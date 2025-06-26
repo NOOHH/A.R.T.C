@@ -26,6 +26,10 @@ Route::get('/enrollment/full', function () {
     return view('registration.Full_enrollment'); // ✅ use dot notation
 })->name('enrollment.full');
 
+Route::get('/enrollment/modular', function () {
+    return view('registration.Modular_enrollment'); // ✅ use dot notation
+})->name('enrollment.modular');
+
 
 Route::get('/login', function () {
     return view('Login.login');

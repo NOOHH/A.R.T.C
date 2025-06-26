@@ -16,7 +16,7 @@
         {{-- Modular Enrollment --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Modular Enrollment</h3>
-            <a href="{{ route('enrollment.full') }}" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; text-decoration: none;">
+            <a href="{{ route('enrollment.modular') }}" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; text-decoration: none;">
                 Enroll
             </a>
         </div>
