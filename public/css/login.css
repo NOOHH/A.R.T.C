@@ -1,0 +1,177 @@
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Montserrat', Arial, sans-serif;
+    display: flex;
+}
+.left {
+    flex: 1;
+    background: linear-gradient(to bottom, #8e2de2, #c84f8f);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    position: relative;
+}
+.left .review-text {
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 32px;
+    margin-top: 40px;
+}
+.left .login-illustration {
+    width: 350px;
+    max-width: 90%;
+    margin: 0 auto 24px auto;
+    display: block;
+}
+.left .copyright {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 0.95em;
+    color: #f3e6f7;
+}
+.right {
+    flex: 1;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0 48px;
+    min-width: 400px;
+    max-width: 520px;
+}
+.right .logo-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+}
+.right .logo-row img {
+    height: 60px;
+    margin-right: 12px;
+}
+.right .brand-text {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #222;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: color 0.3s, background 0.3s;
+    background: none;
+    background-clip: initial;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: initial;
+}
+.right .brand-text:hover {
+    text-decoration: underline;
+    background: linear-gradient(to bottom, #8e2de2, #c84f8f);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #8e2de2; /* fallback for browsers not supporting background-clip:text */
+}
+.right h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 32px;
+    color: #222;
+}
+.login-form {
+    width: 100%;
+    max-width: 350px;
+}
+.login-form label {
+    font-weight: 500;
+    color: #222;
+    margin-bottom: 6px;
+    display: block;
+}
+.login-form input[type="email"],
+.login-form input[type="password"] {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 22px;
+    border: 1.5px solid #ccc;
+    margin-bottom: 16px;
+    font-size: 1em;
+    outline: none;
+    background: #fafafa;
+}
+.login-form .input-row {
+    position: relative;
+}
+.login-form .input-row .toggle-password {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+.login-form .forgot {
+    color: #b00020;
+    font-size: 0.98em;
+    margin-bottom: 18px;
+    display: block;
+    text-decoration: none;
+}
+.login-form .forgot:hover {
+    text-decoration: underline;
+}
+.login-form button[type="submit"] {
+    width: 100%;
+    background: #b0004c;
+    color: #fff;
+    border: none;
+    border-radius: 22px;
+    padding: 12px 0;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.login-form button[type="submit"]:hover {
+    background: #8e2de2;
+}
+.login-form .google-btn {
+    width: 100%;
+    background: #fff;
+    color: #222;
+    border: 1.5px solid #888;
+    border-radius: 22px;
+    padding: 12px 0;
+    font-size: 1.05em;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    cursor: pointer;
+    transition: background 0.2s, border 0.2s;
+}
+.login-form .google-btn:hover {
+    background: #f3e6f7;
+    border-color: #b0004c;
+}
+.login-form .register-link {
+    color: #b0004c;
+    text-decoration: none;
+    font-size: 1em;
+}
+.login-form .register-link:hover {
+    text-decoration: underline;
+}
+@media (max-width: 900px) {
+    body { flex-direction: column; }
+    .left, .right { min-width: 0; max-width: 100%; padding: 24px; }
+    .right { align-items: center; }
+}

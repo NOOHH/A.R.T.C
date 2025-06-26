@@ -19,9 +19,9 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    height: 70px;
+    justify-content: space-between; /* Changed from flex-start to space-between */
+    padding: 0 48px 0 24px; /* Adjusted for more space on left */
+    height: 80px; /* Slightly taller for reference match */
     position: sticky;
     top: 0;
     z-index: 100;
@@ -30,34 +30,37 @@ body {
 .navbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    margin-right: 0; /* Remove extra space, handled by space-between */
 }
 
 .logo {
-    height: 48px;
-    margin-right: 8px;
+    height: 54px; /* Slightly larger for reference match */
+    margin-right: 10px;
 }
 
 .brand-text {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
     font-weight: bold;
     color: #222;
     white-space: nowrap;
+    line-height: 1.1;
 }
 
 .navbar-links {
     list-style: none;
     display: flex;
-    gap: 32px;
+    gap: 44px; /* Reduced gap for tighter grouping */
     margin: 0;
     padding: 0;
+    align-items: center;
 }
 
 .navbar-links li a {
     text-decoration: none;
     color: #222;
-    font-weight: 600;
-    font-size: 1rem;
+    font-weight: 700; /* Bolder */
+    font-size: 1.08rem; /* Slightly larger */
     transition: color 0.2s;
     padding: 8px 0;
     display: inline-block;
@@ -65,6 +68,66 @@ body {
 
 .navbar-links li a:hover {
     color: #5c2f91;
+}
+
+/* Dropdown for navbar */
+.dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dropdown-menu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%); /* Center horizontally below parent */
+    background: #fff;
+    min-width: 160px; /* Wider for better look */
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 10;
+    max-height: 0;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), padding 0.3s;
+    width: max-content;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+.dropdown:hover .dropdown-menu {
+    max-height: 200px;
+    padding: 16px 0; /* More vertical padding for centering */
+}
+.dropdown-menu a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px 0;
+    color: #222;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.08rem;
+    transition: background 0.2s, opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    transition-delay: 0.1s, 0.1s, 0.1s; /* Add slight delay for smoother close */
+    box-sizing: border-box;
+    text-align: center;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(24px);
+    pointer-events: none;
+}
+.dropdown:hover .dropdown-menu a {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.15s, 0.15s, 0s; /* No delay on open, only on close */
+    pointer-events: auto;
+}
+.dropdown-menu a:hover {
+    background: #f3e6f7;
 }
 
 /* Main Section */
@@ -160,5 +223,11 @@ body {
     }
     .main-content {
         padding: 20px 5px 0 5px;
+    }
+    .dropdown-menu {
+        left: 50%;
+        right: auto;
+        min-width: 120px;
+        transform: translateX(-50%);
     }
 }

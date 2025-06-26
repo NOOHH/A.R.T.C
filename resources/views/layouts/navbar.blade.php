@@ -19,7 +19,13 @@
             <li><a href="#">Review Courses</a></li>
             <li><a href="#">About Us</a></li>
             <li><a href="#">Contact Us</a></li>
-            <li><a href="#">Sign Up</a></li>
+            <li class="dropdown">
+                <a href="#">Sign Up</a>
+                <div class="dropdown-menu">
+                    <a href="{{ url('/login') }}">Login</a>
+                    <a href="{{ url('/signup') }}">Sign Up</a>
+                </div>
+            </li>
         </ul>
     </nav>
     <main class="main-content">
