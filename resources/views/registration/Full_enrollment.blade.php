@@ -9,7 +9,7 @@
 @section('content')
 <form action="{{ route('student.register') }}" method="POST" class="registration-form" enctype="multipart/form-data">
     @csrf
-    <h2>STUDENT REGISTRATION FORM</h2>
+    <h2>STUDENT FULL PROGRAM <br> REGISTRATION FORM</h2>
 
     <h3>Student Information</h3>
     <div class="input-row">
@@ -41,6 +41,18 @@
         <label>Good Moral <input type="file" name="good_moral" hidden></label>
         <label>PSA Birth Cert. <input type="file" name="birth_cert" hidden></label>
         <label>Course Cert. <input type="file" name="course_cert" hidden></label>
+        @if(session('ocr_text'))
+            <div class="ocr-result" style="margin-top:10px; background:#f3f3f3; padding:10px; border-radius:8px;">
+                <strong>Extracted Text:</strong>
+                <pre style="white-space:pre-wrap;">{{ session('ocr_text') }}</pre>
+                <strong>Suggested Programs:</strong>
+                <ul>
+                    @foreach(session('ocr_suggestions', []) as $suggestion)
+                        <li>{{ $suggestion }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <label>ToR <input type="file" name="tor" hidden></label>
         <label>Cert. of Graduation <input type="file" name="grad_cert" hidden></label>
         <label>1x1 Photo <input type="file" name="photo" hidden></label>

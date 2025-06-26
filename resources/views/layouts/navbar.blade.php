@@ -14,7 +14,7 @@
         <div class="navbar-left">
             <img src="{{ asset('images/logo.png') }}" alt="Logo" class="logo">
             <div class="brand-text">
-                <strong>Ascendo Review and Training Center</strong>
+                <a href="{{ url('/') }}"><strong>Ascendo Review and Training Center</strong>
             </div>
         </div>
         <ul class="navbar-links">
@@ -26,7 +26,7 @@
                 <a href="#">Sign Up</a>
                 <div class="dropdown-menu">
                     <a href="{{ url('/login') }}">Login</a>
-                    <a href="{{ url('/signup') }}">Sign Up</a>
+                    <a href="{{ url('/enrollment') }}">Sign Up</a>
                 </div>
             </li>
         </ul>

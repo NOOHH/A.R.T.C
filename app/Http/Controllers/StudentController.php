@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\OcrService;
 // use App\Models\Student; // Uncomment if you have a Student model
 
 class StudentController extends Controller
@@ -40,10 +41,16 @@ class StudentController extends Controller
 
         // Handle file uploads
         $uploadedFiles = [];
-        foreach (['good_moral', 'birth_cert', 'course_cert', 'tor', 'grad_cert', 'photo'] as $field) {
-            if ($request->hasFile($field)) {
-                $uploadedFiles[$field] = $request->file($field)->store("documents/{$field}", 'public');
-            }
+        $ocrText = null;
+        $ocrSuggestions = [];
+        if ($request->hasFile('course_cert')) {
+            $path = $request->file('course_cert')->store('documents/course_cert', 'public');
+            $uploadedFiles['course_cert'] = $path;
+            // OCR processing
+            $ocrService = new OcrService();
+            $fullPath = storage_path('app/public/' . $path);
+            $ocrText = $ocrService->extractText($fullPath);
+            $ocrSuggestions = $ocrService->suggestPrograms($ocrText);
         }
 
         // Example: Save to database (uncomment after creating a Student model and migration)
@@ -54,6 +61,10 @@ class StudentController extends Controller
         ]);
         */
 
-        return back()->with('success', 'Registration submitted successfully!');
+        return back()->with([
+            'success' => 'Registration submitted successfully!',
+            'ocr_text' => $ocrText,
+            'ocr_suggestions' => $ocrSuggestions,
+        ]);
     }
 }

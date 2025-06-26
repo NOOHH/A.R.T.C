@@ -91,7 +91,7 @@ body {
     left: 50%;
     top: 100%;
     transform: translateX(-50%); /* Center horizontally below parent */
-    background: #fff;
+    background: #f1f1f1;
     min-width: 160px; /* Wider for better look */
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     border-radius: 12px;
