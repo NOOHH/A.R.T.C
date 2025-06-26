@@ -1,19 +1,28 @@
-/* Base */
-body {
+/* Reset */
+* {
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(to bottom, #8e2de2, #c84f8f);
-    color: #333;
+    box-sizing: border-box;
+}
+
+/* Global styles */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #6b0faf, #c12c85);
+    color: #6e1313;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Navbar */
 .navbar {
-    background-color: #e0d1e6;
+    background-color: #f1f1f1;
+    color: black;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 24px;
+    padding: 20px 24px;
 }
 
 .navbar-left {
@@ -23,93 +32,97 @@ body {
 
 .logo {
     height: 50px;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 
 .brand-text {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
+    line-height: 1.2;
 }
 
 .navbar-links {
     list-style: none;
     display: flex;
     gap: 24px;
-    margin: 0;
-    padding: 0;
 }
 
 .navbar-links li a {
     text-decoration: none;
-    color: black;
     font-weight: bold;
-    font-size: 14px;
+    color: black;
     transition: color 0.3s;
 }
 
 .navbar-links li a:hover {
-    color: #5c2f91;
+    color: #6b0faf;
 }
 
 /* Main Section */
-.main-content {
+.main {
+    flex: 1;
+    padding: 40px 100px;
+}
+
+/* Page Title */
+.main h1 {
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #6e1313;
+}
+
+/* Grid Container */
+.content-grid {
+    display: flex;
+    gap: 40px;
+}
+
+/* Left Column */
+.left-column {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 60px 20px;
+    gap: 20px;
 }
 
-/* Cards */
-.program-card {
-    background: white;
-    border-radius: 30px;
-    padding: 30px 40px;
-    margin: 20px;
-    width: 250px;
-    text-align: center;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
-.program-container {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 60px;
-}
-
-/* Enroll Button */
-.enroll-button {
-    margin-top: 20px;
-    background-color: #1c2951;
-    color: white;
-    border: none;
-    padding: 10px 25px;
-    border-radius: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.enroll-button:hover {
-    background-color: #283c75;
-}
-
-/* Dropdown */
-.select-container {
-    margin-top: 40px;
-}
-
-.select-container select {
-    padding: 10px 15px;
-    border-radius: 15px;
-    border: none;
-    font-size: 14px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    outline: none;
-    appearance: none;
+/* Card Boxes */
+.card {
     background-color: white;
-    background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='18' viewBox='0 0 24 24' width='18' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 16px 16px;
+    border-radius: 6px;
+    height: 180px;
+    width: 220px;
+}
+
+/* Large Cards */
+.card.large {
+    width: 350px;
+    height: 360px;
+    text-align: center;
+    font-weight: bold;
+    padding-top: 20px;
+}
+
+/* Individual Offsets */
+.box-1 {
+    margin-left: 40px;
+}
+
+.box-2 {
+    margin-left: 40px;
+}
+
+.box-complete {
+    margin-left: auto;
+}
+
+.box-modular {
+    margin-left: auto;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 12px;
+    color: #e0dede;
 }

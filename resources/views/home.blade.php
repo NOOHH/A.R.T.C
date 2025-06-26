@@ -1,25 +1,18 @@
-@extends('layouts.app') {{-- uses layouts/app.blade.php --}}
+@extends('layouts.app')
 
-@section('title', 'Home') {{-- optional for dynamic title --}}
+@section('content')
+   <div class="main">
+    <h1>lorem ipsum</h1>
 
-@section('content') {{-- this will be injected into @yield('content') in your layout --}}
-    <div class="program-container">
-        <div class="program-card">
-            <h3>Complete Program</h3>
-            <button class="enroll-button">Enroll</button>
+    <div class="content-grid">
+        <div class="left-column">
+            <div class="card box-1"></div>
+            <div class="card box-2"></div>
         </div>
-        <div class="program-card">
-            <h3>Modular Enrollment</h3>
-            <button class="enroll-button">Enroll</button>
-        </div>
-    </div>
 
-    <div class="select-container">
-        <select>
-            <option selected disabled>Please select your course</option>
-            <option value="1">Nursing</option>
-            <option value="2">Engineering</option>
-            <option value="3">Accountancy</option>
-        </select>
+        <div class="card large box-complete">Complete Program</div>
+        <div class="card large box-modular">Modular Enrollment</div> {{-- pushed to the very right --}}
     </div>
+</div>
+
 @endsection
