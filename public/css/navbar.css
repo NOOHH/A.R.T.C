@@ -1,7 +1,13 @@
 /* Base */
 html, body {
-    height: 100%;
+    margin: 0;
+    padding: 0;
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
+
+
 body {
     margin: 0;
     padding: 0;
@@ -15,17 +21,18 @@ body {
 
 /* Navbar */
 .navbar {
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    background-color: #f1f1f1;
+    color: black;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Changed from flex-start to space-between */
-    padding: 0 48px 0 24px; /* Adjusted for more space on left */
-    height: 80px; /* Slightly taller for reference match */
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 70px;
     position: sticky;
     top: 0;
     z-index: 100;
 }
+
 
 .navbar-left {
     display: flex;
@@ -138,7 +145,8 @@ body {
     justify-content: flex-start;
     min-height: 0;
     max-width: 1100px;
-    margin: 40px auto 0 auto;
+        margin: 0 auto;
+    padding-top: 40px; /* Space below navbar */
     width: 100%;
     padding: 40px 20px 0 20px;
     flex: 1 0 auto;
@@ -203,14 +211,15 @@ body {
     background: #fff;
     color: #444;
     text-align: center;
-    padding: 18px 0 10px 0;
+    padding: 24px 0 10px 0; /* ⬅ increased top padding */
     font-size: 0.95rem;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
     width: 100%;
     flex-shrink: 0;
     position: relative;
-    margin-top: 0;
+    margin-top: 40px; /* ⬅ adds spacing above footer */
 }
+
 
 @media (max-width: 900px) {
     .navbar {

@@ -1,0 +1,118 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to bottom right, #8846D3, #FBA0C4);
+    color: #222;
+    /* REMOVE these two lines below: */
+    /* justify-content: center; */
+    /* align-items: center; */
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    margin-top: 0;
+}
+
+.registration-form {
+    background-color: #f9f9ff;
+    border-radius: 20px;
+    padding: 40px;
+    width: 700px;
+    max-width: 90%;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    margin-top: 120px;
+}
+
+.registration-form h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: bold;
+    font-size: 20px;
+    color: #000;
+    margin-top: 0;
+}
+
+.input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.input-row input,
+.input-row select {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+.input-full {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+.document-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.document-buttons label {
+    padding: 10px 15px;
+    background-color: #f2f2f2;
+    border-radius: 15px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.course-box {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #cde1ff;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.terms {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.enroll-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #83b7ff;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.enroll-btn:hover {
+    background-color: #649fff;
+}
+.registration-form h3 {
+    font-size: 1.1rem;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #333;
+}

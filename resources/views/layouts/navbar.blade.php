@@ -1,10 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>@yield('title', 'Ascendo Review')</title>
     <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
+    @stack('styles') {{-- ✅ to load page-specific styles --}}
 </head>
+
 <body class="body-background">
     {{-- Navbar --}}
     <nav class="navbar">
