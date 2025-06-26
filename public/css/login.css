@@ -65,15 +65,15 @@ body {
     text-decoration: none;
     transition: color 0.3s, background 0.3s;
     background: none;
-    background-clip: initial;
     -webkit-background-clip: initial;
+    background-clip: initial;
     -webkit-text-fill-color: initial;
 }
 .right .brand-text:hover {
     text-decoration: underline;
     background: linear-gradient(to bottom, #8e2de2, #c84f8f);
-    background-clip: text;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     color: #8e2de2; /* fallback for browsers not supporting background-clip:text */
 }
