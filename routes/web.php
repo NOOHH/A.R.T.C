@@ -2,6 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentController;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/test-db', function () {
+    try {
+        DB::connection()->getPdo();
+        return "✅ Connected to DB successfully!";
+    } catch (\Exception $e) {
+        return "❌ DB connection failed: " . $e->getMessage();
+    }
+});
 
 Route::get('/', function () {
     return view('homepage');
@@ -30,4 +40,7 @@ Route::get('/student/register', function () {
     return view('student-register');
 });
 
-Route::post('/student/register', [StudentController::class, 'store'])->name('student.register');
+use App\Http\Controllers\StudentRegistrationController;
+Route::post('/register', [StudentRegistrationController::class, 'store'])->name('student.register');
+
+
