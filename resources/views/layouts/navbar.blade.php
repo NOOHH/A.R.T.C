@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +11,7 @@
     {{-- Navbar --}}
     <nav class="navbar">
         <div class="navbar-left">
-            <img src="{{ asset('images/logo.png') }}" alt="Logo" class="logo">
+            <img src="{{ asset('images/ARTC_Logo.png') }}" alt="Logo" class="logo">
             <div class="brand-text">
                 <a href="{{ url('/') }}"><strong>Ascendo Review and Training Center</strong>
             </div>

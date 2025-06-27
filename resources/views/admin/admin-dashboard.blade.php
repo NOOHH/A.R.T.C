@@ -4,175 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #f5f5f7;
-            font-family: 'Montserrat', Arial, sans-serif;
-        }
-        .admin-container {
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 250px;
-            background: #f5f7fa;
-            border-right: 1.5px solid #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 32px 0 0 0;
-        }
-        .sidebar .logo-row {
-            display: flex;
-            align-items: center;
-            margin-left: 18px;
-            margin-bottom: 36px;
-        }
-        .sidebar .logo-row img {
-            height: 70px;
-            margin-right: 10px;
-        }
-        .sidebar .brand-text {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #222;
-            line-height: 1.2;
-        }
-        .sidebar nav ul, .sidebar .bottom-links {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            width: 100%;
-        }
-        .sidebar nav ul li, .sidebar .bottom-links li {
-            padding: 16px 0 16px 32px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #222;
-            font-size: 1.05em;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .sidebar nav ul li.active {
-            font-weight: 700;
-        }
-        .sidebar .bottom-links {
-            margin-top: auto;
-        }
-        .sidebar .bottom-links li {
-            padding: 12px 0 12px 32px;
-        }
-        .sidebar .bottom-links li.logout {
-            color: #d32f2f;
-            font-weight: bold;
-        }
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #f5f5f7;
-            padding: 32px 32px 0 32px;
-        }
-        .topbar {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            margin-bottom: 24px;
-        }
-        .searchbar {
-            background: #ede6ef;
-            border-radius: 18px;
-            padding: 10px 18px;
-            display: flex;
-            align-items: center;
-            width: 420px;
-        }
-        .searchbar input {
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 1.1em;
-            width: 100%;
-            font-family: inherit;
-        }
-        .topbar .icon {
-            font-size: 2em;
-            margin-right: 18px;
-            color: #222;
-        }
-        .action-btns {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-        .action-btns button {
-            background: #fff;
-            border: 2px solid #5c2f91;
-            border-radius: 22px;
-            padding: 7px 16px;
-            font-size: 1.2em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .content-row {
-            display: flex;
-            gap: 32px;
-        }
-        .course-list {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        .course-card {
-            background: #edeffe;
-            border: 3px solid #5c2f91;
-            border-radius: 32px;
-            padding: 28px 32px;
-            margin-bottom: 0;
-        }
-        .course-card .title {
-            font-weight: bold;
-            font-size: 1.2em;
-            margin-bottom: 6px;
-        }
-        .course-card .progress {
-            font-size: 0.98em;
-            color: #444;
-        }
-        .pending-panel {
-            flex: 1;
-            background: #edeffe;
-            border: 3px solid #5c2f91;
-            border-radius: 24px;
-            padding: 24px 28px;
-            min-width: 320px;
-            max-width: 350px;
-        }
-        .pending-panel .panel-title {
-            font-weight: bold;
-            font-size: 1.1em;
-            border-bottom: 2px solid #222;
-            padding-bottom: 8px;
-            margin-bottom: 18px;
-        }
-        .pending-panel .student {
-            font-size: 1em;
-            color: #222;
-        }
-        @media (max-width: 900px) {
-            .admin-container { flex-direction: column; }
-            .sidebar { width: 100%; min-height: auto; }
-            .main { padding: 16px; }
-            .content-row { flex-direction: column; }
-            .pending-panel { max-width: 100%; min-width: 0; margin-top: 24px; }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
 </head>
 <body>
 <div class="admin-container">
@@ -200,6 +32,12 @@
     </aside>
     <!-- Main Content -->
     <div class="main">
+        @if(isset($dbError) && $dbError)
+            <div style="background:#ffeaea;color:#b91c1c;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-weight:600;border:1.5px solid #fca5a5;">
+                <span style="font-size:1.2em;vertical-align:middle;">&#9888;&#65039;</span> {{ $dbError }}<br>
+                <span style="font-weight:400;font-size:0.98em;">Some dashboard features are unavailable until the database is restored.</span>
+            </div>
+        @endif
         <!-- Top Bar -->
         <div class="topbar">
             <div class="searchbar">
@@ -238,8 +76,98 @@
             <!-- Pending Student Registration -->
             <div class="pending-panel">
                 <div class="panel-title">Pending Student Registration</div>
-                <div class="student">John Doe</div>
+                @if(isset($dbError) && $dbError)
+                    <div style="color:#b91c1c;padding:12px 0;">Cannot load registrations. Database unavailable.</div>
+                @else
+                    <table class="pending-table">
+                        <thead>
+                            <tr>
+                                <th>Last<br>name</th>
+                                <th>First<br>name</th>
+                                <th>Middle<br>name</th>
+                                <th style="text-align:center; min-width:110px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($registrations as $registration)
+                            <tr>
+                                <td>{{ $registration->lastname }}</td>
+                                <td>{{ $registration->firstname }}</td>
+                                <td>{{ $registration->middlename }}</td>
+                                <td style="text-align:center;">
+                                    <button class="view-btn" data-id="{{ $registration->registration_id }}">View</button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
             </div>
+            <!-- Modal -->
+            <div id="registrationModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Registration Details</h2>
+                    <div id="modal-details" class="modal-details-structured">
+                        <!-- Details will be loaded here -->
+                    </div>
+                    <div class="modal-actions">
+                        <form id="approveForm" method="POST" style="display:inline;">
+                            @csrf
+                            <button type="submit" class="approve-btn">Approve</button>
+                        </form>
+                        <form id="rejectForm" method="POST" style="display:inline;">
+                            @csrf
+                            <button type="submit" class="reject-btn">Reject</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = document.getElementById('registrationModal');
+                const modalDetails = document.getElementById('modal-details');
+                const approveForm = document.getElementById('approveForm');
+                const rejectForm = document.getElementById('rejectForm');
+                const closeBtn = document.querySelector('.close');
+                document.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const id = this.getAttribute('data-id');
+                        fetch(`/admin/registration/${id}`)
+                            .then(res => {
+                                if (!res.ok) throw new Error('Network response was not ok');
+                                return res.json();
+                            })
+                            .then(data => {
+                                // Group fields for better structure
+                                let html = '';
+                                html += `<div class='modal-section'><div class='modal-section-title'>Personal Information</div><div class='modal-row'><div><label>Last Name</label><div>${data.lastname || ''}</div></div><div><label>First Name</label><div>${data.firstname || ''}</div></div></div><div class='modal-row'><div><label>Middle Name</label><div>${data.middlename || ''}</div></div><div><label>Student School</label><div>${data.student_school || ''}</div></div></div></div>`;
+                                html += `<div class='modal-section'><div class='modal-section-title'>Contact Information</div><div class='modal-row'><div><label>Email</label><div>${data.email || ''}</div></div><div><label>Contact Number</label><div>${data.contact_number || ''}</div></div></div><div class='modal-row'><div><label>Emergency Contact</label><div>${data.emergency_contact_number || ''}</div></div></div></div>`;
+                                html += `<div class='modal-section'><div class='modal-section-title'>Address</div><div class='modal-row'><div><label>Street Address</label><div>${data.street_address || ''}</div></div><div><label>City</label><div>${data.city || ''}</div></div></div><div class='modal-row'><div><label>State/Province</label><div>${data.state_province || ''}</div></div><div><label>Zipcode</label><div>${data.zipcode || ''}</div></div></div></div>`;
+                                html += `<div class='modal-section'><div class='modal-section-title'>Documents</div><div class='modal-row'><div><label>Good Moral</label><div>${data.good_moral || ''}</div></div><div><label>PSA</label><div>${data.PSA || ''}</div></div></div><div class='modal-row'><div><label>Course Cert</label><div>${data.Course_Cert || ''}</div></div><div><label>TOR</label><div>${data.TOR || ''}</div></div></div><div class='modal-row'><div><label>Cert of Grad</label><div>${data.Cert_of_Grad || ''}</div></div><div><label>Photo 2x2</label><div>${data.photo_2x2 || ''}</div></div></div></div>`;
+                                html += `<div class='modal-section'><div class='modal-section-title'>Status</div><div class='modal-row'><div><label>Undergraduate</label><div>${data.Undergraduate || ''}</div></div><div><label>Graduate</label><div>${data.Graduate || ''}</div></div></div><div class='modal-row'><div><label>Start Date</label><div>${data.Start_Date || ''}</div></div><div><label>Status</label><div>${data.status || ''}</div></div></div></div>`;
+                                modalDetails.innerHTML = html;
+                                modal.style.display = 'flex';
+                                approveForm.action = `/admin/registration/${id}/approve`;
+                                rejectForm.action = `/admin/registration/${id}/reject`;
+                            })
+                            .catch(err => {
+                                modalDetails.innerHTML = '<div style="color:red;">Failed to load details.</div>';
+                                modal.style.display = 'flex';
+                            });
+                    });
+                });
+                closeBtn.onclick = function() {
+                    modal.style.display = 'none';
+                };
+                window.onclick = function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                };
+            });
+            </script>
         </div>
     </div>
 </div>

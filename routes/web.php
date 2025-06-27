@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\AdminController;
 
 Route::get('/', function () {
     return view('homepage');
@@ -25,9 +26,11 @@ Route::get('/login', function () {
     return view('Login.login');
 })->name('login');
 
-// Route::get('/admin-dashboard', function () {
-//     return view('admin.admin-dashboard');
-// });
+// Admin Dashboard and Registration Management
+Route::get('/admin-dashboard', [AdminController::class, 'dashboard']);
+Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
+Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve']);
+Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject']);
 
 
 Route::get('/student/register', function () {
