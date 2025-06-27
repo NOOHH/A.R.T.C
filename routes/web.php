@@ -6,6 +6,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentLoginController;
 use App\Http\Controllers\StudentRegistrationController;
+use App\Http\Controllers\AdminProgramController;
 
 // Optional: DB test route
 Route::get('/test-db', function () {
@@ -21,13 +22,9 @@ Route::get('/', function () {
     return view('homepage');
 })->name('home');
 
-Route::get('/enrollment', function () {
-    return view('enrollment');
-});
+Route::get('/enrollment', [App\Http\Controllers\StudentRegistrationController::class, 'showEnrollmentSelection'])->name('enrollment.selection');
 
-Route::get('/enrollment/full', function () {
-    return view('registration.Full_enrollment');
-})->name('enrollment.full');
+Route::get('/enrollment/full', [App\Http\Controllers\StudentRegistrationController::class, 'showRegistrationForm'])->name('enrollment.full');
 
 Route::get('/enrollment/modular', function () {
     return view('registration.Modular_enrollment');
@@ -58,3 +55,8 @@ Route::get('/admin-student-registration/history', [AdminController::class, 'stud
 
 // View specific student registration submission details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])->name('admin.student.registration.view');
+
+// Admin Programs
+Route::get('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'index'])->name('admin.programs.index');
+Route::post('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'store'])->name('admin.programs.store');
+Route::delete('/admin/programs/{id}', [App\Http\Controllers\AdminProgramController::class, 'destroy'])->name('admin.programs.delete');

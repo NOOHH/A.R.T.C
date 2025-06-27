@@ -3,24 +3,26 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Registration;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Enrollment;
+use App\Models\Program;
+use App\Models\Package;
 
 class StudentRegistrationController extends Controller
 {
     public function store(Request $request)
     {
-        // Validate step 1 + step 2
+        // Validate all form inputs
         $validated = $request->validate([
-            // Step 1 (Account)
+            // Step 1 - Account Info
             'user_firstname' => 'required|string|max:255',
             'user_lastname' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|confirmed|min:6',
 
-            // Step 2 (Details)
+            // Step 2 - Student Details
             'firstname' => 'required|string|max:50',
             'middle_name' => 'nullable|string|max:50',
             'lastname' => 'required|string|max:50',
@@ -32,20 +34,36 @@ class StudentRegistrationController extends Controller
             'contact_number' => 'required|string|max:15',
             'emergency_contact_number' => 'required|string|max:15',
             'Start_Date' => 'required|date',
+
+            // Enrollment Info
+            'program_id' => 'required|integer|exists:programs,program_id',
+            'package_id' => 'required|integer|exists:packages,package_id',
+            'enrollment_type' => 'required|in:modular,full',
         ]);
 
-        // Step 1: Create user account
+        // Normalize enrollment_type to match ENUM in DB
+        $enrollmentType = $validated['enrollment_type'] === 'full' ? 'Complete' : 'Modular';
+
+        // Create enrollment record
+        $enrollment = Enrollment::create([
+            'program_id' => $validated['program_id'],
+            'package_id' => $validated['package_id'],
+            'enrollment_type' => $enrollmentType,
+        ]);
+
+        // Create user account and attach enrollment_id
         $user = User::create([
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'user_firstname' => $validated['user_firstname'],
             'user_lastname' => $validated['user_lastname'],
             'role' => 'unverified',
+            'enrollment_id' => $enrollment->enrollment_id,
         ]);
 
-        // Step 2: Create registration record
+        // Create registration record
         $registration = new Registration();
-        $registration->user_id = $user->id;
+        $registration->user_id = $user->user_id;
         $registration->firstname = $validated['firstname'];
         $registration->middlename = $validated['middle_name'] ?? null;
         $registration->lastname = $validated['lastname'];
@@ -59,14 +77,23 @@ class StudentRegistrationController extends Controller
         $registration->Start_Date = $validated['Start_Date'];
         $registration->status = 'pending';
 
-        // Handle file uploads
-        foreach (['good_moral', 'PSA', 'Course_Cert', 'TOR', 'Cert_of_Grad', 'photo_2x2'] as $field) {
-            if ($request->hasFile($field)) {
-                $registration->$field = $request->file($field)->store('documents', 'public');
+        // Handle uploaded documents
+        $fileFields = [
+            'good_moral' => 'good_moral',
+            'birth_cert' => 'PSA',
+            'course_cert' => 'Course_Cert',
+            'tor' => 'TOR',
+            'grad_cert' => 'Cert_of_Grad',
+            'photo' => 'photo_2x2',
+        ];
+
+        foreach ($fileFields as $inputName => $columnName) {
+            if ($request->hasFile($inputName)) {
+                $registration->$columnName = $request->file($inputName)->store('documents', 'public');
             }
         }
 
-        // Handle education radio
+        // Education radio button
         $education = $request->input('education');
         if ($education === 'Undergraduate') {
             $registration->Undergraduate = 'yes';
@@ -79,5 +106,23 @@ class StudentRegistrationController extends Controller
         $registration->save();
 
         return redirect()->back()->with('success', 'Registration successful!');
+    }
+
+    public function showRegistrationForm(Request $request)
+    {
+        $enrollmentType = $request->query('enrollment_type'); // 'modular' or 'full'
+        $programId = $request->query('program_id');
+        $packageId = $request->query('package_id');
+        $programs = Program::all();
+
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programId', 'packageId', 'programs'));
+    }
+
+    public function showEnrollmentSelection()
+    {
+        $programs = Program::all();
+        $packages = Package::all();
+
+        return view('enrollment', compact('programs', 'packages'));
     }
 }
