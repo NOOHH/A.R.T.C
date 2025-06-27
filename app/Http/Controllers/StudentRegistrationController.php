@@ -32,18 +32,30 @@ class StudentRegistrationController extends Controller
             'contact_number' => 'required|string|max:15',
             'emergency_contact_number' => 'required|string|max:15',
             'Start_Date' => 'required|date',
+            // Step 0 (Enrollment)
+            'program_id' => 'required|integer|exists:programs,program_id',
+            'package_id' => 'required|integer|exists:packages,package_id',
+            'enrollment_type' => 'required|in:Modular,Complete',
         ]);
 
-        // Step 1: Create user account
+        // Step 1: Create enrollment record
+        $enrollment = \App\Models\Enrollment::create([
+            'program_id' => $validated['program_id'],
+            'package_id' => $validated['package_id'],
+            'enrollment_type' => $validated['enrollment_type'],
+        ]);
+
+        // Step 2: Create user account with enrollment_id
         $user = User::create([
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'user_firstname' => $validated['user_firstname'],
             'user_lastname' => $validated['user_lastname'],
             'role' => 'unverified',
+            'enrollment_id' => $enrollment->id,
         ]);
 
-        // Step 2: Create registration record
+        // Step 3: Create registration record
         $registration = new Registration();
         $registration->user_id = $user->id;
         $registration->firstname = $validated['firstname'];
@@ -79,5 +91,21 @@ class StudentRegistrationController extends Controller
         $registration->save();
 
         return redirect()->back()->with('success', 'Registration successful!');
+    }
+
+    public function showRegistrationForm(Request $request)
+    {
+        $enrollmentType = $request->query('enrollment_type');
+        $programId = $request->query('program_id');
+        $packageId = $request->query('package_id');
+        $programs = \App\Models\Program::all();
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programId', 'packageId', 'programs'));
+    }
+
+    public function showEnrollmentSelection()
+    {
+        $programs = \App\Models\Program::all();
+        $packages = \App\Models\Package::all();
+        return view('enrollment', compact('programs', 'packages'));
     }
 }

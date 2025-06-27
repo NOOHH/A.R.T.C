@@ -68,9 +68,10 @@
     </div>
 
     <div class="terms">
-        <a href="javascript:void(0)" onclick="openModal()" style="text-decoration: underline; color: #1c2951;">
-            Read Terms and Conditions
-        </a>
+        <label>
+            <input type="checkbox" id="termsCheckbox" required disabled>
+            I agree to the <a href="javascript:void(0)" onclick="openModal()" style="text-decoration: underline; color: #1c2951;">Terms and Conditions</a>
+        </label>
     </div>
 
     <!-- Modal -->
@@ -88,7 +89,7 @@
         </div>
     </div>
 
-    <button type="submit" class="enroll-btn">Enroll</button>
+    <button type="submit" class="enroll-btn" id="enrollBtn" disabled>Enroll</button>
 </form>
 
 <script>
@@ -97,6 +98,8 @@
     const agreeBtn = document.getElementById('agreeBtn');
     const form = document.querySelector('form');
     const submitBtn = form.querySelector('button[type="submit"]');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const enrollBtn = document.getElementById('enrollBtn');
 
     submitBtn.disabled = true;
 
@@ -109,12 +112,18 @@
     function closeModal() {
         modal.style.display = 'none';
         if (agreeInModal.checked) {
-            submitBtn.disabled = false;
+            termsCheckbox.checked = true;
+            termsCheckbox.disabled = false;
+            enrollBtn.disabled = false;
         }
     }
 
     agreeInModal.addEventListener('change', () => {
         agreeBtn.disabled = !agreeInModal.checked;
+    });
+
+    termsCheckbox.addEventListener('change', function() {
+        enrollBtn.disabled = !this.checked;
     });
 
     window.onclick = function (event) {

@@ -21,13 +21,9 @@ Route::get('/', function () {
     return view('homepage');
 })->name('home');
 
-Route::get('/enrollment', function () {
-    return view('enrollment');
-});
+Route::get('/enrollment', [App\Http\Controllers\StudentRegistrationController::class, 'showEnrollmentSelection'])->name('enrollment.selection');
 
-Route::get('/enrollment/full', function () {
-    return view('registration.Full_enrollment');
-})->name('enrollment.full');
+Route::get('/enrollment/full', [App\Http\Controllers\StudentRegistrationController::class, 'showRegistrationForm'])->name('enrollment.full');
 
 Route::get('/enrollment/modular', function () {
     return view('registration.Modular_enrollment');

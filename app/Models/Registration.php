@@ -11,6 +11,8 @@ class Registration extends Model
 
     protected $table = 'registrations'; // updated table name
 
+    protected $primaryKey = 'registration_id';
+
     protected $fillable = [
         'lastname',
         'firstname',
