@@ -29,15 +29,15 @@
                     </ul>
                 </li>
                 <li class="@if(Route::currentRouteName() === 'enrollment.full' || Route::currentRouteName() === 'enrollment.modular') active @endif"><span>&#128221;</span> Enrollment</li>
-                <li><span>&#128451;</span> Programs</li>
+                <li class="@if(Route::currentRouteName() === 'admin.programs.index') active @endif"><a href="{{ route('admin.programs.index') }}" style="color:inherit;text-decoration:none;"><span>&#128451;</span> Programs</a></li>
                 <li><span>&#128101;</span> Professors</li>
             </ul>
         </nav>
         <div style="flex: 1;"></div>
         <ul class="bottom-links">
-            <li><span>&#10067;</span> Help</li>
-            <li><span>&#9881;&#65039;</span> Settings</li>
-            <li class="logout"><span>&#8634;</span> Logout</li>
+            <li class="help-link" style="cursor:pointer; transition: background 0.3s, color 0.3s, transform 0.2s;"><span>&#10067;</span> Help</li>
+            <li class="settings-link" style="cursor:pointer; transition: background 0.3s, color 0.3s, transform 0.2s;"><span>&#9881;&#65039;</span> Settings</li>
+            <li class="logout" style="cursor:pointer; transition: background 0.3s, color 0.3s, transform 0.2s; margin-bottom: 30px;"><span>&#8634;</span> Logout</li>
         </ul>
     </aside>
     <!-- Main Content -->
@@ -68,6 +68,36 @@
                 var isOpen = submenu.style.display === 'block';
                 submenu.style.display = isOpen ? 'none' : 'block';
                 dropdown.classList.toggle('active', !isOpen);
+            });
+        }
+        // Animation for bottom links
+        function addAnimatedEvents(element, hoverBg, hoverColor) {
+            if (!element) return;
+            element.addEventListener('mouseenter', function() {
+                element.style.background = hoverBg;
+                element.style.color = hoverColor;
+                element.style.transform = 'scale(1.05)';
+            });
+            element.addEventListener('mouseleave', function() {
+                element.style.background = '';
+                element.style.color = '';
+                element.style.transform = 'scale(1)';
+            });
+            element.addEventListener('mousedown', function() {
+                element.style.transform = 'scale(0.95)';
+            });
+            element.addEventListener('mouseup', function() {
+                element.style.transform = 'scale(1.05)';
+            });
+        }
+        addAnimatedEvents(document.querySelector('.help-link'), '#f1c40f', '#fff');
+        addAnimatedEvents(document.querySelector('.settings-link'), '#8e44ad', '#fff');
+        addAnimatedEvents(document.querySelector('.logout'), '#e74c3c', '#fff');
+        // Logout functionality
+        var logoutBtn = document.querySelector('.logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                window.location.href = '/'; // Redirect to homepage
             });
         }
     });

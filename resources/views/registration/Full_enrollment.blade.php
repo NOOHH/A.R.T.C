@@ -19,13 +19,19 @@
 
     {{-- STEP 1: ACCOUNT REGISTRATION --}}
     <div class="step active" id="step-1">
-        <h2>ACCOUNT REGISTRATION</h2>
-        <input type="text" name="user_firstname" placeholder="First Name" required>
-        <input type="text" name="user_lastname" placeholder="Last Name" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <input type="password" name="password_confirmation" placeholder="Confirm Password" required>
-        <button type="button" onclick="nextStep()">Next</button>
+        <h2 style="text-align:center; margin-bottom: 24px; font-weight:700; letter-spacing:1px;">ACCOUNT REGISTRATION</h2>
+        <div style="display: flex; flex-direction: column; gap: 18px; align-items: center;">
+            <div style="display: flex; gap: 16px; width: 100%; max-width: 500px;">
+                <input type="text" name="user_firstname" placeholder="First Name" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+                <input type="text" name="user_lastname" placeholder="Last Name" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+            </div>
+            <input type="email" name="email" placeholder="Email" required style="width: 100%; max-width: 500px; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+            <div style="display: flex; gap: 16px; width: 100%; max-width: 500px;">
+                <input type="password" name="password" placeholder="Password" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+                <input type="password" name="password_confirmation" placeholder="Confirm Password" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;">
+            </div>
+            <button type="button" onclick="nextStep()" style="margin-top: 10px; background: linear-gradient(90deg, #a259c6 0%, #6a82fb 100%); color: #fff; border: none; border-radius: 8px; padding: 12px 40px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 2px 8px rgba(160,89,198,0.08); transition: background 0.2s, transform 0.2s; cursor:pointer;">Next</button>
+        </div>
     </div>
 
     {{-- STEP 2: FULL STUDENT REGISTRATION --}}
