@@ -13,6 +13,7 @@ Route::get('/test-db', function () {
     }
 });
 
+
 Route::get('/', function () {
     return view('homepage');
 })->name('home');
@@ -46,5 +47,19 @@ Route::get('/student/register', function () {
 
 use App\Http\Controllers\StudentRegistrationController;
 Route::post('/register', [StudentRegistrationController::class, 'store'])->name('student.register');
+use App\Http\Controllers\StudentLoginController;
+
+Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login');
+
+Route::get('/admin-dashboard', function () {
+    return view('admin.admin-dashboard');
+})->name('admin.dashboard');
 
 
+Route::get('/admin-dashboard', function () {
+    return view('admin.admin-dashboard');
+})->name('admin.dashboard');
+
+
+Route::get('/register/details/{user}', [StudentRegistrationController::class, 'showDetailsForm'])->name('register.details');
+Route::post('/register/details/{user}', [StudentRegistrationController::class, 'submitDetails']);
