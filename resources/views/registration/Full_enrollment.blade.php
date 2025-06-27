@@ -1,144 +1,112 @@
-@extends('layouts.navbar') {{-- Uses your navbar layout --}}
+@extends('layouts.navbar')
 
 @section('title', 'Student Registration')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
+<link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
+<style>
+    .step { display: none; }
+    .step.active { display: block; }
+</style>
 @endpush
 
 @section('content')
-<form action="{{ route('student.register') }}" method="POST" class="registration-form" enctype="multipart/form-data">
+<form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form">
     @csrf
-    <h2>STUDENT FULL PROGRAM <br> REGISTRATION FORM</h2>
 
-    <h3>Student Information</h3>
-    <div class="input-row">
-        <input type="text" name="first_name" placeholder="First name" required>
-        <input type="text" name="middle_name" placeholder="Middle name">
-        <input type="text" name="last_name" placeholder="Last name" required>
-    </div>
-    <input type="text" name="school" placeholder="Student's school" class="input-full" required>
-
-    <h3>Address</h3>
-    <div class="input-row">
-        <input type="text" name="street_address" placeholder="Street Address" required>
-        <input type="text" name="state" placeholder="State/Province" required>
-    </div>
-    <div class="input-row">
-        <input type="text" name="city" placeholder="City" required>
-        <input type="text" name="zip" placeholder="Zip Code" required>
-    </div>
-
-    <h3>Contact Information</h3>
-    <div class="input-row">
+    {{-- STEP 1: ACCOUNT REGISTRATION --}}
+    <div class="step active" id="step-1">
+        <h2>ACCOUNT REGISTRATION</h2>
+        <input type="text" name="user_firstname" placeholder="First Name" required>
+        <input type="text" name="user_lastname" placeholder="Last Name" required>
         <input type="email" name="email" placeholder="Email" required>
-        <input type="text" name="contact_number" placeholder="Contact Number" required>
-    </div>
-    <input type="text" name="emergency_contact" placeholder="Emergency Contact Number" class="input-full" required>
-
-    <h3>Verification/Document Upload</h3>
-    <div class="document-buttons">
-        <label>Good Moral <input type="file" name="good_moral" hidden></label>
-        <label>PSA Birth Cert. <input type="file" name="birth_cert" hidden></label>
-        <label>Course Cert. <input type="file" name="course_cert" hidden></label>
-        @if(session('ocr_text'))
-            <div class="ocr-result" style="margin-top:10px; background:#f3f3f3; padding:10px; border-radius:8px;">
-                <strong>Extracted Text:</strong>
-                <pre style="white-space:pre-wrap;">{{ session('ocr_text') }}</pre>
-                <strong>Suggested Programs:</strong>
-                <ul>
-                    @foreach(session('ocr_suggestions', []) as $suggestion)
-                        <li>{{ $suggestion }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-        <label>ToR <input type="file" name="tor" hidden></label>
-        <label>Cert. of Graduation <input type="file" name="grad_cert" hidden></label>
-        <label>1x1 Photo <input type="file" name="photo" hidden></label>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="password_confirmation" placeholder="Confirm Password" required>
+        <button type="button" onclick="nextStep()">Next</button>
     </div>
 
-    <div class="input-row">
-        <label><input type="radio" name="education" value="Undergraduate" checked> Undergraduate</label>
-        <label><input type="radio" name="education" value="Graduate"> Graduate</label>
-    </div>
+    {{-- STEP 2: FULL STUDENT REGISTRATION --}}
+    <div class="step" id="step-2">
+        <h2>STUDENT FULL PROGRAM REGISTRATION</h2>
 
-    <h3>Courses</h3>
-    <div class="input-row">
-        <select name="course_1" required>
-            <option value="">Course 1</option>
-            <option value="Nursing">Nursing</option>
-            <option value="Engineering">Engineering</option>
-        </select>
-    </div>
-
-    <h3>Start Date</h3>
-    <div class="course-box">
-        <label for="start_date">
-            <input type="date" name="start_date" id="start_date">
-        </label>
-    </div>
-
-    <div class="terms">
-        <a href="javascript:void(0)" onclick="openModal()" style="text-decoration: underline; color: #1c2951;">
-            Read Terms and Conditions
-        </a>
-    </div>
-
-    <!-- Modal -->
-    <div id="termsModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 999;">
-        <div style="background-color: #fff; width: 80%; max-width: 600px; margin: 100px auto; padding: 20px; border-radius: 10px;">
-            <h2>Terms and Conditions</h2>
-            <p>
-                By registering, you agree that all information provided is accurate.
-                Uploaded documents are for verification only.
-            </p>
-            <div style="margin-top: 20px;">
-                <label><input type="checkbox" id="agreeInModal"> I agree to the Terms and Conditions</label>
-            </div>
-            <button onclick="closeModal()" id="agreeBtn" disabled style="margin-top: 20px;">Agree and Close</button>
+        <h3>Student Information</h3>
+        <div class="input-row">
+            <input type="text" name="firstname" placeholder="First name" required>
+            <input type="text" name="middle_name" placeholder="Middle name">
+            <input type="text" name="lastname" placeholder="Last name" required>
+            <input type="text" name="student_school" placeholder="Student's school" required>
         </div>
-    </div>
 
-    <button type="submit" class="enroll-btn">Enroll</button>
+        <h3>Address</h3>
+        <div class="input-row">
+            <input type="text" name="street_address" placeholder="Street Address" required>
+            <input type="text" name="state_province" placeholder="State/Province" required>
+            <input type="text" name="city" placeholder="City" required>
+            <input type="text" name="zipcode" placeholder="Zip Code" required>
+        </div>
+
+        <h3>Contact Information</h3>
+        <div class="input-row">
+            <input type="text" name="contact_number" placeholder="Contact Number" required>
+            <input type="text" name="emergency_contact_number" placeholder="Emergency Contact Number" required>
+        </div>
+
+        <h3>Verification/Document Upload</h3>
+        <div class="document-buttons">
+            <label>Good Moral <input type="file" name="good_moral" hidden></label>
+            <label>PSA Birth Cert. <input type="file" name="PSA" hidden></label>
+            <label>Course Cert. <input type="file" name="Course_Cert" hidden></label>
+            <label>ToR <input type="file" name="TOR" hidden></label>
+            <label>Cert. of Graduation <input type="file" name="Cert_of_Grad" hidden></label>
+            <label>1x1 Photo <input type="file" name="photo_2x2" hidden></label>
+        </div>
+
+        <div class="education-options">
+            <label><input type="radio" name="education" value="Undergraduate" checked> Undergraduate</label>
+            <label><input type="radio" name="education" value="Graduate"> Graduate</label>
+        </div>
+
+        <h3>Start Date</h3>
+        <div class="course-box">
+            <input type="date" name="Start_Date" required>
+        </div>
+        <button type="button" onclick="prevStep()">Back</button>
+        <button type="submit" class="enroll-btn">Enroll</button>
+    </div>
 </form>
 
+@if(session('success'))
+<div style="color: green;">{{ session('success') }}</div>
+@endif
+@if($errors->any())
+<div style="color: red;">
+    <ul>
+        @foreach($errors->all() as $error)
+        <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 <script>
-    const modal = document.getElementById('termsModal');
-    const agreeInModal = document.getElementById('agreeInModal');
-    const agreeBtn = document.getElementById('agreeBtn');
-    const form = document.querySelector('form');
-    const submitBtn = form.querySelector('button[type="submit"]');
-
-    submitBtn.disabled = true;
-
-    function openModal() {
-        modal.style.display = 'block';
-        agreeInModal.checked = false;
-        agreeBtn.disabled = true;
+    function nextStep() {
+        document.getElementById('step-1').classList.remove('active');
+        document.getElementById('step-2').classList.add('active');
+    }
+    function prevStep() {
+        document.getElementById('step-2').classList.remove('active');
+        document.getElementById('step-1').classList.add('active');
     }
 
-    function closeModal() {
-        modal.style.display = 'none';
-        if (agreeInModal.checked) {
-            submitBtn.disabled = false;
-        }
-    }
-
-    agreeInModal.addEventListener('change', () => {
-        agreeBtn.disabled = !agreeInModal.checked;
-    });
-
-    window.onclick = function (event) {
-        if (event.target === modal) {
-            closeModal();
-        }
-    };
-
-    form.addEventListener('submit', function (e) {
-        if (submitBtn.disabled) {
-            e.preventDefault();
-            alert('Please read and agree to the terms before submitting.');
+    // Debug: Log form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.registration-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                console.log('Form submitted!');
+                // Remove the next line after debugging
+                // alert('Form submitted!');
+            });
         }
     });
 </script>
