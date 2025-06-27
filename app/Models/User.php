@@ -7,9 +7,6 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    protected $primaryKey = 'user_id';
-    public $incrementing = true;
-    protected $keyType = 'int';
     use Notifiable;
 
     // ✅ Tell Laravel the custom primary key name
