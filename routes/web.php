@@ -1,8 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentLoginController;
+use App\Http\Controllers\StudentRegistrationController;
+
 
 Route::get('/test-db', function () {
     try {
@@ -13,53 +16,34 @@ Route::get('/test-db', function () {
     }
 });
 
-
 Route::get('/', function () {
     return view('homepage');
 })->name('home');
 
 Route::get('/enrollment', function () {
-    return view('enrollment'); // Make sure this matches your view name
+    return view('enrollment');
 });
 
-
 Route::get('/enrollment/full', function () {
-    return view('registration.Full_enrollment'); // ✅ use dot notation
+    return view('registration.Full_enrollment');
 })->name('enrollment.full');
 
 Route::get('/enrollment/modular', function () {
-    return view('registration.Modular_enrollment'); // ✅ use dot notation
+    return view('registration.Modular_enrollment');
 })->name('enrollment.modular');
-
 
 Route::get('/login', function () {
     return view('Login.login');
 })->name('login');
 
-// Route::get('/admin-dashboard', function () {
-//     return view('admin.admin-dashboard');
-// });
+Route::get('/admin-dashboard', function () {
+    return view('admin.admin-dashboard');
+})->name('admin.dashboard');
 
-
-Route::get('/student/register', function () {
-    return view('student-register');
-});
-
-use App\Http\Controllers\StudentRegistrationController;
-Route::post('/register', [StudentRegistrationController::class, 'store'])->name('student.register');
-use App\Http\Controllers\StudentLoginController;
-
+// ✅ Form routes
+Route::post('/student/register', [StudentRegistrationController::class, 'store'])->name('student.register');
 Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login');
 
-Route::get('/admin-dashboard', function () {
-    return view('admin.admin-dashboard');
-})->name('admin.dashboard');
-
-
-Route::get('/admin-dashboard', function () {
-    return view('admin.admin-dashboard');
-})->name('admin.dashboard');
-
-
+// Optional: future modular support
 Route::get('/register/details/{user}', [StudentRegistrationController::class, 'showDetailsForm'])->name('register.details');
 Route::post('/register/details/{user}', [StudentRegistrationController::class, 'submitDetails']);
