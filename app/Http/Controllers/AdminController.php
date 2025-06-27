@@ -25,10 +25,24 @@ class AdminController extends Controller
     {
         try {
             $registration = Registration::where('registration_id', $id)->firstOrFail();
-            return response()->json($registration);
+            $user = null;
+            if ($registration->user_id) {
+                $user = User::where('user_id', $registration->user_id)->first();
+            }
+            $data = $registration->toArray();
+            $data['email'] = $user ? $user->email : '';
+            return response()->json($data);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Registration not found or database error.'], 404);
         }
+    }
+
+    public function showRegistrationDetails($id)
+    {
+        $registration = Registration::findOrFail($id);
+        // If you want to fetch user email from users table, you can join or relate here if needed
+        // For now, using registration email field
+        return view('admin.admin-student-registration-view', compact('registration'));
     }
 
     public function approve($id)
@@ -57,5 +71,18 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Database error: ' . $e->getMessage());
         }
+    }
+
+    public function studentRegistration()
+    {
+        $registrations = \App\Models\Registration::all();
+        return view('admin.admin-student-registration', compact('registrations'));
+    }
+
+    public function studentRegistrationHistory()
+    {
+        // You can filter for approved/archived registrations here if needed
+        $registrations = collect(); // Empty for now
+        return view('admin.admin-student-registration', compact('registrations'));
     }
 }

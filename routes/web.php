@@ -38,7 +38,7 @@ Route::get('/login', function () {
 })->name('login');
 
 // Admin Dashboard and Registration Management
-Route::get('/admin-dashboard', [AdminController::class, 'dashboard']);
+Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
 Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve']);
 Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject']);
@@ -50,3 +50,11 @@ Route::post('/student/login', [StudentLoginController::class, 'login'])->name('s
 // Optional: future modular support
 Route::get('/register/details/{user}', [StudentRegistrationController::class, 'showDetailsForm'])->name('register.details');
 Route::post('/register/details/{user}', [StudentRegistrationController::class, 'submitDetails']);
+
+// Admin student registration view
+Route::get('/admin-student-registration', [AdminController::class, 'studentRegistration'])->name('admin.student.registration');
+Route::get('/admin-student-registration/pending', [AdminController::class, 'studentRegistration'])->name('admin.student.registration.pending');
+Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])->name('admin.student.registration.history');
+
+// View specific student registration submission details
+Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])->name('admin.student.registration.view');
