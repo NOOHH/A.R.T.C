@@ -14,6 +14,7 @@ class Student extends Model
 
     // Optionally, add fillable fields for mass assignment
     protected $fillable = [
+        'student_id', // added for custom student ID
         'user_id', 'firstname', 'middlename', 'lastname', 'student_school', 'street_address', 'state_province', 'city', 'zipcode', 'email', 'contact_number', 'emergency_contact_number', 'good_moral', 'PSA', 'Course_Cert', 'TOR', 'Cert_of_Grad', 'Undergraduate', 'Graduate', 'photo_2x2', 'Start_Date', 'date_approved'
     ];
 }

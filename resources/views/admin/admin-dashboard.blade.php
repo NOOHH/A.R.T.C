@@ -2,6 +2,59 @@
 @section('title', 'Admin Dashboard')
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
+<style>
+.pending-panel {
+    border: none;
+    border-radius: 18px;
+    background: #f8f8fc;
+    box-shadow: 0 4px 24px rgba(92,47,145,0.07);
+    padding: 32px 32px 32px 32px;
+    max-width: 430px;
+    margin: 0 auto;
+}
+.panel-title {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin-bottom: 18px;
+    color: #222;
+    border-bottom: 2px solid #222;
+    padding-bottom: 8px;
+}
+.pending-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: none;
+    margin-top: 18px;
+}
+.pending-table th {
+    background: #ede6f7;
+    color: #5c2f91;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px 16px 0 0;
+    font-size: 1.08em;
+    padding: 16px 18px;
+}
+.pending-table td {
+    background: #fff;
+    color: #222;
+    font-weight: 500;
+    border: none;
+    font-size: 1.08em;
+    padding: 16px 18px;
+}
+.pending-table tr {
+    border-radius: 0 0 16px 16px;
+    box-shadow: none;
+}
+.pending-table tr:not(:last-child) td {
+    border-bottom: 1px solid #e0e0e0;
+}
+.pending-table th, .pending-table td {
+    text-align: left;
+}
+</style>
 @endsection
 @section('content')
 @if(isset($dbError) && $dbError)
@@ -44,7 +97,6 @@
                         <th>Last<br>name</th>
                         <th>First<br>name</th>
                         <th>Middle<br>name</th>
-                        <th style="text-align:center; min-width:110px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -53,9 +105,6 @@
                         <td>{{ $registration->lastname }}</td>
                         <td>{{ $registration->firstname }}</td>
                         <td>{{ $registration->middlename }}</td>
-                        <td style="text-align:center;">
-                            <button class="view-btn" data-id="{{ $registration->registration_id }}">View</button>
-                        </td>
                     </tr>
                     @endforeach
                 </tbody>
