@@ -26,4 +26,9 @@ class Enrollment extends Model
         'package_id',
         'enrollment_type',
     ];
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class, 'student_id', 'student_id');
+    }
 }

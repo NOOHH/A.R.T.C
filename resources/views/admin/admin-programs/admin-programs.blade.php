@@ -3,7 +3,7 @@
 @section('title', 'Programs')
 
 @push('styles')
-<link rel="stylesheet" href="/css/admin/admin-programs.css">
+<link rel="stylesheet" href="{{ asset('css/admin/admin-programs.css') }}">
 @endpush
 
 @section('content')
@@ -14,7 +14,9 @@
         @forelse($programs as $program)
             <div class="program-item">
                 <span>{{ $program->program_name }}</span>
-                <form action="{{ route('admin.programs.delete', $program->program_id) }}" method="POST">
+                <span class="status-bar">Enrolled: {{ $program->enrollments->count() }}</span>
+                <button type="button" class="show-enrollments-btn" data-program-id="{{ $program->program_id }}">View Enrollees</button>
+                <form action="{{ route('admin.programs.delete', $program->program_id) }}" method="POST" style="margin:0;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="delete-btn">Delete</button>
@@ -45,8 +47,23 @@
     </div>
 </div>
 
+<!-- Enrollments Modal -->
+<div class="modal-bg" id="enrollmentsModal">
+    <div class="modal">
+        <h3>Enrolled Students</h3>
+        <ul id="enrollmentsList"></ul>
+        <div class="modal-actions">
+            <button type="button" class="cancel-btn" id="closeEnrollmentsModal">Close</button>
+        </div>
+    </div>
+</div>
+
 @if(session('success'))
     <div class="success-message">{{ session('success') }}</div>
+@endif
+
+@if(session('error'))
+    <div class="error-message">{{ session('error') }}</div>
 @endif
 
 @if($errors->any())
@@ -71,3 +88,7 @@
     };
 </script>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/admin-programs.js') }}"></script>
+@endpush

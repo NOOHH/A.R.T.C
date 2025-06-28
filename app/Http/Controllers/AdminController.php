@@ -92,7 +92,7 @@ class AdminController extends Controller
                 'firstname' => $registration->firstname,
                 'middlename' => $registration->middlename,
                 'lastname' => $registration->lastname,
-                'email' => $email,
+                // 'email' => $email, // removed because students table does not have this column
                 'student_school' => $registration->student_school ?? '',
                 'street_address' => $registration->street_address ?? '',
                 'state_province' => $registration->state_province ?? '',

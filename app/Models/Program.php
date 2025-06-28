@@ -18,4 +18,9 @@ class Program extends Model
     public $timestamps = true;
     const CREATED_AT = 'created_at';
     const UPDATED_AT = null;
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'program_id', 'program_id');
+    }
 }

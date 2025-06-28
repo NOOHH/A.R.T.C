@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentLoginController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
+use App\Models\Program;
 
 // Optional: DB test route
 Route::get('/test-db', function () {
@@ -27,7 +28,9 @@ Route::get('/enrollment', [App\Http\Controllers\StudentRegistrationController::c
 Route::get('/enrollment/full', [App\Http\Controllers\StudentRegistrationController::class, 'showRegistrationForm'])->name('enrollment.full');
 
 Route::get('/enrollment/modular', function () {
-    return view('registration.Modular_enrollment');
+    $programs = Program::all();
+    $programId = request('program_id');
+    return view('registration.Modular_enrollment', compact('programs', 'programId'));
 })->name('enrollment.modular');
 
 Route::get('/login', function () {
@@ -60,3 +63,4 @@ Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'sh
 Route::get('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'index'])->name('admin.programs.index');
 Route::post('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'store'])->name('admin.programs.store');
 Route::delete('/admin/programs/{id}', [App\Http\Controllers\AdminProgramController::class, 'destroy'])->name('admin.programs.delete');
+Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])->name('admin.programs.enrollments');

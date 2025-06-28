@@ -37,5 +37,6 @@
         © Copyright Ascendo Review and Training Center.<br>
         All Rights Reserved.
     </footer>
+    @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
 </body>
 </html>

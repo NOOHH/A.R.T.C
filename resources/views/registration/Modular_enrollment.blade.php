@@ -3,7 +3,7 @@
 @section('title', 'Student Registration')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
+<link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_Enrollment.css') }}">
 <style>
     .step { display: none; }
     .step.active { display: block; }
@@ -37,15 +37,16 @@
         <h2 style="text-align:center; margin-bottom: 24px; font-weight:700; letter-spacing:1px;">ACCOUNT REGISTRATION</h2>
         <div style="display: flex; flex-direction: column; gap: 18px; align-items: center;">
             <div style="display: flex; gap: 16px; width: 100%; max-width: 500px;">
-                <input type="text" name="user_firstname" placeholder="First Name" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;">
-                <input type="text" name="user_lastname" placeholder="Last Name" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;">
+                <input type="text" name="user_firstname" placeholder="First Name" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;" value="{{ old('user_firstname') }}">
+                <input type="text" name="user_lastname" placeholder="Last Name" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;" value="{{ old('user_lastname') }}">
             </div>
-            <input type="email" name="user_email" placeholder="Email" required value="{{ old('user_email') }}" style="width: 100%; max-width: 500px; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;">
+            <input type="email" name="email" placeholder="Email" required value="{{ old('email') }}" style="width: 100%; max-width: 500px; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;">
             <div style="display: flex; gap: 16px; width: 100%; max-width: 500px;">
                 <input type="password" name="password" placeholder="Password" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;">
                 <input type="password" name="password_confirmation" placeholder="Confirm Password" required style="flex:1; padding: 12px 16px; border-radius: 8px; border: 1px solid #ccc;">
             </div>
-            <button type="button" onclick="nextStep()" style="margin-top: 10px; background: linear-gradient(90deg, #a259c6, #6a82fb); color: #fff; border: none; border-radius: 8px; padding: 12px 40px;">Next</button>
+            <div id="passwordError" style="display:none; color:#e74c3c; text-align:center; margin-bottom:12px; font-weight:600;"></div>
+            <button type="button" onclick="nextStep()" id="nextBtn" style="margin-top: 10px; background: linear-gradient(90deg, #a259c6, #6a82fb); color: #fff; border: none; border-radius: 8px; padding: 12px 40px;">Next</button>
         </div>
     </div>
 
@@ -55,28 +56,29 @@
 
         <h3>Student Information</h3>
         <div class="input-row">
-            <input type="text" name="firstname" placeholder="First name" required>
-            <input type="text" name="middle_name" placeholder="Middle name">
-            <input type="text" name="lastname" placeholder="Last name" required>
+            <input type="text" name="firstname" placeholder="First name" required value="{{ old('firstname') }}">
+            <input type="text" name="middle_name" placeholder="Middle name" value="{{ old('middle_name') }}">
+            <input type="text" name="lastname" placeholder="Last name" required value="{{ old('lastname') }}">
         </div>
-        <input type="text" name="student_school" placeholder="Student's school" class="input-full" required>
+        <input type="text" name="student_school" placeholder="Student's school" class="input-full" required value="{{ old('student_school') }}">
 
         <h3>Address</h3>
         <div class="input-row">
-            <input type="text" name="street_address" placeholder="Street Address" required>
-            <input type="text" name="state_province" placeholder="State/Province" required>
+            <input type="text" name="street_address" placeholder="Street Address" required value="{{ old('street_address') }}">
+            <input type="text" name="state_province" placeholder="State/Province" required value="{{ old('state_province') }}">
         </div>
         <div class="input-row">
-            <input type="text" name="city" placeholder="City" required>
-            <input type="text" name="zipcode" placeholder="Zip Code" required>
+            <input type="text" name="city" placeholder="City" required value="{{ old('city') }}">
+            <input type="text" name="zipcode" placeholder="Zip Code" required value="{{ old('zipcode') }}">
         </div>
 
         <h3>Contact Information</h3>
-        <div class="input-row">
-            <input type="email" name="email" placeholder="Email" required value="{{ old('user_email') }}">
-            <input type="text" name="contact_number" placeholder="Contact Number" required>
-        </div>
-        <input type="text" name="emergency_contact_number" placeholder="Emergency Contact Number" class="input-full" required>
+<div class="input-row">
+    <input type="text" name="contact_number" placeholder="Contact Number" required value="{{ old('contact_number') }}">
+    <input type="text" name="emergency_contact_number" placeholder="Emergency Contact Number" required value="{{ old('emergency_contact_number') }}">
+</div>
+
+        
 
         <h3>Verification/Document Upload</h3>
         <div class="document-buttons">
@@ -93,18 +95,19 @@
             <label><input type="radio" name="education" value="Graduate"> Graduate</label>
         </div>
 
-        <h3>Courses</h3>
+        <h3>Course</h3>
         <div class="input-row">
-            <select name="course_1" required>
+            <select name="program_id" required>
                 <option value="">Select Course</option>
-                <option value="Nursing">Nursing</option>
-                <option value="Engineering">Engineering</option>
+                @foreach($programs as $program)
+                    <option value="{{ $program->program_id }}" {{ (old('program_id', $programId ?? '') == $program->program_id) ? 'selected' : '' }}>{{ $program->program_name }}</option>
+                @endforeach
             </select>
         </div>
 
         <h3>Start Date</h3>
         <div class="course-box">
-            <input type="date" name="Start_Date" required>
+            <input type="date" name="Start_Date" required value="{{ old('Start_Date') }}">
         </div>
 
         <div class="terms">
@@ -114,8 +117,11 @@
             </label>
         </div>
 
-        <button type="button" onclick="prevStep()">Back</button>
-        <button type="submit" class="enroll-btn" id="enrollBtn" disabled>Enroll</button>
+<div class="button-row">
+    <button type="button" onclick="prevStep()" class="back-btn">Back</button>
+    <button type="submit" class="enroll-btn" id="enrollBtn" disabled>Enroll</button>
+</div>
+
     </div>
 </form>
 
@@ -131,6 +137,23 @@
 
 <script>
     function nextStep() {
+        const password = document.querySelector('input[name="password"]');
+        const confirmPassword = document.querySelector('input[name="password_confirmation"]');
+        const errorDiv = document.getElementById('passwordError');
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+        if (password.value.length < 6) {
+            errorDiv.textContent = 'Password must be at least 6 characters.';
+            errorDiv.style.display = 'block';
+            password.focus();
+            return;
+        }
+        if (password.value !== confirmPassword.value) {
+            errorDiv.textContent = 'Passwords do not match.';
+            errorDiv.style.display = 'block';
+            confirmPassword.focus();
+            return;
+        }
         document.getElementById('step-1').classList.remove('active');
         document.getElementById('step-2').classList.add('active');
     }
