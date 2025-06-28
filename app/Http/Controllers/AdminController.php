@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Registration;
 use App\Models\User;
 use App\Models\Student;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -15,11 +14,12 @@ class AdminController extends Controller
     {
         try {
             $registrations = Registration::all();
-            $dbError = null;
+            $dbError       = null;
         } catch (\Exception $e) {
             $registrations = [];
-            $dbError = 'Database connection failed: ' . $e->getMessage();
+            $dbError       = 'Database connection failed: ' . $e->getMessage();
         }
+
         return view('admin.admin-dashboard', compact('registrations', 'dbError'));
     }
 
@@ -27,12 +27,11 @@ class AdminController extends Controller
     {
         try {
             $registration = Registration::where('registration_id', $id)->firstOrFail();
-            $user = null;
-            if ($registration->user_id) {
-                $user = User::where('user_id', $registration->user_id)->first();
-            }
+            $user = User::find($registration->user_id);
+
             $data = $registration->toArray();
-            $data['email'] = $user ? $user->email : $registration->email;
+            $data['email'] = $user ? $user->email : 'N/A';
+
             return response()->json($data);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Registration not found or database error.'], 404);
@@ -42,82 +41,82 @@ class AdminController extends Controller
     public function showRegistrationDetails($id)
     {
         $registration = Registration::findOrFail($id);
-        // If you want to fetch user email from users table, you can join or relate here if needed
-        // For now, using registration email field
         return view('admin.admin-student-registration-view', compact('registration'));
     }
 
     public function approve($id)
     {
-        Log::info('Approve called for registration_id: ' . $id);
         try {
-            $registration = Registration::where('registration_id', $id)->first();
-            if (!$registration) {
-                Log::error('Registration not found for id: ' . $id);
-                return redirect()->back()->with('error', 'Registration not found.');
-            }
-            Log::info('Registration found: ' . json_encode($registration->toArray()));
-            $email = trim($registration->email);
-            if (empty($email) && $registration->user_id) {
-                $userRecord = User::where('user_id', $registration->user_id)->first();
-                if ($userRecord) {
-                    $email = $userRecord->email;
-                }
-            }
-            if (empty($email)) {
-                Log::error('Registration email is empty and could not be retrieved from users table for id: ' . $id);
-                return redirect()->back()->with('error', 'Registration email is missing and could not be retrieved. Cannot approve.');
-            }
-            $user = User::where('email', $email)->first();
+            DB::beginTransaction();
+
+            $registration = Registration::findOrFail($id);
+
+            // Upgrade user role
+            $user = User::find($registration->user_id);
             if ($user) {
                 $user->role = 'student';
                 $user->save();
-            } else {
-                $user = User::create([
-                    'user_firstname' => $registration->firstname ?? '',
-                    'user_lastname' => $registration->lastname ?? '',
-                    'email' => $email,
-                    'password' => Hash::make('defaultpassword'),
-                    'role' => 'student',
-                ]);
-                Log::info('User created: ' . $user->user_id);
             }
-            $now = now();
+
+            // Generate unique, non-duplicating student_id
+            $now       = now();
             $yearMonth = $now->format('Y-m');
-            $count = Student::whereRaw("DATE_FORMAT(date_approved, '%Y-%m') = ?", [$yearMonth])->count();
-            $studentId = $yearMonth . '-' . str_pad($count + 1, 5, '0', STR_PAD_LEFT);
-            $student = Student::create([
-                'student_id' => $studentId,
-                'user_id' => $user->user_id,
-                'firstname' => $registration->firstname,
-                'middlename' => $registration->middlename,
-                'lastname' => $registration->lastname,
-                // 'email' => $email, // removed because students table does not have this column
-                'student_school' => $registration->student_school ?? '',
-                'street_address' => $registration->street_address ?? '',
-                'state_province' => $registration->state_province ?? '',
-                'city' => $registration->city ?? '',
-                'zipcode' => $registration->zipcode ?? '',
-                'contact_number' => $registration->contact_number ?? '',
-                'emergency_contact_number' => $registration->emergency_contact_number ?? '',
-                'good_moral' => $registration->good_moral ?? '',
-                'PSA' => $registration->PSA ?? '',
-                'Course_Cert' => $registration->Course_Cert ?? '',
-                'TOR' => $registration->TOR ?? '',
-                'Cert_of_Grad' => $registration->Cert_of_Grad ?? '',
-                'Undergraduate' => $registration->Undergraduate ?? '',
-                'Graduate' => $registration->Graduate ?? '',
-                'photo_2x2' => $registration->photo_2x2 ?? '',
-                'Start_Date' => $registration->Start_Date ?? $registration->birthdate ?? null,
-                'date_approved' => $now,
+
+            $lastStudent = Student::where('student_id', 'like', "{$yearMonth}-%")
+                                  ->orderBy('student_id', 'desc')
+                                  ->first();
+
+            $nextSeq = $lastStudent
+                ? ((int) substr($lastStudent->student_id, strlen($yearMonth) + 1)) + 1
+                : 1;
+
+            $studentId = $yearMonth . '-' . str_pad($nextSeq, 5, '0', STR_PAD_LEFT);
+
+            // Create the Student record
+            Student::create([
+                'student_id'               => $studentId,
+                'user_id'                  => $user?->user_id,
+                'firstname'                => $registration->firstname,
+                'middlename'               => $registration->middlename,
+                'lastname'                 => $registration->lastname,
+                'student_school'           => $registration->student_school,
+                'street_address'           => $registration->street_address,
+                'state_province'           => $registration->state_province,
+                'city'                     => $registration->city,
+                'zipcode'                  => $registration->zipcode,
+                'contact_number'           => $registration->contact_number,
+                'emergency_contact_number' => $registration->emergency_contact_number,
+                'good_moral'               => $registration->good_moral,
+                'PSA'                      => $registration->PSA,
+                'Course_Cert'              => $registration->Course_Cert,
+                'TOR'                      => $registration->TOR,
+                'Cert_of_Grad'             => $registration->Cert_of_Grad,
+                'Undergraduate'            => $registration->Undergraduate,
+                'Graduate'                 => $registration->Graduate,
+                'photo_2x2'                => $registration->photo_2x2,
+                'Start_Date'               => $registration->Start_Date,
+                'date_approved'            => $now,
+                'program_id'               => $registration->program_id,
+                'package_id'               => $registration->package_id,
+                'plan_id'                  => $registration->plan_id,
+                'package_name'             => $registration->package_name,
+                'plan_name'                => $registration->plan_name,
+                'program_name'             => $registration->program_name,
+                'email'                    => $user?->email,
             ]);
-            Log::info('Student created: ' . $student->student_id);
+
+            // Remove from pending
             $registration->delete();
-            Log::info('Registration deleted: ' . $id);
-            return redirect()->back()->with('success', 'Student approved and added to students.');
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.student.registration.history')
+                ->with('success', "Student “{$studentId}” approved and moved to history.");
         } catch (\Exception $e) {
-            Log::error('Approve error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Database error: ' . $e->getMessage());
+            DB::rollBack();
+            return redirect()->back()
+                             ->with('error', 'Approval failed: ' . $e->getMessage());
         }
     }
 
@@ -125,37 +124,32 @@ class AdminController extends Controller
     {
         try {
             $registration = Registration::findOrFail($id);
-            // Do not change user role, just delete registration
             $registration->delete();
-            return redirect()->back()->with('success', 'Registration rejected and removed.');
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Registration rejected and removed.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Database error: ' . $e->getMessage());
+            return redirect()->back()
+                             ->with('error', 'Rejection failed: ' . $e->getMessage());
         }
     }
 
     public function studentRegistration()
     {
-        $registrations = \App\Models\Registration::all()->filter(function($reg) {
-            $email = $reg->email;
-            $user = \App\Models\User::where('email', $email)->first();
-            return !$user || $user->role === 'unverified';
-        });
-        return view('admin.admin-student-registration', compact('registrations'));
+        $registrations = Registration::with('user')->get();
+        return view('admin.admin-student-registration', [
+            'registrations' => $registrations,
+            'history'       => false,
+        ]);
     }
 
     public function studentRegistrationHistory()
     {
-        // Show all users who have been verified or rejected
-        $students = \App\Models\Student::all();
-        $verifiedUsers = \App\Models\User::whereIn('role', ['verified', 'rejected'])->get()->keyBy('email');
-        $registrations = $students->filter(function($student) use ($verifiedUsers) {
-            $user = $verifiedUsers->get($student->email);
-            return $user && in_array($user->role, ['verified', 'rejected']);
-        });
+        $registrations = Student::with(['user', 'program', 'package'])->get();
         return view('admin.admin-student-registration', [
             'registrations' => $registrations,
-            'history' => true,
-            'verifiedUsers' => $verifiedUsers
+            'history'       => true,
         ]);
     }
 }

@@ -113,17 +113,17 @@
 @section('content')
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
     <div style="display: flex; gap: 60px; margin-bottom: 40px;">
-        {{-- Complete Program --}}
+        {{-- Complete Plan --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Complete Program</h3>
+            <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Complete Plan</h3>
             <button id="enrollCompleteBtn" onclick="enroll('Complete')" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; opacity: 0.5; cursor: not-allowed;" disabled>
                 Enroll
             </button>
         </div>
 
-        {{-- Modular Enrollment --}}
+        {{-- Modular Plan --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Modular Enrollment</h3>
+            <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Modular Plan</h3>
             <button id="enrollModularBtn" onclick="enroll('Modular')" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; opacity: 0.5; cursor: not-allowed;" disabled>
                 Enroll
             </button>
@@ -198,11 +198,13 @@
             return;
         }
 
-        let programId;
+        let programId, planId;
         if (type === 'Complete') {
             programId = 1; // adjust as needed
+            planId = 1;    // set your plan id for Complete
         } else if (type === 'Modular') {
             programId = 2; // adjust as needed
+            planId = 2;    // set your plan id for Modular
         } else {
             alert('Invalid enrollment type');
             return;
@@ -211,9 +213,9 @@
         let enrollmentType = type.toLowerCase();
         let url;
         if (enrollmentType === 'complete') {
-            url = `/enrollment/full?enrollment_type=full&package_id=${selectedPackageId}&program_id=${programId}`;
+            url = `/enrollment/full?enrollment_type=full&package_id=${selectedPackageId}&program_id=${programId}&plan_id=${planId}`;
         } else if (enrollmentType === 'modular') {
-            url = `/enrollment/modular?enrollment_type=modular&package_id=${selectedPackageId}&program_id=${programId}`;
+            url = `/enrollment/modular?enrollment_type=modular&package_id=${selectedPackageId}&program_id=${programId}&plan_id=${planId}`;
         } else {
             alert('Invalid enrollment type');
             return;

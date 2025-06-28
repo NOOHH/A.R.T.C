@@ -16,6 +16,7 @@
     <input type="hidden" name="enrollment_type" value="{{ request('enrollment_type', 'modular') }}">
     <input type="hidden" name="program_id" value="{{ request('program_id') }}">
     <input type="hidden" name="package_id" value="{{ request('package_id') }}">
+    <input type="hidden" name="plan_id" value="{{ request('plan_id') }}">
 
     @if(session('success'))
         <div class="alert alert-success" style="background:#e6ffe6; color:#218838; border-radius:8px; padding:14px 24px; margin:18px auto; max-width:500px; text-align:center; font-weight:600; font-size:1.1rem; box-shadow:0 2px 8px rgba(33,136,56,0.08);">

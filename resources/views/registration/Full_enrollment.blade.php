@@ -16,6 +16,7 @@
     <input type="hidden" name="enrollment_type" value="{{ old('enrollment_type', $enrollmentType ?? '') }}">
     <input type="hidden" name="program_id" value="{{ old('program_id', $programId ?? '') }}">
     <input type="hidden" name="package_id" value="{{ old('package_id', $packageId ?? '') }}">
+    <input type="hidden" name="plan_id" value="{{ request('plan_id') }}">
 
     {{-- STEP 1: ACCOUNT REGISTRATION --}}
     <div class="step active" id="step-1">
