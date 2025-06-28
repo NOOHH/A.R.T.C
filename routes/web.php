@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentLoginController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
+use App\Http\Controllers\AdminPackageController;
 use App\Models\Program;
 
 // ✅ DB test route
@@ -82,6 +83,7 @@ Route::get('/admin-student-registration/history', [AdminController::class, 'stud
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
      ->name('admin.student.registration.view');
 
+<<<<<<< HEAD
 // ✅ Admin programs
 Route::get('/admin/programs', [AdminProgramController::class, 'index'])
      ->name('admin.programs.index');
@@ -91,3 +93,15 @@ Route::delete('/admin/programs/{id}', [AdminProgramController::class, 'destroy']
      ->name('admin.programs.delete');
 Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])
      ->name('admin.programs.enrollments');
+=======
+// Admin Programs
+Route::get('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'index'])->name('admin.programs.index');
+Route::post('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'store'])->name('admin.programs.store');
+Route::delete('/admin/programs/{id}', [App\Http\Controllers\AdminProgramController::class, 'destroy'])->name('admin.programs.delete');
+Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])->name('admin.programs.enrollments');
+
+// Admin Packages
+Route::get('/admin/packages', [App\Http\Controllers\Admin\PackageController::class, 'index'])->name('admin.packages.index');
+Route::post('/admin/packages', [App\Http\Controllers\Admin\PackageController::class, 'store'])->name('admin.packages.store');
+Route::delete('/admin/packages/{id}', [App\Http\Controllers\Admin\PackageController::class, 'destroy'])->name('admin.packages.delete');
+>>>>>>> main
