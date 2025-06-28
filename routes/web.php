@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentLoginController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
+use App\Http\Controllers\AdminPackageController;
 use App\Models\Program;
 
 // Optional: DB test route
@@ -64,3 +65,11 @@ Route::get('/admin/programs', [App\Http\Controllers\AdminProgramController::clas
 Route::post('/admin/programs', [App\Http\Controllers\AdminProgramController::class, 'store'])->name('admin.programs.store');
 Route::delete('/admin/programs/{id}', [App\Http\Controllers\AdminProgramController::class, 'destroy'])->name('admin.programs.delete');
 Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])->name('admin.programs.enrollments');
+
+// Admin Packages
+Route::get('/admin/packages', [AdminPackageController::class, 'index'])->name('admin.packages.index');
+Route::prefix('admin/packages')->name('admin.packages.')->group(function () {
+    Route::post('/', [AdminPackageController::class, 'store'])->name('store');
+    Route::put('/{package}', [AdminPackageController::class, 'update'])->name('update');
+    Route::delete('/{package}', [AdminPackageController::class, 'delete'])->name('delete');
+});

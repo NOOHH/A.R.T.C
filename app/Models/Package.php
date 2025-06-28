@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Package extends Model
 {
     use HasFactory;
+
+    protected $primaryKey = 'package_id';
+
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class, 'package_id', 'package_id');
+    }
 }
