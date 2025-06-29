@@ -1,0 +1,182 @@
+/* admin-student-registration.css */
+
+.students-table thead th {
+    background: #ede6f7;
+    color: #5c2f91;
+    font-weight: 700;
+    border-bottom: 2px solid #5c2f91;
+}
+.students-table tbody td {
+    vertical-align: middle;
+    font-size: 1.08rem;
+}
+.students-table tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+.students-table .form-check-input:checked {
+    background-color: #5c2f91;
+    border-color: #5c2f91;
+}
+.enroll-header {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #888;
+    background: transparent;
+    border: none;
+    margin-right: 8px;
+}
+
+/* --- Modal Styles: Wider Landscape --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(60, 30, 90, 0.10);
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 90vw;
+    margin: 40px auto;
+    box-shadow: 0 4px 24px rgba(92,47,145,0.10);
+    padding: 20px 24px 14px 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    font-size: 1em;
+    border: 1px solid #e5e7eb;
+}
+@media (min-width: 700px) {
+    .modal-content {
+        flex-direction: row;
+        min-height: 420px;
+        align-items: flex-start;
+    }
+    .modal-details-structured {
+        display: flex;
+        flex-direction: row;
+        gap: 18px;
+        width: 100%;
+    }
+    .landscape-col {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+@media (max-width: 699px) {
+    .modal-content {
+        flex-direction: column;
+        max-width: 99vw;
+        width: 99vw;
+        padding: 8px 1vw 6px 1vw;
+        font-size: 0.95em;
+    }
+    .modal-details-structured {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .landscape-col {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+.modal-details-structured {
+    width: 100%;
+}
+.close {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    font-size: 1.5em;
+    color: #7c3aed;
+    cursor: pointer;
+    background: none;
+    border: none;
+    z-index: 2;
+}
+.modal-section {
+    background: #f8f8fc;
+    border-radius: 8px;
+    padding: 10px 10px 8px 10px;
+    box-shadow: 0 1px 4px rgba(80,80,120,0.03);
+    margin-bottom: 0;
+    border: 1px solid #ede6f7;
+}
+.modal-section-title {
+    font-weight: 700;
+    font-size: 1.01em;
+    color: #7c3aed;
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+.modal-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+.modal-row > div {
+    flex: 1 1 100px;
+    min-width: 80px;
+    margin-bottom: 2px;
+    max-width: 100%;
+}
+.modal-row label {
+    font-size: 0.95em;
+    color: #444;
+    font-weight: 500;
+    margin-bottom: 2px;
+    display: block;
+}
+.modal-row div > div, .modal-row input {
+    font-size: 0.98em;
+    color: #222;
+    font-weight: 400;
+    background: #fff;
+    border-radius: 5px;
+    padding: 4px 7px;
+    border: 1px solid #e0e0e0;
+    margin-top: 2px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    width: 100%;
+    gap: 0;
+}
+.approve-btn {
+    background: #5c2f91;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 24px;
+    font-weight: 600;
+    margin-left: 0;
+}
+.reject-btn {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 24px;
+    font-weight: 600;
+    margin-right: 0;
+}
