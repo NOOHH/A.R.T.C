@@ -5,9 +5,10 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentLoginController;
+use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
-use App\Http\Controllers\AdminProfessorController;
+// use App\Http\Controllers\AdminProfessorController;  // TODO: Create this controller
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Models\Program;
 
@@ -63,6 +64,10 @@ Route::post('/student/register', [StudentRegistrationController::class, 'store']
 // Student login POST
 Route::post('/student/login', [StudentLoginController::class, 'login'])
      ->name('student.login');
+
+// Student logout
+Route::post('/student/logout', [StudentLoginController::class, 'logout'])
+     ->name('student.logout');
 
 // Extra registration details
 Route::get('/register/details/{user}', [StudentRegistrationController::class, 'showDetailsForm'])
@@ -148,6 +153,30 @@ Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy']
 | Admin Professors
 |--------------------------------------------------------------------------
 */
-// Professors list
-Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
-     ->name('admin.professors.index');
+// Professors list - TODO: Create AdminProfessorController
+// Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
+//      ->name('admin.professors.index');
+
+/*
+|--------------------------------------------------------------------------
+| Student Dashboard Routes (Protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['student.auth'])->group(function () {
+    // Student Dashboard
+    Route::get('/student/dashboard', [StudentDashboardController::class, 'dashboard'])
+         ->name('student.dashboard');
+    
+    // Student Calendar
+    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
+         ->name('student.calendar');
+    
+    // Student Courses
+    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 1)
+         ->name('student.courses.calculus1');
+         
+    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 2)
+         ->name('student.courses.calculus2');
+});

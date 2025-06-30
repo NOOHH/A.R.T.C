@@ -23,14 +23,30 @@
         </div>
         <h2>Log in to your account.</h2>
 
+        {{-- Display Success Messages --}}
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        {{-- Display Validation Errors --}}
+        @if($errors->any())
+            <div class="alert alert-error">
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+
        <form class="login-form" method="POST" action="{{ route('student.login') }}">
     @csrf
     <label for="email">Enter your email address</label>
-    <input type="email" id="email" name="email" placeholder="name@example.com" required>
+    <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
 
     <label for="password">Enter your password</label>
     <div class="input-row">
-        <input type="password" id="password" name="password" placeholder="at least 8 characters">
+        <input type="password" id="password" name="password" placeholder="at least 8 characters" required>
         <span class="toggle-password" onclick="togglePassword()">👁️</span>
     </div>
     <a href="#" class="forgot">Forgot your password? Click here.</a>
