@@ -67,7 +67,8 @@
                     </ul>
                 </li>
 
-                {{-- Professors --}}
+                {{-- Professors - TODO: Uncomment when AdminProfessorController is created --}}
+                {{-- 
                 <li class="@if(Route::currentRouteName() === 'admin.professors.index') active @endif">
                     <a href="{{ route('admin.professors.index') }}" class="sidebar-link">
                         <span>&#128101;</span> Professors
