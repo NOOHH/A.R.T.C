@@ -5,21 +5,290 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_Enrollment.css') }}">
 <style>
-    .step { display: none; }
-    .step.active { display: block; }
+  /* STEP TRANSITIONS */
+  .step {
+    display: none;
+    opacity: 0;
+    transform: translateX(50px);
+    transition: all 0.5s ease-in-out;
+  }
+  .step.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(0);
+    animation: slideIn 0.5s ease-in-out;
+  }
+  .step.slide-out-left {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  .step.slide-out-right {
+    transform: translateX(50px);
+    opacity: 0;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(50px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* PACKAGE CARDS */
+  .package-card {
+    background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+    border-radius: 20px;
+    width: 320px;
+    height: 400px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 3px solid transparent;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+    transform-origin: top center;
+    z-index: 1;
+  }
+  .package-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    border-color: #1c2951;
+    z-index: 10;
+  }
+  .package-card.selected {
+    border-color: #1c2951;
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(28, 41, 81, 0.5);
+  }
+
+  /* CAROUSEL LAYOUT */
+  .package-carousel {
+    position: relative;
+    overflow: hidden;
+    padding: 50px 20px 30px 20px;
+    margin-bottom: 30px;
+  }
+  .package-slider {
+    display: flex;
+    gap: 20px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  .package-slider-track {
+    display: flex;
+    gap: 20px;
+    width: max-content;
+    margin: 0 auto;
+    transition: transform 0.3s ease;
+  }
+
+  /* NAVIGATION ARROWS */
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+  #prevBtn { left: 0; }
+  #nextBtn { right: 0; }
+  .carousel-arrow:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  .carousel-arrow:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* CARD CONTENT */
+  .package-image {
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: white;
+  }
+  .package-content {
+    padding: 20px;
+    height: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #1a1a1a;
+  }
+  .package-title {
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .package-description {
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: center;
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 4em;
+  }
+  .package-price {
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 0;
+    background: linear-gradient(90deg, #a259c6, #6a82fb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .package-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #1c2951;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* PAYMENT METHODS (unchanged) */
+  .payment-method {
+    background: #f9f9f9;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .payment-method:hover {
+    border-color: #1c2951;
+    background: #e0f3ff;
+  }
+  .payment-method.selected {
+    border-color: #1c2951;
+    background: #e0f3ff;
+  }
+  .payment-icon {
+    width: 50px;
+    height: 50px;
+    background: #1c2951;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .package-slider {
+      width: 340px !important;
+    }
+    .package-card {
+      width: 300px;
+    }
+    .carousel-arrow {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+  }
+  @media (max-width: 480px) {
+    .package-carousel {
+      flex-direction: column;
+      padding: 0;
+    }
+    .carousel-arrow {
+      position: static;
+      margin: 20px auto;
+    }
+    .package-slider {
+      width: 280px !important;
+    }
+    .package-card {
+      width: 260px;
+      height: 350px;
+    }
+  }
 </style>
 @endpush
 
 @section('content')
 <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form">
     @csrf
-    <input type="hidden" name="enrollment_type" value="{{ request('enrollment_type', 'modular') }}">
-    <input type="hidden" name="program_id"      value="{{ request('program_id') }}">
-    <input type="hidden" name="package_id"      value="{{ request('package_id') }}">
-    <input type="hidden" name="plan_id"         value="{{ request('plan_id') }}">
+    <input type="hidden" name="enrollment_type" value="modular">
+    <input type="hidden" name="program_id" value="2">
+    <input type="hidden" name="package_id" value="">
+    <input type="hidden" name="plan_id" value="2">
 
-    {{-- STEP 1: ACCOUNT REGISTRATION --}}
+    {{-- STEP 1: PACKAGE SELECTION --}}
     <div class="step active" id="step-1">
+        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+            SELECT YOUR PACKAGE
+        </h2>
+        <div class="package-carousel">
+            <button class="carousel-arrow" id="prevBtn" onclick="slidePackages(-1)">‹</button>
+            <div class="package-slider">
+                <div class="package-slider-track" id="packageTrack">
+                    @foreach($packages as $package)
+                        <div class="package-card" onclick="selectPackage('{{ $package->package_id }}', '{{ $package->package_name }}')" data-package-id="{{ $package->package_id }}">
+                            <div class="package-image">
+                                📦
+                            </div>
+                            <div class="package-content">
+                                <h4 class="package-title">{{ $package->package_name }}</h4>
+                                <p class="package-description" title="{{ $package->description ?? 'Complete package with all features included.' }}">{{ $package->description ?? 'Complete package with all features included.' }}</p>
+                                <p class="package-price">₱{{ number_format($package->price, 2) }}</p>
+                            </div>
+                            <div class="package-badge">Popular</div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <button class="carousel-arrow" id="nextBtn" onclick="slidePackages(1)">›</button>
+        </div>
+        <div style="text-align: center;">
+            <div id="selectedPackageDisplay" style="display: none; margin-bottom: 20px; color: #1c2951; font-weight: 600;">
+                Selected Package: <span id="selectedPackageName"></span>
+            </div>
+            <button type="button" onclick="nextStep()" id="packageNextBtn" disabled
+                    style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff; border:none; 
+                           border-radius:8px; padding:12px 40px; font-size:1.1rem; font-weight:600;
+                           box-shadow:0 2px 8px rgba(160,89,198,0.08); cursor:pointer; opacity: 0.5;">
+                Next
+            </button>
+        </div>
+    </div>
+
+    {{-- STEP 2: ACCOUNT REGISTRATION --}}
+    <div class="step" id="step-2">
         <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
             ACCOUNT REGISTRATION
         </h2>
@@ -42,16 +311,81 @@
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc;">
             </div>
             <div id="passwordError" style="display:none; color:#e74c3c; text-align:center; margin-bottom:12px; font-weight:600;"></div>
-            <button type="button" onclick="nextStep()" id="nextBtn"
-                    style="margin-top:10px; background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff;
-                           border:none; border-radius:8px; padding:12px 40px; font-size:1.1rem; cursor:pointer;">
-                Next
-            </button>
+            <div style="display:flex; gap:16px; justify-content:center;">
+                <button type="button" onclick="prevStep()" class="back-btn"
+                        style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
+                    Back
+                </button>
+                <button type="button" onclick="nextStep()" id="nextBtn"
+                        style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff;
+                               border:none; border-radius:8px; padding:12px 40px; font-size:1.1rem; cursor:pointer;">
+                    Next
+                </button>
+            </div>
         </div>
     </div>
 
-    {{-- STEP 2: STUDENT MODULAR REGISTRATION --}}
-    <div class="step" id="step-2">
+    {{-- STEP 3: PAYMENT INFORMATION --}}
+    <div class="step" id="step-3">
+        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+            PAYMENT INFORMATION
+        </h2>
+        
+        <div style="max-width: 600px; margin: 0 auto;">
+            <h3 style="margin-bottom: 20px;">Choose Payment Method</h3>
+            
+            <div class="payment-method" onclick="selectPaymentMethod('credit_card')">
+                <div class="payment-icon">💳</div>
+                <div>
+                    <h4 style="margin: 0 0 5px 0;">Credit/Debit Card</h4>
+                    <p style="margin: 0; color: #666; font-size: 14px;">Pay securely with your credit or debit card</p>
+                </div>
+            </div>
+            
+            <div class="payment-method" onclick="selectPaymentMethod('gcash')">
+                <div class="payment-icon">📱</div>
+                <div>
+                    <h4 style="margin: 0 0 5px 0;">GCash</h4>
+                    <p style="margin: 0; color: #666; font-size: 14px;">Pay using your GCash mobile wallet</p>
+                </div>
+            </div>
+            
+            <div class="payment-method" onclick="selectPaymentMethod('bank_transfer')">
+                <div class="payment-icon">🏦</div>
+                <div>
+                    <h4 style="margin: 0 0 5px 0;">Bank Transfer</h4>
+                    <p style="margin: 0; color: #666; font-size: 14px;">Transfer payment directly to our bank account</p>
+                </div>
+            </div>
+            
+            <div class="payment-method" onclick="selectPaymentMethod('installment')">
+                <div class="payment-icon">📅</div>
+                <div>
+                    <h4 style="margin: 0 0 5px 0;">Installment Plan</h4>
+                    <p style="margin: 0; color: #666; font-size: 14px;">Pay in monthly installments</p>
+                </div>
+            </div>
+            
+            <div id="selectedPaymentDisplay" style="display: none; margin: 20px 0; padding: 15px; background: #e8f5e8; border-radius: 8px; text-align: center;">
+                <strong>Selected Payment Method: <span id="selectedPaymentName"></span></strong>
+            </div>
+            
+            <div style="display:flex; gap:16px; justify-content:center; margin-top: 30px;">
+                <button type="button" onclick="prevStep()" class="back-btn"
+                        style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
+                    Back
+                </button>
+                <button type="button" onclick="nextStep()" id="paymentNextBtn" disabled
+                        style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff; border:none; 
+                               border-radius:8px; padding:12px 40px; font-size:1.1rem; cursor:pointer; opacity: 0.5;">
+                    Next
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- STEP 4: STUDENT MODULAR REGISTRATION --}}
+    <div class="step" id="step-4">
         <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
             STUDENT MODULAR REGISTRATION FORM
         </h2>
@@ -172,77 +506,237 @@
 @endif
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // ---- Step navigation ----
-  function nextStep() {
-    const pwd = document.querySelector('input[name="password"]');
-    const cpw = document.querySelector('input[name="password_confirmation"]');
-    const err = document.getElementById('passwordError');
-    err.style.display = 'none';
-    err.textContent   = '';
+// Global variables (declared once at the top)
+let currentStep = 1;
+let selectedPackageId = null;
+let selectedPaymentMethod = null;
+let currentPackageIndex = 0;
+let packagesPerView = 2;
+let totalPackages = {{ count($packages) }};
 
-    if (pwd.value.length < 6) {
-      err.textContent = 'Password must be at least 6 characters.';
-      err.style.display = 'block';
-      pwd.focus();
-      return;
+// Package carousel functionality
+function slidePackages(direction) {
+    const track = document.getElementById('packageTrack');
+    if (!track) return;
+    
+    const packageWidth = 320; // package card width
+    const gap = 20; // gap between cards
+    const moveDistance = packageWidth + gap;
+    
+    currentPackageIndex += direction;
+    
+    // Boundary checks
+    if (currentPackageIndex < 0) {
+        currentPackageIndex = 0;
+    } else if (currentPackageIndex > totalPackages - packagesPerView) {
+        currentPackageIndex = Math.max(0, totalPackages - packagesPerView);
     }
-    if (pwd.value !== cpw.value) {
-      err.textContent = 'Passwords do not match.';
-      err.style.display = 'block';
-      cpw.focus();
-      return;
+    
+    const translateX = -currentPackageIndex * moveDistance;
+    track.style.transform = `translateX(${translateX}px)`;
+    
+    // Update arrow states
+    updateArrowStates();
+}
+
+function updateArrowStates() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    if (prevBtn && nextBtn) {
+        prevBtn.disabled = currentPackageIndex === 0;
+        nextBtn.disabled = currentPackageIndex >= totalPackages - packagesPerView;
     }
-    document.getElementById('step-1').classList.remove('active');
-    document.getElementById('step-2').classList.add('active');
-  }
-  function prevStep() {
-    document.getElementById('step-2').classList.remove('active');
-    document.getElementById('step-1').classList.add('active');
-  }
-  window.nextStep = nextStep;
-  window.prevStep = prevStep;
+}
 
-  // ---- Terms & Conditions ----
-  const showTerms     = document.getElementById('showTerms');
-  const termsModal    = document.getElementById('termsModal');
-  const agreeBtn      = document.getElementById('agreeBtn');
-  const termsCheckbox = document.getElementById('termsCheckbox');
-  const enrollBtn     = document.getElementById('enrollBtn');
-
-  termsCheckbox.disabled = true;
-  enrollBtn.disabled     = true;
-
-  showTerms.addEventListener('click', function(e) {
-    e.preventDefault();
-    agreeBtn.disabled        = false;
-    termsModal.style.display = 'flex';
-  });
-
-  agreeBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    termsModal.style.display   = 'none';
-    termsCheckbox.disabled     = false;
-    termsCheckbox.checked      = true;
-    enrollBtn.disabled         = false;
-  });
-
-  window.addEventListener('click', function(e) {
-    if (e.target === termsModal) {
-      termsModal.style.display = 'none';
+// Step navigation with animations
+function nextStep() {
+    if (currentStep === 1) {
+        animateStepTransition('step-1', 'step-2');
+        currentStep = 2;
+    } else if (currentStep === 2) {
+        animateStepTransition('step-2', 'step-3');
+        currentStep = 3;
+    } else if (currentStep === 3) {
+        animateStepTransition('step-3', 'step-4');
+        currentStep = 4;
     }
-  });
+}
 
-  // ---- Success Modal ----
-  const successModal = document.getElementById('successModal');
-  if (successModal) {
-    successModal.style.display = 'flex';
-    document.getElementById('successOk').addEventListener('click', function() {
-      window.location.href = '{{ route("home") }}';
+function prevStep() {
+    if (currentStep === 4) {
+        animateStepTransition('step-4', 'step-3', true);
+        currentStep = 3;
+    } else if (currentStep === 3) {
+        animateStepTransition('step-3', 'step-2', true);
+        currentStep = 2;
+    } else if (currentStep === 2) {
+        animateStepTransition('step-2', 'step-1', true);
+        currentStep = 1;
+    }
+}
+
+function animateStepTransition(fromStepId, toStepId, isBack = false) {
+    const fromStep = document.getElementById(fromStepId);
+    const toStep = document.getElementById(toStepId);
+    
+    // Add slide-out class to current step
+    fromStep.classList.add(isBack ? 'slide-out-right' : 'slide-out-left');
+    
+    setTimeout(() => {
+        fromStep.classList.remove('active', 'slide-out-left', 'slide-out-right');
+        toStep.classList.add('active');
+    }, 250);
+}
+
+// Package Selection
+function selectPackage(packageId, packageName) {
+    // Remove selection from all package cards
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.classList.remove('selected');
     });
-    // optional: auto-redirect after 3s
-    // setTimeout(() => window.location.href = '{{ route("home") }}', 3000);
-  }
+    
+    // Highlight selected package
+    event.target.closest('.package-card').classList.add('selected');
+    
+    // Store selection
+    selectedPackageId = packageId;
+    
+    // Update hidden input
+    const packageInput = document.querySelector('input[name="package_id"]');
+    if (packageInput) {
+        packageInput.value = packageId;
+    } else {
+        // Create hidden input if it doesn't exist
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'package_id';
+        hiddenInput.value = packageId;
+        document.querySelector('form').appendChild(hiddenInput);
+    }
+    
+    // Show selected package display
+    document.getElementById('selectedPackageName').textContent = packageName;
+    document.getElementById('selectedPackageDisplay').style.display = 'block';
+    
+    // Enable next button
+    const nextBtn = document.getElementById('packageNextBtn');
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+}
+
+// Payment Method Selection
+function selectPaymentMethod(method) {
+    // Remove selection from all payment methods
+    document.querySelectorAll('.payment-method').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Highlight selected payment method
+    event.target.closest('.payment-method').classList.add('selected');
+    
+    // Store selection
+    selectedPaymentMethod = method;
+    
+    // Update display
+    const methodNames = {
+        'credit_card': 'Credit/Debit Card',
+        'gcash': 'GCash',
+        'bank_transfer': 'Bank Transfer',
+        'installment': 'Installment Plan'
+    };
+    
+    document.getElementById('selectedPaymentName').textContent = methodNames[method];
+    document.getElementById('selectedPaymentDisplay').style.display = 'block';
+    
+    // Enable next button
+    const nextBtn = document.getElementById('paymentNextBtn');
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+}
+
+// Make functions globally accessible
+window.slidePackages = slidePackages;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.selectPackage = selectPackage;
+window.selectPaymentMethod = selectPaymentMethod;
+// Initialize carousel
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize carousel first
+    updateArrowStates();
+    
+    // Adjust for responsive
+    function adjustCarousel() {
+        const slider = document.querySelector('.package-slider');
+        if (slider) {
+            if (window.innerWidth <= 768) {
+                packagesPerView = 1;
+                slider.style.width = '340px';
+            } else {
+                packagesPerView = 2;
+                slider.style.width = '780px';
+            }
+            // Reset position when switching views
+            currentPackageIndex = 0;
+            const track = document.getElementById('packageTrack');
+            if (track) {
+                track.style.transform = 'translateX(0px)';
+            }
+            updateArrowStates();
+        }
+    }
+    
+    adjustCarousel();
+    window.addEventListener('resize', adjustCarousel);
+
+    // Terms & Conditions
+    const showTerms = document.getElementById('showTerms');
+    const termsModal = document.getElementById('termsModal');
+    const agreeBtn = document.getElementById('agreeBtn');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const enrollBtn = document.getElementById('enrollBtn');
+
+    if (termsCheckbox && enrollBtn) {
+        termsCheckbox.disabled = true;
+        enrollBtn.disabled = true;
+
+        if (showTerms) {
+            showTerms.addEventListener('click', function(e) {
+                e.preventDefault();
+                agreeBtn.disabled = false;
+                termsModal.style.display = 'flex';
+            });
+        }
+
+        if (agreeBtn) {
+            agreeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                termsModal.style.display = 'none';
+                termsCheckbox.disabled = false;
+                termsCheckbox.checked = true;
+                enrollBtn.disabled = false;
+            });
+        }
+
+        window.addEventListener('click', function(e) {
+            if (e.target === termsModal) {
+                termsModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Success Modal
+    const successModal = document.getElementById('successModal');
+    if (successModal) {
+        successModal.style.display = 'flex';
+        const successOk = document.getElementById('successOk');
+        if (successOk) {
+            successOk.addEventListener('click', function() {
+                window.location.href = '{{ route("home") }}';
+            });
+        }
+    }
 });
 </script>
 @endsection

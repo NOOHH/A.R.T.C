@@ -8,7 +8,7 @@ use App\Http\Controllers\StudentLoginController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
-// use App\Http\Controllers\AdminProfessorController;  // TODO: Create this controller
+use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Models\Program;
 
@@ -44,9 +44,10 @@ Route::get('/enrollment/full', [StudentRegistrationController::class, 'showRegis
 
 // Modular enrollment form (GET)
 Route::get('/enrollment/modular', function () {
-    $programs  = Program::all();
-    $programId = request('program_id');
-    return view('registration.Modular_enrollment', compact('programs','programId'));
+    $programs = Program::all();
+    $packages = \App\Models\Package::all();
+    $enrollmentType = 'modular';
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'enrollmentType'));
 })->name('enrollment.modular');
 
 // Login page
@@ -124,8 +125,37 @@ Route::delete('/admin/programs/{id}', [AdminProgramController::class, 'destroy']
      ->name('admin.programs.delete');
 
 // View enrollments for a program
-Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])
-     ->name('admin.programs.enrollments');
+Route::get(
+    '/admin/programs/{program}/enrollments',
+    [AdminProgramController::class, 'enrollments']
+)->name('admin.programs.enrollments');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Modules
+|--------------------------------------------------------------------------
+*/
+use App\Http\Controllers\AdminModuleController;
+
+// Modules list
+Route::get('/admin/modules', [AdminModuleController::class, 'index'])
+     ->name('admin.modules.index');
+
+// Store new module
+Route::post('/admin/modules', [AdminModuleController::class, 'store'])
+     ->name('admin.modules.store');
+
+// Update module
+Route::put('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'update'])
+     ->name('admin.modules.update');
+
+// Delete a module
+Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
+     ->name('admin.modules.destroy');
+
+// Get modules by program (AJAX)
+Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
+     ->name('admin.modules.by-program');
 
 /*
 |--------------------------------------------------------------------------
@@ -144,6 +174,10 @@ Route::get('/admin/packages/create', [AdminPackageController::class, 'create'])
 Route::post('/admin/packages', [AdminPackageController::class, 'store'])
      ->name('admin.packages.store');
 
+// Update a package
+Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
+     ->name('admin.packages.update');
+
 // Delete a package
 Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.delete');
@@ -153,30 +187,6 @@ Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy']
 | Admin Professors
 |--------------------------------------------------------------------------
 */
-// Professors list - TODO: Create AdminProfessorController
-// Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
-//      ->name('admin.professors.index');
-
-/*
-|--------------------------------------------------------------------------
-| Student Dashboard Routes (Protected)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['student.auth'])->group(function () {
-    // Student Dashboard
-    Route::get('/student/dashboard', [StudentDashboardController::class, 'dashboard'])
-         ->name('student.dashboard');
-    
-    // Student Calendar
-    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
-         ->name('student.calendar');
-    
-    // Student Courses
-    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
-         ->defaults('courseId', 1)
-         ->name('student.courses.calculus1');
-         
-    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
-         ->defaults('courseId', 2)
-         ->name('student.courses.calculus2');
-});
+// Professors list
+Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
+     ->name('admin.professors.index');

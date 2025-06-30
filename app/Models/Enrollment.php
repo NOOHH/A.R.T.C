@@ -22,6 +22,7 @@ class Enrollment extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'student_id',
         'program_id',
         'package_id',
         'enrollment_type',
