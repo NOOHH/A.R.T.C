@@ -104,19 +104,15 @@ class StudentRegistrationController extends Controller
 
     public function showRegistrationForm(Request $request)
     {
-        $enrollmentType = $request->query('enrollment_type');
-        $programId = $request->query('program_id');
-        $packageId = $request->query('package_id');
+        $enrollmentType = 'full'; // Set to full since this is the full enrollment route
         $programs = Program::all();
+        $packages = Package::all();
 
-        return view('registration.Full_enrollment', compact('enrollmentType', 'programId', 'packageId', 'programs'));
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages'));
     }
 
     public function showEnrollmentSelection()
     {
-        $programs = Program::all();
-        $packages = Package::all();
-
-        return view('enrollment', compact('programs', 'packages'));
+        return view('enrollment');
     }
 }

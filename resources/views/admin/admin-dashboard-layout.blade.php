@@ -49,7 +49,7 @@
                 </li>
 
                 {{-- Programs & Packages Dropdown --}}
-                <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || Route::currentRouteName() === 'admin.packages.index') active @endif">
+                <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') active @endif">
                     <a href="#" class="sidebar-link flex justify-between">
                         <span>&#128451; Programs</span>
                         <span class="chevron">&#9662;</span>
@@ -58,18 +58,22 @@
                         <li class="@if(Route::currentRouteName() === 'admin.programs.index') active @endif">
                             <a href="{{ route('admin.programs.index') }}">Manage Programs</a>
                         </li>
+                        <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.modules')) active @endif">
+                            <a href="{{ route('admin.modules.index') }}">Manage Modules</a>
+                        </li>
                         <li class="@if(Route::currentRouteName() === 'admin.packages.index') active @endif">
                             <a href="{{ route('admin.packages.index') }}">Packages</a>
                         </li>
                     </ul>
                 </li>
 
-                {{-- Professors --}}
+                {{-- Professors - TODO: Create AdminProfessorController first
                 <li class="@if(Route::currentRouteName() === 'admin.professors.index') active @endif">
                     <a href="{{ route('admin.professors.index') }}" class="sidebar-link">
                         <span>&#128101;</span> Professors
                     </a>
                 </li>
+                --}}
             </ul>
         </nav>
 
@@ -137,5 +141,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+{{-- allow child views to push scripts here --}}
+@stack('scripts')
 </body>
 </html>
