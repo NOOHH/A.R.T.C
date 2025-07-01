@@ -5,6 +5,9 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
 <style>
+{!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
+{!! App\Helpers\SettingsHelper::getButtonStyles() !!}
+
     .step { 
         display: none; 
         opacity: 0;

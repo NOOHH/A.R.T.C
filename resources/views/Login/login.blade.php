@@ -5,21 +5,32 @@
     <title>Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
+    <style>
+        {!! \App\Helpers\SettingsHelper::getLoginStyles() !!}
+        {!! \App\Helpers\SettingsHelper::getButtonStyles() !!}
+    </style>
 </head>
-<body>
+<body class="login-page">
+    @php
+        $settings = \App\Helpers\SettingsHelper::getSettings();
+        $login = $settings['login'] ?? [];
+        $footer = $settings['footer'] ?? [];
+    @endphp
     <div class="left">
         <div class="review-text">
             Review Smarter.<br>Learn Better.<br>Succeed Faster.
         </div>
-        <img src="{{ asset('images/login-illustration.png') }}" alt="Study Illustration" class="login-illustration">
         <div class="copyright">
-            © Copyright Ascendo Review and Training Center.<br>All Rights Reserved.
+            {!! $footer['text'] ?? '© Copyright Ascendo Review and Training Center.<br>All Rights Reserved.' !!}
         </div>
     </div>
     <div class="right">
         <div class="logo-row">
-            <img src="{{ asset('images/logo.png') }}" alt="Logo">
-            <a href="{{ url('/') }}" class="brand-text">Ascendo Review<br>and Training Center</a>
+            <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" alt="Logo">
+            @php
+                $navbarSettings = $settings['navbar'] ?? [];
+            @endphp
+            <a href="{{ url('/') }}" class="brand-text">{{ $navbarSettings['brand_name'] ?? 'Ascendo Review and Training Center' }}</a>
         </div>
         <h2>Log in to your account.</h2>
 

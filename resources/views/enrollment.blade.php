@@ -4,19 +4,29 @@
 
 @push('styles')
 <style>
+{!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
+{!! App\Helpers\SettingsHelper::getProgramCardStyles() !!}
+{!! App\Helpers\SettingsHelper::getButtonStyles() !!}
+
     .program-card {
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
+        transition: transform 0.2s, border-color 0.3s, box-shadow 0.3s;
+        border-width: 2px;
+        border-style: solid;
     }
 
     .program-card:hover {
         transform: translateY(-5px);
     }
 
+    .enroll-btn {
+        transition: background-color 0.3s, transform 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
     .enroll-btn:hover {
-        background-color: #0f1a3a !important;
+        transform: translateY(-2px);
     }
 </style>
 @endpush
@@ -27,7 +37,7 @@
         {{-- Complete Plan --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Complete Plan</h3>
-            <button onclick="window.location.href='{{ route('enrollment.full') }}'" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; cursor: pointer;">
+            <button onclick="window.location.href='{{ route('enrollment.full') }}'" class="enroll-btn btn-primary" style="border-radius: 20px; padding: 10px 40px; font-size: 1rem;">
                 Enroll
             </button>
         </div>
@@ -35,7 +45,7 @@
         {{-- Modular Plan --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Modular Plan</h3>
-            <button onclick="window.location.href='{{ route('enrollment.modular') }}'" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; cursor: pointer;">
+            <button onclick="window.location.href='{{ route('enrollment.modular') }}'" class="enroll-btn btn-primary" style="border-radius: 20px; padding: 10px 40px; font-size: 1rem;">
                 Enroll
             </button>
         </div>

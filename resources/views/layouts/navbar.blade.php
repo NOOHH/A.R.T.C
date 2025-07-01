@@ -4,16 +4,27 @@
     <meta charset="UTF-8">
     <title>@yield('title', 'Ascendo Review')</title>
     <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
+    <style>
+        {!! \App\Helpers\SettingsHelper::getNavbarStyles() !!}
+        {!! \App\Helpers\SettingsHelper::getFooterStyles() !!}
+        {!! \App\Helpers\SettingsHelper::getProgramCardStyles() !!}
+    </style>
     @stack('styles') {{-- ✅ to load page-specific styles --}}
 </head>
 
 <body class="body-background">
+    @php
+        $settings = \App\Helpers\SettingsHelper::getSettings();
+        $navbar = $settings['navbar'] ?? [];
+        $footer = $settings['footer'] ?? [];
+    @endphp
+    
     {{-- Navbar --}}
     <nav class="navbar">
         <div class="navbar-left">
-            <img src="{{ asset('images/ARTC_Logo.png') }}" alt="Logo" class="logo">
+            <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl(asset('images/ARTC_Logo.png')) }}" alt="Logo" class="logo">
             <div class="brand-text">
-                <a href="{{ url('/') }}"><strong>Ascendo Review and Training Center</strong>
+                <a href="{{ url('/') }}"><strong>{{ $navbar['brand_name'] ?? 'Ascendo Review and Training Center' }}</strong></a>
             </div>
         </div>
         <ul class="navbar-links">
@@ -34,8 +45,7 @@
         @yield('content')
     </main>
     <footer class="footer">
-        © Copyright Ascendo Review and Training Center.<br>
-        All Rights Reserved.
+        {!! $footer['text'] ?? '© Copyright Ascendo Review and Training Center.<br>All Rights Reserved.' !!}
     </footer>
     @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
 </body>

@@ -5,6 +5,9 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_Enrollment.css') }}">
 <style>
+{!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
+{!! App\Helpers\SettingsHelper::getButtonStyles() !!}
+
   /* STEP TRANSITIONS */
   .step {
     display: none;

@@ -136,6 +136,11 @@ document.addEventListener('DOMContentLoaded', function() {
     addAnimatedEvents(document.querySelector('.settings-link'),'#8e44ad', '#fff');
     addAnimatedEvents(document.querySelector('.logout'),       '#e74c3c', '#fff');
 
+    // Settings navigation
+    document.querySelector('.settings-link')?.addEventListener('click', () => {
+        window.location.href = '{{ route("admin.settings.index") }}';
+    });
+
     // Logout
     document.querySelector('.logout')?.addEventListener('click', () => {
         window.location.href = '/';

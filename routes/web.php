@@ -11,7 +11,9 @@ use App\Http\Controllers\AdminProgramController;
 use App\Http\Controllers\AdminModuleController;
 // use App\Http\Controllers\AdminProfessorController;  // TODO: Create this controller
 use App\Http\Controllers\AdminPackageController;    // ← NEW
+use App\Http\Controllers\AdminSettingsController;
 use App\Models\Program;
+use App\Models\Package;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +27,27 @@ Route::get('/test-db', function () {
     } catch (\Exception $e) {
         return "❌ DB connection failed: " . $e->getMessage();
     }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Test Settings
+|--------------------------------------------------------------------------
+*/
+Route::get('/test-settings', function () {
+    $settingsPath = storage_path('app/settings.json');
+    $settings = \App\Helpers\SettingsHelper::getSettings();
+    
+    return response()->json([
+        'settings_file_exists' => file_exists($settingsPath),
+        'settings_path' => $settingsPath,
+        'current_settings' => $settings,
+        'enrollment_styles' => \App\Helpers\SettingsHelper::getEnrollmentStyles(),
+        'navbar_styles' => \App\Helpers\SettingsHelper::getNavbarStyles(),
+        'footer_styles' => \App\Helpers\SettingsHelper::getFooterStyles(),
+        'program_card_styles' => \App\Helpers\SettingsHelper::getProgramCardStyles(),
+        'button_styles' => \App\Helpers\SettingsHelper::getButtonStyles(),
+    ]);
 });
 
 /*
@@ -46,8 +69,9 @@ Route::get('/enrollment/full', [StudentRegistrationController::class, 'showRegis
 // Modular enrollment form (GET)
 Route::get('/enrollment/modular', function () {
     $programs  = Program::all();
+    $packages  = Package::all(); // Add this line to fix the undefined variable error
     $programId = request('program_id');
-    return view('registration.Modular_enrollment', compact('programs','programId'));
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId'));
 })->name('enrollment.modular');
 
 // Login page
@@ -177,6 +201,65 @@ Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
 // Delete a package
 Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.delete');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Settings
+|--------------------------------------------------------------------------
+*/
+// Settings page
+Route::get('/admin/settings', [AdminSettingsController::class, 'index'])
+     ->name('admin.settings.index');
+
+// New simplified settings page
+Route::get('/admin/settings/new', [AdminSettingsController::class, 'newIndex'])
+     ->name('admin.settings.new.index');
+
+// Fixed settings page
+Route::get('/admin/settings/fixed', [AdminSettingsController::class, 'fixedIndex'])
+     ->name('admin.settings.fixed.index');
+
+// Update homepage settings
+Route::post('/admin/settings/homepage', [AdminSettingsController::class, 'updateHomepage'])
+     ->name('admin.settings.update.homepage');
+
+// Update navbar settings
+Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'updateNavbar'])
+     ->name('admin.settings.update.navbar');
+
+// Update footer settings
+Route::post('/admin/settings/footer', [AdminSettingsController::class, 'updateFooter'])
+     ->name('admin.settings.update.footer');
+
+// Update program cards settings
+Route::post('/admin/settings/program-cards', [AdminSettingsController::class, 'updateProgramCards'])
+     ->name('admin.settings.update.program-cards');
+
+// Update enrollment settings
+Route::post('/admin/settings/enrollment', [AdminSettingsController::class, 'updateEnrollment'])
+     ->name('admin.settings.update.enrollment');
+
+// Update button settings
+Route::post('/admin/settings/buttons', [AdminSettingsController::class, 'updateButtons'])
+     ->name('admin.settings.update.buttons');
+
+// Update login page settings
+Route::post('/admin/settings/login', [AdminSettingsController::class, 'updateLogin'])
+     ->name('admin.settings.update.login');
+
+// Global Logo routes
+Route::post('/admin/settings/global-logo', [AdminSettingsController::class, 'updateGlobalLogo'])
+     ->name('admin.settings.global.logo');
+
+Route::post('/admin/settings/remove-global-logo', [AdminSettingsController::class, 'removeGlobalLogo'])
+     ->name('admin.settings.remove.global.logo');
+
+Route::post('/admin/settings/remove-login-illustration', [AdminSettingsController::class, 'removeLoginIllustration'])
+     ->name('admin.settings.remove.login.illustration');
+
+// Remove background image or logo
+Route::post('/admin/settings/remove-image', [AdminSettingsController::class, 'removeImage'])
+     ->name('admin.settings.remove.image');
 
 /*
 |--------------------------------------------------------------------------
