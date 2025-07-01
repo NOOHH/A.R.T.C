@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 27, 2025 at 01:07 PM
+-- Generation Time: Jun 30, 2025 at 07:19 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -29,21 +29,55 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `admins` (
   `admin_id` int(11) NOT NULL,
-  `registration_id` int(11) NOT NULL
+  `admin_name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `admins`
+--
+
+INSERT INTO `admins` (`admin_id`, `admin_name`, `email`, `password`, `created_at`, `updated_at`) VALUES
+(1, 'Administrator', 'admin@artc.com', '$2y$10$wVoqaCx2cyvujuym1wakQ.x8UqUSisfeNeXXsmm1HYhc2OclIn4bC', '2025-06-30 08:41:42', '2025-06-30 16:45:13');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `enrollment`
+-- Table structure for table `enrollments`
 --
 
-CREATE TABLE `enrollment` (
+CREATE TABLE `enrollments` (
   `enrollment_id` int(11) NOT NULL,
-  `Modular_enrollment` varchar(50) NOT NULL,
-  `Complete_Program` varchar(50) NOT NULL,
-  `package_id` int(11) NOT NULL
+  `program_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `enrollment_type` enum('Modular','Complete') NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `enrollments`
+--
+
+INSERT INTO `enrollments` (`enrollment_id`, `program_id`, `package_id`, `enrollment_type`, `created_at`, `updated_at`) VALUES
+(17, 17, 3, 'Complete', '2025-06-28 05:26:00', '2025-06-28 05:26:00'),
+(18, 1, 1, 'Complete', '2025-06-28 08:05:13', '2025-06-28 08:05:13'),
+(19, 1, 1, 'Complete', '2025-06-28 08:23:00', '2025-06-28 08:23:00'),
+(20, 1, 1, 'Modular', '2025-06-28 09:12:36', '2025-06-28 09:12:36'),
+(21, 2, 1, 'Modular', '2025-06-28 09:19:07', '2025-06-28 09:19:07'),
+(22, 2, 1, 'Modular', '2025-06-28 09:30:15', '2025-06-28 09:30:15'),
+(23, 1, 3, 'Modular', '2025-06-28 09:38:10', '2025-06-28 09:38:10'),
+(24, 1, 3, 'Modular', '2025-06-28 09:39:54', '2025-06-28 09:39:54'),
+(25, 1, 3, 'Complete', '2025-06-28 09:43:17', '2025-06-28 09:43:17'),
+(26, 2, 5, 'Modular', '2025-06-28 09:44:32', '2025-06-28 09:44:32'),
+(27, 17, 1, 'Complete', '2025-06-28 10:10:54', '2025-06-28 10:10:54'),
+(28, 2, 1, 'Modular', '2025-06-28 10:23:20', '2025-06-28 10:23:20'),
+(29, 1, 1, 'Complete', '2025-06-28 10:24:35', '2025-06-28 10:24:35'),
+(30, 17, 1, 'Complete', '2025-06-28 10:25:30', '2025-06-28 10:25:30'),
+(31, 2, 1, 'Complete', '2025-06-30 06:37:54', '2025-06-30 06:37:54');
 
 -- --------------------------------------------------------
 
@@ -86,6 +120,23 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `modules`
+--
+
+CREATE TABLE `modules` (
+  `modules_id` int(11) NOT NULL,
+  `module_name` varchar(255) NOT NULL,
+  `module_description` text DEFAULT NULL,
+  `program_id` int(11) NOT NULL,
+  `plan_id` int(11) DEFAULT NULL,
+  `attachment` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `packages`
 --
 
@@ -93,9 +144,21 @@ CREATE TABLE `packages` (
   `package_id` int(11) NOT NULL,
   `package_name` varchar(100) NOT NULL,
   `description` text DEFAULT NULL,
+  `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
   `created_by_admin_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `packages`
+--
+
+INSERT INTO `packages` (`package_id`, `package_name`, `description`, `amount`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
+(1, 'Basic Package', 'Access to lectures, quizzes, and PDF materials.', 2222.00, 1, '2025-06-27 15:14:54', '2025-06-28 06:55:36'),
+(2, 'Premium Package', 'Includes Basic features + Live Zoom classes and Q&A sessions.', 0.00, 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
+(3, 'Mock Exam Package', 'Includes full-length mock board exams and analytics.', 0.00, 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
+(5, 'batman', 'aaa', 0.00, 1, '2025-06-28 06:52:11', '2025-06-28 06:52:11');
 
 -- --------------------------------------------------------
 
@@ -130,15 +193,45 @@ CREATE TABLE `personal_access_tokens` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `program`
+-- Table structure for table `plan`
 --
 
-CREATE TABLE `program` (
-  `program_id` int(11) NOT NULL,
-  `mechanical_engineer` varchar(50) NOT NULL,
-  `admin_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+CREATE TABLE `plan` (
+  `plan_id` int(11) NOT NULL,
+  `plan_name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `plan`
+--
+
+INSERT INTO `plan` (`plan_id`, `plan_name`, `description`) VALUES
+(1, 'Full Plan', 'Full/Complete Plan Description'),
+(2, 'Modular Plan', 'Modular Plan Description');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `programs`
+--
+
+CREATE TABLE `programs` (
+  `program_id` int(11) NOT NULL,
+  `program_name` varchar(100) NOT NULL,
+  `created_by_admin_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `programs`
+--
+
+INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
+(1, 'Nursing Board Review', 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
+(2, 'Engineering Board Review', 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
+(17, 'ni', 1, '2025-06-28 02:52:20', '2025-06-28 10:52:20');
 
 -- --------------------------------------------------------
 
@@ -169,16 +262,22 @@ CREATE TABLE `registrations` (
   `photo_2x2` varchar(255) DEFAULT NULL,
   `Start_Date` date NOT NULL,
   `status` enum('pending','approved','rejected') DEFAULT 'pending',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `package_name` varchar(100) DEFAULT NULL,
+  `plan_name` varchar(50) DEFAULT NULL,
+  `program_name` varchar(100) DEFAULT NULL,
+  `package_id` int(11) DEFAULT NULL,
+  `plan_id` int(11) DEFAULT NULL,
+  `program_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `registrations`
 --
 
-INSERT INTO `registrations` (`registration_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `Undergraduate`, `Graduate`, `photo_2x2`, `Start_Date`, `status`, `created_at`, `updated_at`) VALUES
-(2, 3, '123123', 'sadasd', 'weq', '1', 'qwe', 'ew', 'sadasdw', 'w', '2', '1', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-06-24', 'pending', '2025-06-27 03:07:13', '2025-06-27 03:07:13');
+INSERT INTO `registrations` (`registration_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `Undergraduate`, `Graduate`, `photo_2x2`, `Start_Date`, `status`, `created_at`, `updated_at`, `package_name`, `plan_name`, `program_name`, `package_id`, `plan_id`, `program_id`) VALUES
+(26, 29, 'bryan', 'm', 'justimbaste', 'lpu', 'General Trias Cavite', 'state', 'Cavite', '4107', '9090993452', '3546365436', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-06-30', 'pending', '2025-06-30 06:37:54', '2025-06-30 06:37:54', 'Basic Package', 'Complete', 'Engineering Board Review', 1, 1, 2);
 
 -- --------------------------------------------------------
 
@@ -187,7 +286,7 @@ INSERT INTO `registrations` (`registration_id`, `user_id`, `firstname`, `middlen
 --
 
 CREATE TABLE `students` (
-  `student_id` int(11) NOT NULL,
+  `student_id` varchar(30) NOT NULL,
   `user_id` int(11) NOT NULL,
   `firstname` varchar(50) NOT NULL,
   `middlename` varchar(50) NOT NULL,
@@ -209,9 +308,15 @@ CREATE TABLE `students` (
   `photo_2x2` varchar(255) DEFAULT NULL,
   `Start_Date` date NOT NULL,
   `date_approved` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `email` varchar(100) NOT NULL,
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `package_id` int(11) DEFAULT NULL,
+  `plan_id` int(11) DEFAULT NULL,
+  `program_id` int(11) DEFAULT NULL,
+  `package_name` varchar(100) DEFAULT NULL,
+  `plan_name` varchar(50) DEFAULT NULL,
+  `program_name` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -226,19 +331,19 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `user_firstname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL,
-  `role` enum('unverified','student','professor','admin') DEFAULT 'unverified',
-  `program_id` int(11) DEFAULT NULL,
-  `enrollment_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `role` enum('unverified','student','professor') DEFAULT 'unverified',
+  `enrollment_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `email`, `password`, `user_firstname`, `user_lastname`, `role`, `program_id`, `enrollment_id`, `created_at`, `updated_at`) VALUES
-(3, 'vmdelavega03@gmail.com', '$2y$10$lwQ5ScguI0o6E99fDmWbR.yk90jTq/Z3o/j4yd.djP8fjOvthEqLO', '123123', 'weq', 'unverified', NULL, NULL, '2025-06-27 03:07:13', '2025-06-27 03:07:13');
+INSERT INTO `users` (`user_id`, `email`, `password`, `user_firstname`, `user_lastname`, `role`, `enrollment_id`, `created_at`, `updated_at`) VALUES
+(29, 'bryan.justimbaste@gmail.com', '$2y$10$teKTw.9r5WjxBZ.8CN3mSOBIVYZnBCvKr9D.83tXK8fzXoFogZJPq', 'bryan', 'justimbaste', 'unverified', 31, '2025-06-30 06:37:54', '2025-06-30 06:37:54'),
+(30, 'student@test.com', '$2y$10$D66uIkz94nWebIWEyfj2sec05TxRUSFHlXCYVDKyL1XFKJCcmQHCW', 'Test', 'Student', 'student', 1, '2025-06-30 08:07:03', '2025-06-30 08:07:03');
 
 --
 -- Indexes for dumped tables
@@ -249,13 +354,14 @@ INSERT INTO `users` (`user_id`, `email`, `password`, `user_firstname`, `user_las
 --
 ALTER TABLE `admins`
   ADD PRIMARY KEY (`admin_id`),
-  ADD KEY `registration_id` (`registration_id`);
+  ADD UNIQUE KEY `email` (`email`);
 
 --
--- Indexes for table `enrollment`
+-- Indexes for table `enrollments`
 --
-ALTER TABLE `enrollment`
+ALTER TABLE `enrollments`
   ADD PRIMARY KEY (`enrollment_id`),
+  ADD KEY `program_id` (`program_id`),
   ADD KEY `package_id` (`package_id`);
 
 --
@@ -270,6 +376,14 @@ ALTER TABLE `failed_jobs`
 --
 ALTER TABLE `migrations`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `modules`
+--
+ALTER TABLE `modules`
+  ADD PRIMARY KEY (`modules_id`),
+  ADD KEY `idx_modules_program` (`program_id`),
+  ADD KEY `idx_modules_plan` (`plan_id`);
 
 --
 -- Indexes for table `packages`
@@ -293,25 +407,37 @@ ALTER TABLE `personal_access_tokens`
   ADD KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`);
 
 --
--- Indexes for table `program`
+-- Indexes for table `plan`
 --
-ALTER TABLE `program`
+ALTER TABLE `plan`
+  ADD PRIMARY KEY (`plan_id`);
+
+--
+-- Indexes for table `programs`
+--
+ALTER TABLE `programs`
   ADD PRIMARY KEY (`program_id`),
-  ADD KEY `admin_id` (`admin_id`);
+  ADD KEY `created_by_admin_id` (`created_by_admin_id`);
 
 --
 -- Indexes for table `registrations`
 --
 ALTER TABLE `registrations`
   ADD PRIMARY KEY (`registration_id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `fk_registrations_package_id` (`package_id`),
+  ADD KEY `fk_registrations_plan_id` (`plan_id`),
+  ADD KEY `fk_registrations_program_id` (`program_id`);
 
 --
 -- Indexes for table `students`
 --
 ALTER TABLE `students`
   ADD PRIMARY KEY (`student_id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `fk_students_package_id_2025` (`package_id`),
+  ADD KEY `fk_students_plan_id_2025` (`plan_id`),
+  ADD KEY `fk_students_program_id_2025` (`program_id`);
 
 --
 -- Indexes for table `users`
@@ -319,7 +445,6 @@ ALTER TABLE `students`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `program_id` (`program_id`),
   ADD KEY `enrollment_id` (`enrollment_id`);
 
 --
@@ -330,13 +455,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `enrollment`
+-- AUTO_INCREMENT for table `enrollments`
 --
-ALTER TABLE `enrollment`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `enrollments`
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `failed_jobs`
@@ -351,10 +476,16 @@ ALTER TABLE `migrations`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT for table `modules`
+--
+ALTER TABLE `modules`
+  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `packages`
 --
 ALTER TABLE `packages`
-  MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `personal_access_tokens`
@@ -363,75 +494,39 @@ ALTER TABLE `personal_access_tokens`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `program`
+-- AUTO_INCREMENT for table `plan`
 --
-ALTER TABLE `program`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `plan`
+  MODIFY `plan_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `programs`
+--
+ALTER TABLE `programs`
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
-  MODIFY `registration_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `students`
---
-ALTER TABLE `students`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `registration_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `admins`
+-- Constraints for table `modules`
 --
-ALTER TABLE `admins`
-  ADD CONSTRAINT `admins_ibfk_1` FOREIGN KEY (`registration_id`) REFERENCES `registrations` (`registration_id`);
-
---
--- Constraints for table `enrollment`
---
-ALTER TABLE `enrollment`
-  ADD CONSTRAINT `enrollment_ibfk_1` FOREIGN KEY (`package_id`) REFERENCES `packages` (`package_id`);
-
---
--- Constraints for table `packages`
---
-ALTER TABLE `packages`
-  ADD CONSTRAINT `packages_ibfk_1` FOREIGN KEY (`created_by_admin_id`) REFERENCES `admins` (`admin_id`);
-
---
--- Constraints for table `program`
---
-ALTER TABLE `program`
-  ADD CONSTRAINT `program_ibfk_1` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`admin_id`);
-
---
--- Constraints for table `registrations`
---
-ALTER TABLE `registrations`
-  ADD CONSTRAINT `registrations_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `students`
---
-ALTER TABLE `students`
-  ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `users`
---
-ALTER TABLE `users`
-  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `program` (`program_id`),
-  ADD CONSTRAINT `users_ibfk_2` FOREIGN KEY (`enrollment_id`) REFERENCES `enrollment` (`enrollment_id`);
+ALTER TABLE `modules`
+  ADD CONSTRAINT `fk_modules_plan` FOREIGN KEY (`plan_id`) REFERENCES `plan` (`plan_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_modules_programs` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

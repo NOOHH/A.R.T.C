@@ -189,8 +189,10 @@ class SettingsHelper
                 " . $backgroundStyle . "
             }
             
-            .enrollment-container {
+            .enrollment-container,
+            .enrollment-page-content {
                 " . $backgroundStyle . "
+                color: " . ($enrollment['page_text_color'] ?? '#333333') . " !important;
             }
             
             .enrollment-form-container {
@@ -203,16 +205,24 @@ class SettingsHelper
             }
             
             .enrollment-btn,
-            .btn-enroll {
+            .btn-enroll,
+            .enroll-btn {
                 background-color: " . ($enrollment['button_color'] ?? '#667eea') . " !important;
                 border-color: " . ($enrollment['button_color'] ?? '#667eea') . " !important;
                 color: " . ($enrollment['button_text_color'] ?? '#ffffff') . " !important;
             }
             
             .enrollment-btn:hover,
-            .btn-enroll:hover {
+            .btn-enroll:hover,
+            .enroll-btn:hover {
                 background-color: " . ($enrollment['button_hover_color'] ?? '#5a67d8') . " !important;
                 border-color: " . ($enrollment['button_hover_color'] ?? '#5a67d8') . " !important;
+            }
+            
+            /* Enrollment program card text color */
+            .enrollment-program-card h3,
+            .enrollment-program-card {
+                color: " . ($enrollment['page_text_color'] ?? '#333333') . " !important;
             }
         ";
         
@@ -290,15 +300,22 @@ class SettingsHelper
         }
         
         $styles = "
-            .program-card {
+            .program-card,
+            .enrollment-program-card {
                 " . $backgroundStyle . "
                 color: " . ($cards['text_color'] ?? '#333333') . " !important;
                 border-color: " . ($cards['border_color'] ?? '#dddddd') . " !important;
             }
             
-            .program-card:hover {
+            .program-card:hover,
+            .enrollment-program-card:hover {
                 border-color: " . ($cards['hover_color'] ?? '#1c2951') . " !important;
                 box-shadow: 0 4px 8px rgba(" . self::hexToRgb($cards['hover_color'] ?? '#1c2951') . ", 0.3) !important;
+            }
+            
+            .program-card h3,
+            .enrollment-program-card h3 {
+                color: " . ($cards['text_color'] ?? '#333333') . " !important;
             }
         ";
         

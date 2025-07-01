@@ -150,6 +150,7 @@
     margin-bottom: 12px;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     height: 4em;
@@ -161,6 +162,7 @@
     margin: 0;
     background: linear-gradient(90deg, #a259c6, #6a82fb);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   .package-badge {
@@ -515,7 +517,7 @@ let selectedPackageId = null;
 let selectedPaymentMethod = null;
 let currentPackageIndex = 0;
 let packagesPerView = 2;
-let totalPackages = {{ count($packages) }};
+let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
 
 // Package carousel functionality
 function slidePackages(direction) {

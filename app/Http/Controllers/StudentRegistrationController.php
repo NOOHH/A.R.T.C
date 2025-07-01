@@ -115,4 +115,21 @@ class StudentRegistrationController extends Controller
     {
         return view('enrollment');
     }
+
+    public function checkEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $email = $request->input('email');
+        
+        // Check if email exists in users table
+        $exists = User::where('email', $email)->exists();
+        
+        return response()->json([
+            'exists' => $exists,
+            'message' => $exists ? 'Email already exists' : 'Email is available'
+        ]);
+    }
 }

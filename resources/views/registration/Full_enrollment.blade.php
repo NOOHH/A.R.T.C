@@ -105,6 +105,8 @@
         cursor: not-allowed;
         transform: none;
     }
+    
+    .package-card {
         box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     }
     
@@ -267,6 +269,8 @@
 @endpush
 
 @section('content')
+<!-- FIXED SIZE REGISTRATION CONTAINER - prevents form resizing -->
+<div class="registration-container" style="min-height: 800px; max-width: 1200px; margin: 0 auto; padding: 20px; position: relative;">
 <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form">
     @csrf
     <input type="hidden" name="enrollment_type" value="full">
@@ -320,28 +324,45 @@
         </h2>
         <div style="display:flex; flex-direction:column; gap:18px; align-items:center;">
             <div style="display:flex; gap:16px; width:100%; max-width:500px;">
-                <input type="text" name="user_firstname" placeholder="First Name" required
+                <input type="text" name="user_firstname" id="user_firstname" placeholder="First Name" required
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
-                <input type="text" name="user_lastname" placeholder="Last Name" required
+                <input type="text" name="user_lastname" id="user_lastname" placeholder="Last Name" required
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
             </div>
-            <input type="email" name="email" placeholder="Email" required
+            <input type="email" name="email" id="user_email" placeholder="Email" required
                    style="width:100%; max-width:500px; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+            <div id="emailError" style="display: none; color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center;">
+                This email is already registered. Please use a different email.
+            </div>
             <div style="display:flex; gap:16px; width:100%; max-width:500px;">
-                <input type="password" name="password" placeholder="Password" required
+                <input type="password" name="password" id="password" placeholder="Password" required
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
-                <input type="password" name="password_confirmation" placeholder="Confirm Password" required
+                <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password" required
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+            </div>
+            <div id="passwordError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; visibility: hidden;">
+                Password must be at least 8 characters long.
+            </div>
+            <div id="passwordMatchError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; visibility: hidden;">
+                Passwords do not match.
+            </div>
+            <div style="text-align: center; margin-top: -10px;">
+                <p style="color: #666; font-size: 14px; margin: 0;">
+                    Already have an account? 
+                    <a href="{{ route('login') }}" style="color: #1c2951; text-decoration: underline; font-weight: 600;">
+                        Click here to login
+                    </a>
+                </p>
             </div>
             <div style="display:flex; gap:16px; justify-content:center;">
                 <button type="button" onclick="prevStep()" class="back-btn"
                         style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
                     Back
                 </button>
-                <button type="button" onclick="nextStep()"
+                <button type="button" onclick="nextStep()" id="step2NextBtn"
                         style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff;
                                border:none; border-radius:8px; padding:12px 40px; font-size:1.1rem; font-weight:600;
-                               box-shadow:0 2px 8px rgba(160,89,198,0.08); cursor:pointer;">
+                               box-shadow:0 2px 8px rgba(160,89,198,0.08); cursor:not-allowed; opacity: 0.5;" disabled>
                     Next
                 </button>
             </div>
@@ -415,10 +436,10 @@
 
         <h3>Student Information</h3>
         <div class="input-row">
-            <input type="text" name="firstname" placeholder="First name" required>
-            <input type="text" name="middle_name" placeholder="Middle name">
-            <input type="text" name="lastname" placeholder="Last name" required>
-            <input type="text" name="student_school" placeholder="Student's school" required>
+            <input type="text" name="firstname" id="firstname" placeholder="First name" required>
+            <input type="text" name="middle_name" id="middle_name" placeholder="Middle name">
+            <input type="text" name="lastname" id="lastname" placeholder="Last name" required>
+            <input type="text" name="student_school" id="student_school" placeholder="Student's school" required>
         </div>
 
         <h3>Address</h3>
@@ -490,6 +511,7 @@
         </div>
     </div>
 </form>
+</div> <!-- END FIXED SIZE REGISTRATION CONTAINER -->
 
 {{-- Terms and Conditions Modal --}}
 <div id="termsModal"
@@ -536,7 +558,7 @@ let selectedPackageId = null;
 let selectedPaymentMethod = null;
 let currentPackageIndex = 0;
 let packagesPerView = 2;
-let totalPackages = {{ count($packages) }};
+let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
 
 // Package carousel functionality
 function slidePackages(direction) {
@@ -579,11 +601,15 @@ function nextStep() {
         animateStepTransition('step-1', 'step-2');
         currentStep = 2;
     } else if (currentStep === 2) {
+        // Copy Account Registration data to Full Student Registration before moving to step 3
+        copyAccountDataToStudentForm();
         animateStepTransition('step-2', 'step-3');
         currentStep = 3;
     } else if (currentStep === 3) {
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
+        // Also auto-fill in case user comes directly to step 4
+        copyAccountDataToStudentForm();
     }
 }
 
@@ -686,6 +712,176 @@ window.prevStep = prevStep;
 window.selectPackage = selectPackage;
 window.selectPaymentMethod = selectPaymentMethod;
 
+// Function to copy Account Registration data to Full Student Registration
+function copyAccountDataToStudentForm() {
+    // Get values from Step 2 (Account Registration)
+    const userFirstname = document.getElementById('user_firstname')?.value || '';
+    const userLastname = document.getElementById('user_lastname')?.value || '';
+    const userEmail = document.getElementById('user_email')?.value || '';
+    
+    // Set values in Step 4 (Full Student Registration)
+    const firstnameField = document.getElementById('firstname');
+    const lastnameField = document.getElementById('lastname');
+    
+    if (firstnameField && userFirstname) {
+        firstnameField.value = userFirstname;
+        console.log('Auto-filled firstname:', userFirstname);
+    }
+    if (lastnameField && userLastname) {
+        lastnameField.value = userLastname;
+        console.log('Auto-filled lastname:', userLastname);
+    }
+    
+    console.log('Auto-filled student registration fields from account data');
+}
+
+// Function to check if email already exists in database
+async function checkEmailExists(email) {
+    if (!email) return false;
+    
+    try {
+        const response = await fetch('{{ route("check.email") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                               document.querySelector('input[name="_token"]')?.value
+            },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const data = await response.json();
+        return data.exists;
+    } catch (error) {
+        console.error('Error checking email:', error);
+        return false;
+    }
+}
+
+// Function to validate email on blur
+async function validateEmail() {
+    const emailField = document.getElementById('user_email');
+    const emailError = document.getElementById('emailError');
+    
+    if (!emailField || !emailError) return;
+    
+    const email = emailField.value.trim();
+    
+    if (email) {
+        // Show loading state
+        emailField.style.borderColor = '#ffc107';
+        emailError.style.display = 'none';
+        
+        const exists = await checkEmailExists(email);
+        
+        if (exists) {
+            emailField.style.borderColor = '#dc3545';
+            emailError.style.display = 'block';
+        } else {
+            emailField.style.borderColor = '#28a745';
+            emailError.style.display = 'none';
+        }
+    } else {
+        emailField.style.borderColor = '#ccc';
+        emailError.style.display = 'none';
+    }
+    
+    // Validate all Step 2 fields after email validation
+    setTimeout(validateStep2, 100);
+}
+
+// Function to validate password length
+function validatePassword() {
+    const passwordField = document.getElementById('password');
+    const passwordError = document.getElementById('passwordError');
+    
+    if (!passwordField || !passwordError) return true;
+    
+    const password = passwordField.value;
+    
+    if (password.length > 0 && password.length < 8) {
+        passwordField.style.borderColor = '#dc3545';
+        passwordError.style.visibility = 'visible';
+        return false;
+    } else if (password.length >= 8) {
+        passwordField.style.borderColor = '#28a745';
+        passwordError.style.visibility = 'hidden';
+        return true;
+    } else {
+        passwordField.style.borderColor = '#ccc';
+        passwordError.style.visibility = 'hidden';
+        return true;
+    }
+}
+
+// Function to validate password confirmation
+function validatePasswordConfirmation() {
+    const passwordField = document.getElementById('password');
+    const passwordConfirmField = document.getElementById('password_confirmation');
+    const passwordMatchError = document.getElementById('passwordMatchError');
+    
+    if (!passwordField || !passwordConfirmField || !passwordMatchError) return true;
+    
+    const password = passwordField.value;
+    const passwordConfirm = passwordConfirmField.value;
+    
+    if (passwordConfirm.length > 0 && password !== passwordConfirm) {
+        passwordConfirmField.style.borderColor = '#dc3545';
+        passwordMatchError.style.visibility = 'visible';
+        return false;
+    } else if (passwordConfirm.length > 0 && password === passwordConfirm) {
+        passwordConfirmField.style.borderColor = '#28a745';
+        passwordMatchError.style.visibility = 'hidden';
+        return true;
+    } else {
+        passwordConfirmField.style.borderColor = '#ccc';
+        passwordMatchError.style.visibility = 'hidden';
+        return true;
+    }
+}
+
+// Function to validate all Step 2 fields
+function validateStep2() {
+    const firstnameField = document.getElementById('user_firstname');
+    const lastnameField = document.getElementById('user_lastname');
+    const emailField = document.getElementById('user_email');
+    const passwordField = document.getElementById('password');
+    const passwordConfirmField = document.getElementById('password_confirmation');
+    const nextBtn = document.querySelector('#step-2 button[onclick="nextStep()"]');
+    
+    // Check if all required fields are filled
+    const isFirstnameFilled = firstnameField && firstnameField.value.trim().length > 0;
+    const isLastnameFilled = lastnameField && lastnameField.value.trim().length > 0;
+    const isEmailFilled = emailField && emailField.value.trim().length > 0;
+    const isPasswordFilled = passwordField && passwordField.value.length > 0;
+    const isPasswordConfirmFilled = passwordConfirmField && passwordConfirmField.value.length > 0;
+    
+    // Check if validations pass
+    const isPasswordValid = validatePassword();
+    const isPasswordConfirmValid = validatePasswordConfirmation();
+    
+    // Check if email field has error (red border means email exists)
+    const emailHasError = emailField && emailField.style.borderColor === 'rgb(220, 53, 69)';
+    
+    // Enable next button only if all conditions are met
+    const allFieldsFilled = isFirstnameFilled && isLastnameFilled && isEmailFilled && isPasswordFilled && isPasswordConfirmFilled;
+    const allValidationsPassed = isPasswordValid && isPasswordConfirmValid && !emailHasError;
+    
+    if (nextBtn) {
+        if (allFieldsFilled && allValidationsPassed) {
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+        } else {
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+        }
+    }
+    
+    return allFieldsFilled && allValidationsPassed;
+}
+
 // Initialize carousel
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize carousel first
@@ -714,6 +910,67 @@ document.addEventListener('DOMContentLoaded', function() {
     
     adjustCarousel();
     window.addEventListener('resize', adjustCarousel);
+
+    // Email validation
+    const emailField = document.getElementById('user_email');
+    if (emailField) {
+        emailField.addEventListener('blur', validateEmail);
+        emailField.addEventListener('input', function() {
+            // Reset styling when user starts typing
+            this.style.borderColor = '#ccc';
+            document.getElementById('emailError').style.display = 'none';
+            // Validate all fields when email changes
+            setTimeout(validateStep2, 100);
+        });
+    }
+
+    // First name and last name validation
+    const firstnameField = document.getElementById('user_firstname');
+    const lastnameField = document.getElementById('user_lastname');
+    
+    if (firstnameField) {
+        firstnameField.addEventListener('input', function() {
+            // Validate all fields when first name changes
+            setTimeout(validateStep2, 100);
+        });
+    }
+    
+    if (lastnameField) {
+        lastnameField.addEventListener('input', function() {
+            // Validate all fields when last name changes
+            setTimeout(validateStep2, 100);
+        });
+    }
+
+    // Password validation
+    const passwordField = document.getElementById('password');
+    const passwordConfirmField = document.getElementById('password_confirmation');
+    
+    if (passwordField) {
+        passwordField.addEventListener('blur', validatePassword);
+        passwordField.addEventListener('input', function() {
+            // Reset styling when user starts typing
+            this.style.borderColor = '#ccc';
+            // Don't hide the error here - let validatePassword handle it
+            // Also validate confirmation when password changes
+            setTimeout(validatePassword, 50);
+            setTimeout(validatePasswordConfirmation, 100);
+            setTimeout(validateStep2, 200);
+        });
+    }
+    
+    if (passwordConfirmField) {
+        passwordConfirmField.addEventListener('blur', validatePasswordConfirmation);
+        passwordConfirmField.addEventListener('input', function() {
+            // Reset styling when user starts typing
+            this.style.borderColor = '#ccc';
+            document.getElementById('passwordMatchError').style.visibility = 'hidden';
+            setTimeout(validateStep2, 100);
+        });
+    }
+
+    // Initial validation on page load
+    setTimeout(validateStep2, 500);
 
     // Terms & Conditions
     const showTerms = document.getElementById('showTerms');
