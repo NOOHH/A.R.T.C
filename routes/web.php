@@ -62,6 +62,10 @@ Route::get('/login', fn() => view('Login.login'))->name('login');
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
 
+// Check if email exists
+Route::post('/check-email', [StudentRegistrationController::class, 'checkEmail'])
+     ->name('check.email');
+
 // Student login POST
 Route::post('/student/login', [StudentLoginController::class, 'login'])
      ->name('student.login');

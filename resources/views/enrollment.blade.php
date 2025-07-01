@@ -27,17 +27,17 @@
         {{-- Complete Plan --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Complete Plan</h3>
-            <button onclick="window.location.href='{{ route('enrollment.full') }}'" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; cursor: pointer;">
+            <a href="{{ route('enrollment.full') }}" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; cursor: pointer; display: inline-block; text-align: center; text-decoration: none;">
                 Enroll
-            </button>
+            </a>
         </div>
 
         {{-- Modular Plan --}}
         <div class="program-card" style="width: 350px; height: 260px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <h3 style="font-size: 2rem; font-weight: 500; margin-bottom: 24px;">Modular Plan</h3>
-            <button onclick="window.location.href='{{ route('enrollment.modular') }}'" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; cursor: pointer;">
+            <a href="{{ route('enrollment.modular') }}" class="enroll-btn" style="background-color: #1c2951; color: white; border-radius: 20px; padding: 10px 40px; font-size: 1rem; border: none; cursor: pointer; display: inline-block; text-align: center; text-decoration: none;">
                 Enroll
-            </button>
+            </a>
         </div>
     </div>
 </div>
