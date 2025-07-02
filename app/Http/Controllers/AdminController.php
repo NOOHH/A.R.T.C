@@ -7,20 +7,50 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Registration;
 use App\Models\User;
 use App\Models\Student;
+use App\Models\Program;
+use App\Models\Module;
+use App\Models\Enrollment;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
     public function dashboard()
     {
         try {
-            $registrations = Registration::all();
-            $dbError       = null;
+            // Get pending registrations
+            $registrations = Registration::where('status', 'pending')
+                                        ->orderBy('created_at', 'desc')
+                                        ->get();
+
+            // Calculate analytics data
+            $analytics = [
+                'total_students' => Student::count(),
+                'total_programs' => Program::where('is_archived', false)->count(),
+                'total_modules' => Module::where('is_archived', false)->count(),
+                'total_enrollments' => Enrollment::count(),
+                'pending_registrations' => Registration::where('status', 'pending')->count(),
+                'new_students_this_month' => Student::where('created_at', '>=', Carbon::now()->startOfMonth())->count(),
+                'modules_this_week' => Module::where('created_at', '>=', Carbon::now()->startOfWeek())->count(),
+                'archived_programs' => Program::where('is_archived', true)->count(),
+            ];
+
+            $dbError = null;
         } catch (\Exception $e) {
-            $registrations = [];
-            $dbError       = 'Database connection failed: ' . $e->getMessage();
+            $registrations = collect();
+            $analytics = [
+                'total_students' => 0,
+                'total_programs' => 0,
+                'total_modules' => 0,
+                'total_enrollments' => 0,
+                'pending_registrations' => 0,
+                'new_students_this_month' => 0,
+                'modules_this_week' => 0,
+                'archived_programs' => 0,
+            ];
+            $dbError = 'Database connection failed: ' . $e->getMessage();
         }
 
-        return view('admin.admin-dashboard', compact('registrations', 'dbError'));
+        return view('admin.admin-dashboard', compact('registrations', 'analytics', 'dbError'));
     }
 
     public function showRegistration($id)

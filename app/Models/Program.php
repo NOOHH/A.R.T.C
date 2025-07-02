@@ -14,6 +14,11 @@ class Program extends Model
         'program_name',
         'program_description',
         'created_by_admin_id',
+        'is_archived',
+    ];
+
+    protected $casts = [
+        'is_archived' => 'boolean'
     ];
     public $timestamps = true;
     const CREATED_AT = 'created_at';
