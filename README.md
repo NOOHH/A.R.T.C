@@ -27,8 +27,7 @@ open terminal inside vscode then copy&paste:
     next
     composer update
 
-- Step - 6
-[download PHP here](https://windows.php.net/download/) Find the Threat Safe and download the ZIP File
+NOT YET FINISHED
 
 
 
