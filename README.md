@@ -62,3 +62,31 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+
+
+How to download and Access into VSCode
+
+#Step - 1
+download vscode
+
+#Step - 2
+download Git for Windows
+open cmd & type - winget install --id Git.Git -e --source winget
+
+#Step - 3
+
+
+#Step - 4
+
+
+
+
+
+
+
+
+
+
+
