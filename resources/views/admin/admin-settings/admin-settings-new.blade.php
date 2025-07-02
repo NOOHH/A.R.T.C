@@ -1,10 +1,264 @@
-@extends('layouts.admin')
+@extends('admin.admin-dashboard-layout')
 
 @section('title', 'Website Settings')
 
-@section('styles')
+@push('styles')
 <link href="{{ asset('css/admin/admin-settings/admin-settings-new.css') }}" rel="stylesheet">
-@endsection
+<style>
+/* Bootstrap customizations for settings page */
+.settings-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.settings-tabs {
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+    padding: 0 1rem;
+}
+
+.settings-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.settings-tabs .nav-link:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border-color: transparent;
+}
+
+.settings-tabs .nav-link.active {
+    background: #fff;
+    color: #667eea;
+    border-bottom-color: #667eea;
+    font-weight: 600;
+}
+
+.settings-content {
+    padding: 0;
+}
+
+.settings-card {
+    border: none;
+    margin-bottom: 2rem;
+    background: #fff;
+}
+
+.settings-card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.5rem;
+}
+
+.settings-card-header h3 {
+    margin: 0 0 0.5rem 0;
+    color: #495057;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.settings-card-header p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.settings-card-body {
+    padding: 1.5rem;
+}
+
+.color-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.form-control-color {
+    width: 60px;
+    height: 38px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+}
+
+.color-hex {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.preview-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    position: sticky;
+    top: 2rem;
+}
+
+.preview-header h4 {
+    color: #495057;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.preview-header p {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+}
+
+.website-preview {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.75rem;
+}
+
+.nav-preview {
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preview-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.brand-text {
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-links span {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.hero-preview {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: white;
+}
+
+.hero-preview h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.hero-preview p {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.hero-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+.programs-preview {
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.program-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.program-card h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.program-card p {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-bottom: 0.75rem;
+}
+
+.enroll-btn {
+    padding: 0.375rem 0.75rem;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.7rem;
+}
+
+.footer-preview {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.65rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.current-image-info {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6c46a0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+</style>
+@endpush
 
 @section('content')
 <div class="container-fluid">
