@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Program;
-use Illuminate\Support\Facades\Log;
-use App\Models\Student;
 use App\Models\Module;
-use App\Models\Program;
 
 class StudentDashboardController extends Controller
 {
