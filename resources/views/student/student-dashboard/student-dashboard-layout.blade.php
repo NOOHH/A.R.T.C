@@ -56,18 +56,38 @@
                         </li>
 
                         {{-- My Programs --}}
-                        <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'student.courses')) active @endif">
+                        <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'student.course')) active @endif">
                             <a href="#" class="sidebar-link">
                                 <span class="icon">📚</span> My Programs
                                 <span class="chevron">▼</span>
                             </a>
                             <ul class="sidebar-submenu">
-                                <li class="@if(Route::currentRouteName() === 'student.courses.calculus1') active @endif">
-                                    <a href="{{ route('student.courses.calculus1') }}">Calculus 1</a>
-                                </li>
-                                <li class="@if(Route::currentRouteName() === 'student.courses.calculus2') active @endif">
-                                    <a href="{{ route('student.courses.calculus2') }}">Calculus 2</a>
-                                </li>
+                                @php
+                                    // Get all available programs
+                                    $programs = App\Models\Program::where('is_archived', false)->get();
+                                    
+                                    // Get student's enrolled program if any
+                                    $studentProgramId = null;
+                                    if (session('user_id')) {
+                                        $student = App\Models\Student::where('user_id', session('user_id'))->first();
+                                        if ($student) {
+                                            $studentProgramId = $student->program_id;
+                                        }
+                                    }
+                                @endphp
+                                
+                                @forelse($programs as $program)
+                                    <li class="@if(request()->route('courseId') == $program->program_id) active @endif">
+                                        <a href="{{ route('student.course', ['courseId' => $program->program_id]) }}">
+                                            {{ $program->program_name }}
+                                            @if($program->program_id === $studentProgramId)
+                                                <small>(Enrolled)</small>
+                                            @endif
+                                        </a>
+                                    </li>
+                                @empty
+                                    <li><span class="disabled">No programs available</span></li>
+                                @endforelse
                             </ul>
                         </li>
                     </ul>

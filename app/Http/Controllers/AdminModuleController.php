@@ -15,18 +15,32 @@ class AdminModuleController extends Controller
      */
     public function index(Request $request)
     {
-        $programs = Program::all();
+        // Get all programs for the dropdown, including archived ones but mark them
+        $programs = Program::orderBy('is_archived', 'asc')
+                          ->orderBy('program_name', 'asc')
+                          ->get();
+        
         $modules = collect();
+        $selectedProgram = null;
+        $modulesByType = collect(); // Initialize modulesByType with an empty collection
         
         if ($request->has('program_id') && $request->program_id != '') {
+            // Get the selected program with its details
+            $selectedProgram = Program::findOrFail($request->program_id);
+            
+            // Get modules for the selected program
             $modules = Module::where('program_id', $request->program_id)
                            ->where('is_archived', false)
                            ->with('program')
-                           ->orderBy('created_at', 'desc')
+                           ->orderBy('module_order', 'asc') // Sort by order if available
+                           ->orderBy('created_at', 'asc')   // Otherwise by creation date
                            ->get();
+                           
+            // Group modules by content type for better organization
+            $modulesByType = $modules->groupBy('content_type');
         }
 
-        return view('admin.admin-modules.admin-modules', compact('programs', 'modules'));
+        return view('admin.admin-modules.admin-modules', compact('programs', 'modules', 'selectedProgram', 'modulesByType'));
     }
 
     /**
@@ -349,5 +363,36 @@ class AdminModuleController extends Controller
         }
         
         return view('admin.admin-modules.admin-modules-archived', compact('programs', 'modules'));
+    }
+
+    /**
+     * Update module order within a program
+     */
+    public function updateOrder(Request $request)
+    {
+        $request->validate([
+            'moduleIds' => 'required|array',
+            'moduleIds.*' => 'integer|exists:modules,modules_id',
+        ]);
+        
+        // Update the order of modules
+        foreach ($request->moduleIds as $index => $moduleId) {
+            Module::where('modules_id', $moduleId)
+                ->update(['module_order' => $index + 1]);
+        }
+        
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Preview a module for admin review
+     */
+    public function preview(Module $module)
+    {
+        // Load the module with its program
+        $module->load('program');
+        
+        // Return the module data as JSON for the preview modal
+        return response()->json($module);
     }
 }

@@ -23,7 +23,8 @@ class Module extends Model
         'created_by_admin_id',
         'content_type',
         'content_data',
-        'is_archived'
+        'is_archived',
+        'module_order'
     ];
 
     protected $casts = [
@@ -60,5 +61,17 @@ class Module extends Model
             'link' => '🔗',
             default => '📚'
         };
+    }
+    
+    // Relationship for module completions
+    public function completions()
+    {
+        return $this->hasMany(ModuleCompletion::class, 'module_id', 'modules_id');
+    }
+    
+    // Check if a student has completed this module
+    public function isCompletedBy($studentId)
+    {
+        return $this->completions()->where('student_id', $studentId)->exists();
     }
 }

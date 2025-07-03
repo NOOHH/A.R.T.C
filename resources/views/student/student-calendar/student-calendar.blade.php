@@ -1,4 +1,4 @@
-@extends('student.student-dasboard.student-dashboard-layout')
+@extends('student.student-dashboard.student-dashboard-layout')
 
 @section('title', 'Calendar')
 
