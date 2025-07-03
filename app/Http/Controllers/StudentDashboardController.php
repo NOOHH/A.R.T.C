@@ -172,7 +172,7 @@ class StudentDashboardController extends Controller
             'contact_number' => 'nullable|string|max:20',
             'emergency_contact_number' => 'nullable|string|max:20',
             'Start_Date' => 'nullable|date',
-            'education_level' => 'nullable|in:undergraduate,graduate',
+            'education' => 'nullable|in:Undergraduate,Graduate',
             // File uploads
             'good_moral' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'PSA' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
