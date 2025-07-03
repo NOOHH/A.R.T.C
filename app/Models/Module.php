@@ -21,10 +21,44 @@ class Module extends Model
         'plan_id',
         'attachment',
         'created_by_admin_id',
+        'content_type',
+        'content_data',
+        'is_archived'
+    ];
+
+    protected $casts = [
+        'content_data' => 'array',
+        'is_archived' => 'boolean'
     ];
 
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    // Helper method to get content type display name
+    public function getContentTypeDisplayAttribute()
+    {
+        return match($this->content_type) {
+            'module' => 'Module/Lesson',
+            'assignment' => 'Assignment',
+            'quiz' => 'Quiz',
+            'test' => 'Test',
+            'link' => 'External Link',
+            default => 'Module/Lesson'
+        };
+    }
+
+    // Helper method to get content type icon
+    public function getContentTypeIconAttribute()
+    {
+        return match($this->content_type) {
+            'module' => '📚',
+            'assignment' => '📝',
+            'quiz' => '❓',
+            'test' => '📋',
+            'link' => '🔗',
+            default => '📚'
+        };
     }
 }

@@ -148,13 +148,38 @@ Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])
 Route::post('/admin/programs', [AdminProgramController::class, 'store'])
      ->name('admin.programs.store');
 
-// Delete a program
+// Batch store programs
+Route::post('/admin/programs/batch-store', [AdminProgramController::class, 'batchStore'])
+     ->name('admin.programs.batch-store');
+
+// Delete a program (used only by archived programs view)
 Route::delete('/admin/programs/{id}', [AdminProgramController::class, 'destroy'])
      ->name('admin.programs.delete');
+
+// Toggle archive status
+Route::post('/admin/programs/{program}/toggle-archive', [AdminProgramController::class, 'toggleArchive'])
+     ->name('admin.programs.toggle-archive');
+
+// Batch delete programs (used only by archived programs view)
+Route::post('/admin/programs/batch-delete', [AdminProgramController::class, 'batchDelete'])
+     ->name('admin.programs.batch-delete');
+
+// View archived programs
+Route::get('/admin/programs/archived', [AdminProgramController::class, 'archived'])
+     ->name('admin.programs.archived');
 
 // View enrollments for a program
 Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])
      ->name('admin.programs.enrollments');
+
+// Assign program to student
+Route::post('/admin/programs/assign', [AdminProgramController::class, 'assignProgram'])
+     ->name('admin.programs.assign');
+
+// Enrollment management page
+Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])
+     ->name('admin.enrollments.index');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -169,11 +194,27 @@ Route::get('/admin/modules', [AdminModuleController::class, 'index'])
 Route::post('/admin/modules', [AdminModuleController::class, 'store'])
      ->name('admin.modules.store');
 
+// Batch store modules
+Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
+     ->name('admin.modules.batch-store');
+
+// Toggle archive status
+Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
+     ->name('admin.modules.toggle-archive');
+
+// Batch delete modules (used only by archived modules view)
+Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])
+     ->name('admin.modules.batch-delete');
+
+// View archived modules
+Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])
+     ->name('admin.modules.archived');
+
 // Update module
 Route::put('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'update'])
      ->name('admin.modules.update');
 
-// Delete a module
+// Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
      ->name('admin.modules.destroy');
 
@@ -303,3 +344,43 @@ Route::middleware(['student.auth'])->group(function () {
          ->defaults('courseId', 2)
          ->name('student.courses.calculus2');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Assignment Management Routes
+|--------------------------------------------------------------------------
+*/
+// Student assignment submission routes
+Route::middleware(['student.auth'])->group(function () {
+    // View assignments for student
+    Route::get('/student/assignments', [StudentDashboardController::class, 'assignments'])
+         ->name('student.assignments');
+    
+    // View specific assignment
+    Route::get('/student/assignments/{assignment}', [StudentDashboardController::class, 'viewAssignment'])
+         ->name('student.assignments.view');
+    
+    // Submit assignment
+    Route::post('/student/assignments/{assignment}/submit', [StudentDashboardController::class, 'submitAssignment'])
+         ->name('student.assignments.submit');
+    
+    // Download assignment file
+    Route::get('/student/assignments/{assignment}/download', [StudentDashboardController::class, 'downloadAssignment'])
+         ->name('student.assignments.download');
+});
+
+// Admin assignment management routes
+Route::get('/admin/assignments', [AdminModuleController::class, 'assignments'])
+     ->name('admin.assignments.index');
+
+// View assignment submissions
+Route::get('/admin/assignments/{assignment}/submissions', [AdminModuleController::class, 'assignmentSubmissions'])
+     ->name('admin.assignments.submissions');
+
+// Grade assignment submission
+Route::post('/admin/assignments/submissions/{submission}/grade', [AdminModuleController::class, 'gradeSubmission'])
+     ->name('admin.assignments.grade');
+
+// Download student submission
+Route::get('/admin/assignments/submissions/{submission}/download', [AdminModuleController::class, 'downloadSubmission'])
+     ->name('admin.assignments.download-submission');

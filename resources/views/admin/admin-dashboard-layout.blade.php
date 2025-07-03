@@ -14,6 +14,8 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
+
     
     @yield('head')
     @stack('styles')
@@ -44,6 +46,10 @@
         </div>
     </header>
 
+            <!-- Main Content -->
+            <div class="main-content">
+                
+
     <div class="main-wrapper">
         <div class="content-below-search">
             <!-- Sidebar -->
@@ -73,10 +79,10 @@
                             </ul>
                         </li>
 
-                        {{-- Enrollment --}}
-                        <li class="@if(Route::currentRouteName() === '' || Route::currentRouteName() === 'enrollment.modular') active @endif">
-                            <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
-                                <span class="icon">📝</span> Enrollment
+                        {{-- Enrollment Management --}}
+                        <li class="@if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
+                            <a href="{{ route('admin.enrollments.index') }}" class="sidebar-link">
+                                <span class="icon">📝</span> Enrollment Management
                             </a>
                         </li>
 
@@ -114,7 +120,11 @@
                 <div class="sidebar-footer">
                     <ul class="bottom-links">
                         <li class="help-link"><span class="icon">❓</span> Help</li>
-                        <li class="settings-link"><span class="icon">⚙️</span> Settings</li>
+                        <li class="settings-link">
+                            <a href="{{ route('admin.settings.index') }}" class="sidebar-link">
+                                <span class="icon">⚙️</span> Settings
+                            </a>
+                        </li>
                         <li class="logout" onclick="handleAdminLogout();">
                             <span class="icon">🚪</span> Logout
                         </li>
@@ -122,9 +132,25 @@
                 </div>
             </aside>
 
-            <!-- Main Content -->
-            <div class="main-content">
-                <!-- Content Area -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 <div class="content-wrapper">
                     @yield('content')
                 </div>

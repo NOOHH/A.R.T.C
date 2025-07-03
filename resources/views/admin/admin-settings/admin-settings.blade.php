@@ -10,94 +10,123 @@
 @section('content')
 <div class="main-content-wrapper">
     <div class="settings-container">
-        <div class="settings-header">
-            <h1>Settings</h1>
+        <div class="settings-header text-center mb-5">
+            <h1 class="display-4 fw-bold text-dark mb-0">
+                <i class="fas fa-cog me-3"></i>Settings
+            </h1>
         </div>
         
         {{-- Flash Messages --}}
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         @endif
         @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         @endif
         @if($errors->any())
-            <div class="alert alert-danger">
-                <ul style="margin: 0; padding-left: 20px;">
+            <div class="alert alert-danger alert-dismissible fade show">
+                <ul class="mb-0">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
-        <div class="settings-grid">
+        <div class="row g-4">
             {{-- Global Logo Settings --}}
-            <div class="settings-section global-logo-section settings-section-small">
-                <h2 class="section-title">🌐 Global Logo</h2>
-                
-                <form id="globalLogoForm" action="{{ route('admin.settings.global.logo') }}" method="POST" enctype="multipart/form-data" class="settings-form">
+            <div class="col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-globe me-2"></i>Global Logo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                    <form id="globalLogoForm" action="{{ route('admin.settings.global.logo') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
-                    <div class="form-group">
-                        <label for="global_logo">Upload Global Logo</label>
+                    <div class="mb-3">
+                        <label for="global_logo" class="form-label fw-semibold">Upload Global Logo</label>
                         <input type="file" 
                                id="global_logo" 
                                name="global_logo" 
                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml" 
                                class="form-control">
-                        <small class="form-text">This logo will be used across all pages (navbar, login, etc.). Supported formats: JPG, PNG, GIF, WebP, SVG. Max size: 5MB</small>
+                        <div class="form-text">This logo will be used across all pages (navbar, login, etc.). Supported formats: JPG, PNG, GIF, WebP, SVG. Max size: 5MB</div>
                     </div>
                     
                     {{-- Current Global Logo Preview --}}
                     @if(isset($settings['global_logo']) && $settings['global_logo'])
-                        <div class="current-logo-preview">
-                            <label>Current Global Logo:</label>
-                            <div class="image-preview-wrapper">
-                                <img src="{{ asset('storage/' . $settings['global_logo']) }}" alt="Current Global Logo" class="current-image">
-                                <form action="{{ route('admin.settings.remove.global.logo') }}" method="POST" style="display: inline;">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Current Global Logo:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <img src="{{ asset('storage/' . $settings['global_logo']) }}" alt="Current Global Logo" class="img-fluid mb-2" style="max-height: 100px;">
+                                <form action="{{ route('admin.settings.remove.global.logo') }}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" 
-                                            class="remove-image-btn-large" 
+                                            class="btn btn-outline-danger btn-sm" 
                                             onclick="return confirm('Are you sure you want to remove this logo?')" 
                                             title="Remove Global Logo">
-                                        <i class="fas fa-trash"></i> Remove Logo
+                                        <i class="fas fa-trash me-1"></i>Remove Logo
                                     </button>
                                 </form>
                             </div>
                         </div>
                     @endif
                     
-                    <button type="submit" id="updateGlobalLogoBtn" class="btn-primary">Update Global Logo</button>
+                    <button type="submit" id="updateGlobalLogoBtn" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Update Global Logo
+                    </button>
                 </form>
+                    </div>
+                </div>
             </div>
 
             {{-- Homepage Settings --}}
-            <div class="settings-section homepage-section">
-                <h2 class="section-title">Homepage Customization</h2>
+            <div class="col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-home me-2"></i>Homepage Customization
+                        </h5>
+                    </div>
+                    <div class="card-body">
                 
-                <form action="{{ route('admin.settings.update.homepage') }}" method="POST" enctype="multipart/form-data" class="settings-form">
+                <form action="{{ route('admin.settings.update.homepage') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
-                    <div class="form-group">
-                        <label for="homepage_title">Homepage Title</label>
+                    <div class="mb-3">
+                        <label for="homepage_title" class="form-label fw-semibold">Homepage Title</label>
                         <input type="text" 
                                id="homepage_title" 
                                name="homepage_title" 
                                value="{{ old('homepage_title', $settings['homepage']['title'] ?? 'ENROLL NOW') }}"
-                               placeholder="Enter homepage title">
+                               placeholder="Enter homepage title"
+                               class="form-control">
                     </div>
                     
-                    <div class="form-group">
-                        <label for="homepage_background_color">Background Color</label>
-                        <div class="color-input-group">
+                    <div class="mb-3">
+                        <label for="homepage_background_color" class="form-label fw-semibold">Background Color</label>
+                        <div class="input-group">
                             <input type="color" 
                                    id="homepage_background_color" 
                                    name="homepage_background_color" 
-                                   value="{{ old('homepage_background_color', $settings['homepage']['background_color'] ?? '#667eea') }}">
+                                   value="{{ old('homepage_background_color', $settings['homepage']['background_color'] ?? '#667eea') }}"
+                                   class="form-control form-control-color">
                             <input type="text" 
                                    value="{{ old('homepage_background_color', $settings['homepage']['background_color'] ?? '#667eea') }}"
-                                   readonly>
+                                   readonly 
+                                   class="form-control">
+                        </div>
+                    </div>
                         </div>
                     </div>
                     

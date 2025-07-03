@@ -3,57 +3,27 @@
 @section('title', 'Packages')
 
 @push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="{{ asset('css/admin/admin-packages.css') }}">
 <style>
-  /* 1) Let the main wrapper grow so cards never get clipped */
+  /* Main wrapper */
   .main-content-wrapper {
     align-items: flex-start !important;
   }
 
-  /* 2) Make the white panel run under every card and add bottom breathing room */
+  /* Container with Bootstrap styling */
   .packages-container {
     background: #fff;
-    padding: 40px 20px 60px; /* extra bottom padding */
+    padding: 40px 20px 60px;
     margin: 40px 0 0 0;
     max-width: 1400px;
     width: 100%;
     box-sizing: border-box;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   }
 
-  /* Header */
-  .packages-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 40px;
-    padding: 0 10px;
-  }
-  .packages-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #2c3e50;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-  }
-  .add-package-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  }
-  .add-package-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-  }
-
-  /* 3) Grid left-aligned, 2 columns when there's room */
+  /* Grid with Bootstrap approach */
   .package-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -61,7 +31,7 @@
     justify-items: start;
   }
 
-  /* 4) Cards: allow badge & shadow to overflow */
+  /* Cards with Bootstrap-enhanced styling */
   .package-item {
     background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
     border-radius: 20px;
@@ -69,7 +39,7 @@
     max-width: 380px;
     cursor: pointer;
     position: relative;
-    overflow: visible;            /* ← key fix */
+    overflow: visible;
     border: 1px solid #e9ecef;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
@@ -226,26 +196,35 @@
 @section('content')
 <div class="main-content-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0;">
     <div class="packages-container">
-        <div class="packages-header">
-            <h1>Packages</h1>
-            <button class="add-package-btn" id="showAddModal">
+        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+            <h1 class="display-4 fw-bold text-uppercase text-dark mb-0" style="letter-spacing: 2px;">Packages</h1>
+            <button class="btn btn-lg text-white fw-semibold px-4 py-3 rounded-pill shadow add-package-btn" 
+                    id="showAddModal" 
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <span style="font-size:1.3em;">&#43;</span> Add Package
             </button>
         </div>
         
         @if(session('success'))
-            <div class="success-alert">{{ session('success') }}</div>
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         @endif
         @if(session('error'))
-            <div class="error-alert">{{ session('error') }}</div>
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         @endif
         @if($errors->any())
-            <div class="error-alert">
-                <ul style="margin: 0; padding-left: 20px;">
+            <div class="alert alert-danger alert-dismissible fade show">
+                <ul class="mb-0">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
         
@@ -261,26 +240,32 @@
                         {{ $package->description }}
                     </div>
                     <div class="package-price">₱{{ number_format($package->amount ?? 0, 2) }}</div>
-                    <div class="package-actions">
-                        <button type="button" class="edit-package-btn" 
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn btn-success flex-fill fw-semibold edit-package-btn" 
                                 data-id="{{ $package->package_id }}" 
                                 data-name="{{ $package->package_name }}" 
                                 data-description="{{ $package->description }}" 
                                 data-amount="{{ $package->amount }}">
-                            Edit Package
+                            <i class="fas fa-edit me-1"></i>Edit
                         </button>
-                        <form action="{{ route('admin.packages.delete', $package->package_id) }}" method="POST" style="margin:0; flex: 1;">
+                        <form action="{{ route('admin.packages.delete', $package->package_id) }}" method="POST" class="flex-fill">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this package?')">Delete</button>
+                            <button type="submit" class="btn btn-danger w-100 fw-semibold" 
+                                    onclick="return confirm('Are you sure you want to delete this package?')">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
                         </form>
                     </div>
                 </div>
             </div>
             @empty
-                <div class="no-packages">
-                    <h3>No packages found</h3>
-                    <p>Create your first package to get started!</p>
+                <div class="col-12 text-center py-5">
+                    <div class="bg-light border border-2 border-dashed rounded-4 p-5">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted mb-2">No packages found</h3>
+                        <p class="text-muted">Create your first package to get started!</p>
+                    </div>
                 </div>
             @endforelse
         </div>
