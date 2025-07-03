@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 30, 2025 at 07:19 PM
+-- Generation Time: Jul 02, 2025 at 10:07 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -63,21 +63,17 @@ CREATE TABLE `enrollments` (
 --
 
 INSERT INTO `enrollments` (`enrollment_id`, `program_id`, `package_id`, `enrollment_type`, `created_at`, `updated_at`) VALUES
-(17, 17, 3, 'Complete', '2025-06-28 05:26:00', '2025-06-28 05:26:00'),
-(18, 1, 1, 'Complete', '2025-06-28 08:05:13', '2025-06-28 08:05:13'),
-(19, 1, 1, 'Complete', '2025-06-28 08:23:00', '2025-06-28 08:23:00'),
-(20, 1, 1, 'Modular', '2025-06-28 09:12:36', '2025-06-28 09:12:36'),
-(21, 2, 1, 'Modular', '2025-06-28 09:19:07', '2025-06-28 09:19:07'),
-(22, 2, 1, 'Modular', '2025-06-28 09:30:15', '2025-06-28 09:30:15'),
-(23, 1, 3, 'Modular', '2025-06-28 09:38:10', '2025-06-28 09:38:10'),
-(24, 1, 3, 'Modular', '2025-06-28 09:39:54', '2025-06-28 09:39:54'),
-(25, 1, 3, 'Complete', '2025-06-28 09:43:17', '2025-06-28 09:43:17'),
-(26, 2, 5, 'Modular', '2025-06-28 09:44:32', '2025-06-28 09:44:32'),
-(27, 17, 1, 'Complete', '2025-06-28 10:10:54', '2025-06-28 10:10:54'),
-(28, 2, 1, 'Modular', '2025-06-28 10:23:20', '2025-06-28 10:23:20'),
-(29, 1, 1, 'Complete', '2025-06-28 10:24:35', '2025-06-28 10:24:35'),
-(30, 17, 1, 'Complete', '2025-06-28 10:25:30', '2025-06-28 10:25:30'),
-(31, 2, 1, 'Complete', '2025-06-30 06:37:54', '2025-06-30 06:37:54');
+(32, 23, 2, 'Complete', '2025-06-30 09:44:43', '2025-06-30 09:44:43'),
+(33, 24, 2, 'Complete', '2025-06-30 10:04:25', '2025-06-30 10:04:25'),
+(34, 1, 2, 'Complete', '2025-06-30 10:05:58', '2025-06-30 10:05:58'),
+(35, 23, 2, 'Complete', '2025-07-01 07:01:23', '2025-07-01 07:01:23'),
+(36, 23, 2, 'Modular', '2025-07-01 07:02:24', '2025-07-01 07:02:24'),
+(37, 1, 2, 'Complete', '2025-07-01 08:05:39', '2025-07-01 08:05:39'),
+(38, 23, 2, 'Complete', '2025-07-01 08:09:09', '2025-07-01 08:09:09'),
+(39, 1, 2, 'Complete', '2025-07-01 08:18:43', '2025-07-01 08:18:43'),
+(40, 23, 2, 'Modular', '2025-07-01 08:21:18', '2025-07-01 08:21:18'),
+(41, 1, 2, 'Complete', '2025-07-01 15:41:27', '2025-07-01 15:41:27'),
+(42, 1, 3, 'Complete', '2025-07-02 01:27:42', '2025-07-02 01:27:42');
 
 -- --------------------------------------------------------
 
@@ -131,8 +127,16 @@ CREATE TABLE `modules` (
   `plan_id` int(11) DEFAULT NULL,
   `attachment` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_archived` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `modules`
+--
+
+INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `program_id`, `plan_id`, `attachment`, `created_at`, `updated_at`, `is_archived`) VALUES
+(2, 'ww', 'w', 23, NULL, 'modules/1751306077_G.SAMPEDRO_CV (1).pdf', '2025-06-30 09:54:37', '2025-07-02 10:24:28', 1);
 
 -- --------------------------------------------------------
 
@@ -155,7 +159,6 @@ CREATE TABLE `packages` (
 --
 
 INSERT INTO `packages` (`package_id`, `package_name`, `description`, `amount`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
-(1, 'Basic Package', 'Access to lectures, quizzes, and PDF materials.', 2222.00, 1, '2025-06-27 15:14:54', '2025-06-28 06:55:36'),
 (2, 'Premium Package', 'Includes Basic features + Live Zoom classes and Q&A sessions.', 0.00, 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
 (3, 'Mock Exam Package', 'Includes full-length mock board exams and analytics.', 0.00, 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
 (5, 'batman', 'aaa', 0.00, 1, '2025-06-28 06:52:11', '2025-06-28 06:52:11');
@@ -221,17 +224,20 @@ CREATE TABLE `programs` (
   `program_name` varchar(100) NOT NULL,
   `created_by_admin_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_archived` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `programs`
 --
 
-INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
-(1, 'Nursing Board Review', 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
-(2, 'Engineering Board Review', 1, '2025-06-27 15:14:54', '2025-06-27 15:14:54'),
-(17, 'ni', 1, '2025-06-28 02:52:20', '2025-06-28 10:52:20');
+INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `created_at`, `updated_at`, `is_archived`) VALUES
+(1, 'Nursing Board Review', 1, '2025-06-27 15:14:54', '2025-07-02 18:31:25', 1),
+(23, 'Culinary', 1, '2025-06-30 09:43:37', '2025-06-30 17:43:37', 0),
+(26, 'Engineer', 1, '2025-07-01 15:25:00', '2025-07-01 23:25:00', 0),
+(27, 'ww', 1, '2025-07-02 10:24:02', '2025-07-02 18:24:07', 1),
+(28, 'wq', 1, '2025-07-02 10:24:02', '2025-07-02 18:24:02', 0);
 
 -- --------------------------------------------------------
 
@@ -277,7 +283,8 @@ CREATE TABLE `registrations` (
 --
 
 INSERT INTO `registrations` (`registration_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `Undergraduate`, `Graduate`, `photo_2x2`, `Start_Date`, `status`, `created_at`, `updated_at`, `package_name`, `plan_name`, `program_name`, `package_id`, `plan_id`, `program_id`) VALUES
-(26, 29, 'bryan', 'm', 'justimbaste', 'lpu', 'General Trias Cavite', 'state', 'Cavite', '4107', '9090993452', '3546365436', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-06-30', 'pending', '2025-06-30 06:37:54', '2025-06-30 06:37:54', 'Basic Package', 'Complete', 'Engineering Board Review', 1, 1, 2);
+(36, 41, '12', 'ww', '3', 'www', 'ww', 'w', 'w', 'w', 'w', 'w', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-15', 'pending', '2025-07-01 15:41:27', '2025-07-01 15:41:27', 'Premium Package', 'Complete', 'Nursing Board Review', 2, 1, 1),
+(37, 42, '12', '2', '3', '2', '222', '2', '2', '2', '22', '222', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-22', 'pending', '2025-07-02 01:27:42', '2025-07-02 01:27:42', 'Mock Exam Package', 'Complete', 'Nursing Board Review', 3, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -319,6 +326,20 @@ CREATE TABLE `students` (
   `program_name` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `students`
+--
+
+INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `Undergraduate`, `Graduate`, `photo_2x2`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `package_id`, `plan_id`, `program_id`, `package_name`, `plan_name`, `program_name`) VALUES
+('2025-06-00001', 29, 'bryan', 'm', 'justimbaste', 'lpu', 'General Trias Cavite', 'state', 'Cavite', '4107', '9090993452', '3546365436', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-06-30', '2025-06-30 09:42:20', '2025-06-30 09:42:20', '2025-06-30 09:42:20', 'bryan.justimbaste@gmail.com', 1, 1, 2, 'Basic Package', 'Complete', 'Engineering Board Review'),
+('2025-06-00002', 32, '23', '22', '12', '2', '2', '2', '2', '2', '2', '2', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-29', '2025-06-30 09:44:57', '2025-06-30 09:44:57', '2025-06-30 09:44:57', 'vmdelavega03@gmail.com', 2, 1, 23, 'Premium Package', 'Complete', 'Culinary'),
+('2025-06-00003', 33, '23', '12', '2', '2', '2', '2', '2', '2', '2', '2', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-28', '2025-06-30 10:04:45', '2025-06-30 10:04:45', '2025-06-30 10:04:45', '123@gmail.com', 2, 1, 24, 'Premium Package', 'Complete', 'Engineer'),
+('2025-06-00004', 34, 'Cena', 'John', 'Cins', '122', '3', '4', 's', 's', 's', 's', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-28', '2025-06-30 10:06:05', '2025-06-30 10:06:05', '2025-06-30 10:06:05', 'Cene@gmail.com', 2, 1, 1, 'Premium Package', 'Complete', 'Nursing Board Review'),
+('2025-07-00001', 36, '23', '3', '3', '3', '3', '3', '4', '4', '4', '4', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-16', '2025-07-01 07:02:32', '2025-07-01 07:02:32', '2025-07-01 07:02:32', '3232@gmail.com', 2, 2, 23, 'Premium Package', 'Modular', 'Culinary'),
+('2025-07-00002', 39, '233', 'e', '123456', 'ww', 'e', 'e', 'e', 'e', 'e', 'e', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-08', '2025-07-01 08:22:15', '2025-07-01 08:22:15', '2025-07-01 08:22:15', '3ww3@gmail.com', 2, 1, 1, 'Premium Package', 'Complete', 'Nursing Board Review'),
+('2025-07-00003', 37, '12', '2', '2', '2', '2', '2', '2', '2', '2', '2', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-16', '2025-07-01 15:42:06', '2025-07-01 15:42:06', '2025-07-01 15:42:06', '23132@gmail.com', 2, 1, 1, 'Premium Package', 'Complete', 'Nursing Board Review'),
+('2025-07-00004', 40, '23', '2', '2', '2', '2', '2', '2', '2', '2', '2', NULL, NULL, NULL, NULL, NULL, 'yes', 'no', NULL, '2025-07-06', '2025-07-02 01:27:54', '2025-07-02 01:27:54', '2025-07-02 01:27:54', 'vince.deleevega@lpunetwork.edu.ph', 2, 2, 23, 'Premium Package', 'Modular', 'Culinary');
+
 -- --------------------------------------------------------
 
 --
@@ -342,8 +363,19 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `email`, `password`, `user_firstname`, `user_lastname`, `role`, `enrollment_id`, `created_at`, `updated_at`) VALUES
-(29, 'bryan.justimbaste@gmail.com', '$2y$10$teKTw.9r5WjxBZ.8CN3mSOBIVYZnBCvKr9D.83tXK8fzXoFogZJPq', 'bryan', 'justimbaste', 'unverified', 31, '2025-06-30 06:37:54', '2025-06-30 06:37:54'),
-(30, 'student@test.com', '$2y$10$D66uIkz94nWebIWEyfj2sec05TxRUSFHlXCYVDKyL1XFKJCcmQHCW', 'Test', 'Student', 'student', 1, '2025-06-30 08:07:03', '2025-06-30 08:07:03');
+(29, 'bryan.justimbaste@gmail.com', '$2y$10$teKTw.9r5WjxBZ.8CN3mSOBIVYZnBCvKr9D.83tXK8fzXoFogZJPq', 'bryan', 'justimbaste', 'student', 31, '2025-06-30 06:37:54', '2025-06-30 09:42:20'),
+(30, 'student@test.com', '$2y$10$D66uIkz94nWebIWEyfj2sec05TxRUSFHlXCYVDKyL1XFKJCcmQHCW', 'Test', 'Student', 'student', 1, '2025-06-30 08:07:03', '2025-06-30 08:07:03'),
+(32, 'vmdelavega03@gmail.com', '$2y$10$5HjrTDwzn1CQRgdrwQAzL.mz/v9E45zC7qobqjZWRJAv.gagCaDHm', 'Test', '1', 'student', 32, '2025-06-30 09:44:43', '2025-06-30 09:44:57'),
+(33, '123@gmail.com', '$2y$10$mUE23NeSXxugqsrJ7pfUBOizfWM8lTqhLaOIYchYuwg17hm8WanfW', 'Bateman', 'Last', 'student', 33, '2025-06-30 10:04:26', '2025-06-30 10:04:45'),
+(34, 'Cene@gmail.com', '$2y$10$0Z0GQDexb0IbeLTEZwEacOSUk5AeX7HOXV9A6gZ6QR06Sk4uZe4Bi', 'John', 'Cena', 'student', 34, '2025-06-30 10:05:58', '2025-06-30 10:06:05'),
+(35, 'Cen3e@gmail.com', '$2y$10$HpboUGNXtBPrMeaBcNP9sen7jcUQApnYpxKIg05Tw0/O9KOmrV3JS', '3', '2', 'unverified', 35, '2025-07-01 07:01:23', '2025-07-01 07:01:23'),
+(36, '3232@gmail.com', '$2y$10$NBTTq56BD92doZpsl9Sj7u5ajjh5GvTuny1SseWp6ap..IJgbkcGG', '3', '3', 'student', 36, '2025-07-01 07:02:24', '2025-07-01 07:02:32'),
+(37, '23132@gmail.com', '$2y$10$H956Gqc3vjvSP/...pxOb.p/NRirIRa7iUcz1NeGhWox2au1pFKe2', '12', '2', 'student', 37, '2025-07-01 08:05:39', '2025-07-01 15:42:06'),
+(38, '23213123@gmail.com', '$2y$10$8URJEo7cKfXpMG6fArRcSu.klC1ipbgM54/FoCLj4mXr8mM/g6c4a', '123456', '2', 'unverified', 38, '2025-07-01 08:09:09', '2025-07-01 08:09:09'),
+(39, '3ww3@gmail.com', '$2y$10$zIbvM2o71R5s2G5F4KxysO2bSm4Kp6FoUNPWxtDUxi67ZQd4/5dma', '233', '123456', 'student', 39, '2025-07-01 08:18:43', '2025-07-01 08:22:15'),
+(40, 'vince.deleevega@lpunetwork.edu.ph', '$2y$10$SSaDh6kibfMEhaZI3P/xJOAkn8dKWR6kEpfrwbfp3Dgx2vsYbC7Yq', '12', '3', 'student', 40, '2025-07-01 08:21:19', '2025-07-02 01:27:54'),
+(41, '11@gmail.com', '$2y$10$VQJYsyorBh3yjQ4WG/4N6OSsWz9aGr00f8sc7nQV65z0LlUGQNqfK', '12', '3', 'unverified', 41, '2025-07-01 15:41:27', '2025-07-01 15:41:27'),
+(42, '1@gmail.com', '$2y$10$YF3MbcYIyntzMKSjeo2xrumRQSmh9YpkE1Szp638Q2N/iO8.i1uYO', '12', '3', 'unverified', 42, '2025-07-02 01:27:42', '2025-07-02 01:27:42');
 
 --
 -- Indexes for dumped tables
@@ -461,7 +493,7 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `enrollments`
 --
 ALTER TABLE `enrollments`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `failed_jobs`
@@ -479,7 +511,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `packages`
@@ -503,19 +535,19 @@ ALTER TABLE `plan`
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
-  MODIFY `registration_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `registration_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- Constraints for dumped tables

@@ -223,11 +223,21 @@ Route::put('/admin/modules/{module:modules_id}', [AdminModuleController::class, 
 
 // Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
-     ->name('admin.modules.destroy');
+     ->name('admin.modules.destroy')
+     ->middleware(['admin.auth']);
 
-// Get modules by program (AJAX)
 Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
-     ->name('admin.modules.by-program');
+    ->name('admin.modules.by-program')
+    ->middleware(['admin.auth']);
+    
+// New routes for enhanced LMS functionality
+Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updateOrder'])
+    ->name('admin.modules.updateOrder')
+    ->middleware(['admin.auth']);
+    
+Route::get('/admin/modules/{module:modules_id}/preview', [AdminModuleController::class, 'preview'])
+    ->name('admin.modules.preview')
+    ->middleware(['admin.auth']);
 
 /*
 |--------------------------------------------------------------------------
@@ -411,11 +421,30 @@ Route::middleware(['auth:professor'])->prefix('professor')->name('professor.')->
     Route::get('/programs', [ProfessorDashboardController::class, 'programs'])
          ->name('programs');
     
-    Route::get('/programs/{program}', [ProfessorDashboardController::class, 'programDetails'])
-         ->name('program.details');
+    // Student Calendar
+    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
+         ->name('student.calendar');
     
-    Route::post('/programs/{program}/video', [ProfessorDashboardController::class, 'updateVideo'])
-         ->name('program.video.update');
+    // Student Courses - Dynamic route for any course
+    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])
+         ->name('student.course');
+         
+    // Legacy routes - keep for backward compatibility
+    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 1)
+         ->name('student.courses.calculus1');
+         
+    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 2)
+         ->name('student.courses.calculus2');
+    
+    // New route for viewing individual modules
+    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])
+         ->name('student.module');
+         
+    // Route for marking a module as complete via AJAX
+    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'markModuleComplete'])
+         ->name('student.module.complete');
 });
 
 /*
