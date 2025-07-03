@@ -8,10 +8,10 @@
 
 @section('content')
 <div class="dashboard-grid">
-    <!-- My Courses Section -->
+    <!-- My Programs Section -->
     <div class="dashboard-card courses-card">
         <div class="card-header">
-            <h2>My Courses</h2>
+            <h2>My Programs</h2>
             <span class="completion-badge">{{ count($courses) > 0 ? '25' : '0' }}% complete</span>
         </div>
         <div class="courses-list">

@@ -52,6 +52,7 @@
 
        <form class="login-form" method="POST" action="{{ route('student.login') }}">
     @csrf
+    <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
     <label for="email">Enter your email address</label>
     <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
 

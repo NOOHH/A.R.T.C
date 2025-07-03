@@ -284,6 +284,12 @@ Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'dashboard'])
          ->name('student.dashboard');
     
+    // Student Settings
+    Route::get('/student/settings', [StudentDashboardController::class, 'settings'])
+         ->name('student.settings');
+    Route::put('/student/settings', [StudentDashboardController::class, 'updateSettings'])
+         ->name('student.settings.update');
+    
     // Student Calendar
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
          ->name('student.calendar');

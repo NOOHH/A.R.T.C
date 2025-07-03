@@ -19,7 +19,7 @@
     display: block;
     opacity: 1;
     transform: translateX(0);
-    animation: slideIn 0.5s ease-in-out;
+    animation: slideIn 0.5s // Function to handle login with package selection
   }
   .step.slide-out-left {
     transform: translateX(-50px);
@@ -316,6 +316,14 @@
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc;">
             </div>
             <div id="passwordError" style="display:none; color:#e74c3c; text-align:center; margin-bottom:12px; font-weight:600;"></div>
+            
+            <div style="text-align:center; margin-bottom:15px; font-size:0.9rem; color:#666;">
+                Already have an account? 
+                <a href="#" onclick="loginWithPackage()" style="color: #1c2951; text-decoration: underline; font-weight: 600;">
+                    Click here to login
+                </a>
+            </div>
+            
             <div style="display:flex; gap:16px; justify-content:center;">
                 <button type="button" onclick="prevStep()" class="back-btn"
                         style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
@@ -434,10 +442,10 @@
             <label><input type="radio" name="education" value="Graduate"> Graduate</label>
         </div>
 
-        <h3>Course</h3>
+        <h3>Program</h3>
         <div class="input-row">
             <select name="program_id" required>
-                <option value="">Select Course</option>
+                <option value="">Select Program</option>
                 @foreach($programs as $program)
                     <option value="{{ $program->program_id }}"
                         {{ old('program_id', $programId ?? '') == $program->program_id ? 'selected' : '' }}>
@@ -493,8 +501,8 @@
   </div>
 </div>
 
-{{-- Success Modal --}}
-@if(session('success'))
+{{-- Success Modal - Only show for registration completion messages --}}
+@if(session('success') && str_contains(session('success'), 'registration'))
   <div id="successModal"
        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
               background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
@@ -510,6 +518,26 @@
   </div>
 @endif
 
+{{-- Login Success Modal - Shows welcome back message when returning from login --}}
+@if(session('success') && str_contains(session('success'), 'Welcome back'))
+  <div id="loginSuccessModal" 
+       style="position:fixed; top:20px; right:20px; background:#fff; padding:15px 20px; 
+              border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; 
+              max-width:300px; animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-out 5s forwards;">
+    <p style="margin:0; color:#333;"><strong>{{ session('success') }}</strong></p>
+  </div>
+  <style>
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; visibility: hidden; }
+    }
+  </style>
+@endif
+
 <script>
 // Global variables (declared once at the top)
 let currentStep = 1;
@@ -518,6 +546,13 @@ let selectedPaymentMethod = null;
 let currentPackageIndex = 0;
 let packagesPerView = 2;
 let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
+
+// Check if user is logged in (set from server)
+const isUserLoggedIn = @if(session('user_id')) true @else false @endif;
+const loggedInUserName = '@if(session("user_name")){{ session("user_name") }}@endif';
+const loggedInUserFirstname = '@if(session("user_firstname")){{ session("user_firstname") }}@endif';
+const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_lastname") }}@endif';
+const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
 
 // Package carousel functionality
 function slidePackages(direction) {
@@ -554,18 +589,47 @@ function updateArrowStates() {
     }
 }
 
+// Function to update the progress bar based on current step
+function updateProgress(step) {
+    const totalSteps = 4; // Total number of steps in the form
+    const progress = document.querySelector('.progress-bar');
+    
+    if (progress) {
+        const percentage = Math.round((step / totalSteps) * 100);
+        progress.style.width = percentage + '%';
+        progress.setAttribute('aria-valuenow', percentage);
+    }
+}
+
 // Step navigation with animations
 function nextStep() {
     if (currentStep === 1) {
-        animateStepTransition('step-1', 'step-2');
-        currentStep = 2;
+        // Check if user is logged in - skip account registration step
+        if (isUserLoggedIn) {
+            // Skip step 2 and go directly to step 3 (payment)
+            animateStepTransition('step-1', 'step-3');
+            currentStep = 3;
+        } else {
+            // User not logged in, go to account registration
+            animateStepTransition('step-1', 'step-2');
+            currentStep = 2;
+        }
     } else if (currentStep === 2) {
+        // Copy Account Registration data to Student Registration before moving to step 3
+        copyAccountDataToStudentForm();
         animateStepTransition('step-2', 'step-3');
         currentStep = 3;
     } else if (currentStep === 3) {
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
+        // Auto-fill user data if logged in
+        fillLoggedInUserData();
+        // Also auto-fill in case user comes directly to step 4
+        copyAccountDataToStudentForm();
     }
+    
+    // Update progress bar
+    updateProgress(currentStep);
 }
 
 function prevStep() {
@@ -573,12 +637,23 @@ function prevStep() {
         animateStepTransition('step-4', 'step-3', true);
         currentStep = 3;
     } else if (currentStep === 3) {
-        animateStepTransition('step-3', 'step-2', true);
-        currentStep = 2;
+        // Check if user is logged in - skip back to step 1 if logged in
+        if (isUserLoggedIn) {
+            // Skip step 2 and go back to step 1
+            animateStepTransition('step-3', 'step-1', true);
+            currentStep = 1;
+        } else {
+            // User not logged in, go back to account registration
+            animateStepTransition('step-3', 'step-2', true);
+            currentStep = 2;
+        }
     } else if (currentStep === 2) {
         animateStepTransition('step-2', 'step-1', true);
         currentStep = 1;
     }
+    
+    // Update progress bar
+    updateProgress(currentStep);
 }
 
 function animateStepTransition(fromStepId, toStepId, isBack = false) {
@@ -660,6 +735,84 @@ function selectPaymentMethod(method) {
     nextBtn.style.opacity = '1';
 }
 
+// Function to fill logged-in user data
+function fillLoggedInUserData() {
+    if (isUserLoggedIn) {
+        console.log('Filling logged-in user data...');
+        
+        // Auto-fill Step 4 (Modular Student Registration) fields with logged-in user data
+        const firstnameField = document.getElementById('firstname');
+        const lastnameField = document.getElementById('lastname');
+        
+        // Use session data if available
+        if (firstnameField && loggedInUserFirstname) {
+            firstnameField.value = loggedInUserFirstname;
+            console.log('Auto-filled firstname from session:', loggedInUserFirstname);
+        }
+        if (lastnameField && loggedInUserLastname) {
+            lastnameField.value = loggedInUserLastname;
+            console.log('Auto-filled lastname from session:', loggedInUserLastname);
+        }
+        
+        // Also auto-fill Step 2 (Account Registration) fields if user navigates back
+        const userFirstnameField = document.getElementById('user_firstname');
+        const userLastnameField = document.getElementById('user_lastname');
+        const userEmailField = document.getElementById('user_email');
+        
+        if (userFirstnameField && loggedInUserFirstname) {
+            userFirstnameField.value = loggedInUserFirstname;
+        }
+        if (userLastnameField && loggedInUserLastname) {
+            userLastnameField.value = loggedInUserLastname;
+        }
+        if (userEmailField && loggedInUserEmail) {
+            userEmailField.value = loggedInUserEmail;
+        }
+        
+        console.log('Auto-filled student registration fields with logged-in user data');
+    }
+}
+
+// Function to copy Account Registration data to Modular Student Registration
+function copyAccountDataToStudentForm() {
+    // Get values from Step 2 (Account Registration)
+    const userFirstname = document.getElementById('user_firstname')?.value || '';
+    const userLastname = document.getElementById('user_lastname')?.value || '';
+    const userEmail = document.getElementById('user_email')?.value || '';
+    
+    // Set values in Step 4 (Modular Student Registration)
+    const firstnameField = document.getElementById('firstname');
+    const lastnameField = document.getElementById('lastname');
+    
+    // Only auto-fill if the fields are empty (to avoid overwriting user input)
+    if (firstnameField && userFirstname && !firstnameField.value) {
+        firstnameField.value = userFirstname;
+        console.log('Auto-filled firstname:', userFirstname);
+    }
+    if (lastnameField && userLastname && !lastnameField.value) {
+        lastnameField.value = userLastname;
+        console.log('Auto-filled lastname:', userLastname);
+    }
+    
+    console.log('Account data copied to student form');
+}
+
+// Function to handle login with package selection
+function loginWithPackage() {
+    // Store the current package selection if any
+    if (selectedPackageId) {
+        sessionStorage.setItem('selectedPackageId', selectedPackageId);
+        sessionStorage.setItem('selectedPackageName', document.getElementById('selectedPackageName').textContent);
+    }
+    
+    // Store that we're coming from enrollment and should skip to payment
+    sessionStorage.setItem('continueEnrollment', 'true');
+    sessionStorage.setItem('skipToPayment', 'true');
+    
+    // Redirect to login with enrollment flag
+    window.location.href = '{{ route("login") }}?from_enrollment=true';
+}
+
 // Make functions globally accessible
 window.slidePackages = slidePackages;
 window.nextStep = nextStep;
@@ -668,6 +821,77 @@ window.selectPackage = selectPackage;
 window.selectPaymentMethod = selectPaymentMethod;
 // Initialize carousel
 document.addEventListener('DOMContentLoaded', function() {
+    // Hide Step 2 if user is logged in
+    if (isUserLoggedIn) {
+        const step2 = document.getElementById('step-2');
+        if (step2) {
+            step2.style.display = 'none';
+        }
+        console.log('User is logged in - Step 2 (Account Registration) hidden');
+    }
+    
+    // Check if we're returning from login with a package selection
+    const continueEnrollment = sessionStorage.getItem('continueEnrollment');
+    const skipToPayment = sessionStorage.getItem('skipToPayment');
+    const savedPackageId = sessionStorage.getItem('selectedPackageId');
+    const savedPackageName = sessionStorage.getItem('selectedPackageName');
+    
+    if (continueEnrollment === 'true' && savedPackageId && savedPackageName) {
+        // Clear the session flags
+        sessionStorage.removeItem('continueEnrollment');
+        sessionStorage.removeItem('skipToPayment');
+        
+        // Auto-select the saved package
+        selectedPackageId = savedPackageId;
+        
+        // Find and highlight the package card
+        const packageCard = document.querySelector(`[data-package-id="${savedPackageId}"]`);
+        if (packageCard) {
+            packageCard.classList.add('selected');
+        }
+        
+        // Update the form
+        const packageInput = document.querySelector('input[name="package_id"]');
+        if (packageInput) {
+            packageInput.value = savedPackageId;
+        }
+        
+        // Show selected package display
+        document.getElementById('selectedPackageName').textContent = savedPackageName;
+        document.getElementById('selectedPackageDisplay').style.display = 'block';
+        
+        // Enable next button
+        const nextBtn = document.getElementById('packageNextBtn');
+        nextBtn.disabled = false;
+        
+        // Skip to payment if needed
+        if (skipToPayment === 'true') {
+            sessionStorage.removeItem('skipToPayment');
+            
+            // Since we need to go to step 3 (payment), but step 1 is currently active
+            setTimeout(() => {
+                // Transition from step 1 to step 3 directly
+                const step1 = document.getElementById('step-1');
+                const step3 = document.getElementById('step-3');
+                
+                if (step1 && step3) {
+                    step1.classList.remove('active');
+                    step3.classList.add('active');
+                    currentStep = 3;
+                    
+                    // Update progress bar
+                    updateProgress(currentStep);
+                    console.log('Skipped to payment step after login');
+                }
+            }, 100); // Small delay to ensure DOM is ready
+        }
+    }
+    
+    // Fill logged-in user data on page load
+    if (isUserLoggedIn) {
+        fillLoggedInUserData();
+    }
+    
     // Initialize carousel first
     updateArrowStates();
     

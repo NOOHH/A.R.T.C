@@ -4,10 +4,8 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>
-{!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
-{!! App\Helpers\SettingsHelper::getButtonStyles() !!}
-
     .step { 
         display: none; 
         opacity: 0;
@@ -159,6 +157,7 @@
         line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 3;
+        line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -225,6 +224,7 @@
         font-size: 24px;
     }
     
+    /* ==== MOBILE & TABLET DEVICES (768px and below) ==== */
     @media (max-width: 768px) {
         .package-slider {
             width: 340px !important;
@@ -245,6 +245,7 @@
         }
     }
     
+    /* ==== SMALL MOBILE DEVICES (480px and below) ==== */
     @media (max-width: 480px) {
         .package-carousel {
             flex-direction: column;
@@ -349,7 +350,7 @@
             <div style="text-align: center; margin-top: -10px;">
                 <p style="color: #666; font-size: 14px; margin: 0;">
                     Already have an account? 
-                    <a href="{{ route('login') }}" style="color: #1c2951; text-decoration: underline; font-weight: 600;">
+                    <a href="#" onclick="loginWithPackage()" style="color: #1c2951; text-decoration: underline; font-weight: 600;">
                         Click here to login
                     </a>
                 </p>
@@ -434,79 +435,165 @@
             STUDENT FULL PROGRAM REGISTRATION
         </h2>
 
-        <h3>Student Information</h3>
+        @if($student)
+        <div class="alert alert-info" style="background-color:#e7f3ff; border:1px solid #b3d9ff; color:#0066cc; padding:12px; border-radius:6px; margin-bottom:20px; text-align:center;">
+            <i class="bi bi-info-circle"></i> Your existing information has been pre-filled. You can update any field as needed.
+        </div>
+        @endif
+
+        <h3><i class="bi bi-person-lines-fill me-2"></i>Student Information</h3>
+        <div class="row g-3">
+            <!-- Mobile: col-12, Tablet: col-md-6, PC: col-lg-3 -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <input type="text" name="firstname" id="firstname" class="form-control" placeholder="First name" 
+                       value="{{ $student->firstname ?? old('firstname') }}" required>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <input type="text" name="middle_name" id="middle_name" class="form-control" placeholder="Middle name" 
+                       value="{{ $student->middle_name ?? old('middle_name') }}">
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <input type="text" name="lastname" id="lastname" class="form-control" placeholder="Last name" 
+                       value="{{ $student->lastname ?? old('lastname') }}" required>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <input type="text" name="student_school" id="student_school" class="form-control" placeholder="Student's school" 
+                       value="{{ $student->student_school ?? old('student_school') }}" required>
+            </div>
+        </div>
+
+        <h3><i class="bi bi-geo-alt me-2"></i>Address</h3>
+        <div class="row g-3">
+            <!-- Mobile: col-12, Tablet: col-md-6 -->
+            <div class="col-12 col-md-6">
+                <input type="text" name="street_address" class="form-control" placeholder="Street Address" 
+                       value="{{ $student->street_address ?? old('street_address') }}" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <input type="text" name="state_province" class="form-control" placeholder="State/Province" 
+                       value="{{ $student->state_province ?? old('state_province') }}" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <input type="text" name="city" class="form-control" placeholder="City" 
+                       value="{{ $student->city ?? old('city') }}" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <input type="text" name="zipcode" class="form-control" placeholder="Zip Code" 
+                       value="{{ $student->zipcode ?? old('zipcode') }}" required>
+            </div>
+        </div>
+
+        <h3><i class="bi bi-telephone me-2"></i>Contact Information</h3>
+        <div class="row g-3">
+            <!-- Mobile: col-12, Tablet: col-md-6 -->
+            <div class="col-12 col-md-6">
+                <input type="text" name="contact_number" class="form-control" placeholder="Contact Number" 
+                       value="{{ $student->contact_number ?? old('contact_number') }}" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <input type="text" name="emergency_contact_number" class="form-control" placeholder="Emergency Contact Number" 
+                       value="{{ $student->emergency_contact_number ?? old('emergency_contact_number') }}" required>
+            </div>
+        </div>
+
+        <h3><i class="bi bi-file-earmark-arrow-up"></i> Verification/Document Upload</h3>
+        <div class="document-buttons row g-2">
+            <!-- Mobile: col-12, Tablet: col-md-6, PC: col-lg-4 -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="btn btn-outline-primary w-100 position-relative">
+                    <i class="bi bi-file-earmark-text me-2"></i>Good Moral 
+                    <input type="file" name="good_moral" hidden>
+                </label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="btn btn-outline-primary w-100 position-relative">
+                    <i class="bi bi-file-earmark-person me-2"></i>PSA Birth Cert. 
+                    <input type="file" name="PSA" hidden>
+                </label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="btn btn-outline-primary w-100 position-relative">
+                    <i class="bi bi-file-earmark-check me-2"></i>Course Cert. 
+                    <input type="file" name="Course_Cert" hidden>
+                </label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="btn btn-outline-primary w-100 position-relative">
+                    <i class="bi bi-file-earmark-text me-2"></i>ToR 
+                    <input type="file" name="TOR" hidden>
+                </label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="btn btn-outline-primary w-100 position-relative">
+                    <i class="bi bi-award me-2"></i>Cert. of Graduation 
+                    <input type="file" name="Cert_of_Grad" hidden>
+                </label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="btn btn-outline-primary w-100 position-relative">
+                    <i class="bi bi-person-square me-2"></i>1x1 Photo 
+                    <input type="file" name="photo_2x2" hidden>
+                </label>
+            </div>
+        </div>
+
+        <div class="row justify-content-center" style="margin:20px 0;">
+            <!-- Mobile: col-12, Tablet & PC: col-auto -->
+            <div class="col-12 col-md-auto">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="education" value="Undergraduate" id="undergraduate"
+                           {{ ($student->education_level ?? 'Undergraduate') == 'Undergraduate' ? 'checked' : '' }}>
+                    <label class="btn btn-outline-info" for="undergraduate">
+                        <i class="bi bi-mortarboard me-2"></i>Undergraduate
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="education" value="Graduate" id="graduate"
+                           {{ ($student->education_level ?? '') == 'Graduate' ? 'checked' : '' }}>
+                    <label class="btn btn-outline-info" for="graduate">
+                        <i class="bi bi-award me-2"></i>Graduate
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <h3><i class="bi bi-book me-2"></i>Program</h3>
         <div class="input-row">
-            <input type="text" name="firstname" id="firstname" placeholder="First name" required>
-            <input type="text" name="middle_name" id="middle_name" placeholder="Middle name">
-            <input type="text" name="lastname" id="lastname" placeholder="Last name" required>
-            <input type="text" name="student_school" id="student_school" placeholder="Student's school" required>
-        </div>
-
-        <h3>Address</h3>
-        <div class="input-row">
-            <input type="text" name="street_address" placeholder="Street Address" required>
-            <input type="text" name="state_province" placeholder="State/Province" required>
-            <input type="text" name="city" placeholder="City" required>
-            <input type="text" name="zipcode" placeholder="Zip Code" required>
-        </div>
-
-        <h3>Contact Information</h3>
-        <div class="input-row">
-            <input type="text" name="contact_number" placeholder="Contact Number" required>
-            <input type="text" name="emergency_contact_number" placeholder="Emergency Contact Number" required>
-        </div>
-
-        <h3>Verification/Document Upload</h3>
-        <div class="document-buttons">
-            <label>Good Moral <input type="file" name="good_moral" hidden></label>
-            <label>PSA Birth Cert. <input type="file" name="PSA" hidden></label>
-            <label>Course Cert. <input type="file" name="Course_Cert" hidden></label>
-            <label>ToR <input type="file" name="TOR" hidden></label>
-            <label>Cert. of Graduation <input type="file" name="Cert_of_Grad" hidden></label>
-            <label>1x1 Photo <input type="file" name="photo_2x2" hidden></label>
-        </div>
-
-        <div class="education-options" style="margin:16px 0;">
-            <label><input type="radio" name="education" value="Undergraduate" checked> Undergraduate</label>
-            <label><input type="radio" name="education" value="Graduate"> Graduate</label>
-        </div>
-
-        <h3>Course</h3>
-        <div class="input-row">
-            <select name="program_id" required>
-                <option value="">Select Course</option>
+            <select name="program_id" class="form-select" required>
+                <option value="">Select Program</option>
                 @foreach($programs as $program)
                     <option value="{{ $program->program_id }}"
-                        {{ old('program_id', $programId ?? '') == $program->program_id ? 'selected' : '' }}>
+                        {{ old('program_id', $student->program_id ?? $programId ?? '') == $program->program_id ? 'selected' : '' }}>
                         {{ $program->program_name }}
                     </option>
                 @endforeach
             </select>
         </div>
 
-        <h3>Start Date</h3>
+        <h3><i class="bi bi-calendar-event me-2"></i>Start Date</h3>
         <div class="course-box" style="margin-bottom:20px;">
-            <input type="date" name="Start_Date" required>
+            <input type="date" name="Start_Date" class="form-control"
+                   value="{{ $student->start_date ?? old('Start_Date') }}" required>
         </div>
 
-        <div style="text-align:left; margin-bottom:24px;">
-            <label>
-                <input type="checkbox" id="termsCheckbox" required>
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="termsCheckbox" required>
+            <label class="form-check-label" for="termsCheckbox">
                 I agree to the 
-                <a href="#" id="showTerms" style="color:#1c2951; text-decoration:underline;">
+                <a href="#" id="showTerms" class="text-primary text-decoration-underline">
                   Terms and Conditions
                 </a>
             </label>
         </div>
 
-        <div style="display:flex; gap:16px; justify-content:center;">
-            <button type="button" onclick="prevStep()"
-                    style="padding:12px 30px; border:none; border-radius:8px; background:#ccc;">
-                Back
+        <div class="d-flex gap-3 justify-content-center flex-column flex-md-row">
+            <!-- Mobile: Full width buttons, Tablet & PC: Side by side -->
+            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg order-2 order-md-1">
+                <i class="bi bi-arrow-left me-2"></i>Back
             </button>
-            <button type="submit" class="enroll-btn" id="enrollBtn" disabled
-                    style="padding:12px 30px; border:none; border-radius:8px; background:#1c2951; color:#fff;">
-                Enroll
+            <button type="submit" class="btn btn-primary btn-lg order-1 order-md-2" id="enrollBtn" disabled>
+                <i class="bi bi-check-circle me-2"></i>Enroll Now
+            </button>
+        </div>
             </button>
         </div>
     </div>
@@ -534,8 +621,8 @@
   </div>
 </div>
 
-{{-- Success Modal --}}
-@if(session('success'))
+{{-- Success Modal - Only show for registration completion messages --}}
+@if(session('success') && str_contains(session('success'), 'registration'))
   <div id="successModal"
        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
               background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
@@ -551,6 +638,26 @@
   </div>
 @endif
 
+{{-- Login Success Modal - Shows welcome back message when returning from login --}}
+@if(session('success') && str_contains(session('success'), 'Welcome back'))
+  <div id="loginSuccessModal" 
+       style="position:fixed; top:20px; right:20px; background:#fff; padding:15px 20px; 
+              border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; 
+              max-width:300px; animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-out 5s forwards;">
+    <p style="margin:0; color:#333;"><strong>{{ session('success') }}</strong></p>
+  </div>
+  <style>
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; visibility: hidden; }
+    }
+  </style>
+@endif
+
 <script>
 // Global variables (declared once at the top)
 let currentStep = 1;
@@ -559,6 +666,13 @@ let selectedPaymentMethod = null;
 let currentPackageIndex = 0;
 let packagesPerView = 2;
 let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
+
+// Check if user is logged in (set from server)
+const isUserLoggedIn = @if(session('user_id')) true @else false @endif;
+const loggedInUserName = '@if(session("user_name")){{ session("user_name") }}@endif';
+const loggedInUserFirstname = '@if(session("user_firstname")){{ session("user_firstname") }}@endif';
+const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_lastname") }}@endif';
+const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
 
 // Package carousel functionality
 function slidePackages(direction) {
@@ -598,8 +712,16 @@ function updateArrowStates() {
 // Step navigation with animations
 function nextStep() {
     if (currentStep === 1) {
-        animateStepTransition('step-1', 'step-2');
-        currentStep = 2;
+        // If user is logged in, skip directly to payment step
+        if (isUserLoggedIn) {
+            // Skip step 2 (account registration) and go directly to step 3 (payment)
+            animateStepTransition('step-1', 'step-3');
+            currentStep = 3;
+        } else {
+            // User not logged in, go to account registration
+            animateStepTransition('step-1', 'step-2');
+            currentStep = 2;
+        }
     } else if (currentStep === 2) {
         // Copy Account Registration data to Full Student Registration before moving to step 3
         copyAccountDataToStudentForm();
@@ -608,6 +730,8 @@ function nextStep() {
     } else if (currentStep === 3) {
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
+        // Auto-fill user data if logged in
+        fillLoggedInUserData();
         // Also auto-fill in case user comes directly to step 4
         copyAccountDataToStudentForm();
     }
@@ -618,8 +742,16 @@ function prevStep() {
         animateStepTransition('step-4', 'step-3', true);
         currentStep = 3;
     } else if (currentStep === 3) {
-        animateStepTransition('step-3', 'step-2', true);
-        currentStep = 2;
+        // Check if user is logged in - skip back to step 1 if logged in
+        if (isUserLoggedIn) {
+            // Skip step 2 and go back to step 1
+            animateStepTransition('step-3', 'step-1', true);
+            currentStep = 1;
+        } else {
+            // User not logged in, go back to account registration
+            animateStepTransition('step-3', 'step-2', true);
+            currentStep = 2;
+        }
     } else if (currentStep === 2) {
         animateStepTransition('step-2', 'step-1', true);
         currentStep = 1;
@@ -651,6 +783,10 @@ function selectPackage(packageId, packageName) {
     
     // Store selection
     selectedPackageId = packageId;
+    
+    // Store package selection in session storage
+    sessionStorage.setItem('selectedPackageId', packageId);
+    sessionStorage.setItem('selectedPackageName', packageName);
     
     // Update hidden input
     const packageInput = document.querySelector('input[name="package_id"]');
@@ -711,6 +847,61 @@ window.nextStep = nextStep;
 window.prevStep = prevStep;
 window.selectPackage = selectPackage;
 window.selectPaymentMethod = selectPaymentMethod;
+window.loginWithPackage = loginWithPackage;
+
+// Function to handle login with package selection
+function loginWithPackage() {
+    // Store the current package selection if any
+    if (selectedPackageId) {
+        sessionStorage.setItem('selectedPackageId', selectedPackageId);
+        sessionStorage.setItem('selectedPackageName', document.getElementById('selectedPackageName').textContent);
+    }
+    
+    // Store that we're coming from enrollment and should skip to payment
+    sessionStorage.setItem('continueEnrollment', 'true');
+    sessionStorage.setItem('skipToPayment', 'true');
+    
+    // Redirect to login with enrollment flag
+    window.location.href = '{{ route("login") }}?from_enrollment=true';
+}
+
+// Function to fill logged-in user data
+function fillLoggedInUserData() {
+    if (isUserLoggedIn) {
+        console.log('Filling logged-in user data...');
+        
+        // Auto-fill Step 4 (Full Student Registration) fields with logged-in user data
+        const firstnameField = document.getElementById('firstname');
+        const lastnameField = document.getElementById('lastname');
+        
+        // Use session data if available
+        if (firstnameField && loggedInUserFirstname) {
+            firstnameField.value = loggedInUserFirstname;
+            console.log('Auto-filled firstname from session:', loggedInUserFirstname);
+        }
+        if (lastnameField && loggedInUserLastname) {
+            lastnameField.value = loggedInUserLastname;
+            console.log('Auto-filled lastname from session:', loggedInUserLastname);
+        }
+        
+        // Also auto-fill Step 2 (Account Registration) fields if user navigates back
+        const userFirstnameField = document.getElementById('user_firstname');
+        const userLastnameField = document.getElementById('user_lastname');
+        const userEmailField = document.getElementById('user_email');
+        
+        if (userFirstnameField && loggedInUserFirstname) {
+            userFirstnameField.value = loggedInUserFirstname;
+        }
+        if (userLastnameField && loggedInUserLastname) {
+            userLastnameField.value = loggedInUserLastname;
+        }
+        if (userEmailField && loggedInUserEmail) {
+            userEmailField.value = loggedInUserEmail;
+        }
+        
+        console.log('Auto-filled student registration fields with logged-in user data');
+    }
+}
 
 // Function to copy Account Registration data to Full Student Registration
 function copyAccountDataToStudentForm() {
@@ -723,11 +914,11 @@ function copyAccountDataToStudentForm() {
     const firstnameField = document.getElementById('firstname');
     const lastnameField = document.getElementById('lastname');
     
-    if (firstnameField && userFirstname) {
+    if (firstnameField && userFirstname && !firstnameField.value) {
         firstnameField.value = userFirstname;
         console.log('Auto-filled firstname:', userFirstname);
     }
-    if (lastnameField && userLastname) {
+    if (lastnameField && userLastname && !lastnameField.value) {
         lastnameField.value = userLastname;
         console.log('Auto-filled lastname:', userLastname);
     }
@@ -884,6 +1075,65 @@ function validateStep2() {
 
 // Initialize carousel
 document.addEventListener('DOMContentLoaded', function() {
+    // Hide Step 2 if user is logged in
+    if (isUserLoggedIn) {
+        const step2 = document.getElementById('step-2');
+        if (step2) {
+            step2.style.display = 'none';
+        }
+        console.log('User is logged in - Step 2 (Account Registration) hidden');
+    }
+    
+    // Check if we're returning from login with a package selection
+    const continueEnrollment = sessionStorage.getItem('continueEnrollment');
+    const skipToPayment = sessionStorage.getItem('skipToPayment');
+    const savedPackageId = sessionStorage.getItem('selectedPackageId');
+    const savedPackageName = sessionStorage.getItem('selectedPackageName');
+    
+    if (continueEnrollment === 'true' && savedPackageId && savedPackageName) {
+        // Clear the session flags
+        sessionStorage.removeItem('continueEnrollment');
+        sessionStorage.removeItem('skipToPayment');
+        
+        // Auto-select the saved package
+        selectedPackageId = savedPackageId;
+        
+        // Find and highlight the package card
+        const packageCard = document.querySelector(`[data-package-id="${savedPackageId}"]`);
+        if (packageCard) {
+            packageCard.classList.add('selected');
+        }
+        
+        // Update the form
+        const packageInput = document.querySelector('input[name="package_id"]');
+        if (packageInput) {
+            packageInput.value = savedPackageId;
+        }
+        
+        // Show selected package display
+        document.getElementById('selectedPackageName').textContent = savedPackageName;
+        document.getElementById('selectedPackageDisplay').style.display = 'block';
+        
+        // Enable next button
+        const nextBtn = document.getElementById('packageNextBtn');
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        
+        // If user logged in from step 2 (account registration), skip to payment step (step 3)
+        if (skipToPayment === 'true') {
+            setTimeout(() => {
+                // Go to step 3 (payment)
+                animateStepTransition('step-1', 'step-3');
+                currentStep = 3;
+            }, 500);
+        }
+    }
+    
+    // Fill logged-in user data on page load
+    if (isUserLoggedIn) {
+        fillLoggedInUserData();
+    }
+    
     // Initialize carousel first
     updateArrowStates();
     

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Student;
 use App\Models\Registration;
 use App\Models\Enrollment;
 use App\Models\Program;
@@ -107,8 +108,14 @@ class StudentRegistrationController extends Controller
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
         $programs = Program::all();
         $packages = Package::all();
+        
+        // Get existing student data if user is logged in
+        $student = null;
+        if (session('user_id')) {
+            $student = Student::where('user_id', session('user_id'))->first();
+        }
 
-        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages'));
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student'));
     }
 
     public function showEnrollmentSelection()

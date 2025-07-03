@@ -55,10 +55,10 @@
                             </a>
                         </li>
 
-                        {{-- My Courses --}}
+                        {{-- My Programs --}}
                         <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'student.courses')) active @endif">
                             <a href="#" class="sidebar-link">
-                                <span class="icon">📚</span> My Courses
+                                <span class="icon">📚</span> My Programs
                                 <span class="chevron">▼</span>
                             </a>
                             <ul class="sidebar-submenu">
@@ -77,7 +77,11 @@
                 <div class="sidebar-footer">
                     <ul class="bottom-links">
                         <li class="help-link"><span class="icon">❓</span> Help</li>
-                        <li class="settings-link"><span class="icon">⚙️</span> Settings</li>
+                        <li class="settings-link">
+                            <a href="{{ route('student.settings') }}" style="color: inherit; text-decoration: none;">
+                                <span class="icon">⚙️</span> Settings
+                            </a>
+                        </li>
                         <li class="logout" onclick="document.getElementById('logout-form').submit();">
                             <span class="icon">🚪</span> Logout
                         </li>
