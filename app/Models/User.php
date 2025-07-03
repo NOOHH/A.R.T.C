@@ -28,4 +28,8 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+     public function enrollment()
+    {
+        return $this->belongsTo(Enrollment::class, 'enrollment_id', 'enrollment_id');
+    }
 }

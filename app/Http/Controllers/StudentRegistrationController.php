@@ -10,12 +10,14 @@ use App\Models\Registration;
 use App\Models\Enrollment;
 use App\Models\Program;
 use App\Models\Package;
+use App\Models\FormRequirement;
 
 class StudentRegistrationController extends Controller
 {
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        // Build validation rules dynamically
+        $rules = [
             'user_firstname' => 'required|string|max:255',
             'user_lastname' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -35,7 +37,64 @@ class StudentRegistrationController extends Controller
             'package_id' => 'required|integer|exists:packages,package_id',
             'enrollment_type' => 'required|in:modular,full',
             'plan_id' => 'nullable|integer',
-        ]);
+        ];
+
+        // Add dynamic field validation rules based on form requirements
+        $programType = $request->input('enrollment_type') === 'full' ? 'complete' : 'modular';
+        $formRequirements = FormRequirement::active()
+            ->forProgram($programType)
+            ->get();
+
+        foreach ($formRequirements as $requirement) {
+            $fieldName = $requirement->field_name;
+            $fieldRules = [];
+
+            // Add required rule if field is required
+            if ($requirement->is_required) {
+                $fieldRules[] = 'required';
+            } else {
+                $fieldRules[] = 'nullable';
+            }
+
+            // Add specific validation rules based on field type
+            switch ($requirement->field_type) {
+                case 'text':
+                case 'textarea':
+                    $fieldRules[] = 'string|max:255';
+                    break;
+                case 'email':
+                    $fieldRules[] = 'email|max:255';
+                    break;
+                case 'number':
+                    $fieldRules[] = 'numeric';
+                    break;
+                case 'tel':
+                    $fieldRules[] = 'string|max:20';
+                    break;
+                case 'date':
+                    $fieldRules[] = 'date';
+                    break;
+                case 'file':
+                    $fieldRules[] = 'file|mimes:pdf,jpg,jpeg,png|max:2048';
+                    break;
+                case 'select':
+                    if ($requirement->field_options && is_array($requirement->field_options)) {
+                        $options = implode(',', $requirement->field_options);
+                        $fieldRules[] = "in:$options";
+                    }
+                    break;
+            }
+
+            // Add custom validation rules if specified
+            if ($requirement->validation_rules) {
+                $customRules = explode('|', $requirement->validation_rules);
+                $fieldRules = array_merge($fieldRules, $customRules);
+            }
+
+            $rules[$fieldName] = implode('|', $fieldRules);
+        }
+
+        $validated = $request->validate($rules);
 
         $enrollmentType = $validated['enrollment_type'] === 'full' ? 'Complete' : 'Modular';
 
@@ -79,6 +138,7 @@ class StudentRegistrationController extends Controller
         $registration->program_name = $program ? $program->program_name : null;
         $registration->plan_name = $planName;
 
+        // Handle standard file uploads
         $fileFields = [
             'good_moral' => 'good_moral',
             'birth_cert' => 'PSA',
@@ -92,6 +152,26 @@ class StudentRegistrationController extends Controller
             if ($request->hasFile($inputName)) {
                 $registration->$columnName = $request->file($inputName)->store('documents', 'public');
             }
+        }
+
+        // Handle dynamic form fields
+        $dynamicData = [];
+        foreach ($formRequirements as $requirement) {
+            $fieldName = $requirement->field_name;
+            if ($request->has($fieldName)) {
+                if ($requirement->field_type === 'file' && $request->hasFile($fieldName)) {
+                    // Store file uploads
+                    $dynamicData[$fieldName] = $request->file($fieldName)->store('documents/dynamic', 'public');
+                } else {
+                    // Store other field values
+                    $dynamicData[$fieldName] = $request->input($fieldName);
+                }
+            }
+        }
+
+        // Store dynamic form data as JSON in a dedicated column (we'll need to add this column)
+        if (!empty($dynamicData)) {
+            $registration->dynamic_fields = json_encode($dynamicData);
         }
 
         $education = $request->input('education');

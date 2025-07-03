@@ -39,6 +39,11 @@ class Registration extends Model
         'Undergraduate',
         'Graduate',
         'photo_2x2',
+        'dynamic_fields',
+    ];
+
+    protected $casts = [
+        'dynamic_fields' => 'array',
     ];
 
     public function user()

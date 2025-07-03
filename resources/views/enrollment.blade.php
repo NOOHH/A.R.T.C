@@ -3,6 +3,10 @@
 @section('title', 'Enrollment')
 
 @push('styles')
+
+{{-- Global UI Styles --}}
+{!! App\Helpers\UIHelper::getNavbarStyles() !!}
+
 <style>
 {!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
 {!! App\Helpers\SettingsHelper::getProgramCardStyles() !!}

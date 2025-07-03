@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Dashboard')</title>
     
     <!-- Bootstrap CSS -->
@@ -16,6 +17,8 @@
     <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
 
+    {{-- Global UI Styles --}}
+    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
     
     @yield('head')
     @stack('styles')
@@ -26,7 +29,7 @@
     <header class="main-header">
         <div class="header-left">
             <a href="{{ route('home') }}" class="brand-link">
-                <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
+                <img src="{{ App\Helpers\UIHelper::getGlobalLogo() }}" alt="Logo">
                 <div class="brand-text">Ascendo Review<br>and Training Center</div>
             </a>
         </div>
@@ -79,10 +82,24 @@
                             </ul>
                         </li>
 
+                        {{-- Students List --}}
+                        <li class="@if(Route::currentRouteName() === 'admin.students.index') active @endif">
+                            <a href="{{ route('admin.students.index') }}" class="sidebar-link">
+                                <span class="icon">📋</span> List of Students
+                            </a>
+                        </li>
+
                         {{-- Enrollment Management --}}
                         <li class="@if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
                             <a href="{{ route('admin.enrollments.index') }}" class="sidebar-link">
                                 <span class="icon">📝</span> Enrollment Management
+                            </a>
+                        </li>
+
+                        {{-- Directors --}}
+                        <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
+                            <a href="{{ route('admin.directors.index') }}" class="sidebar-link">
+                                <span class="icon">👨‍💼</span> Directors
                             </a>
                         </li>
 
@@ -105,14 +122,12 @@
                             </ul>
                         </li>
 
-                        {{-- Professors - TODO: Uncomment when AdminProfessorController is created --}}
-                        {{-- 
-                        <li class="@if(Route::currentRouteName() === 'admin.professors.index') active @endif">
+                        {{-- Professors --}}
+                        <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.professors')) active @endif">
                             <a href="{{ route('admin.professors.index') }}" class="sidebar-link">
                                 <span class="icon">👨‍🏫</span> Professors
                             </a>
                         </li>
-                        --}}
                     </ul>
                 </nav>
 

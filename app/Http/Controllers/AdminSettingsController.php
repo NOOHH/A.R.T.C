@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use App\Models\FormRequirement;
+use App\Models\UiSetting;
 
 class AdminSettingsController extends Controller
 {
@@ -15,22 +17,6 @@ class AdminSettingsController extends Controller
         $settings = $this->getCurrentSettings();
         
         return view('admin.admin-settings.admin-settings', compact('settings'));
-    }
-
-    public function newIndex()
-    {
-        // Get current settings from config/storage or database
-        $settings = $this->getCurrentSettings();
-        
-        return view('admin.admin-settings.admin-settings-new', compact('settings'));
-    }
-
-    public function fixedIndex()
-    {
-        // Get current settings from config/storage or database
-        $settings = $this->getCurrentSettings();
-        
-        return view('admin.admin-settings.admin-settings-fixed', compact('settings'));
     }
 
     public function updateHomepage(Request $request)
@@ -311,49 +297,168 @@ class AdminSettingsController extends Controller
 
     public function updateGlobalLogo(Request $request)
     {
+        try {
+            $request->validate([
+                'logo' => 'required|image|mimes:jpeg,jpg,png,svg,webp|max:2048',
+                'logo_position' => 'nullable|in:left,center,right',
+                'site_title' => 'nullable|string|max:255',
+                'show_on_all_pages' => 'nullable|boolean'
+            ]);
+
+            $logoPath = null;
+            
+            if ($request->hasFile('logo')) {
+                // Delete old logo if exists
+                $oldLogo = UiSetting::get('global', 'logo_path');
+                if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+                    Storage::disk('public')->delete($oldLogo);
+                }
+                
+                // Store new logo
+                $file = $request->file('logo');
+                $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
+                $logoPath = $file->storeAs('logos', $filename, 'public');
+                
+                // Save to database
+                UiSetting::set('global', 'logo_path', $logoPath, 'file');
+                UiSetting::set('global', 'logo_url', Storage::url($logoPath), 'text');
+            }
+            
+            // Save other settings
+            if ($request->has('logo_position')) {
+                UiSetting::set('global', 'logo_position', $request->logo_position);
+            }
+            
+            if ($request->has('site_title')) {
+                UiSetting::set('global', 'site_title', $request->site_title);
+            }
+            
+            UiSetting::set('global', 'show_on_all_pages', $request->has('show_on_all_pages') ? '1' : '0', 'boolean');
+            
+            return response()->json([
+                'success' => true,
+                'logo_url' => $logoPath ? Storage::url($logoPath) : null,
+                'message' => 'Logo updated successfully!'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating logo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating logo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function updateFavicon(Request $request)
+    {
+        try {
+            $request->validate([
+                'favicon' => 'required|file|mimes:ico,png|max:1024'
+            ]);
+            
+            if ($request->hasFile('favicon')) {
+                // Delete old favicon if exists
+                $oldFavicon = UiSetting::get('global', 'favicon_path');
+                if ($oldFavicon && Storage::disk('public')->exists($oldFavicon)) {
+                    Storage::disk('public')->delete($oldFavicon);
+                }
+                
+                // Store new favicon
+                $file = $request->file('favicon');
+                $filename = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
+                $faviconPath = $file->storeAs('favicons', $filename, 'public');
+                
+                // Save to database
+                UiSetting::set('global', 'favicon_path', $faviconPath, 'file');
+                UiSetting::set('global', 'favicon_url', Storage::url($faviconPath), 'text');
+                
+                // Copy favicon to public root for direct access
+                $publicPath = public_path('favicon.' . $file->getClientOriginalExtension());
+                copy(storage_path('app/public/' . $faviconPath), $publicPath);
+                
+                return response()->json([
+                    'success' => true,
+                    'favicon_url' => Storage::url($faviconPath),
+                    'message' => 'Favicon updated successfully!'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating favicon: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating favicon: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateGlobalSettings(Request $request)
+    {
         $request->validate([
-            'global_logo' => 'required|image|mimes:jpeg,jpg,png,gif,webp,svg|max:5120', // 5MB max, specific image types
+            'app_name' => 'required|string|max:255',
+            'app_description' => 'nullable|string|max:500',
+            'app_keywords' => 'nullable|string|max:255',
+            'app_logo' => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:2048',
+            'app_favicon' => 'nullable|image|mimes:ico,png|max:1024',
         ]);
 
         $settings = $this->getCurrentSettings();
 
-        // Delete old global logo if exists
-        if (isset($settings['global_logo']) && Storage::disk('public')->exists($settings['global_logo'])) {
-            Storage::disk('public')->delete($settings['global_logo']);
+        // Update app name and description
+        $settings['app_name'] = $request->input('app_name');
+        $settings['app_description'] = $request->input('app_description', $settings['app_description'] ?? '');
+        $settings['app_keywords'] = $request->input('app_keywords', $settings['app_keywords'] ?? '');
+
+        // Handle logo upload
+        if ($request->hasFile('app_logo')) {
+            // Delete old logo if exists
+            if (isset($settings['app_logo']) && Storage::disk('public')->exists($settings['app_logo'])) {
+                Storage::disk('public')->delete($settings['app_logo']);
+            }
+
+            $logoPath = $request->file('app_logo')->store('settings/logos', 'public');
+            $settings['app_logo'] = $logoPath;
         }
 
-        // Store new logo
-        $logoPath = $request->file('global_logo')->store('settings/global', 'public');
-        $settings['global_logo'] = $logoPath;
+        // Handle favicon upload
+        if ($request->hasFile('app_favicon')) {
+            // Delete old favicon if exists
+            if (isset($settings['app_favicon']) && Storage::disk('public')->exists($settings['app_favicon'])) {
+                Storage::disk('public')->delete($settings['app_favicon']);
+            }
+
+            $faviconPath = $request->file('app_favicon')->store('settings/favicons', 'public');
+            $settings['app_favicon'] = $faviconPath;
+        }
 
         $this->saveSettings($settings);
 
-        return back()->with('success', 'Global logo updated successfully!');
+        return back()->with('success', 'Global settings updated successfully!');
     }
 
-    public function removeGlobalLogo()
+    public function updateSeoSettings(Request $request)
     {
+        $request->validate([
+            'seo_title' => 'nullable|string|max:255',
+            'seo_description' => 'nullable|string|max:500',
+            'seo_keywords' => 'nullable|string|max:255',
+            'seo_robots' => 'nullable|string|max:255',
+        ]);
+
         $settings = $this->getCurrentSettings();
 
-        try {
-            if (isset($settings['global_logo'])) {
-                // Delete the logo file
-                if (Storage::disk('public')->exists($settings['global_logo'])) {
-                    Storage::disk('public')->delete($settings['global_logo']);
-                }
+        // Update SEO settings
+        $settings['seo'] = array_merge($settings['seo'] ?? [], [
+            'title' => $request->input('seo_title', $settings['seo']['title'] ?? ''),
+            'description' => $request->input('seo_description', $settings['seo']['description'] ?? ''),
+            'keywords' => $request->input('seo_keywords', $settings['seo']['keywords'] ?? ''),
+            'robots' => $request->input('seo_robots', $settings['seo']['robots'] ?? ''),
+        ]);
 
-                // Remove from settings
-                unset($settings['global_logo']);
-                $this->saveSettings($settings);
-                
-                return back()->with('success', 'Global logo removed successfully!');
-            } else {
-                return back()->with('info', 'No global logo to remove.');
-            }
-        } catch (\Exception $e) {
-            Log::error('Error removing global logo: ' . $e->getMessage());
-            return back()->with('error', 'Error removing global logo. Please try again.');
-        }
+        $this->saveSettings($settings);
+
+        return back()->with('success', 'SEO settings updated successfully!');
     }
 
     private function getCurrentSettings()
@@ -518,6 +623,224 @@ class AdminSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Error removing login illustration: ' . $e->getMessage());
             return back()->with('error', 'Error removing login illustration. Please try again.');
+        }
+    }
+
+    public function getFormRequirements()
+    {
+        $requirements = FormRequirement::active()->ordered()->get();
+        return response()->json($requirements);
+    }
+    
+    public function saveFormRequirements(Request $request)
+    {
+        try {
+            $requirements = $request->input('requirements', []);
+            
+            // Delete existing requirements that are not in the request
+            $existingIds = collect($requirements)->pluck('id')->filter();
+            FormRequirement::whereNotIn('id', $existingIds)->delete();
+            
+            foreach ($requirements as $index => $reqData) {
+                if (empty($reqData['field_name']) || empty($reqData['field_label'])) {
+                    continue; // Skip incomplete requirements
+                }
+                
+                $data = [
+                    'field_name' => $reqData['field_name'],
+                    'field_label' => $reqData['field_label'],
+                    'field_type' => $reqData['field_type'],
+                    'program_type' => $reqData['program_type'],
+                    'is_required' => isset($reqData['is_required']),
+                    'is_active' => true,
+                    'sort_order' => $index
+                ];
+                
+                if (!empty($reqData['id'])) {
+                    // Update existing
+                    FormRequirement::where('id', $reqData['id'])->update($data);
+                } else {
+                    // Create new
+                    FormRequirement::create($data);
+                }
+            }
+            
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error saving form requirements: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    public function saveStudentPortalSettings(Request $request)
+    {
+        try {
+            $request->validate([
+                'primary_color' => 'nullable|string|max:7',
+                'background_color' => 'nullable|string|max:7',
+                'header_logo' => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:2048'
+            ]);
+            
+            // Save color settings
+            if ($request->has('primary_color')) {
+                UiSetting::set('student_portal', 'primary_color', $request->primary_color, 'color');
+            }
+            
+            if ($request->has('background_color')) {
+                UiSetting::set('student_portal', 'background_color', $request->background_color, 'color');
+            }
+            
+            // Handle logo upload
+            if ($request->hasFile('header_logo')) {
+                $oldLogo = UiSetting::get('student_portal', 'header_logo_path');
+                if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+                    Storage::disk('public')->delete($oldLogo);
+                }
+                
+                $file = $request->file('header_logo');
+                $filename = 'student_header_logo_' . time() . '.' . $file->getClientOriginalExtension();
+                $logoPath = $file->storeAs('logos/student', $filename, 'public');
+                
+                UiSetting::set('student_portal', 'header_logo_path', $logoPath, 'file');
+                UiSetting::set('student_portal', 'header_logo_url', Storage::url($logoPath), 'text');
+            }
+            
+            return response()->json(['success' => true]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error saving student portal settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    public function getStudentPortalSettings()
+    {
+        $settings = UiSetting::getSection('student_portal');
+        return response()->json($settings);
+    }
+    
+    public function saveNavbarSettings(Request $request)
+    {
+        try {
+            $colorSettings = [
+                'header_bg', 'header_text', 'header_border', 'search_bg',
+                'sidebar_bg', 'sidebar_text', 'active_link_bg', 'active_link_text',
+                'hover_bg', 'hover_text', 'submenu_bg', 'submenu_text',
+                'footer_bg', 'icon_color'
+            ];
+            
+            foreach ($colorSettings as $setting) {
+                if ($request->has($setting)) {
+                    UiSetting::set('navbar', $setting, $request->input($setting), 'color');
+                }
+            }
+            
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error saving navbar settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    public function getNavbarSettings()
+    {
+        $settings = UiSetting::getSection('navbar');
+        return response()->json($settings);
+    }
+
+    public function generateEnrollmentForm($programType = 'both')
+    {
+        $requirements = FormRequirement::active()
+            ->forProgram($programType)
+            ->ordered()
+            ->get();
+            
+        return response()->json($requirements);
+    }
+    
+    public function renderEnrollmentForm($programType)
+    {
+        $requirements = FormRequirement::active()
+            ->forProgram($programType)
+            ->ordered()
+            ->get();
+            
+        $html = '';
+        
+        foreach ($requirements as $requirement) {
+            $html .= $this->generateFieldHtml($requirement);
+        }
+        
+        return $html;
+    }
+    
+    private function generateFieldHtml($requirement)
+    {
+        $fieldName = $requirement->field_name;
+        $fieldLabel = $requirement->field_label;
+        $fieldType = $requirement->field_type;
+        $isRequired = $requirement->is_required;
+        $requiredAttr = $isRequired ? 'required' : '';
+        $requiredMark = $isRequired ? '<span class="text-danger">*</span>' : '';
+        
+        switch ($fieldType) {
+            case 'text':
+            case 'email':
+            case 'tel':
+                return "
+                    <div class='form-group mb-3'>
+                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                        <input type='{$fieldType}' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                    </div>
+                ";
+                
+            case 'date':
+                return "
+                    <div class='form-group mb-3'>
+                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                        <input type='date' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                    </div>
+                ";
+                
+            case 'file':
+                return "
+                    <div class='form-group mb-3'>
+                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                        <div class='file-upload-container'>
+                            <input type='file' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                            <button type='button' class='btn btn-outline-primary btn-sm upload-btn' data-field='{$fieldName}'>
+                                <i class='bi bi-upload'></i> Choose File
+                            </button>
+                        </div>
+                    </div>
+                ";
+                
+            case 'textarea':
+                return "
+                    <div class='form-group mb-3'>
+                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                        <textarea class='form-control' id='{$fieldName}' name='{$fieldName}' rows='3' {$requiredAttr}></textarea>
+                    </div>
+                ";
+                
+            case 'select':
+                $options = $requirement->field_options ?: [];
+                $optionsHtml = '<option value="">Select an option</option>';
+                foreach ($options as $option) {
+                    $optionsHtml .= "<option value='{$option}'>{$option}</option>";
+                }
+                
+                return "
+                    <div class='form-group mb-3'>
+                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                        <select class='form-select' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                            {$optionsHtml}
+                        </select>
+                    </div>
+                ";
+                
+            default:
+                return '';
         }
     }
 }

@@ -3,6 +3,10 @@
 @section('title', 'Home')
 
 @push('styles')
+
+{{-- Global UI Styles --}}
+{!! App\Helpers\UIHelper::getNavbarStyles() !!}
+
 <style>
 {!! App\Helpers\SettingsHelper::getHomepageStyles() !!}
 

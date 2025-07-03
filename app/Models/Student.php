@@ -9,9 +9,11 @@ class Student extends Model
 {
     use HasFactory;
 
+    protected $table = 'students';
     protected $primaryKey = 'student_id';
-    public $incrementing = false;
+    public $incrementing = false; // student_id is a string
     protected $keyType = 'string';
+    public $timestamps = true;
 
     protected $fillable = [
         'student_id',
@@ -36,13 +38,18 @@ class Student extends Model
         'photo_2x2',
         'Start_Date',
         'date_approved',
-        'email',
         'program_id',
         'package_id',
         'plan_id',
         'package_name',
         'plan_name',
         'program_name',
+        'email',
+        'is_archived',
+    ];
+
+    protected $casts = [
+        'is_archived' => 'boolean',
     ];
 
     public function user()
@@ -59,4 +66,5 @@ class Student extends Model
     {
         return $this->belongsTo(Package::class, 'package_id', 'package_id');
     }
+
 }

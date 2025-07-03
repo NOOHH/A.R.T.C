@@ -9,9 +9,12 @@ use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
 use App\Http\Controllers\AdminModuleController;
-// use App\Http\Controllers\AdminProfessorController;  // TODO: Create this controller
+use App\Http\Controllers\AdminDirectorController;
+use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\AdminProfessorController;
+use App\Http\Controllers\ProfessorDashboardController;
 use App\Models\Program;
 use App\Models\Package;
 
@@ -160,6 +163,10 @@ Route::delete('/admin/programs/{id}', [AdminProgramController::class, 'destroy']
 Route::post('/admin/programs/{program}/toggle-archive', [AdminProgramController::class, 'toggleArchive'])
      ->name('admin.programs.toggle-archive');
 
+// Archive a program (used by main programs view)
+Route::post('/admin/programs/{id}/archive', [AdminProgramController::class, 'archive'])
+     ->name('admin.programs.archive');
+
 // Batch delete programs (used only by archived programs view)
 Route::post('/admin/programs/batch-delete', [AdminProgramController::class, 'batchDelete'])
      ->name('admin.programs.batch-delete');
@@ -256,14 +263,6 @@ Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy']
 Route::get('/admin/settings', [AdminSettingsController::class, 'index'])
      ->name('admin.settings.index');
 
-// New simplified settings page
-Route::get('/admin/settings/new', [AdminSettingsController::class, 'newIndex'])
-     ->name('admin.settings.new.index');
-
-// Fixed settings page
-Route::get('/admin/settings/fixed', [AdminSettingsController::class, 'fixedIndex'])
-     ->name('admin.settings.fixed.index');
-
 // Update homepage settings
 Route::post('/admin/settings/homepage', [AdminSettingsController::class, 'updateHomepage'])
      ->name('admin.settings.update.homepage');
@@ -306,81 +305,168 @@ Route::post('/admin/settings/remove-login-illustration', [AdminSettingsControlle
 Route::post('/admin/settings/remove-image', [AdminSettingsController::class, 'removeImage'])
      ->name('admin.settings.remove.image');
 
+// New settings routes for form requirements and UI customization
+Route::get('/admin/settings/form-requirements', [AdminSettingsController::class, 'getFormRequirements']);
+Route::post('/admin/settings/form-requirements', [AdminSettingsController::class, 'saveFormRequirements']);
+Route::get('/admin/settings/student-portal', [AdminSettingsController::class, 'getStudentPortalSettings']);
+Route::post('/admin/settings/student-portal', [AdminSettingsController::class, 'saveStudentPortalSettings']);
+Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'saveNavbarSettings']);
+Route::get('/admin/settings/navbar', [AdminSettingsController::class, 'getNavbarSettings']);
+
+/*
+|--------------------------------------------------------------------------
+| Admin Directors
+|--------------------------------------------------------------------------
+*/
+// Directors list
+Route::get('/admin/directors', [AdminDirectorController::class, 'index'])
+     ->name('admin.directors.index');
+
+// View archived directors (must come before other dynamic routes)
+Route::get('/admin/directors/archived', [AdminDirectorController::class, 'archived'])
+     ->name('admin.directors.archived');
+
+// Show "Add New Director" form
+Route::get('/admin/directors/create', [AdminDirectorController::class, 'create'])
+     ->name('admin.directors.create');
+
+// Store new director
+Route::post('/admin/directors', [AdminDirectorController::class, 'store'])
+     ->name('admin.directors.store');
+
+// Show director details
+Route::get('/admin/directors/{director:directors_id}', [AdminDirectorController::class, 'show'])
+     ->name('admin.directors.show');
+
+// Show edit director form
+Route::get('/admin/directors/{director:directors_id}/edit', [AdminDirectorController::class, 'edit'])
+     ->name('admin.directors.edit');
+
+// Update director
+Route::put('/admin/directors/{director:directors_id}', [AdminDirectorController::class, 'update'])
+     ->name('admin.directors.update');
+
+// Archive director
+Route::patch('/admin/directors/{director:directors_id}/archive', [AdminDirectorController::class, 'archive'])
+     ->name('admin.directors.archive');
+
+// Restore archived director
+Route::patch('/admin/directors/{director:directors_id}/restore', [AdminDirectorController::class, 'restore'])
+     ->name('admin.directors.restore');
+
+// Delete director permanently
+Route::delete('/admin/directors/{director:directors_id}', [AdminDirectorController::class, 'destroy'])
+     ->name('admin.directors.destroy');
+
+// Assign program to director
+Route::post('/admin/directors/{director:directors_id}/assign-program', [AdminDirectorController::class, 'assignProgram'])
+     ->name('admin.directors.assign-program');
+
+// Unassign program from director
+Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminDirectorController::class, 'unassignProgram'])
+     ->name('admin.directors.unassign-program');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Students List
+|--------------------------------------------------------------------------
+*/
+// Students list
+Route::get('/admin/students', [AdminStudentListController::class, 'index'])
+     ->name('admin.students.index');
+
+// View archived students (must come before dynamic routes)
+Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])
+     ->name('admin.students.archived');
+
+// Show student details
+Route::get('/admin/students/{student:student_id}', [AdminStudentListController::class, 'show'])
+     ->name('admin.students.show');
+
+// Approve student
+Route::patch('/admin/students/{student:student_id}/approve', [AdminStudentListController::class, 'approve'])
+     ->name('admin.students.approve');
+
+// Archive student
+Route::patch('/admin/students/{student:student_id}/archive', [AdminStudentListController::class, 'archive'])
+     ->name('admin.students.archive');
+
+// Restore archived student
+Route::patch('/admin/students/{student:student_id}/restore', [AdminStudentListController::class, 'restore'])
+     ->name('admin.students.restore');
+
+// Delete student permanently
+Route::delete('/admin/students/{student:student_id}', [AdminStudentListController::class, 'destroy'])
+     ->name('admin.students.destroy');
+
+/*
+|--------------------------------------------------------------------------
+| Professor Dashboard Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:professor'])->prefix('professor')->name('professor.')->group(function () {
+    Route::get('/dashboard', [ProfessorDashboardController::class, 'index'])
+         ->name('dashboard');
+    
+    Route::get('/programs', [ProfessorDashboardController::class, 'programs'])
+         ->name('programs');
+    
+    Route::get('/programs/{program}', [ProfessorDashboardController::class, 'programDetails'])
+         ->name('program.details');
+    
+    Route::post('/programs/{program}/video', [ProfessorDashboardController::class, 'updateVideo'])
+         ->name('program.video.update');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Admin Professors
 |--------------------------------------------------------------------------
 */
-// Professors list - TODO: Create AdminProfessorController
-// Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
-//      ->name('admin.professors.index');
+// Professor routes
+Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
+     ->name('admin.professors.index');
+
+Route::get('/admin/professors/archived', [AdminProfessorController::class, 'archived'])
+     ->name('admin.professors.archived');
+
+Route::post('/admin/professors', [AdminProfessorController::class, 'store'])
+     ->name('admin.professors.store');
+
+Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
+     ->name('admin.professors.edit');
+
+Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
+     ->name('admin.professors.update');
+
+Route::patch('/admin/professors/{professor}/archive', [AdminProfessorController::class, 'archive'])
+     ->name('admin.professors.archive');
+
+Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController::class, 'restore'])
+     ->name('admin.professors.restore');
+
+Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
+     ->name('admin.professors.destroy');
+
+Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
+     ->name('admin.professors.video.update');
+
+Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
+Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);
+Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsController::class, 'generateEnrollmentForm']);
 
 /*
 |--------------------------------------------------------------------------
-| Student Dashboard Routes (Protected)
+| Test UI and Form Requirements (Development Only - Remove in Production)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['student.auth'])->group(function () {
-    // Student Dashboard
-    Route::get('/student/dashboard', [StudentDashboardController::class, 'dashboard'])
-         ->name('student.dashboard');
-    
-    // Student Settings
-    Route::get('/student/settings', [StudentDashboardController::class, 'settings'])
-         ->name('student.settings');
-    Route::put('/student/settings', [StudentDashboardController::class, 'updateSettings'])
-         ->name('student.settings.update');
-    
-    // Student Calendar
-    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
-         ->name('student.calendar');
-    
-    // Student Courses
-    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
-         ->defaults('courseId', 1)
-         ->name('student.courses.calculus1');
-         
-    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
-         ->defaults('courseId', 2)
-         ->name('student.courses.calculus2');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Assignment Management Routes
-|--------------------------------------------------------------------------
-*/
-// Student assignment submission routes
-Route::middleware(['student.auth'])->group(function () {
-    // View assignments for student
-    Route::get('/student/assignments', [StudentDashboardController::class, 'assignments'])
-         ->name('student.assignments');
-    
-    // View specific assignment
-    Route::get('/student/assignments/{assignment}', [StudentDashboardController::class, 'viewAssignment'])
-         ->name('student.assignments.view');
-    
-    // Submit assignment
-    Route::post('/student/assignments/{assignment}/submit', [StudentDashboardController::class, 'submitAssignment'])
-         ->name('student.assignments.submit');
-    
-    // Download assignment file
-    Route::get('/student/assignments/{assignment}/download', [StudentDashboardController::class, 'downloadAssignment'])
-         ->name('student.assignments.download');
-});
-
-// Admin assignment management routes
-Route::get('/admin/assignments', [AdminModuleController::class, 'assignments'])
-     ->name('admin.assignments.index');
-
-// View assignment submissions
-Route::get('/admin/assignments/{assignment}/submissions', [AdminModuleController::class, 'assignmentSubmissions'])
-     ->name('admin.assignments.submissions');
-
-// Grade assignment submission
-Route::post('/admin/assignments/submissions/{submission}/grade', [AdminModuleController::class, 'gradeSubmission'])
-     ->name('admin.assignments.grade');
-
-// Download student submission
-Route::get('/admin/assignments/submissions/{submission}/download', [AdminModuleController::class, 'downloadSubmission'])
-     ->name('admin.assignments.download-submission');
+// Route::get('/test-ui', function () {
+//     $formRequirements = App\Models\FormRequirement::active()
+//         ->forProgram('complete')
+//         ->ordered()
+//         ->get();
+//     
+//     $navbarSettings = App\Models\UiSetting::getSection('navbar');
+//     
+//     return view('test-ui', compact('formRequirements', 'navbarSettings'));
+// });

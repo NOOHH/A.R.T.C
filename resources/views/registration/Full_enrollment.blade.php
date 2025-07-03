@@ -5,6 +5,10 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+{{-- Global UI Styles --}}
+{!! App\Helpers\UIHelper::getNavbarStyles() !!}
+
 <style>
     .step { 
         display: none; 
@@ -270,6 +274,19 @@
 @endpush
 
 @section('content')
+<!-- Validation Errors Display -->
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin: 20px auto; max-width: 1200px;">
+        <h6><i class="bi bi-exclamation-triangle"></i> Please correct the following errors:</h6>
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <!-- FIXED SIZE REGISTRATION CONTAINER - prevents form resizing -->
 <div class="registration-container" style="min-height: 800px; max-width: 1200px; margin: 0 auto; padding: 20px; position: relative;">
 <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form">
@@ -443,7 +460,7 @@
 
         <h3><i class="bi bi-person-lines-fill me-2"></i>Student Information</h3>
         <div class="row g-3">
-            <!-- Mobile: col-12, Tablet: col-md-6, PC: col-lg-3 -->
+            <!-- Basic Required Fields -->
             <div class="col-12 col-md-6 col-lg-3">
                 <input type="text" name="firstname" id="firstname" class="form-control" placeholder="First name" 
                        value="{{ $student->firstname ?? old('firstname') }}" required>
@@ -462,38 +479,9 @@
             </div>
         </div>
 
-        <h3><i class="bi bi-geo-alt me-2"></i>Address</h3>
-        <div class="row g-3">
-            <!-- Mobile: col-12, Tablet: col-md-6 -->
-            <div class="col-12 col-md-6">
-                <input type="text" name="street_address" class="form-control" placeholder="Street Address" 
-                       value="{{ $student->street_address ?? old('street_address') }}" required>
-            </div>
-            <div class="col-12 col-md-6">
-                <input type="text" name="state_province" class="form-control" placeholder="State/Province" 
-                       value="{{ $student->state_province ?? old('state_province') }}" required>
-            </div>
-            <div class="col-12 col-md-6">
-                <input type="text" name="city" class="form-control" placeholder="City" 
-                       value="{{ $student->city ?? old('city') }}" required>
-            </div>
-            <div class="col-12 col-md-6">
-                <input type="text" name="zipcode" class="form-control" placeholder="Zip Code" 
-                       value="{{ $student->zipcode ?? old('zipcode') }}" required>
-            </div>
-        </div>
-
-        <h3><i class="bi bi-telephone me-2"></i>Contact Information</h3>
-        <div class="row g-3">
-            <!-- Mobile: col-12, Tablet: col-md-6 -->
-            <div class="col-12 col-md-6">
-                <input type="text" name="contact_number" class="form-control" placeholder="Contact Number" 
-                       value="{{ $student->contact_number ?? old('contact_number') }}" required>
-            </div>
-            <div class="col-12 col-md-6">
-                <input type="text" name="emergency_contact_number" class="form-control" placeholder="Emergency Contact Number" 
-                       value="{{ $student->emergency_contact_number ?? old('emergency_contact_number') }}" required>
-            </div>
+        {{-- Dynamic Additional Fields --}}
+        <div id="dynamic-fields-container">
+            <x-dynamic-enrollment-form program-type="complete" />
         </div>
 
         <h3><i class="bi bi-file-earmark-arrow-up"></i> Verification/Document Upload</h3>

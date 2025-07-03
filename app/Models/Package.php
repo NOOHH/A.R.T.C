@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Package extends Model
 {
-    // If your PK is not 'id':
+    use HasFactory;
+
     protected $primaryKey = 'package_id';
+    public $timestamps = true;
 
     protected $fillable = [
         'package_name',
@@ -19,14 +22,14 @@ class Package extends Model
     ];
 
     /**
-     * All the enrollments that have chosen this package.
+     * Get all enrollments that have chosen this package.
      */
     public function enrollments(): HasMany
     {
         return $this->hasMany(
-            \App\Models\Enrollment::class,
-            'package_id',    // FK on enrollments table
-            'package_id'     // PK on packages table
+            Enrollment::class,
+            'package_id',
+            'package_id'
         );
     }
 
@@ -36,9 +39,9 @@ class Package extends Model
     public function program()
     {
         return $this->belongsTo(
-            \App\Models\Program::class,
-            'program_id',    // FK on packages table
-            'program_id'     // PK on programs table
+            Program::class,
+            'program_id',
+            'program_id'
         );
     }
 }

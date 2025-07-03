@@ -4,6 +4,10 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_Enrollment.css') }}">
+
+{{-- Global UI Styles --}}
+{!! App\Helpers\UIHelper::getNavbarStyles() !!}
+
 <style>
 {!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
 {!! App\Helpers\SettingsHelper::getButtonStyles() !!}
@@ -246,6 +250,19 @@
 @endpush
 
 @section('content')
+<!-- Validation Errors Display -->
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin: 20px auto; max-width: 1200px;">
+        <h6><i class="bi bi-exclamation-triangle"></i> Please correct the following errors:</h6>
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form">
     @csrf
     <input type="hidden" name="enrollment_type" value="modular">
@@ -411,35 +428,9 @@
         </div>
         <input type="text" name="student_school" placeholder="Student's school" class="input-full" required value="{{ old('student_school') }}">
 
-        <h3>Address</h3>
-        <div class="input-row">
-            <input type="text" name="street_address" placeholder="Street Address" required value="{{ old('street_address') }}">
-            <input type="text" name="state_province" placeholder="State/Province" required value="{{ old('state_province') }}">
-        </div>
-        <div class="input-row">
-            <input type="text" name="city" placeholder="City" required value="{{ old('city') }}">
-            <input type="text" name="zipcode" placeholder="Zip Code" required value="{{ old('zipcode') }}">
-        </div>
-
-        <h3>Contact Information</h3>
-        <div class="input-row">
-            <input type="text" name="contact_number" placeholder="Contact Number" required value="{{ old('contact_number') }}">
-            <input type="text" name="emergency_contact_number" placeholder="Emergency Contact Number" required value="{{ old('emergency_contact_number') }}">
-        </div>
-
-        <h3>Verification/Document Upload</h3>
-        <div class="document-buttons">
-            <label>Good Moral <input type="file" name="good_moral" hidden></label>
-            <label>PSA Birth Cert. <input type="file" name="birth_cert" hidden></label>
-            <label>Course Cert. <input type="file" name="course_cert" hidden></label>
-            <label>ToR <input type="file" name="tor" hidden></label>
-            <label>Cert. of Graduation <input type="file" name="grad_cert" hidden></label>
-            <label>1x1 Photo <input type="file" name="photo" hidden></label>
-        </div>
-
-        <div class="input-row" style="margin:16px 0;">
-            <label><input type="radio" name="education" value="Undergraduate" checked> Undergraduate</label>
-            <label><input type="radio" name="education" value="Graduate"> Graduate</label>
+        {{-- Dynamic Additional Fields --}}
+        <div id="dynamic-fields-container">
+            <x-dynamic-enrollment-form program-type="modular" />
         </div>
 
         <h3>Program</h3>

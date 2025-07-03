@@ -11,24 +11,25 @@ class Module extends Model
 
     protected $table = 'modules';
     protected $primaryKey = 'modules_id';
-    public $incrementing = true;             // or false if you’re using strings
-    protected $keyType = 'int';              // adjust if string
+    public $incrementing = true;             // Keep true if using auto-increment int
+    protected $keyType = 'int';
+
+    public $timestamps = true;
 
     protected $fillable = [
         'module_name',
         'module_description',
         'program_id',
-        'plan_id',
         'attachment',
         'created_by_admin_id',
         'content_type',
         'content_data',
-        'is_archived'
+        'is_archived',
     ];
 
     protected $casts = [
         'content_data' => 'array',
-        'is_archived' => 'boolean'
+        'is_archived' => 'boolean',
     ];
 
     public function program()
@@ -45,7 +46,7 @@ class Module extends Model
             'quiz' => 'Quiz',
             'test' => 'Test',
             'link' => 'External Link',
-            default => 'Module/Lesson'
+            default => 'Module/Lesson',
         };
     }
 
@@ -58,7 +59,7 @@ class Module extends Model
             'quiz' => '❓',
             'test' => '📋',
             'link' => '🔗',
-            default => '📚'
+            default => '📚',
         };
     }
 }
