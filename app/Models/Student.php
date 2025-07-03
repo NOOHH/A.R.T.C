@@ -66,47 +66,5 @@ class Student extends Model
     {
         return $this->belongsTo(Package::class, 'package_id', 'package_id');
     }
-    
-    // Enrollments relationship
-    public function enrollments()
-    {
-        return $this->hasMany(\App\Models\Enrollment::class, 'student_id', 'student_id');
-    }
-    
-    // Module completions relationship
-    public function moduleCompletions()
-    {
-        return $this->hasMany(\App\Models\ModuleCompletion::class, 'student_id', 'student_id');
-    }
-    
-    // Get all completed module IDs for this student
-    public function getCompletedModuleIdsAttribute()
-    {
-        return $this->moduleCompletions->pluck('module_id')->toArray();
-    }
-    
-    // Check if student has completed a specific module
-    public function hasCompleted($moduleId)
-    {
-        return $this->moduleCompletions()->where('module_id', $moduleId)->exists();
-    }
-    
-    // Get program progress
-    public function getProgramProgress($programId)
-    {
-        $totalModules = \App\Models\Module::where('program_id', $programId)
-                                        ->where('is_archived', false)
-                                        ->count();
-                                        
-        if ($totalModules === 0) {
-            return 0;
-        }
-        
-        $completedModules = $this->moduleCompletions()
-                                ->where('program_id', $programId)
-                                ->count();
-                                
-        return round(($completedModules / $totalModules) * 100);
-    }
 
 }
