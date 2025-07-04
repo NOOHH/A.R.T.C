@@ -10,13 +10,19 @@ class DynamicEnrollmentForm extends Component
     public $programType;
     public $requirements;
 
-    public function __construct($programType = 'both')
+    public function __construct($programType = 'both', $requirements = null)
     {
         $this->programType = $programType;
-        $this->requirements = FormRequirement::active()
-            ->forProgram($programType)
-            ->ordered()
-            ->get();
+        
+        if ($requirements) {
+            $this->requirements = $requirements;
+        } else {
+            // Fallback to fetch requirements if not provided
+            $this->requirements = FormRequirement::active()
+                ->forProgram($programType)
+                ->ordered()
+                ->get();
+        }
     }
 
     public function render()

@@ -27,6 +27,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'complete',
                 'is_required' => false,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 1
             ],
             [
@@ -36,6 +37,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'complete',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 2
             ],
             [
@@ -46,6 +48,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => true,
                 'sort_order' => 3
             ],
             [
@@ -55,6 +58,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => true,
                 'sort_order' => 4
             ],
             [
@@ -65,7 +69,20 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 5
+            ],
+            [
+                'field_name' => 'education_level',
+                'field_label' => 'Education Level',
+                'field_type' => 'select',
+                'field_options' => ['Undergraduate', 'Graduate'],
+                'program_type' => 'both',
+                'is_required' => true,
+                'is_active' => true,
+                'is_bold' => true,
+                'sort_order' => 6,
+                'section_name' => 'Education Information'
             ],
             
             // Modular Program Requirements
@@ -76,7 +93,8 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'modular',
                 'is_required' => false,
                 'is_active' => true,
-                'sort_order' => 6
+                'is_bold' => false,
+                'sort_order' => 7
             ],
             [
                 'field_name' => 'preferred_schedule',
@@ -86,7 +104,19 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'modular',
                 'is_required' => true,
                 'is_active' => true,
-                'sort_order' => 7
+                'is_bold' => true,
+                'sort_order' => 8
+            ],
+            [
+                'field_name' => 'selected_modules',
+                'field_label' => 'Select Modules',
+                'field_type' => 'module_selection',
+                'program_type' => 'modular',
+                'is_required' => true,
+                'is_active' => true,
+                'is_bold' => true,
+                'sort_order' => 9,
+                'section_name' => 'Module Selection'
             ],
             [
                 'field_name' => 'emergency_contact_relationship',
@@ -95,7 +125,8 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => true,
                 'is_active' => true,
-                'sort_order' => 8
+                'is_bold' => false,
+                'sort_order' => 10
             ],
             [
                 'field_name' => 'health_conditions',
@@ -104,6 +135,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => false,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 9
             ],
             [
@@ -113,6 +145,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => false,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 10
             ],
             
@@ -124,6 +157,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => true,
                 'sort_order' => 11
             ],
             [
@@ -133,6 +167,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'complete',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => true,
                 'sort_order' => 12
             ],
             [
@@ -142,6 +177,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => false,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 13
             ],
             [
@@ -151,6 +187,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'complete',
                 'is_required' => false,
                 'is_active' => true,
+                'is_bold' => false,
                 'sort_order' => 14
             ],
             [
@@ -160,6 +197,7 @@ class FormRequirementsSeeder extends Seeder
                 'program_type' => 'both',
                 'is_required' => true,
                 'is_active' => true,
+                'is_bold' => true,
                 'sort_order' => 15
             ]
         ];

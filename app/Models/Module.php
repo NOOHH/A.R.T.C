@@ -31,6 +31,7 @@ class Module extends Model
     protected $casts = [
         'content_data' => 'array',
         'is_archived' => 'boolean',
+        'module_order' => 'integer',
     ];
 
     public function program()
@@ -74,5 +75,11 @@ class Module extends Model
     public function isCompletedBy($studentId)
     {
         return $this->completions()->where('student_id', $studentId)->exists();
+    }
+
+    // Scope for ordering modules
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('module_order');
     }
 }

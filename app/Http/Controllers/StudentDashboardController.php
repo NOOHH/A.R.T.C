@@ -497,4 +497,40 @@ class StudentDashboardController extends Controller
             ], 500);
         }
     }
+    
+    /**
+     * Download assignment file
+     */
+    public function downloadAssignment($moduleId)
+    {
+        try {
+            // Get the module with the given ID
+            $module = Module::where('modules_id', $moduleId)
+                           ->where('content_type', 'assignment')
+                           ->first();
+            
+            if (!$module) {
+                abort(404, 'Assignment not found.');
+            }
+            
+            // Check if the module has an attachment
+            if (!$module->attachment) {
+                abort(404, 'Assignment file not found.');
+            }
+            
+            // Get the full path to the file
+            $filePath = storage_path('app/public/' . $module->attachment);
+            
+            if (!file_exists($filePath)) {
+                abort(404, 'Assignment file not found on server.');
+            }
+            
+            // Return the file for download
+            return response()->download($filePath, $module->module_name . '.' . pathinfo($filePath, PATHINFO_EXTENSION));
+            
+        } catch (\Exception $e) {
+            Log::error('Error downloading assignment: ' . $e->getMessage());
+            abort(500, 'Error downloading assignment file.');
+        }
+    }
 }
