@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentLoginController;
@@ -100,6 +102,50 @@ Route::post('/student/login', [StudentLoginController::class, 'login'])
 // Student logout
 Route::post('/student/logout', [StudentLoginController::class, 'logout'])
      ->name('student.logout');
+
+// Student dashboard and related routes (protected by student auth middleware)
+Route::middleware(['student.auth'])->group(function () {
+    // Student dashboard
+    Route::get('/student/dashboard', [StudentDashboardController::class, 'dashboard'])
+         ->name('student.dashboard');
+
+    // Student calendar
+    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
+         ->name('student.calendar');
+
+    // Student Courses - Dynamic route for any course
+    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])
+         ->name('student.course');
+         
+    // Legacy routes - keep for backward compatibility
+    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 1)
+         ->name('student.courses.calculus1');
+         
+    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 2)
+         ->name('student.courses.calculus2');
+
+    // New route for viewing individual modules
+    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])
+         ->name('student.module');
+         
+    // Route for marking a module as complete via AJAX
+    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'markModuleComplete'])
+         ->name('student.module.complete');
+         
+    // Student settings
+    Route::get('/student/settings', [StudentDashboardController::class, 'settings'])
+         ->name('student.settings');
+         
+    // Student settings update
+    Route::post('/student/settings', [StudentDashboardController::class, 'updateSettings'])
+         ->name('student.settings.update');
+         
+    // Assignment download
+    Route::get('/student/assignments/{moduleId}/download', [StudentDashboardController::class, 'downloadAssignment'])
+         ->name('student.assignments.download');
+});
 
 // Extra registration details
 Route::get('/register/details/{user}', [StudentRegistrationController::class, 'showDetailsForm'])
@@ -420,31 +466,6 @@ Route::middleware(['auth:professor'])->prefix('professor')->name('professor.')->
     
     Route::get('/programs', [ProfessorDashboardController::class, 'programs'])
          ->name('programs');
-    
-    // Student Calendar
-    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
-         ->name('student.calendar');
-    
-    // Student Courses - Dynamic route for any course
-    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])
-         ->name('student.course');
-         
-    // Legacy routes - keep for backward compatibility
-    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
-         ->defaults('courseId', 1)
-         ->name('student.courses.calculus1');
-         
-    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
-         ->defaults('courseId', 2)
-         ->name('student.courses.calculus2');
-    
-    // New route for viewing individual modules
-    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])
-         ->name('student.module');
-         
-    // Route for marking a module as complete via AJAX
-    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'markModuleComplete'])
-         ->name('student.module.complete');
 });
 
 /*

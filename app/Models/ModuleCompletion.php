@@ -17,6 +17,7 @@ class ModuleCompletion extends Model
         'program_id',
         'completed_at',
         'score',
+        'time_spent',
         'submission_data'
     ];
     
@@ -40,3 +41,4 @@ class ModuleCompletion extends Model
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
+}

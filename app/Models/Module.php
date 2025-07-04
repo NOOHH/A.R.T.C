@@ -47,6 +47,7 @@ class Module extends Model
             'quiz' => 'Quiz',
             'test' => 'Test',
             'link' => 'External Link',
+            'file' => 'File Upload',
             default => 'Module/Lesson',
         };
     }
@@ -54,12 +55,13 @@ class Module extends Model
     // Helper method to get content type icon
     public function getContentTypeIconAttribute()
     {
-        return match($this->content_type) {
+        return $this->attributes['content_type_icon'] ?? match($this->content_type) {
             'module' => '📚',
             'assignment' => '📝',
             'quiz' => '❓',
             'test' => '📋',
             'link' => '🔗',
+            'file' => '📎',
             default => '📚',
         };
     }

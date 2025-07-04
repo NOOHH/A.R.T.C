@@ -35,9 +35,9 @@ class StudentDashboardController extends Controller
         $courses = [];
         
         if ($student) {
-            // Get all enrollments for this student
+            // Get all enrollments for this student with relationships
             $enrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
-                ->with('program')
+                ->with(['program', 'package'])
                 ->get();
                 
             // If student has enrollments, get their programs
@@ -49,8 +49,48 @@ class StudentDashboardController extends Controller
                     }
                     
                     $program = $enrollment->program;
+                    $package = $enrollment->package;
                     
                     // Get module count for progress calculation
+                    $totalModules = Module::where('program_id', $program->program_id)
+                                        ->where('is_archived', false)
+                                        ->count();
+                    
+                    // Get completed modules count
+                    $completedModules = ModuleCompletion::where('student_id', $student->student_id)
+                                            ->where('program_id', $program->program_id)
+                                            ->count();
+                    
+                    // Calculate progress based on completed modules
+                    $progressPercentage = 0;
+                    if ($totalModules > 0) {
+                        $progressPercentage = round(($completedModules / $totalModules) * 100);
+                    }
+                    
+                    // Get plan information from student record
+                    $planName = $student->plan_name ?? 'Standard Plan';
+                    
+                    // Add this program to the courses array
+                    $courses[] = [
+                        'id' => $program->program_id,
+                        'name' => $program->program_name,
+                        'description' => $program->program_description ?? 'No description available.',
+                        'progress' => $progressPercentage,
+                        'total_modules' => $totalModules,
+                        'completed_modules' => $completedModules,
+                        'package_name' => $package ? $package->package_name : $student->package_name,
+                        'plan_name' => $planName,
+                        'enrollment_type' => $enrollment->enrollment_type,
+                    ];
+                }
+            }
+            // If no enrollments but student has direct program_id, package_id, plan_id
+            elseif ($student->program_id) {
+                $program = Program::where('program_id', $student->program_id)
+                                ->where('is_archived', false)
+                                ->first();
+                                
+                if ($program) {
                     $totalModules = Module::where('program_id', $program->program_id)
                                         ->where('is_archived', false)
                                         ->count();
@@ -73,45 +113,16 @@ class StudentDashboardController extends Controller
                         'description' => $program->program_description ?? 'No description available.',
                         'progress' => $progressPercentage,
                         'total_modules' => $totalModules,
-                        'completed_modules' => $completedModules
-                    ];
-                }
-            }
-            // If no enrollments but student has a direct program_id, use that
-            elseif ($student->program_id) {
-                $program = Program::where('program_id', $student->program_id)
-                                ->where('is_archived', false)
-                                ->first();
-                                
-                if ($program) {
-                    $totalModules = Module::where('program_id', $program->program_id)
-                                        ->where('is_archived', false)
-                                        ->count();
-                    
-                    // Get completed modules count
-                    $completedModules = ModuleCompletion::where('student_id', $student->student_id)
-                                            ->where('program_id', $program->program_id)
-                                            ->count();
-                    
-                    // Calculate progress based on completed modules
-                    $progressPercentage = 0;
-                    if ($totalModules > 0) {
-                        $progressPercentage = round(($completedModules / $totalModules) * 100);
-                    }
-                    
-                    $courses[] = [
-                        'id' => $program->program_id,
-                        'name' => $program->program_name,
-                        'description' => $program->program_description ?? 'No description available.',
-                        'progress' => $progressPercentage,
-                        'total_modules' => $totalModules,
-                        'completed_modules' => $completedModules
+                        'completed_modules' => $completedModules,
+                        'package_name' => $student->package_name ?? 'Standard Package',
+                        'plan_name' => $student->plan_name ?? 'Standard Plan',
+                        'enrollment_type' => 'Direct',
                     ];
                 }
             }
         }
 
-        return view('student.student-dashboard.student-dashboard', compact('courses'));
+        return view('student.student-dashboard.student-dashboard', compact('user', 'courses'));
     }
 
     public function calendar()
@@ -495,6 +506,42 @@ class StudentDashboardController extends Controller
                 'success' => false, 
                 'message' => 'An error occurred while marking the module as complete.'
             ], 500);
+        }
+    }
+    
+    /**
+     * Download assignment file
+     */
+    public function downloadAssignment($moduleId)
+    {
+        try {
+            // Get the module with the given ID
+            $module = Module::where('modules_id', $moduleId)
+                           ->where('content_type', 'assignment')
+                           ->first();
+            
+            if (!$module) {
+                abort(404, 'Assignment not found.');
+            }
+            
+            // Check if the module has an attachment
+            if (!$module->attachment) {
+                abort(404, 'Assignment file not found.');
+            }
+            
+            // Get the full path to the file
+            $filePath = storage_path('app/public/' . $module->attachment);
+            
+            if (!file_exists($filePath)) {
+                abort(404, 'Assignment file not found on server.');
+            }
+            
+            // Return the file for download
+            return response()->download($filePath, $module->module_name . '.' . pathinfo($filePath, PATHINFO_EXTENSION));
+            
+        } catch (\Exception $e) {
+            Log::error('Error downloading assignment: ' . $e->getMessage());
+            abort(500, 'Error downloading assignment file.');
         }
     }
 }

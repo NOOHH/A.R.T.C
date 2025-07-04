@@ -305,6 +305,51 @@ body, html {
   transition: all 0.2s;
 }
 
+.sidebar-submenu li a.program-link {
+  padding: 0.75rem 1.5rem;
+}
+
+.program-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.program-name {
+  font-weight: 500;
+  color: #2d1b69;
+  line-height: 1.2;
+}
+
+.program-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(45, 27, 105, 0.6);
+}
+
+.package-info {
+  background: rgba(169, 29, 58, 0.1);
+  color: #a91d3a;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.plan-info {
+  color: rgba(45, 27, 105, 0.7);
+  font-style: italic;
+}
+
+.sidebar-submenu li .disabled {
+  color: rgba(45, 27, 105, 0.5);
+  font-size: 0.8rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
 .sidebar-submenu li a:hover {
   background: rgba(45, 27, 105, 0.1);
   color: #2d1b69;

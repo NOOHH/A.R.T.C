@@ -134,6 +134,39 @@
         transform: translateY(-2px);
     }
     
+    /* Course enrollment info badges */
+    .course-enrollment-info {
+        margin: 10px 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .enrollment-badge, .plan-badge, .type-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-weight: 500;
+        line-height: 1;
+    }
+    
+    .enrollment-badge {
+        background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+        color: white;
+    }
+    
+    .plan-badge {
+        background: rgba(39, 174, 96, 0.1);
+        color: #27ae60;
+        border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+    
+    .type-badge {
+        background: rgba(230, 126, 34, 0.1);
+        color: #e67e22;
+        border: 1px solid rgba(230, 126, 34, 0.3);
+    }
+    
     .no-courses {
         padding: 40px 20px;
         text-align: center;
@@ -173,6 +206,18 @@
                     <div class="course-details">
                         <h3>{{ $course['name'] }}</h3>
                         <p>{{ $course['description'] }}</p>
+                        
+                        <!-- Program Details -->
+                        <div class="course-enrollment-info">
+                            <span class="enrollment-badge">{{ $course['package_name'] }}</span>
+                            @if(isset($course['plan_name']))
+                                <span class="plan-badge">{{ $course['plan_name'] }}</span>
+                            @endif
+                            @if(isset($course['enrollment_type']))
+                                <span class="type-badge">{{ $course['enrollment_type'] }}</span>
+                            @endif
+                        </div>
+                        
                         <div class="progress-bar" style="--progress: {{ $course['progress'] }}%">
                             <span class="progress-text">{{ $course['progress'] }}% complete</span>
                         </div>
@@ -180,7 +225,7 @@
                             <span>{{ $course['completed_modules'] ?? 0 }} / {{ $course['total_modules'] }} modules complete</span>
                         </div>
                     </div>
-                    <a href="{{ route('student.course', ['courseId' => $course['id']]) }}" class="resume-btn">Resume</a>
+                    <a href="{{ route('student.course', ['courseId' => $course['id']]) }}" class="resume-btn">Continue Learning</a>
                 </div>
             @empty
                 <div class="no-courses">

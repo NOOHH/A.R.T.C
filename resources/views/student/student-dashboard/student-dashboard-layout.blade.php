@@ -63,30 +63,61 @@
                             </a>
                             <ul class="sidebar-submenu">
                                 @php
-                                    // Get all available programs
-                                    $programs = App\Models\Program::where('is_archived', false)->get();
-                                    
-                                    // Get student's enrolled program if any
-                                    $studentProgramId = null;
+                                    // Get student's enrolled programs
+                                    $studentPrograms = [];
                                     if (session('user_id')) {
                                         $student = App\Models\Student::where('user_id', session('user_id'))->first();
                                         if ($student) {
-                                            $studentProgramId = $student->program_id;
+                                            // Get enrollments
+                                            $enrollments = App\Models\Enrollment::where('student_id', $student->student_id)
+                                                ->with(['program', 'package'])
+                                                ->get();
+                                                
+                                            foreach ($enrollments as $enrollment) {
+                                                if ($enrollment->program && !$enrollment->program->is_archived) {
+                                                    $studentPrograms[] = [
+                                                        'program_id' => $enrollment->program->program_id,
+                                                        'program_name' => $enrollment->program->program_name,
+                                                        'package_name' => $enrollment->package ? $enrollment->package->package_name : $student->package_name,
+                                                        'plan_name' => $student->plan_name ?? 'Standard Plan',
+                                                    ];
+                                                }
+                                            }
+                                            
+                                            // If no enrollments but student has direct program_id
+                                            if (empty($studentPrograms) && $student->program_id) {
+                                                $program = App\Models\Program::where('program_id', $student->program_id)
+                                                    ->where('is_archived', false)
+                                                    ->first();
+                                                if ($program) {
+                                                    $studentPrograms[] = [
+                                                        'program_id' => $program->program_id,
+                                                        'program_name' => $program->program_name,
+                                                        'package_name' => $student->package_name ?? 'Standard Package',
+                                                        'plan_name' => $student->plan_name ?? 'Standard Plan',
+                                                    ];
+                                                }
+                                            }
                                         }
                                     }
                                 @endphp
                                 
-                                @forelse($programs as $program)
-                                    <li class="@if(request()->route('courseId') == $program->program_id) active @endif">
-                                        <a href="{{ route('student.course', ['courseId' => $program->program_id]) }}">
-                                            {{ $program->program_name }}
-                                            @if($program->program_id === $studentProgramId)
-                                                <small>(Enrolled)</small>
-                                            @endif
+                                @forelse($studentPrograms as $program)
+                                    <li class="@if(request()->route('courseId') == $program['program_id']) active @endif">
+                                        <a href="{{ route('student.course', ['courseId' => $program['program_id']]) }}" class="program-link">
+                                            <div class="program-info">
+                                                <div class="program-name">{{ $program['program_name'] }}</div>
+                                                <div class="program-details">
+                                                    <small class="package-info">{{ $program['package_name'] }}</small>
+                                                    @if($program['plan_name'])
+                                                        <small class="plan-info"> • {{ $program['plan_name'] }}</small>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </a>
                                     </li>
                                 @empty
-                                    <li><span class="disabled">No programs available</span></li>
+                                    <li><span class="disabled">You are not enrolled in any programs yet.<br>Please contact your administrator to get enrolled in courses.</span></li>
                                 @endforelse
                             </ul>
                         </li>

@@ -25,6 +25,43 @@
   .header-buttons .btn {
     margin-left: 0.75rem;
   }
+  
+  .add-module-btn, .view-archived-btn, .batch-upload-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+  }
+  
+  .add-module-btn:hover, .view-archived-btn:hover, .batch-upload-btn:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+  }
+  
+  .view-archived-btn {
+    background: #f39c12;
+  }
+  
+  .view-archived-btn:hover {
+    background: #e67e22;
+  }
+  
+  .batch-upload-btn {
+    background: #9b59b6;
+  }
+  
+  .batch-upload-btn:hover {
+    background: #8e44ad;
+  }
 
   .program-selector select {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -367,8 +404,8 @@
     font-weight: 600;
   }
   
-  /* Specific fixes for the Add Content modal to ensure it displays correctly */
-  #addModalBg {
+  /* Modal Styles */
+  .modal-bg {
     display: none;
     position: fixed;
     top: 0;
@@ -376,31 +413,115 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 9999 !important;
+    z-index: 9999;
     align-items: center;
     justify-content: center;
     overflow-y: auto;
   }
   
-  #addModalBg.show {
+  .modal-bg.show {
     display: flex !important;
   }
   
-  #addModalBg .modal {
-    position: relative !important;
-    display: block !important;
+  .modal {
     background-color: white;
     padding: 30px;
     border-radius: 15px;
-    max-width: 500px;
+    max-width: 600px;
     width: 90%;
-    margin: 1.75rem auto !important;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    z-index: 10000 !important;
-    transform: none !important;
-    opacity: 1 !important;
-    transition: transform 0.3s ease-out !important;
-    pointer-events: auto !important;
+    position: relative;
+  }
+  
+  .modal h3 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+  }
+  
+  .modal input, .modal textarea, .modal select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  
+  .modal textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  
+  .content-type-fields {
+    border: 1px solid #e1e5e9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+  }
+  
+  .dropzone {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    background: #fafafa;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .dropzone:hover {
+    border-color: #3498db;
+    background: #f0f8ff;
+  }
+  
+  .dropzone input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  
+  .cancel-btn, .add-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .cancel-btn {
+    background: #95a5a6;
+    color: white;
+  }
+  
+  .cancel-btn:hover {
+    background: #7f8c8d;
+  }
+  
+  .add-btn {
+    background: #3498db;
+    color: white;
+  }
+  
+  .add-btn:hover {
+    background: #2980b9;
   }
 </style>
 @endpush
@@ -436,7 +557,7 @@
             <button type="button" class="add-module-btn batch-upload-btn" id="showBatchModal">
                 <span style="font-size:1.3em;">📚</span> Batch Upload
             </button>
-            <button type="button" class="add-module-btn" id="showAddModal" onclick="showAddContentModal()">
+            <button type="button" class="add-module-btn" id="showAddModal">
                 <span style="font-size:1.3em;">&#43;</span> Add Content
             </button>
         </div>
@@ -625,19 +746,60 @@
 
             <select name="content_type" id="addContentType" required>
                 <option value="">-- Select Content Type --</option>
-                <option value="module">Module/Lesson</option>
-                <option value="assignment">Assignment</option>
-                <option value="quiz">Quiz</option>
-                <option value="test">Test</option>
-                <option value="link">External Link</option>
+                <option value="module">📚 Module/Lesson</option>
+                <option value="assignment">📝 Assignment</option>
+                <option value="quiz">❓ Quiz</option>
+                <option value="test">📋 Test</option>
+                <option value="link">🔗 External Link</option>
+                <option value="file">📎 File Upload</option>
             </select>
 
             <div class="content-specific-fields" id="addContentFields">
                 <!-- Dynamic fields will be added here based on content type -->
             </div>
 
+            <!-- Assignment specific fields -->
+            <div class="content-type-fields" id="assignmentFields" style="display: none;">
+                <input type="text" name="assignment_title" placeholder="Assignment Title">
+                <textarea name="assignment_instructions" placeholder="Assignment Instructions"></textarea>
+                <input type="datetime-local" name="due_date" placeholder="Due Date">
+                <input type="number" name="max_points" placeholder="Maximum Points" min="1">
+            </div>
+
+            <!-- Quiz specific fields -->
+            <div class="content-type-fields" id="quizFields" style="display: none;">
+                <input type="text" name="quiz_title" placeholder="Quiz Title">
+                <textarea name="quiz_description" placeholder="Quiz Description"></textarea>
+                <input type="number" name="time_limit" placeholder="Time Limit (minutes)" min="1">
+                <input type="number" name="question_count" placeholder="Number of Questions" min="1">
+            </div>
+
+            <!-- Test specific fields -->
+            <div class="content-type-fields" id="testFields" style="display: none;">
+                <input type="text" name="test_title" placeholder="Test Title">
+                <textarea name="test_description" placeholder="Test Description"></textarea>
+                <input type="datetime-local" name="test_date" placeholder="Test Date">
+                <input type="number" name="duration" placeholder="Duration (minutes)" min="1">
+                <input type="number" name="total_marks" placeholder="Total Marks" min="1">
+            </div>
+
+            <!-- External Link specific fields -->
+            <div class="content-type-fields" id="linkFields" style="display: none;">
+                <input type="text" name="link_title" placeholder="Link Title">
+                <input type="url" name="external_url" placeholder="External URL (https://...)">
+                <textarea name="link_description" placeholder="Link Description"></textarea>
+                <select name="link_type">
+                    <option value="video">📹 Video</option>
+                    <option value="article">📄 Article</option>
+                    <option value="website">🌐 Website</option>
+                    <option value="tool">🔧 Tool</option>
+                    <option value="other">📂 Other</option>
+                </select>
+            </div>
+
             <div class="dropzone" id="addDropzone">
-                <p>Drop files here or click to browse</p>
+                <p>📁 Drop files here or click to browse</p>
+                <small>Supported formats: PDF, DOC, DOCX, ZIP, PNG, JPG, JPEG (Max 10MB)</small>
                 <input type="file"
                        name="attachment"
                        id="addAttachment"
@@ -646,7 +808,7 @@
 
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="cancelAddModal">Cancel</button>
-                <button type="submit" class="add-btn">Add Content</button>
+                <button type="submit" class="add-btn" id="submitAddContent">Add Content</button>
             </div>
         </form>
     </div>
@@ -757,7 +919,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize the Add Content modal
     if (showAddModal) {
-        showAddModal.addEventListener('click', function() {
+        showAddModal.addEventListener('click', function(e) {
+            e.preventDefault();
             showAddContentModal();
         });
     }
@@ -776,6 +939,49 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target === addModalBg) {
                 addModalBg.classList.remove('show');
                 addModalBg.style.display = 'none';
+            }
+        });
+    }
+    
+    // Handle content type selection to show/hide specific fields
+    const contentTypeSelect = document.getElementById('addContentType');
+    if (contentTypeSelect) {
+        contentTypeSelect.addEventListener('change', function() {
+            // Hide all content type specific fields
+            const allFields = document.querySelectorAll('.content-type-fields');
+            allFields.forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            // Remove required attribute from all conditional fields
+            const conditionalInputs = document.querySelectorAll('#linkFields input[name="external_url"]');
+            conditionalInputs.forEach(input => {
+                input.removeAttribute('required');
+            });
+            
+            // Show relevant fields based on selection
+            const selectedType = this.value;
+            switch (selectedType) {
+                case 'assignment':
+                    document.getElementById('assignmentFields').style.display = 'block';
+                    break;
+                case 'quiz':
+                    document.getElementById('quizFields').style.display = 'block';
+                    break;
+                case 'test':
+                    document.getElementById('testFields').style.display = 'block';
+                    break;
+                case 'link':
+                    document.getElementById('linkFields').style.display = 'block';
+                    // Make URL required only for link type
+                    const urlInput = document.querySelector('#linkFields input[name="external_url"]');
+                    if (urlInput) {
+                        urlInput.setAttribute('required', 'required');
+                    }
+                    break;
+                default:
+                    // For 'module' and 'file' types, no additional fields needed
+                    break;
             }
         });
     }
@@ -1048,6 +1254,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.showAddContentModal = function() {
         console.log('showAddContentModal called');
         
+        const programSelect = document.getElementById('programSelect');
+        const addModalBg = document.getElementById('addModalBg');
+        
         if (!programSelect || !addModalBg) {
             console.error('Required elements not found');
             return;
@@ -1074,19 +1283,304 @@ document.addEventListener('DOMContentLoaded', function() {
             modalProgramSelect.value = currentProgramId;
         }
         
-        // Ensure the modal is visible with explicit styles
-        const modalElement = addModalBg.querySelector('.modal');
-        if (modalElement) {
-            modalElement.style.display = 'block';
-            modalElement.style.opacity = '1';
-            modalElement.style.zIndex = '10000';
-        }
+        // Reset form fields
+        document.getElementById('addModuleForm').reset();
+        modalProgramSelect.value = currentProgramId;
         
-        // Show the modal background
+        // Hide all content type specific fields
+        const allFields = document.querySelectorAll('.content-type-fields');
+        allFields.forEach(field => {
+            field.style.display = 'none';
+        });
+        
+        // Show the modal
         addModalBg.classList.add('show');
         addModalBg.style.display = 'flex';
         
         console.log('Modal should now be visible');
+    };
+    
+    // Handle file drop functionality
+    const dropzone = document.getElementById('addDropzone');
+    const fileInput = document.getElementById('addAttachment');
+    
+    if (dropzone && fileInput) {
+        dropzone.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.style.borderColor = '#3498db';
+            dropzone.style.background = '#f0f8ff';
+        });
+        
+        dropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropzone.style.borderColor = '#ddd';
+            dropzone.style.background = '#fafafa';
+        });
+        
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.style.borderColor = '#ddd';
+            dropzone.style.background = '#fafafa';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateDropzoneText(files[0].name);
+            }
+        });
+        
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                updateDropzoneText(this.files[0].name);
+            }
+        });
+    }
+    
+    function updateDropzoneText(fileName) {
+        const dropzoneText = dropzone.querySelector('p');
+        if (dropzoneText) {
+            dropzoneText.textContent = `Selected: ${fileName}`;
+        }
+    }
+    
+    // Form validation for Add Content
+    const addForm = document.getElementById('addModuleForm');
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            console.log('Form submit event triggered');
+            
+            const moduleName = document.querySelector('input[name="module_name"]').value.trim();
+            const contentType = document.querySelector('select[name="content_type"]').value;
+            const programId = document.querySelector('select[name="program_id"]').value;
+            
+            console.log('Form data:', { moduleName, contentType, programId });
+            
+            if (!moduleName) {
+                console.log('Validation failed: No module name');
+                e.preventDefault();
+                alert('Please enter a content name.');
+                return false;
+            }
+            
+            if (!contentType) {
+                console.log('Validation failed: No content type');
+                e.preventDefault();
+                alert('Please select a content type.');
+                return false;
+            }
+            
+            if (!programId) {
+                console.log('Validation failed: No program ID');
+                e.preventDefault();
+                alert('Please select a program.');
+                return false;
+            }
+            
+            // Additional validation for external links
+            if (contentType === 'link') {
+                const externalUrl = document.querySelector('input[name="external_url"]').value.trim();
+                if (!externalUrl) {
+                    console.log('Validation failed: No external URL for link');
+                    e.preventDefault();
+                    alert('Please enter an external URL for link content.');
+                    return false;
+                }
+                
+                // Basic URL validation
+                try {
+                    new URL(externalUrl);
+                } catch {
+                    console.log('Validation failed: Invalid URL');
+                    e.preventDefault();
+                    alert('Please enter a valid URL (including http:// or https://).');
+                    return false;
+                }
+            }
+            
+            console.log('Form validation passed, submitting...');
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submitAddContent');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Adding...';
+            }
+            
+            return true;
+        });
+    } else {
+        console.error('Form element not found!');
+    }
+    
+    // Debug: Add click handler to submit button
+    const submitBtn = document.getElementById('submitAddContent');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            console.log('Submit button clicked');
+            console.log('Form element:', document.getElementById('addModuleForm'));
+            const form = document.getElementById('addModuleForm');
+            if (form) {
+                console.log('Form action:', form.action);
+                console.log('Form method:', form.method);
+                console.log('Form CSRF token:', form.querySelector('input[name="_token"]')?.value);
+            }
+        });
+    }
+    
+    // Alternative form submission method in case normal submission fails
+    window.submitAddContentForm = function() {
+        console.log('Alternative form submission triggered');
+        const form = document.getElementById('addModuleForm');
+        if (form) {
+            // Manually trigger form validation
+            if (form.checkValidity()) {
+                console.log('Form is valid, submitting...');
+                form.submit();
+            } else {
+                console.log('Form validation failed');
+                form.reportValidity();
+            }
+        }
+    };
+    
+    // Debug function - commented out since feature is working
+    /*
+    window.testFormSubmission = function() {
+        console.log('Test form submission triggered');
+        const form = document.getElementById('addModuleForm');
+        if (form) {
+            // Clone the form data
+            const formData = new FormData(form);
+            
+            // Log form data
+            console.log('Form data being sent:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key, value);
+            }
+            
+            fetch('/admin/modules', { // Changed to a safe route that exists
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            })
+            .then(data => {
+                console.log('Test submission response:', data);
+                alert('Test submission successful! Check console for details.');
+            })
+            .catch(error => {
+                console.error('Test submission error:', error);
+                console.error('Error details:', error.message);
+                alert(`Test submission failed! Error: ${error.message}. Check console for details.`);
+            });
+        } else {
+            console.error('Form not found!');
+            alert('Form not found!');
+        }
+    };
+    */
+    
+    // Complete debugging function
+    window.debugFormState = function() {
+        console.log('=== FORM DEBUG START ===');
+        
+        const form = document.getElementById('addModuleForm');
+        console.log('Form element:', form);
+        
+        if (form) {
+            console.log('Form action:', form.action);
+            console.log('Form method:', form.method);
+            console.log('Form enctype:', form.enctype);
+            
+            const inputs = form.querySelectorAll('input, select, textarea');
+            console.log('Form inputs:', inputs.length);
+            
+            inputs.forEach((input, index) => {
+                console.log(`Input ${index}:`, {
+                    name: input.name,
+                    type: input.type,
+                    value: input.value,
+                    required: input.required,
+                    valid: input.checkValidity()
+                });
+            });
+            
+            const csrfToken = form.querySelector('input[name="_token"]');
+            console.log('CSRF Token:', csrfToken ? csrfToken.value : 'NOT FOUND');
+            
+            console.log('Form validity:', form.checkValidity());
+            
+            // Test simple fetch to check server connection
+            fetch('/admin/modules', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log('Server connection test - Status:', response.status);
+                console.log('Server connection test - OK:', response.ok);
+            })
+            .catch(error => {
+                console.error('Server connection test failed:', error);
+            });
+        }
+        
+        console.log('Current URL:', window.location.href);
+        console.log('Base URL:', window.location.origin);
+        console.log('=== FORM DEBUG END ===');
+    };
+    
+    // Test actual form route
+    window.testActualSubmission = function() {
+        console.log('Testing actual form submission route');
+        const form = document.getElementById('addModuleForm');
+        if (form) {
+            const formData = new FormData(form);
+            
+            fetch('{{ route("admin.modules.store") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Actual route response status:', response.status);
+                console.log('Actual route response ok:', response.ok);
+                
+                if (response.redirected) {
+                    console.log('Response was redirected to:', response.url);
+                    alert('Form submission worked! Response was redirected (likely success).');
+                } else if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            })
+            .then(data => {
+                if (data) {
+                    console.log('Response data:', data);
+                    alert('Form submission completed. Check console for details.');
+                }
+            })
+            .catch(error => {
+                console.error('Actual route error:', error);
+                alert(`Actual route test failed: ${error.message}`);
+            });
+        }
     };
 });
 </script>
