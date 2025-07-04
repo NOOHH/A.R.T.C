@@ -25,7 +25,6 @@ class Module extends Model
         'content_type',
         'content_data',
         'is_archived',
-        'module_order',
     ];
 
     protected $casts = [
@@ -63,23 +62,5 @@ class Module extends Model
             'link' => '🔗',
             default => '📚',
         };
-    }
-    
-    // Relationship for module completions
-    public function completions()
-    {
-        return $this->hasMany(ModuleCompletion::class, 'module_id', 'modules_id');
-    }
-    
-    // Check if a student has completed this module
-    public function isCompletedBy($studentId)
-    {
-        return $this->completions()->where('student_id', $studentId)->exists();
-    }
-
-    // Scope for ordering modules
-    public function scopeOrdered($query)
-    {
-        return $query->orderBy('module_order');
     }
 }
