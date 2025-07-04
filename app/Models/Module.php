@@ -25,12 +25,12 @@ class Module extends Model
         'content_type',
         'content_data',
         'is_archived',
-        'module_order',
     ];
 
     protected $casts = [
         'content_data' => 'array',
         'is_archived' => 'boolean',
+        'module_order' => 'integer',
     ];
 
     public function program()
@@ -64,17 +64,5 @@ class Module extends Model
             'file' => '📎',
             default => '📚',
         };
-    }
-    
-    // Relationship for module completions
-    public function completions()
-    {
-        return $this->hasMany(ModuleCompletion::class, 'module_id', 'modules_id');
-    }
-    
-    // Check if a student has completed this module
-    public function isCompletedBy($studentId)
-    {
-        return $this->completions()->where('student_id', $studentId)->exists();
     }
 }

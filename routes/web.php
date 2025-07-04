@@ -17,6 +17,8 @@ use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\ProfessorDashboardController;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\FormRequirementController;
 use App\Models\Program;
 use App\Models\Package;
 
@@ -76,7 +78,14 @@ Route::get('/enrollment/modular', function () {
     $programs  = Program::all();
     $packages  = Package::all(); // Add this line to fix the undefined variable error
     $programId = request('program_id');
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId'));
+    
+    // Get form requirements for modular enrollment
+    $formRequirements = \App\Models\FormRequirement::active()
+        ->forProgram('modular')
+        ->ordered()
+        ->get();
+    
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements'));
 })->name('enrollment.modular');
 
 // Login page
@@ -91,6 +100,17 @@ Route::get('/login', fn() => view('Login.login'))->name('login');
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
 
+// Registration success page
+Route::get('/registration/success', function () {
+    return view('registration.success');
+})->name('registration.success');
+
+// Test registration form
+Route::get('/test-registration', function () {
+    $formRequirements = App\Models\FormRequirement::active()->forProgram('complete')->get();
+    return view('test-registration', compact('formRequirements'));
+})->name('test.registration');
+
 // Check if email exists
 Route::post('/check-email', [StudentRegistrationController::class, 'checkEmail'])
      ->name('check.email');
@@ -102,6 +122,50 @@ Route::post('/student/login', [StudentLoginController::class, 'login'])
 // Student logout
 Route::post('/student/logout', [StudentLoginController::class, 'logout'])
      ->name('student.logout');
+
+// Student dashboard and related routes (protected by student auth middleware)
+Route::middleware(['student.auth'])->group(function () {
+    // Student dashboard
+    Route::get('/student/dashboard', [StudentDashboardController::class, 'dashboard'])
+         ->name('student.dashboard');
+
+    // Student calendar
+    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
+         ->name('student.calendar');
+
+    // Student Courses - Dynamic route for any course
+    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])
+         ->name('student.course');
+         
+    // Legacy routes - keep for backward compatibility
+    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 1)
+         ->name('student.courses.calculus1');
+         
+    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 2)
+         ->name('student.courses.calculus2');
+
+    // New route for viewing individual modules
+    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])
+         ->name('student.module');
+         
+    // Route for marking a module as complete via AJAX
+    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'markModuleComplete'])
+         ->name('student.module.complete');
+         
+    // Student settings
+    Route::get('/student/settings', [StudentDashboardController::class, 'settings'])
+         ->name('student.settings');
+         
+    // Student settings update
+    Route::post('/student/settings', [StudentDashboardController::class, 'updateSettings'])
+         ->name('student.settings.update');
+         
+    // Assignment download
+    Route::get('/student/assignments/{moduleId}/download', [StudentDashboardController::class, 'downloadAssignment'])
+         ->name('student.assignments.download');
+});
 
 // Student dashboard and related routes (protected by student auth middleware)
 Route::middleware(['student.auth'])->group(function () {
@@ -269,21 +333,11 @@ Route::put('/admin/modules/{module:modules_id}', [AdminModuleController::class, 
 
 // Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
-     ->name('admin.modules.destroy')
-     ->middleware(['admin.auth']);
+     ->name('admin.modules.destroy');
 
+// Get modules by program (AJAX)
 Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
-    ->name('admin.modules.by-program')
-    ->middleware(['admin.auth']);
-    
-// New routes for enhanced LMS functionality
-Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updateOrder'])
-    ->name('admin.modules.updateOrder')
-    ->middleware(['admin.auth']);
-    
-Route::get('/admin/modules/{module:modules_id}/preview', [AdminModuleController::class, 'preview'])
-    ->name('admin.modules.preview')
-    ->middleware(['admin.auth']);
+     ->name('admin.modules.by-program');
 
 /*
 |--------------------------------------------------------------------------
@@ -368,6 +422,20 @@ Route::get('/admin/settings/student-portal', [AdminSettingsController::class, 'g
 Route::post('/admin/settings/student-portal', [AdminSettingsController::class, 'saveStudentPortalSettings']);
 Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'saveNavbarSettings']);
 Route::get('/admin/settings/navbar', [AdminSettingsController::class, 'getNavbarSettings']);
+
+// Dynamic Field Management routes
+Route::post('/admin/settings/form-requirements/toggle-active', [AdminSettingsController::class, 'toggleFieldActive'])
+     ->name('admin.settings.form-requirements.toggle-active');
+Route::post('/admin/settings/form-requirements/add-column', [AdminSettingsController::class, 'addDynamicColumn'])
+     ->name('admin.settings.form-requirements.add-column');
+Route::get('/admin/settings/form-requirements/preview/{programType}', [AdminSettingsController::class, 'previewForm'])
+     ->name('admin.settings.form-requirements.preview');
+
+// Module ordering routes
+Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updateSortOrder'])
+     ->name('admin.modules.update-sort-order');
+Route::get('/admin/modules/ordered', [ModuleController::class, 'getOrderedModules'])
+     ->name('admin.modules.ordered');
 
 /*
 |--------------------------------------------------------------------------
@@ -466,6 +534,31 @@ Route::middleware(['auth:professor'])->prefix('professor')->name('professor.')->
     
     Route::get('/programs', [ProfessorDashboardController::class, 'programs'])
          ->name('programs');
+    
+    // Student Calendar
+    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])
+         ->name('student.calendar');
+    
+    // Student Courses - Dynamic route for any course
+    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])
+         ->name('student.course');
+         
+    // Legacy routes - keep for backward compatibility
+    Route::get('/student/courses/calculus1', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 1)
+         ->name('student.courses.calculus1');
+         
+    Route::get('/student/courses/calculus2', [StudentDashboardController::class, 'course'])
+         ->defaults('courseId', 2)
+         ->name('student.courses.calculus2');
+    
+    // New route for viewing individual modules
+    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])
+         ->name('student.module');
+         
+    // Route for marking a module as complete via AJAX
+    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'markModuleComplete'])
+         ->name('student.module.complete');
 });
 
 /*
@@ -520,3 +613,19 @@ Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsContro
 //     
 //     return view('test-ui', compact('formRequirements', 'navbarSettings'));
 // });
+
+// Test dynamic registration system
+Route::get('/test-dynamic-registration', function () {
+    $activeFields = App\Models\FormRequirement::active()->get();
+    $inactiveFields = App\Models\FormRequirement::where('is_active', false)->get();
+    
+    return view('test-dynamic-registration', compact('activeFields', 'inactiveFields'));
+})->name('test.dynamic.registration');
+
+// Form Requirements Management Routes
+Route::get('/admin/form-requirements', [FormRequirementController::class, 'index'])->name('admin.form-requirements');
+Route::post('/admin/form-requirements', [FormRequirementController::class, 'store'])->name('admin.form-requirements.store');
+Route::post('/admin/form-requirements/archive', [FormRequirementController::class, 'archive'])->name('admin.form-requirements.archive');
+Route::post('/admin/form-requirements/restore', [FormRequirementController::class, 'restore'])->name('admin.form-requirements.restore');
+Route::put('/admin/form-requirements/{id}', [FormRequirementController::class, 'update'])->name('admin.form-requirements.update');
+Route::delete('/admin/form-requirements/{id}', [FormRequirementController::class, 'destroy'])->name('admin.form-requirements.destroy');

@@ -140,7 +140,7 @@
                                 <span class="icon">⚙️</span> Settings
                             </a>
                         </li>
-                        <li class="logout" onclick="handleAdminLogout();" style="cursor: pointer;">
+                        <li class="logout" onclick="handleAdminLogout();">
                             <span class="icon">🚪</span> Logout
                         </li>
                     </ul>
@@ -175,16 +175,16 @@
 </div>
 
 <!-- Hidden Logout Form -->
-<form id="admin-logout-form" action="{{ route('student.logout') }}" method="POST" style="display: none;">
-    @csrf
+<form id="logout-form" action="{{ route('login') }}" method="GET" style="display: none;">
 </form>
 
 @yield('scripts')
 <script>
 function handleAdminLogout() {
+    // Clear any session data and redirect to login/home
     if (confirm('Are you sure you want to logout?')) {
-        // Submit the form to properly log out and clear session
-        document.getElementById('admin-logout-form').submit();
+        // You can add session clearing logic here
+        window.location.href = '{{ route("login") }}';
     }
 }
 
@@ -227,7 +227,10 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '{{ route("admin.settings.index") }}';
     });
 
-    // Logout is handled by handleAdminLogout() function, no additional handler needed here
+    // Logout
+    document.querySelector('.logout')?.addEventListener('click', () => {
+        window.location.href = '/';
+    });
 });
 </script>
 

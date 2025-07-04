@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use App\Models\FormRequirement;
 use App\Models\UiSetting;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class AdminSettingsController extends Controller
 {
@@ -628,7 +630,8 @@ class AdminSettingsController extends Controller
 
     public function getFormRequirements()
     {
-        $requirements = FormRequirement::active()->ordered()->get();
+        // Return ALL requirements (both active and inactive) for admin management
+        $requirements = FormRequirement::ordered()->get();
         return response()->json($requirements);
     }
     
@@ -642,19 +645,41 @@ class AdminSettingsController extends Controller
             FormRequirement::whereNotIn('id', $existingIds)->delete();
             
             foreach ($requirements as $index => $reqData) {
-                if (empty($reqData['field_name']) || empty($reqData['field_label'])) {
-                    continue; // Skip incomplete requirements
+                if ($reqData['field_type'] === 'section') {
+                    // For section type, only section_name is required
+                    if (empty($reqData['section_name'])) {
+                        continue;
+                    }
+                    
+                    $data = [
+                        'field_name' => 'section_' . $index,
+                        'field_label' => $reqData['section_name'],
+                        'field_type' => 'section',
+                        'program_type' => $reqData['program_type'],
+                        'is_required' => false,
+                        'is_active' => true,
+                        'sort_order' => $reqData['sort_order'] ?? $index,
+                        'section_name' => $reqData['section_name']
+                    ];
+                } else {
+                    // For regular fields, field_name and field_label are required
+                    if (empty($reqData['field_name']) || empty($reqData['field_label'])) {
+                        continue;
+                    }
+                    
+                    $data = [
+                        'field_name' => $reqData['field_name'],
+                        'field_label' => $reqData['field_label'],
+                        'field_type' => $reqData['field_type'],
+                        'program_type' => $reqData['program_type'],
+                        'is_required' => isset($reqData['is_required']),
+                        'is_active' => isset($reqData['is_active']),
+                        'sort_order' => $reqData['sort_order'] ?? $index,
+                        'section_name' => $reqData['section_name'] ?? null,
+                        'is_bold' => isset($reqData['is_bold']) && $reqData['is_bold'] === '1',
+                        'field_options' => $this->processFieldOptions($reqData['field_options'] ?? null)
+                    ];
                 }
-                
-                $data = [
-                    'field_name' => $reqData['field_name'],
-                    'field_label' => $reqData['field_label'],
-                    'field_type' => $reqData['field_type'],
-                    'program_type' => $reqData['program_type'],
-                    'is_required' => isset($reqData['is_required']),
-                    'is_active' => true,
-                    'sort_order' => $index
-                ];
                 
                 if (!empty($reqData['id'])) {
                     // Update existing
@@ -774,73 +799,181 @@ class AdminSettingsController extends Controller
         return $html;
     }
     
-    private function generateFieldHtml($requirement)
+  private function generateFieldHtml($requirement)
+{
+    $fieldName = $requirement->field_name;
+    $fieldLabel = $requirement->field_label;
+    $fieldType = $requirement->field_type;
+    $isRequired = $requirement->is_required;
+    $requiredAttr = $isRequired ? 'required' : '';
+    $requiredMark = $isRequired ? '<span class="text-danger">*</span>' : '';
+
+    switch ($fieldType) {
+        case 'section_label':
+            return "
+                <div class='form-section-label my-4'>
+                    <h5 class='text-primary fw-bold'>{$fieldLabel}</h5>
+                </div>
+            ";
+
+        case 'text':
+        case 'email':
+        case 'tel':
+            return "
+                <div class='form-group mb-3'>
+                    <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                    <input type='{$fieldType}' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                </div>
+            ";
+
+        case 'date':
+            return "
+                <div class='form-group mb-3'>
+                    <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                    <input type='date' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                </div>
+            ";
+
+        case 'file':
+            return "
+                <div class='form-group mb-3'>
+                    <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                    <div class='file-upload-container'>
+                        <input type='file' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                        <button type='button' class='btn btn-outline-primary btn-sm upload-btn' data-field='{$fieldName}'>
+                            <i class='bi bi-upload'></i> Choose File
+                        </button>
+                    </div>
+                </div>
+            ";
+
+        case 'textarea':
+            return "
+                <div class='form-group mb-3'>
+                    <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                    <textarea class='form-control' id='{$fieldName}' name='{$fieldName}' rows='3' {$requiredAttr}></textarea>
+                </div>
+            ";
+
+        case 'select':
+            $options = $requirement->field_options ?: [];
+            $optionsHtml = '<option value="">Select an option</option>';
+            foreach ($options as $option) {
+                $optionsHtml .= "<option value='{$option}'>{$option}</option>";
+            }
+
+            return "
+                <div class='form-group mb-3'>
+                    <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
+                    <select class='form-select' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
+                        {$optionsHtml}
+                    </select>
+                </div>
+            ";
+
+        default:
+            return '';
+    }
+}
+
+    /**
+     * Toggle field active status
+     */
+    public function toggleFieldActive(Request $request)
     {
-        $fieldName = $requirement->field_name;
-        $fieldLabel = $requirement->field_label;
-        $fieldType = $requirement->field_type;
-        $isRequired = $requirement->is_required;
-        $requiredAttr = $isRequired ? 'required' : '';
-        $requiredMark = $isRequired ? '<span class="text-danger">*</span>' : '';
-        
-        switch ($fieldType) {
-            case 'text':
-            case 'email':
-            case 'tel':
-                return "
-                    <div class='form-group mb-3'>
-                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
-                        <input type='{$fieldType}' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
-                    </div>
-                ";
-                
-            case 'date':
-                return "
-                    <div class='form-group mb-3'>
-                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
-                        <input type='date' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
-                    </div>
-                ";
-                
-            case 'file':
-                return "
-                    <div class='form-group mb-3'>
-                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
-                        <div class='file-upload-container'>
-                            <input type='file' class='form-control' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
-                            <button type='button' class='btn btn-outline-primary btn-sm upload-btn' data-field='{$fieldName}'>
-                                <i class='bi bi-upload'></i> Choose File
-                            </button>
-                        </div>
-                    </div>
-                ";
-                
-            case 'textarea':
-                return "
-                    <div class='form-group mb-3'>
-                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
-                        <textarea class='form-control' id='{$fieldName}' name='{$fieldName}' rows='3' {$requiredAttr}></textarea>
-                    </div>
-                ";
-                
-            case 'select':
-                $options = $requirement->field_options ?: [];
-                $optionsHtml = '<option value="">Select an option</option>';
-                foreach ($options as $option) {
-                    $optionsHtml .= "<option value='{$option}'>{$option}</option>";
-                }
-                
-                return "
-                    <div class='form-group mb-3'>
-                        <label for='{$fieldName}' class='form-label'>{$fieldLabel} {$requiredMark}</label>
-                        <select class='form-select' id='{$fieldName}' name='{$fieldName}' {$requiredAttr}>
-                            {$optionsHtml}
-                        </select>
-                    </div>
-                ";
-                
-            default:
-                return '';
+        try {
+            $fieldId = $request->input('field_id');
+            $isActive = $request->input('is_active');
+
+            $requirement = FormRequirement::findOrFail($fieldId);
+            $requirement->is_active = $isActive;
+            $requirement->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Field status updated successfully',
+                'field_name' => $requirement->field_name,
+                'is_active' => $requirement->is_active
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling field active status: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Add a new column to the registrations table
+     */
+    public function addDynamicColumn(Request $request)
+    {
+        try {
+            $fieldName = $request->input('field_name');
+            $fieldType = $request->input('field_type', 'string');
+            $nullable = $request->input('nullable', true);
+
+            // Check if column already exists
+            if (Schema::hasColumn('registrations', $fieldName)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => "Column '{$fieldName}' already exists in the registrations table."
+                ]);
+            }
+
+            // Add the column
+            Schema::table('registrations', function (Blueprint $table) use ($fieldName, $fieldType, $nullable) {
+                $column = $table->$fieldType($fieldName);
+                if ($nullable) {
+                    $column->nullable();
+                }
+            });
+
+            // Add to Registration model fillable array (this would need to be done manually)
+            return response()->json([
+                'success' => true,
+                'message' => "Column '{$fieldName}' added successfully. Please add it to the Registration model's fillable array."
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error adding dynamic column: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Preview form for a specific program type
+     */
+    public function previewForm($programType)
+    {
+        try {
+            $requirements = FormRequirement::active()
+                ->forProgram($programType)
+                ->ordered()
+                ->get();
+
+            return view('admin.settings.form-preview', compact('requirements', 'programType'));
+        } catch (\Exception $e) {
+            Log::error('Error previewing form: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error loading form preview');
+        }
+    }
+
+    /**
+     * Process field options from textarea input
+     */
+    private function processFieldOptions($optionsString)
+    {
+        if (empty($optionsString)) {
+            return null;
+        }
+        
+        // Split by newlines and trim each option
+        $options = array_map('trim', explode("\n", $optionsString));
+        
+        // Remove empty options
+        $options = array_filter($options, function($option) {
+            return !empty($option);
+        });
+        
+        // Return as array for JSON storage
+        return array_values($options);
     }
 }
