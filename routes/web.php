@@ -17,6 +17,8 @@ use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\ProfessorDashboardController;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\FormRequirementController;
 use App\Models\Program;
 use App\Models\Package;
 
@@ -76,7 +78,14 @@ Route::get('/enrollment/modular', function () {
     $programs  = Program::all();
     $packages  = Package::all(); // Add this line to fix the undefined variable error
     $programId = request('program_id');
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId'));
+    
+    // Get form requirements for modular enrollment
+    $formRequirements = \App\Models\FormRequirement::active()
+        ->forProgram('modular')
+        ->ordered()
+        ->get();
+    
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements'));
 })->name('enrollment.modular');
 
 // Login page
@@ -90,6 +99,17 @@ Route::get('/login', fn() => view('Login.login'))->name('login');
 // Student register POST
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
+
+// Registration success page
+Route::get('/registration/success', function () {
+    return view('registration.success');
+})->name('registration.success');
+
+// Test registration form
+Route::get('/test-registration', function () {
+    $formRequirements = App\Models\FormRequirement::active()->forProgram('complete')->get();
+    return view('test-registration', compact('formRequirements'));
+})->name('test.registration');
 
 // Check if email exists
 Route::post('/check-email', [StudentRegistrationController::class, 'checkEmail'])
@@ -369,6 +389,20 @@ Route::post('/admin/settings/student-portal', [AdminSettingsController::class, '
 Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'saveNavbarSettings']);
 Route::get('/admin/settings/navbar', [AdminSettingsController::class, 'getNavbarSettings']);
 
+// Dynamic Field Management routes
+Route::post('/admin/settings/form-requirements/toggle-active', [AdminSettingsController::class, 'toggleFieldActive'])
+     ->name('admin.settings.form-requirements.toggle-active');
+Route::post('/admin/settings/form-requirements/add-column', [AdminSettingsController::class, 'addDynamicColumn'])
+     ->name('admin.settings.form-requirements.add-column');
+Route::get('/admin/settings/form-requirements/preview/{programType}', [AdminSettingsController::class, 'previewForm'])
+     ->name('admin.settings.form-requirements.preview');
+
+// Module ordering routes
+Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updateSortOrder'])
+     ->name('admin.modules.update-sort-order');
+Route::get('/admin/modules/ordered', [ModuleController::class, 'getOrderedModules'])
+     ->name('admin.modules.ordered');
+
 /*
 |--------------------------------------------------------------------------
 | Admin Directors
@@ -520,3 +554,19 @@ Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsContro
 //     
 //     return view('test-ui', compact('formRequirements', 'navbarSettings'));
 // });
+
+// Test dynamic registration system
+Route::get('/test-dynamic-registration', function () {
+    $activeFields = App\Models\FormRequirement::active()->get();
+    $inactiveFields = App\Models\FormRequirement::where('is_active', false)->get();
+    
+    return view('test-dynamic-registration', compact('activeFields', 'inactiveFields'));
+})->name('test.dynamic.registration');
+
+// Form Requirements Management Routes
+Route::get('/admin/form-requirements', [FormRequirementController::class, 'index'])->name('admin.form-requirements');
+Route::post('/admin/form-requirements', [FormRequirementController::class, 'store'])->name('admin.form-requirements.store');
+Route::post('/admin/form-requirements/archive', [FormRequirementController::class, 'archive'])->name('admin.form-requirements.archive');
+Route::post('/admin/form-requirements/restore', [FormRequirementController::class, 'restore'])->name('admin.form-requirements.restore');
+Route::put('/admin/form-requirements/{id}', [FormRequirementController::class, 'update'])->name('admin.form-requirements.update');
+Route::delete('/admin/form-requirements/{id}', [FormRequirementController::class, 'destroy'])->name('admin.form-requirements.destroy');

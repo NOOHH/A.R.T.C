@@ -458,90 +458,9 @@
         </div>
         @endif
 
-        <h3><i class="bi bi-person-lines-fill me-2"></i>Student Information</h3>
-        <div class="row g-3">
-            <!-- Basic Required Fields -->
-            <div class="col-12 col-md-6 col-lg-3">
-                <input type="text" name="firstname" id="firstname" class="form-control" placeholder="First name" 
-                       value="{{ $student->firstname ?? old('firstname') }}" required>
-            </div>
-            <div class="col-12 col-md-6 col-lg-3">
-                <input type="text" name="middle_name" id="middle_name" class="form-control" placeholder="Middle name" 
-                       value="{{ $student->middle_name ?? old('middle_name') }}">
-            </div>
-            <div class="col-12 col-md-6 col-lg-3">
-                <input type="text" name="lastname" id="lastname" class="form-control" placeholder="Last name" 
-                       value="{{ $student->lastname ?? old('lastname') }}" required>
-            </div>
-            <div class="col-12 col-md-6 col-lg-3">
-                <input type="text" name="student_school" id="student_school" class="form-control" placeholder="Student's school" 
-                       value="{{ $student->student_school ?? old('student_school') }}" required>
-            </div>
-        </div>
-
-        {{-- Dynamic Additional Fields --}}
+        {{-- Dynamic Form Fields (includes all sections) --}}
         <div id="dynamic-fields-container">
-            <x-dynamic-enrollment-form program-type="complete" />
-        </div>
-
-        <h3><i class="bi bi-file-earmark-arrow-up"></i> Verification/Document Upload</h3>
-        <div class="document-buttons row g-2">
-            <!-- Mobile: col-12, Tablet: col-md-6, PC: col-lg-4 -->
-            <div class="col-12 col-md-6 col-lg-4">
-                <label class="btn btn-outline-primary w-100 position-relative">
-                    <i class="bi bi-file-earmark-text me-2"></i>Good Moral 
-                    <input type="file" name="good_moral" hidden>
-                </label>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <label class="btn btn-outline-primary w-100 position-relative">
-                    <i class="bi bi-file-earmark-person me-2"></i>PSA Birth Cert. 
-                    <input type="file" name="PSA" hidden>
-                </label>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <label class="btn btn-outline-primary w-100 position-relative">
-                    <i class="bi bi-file-earmark-check me-2"></i>Course Cert. 
-                    <input type="file" name="Course_Cert" hidden>
-                </label>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <label class="btn btn-outline-primary w-100 position-relative">
-                    <i class="bi bi-file-earmark-text me-2"></i>ToR 
-                    <input type="file" name="TOR" hidden>
-                </label>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <label class="btn btn-outline-primary w-100 position-relative">
-                    <i class="bi bi-award me-2"></i>Cert. of Graduation 
-                    <input type="file" name="Cert_of_Grad" hidden>
-                </label>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <label class="btn btn-outline-primary w-100 position-relative">
-                    <i class="bi bi-person-square me-2"></i>1x1 Photo 
-                    <input type="file" name="photo_2x2" hidden>
-                </label>
-            </div>
-        </div>
-
-        <div class="row justify-content-center" style="margin:20px 0;">
-            <!-- Mobile: col-12, Tablet & PC: col-auto -->
-            <div class="col-12 col-md-auto">
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="education" value="Undergraduate" id="undergraduate"
-                           {{ ($student->education_level ?? 'Undergraduate') == 'Undergraduate' ? 'checked' : '' }}>
-                    <label class="btn btn-outline-info" for="undergraduate">
-                        <i class="bi bi-mortarboard me-2"></i>Undergraduate
-                    </label>
-                    
-                    <input type="radio" class="btn-check" name="education" value="Graduate" id="graduate"
-                           {{ ($student->education_level ?? '') == 'Graduate' ? 'checked' : '' }}>
-                    <label class="btn btn-outline-info" for="graduate">
-                        <i class="bi bi-award me-2"></i>Graduate
-                    </label>
-                </div>
-            </div>
+            <x-dynamic-enrollment-form :requirements="$formRequirements" />
         </div>
 
         <h3><i class="bi bi-book me-2"></i>Program</h3>
@@ -1258,5 +1177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+
 </script>
 @endsection
