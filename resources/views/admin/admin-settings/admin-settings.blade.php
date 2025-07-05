@@ -75,10 +75,12 @@
                         <i class="fas fa-user-graduate me-2"></i>Student
                     </button>
                 </li>
+                
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
                         <i class="fas fa-user-shield me-2"></i>Admin
                     </button>
+                    
                 </li>
             </ul>
         </div>
@@ -297,17 +299,316 @@
 
             {{-- Admin Tab --}}
             <div class="tab-pane fade" id="admin" role="tabpanel">
-                <div class="row g-4">
-                    {{-- Navbar Color Customization --}}
+                {{-- Admin Sub-tabs --}}
+                <ul class="nav nav-pills justify-content-center mb-4" id="adminSubTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="admin-homepage-tab" data-bs-toggle="tab" data-bs-target="#admin-homepage" type="button" role="tab">Home Page</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-enrollment-tab" data-bs-toggle="tab" data-bs-target="#admin-enrollment" type="button" role="tab">Enrollment Page</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-login-tab" data-bs-toggle="tab" data-bs-target="#admin-login" type="button" role="tab">Login Page</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-student-tab" data-bs-toggle="tab" data-bs-target="#admin-student" type="button" role="tab">Student Page</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-professor-tab" data-bs-toggle="tab" data-bs-target="#admin-professor" type="button" role="tab">Professor Page</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-admin-tab" data-bs-toggle="tab" data-bs-target="#admin-admin" type="button" role="tab">Admin Page</button>
+                    </li>
+                </ul>
+
+
+                    {{-- Admin Sub-tab Content --}}
+                 <div class="tab-content" id="adminSubTabContent">
+                    <div class="tab-pane fade show active" id="admin-homepage" role="tabpanel">
+                    <div class="col-md-16">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-palette me-2"></i>HomePage Navbar Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="admin-homepage-tab">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Header Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Background</label>
+                                                <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_text" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Border Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_border" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Sidebar Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Background</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_bg" value="#343a40">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_text" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Link Background</label>
+                                                <input type="color" class="form-control form-control-color" name="active_link_bg" value="#007bff">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-outline-primary" id="previewColors">
+                                                    <i class="fas fa-eye"></i> Preview Colors
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" id="resetColors">
+                                                    <i class="fas fa-undo"></i> Reset to Default
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                
+               <div class="col-md-12 mt-4">
+          <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-cog me-2"></i>Text Customization
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Column 1 -->
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Main Title 1</label>
+                        <input type="text" class="form-control" name="main_title">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Main 1 Description</label>
+                        <input type="text" class="form-control" name="main_description">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Main Title 2</label>
+                        <input type="text" class="form-control" name="main_title_2">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">About Us</label>
+                        <input type="text" class="form-control" name="about_us">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Main Title 3</label>
+                        <input type="text" class="form-control" name="main_title_3">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Footer</label>
+                        <input type="text" class="form-control" name="footer_text">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Global Brand Name</label>
+                        <input type="text" class="form-control" name="brand_name">
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-success">Save Changes</button>
+                        <button class="btn btn-success">Reset to Default</button>
+                    </div>
+                </div>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+                <div class="col-md-16 mt-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-cog me-2"></i>HomePage Background Customization
+                            </h5>
+                        </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Header Background</label>
+                                    <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Hompage Background</label>
+                                    <input type="color" class="form-control form-control-color" name="homepage_bg" value="#ffffff">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Programs Background</label>
+                                    <input type="color" class="form-control form-control-color" name="programs_bg" value="#ffffff">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">About Us Background</label>
+                                    <input type="color" class="form-control form-control-color" name="aboutus_bg" value="#ffffff">
+                                </div>
+                            <div class="mb-3">
+                                    <label class="form-label">Available Modalities</label>
+                                    <input type="color" class="form-control form-control-color" name="modalities_bg" value="#ffffff">
+                                </div>
+                            <div class="mb-3 ">
+                                <label class="form-label">Background Image</label>
+                                <input type="file" class="form-control" name="file_upload">
+                            </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3 ">
+                                <label class="form-label">Global Logo</label>
+                                <input type="file" class="form-control" name="Global_Logo_upload">
+                                </div>
+                                <div class="d-grid gap-2 mt-8">
+                                    <button class="btn btn-success">Save Changes</button>
+                                    <button class="btn btn-success">Reset to Default</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>     
+        </div>
+         {{-- Admin -- Enrollment Subtab --}}
+              <div class="tab-pane fade" id="admin-enrollment" role="tabpanel">
                     <div class="col-md-12">
                         <div class="card shadow-sm">
                             <div class="card-header bg-primary text-white">
                                 <h5 class="card-title mb-0">
-                                    <i class="fas fa-palette me-2"></i>Navbar Customization
+                                    <i class="fas fa-palette me-2"></i>Enrollment Navbar Customization
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <form id="navbarSettingsForm">
+                                <form id="admin-enrollment-tab">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Header Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Background</label>
+                                                <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_text" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Border Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_border" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Sidebar Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Background</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_bg" value="#343a40">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_text" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Link Background</label>
+                                                <input type="color" class="form-control form-control-color" name="active_link_bg" value="#007bff">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-outline-primary" id="previewColors">
+                                                    <i class="fas fa-eye"></i> Preview Colors
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" id="resetColors">
+                                                    <i class="fas fa-undo"></i> Reset to Default
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                                    <div class="col-md-16 mt-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-cog me-2"></i>Enrollment Background Customization
+                            </h5>
+                        </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Background Color</label>
+                                    <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Card Background</label>
+                                    <input type="color" class="form-control form-control-color" name="homepage_bg" value="#ffffff">
+                                </div>
+                                <div class="mb-3">
+                                <label class="form-label">Background Image</label>
+                                <input type="file" class="form-control" name="file_upload">
+                            </div>
+                            </div>
+                            <div class="col-md-4">
+                            <div class="mb-3">
+                                    <label class="form-label">Text Color</label>
+                                    <input type="color" class="form-control form-control-color" name="modalities_bg" value="#ffffff">
+                                </div>
+                            <div class="mb-3 cool-md-4">
+                                <label class="form-label">Text</label>
+                                <input type="text" class="form-control" name="modalities_bg">
+                            </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-grid gap-2 mt-8">
+                                    <button class="btn btn-success">Save Changes</button>
+                                    <button class="btn btn-success">Reset to Default</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                </div>
+           
+
+            {{-- Admin Sub-tab Login --}}
+            <div class="tab-pane fade" id="admin-login" role="tabpanel">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-palette me-2"></i>Login Navbar Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="admin-enrollment-tab">
                                     @csrf
                                     <div class="row">
                                         <div class="col-md-4">
@@ -360,6 +661,206 @@
                         </div>
                     </div>
                 </div>
+            
+
+             {{-- Admin Sub-tab Student--}}
+            <div class="tab-pane fade" id="admin-student" role="tabpanel">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-palette me-2"></i>Student Navbar Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="admin-enrollment-tab">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Header Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Background</label>
+                                                <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_text" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Border Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_border" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Sidebar Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Background</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_bg" value="#343a40">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_text" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Link Background</label>
+                                                <input type="color" class="form-control form-control-color" name="active_link_bg" value="#007bff">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-outline-primary" id="previewColors">
+                                                    <i class="fas fa-eye"></i> Preview Colors
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" id="resetColors">
+                                                    <i class="fas fa-undo"></i> Reset to Default
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+             {{-- Admin Sub-tab Professor--}}
+            <div class="tab-pane fade" id="admin-professor" role="tabpanel">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-palette me-2"></i>Professor Navbar Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="admin-enrollment-tab">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Header Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Background</label>
+                                                <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_text" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Border Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_border" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Sidebar Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Background</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_bg" value="#343a40">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_text" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Link Background</label>
+                                                <input type="color" class="form-control form-control-color" name="active_link_bg" value="#007bff">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-outline-primary" id="previewColors">
+                                                    <i class="fas fa-eye"></i> Preview Colors
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" id="resetColors">
+                                                    <i class="fas fa-undo"></i> Reset to Default
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                     
+             {{-- Admin Sub-tab Admin--}}
+            <div class="tab-pane fade" id="admin-admin" role="tabpanel">
+                    <div class="col-md-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-palette me-2"></i>Admin Navbar Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="admin-enrollment-tab">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Header Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Background</label>
+                                                <input type="color" class="form-control form-control-color" name="header_bg" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_text" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Header Border Color</label>
+                                                <input type="color" class="form-control form-control-color" name="header_border" value="#e0e0e0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Sidebar Colors</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Background</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_bg" value="#343a40">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sidebar Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_text" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Link Background</label>
+                                                <input type="color" class="form-control form-control-color" name="active_link_bg" value="#007bff">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="text-secondary mb-3">Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-outline-primary" id="previewColors">
+                                                    <i class="fas fa-eye"></i> Preview Colors
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" id="resetColors">
+                                                    <i class="fas fa-undo"></i> Reset to Default
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                
             </div>
         </div>
     </div>
@@ -598,6 +1099,16 @@ function addRequirementField(data = {}) {
     container.appendChild(requirementDiv);
 }
 
+// Initialize admin sub-tabs
+var adminSubTabList = [].slice.call(document.querySelectorAll('#adminSubTabs button[data-bs-toggle="tab"]'));
+adminSubTabList.forEach(function (triggerEl) {
+    var tabTrigger = new bootstrap.Tab(triggerEl);
+
+    triggerEl.addEventListener('click', function (event) {
+        event.preventDefault();
+        tabTrigger.show();
+    });
+});
 
 function removeRequirement(button) {
     button.closest('.requirement-item').remove();

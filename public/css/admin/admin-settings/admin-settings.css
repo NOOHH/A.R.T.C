@@ -20,6 +20,24 @@
     .settings-tabs .nav-tabs {
         border-bottom: 2px solid #e9ecef;
     }
+    
+/* Default background for inactive sub-tabs */
+#studentSubTabs .nav-link {
+    color: white;
+    background-color: #6c757d; /* Gray as default for inactive */
+    border-radius: 5px;
+    margin-right: 5px;
+    transition: all 0.3s ease;
+}
+
+#adminSubTabs .nav-link {
+    color: white;
+    background-color: #6c757d; /* Gray as default for inactive */
+    border-radius: 5px;
+    margin-right: 5px;
+    transition: all 0.3s ease;
+}
+
 
     .settings-tabs .nav-link {
         border: none;
@@ -76,9 +94,9 @@
 /* Container */
 .settings-container {
     background: #fff;
-    padding: 20px 15px 25px;
+    padding: 20px 30px 25px 25px;
     margin: 0 auto;
-    max-width: 1000px;
+    max-width: 1100px;
     width: 100%;
     box-sizing: border-box;
     border-radius: 10px;
