@@ -32,8 +32,8 @@ class StudentLoginController extends Controller
                 'user_role' => 'admin',
                 'logged_in' => true
             ]);
-            return redirect()->route('admin.dashboard')->with('success', 'Admin logged in!');
-        }
+            return redirect()->route('admin.dashboard')->with('success','Admin logged in!');
+        } 
 
         // If not found in admins, try users table for students
         $user = User::where('email', $credentials['email'])->first();

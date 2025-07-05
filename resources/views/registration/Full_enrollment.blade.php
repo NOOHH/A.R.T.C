@@ -10,6 +10,454 @@
 {!! App\Helpers\UIHelper::getNavbarStyles() !!}
 
 <style>
+    /* CLEAN RESET - Remove all layered containers */
+    body {
+        background: #f8f9fa !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .main-content,
+    .content-wrapper,
+    #content,
+    .container-fluid {
+        background: #f8f9fa !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+    }
+    
+    /* SINGLE CENTERED CONTAINER - No multiple layers */
+    .registration-container {
+        background: white !important;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1) !important;
+        border-radius: 15px !important;
+        margin: 50px auto !important;
+        max-width: 1200px !important;
+        width: 90% !important;
+        min-height: 600px !important;
+        padding: 40px !important;
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* CENTERED FORM CONTENT */
+    .registration-form {
+        width: 100% !important;
+        max-width: 1000px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+    }
+    
+    /* CENTERED STEPS */
+    .step {
+        display: none !important;
+        opacity: 0;
+        transform: translateX(50px);
+        transition: all 0.5s ease-in-out;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        min-height: 500px !important;
+        width: 100% !important;
+        padding: 20px !important;
+    }
+    
+    .step.active {
+        display: flex !important;
+        opacity: 1;
+        transform: translateX(0);
+        animation: slideIn 0.5s ease-in-out;
+    }
+    
+    /* Get enrollment styles from helper */
+    {!! App\Helpers\SettingsHelper::getEnrollmentStyles() !!}
+    {!! App\Helpers\SettingsHelper::getButtonStyles() !!}
+
+    /* STEP TRANSITIONS */
+    .step.slide-out-left {
+        transform: translateX(-50px);
+        opacity: 0;
+    }
+    .step.slide-out-right {
+        transform: translateX(50px);
+        opacity: 0;
+    }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(50px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* PACKAGE CAROUSEL - CENTERED */
+    .packages-carousel-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+        padding: 0 4rem;
+    }
+    
+    .packages-carousel {
+        cursor: grab;
+        user-select: none;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+        padding: 1rem 0;
+        display: flex;
+        gap: 2rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+    }
+    
+    .packages-carousel::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .packages-carousel.grabbing {
+        cursor: grabbing;
+    }
+    
+    .package-card-wrapper {
+        scroll-snap-align: start;
+        flex-shrink: 0;
+        min-width: 320px;
+        max-width: 350px;
+    }
+    
+    .package-card {
+        width: 100%;
+        height: 400px;
+        border-radius: 20px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 3px solid transparent !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .package-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .package-card.selected {
+        border-color: #1c2951 !important;
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(28, 41, 81, 0.3);
+    }
+    
+    .package-image-header {
+        height: 60%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .package-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .package-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        backdrop-filter: blur(10px);
+    }
+    
+    .package-content {
+        height: 40%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #1a1a1a;
+        padding: 20px;
+    }
+    
+    .package-title {
+        color: #ffffff;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+        text-align: center;
+    }
+    
+    .package-description {
+        color: #cccccc;
+        font-size: 0.9rem;
+        margin: 0 0 12px 0;
+        text-align: center;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        height: 4em;
+    }
+    
+    .package-price {
+        color: #1c2951;
+        font-size: 1.4rem;
+        font-weight: 800;
+        text-align: center;
+        margin: 0;
+        background: linear-gradient(90deg, #a259c6, #6a82fb);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* CAROUSEL NAVIGATION */
+    .carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10;
+    }
+    
+    .carousel-nav:hover {
+        background: white;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    
+    .prev-btn {
+        left: 1rem;
+    }
+    
+    .next-btn {
+        right: 1rem;
+    }
+    
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 768px) {
+        .registration-container {
+            margin: 20px auto !important;
+            width: 95% !important;
+            padding: 20px !important;
+        }
+        
+        .packages-carousel-container {
+            padding: 0 2rem;
+        }
+        
+        .package-card-wrapper {
+            min-width: 280px;
+            max-width: 300px;
+        }
+        
+        .carousel-nav {
+            width: 40px;
+            height: 40px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .packages-carousel-container {
+            padding: 0 1rem;
+        }
+        
+        .carousel-nav {
+            display: none;
+        }
+        
+        .package-card-wrapper {
+            min-width: 260px;
+        }
+    }
+        
+    .package-card-wrapper {
+        scroll-snap-align: start;
+        flex-shrink: 0;
+        min-width: 320px;
+        max-width: 350px;
+    }
+    
+    .package-card {
+        transition: all 0.3s ease;
+        border: 3px solid transparent !important;
+        border-radius: 20px !important;
+        overflow: hidden;
+        cursor: pointer;
+        height: 400px;
+        background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+        color: white;
+    }
+    
+    .package-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+        border-color: #1c2951 !important;
+    }
+    
+    .package-card.selected {
+        border-color: #1c2951 !important;
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(28, 41, 81, 0.5) !important;
+    }
+    
+    .package-image-header {
+        height: 60%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .package-icon {
+        font-size: 4rem;
+        color: white;
+    }
+    
+    .package-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #1c2951;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .package-card .card-body {
+        background: #1a1a1a;
+        height: 40%;
+        padding: 20px;
+    }
+    
+    .package-title {
+        color: #fff !important;
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 8px !important;
+        text-align: center;
+    }
+    
+    .package-description {
+        color: #ccc !important;
+        font-size: 0.9rem !important;
+        line-height: 1.4;
+        text-align: center;
+        margin-bottom: 12px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .package-price {
+        font-size: 1.4rem !important;
+        font-weight: 800 !important;
+        text-align: center;
+        margin: 0;
+        background: linear-gradient(90deg, #a259c6, #6a82fb);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: white;
+        border: 2px solid #667eea;
+        border-radius: 50%;
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #667eea;
+        font-size: 1.4rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 10;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .carousel-nav:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .prev-btn {
+        left: 15px;
+    }
+    
+    .next-btn {
+        right: 15px;
+    }
+    
+    @media (max-width: 768px) {
+        .packages-carousel-container {
+            padding: 0 1rem;
+        }
+        
+        .carousel-nav {
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+        }
+        
+        .prev-btn {
+            left: 5px;
+        }
+        
+        .next-btn {
+            right: 5px;
+        }
+        
+        .package-card-wrapper {
+            min-width: 280px;
+        }
+    }
+    
     .step { 
         display: none; 
         opacity: 0;
@@ -228,6 +676,25 @@
         font-size: 24px;
     }
     
+    /* Learning Mode Cards */
+    .learning-mode-card {
+        background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-radius: 15px;
+        padding: 30px 20px;
+        width: 250px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 3px solid transparent;
+        text-align: center;
+        color: white;
+    }
+    
+    .learning-mode-card:hover {
+        transform: translateY(-5px);
+        border-color: #667eea;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
     /* ==== MOBILE & TABLET DEVICES (768px and below) ==== */
     @media (max-width: 768px) {
         .package-slider {
@@ -270,6 +737,100 @@
             height: 350px;
         }
     }
+    
+    /* PAYMENT METHOD STYLES */
+    .payment-method {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        margin: 15px 0;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .payment-method:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .payment-method.selected {
+        border-color: #667eea;
+        background: linear-gradient(145deg, #f8f9ff 0%, #e3f2fd 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .payment-icon {
+        font-size: 2rem;
+        margin-right: 20px;
+        width: 60px;
+        text-align: center;
+    }
+    
+    .payment-method h4 {
+        color: #333;
+        font-weight: 600;
+        margin: 0 0 5px 0;
+    }
+    
+    .payment-method p {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .payment-method.selected h4 {
+        color: #667eea;
+    }
+    
+    .payment-method.selected p {
+        color: #555;
+    }
+    
+    /* FORM INPUT FIXES */
+    input[type="password"],
+    input[type="email"],
+    input[type="text"],
+    input[type="date"],
+    input[type="tel"],
+    select,
+    textarea {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 1 !important;
+        background: white !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    input[type="password"]:focus,
+    input[type="email"]:focus,
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="tel"]:focus,
+    select:focus,
+    textarea:focus {
+        outline: none !important;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    }
+    
+    /* Ensure form elements are not blocked */
+    .step input,
+    .step select,
+    .step textarea {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
 </style>
 @endpush
 
@@ -287,56 +848,120 @@
     </div>
 @endif
 
-<!-- FIXED SIZE REGISTRATION CONTAINER - prevents form resizing -->
-<div class="registration-container" style="min-height: 800px; max-width: 1200px; margin: 0 auto; padding: 20px; position: relative;">
-<form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form">
-    @csrf
-    <input type="hidden" name="enrollment_type" value="full">
-    <input type="hidden" name="program_id" value="1">
-    <input type="hidden" name="package_id" value="">
-    <input type="hidden" name="plan_id" value="1">
+<!-- SINGLE CENTERED CONTAINER - No nested layers -->
+<div class="registration-container">
+    <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="enrollmentForm" novalidate>
+        @csrf
+        <input type="hidden" name="enrollment_type" value="full">
+        <input type="hidden" name="package_id" value="">
+        <input type="hidden" name="plan_id" value="1">
 
     {{-- STEP 1: PACKAGE SELECTION --}}
     <div class="step active" id="step-1">
-        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+        <h2 style="text-align:center; margin-bottom:30px; font-weight:700; letter-spacing:1px;">
             SELECT YOUR PACKAGE
         </h2>
-        <div class="package-carousel">
-            <button class="carousel-arrow" id="prevBtn" onclick="slidePackages(-1)">‹</button>
-            <div class="package-slider">
-                <div class="package-slider-track" id="packageTrack">
-                    @foreach($packages as $package)
-                        <div class="package-card" onclick="selectPackage('{{ $package->package_id }}', '{{ $package->package_name }}')" data-package-id="{{ $package->package_id }}">
-                            <div class="package-image">
-                                📦
-                            </div>
-                            <div class="package-content">
-                                <h4 class="package-title">{{ $package->package_name }}</h4>
-                                <p class="package-description" title="{{ $package->description ?? 'Complete package with all features included.' }}">{{ $package->description ?? 'Complete package with all features included.' }}</p>
-                                <p class="package-price">₱{{ number_format($package->price, 2) }}</p>
-                            </div>
-                            <div class="package-badge">Popular</div>
+        
+        <!-- Bootstrap Horizontal Scrolling Package Carousel -->
+        <div class="packages-carousel-container">
+            <div class="packages-carousel" id="packagesCarousel">
+                @foreach($packages as $package)
+                <div class="package-card-wrapper">
+                    <div class="card package-card h-100 shadow-lg" onclick="selectPackage('{{ $package->package_id }}', '{{ $package->package_name }}', '{{ $package->amount }}')" data-package-id="{{ $package->package_id }}" data-package-price="{{ $package->amount }}">
+                        <div class="package-image-header">
+                            <div class="package-icon">📦</div>
+                            @if($loop->first)
+                                <div class="package-badge">Popular</div>
+                            @endif
                         </div>
-                    @endforeach
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title package-title">{{ $package->package_name }}</h5>
+                            <p class="card-text package-description flex-grow-1" title="{{ $package->description ?? 'Complete package with all features included.' }}">
+                                {{ $package->description ?? 'Complete package with all features included.' }}
+                            </p>
+                            <div class="mt-auto">
+                                <div class="package-price">₱{{ number_format($package->amount, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            
+            <!-- Navigation Arrows -->
+            @if($packages->count() > 2)
+            <button class="carousel-nav prev-btn" onclick="scrollPackages('left')" id="prevPackageBtn">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="carousel-nav next-btn" onclick="scrollPackages('right')" id="nextPackageBtn">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+            @endif
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <div id="selectedPackageDisplay" style="display: none; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border-radius: 12px; border: 2px solid #4caf50; max-width: 400px; margin: 0 auto 20px;">
+                <strong style="color: #2e7d2e; font-size: 1.1rem;">Selected Package: <span id="selectedPackageName"></span></strong>
+                <div style="color: #2e7d2e; font-size: 1.2rem; font-weight: bold; margin-top: 8px;">
+                    Price: <span id="selectedPackagePrice"></span>
                 </div>
             </div>
-            <button class="carousel-arrow" id="nextBtn" onclick="slidePackages(1)">›</button>
-        </div>
-        <div style="text-align: center;">
-            <div id="selectedPackageDisplay" style="display: none; margin-bottom: 20px; color: #1c2951; font-weight: 600;">
-                Selected Package: <span id="selectedPackageName"></span>
-            </div>
             <button type="button" onclick="nextStep()" id="packageNextBtn" disabled
-                    style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff; border:none; 
-                           border-radius:8px; padding:12px 40px; font-size:1.1rem; font-weight:600;
-                           box-shadow:0 2px 8px rgba(160,89,198,0.08); cursor:pointer; opacity: 0.5;">
-                Next
+                    class="btn btn-primary btn-lg" style="opacity: 0.5;">
+                Next<i class="bi bi-arrow-right ms-2"></i>
             </button>
         </div>
     </div>
 
-    {{-- STEP 2: ACCOUNT REGISTRATION --}}
+    {{-- STEP 2: LEARNING MODE SELECTION --}}
     <div class="step" id="step-2">
+        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+            LEARNING MODE SELECTION
+        </h2>
+        
+        <div style="max-width: 600px; margin: 0 auto;">
+            <h3 style="margin-bottom: 20px; text-align: center;">Choose Your Learning Mode</h3>
+            
+            <div class="learning-mode-container" style="display: flex; gap: 30px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+                <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous"
+                     style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 15px; padding: 30px 20px; width: 250px; cursor: pointer; 
+                            transition: all 0.3s ease; border: 3px solid transparent; text-align: center; color: white;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🕐</div>
+                    <h4 style="margin: 0 0 10px 0; color: #fff;">Synchronous</h4>
+                    <p style="margin: 0; color: #ccc; font-size: 14px;">Real-time classes with live interaction, scheduled sessions, and immediate feedback.</p>
+                </div>
+                
+                <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous"
+                     style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 15px; padding: 30px 20px; width: 250px; cursor: pointer; 
+                            transition: all 0.3s ease; border: 3px solid transparent; text-align: center; color: white;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🎯</div>
+                    <h4 style="margin: 0 0 10px 0; color: #fff;">Asynchronous</h4>
+                    <p style="margin: 0; color: #ccc; font-size: 14px;">Self-paced learning with recorded materials, flexible schedule, and individual progress.</p>
+                </div>
+            </div>
+            
+            <div id="selectedLearningModeDisplay" style="display: none; margin: 20px 0; padding: 15px; background: #e8f5e8; border-radius: 8px; text-align: center;">
+                <strong>Selected Learning Mode: <span id="selectedLearningModeName"></span></strong>
+            </div>
+            
+            <input type="hidden" name="learning_mode" id="learning_mode" value="">
+            
+            <div style="display:flex; gap:16px; justify-content:center; margin-top: 30px;">
+                <button type="button" onclick="prevStep()" class="back-btn"
+                        style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
+                    Back
+                </button>
+                <button type="button" onclick="nextStep()" id="learningModeNextBtn" disabled
+                        style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff; border:none; 
+                               border-radius:8px; padding:12px 40px; font-size:1.1rem; cursor:pointer; opacity: 0.5;">
+                    Next
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- STEP 3: ACCOUNT REGISTRATION --}}
+    <div class="step" id="step-3">
         <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
             ACCOUNT REGISTRATION
         </h2>
@@ -353,15 +978,15 @@
                 This email is already registered. Please use a different email.
             </div>
             <div style="display:flex; gap:16px; width:100%; max-width:500px;">
-                <input type="password" name="password" id="password" placeholder="Password" required
+                <input type="password" name="password" id="password" placeholder="Password"
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
-                <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password" required
+                <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password"
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
             </div>
-            <div id="passwordError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; visibility: hidden;">
+            <div id="passwordError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; display: none;">
                 Password must be at least 8 characters long.
             </div>
-            <div id="passwordMatchError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; visibility: hidden;">
+            <div id="passwordMatchError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; display: none;">
                 Passwords do not match.
             </div>
             <div style="text-align: center; margin-top: -10px;">
@@ -377,7 +1002,7 @@
                         style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
                     Back
                 </button>
-                <button type="button" onclick="nextStep()" id="step2NextBtn"
+                <button type="button" onclick="nextStep()" id="step3NextBtn"
                         style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff;
                                border:none; border-radius:8px; padding:12px 40px; font-size:1.1rem; font-weight:600;
                                box-shadow:0 2px 8px rgba(160,89,198,0.08); cursor:not-allowed; opacity: 0.5;" disabled>
@@ -387,8 +1012,8 @@
         </div>
     </div>
 
-    {{-- STEP 3: PAYMENT INFORMATION --}}
-    <div class="step" id="step-3">
+    {{-- STEP 4: PAYMENT INFORMATION --}}
+    <div class="step" id="step-4">
         <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
             PAYMENT INFORMATION
         </h2>
@@ -405,7 +1030,7 @@
             </div>
             
             <div class="payment-method" onclick="selectPaymentMethod('gcash')">
-                <div class="payment-icon">📱</div>
+                <div class="payment-icon">�</div>
                 <div>
                     <h4 style="margin: 0 0 5px 0;">GCash</h4>
                     <p style="margin: 0; color: #666; font-size: 14px;">Pay using your GCash mobile wallet</p>
@@ -446,8 +1071,8 @@
         </div>
     </div>
 
-    {{-- STEP 4: FULL STUDENT REGISTRATION --}}
-    <div class="step" id="step-4">
+    {{-- STEP 5: FULL STUDENT REGISTRATION --}}
+    <div class="step" id="step-5">
         <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
             STUDENT FULL PROGRAM REGISTRATION
         </h2>
@@ -465,11 +1090,11 @@
 
         <h3><i class="bi bi-book me-2"></i>Program</h3>
         <div class="input-row">
-            <select name="program_id" class="form-select" required>
+            <select name="program_id" class="form-select" required id="programSelect">
                 <option value="">Select Program</option>
                 @foreach($programs as $program)
                     <option value="{{ $program->program_id }}"
-                        {{ old('program_id', $student->program_id ?? $programId ?? '') == $program->program_id ? 'selected' : '' }}>
+                        {{ old('program_id', $programId ?? '') == $program->program_id ? 'selected' : '' }}>
                         {{ $program->program_name }}
                     </option>
                 @endforeach
@@ -497,15 +1122,12 @@
             <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg order-2 order-md-1">
                 <i class="bi bi-arrow-left me-2"></i>Back
             </button>
-            <button type="submit" class="btn btn-primary btn-lg order-1 order-md-2" id="enrollBtn" disabled>
+            <button type="submit" class="btn btn-primary btn-lg order-1 order-md-2" id="enrollBtn">
                 <i class="bi bi-check-circle me-2"></i>Enroll Now
             </button>
         </div>
-            </button>
-        </div>
-    </div>
-</form>
-</div> <!-- END FIXED SIZE REGISTRATION CONTAINER -->
+    </div>    </form>
+</div> <!-- END SINGLE CENTERED CONTAINER -->
 
 {{-- Terms and Conditions Modal --}}
 <div id="termsModal"
@@ -531,18 +1153,47 @@
 {{-- Success Modal - Only show for registration completion messages --}}
 @if(session('success') && str_contains(session('success'), 'registration'))
   <div id="successModal"
-       style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
-              background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:30px; border-radius:12px; max-width:400px; width:90%; text-align:center;">
-      <h2>Registration Successful!</h2>
-      <p>{{ session('success') }}</p>
-      <button id="successOk" type="button"
-             style="margin-top:20px; padding:10px 24px; border:none; border-radius:6px;
-                    background:#1c2951; color:#fff; cursor:pointer;">
-        Go to Homepage
-      </button>
+       style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh;
+              background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div class="success-modal-content" style="background:white; border-radius:20px; max-width:500px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideIn 0.3s ease-out;">
+      <!-- Success Icon -->
+      <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:40px 20px 20px; color:white;">
+        <div style="width:80px; height:80px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; backdrop-filter:blur(10px);">
+          <i class="bi bi-check-circle-fill" style="font-size:2.5rem; color:white;"></i>
+        </div>
+        <h2 style="margin:0; font-size:1.8rem; font-weight:700; color:white;">Registration Successful!</h2>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding:30px;">
+        <p style="color:#666; font-size:1.1rem; margin:0 0 30px; line-height:1.5;">{{ session('success') }}</p>
+        
+        <!-- Buttons -->
+        <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+          <button id="successOk" type="button" class="btn btn-primary btn-lg"
+                 style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; padding:12px 30px; border-radius:10px; color:white; font-weight:600; cursor:pointer; transition:all 0.3s ease;">
+            <i class="bi bi-house-door me-2"></i>Go to Homepage
+          </button>
+          <a href="{{ route('student.dashboard') }}" class="btn btn-outline-primary btn-lg" 
+             style="padding:12px 30px; border-radius:10px; text-decoration:none; transition:all 0.3s ease;">
+            <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+          </a>
+        </div>
+      </div>
     </div>
   </div>
+  
+  <style>
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    .success-modal-content button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+  </style>
 @endif
 
 {{-- Login Success Modal - Shows welcome back message when returning from login --}}
@@ -582,84 +1233,92 @@ const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_last
 const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
 
 // Package carousel functionality
-function slidePackages(direction) {
-    const track = document.getElementById('packageTrack');
-    if (!track) return;
+function scrollPackages(direction) {
+    const carousel = document.getElementById('packagesCarousel');
+    if (!carousel) return;
     
-    const packageWidth = 320; // package card width
-    const gap = 20; // gap between cards
-    const moveDistance = packageWidth + gap;
+    const scrollAmount = 340; // Package card width + gap
     
-    currentPackageIndex += direction;
-    
-    // Boundary checks
-    if (currentPackageIndex < 0) {
-        currentPackageIndex = 0;
-    } else if (currentPackageIndex > totalPackages - packagesPerView) {
-        currentPackageIndex = Math.max(0, totalPackages - packagesPerView);
+    if (direction === 'left') {
+        carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+        carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
-    
-    const translateX = -currentPackageIndex * moveDistance;
-    track.style.transform = `translateX(${translateX}px)`;
-    
-    // Update arrow states
-    updateArrowStates();
+}
+
+// Keep the old function name for compatibility
+function slidePackages(direction) {
+    scrollPackages(direction === 1 ? 'right' : 'left');
 }
 
 function updateArrowStates() {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    
-    if (prevBtn && nextBtn) {
-        prevBtn.disabled = currentPackageIndex === 0;
-        nextBtn.disabled = currentPackageIndex >= totalPackages - packagesPerView;
-    }
+    // This function is no longer needed with the new carousel but keeping for compatibility
+    return;
 }
 
 // Step navigation with animations
 function nextStep() {
+    console.log('Current step:', currentStep, 'User logged in:', isUserLoggedIn);
+    
     if (currentStep === 1) {
-        // If user is logged in, skip directly to payment step
+        // Always go to learning mode selection first
+        animateStepTransition('step-1', 'step-2');
+        currentStep = 2;
+    } else if (currentStep === 2) {
+        // From learning mode, check if user is logged in
         if (isUserLoggedIn) {
-            // Skip step 2 (account registration) and go directly to step 3 (payment)
-            animateStepTransition('step-1', 'step-3');
-            currentStep = 3;
+            // Skip account registration and go directly to payment
+            console.log('User logged in - skipping to payment');
+            animateStepTransition('step-2', 'step-4');
+            currentStep = 4;
         } else {
             // User not logged in, go to account registration
-            animateStepTransition('step-1', 'step-2');
-            currentStep = 2;
+            console.log('User not logged in - going to account registration');
+            animateStepTransition('step-2', 'step-3');
+            currentStep = 3;
         }
-    } else if (currentStep === 2) {
-        // Copy Account Registration data to Full Student Registration before moving to step 3
-        copyAccountDataToStudentForm();
-        animateStepTransition('step-2', 'step-3');
-        currentStep = 3;
     } else if (currentStep === 3) {
+        // From account registration to payment
+        copyAccountDataToStudentForm();
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
+    } else if (currentStep === 4) {
+        // From payment to student registration
+        animateStepTransition('step-4', 'step-5');
+        currentStep = 5;
         // Auto-fill user data if logged in
         fillLoggedInUserData();
-        // Also auto-fill in case user comes directly to step 4
+        // Also auto-fill in case user comes directly to step 5
         copyAccountDataToStudentForm();
     }
 }
 
 function prevStep() {
-    if (currentStep === 4) {
-        animateStepTransition('step-4', 'step-3', true);
-        currentStep = 3;
-    } else if (currentStep === 3) {
-        // Check if user is logged in - skip back to step 1 if logged in
+    console.log('Going back from step:', currentStep, 'User logged in:', isUserLoggedIn);
+    
+    if (currentStep === 5) {
+        // From student registration back to payment
+        animateStepTransition('step-5', 'step-4', true);
+        currentStep = 4;
+    } else if (currentStep === 4) {
+        // From payment, check if user is logged in
         if (isUserLoggedIn) {
-            // Skip step 2 and go back to step 1
-            animateStepTransition('step-3', 'step-1', true);
-            currentStep = 1;
+            // Skip account registration and go back to learning mode
+            console.log('User logged in - going back to learning mode');
+            animateStepTransition('step-4', 'step-2', true);
+            currentStep = 2;
         } else {
             // User not logged in, go back to account registration
-            animateStepTransition('step-3', 'step-2', true);
-            currentStep = 2;
+            console.log('User not logged in - going back to account registration');
+            animateStepTransition('step-4', 'step-3', true);
+            currentStep = 3;
         }
+    } else if (currentStep === 3) {
+        // From account registration back to learning mode
+        animateStepTransition('step-3', 'step-2', true);
+        currentStep = 2;
     } else if (currentStep === 2) {
+        // From learning mode back to package selection
         animateStepTransition('step-2', 'step-1', true);
         currentStep = 1;
     }
@@ -679,7 +1338,7 @@ function animateStepTransition(fromStepId, toStepId, isBack = false) {
 }
 
 // Package Selection
-function selectPackage(packageId, packageName) {
+function selectPackage(packageId, packageName, packagePrice) {
     // Remove selection from all package cards
     document.querySelectorAll('.package-card').forEach(card => {
         card.classList.remove('selected');
@@ -694,6 +1353,7 @@ function selectPackage(packageId, packageName) {
     // Store package selection in session storage
     sessionStorage.setItem('selectedPackageId', packageId);
     sessionStorage.setItem('selectedPackageName', packageName);
+    sessionStorage.setItem('selectedPackagePrice', packagePrice);
     
     // Update hidden input
     const packageInput = document.querySelector('input[name="package_id"]');
@@ -708,14 +1368,31 @@ function selectPackage(packageId, packageName) {
         document.querySelector('form').appendChild(hiddenInput);
     }
     
-    // Show selected package display
-    document.getElementById('selectedPackageName').textContent = packageName;
-    document.getElementById('selectedPackageDisplay').style.display = 'block';
+    // Show selected package display with price
+    const selectedDisplay = document.getElementById('selectedPackageDisplay');
+    const selectedNameElement = document.getElementById('selectedPackageName');
+    const selectedPriceElement = document.getElementById('selectedPackagePrice');
+    
+    if (selectedNameElement) {
+        selectedNameElement.textContent = packageName;
+    }
+    
+    if (selectedPriceElement) {
+        selectedPriceElement.textContent = '₱' + parseFloat(packagePrice).toLocaleString('en-PH', {minimumFractionDigits: 2});
+    }
+    
+    if (selectedDisplay) {
+        selectedDisplay.style.display = 'block';
+    }
     
     // Enable next button
     const nextBtn = document.getElementById('packageNextBtn');
-    nextBtn.disabled = false;
-    nextBtn.style.opacity = '1';
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+    }
+    
+    console.log('Package selected:', packageId, packageName, packagePrice);
 }
 
 // Payment Method Selection
@@ -748,12 +1425,46 @@ function selectPaymentMethod(method) {
     nextBtn.style.opacity = '1';
 }
 
+// Learning Mode Selection
+function selectLearningMode(mode) {
+    // Remove selection from all learning mode cards
+    document.querySelectorAll('.learning-mode-card').forEach(card => {
+        card.style.border = '3px solid transparent';
+        card.style.boxShadow = 'none';
+    });
+    
+    // Highlight selected learning mode
+    const selectedCard = event.target.closest('.learning-mode-card');
+    selectedCard.style.border = '3px solid #667eea';
+    selectedCard.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
+    
+    // Update hidden input
+    document.getElementById('learning_mode').value = mode;
+    
+    // Update display
+    const modeNames = {
+        'synchronous': 'Synchronous (Live Classes)',
+        'asynchronous': 'Asynchronous (Self-Paced)'
+    };
+    
+    document.getElementById('selectedLearningModeName').textContent = modeNames[mode];
+    document.getElementById('selectedLearningModeDisplay').style.display = 'block';
+    
+    // Enable next button
+    const nextBtn = document.getElementById('learningModeNextBtn');
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    nextBtn.style.cursor = 'pointer';
+}
+
 // Make functions globally accessible
+window.scrollPackages = scrollPackages;
 window.slidePackages = slidePackages;
 window.nextStep = nextStep;
 window.prevStep = prevStep;
 window.selectPackage = selectPackage;
 window.selectPaymentMethod = selectPaymentMethod;
+window.selectLearningMode = selectLearningMode;
 window.loginWithPackage = loginWithPackage;
 
 // Function to handle login with package selection
@@ -777,9 +1488,11 @@ function fillLoggedInUserData() {
     if (isUserLoggedIn) {
         console.log('Filling logged-in user data...');
         
-        // Auto-fill Step 4 (Full Student Registration) fields with logged-in user data
+        // Auto-fill Step 5 (Full Student Registration) fields with logged-in user data
         const firstnameField = document.getElementById('firstname');
         const lastnameField = document.getElementById('lastname');
+        const middlenameField = document.getElementById('middlename');
+        const emailField = document.querySelector('input[name="email"]');
         
         // Use session data if available
         if (firstnameField && loggedInUserFirstname) {
@@ -790,6 +1503,35 @@ function fillLoggedInUserData() {
             lastnameField.value = loggedInUserLastname;
             console.log('Auto-filled lastname from session:', loggedInUserLastname);
         }
+        if (emailField && loggedInUserEmail) {
+            emailField.value = loggedInUserEmail;
+            console.log('Auto-filled email from session:', loggedInUserEmail);
+        }
+        
+        // Auto-fill other fields from student data if available
+        @if($student)
+        const studentData = {
+            firstname: '{{ $student->firstname ?? '' }}',
+            lastname: '{{ $student->lastname ?? '' }}',
+            middlename: '{{ $student->middlename ?? '' }}',
+            student_school: '{{ $student->student_school ?? '' }}',
+            street_address: '{{ $student->street_address ?? '' }}',
+            state_province: '{{ $student->state_province ?? '' }}',
+            city: '{{ $student->city ?? '' }}',
+            zipcode: '{{ $student->zipcode ?? '' }}',
+            contact_number: '{{ $student->contact_number ?? '' }}',
+            emergency_contact_number: '{{ $student->emergency_contact_number ?? '' }}',
+        };
+        
+        // Fill all available student data
+        Object.keys(studentData).forEach(fieldName => {
+            const field = document.getElementById(fieldName) || document.querySelector(`input[name="${fieldName}"]`) || document.querySelector(`select[name="${fieldName}"]`);
+            if (field && studentData[fieldName] && !field.value) {
+                field.value = studentData[fieldName];
+                console.log(`Auto-filled ${fieldName}:`, studentData[fieldName]);
+            }
+        });
+        @endif
         
         // Also auto-fill Step 2 (Account Registration) fields if user navigates back
         const userFirstnameField = document.getElementById('user_firstname');
@@ -899,15 +1641,15 @@ function validatePassword() {
     
     if (password.length > 0 && password.length < 8) {
         passwordField.style.borderColor = '#dc3545';
-        passwordError.style.visibility = 'visible';
+        passwordError.style.display = 'block';
         return false;
     } else if (password.length >= 8) {
         passwordField.style.borderColor = '#28a745';
-        passwordError.style.visibility = 'hidden';
+        passwordError.style.display = 'none';
         return true;
     } else {
         passwordField.style.borderColor = '#ccc';
-        passwordError.style.visibility = 'hidden';
+        passwordError.style.display = 'none';
         return true;
     }
 }
@@ -925,27 +1667,27 @@ function validatePasswordConfirmation() {
     
     if (passwordConfirm.length > 0 && password !== passwordConfirm) {
         passwordConfirmField.style.borderColor = '#dc3545';
-        passwordMatchError.style.visibility = 'visible';
+        passwordMatchError.style.display = 'block';
         return false;
     } else if (passwordConfirm.length > 0 && password === passwordConfirm) {
         passwordConfirmField.style.borderColor = '#28a745';
-        passwordMatchError.style.visibility = 'hidden';
+        passwordMatchError.style.display = 'none';
         return true;
     } else {
         passwordConfirmField.style.borderColor = '#ccc';
-        passwordMatchError.style.visibility = 'hidden';
+        passwordMatchError.style.display = 'none';
         return true;
     }
 }
 
-// Function to validate all Step 2 fields
-function validateStep2() {
+// Function to validate all Step 3 (Account Registration) fields
+function validateStep3() {
     const firstnameField = document.getElementById('user_firstname');
     const lastnameField = document.getElementById('user_lastname');
     const emailField = document.getElementById('user_email');
     const passwordField = document.getElementById('password');
     const passwordConfirmField = document.getElementById('password_confirmation');
-    const nextBtn = document.querySelector('#step-2 button[onclick="nextStep()"]');
+    const nextBtn = document.getElementById('step3NextBtn');
     
     // Check if all required fields are filled
     const isFirstnameFilled = firstnameField && firstnameField.value.trim().length > 0;
@@ -982,13 +1724,20 @@ function validateStep2() {
 
 // Initialize carousel
 document.addEventListener('DOMContentLoaded', function() {
-    // Hide Step 2 if user is logged in
+    // Hide Step 2 if user is logged in and remove required attributes
     if (isUserLoggedIn) {
         const step2 = document.getElementById('step-2');
         if (step2) {
             step2.style.display = 'none';
+            
+            // Remove required attributes from Step 2 fields to prevent form validation errors
+            const step2Fields = step2.querySelectorAll('input[required]');
+            step2Fields.forEach(field => {
+                field.removeAttribute('required');
+                console.log('Removed required attribute from:', field.name);
+            });
         }
-        console.log('User is logged in - Step 2 (Account Registration) hidden');
+        console.log('User is logged in - Step 2 (Account Registration) hidden and validation disabled');
     }
     
     // Check if we're returning from login with a package selection
@@ -1026,10 +1775,10 @@ document.addEventListener('DOMContentLoaded', function() {
         nextBtn.disabled = false;
         nextBtn.style.opacity = '1';
         
-        // If user logged in from step 2 (account registration), skip to payment step (step 3)
+        // If user logged in from step 2 (account registration), skip to learning mode step (step 3)
         if (skipToPayment === 'true') {
             setTimeout(() => {
-                // Go to step 3 (payment)
+                // Go to step 3 (learning mode)
                 animateStepTransition('step-1', 'step-3');
                 currentStep = 3;
             }, 500);
@@ -1039,6 +1788,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fill logged-in user data on page load
     if (isUserLoggedIn) {
         fillLoggedInUserData();
+    }
+    
+    // Add program selection handler to update hidden input
+    const programSelectField = document.getElementById('programSelect');
+    if (programSelectField) {
+        programSelectField.addEventListener('change', function() {
+            const hiddenProgramInput = document.querySelector('input[name="program_id"]');
+            if (hiddenProgramInput) {
+                hiddenProgramInput.value = this.value;
+                console.log('Updated hidden program_id input to:', this.value);
+            }
+        });
     }
     
     // Initialize carousel first
@@ -1077,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.borderColor = '#ccc';
             document.getElementById('emailError').style.display = 'none';
             // Validate all fields when email changes
-            setTimeout(validateStep2, 100);
+            setTimeout(validateStep3, 100);
         });
     }
 
@@ -1088,14 +1849,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (firstnameField) {
         firstnameField.addEventListener('input', function() {
             // Validate all fields when first name changes
-            setTimeout(validateStep2, 100);
+            setTimeout(validateStep3, 100);
         });
     }
     
     if (lastnameField) {
         lastnameField.addEventListener('input', function() {
             // Validate all fields when last name changes
-            setTimeout(validateStep2, 100);
+            setTimeout(validateStep3, 100);
         });
     }
 
@@ -1112,7 +1873,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Also validate confirmation when password changes
             setTimeout(validatePassword, 50);
             setTimeout(validatePasswordConfirmation, 100);
-            setTimeout(validateStep2, 200);
+            setTimeout(validateStep3, 200);
         });
     }
     
@@ -1121,13 +1882,13 @@ document.addEventListener('DOMContentLoaded', function() {
         passwordConfirmField.addEventListener('input', function() {
             // Reset styling when user starts typing
             this.style.borderColor = '#ccc';
-            document.getElementById('passwordMatchError').style.visibility = 'hidden';
-            setTimeout(validateStep2, 100);
+            document.getElementById('passwordMatchError').style.display = 'none';
+            setTimeout(validateStep3, 100);
         });
     }
 
     // Initial validation on page load
-    setTimeout(validateStep2, 500);
+    setTimeout(validateStep3, 500);
 
     // Terms & Conditions
     const showTerms = document.getElementById('showTerms');
@@ -1137,8 +1898,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const enrollBtn = document.getElementById('enrollBtn');
 
     if (termsCheckbox && enrollBtn) {
-        termsCheckbox.disabled = true;
-        enrollBtn.disabled = true;
+        // For logged-in users doing multiple enrollments, enable the button immediately
+        if (isUserLoggedIn) {
+            termsCheckbox.disabled = false;
+            termsCheckbox.checked = true;
+            enrollBtn.disabled = false;
+        } else {
+            // For new users, require terms agreement
+            termsCheckbox.disabled = true;
+            enrollBtn.disabled = true;
+        }
 
         if (showTerms) {
             showTerms.addEventListener('click', function(e) {
@@ -1158,10 +1927,108 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // Add event listener for checkbox change
+        termsCheckbox.addEventListener('change', function() {
+            enrollBtn.disabled = !this.checked;
+        });
+
         window.addEventListener('click', function(e) {
             if (e.target === termsModal) {
                 termsModal.style.display = 'none';
             }
+        });
+    }
+
+    // Handle program selection
+    const programSelect = document.getElementById('programSelect');
+    if (programSelect) {
+        programSelect.addEventListener('change', function() {
+            // Update the hidden program_id input
+            const hiddenProgramInput = document.querySelector('input[name="program_id"]');
+            if (hiddenProgramInput) {
+                hiddenProgramInput.value = this.value;
+            }
+            console.log('Program selected:', this.value);
+        });
+    }
+
+    // Add form submission debugging
+    const enrollmentForm = document.getElementById('enrollmentForm');
+    if (enrollmentForm) {
+        enrollmentForm.addEventListener('submit', function(e) {
+            console.log('Form submission attempt detected');
+            console.log('User logged in:', isUserLoggedIn);
+            console.log('Selected package ID:', selectedPackageId);
+            console.log('Learning mode:', document.getElementById('learning_mode')?.value);
+            console.log('Payment method:', selectedPaymentMethod);
+            console.log('Terms checked:', document.getElementById('termsCheckbox')?.checked);
+            
+            // Check if required fields are filled
+            const programSelect = document.querySelector('select[name="program_id"]');
+            const startDate = document.querySelector('input[name="Start_Date"]');
+            
+            console.log('Program selected:', programSelect?.value);
+            console.log('Start date:', startDate?.value);
+            
+            // For debugging - don't prevent submission, just log
+            // e.preventDefault();
+        });
+    }
+
+    // Add form submission debugging
+    const formElement = document.getElementById('enrollmentForm');
+    if (formElement) {
+        formElement.addEventListener('submit', function(e) {
+            console.log('Form submission attempted...');
+            
+            // Check all required fields
+            const requiredFields = formElement.querySelectorAll('[required]');
+            let missingFields = [];
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    missingFields.push(field.name || field.id);
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                console.error('Missing required fields:', missingFields);
+                e.preventDefault();
+                alert('Please fill in all required fields: ' + missingFields.join(', '));
+                return;
+            }
+            
+            // Check if program is selected
+            const programSelect = document.getElementById('programSelect');
+            if (programSelect && !programSelect.value) {
+                console.error('No program selected');
+                e.preventDefault();
+                alert('Please select a program');
+                return;
+            }
+            
+            // Check if package is selected
+            const packageInput = document.querySelector('input[name="package_id"]');
+            if (packageInput && !packageInput.value) {
+                console.error('No package selected');
+                e.preventDefault();
+                alert('Please select a package');
+                return;
+            }
+            
+            // Check if learning mode is selected
+            const learningModeInput = document.getElementById('learning_mode');
+            if (learningModeInput && !learningModeInput.value) {
+                console.error('No learning mode selected');
+                e.preventDefault();
+                alert('Please select a learning mode');
+                return;
+            }
+            
+            console.log('Form validation passed, submitting...');
+            console.log('Program ID:', programSelect ? programSelect.value : 'not found');
+            console.log('Package ID:', packageInput ? packageInput.value : 'not found');
+            console.log('Learning Mode:', learningModeInput ? learningModeInput.value : 'not found');
         });
     }
 
@@ -1176,6 +2043,58 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+});
+
+// Form validation before submission
+document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default submission
+    
+    console.log('Form submission attempted');
+    
+    // Check if we're on the final step
+    if (currentStep !== 5) {
+        alert('Please complete all steps before enrolling.');
+        return false;
+    }
+    
+    // Validate required fields based on user login status
+    let missingFields = [];
+    
+    // Always required fields
+    const packageId = document.querySelector('input[name="package_id"]').value;
+    const programId = document.querySelector('select[name="program_id"]').value;
+    const startDate = document.querySelector('input[name="Start_Date"]').value;
+    const termsAccepted = document.querySelector('#termsCheckbox').checked;
+    
+    if (!packageId) missingFields.push('Package selection');
+    if (!programId) missingFields.push('Program selection');
+    if (!startDate) missingFields.push('Start date');
+    if (!termsAccepted) missingFields.push('Terms and conditions agreement');
+    
+    // Check password fields only if user is not logged in
+    if (!isUserLoggedIn) {
+        const password = document.querySelector('#password').value;
+        const passwordConfirm = document.querySelector('#password_confirmation').value;
+        const email = document.querySelector('#user_email').value;
+        const firstName = document.querySelector('#user_firstname').value;
+        const lastName = document.querySelector('#user_lastname').value;
+        
+        if (!email) missingFields.push('Email');
+        if (!firstName) missingFields.push('First name');
+        if (!lastName) missingFields.push('Last name');
+        if (!password) missingFields.push('Password');
+        if (!passwordConfirm) missingFields.push('Password confirmation');
+        if (password !== passwordConfirm) missingFields.push('Password confirmation (passwords must match)');
+    }
+    
+    if (missingFields.length > 0) {
+        alert('Please fill in the following required fields:\n• ' + missingFields.join('\n• '));
+        return false;
+    }
+    
+    // If validation passes, submit the form
+    console.log('Form validation passed, submitting...');
+    this.submit();
 });
 
 

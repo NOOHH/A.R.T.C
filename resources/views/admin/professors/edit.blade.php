@@ -28,7 +28,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.professors.update', $professor->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('admin.professors.update', $professor->professor_id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         

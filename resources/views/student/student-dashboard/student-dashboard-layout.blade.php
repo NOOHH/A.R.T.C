@@ -78,23 +78,9 @@
                                                     $studentPrograms[] = [
                                                         'program_id' => $enrollment->program->program_id,
                                                         'program_name' => $enrollment->program->program_name,
-                                                        'package_name' => $enrollment->package ? $enrollment->package->package_name : $student->package_name,
-                                                        'plan_name' => $student->plan_name ?? 'Standard Plan',
-                                                    ];
-                                                }
-                                            }
-                                            
-                                            // If no enrollments but student has direct program_id
-                                            if (empty($studentPrograms) && $student->program_id) {
-                                                $program = App\Models\Program::where('program_id', $student->program_id)
-                                                    ->where('is_archived', false)
-                                                    ->first();
-                                                if ($program) {
-                                                    $studentPrograms[] = [
-                                                        'program_id' => $program->program_id,
-                                                        'program_name' => $program->program_name,
-                                                        'package_name' => $student->package_name ?? 'Standard Package',
-                                                        'plan_name' => $student->plan_name ?? 'Standard Plan',
+                                                        'package_name' => $enrollment->package ? $enrollment->package->package_name : 'Standard Package',
+                                                        'plan_name' => $enrollment->enrollment_type ?? 'Standard Plan',
+                                                        'learning_mode' => $enrollment->learning_mode ?? 'Synchronous',
                                                     ];
                                                 }
                                             }

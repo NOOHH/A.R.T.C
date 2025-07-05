@@ -18,6 +18,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Programs list API route for navbar dropdown
+Route::get('/programs', function () {
+    $programs = \App\Models\Program::where('is_archived', false)
+        ->select('program_id', 'program_name', 'program_description')
+        ->orderBy('program_name')
+        ->get();
+    return response()->json(['success' => true, 'data' => $programs]);
+});
+
 // Program details API route
 Route::get('/programs/{id}', function ($id) {
     $program = \App\Models\Program::find($id);
@@ -33,4 +42,4 @@ Route::get('/programs/{id}/modules', function ($id) {
         ->where('is_archived', false)
         ->get();
     return response()->json($modules);
-});
+}); 

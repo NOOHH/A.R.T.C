@@ -539,11 +539,11 @@ class SettingsHelper
         $rgb = array_map('hexdec', str_split($hex, 2));
         
         foreach ($rgb as &$color) {
-            $color = max(0, min(255, $color - ($color * $percent / 100)));
+            $color = max(0, min(255, (int)round($color - ($color * $percent / 100))));
         }
         
         return '#' . implode('', array_map(function($color) {
-            return str_pad(dechex($color), 2, '0', STR_PAD_LEFT);
+            return str_pad(dechex((int)$color), 2, '0', STR_PAD_LEFT);
         }, $rgb));
     }
 }

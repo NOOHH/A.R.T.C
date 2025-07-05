@@ -222,7 +222,7 @@
                             <span class="progress-text">{{ $course['progress'] }}% complete</span>
                         </div>
                         <div class="course-meta" style="margin-top: 10px; font-size: 0.9rem; color: #7f8c8d;">
-                            <span>{{ $course['completed_modules'] ?? 0 }} / {{ $course['total_modules'] }} modules complete</span>
+                            <span>{{ $course['completed_modules'] ?? 0 }} / {{ $course['total_modules'] ?? 0 }} modules complete</span>
                         </div>
                     </div>
                     <a href="{{ route('student.course', ['courseId' => $course['id']]) }}" class="resume-btn">Continue Learning</a>

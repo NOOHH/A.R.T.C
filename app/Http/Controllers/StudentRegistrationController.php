@@ -26,20 +26,46 @@ class StudentRegistrationController extends Controller
             ->ordered()
             ->get();
 
+        // Check if user is already logged in (multiple enrollment scenario)
+        $isLoggedIn = session('user_id') !== null;
+
         // Base validation rules for core fields
         $rules = [
-            'user_firstname' => 'required|string|max:255',
-            'user_lastname' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|confirmed|min:6',
             'Start_Date' => 'required|date',
             'program_id' => 'required|integer|exists:programs,program_id',
             'package_id' => 'required|integer|exists:packages,package_id',
             'enrollment_type' => 'required|in:modular,full',
+            'learning_mode' => 'required|in:synchronous,asynchronous,Synchronous,Asynchronous',
             'registration_mode' => 'nullable|in:sync,async',
             'selected_modules' => 'nullable|array',
             'selected_modules.*' => 'exists:modules,modules_id',
-        ];        // Add dynamic field validation rules based on form requirements
+        ];
+
+        // Add account validation rules only for new users (not logged in)
+        if (!$isLoggedIn) {
+            $rules['user_firstname'] = 'required|string|max:255';
+            $rules['user_lastname'] = 'required|string|max:255';
+            $rules['email'] = 'required|email|unique:users,email';
+            $rules['password'] = 'required|confirmed|min:6';
+        }
+        
+        // For logged-in users, check if they're already enrolled in this program
+        if ($isLoggedIn) {
+            $user = User::find(session('user_id'));
+            $student = Student::where('user_id', $user->user_id)->first();
+            
+            if ($student) {
+                $existingEnrollment = $student->enrollments()
+                    ->where('program_id', $request->input('program_id'))
+                    ->first();
+                    
+                if ($existingEnrollment) {
+                    return redirect()->back()
+                        ->withErrors(['program_id' => 'You are already enrolled in this program.'])
+                        ->withInput();
+                }
+            }
+        }        // Add dynamic field validation rules based on form requirements
         foreach ($formRequirements as $requirement) {
             // Skip section type fields as they don't need validation
             if ($requirement->field_type === 'section') {
@@ -141,37 +167,71 @@ class StudentRegistrationController extends Controller
         $validated = $request->validate($rules);
 
         $enrollmentType = $validated['enrollment_type'] === 'full' ? 'Complete' : 'Modular';
+        
+        // Normalize learning mode to proper case
+        $learningMode = ucfirst(strtolower($validated['learning_mode']));
 
-        $enrollment = Enrollment::create([
-            'program_id' => $validated['program_id'],
-            'package_id' => $validated['package_id'],
-            'enrollment_type' => $enrollmentType,
-        ]);
+        // Check if user is already logged in (multiple enrollment scenario)
+        $user = null;
+        $student = null;
+        
+        if (session('user_id')) {
+            // User is already logged in - this is a multiple enrollment
+            $user = User::find(session('user_id'));
+            $student = Student::where('user_id', $user->user_id)->first();
+            
+            Log::info('Multiple enrollment detected', [
+                'user_id' => $user->user_id,
+                'student_id' => $student ? $student->student_id : 'none',
+                'program_id' => $validated['program_id'],
+                'package_id' => $validated['package_id']
+            ]);
+        } else {
+            // New user registration
+            $user = User::create([
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'user_firstname' => $validated['user_firstname'],
+                'user_lastname' => $validated['user_lastname'],
+                'role' => 'unverified',
+            ]);
+            
+            Log::info('New user created', [
+                'user_id' => $user->user_id,
+                'email' => $user->email
+            ]);
+        }
 
-        $user = User::create([
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'user_firstname' => $validated['user_firstname'],
-            'user_lastname' => $validated['user_lastname'],
-            'role' => 'unverified',
-            'enrollment_id' => $enrollment->enrollment_id,
-        ]);
-
-        $package = Package::find($validated['package_id']);
-        $program = Program::find($validated['program_id']);
-        $planName = $enrollmentType;
-
-        // Create registration record
+        // Create registration record first
         $registration = new Registration();
         $registration->user_id = $user->user_id;
-        $registration->package_id = $validated['package_id'];
-        $registration->program_id = $validated['program_id'];
-        $registration->plan_id = $request->input('plan_id');
-        $registration->package_name = $package ? $package->package_name : null;
-        $registration->program_name = $program ? $program->program_name : null;
-        $registration->plan_name = $planName;
         $registration->Start_Date = $validated['Start_Date'];
         $registration->status = 'pending';
+        
+        // Save package, program, and plan information
+        $registration->package_id = $validated['package_id'];
+        $registration->program_id = $validated['program_id'];
+        $registration->plan_id = $validated['plan_id'] ?? null;
+        $registration->enrollment_type = $enrollmentType;
+        $registration->learning_mode = $learningMode;
+        
+        // Get and save the names for easy display
+        if ($validated['package_id']) {
+            $package = \App\Models\Package::find($validated['package_id']);
+            $registration->package_name = $package ? $package->package_name : 'N/A';
+        }
+        
+        if ($validated['program_id']) {
+            $program = \App\Models\Program::find($validated['program_id']);
+            $registration->program_name = $program ? $program->program_name : 'N/A';
+        }
+        
+        if (isset($validated['plan_id']) && $validated['plan_id']) {
+            $plan = \App\Models\Plan::find($validated['plan_id']);
+            $registration->plan_name = $plan ? $plan->plan_name : 'N/A';
+        } else {
+            $registration->plan_name = $enrollmentType === 'full' ? 'Full Program' : 'Modular';
+        }
 
         // Handle dynamic fields from form requirements
         $dynamicFields = [];
@@ -232,6 +292,97 @@ class StudentRegistrationController extends Controller
         
         $registration->save();
 
+        // Create the enrollment record with registration_id for tracking
+        $enrollment = Enrollment::create([
+            'student_id' => $student ? $student->student_id : null, // Will be updated after student creation or during approval
+            'program_id' => $validated['program_id'],
+            'package_id' => $validated['package_id'],
+            'enrollment_type' => $enrollmentType,
+            'learning_mode' => $learningMode,
+            'registration_id' => $registration->registration_id, // Link to the registration for admin approval process
+            'enrollment_status' => 'pending',
+        ]);
+
+        // Create or update Student record
+        if (!$student) {
+            // Create new student record with year-month-increment format
+            $currentYear = date('Y');
+            $currentMonth = date('m');
+            
+            // Get the latest student ID for the current month to generate the next increment
+            $latestStudent = Student::where('student_id', 'LIKE', $currentYear . '-' . $currentMonth . '-%')
+                ->orderBy('student_id', 'desc')
+                ->first();
+            
+            $increment = 1;
+            if ($latestStudent) {
+                // Extract the increment from the latest student ID
+                $lastIncrement = (int) substr($latestStudent->student_id, -5);
+                $increment = $lastIncrement + 1;
+            }
+            
+            $studentId = $currentYear . '-' . $currentMonth . '-' . str_pad($increment, 5, '0', STR_PAD_LEFT);
+            
+            $student = Student::create([
+                'student_id' => $studentId,
+                'user_id' => $user->user_id,
+                'firstname' => $registration->firstname ?? $validated['user_firstname'] ?? '',
+                'middlename' => $registration->middlename ?? '',
+                'lastname' => $registration->lastname ?? $validated['user_lastname'] ?? '',
+                'student_school' => $registration->student_school ?? $registration->school_name ?? '',
+                'street_address' => $registration->street_address ?? '',
+                'state_province' => $registration->state_province ?? '',
+                'city' => $registration->city ?? '',
+                'zipcode' => $registration->zipcode ?? '',
+                'contact_number' => $registration->contact_number ?? $registration->phone_number ?? '',
+                'emergency_contact_number' => $registration->emergency_contact_number ?? '',
+                'good_moral' => $registration->good_moral ?? '',
+                'PSA' => $registration->PSA ?? '',
+                'Course_Cert' => $registration->Course_Cert ?? '',
+                'TOR' => $registration->TOR ?? '',
+                'Cert_of_Grad' => $registration->Cert_of_Grad ?? '',
+                'Undergraduate' => $registration->Undergraduate ?? '',
+                'Graduate' => $registration->Graduate ?? '',
+                'photo_2x2' => $registration->photo_2x2 ?? '',
+                'Start_Date' => $validated['Start_Date'],
+                'email' => $user->email,
+                'is_archived' => false,
+            ]);
+            
+            Log::info('New student record created', [
+                'student_id' => $student->student_id,
+                'user_id' => $user->user_id
+            ]);
+        } else {
+            // For existing students, update the student record with new information if provided
+            $updateData = [];
+            if (isset($registration->firstname) && $registration->firstname) {
+                $updateData['firstname'] = $registration->firstname;
+            }
+            if (isset($registration->lastname) && $registration->lastname) {
+                $updateData['lastname'] = $registration->lastname;
+            }
+            if (isset($registration->middlename) && $registration->middlename) {
+                $updateData['middlename'] = $registration->middlename;
+            }
+            // Add other fields as needed
+            
+            if (!empty($updateData)) {
+                $student->update($updateData);
+                Log::info('Existing student record updated', [
+                    'student_id' => $student->student_id,
+                    'updated_fields' => array_keys($updateData)
+                ]);
+            }
+        }
+
+        // Update enrollment with student_id if student was created
+        if (!$student && isset($student)) {
+            $enrollment->update([
+                'student_id' => $student->student_id
+            ]);
+        }
+
         // Handle module selection for modular enrollment
         if ($validated['enrollment_type'] === 'modular' && !empty($validated['selected_modules'])) {
             $moduleIds = is_array($validated['selected_modules']) 
@@ -241,14 +392,18 @@ class StudentRegistrationController extends Controller
             $registration->modules()->sync($moduleIds);
         }
 
+        // Set success message based on whether this is a new user or multiple enrollment
+        $successMessage = $isLoggedIn 
+            ? 'Successfully enrolled in additional program! You can view all your enrollments in your dashboard.'
+            : 'Registration submitted successfully!';
+
         return redirect()->route('registration.success')
-            ->with('success', 'Registration submitted successfully!');
+            ->with('success', $successMessage);
     }
 
     public function showRegistrationForm(Request $request)
     {
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
-        $programs = Program::all();
         $packages = Package::all();
         
         // Get requirements for "complete" (full) program
@@ -259,9 +414,23 @@ class StudentRegistrationController extends Controller
 
         // Get existing student data if user is logged in
         $student = null;
+        $enrolledProgramIds = [];
+        
         if (session('user_id')) {
             $student = Student::where('user_id', session('user_id'))->first();
+            
+            // Get all program IDs that the student is already enrolled in
+            if ($student) {
+                $enrolledProgramIds = $student->enrollments()
+                    ->pluck('program_id')
+                    ->toArray();
+            }
         }
+        
+        // Filter out programs that the student is already enrolled in
+        $programs = Program::where('is_archived', false)
+            ->whereNotIn('program_id', $enrolledProgramIds)
+            ->get();
 
         return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements'));
     }

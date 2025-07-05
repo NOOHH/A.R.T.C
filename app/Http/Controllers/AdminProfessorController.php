@@ -42,7 +42,7 @@ class AdminProfessorController extends Controller
         $professor->last_name = $request->last_name;
         $professor->email = $request->email;
         $professor->password = Hash::make($request->password);
-        $professor->admin_id = auth()->id(); // Assuming admin is creating this
+        $professor->admin_id = session('admin_id') ?? session('admin.admin_id') ?? 1; // Get admin ID from session
 
         $professor->save();
 

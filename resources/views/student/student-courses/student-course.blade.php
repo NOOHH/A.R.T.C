@@ -366,7 +366,7 @@
             <h2>Course Content</h2>
             
             @if($totalModules > 0)
-                @foreach($modules as $index => $module)
+                @foreach($course['modules'] as $index => $module)
                     <div class="module-card" data-type="{{ $module['type'] }}">
                         <div class="module-header">
                             <h3 class="module-title">

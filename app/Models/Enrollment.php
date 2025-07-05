@@ -18,6 +18,9 @@ class Enrollment extends Model
         'program_id',
         'package_id',
         'enrollment_type',
+        'learning_mode',
+        'registration_id',
+        'enrollment_status',
     ];
 
     public function student()

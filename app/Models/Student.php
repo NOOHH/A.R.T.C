@@ -38,12 +38,6 @@ class Student extends Model
         'photo_2x2',
         'Start_Date',
         'date_approved',
-        'program_id',
-        'package_id',
-        'plan_id',
-        'package_name',
-        'plan_name',
-        'program_name',
         'email',
         'is_archived',
     ];
@@ -56,21 +50,51 @@ class Student extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
-
+    
+    // Single program relationship (for backward compatibility)
+    // This gets the first program the student is enrolled in
     public function program()
     {
-        return $this->belongsTo(Program::class, 'program_id', 'program_id');
-    }
-
-    public function package()
-    {
-        return $this->belongsTo(Package::class, 'package_id', 'package_id');
+        return $this->hasOneThrough(
+            \App\Models\Program::class,
+            \App\Models\Enrollment::class,
+            'student_id', // Foreign key on enrollments table
+            'program_id', // Foreign key on programs table
+            'student_id', // Local key on students table
+            'program_id'  // Local key on enrollments table
+        );
     }
     
-    // Enrollments relationship
+    // Enrollments relationship - a student can have multiple enrollments
     public function enrollments()
     {
         return $this->hasMany(\App\Models\Enrollment::class, 'student_id', 'student_id');
+    }
+    
+    // Get programs through enrollments
+    public function programs()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Program::class,
+            \App\Models\Enrollment::class,
+            'student_id', // Foreign key on enrollments table
+            'program_id', // Foreign key on programs table
+            'student_id', // Local key on students table
+            'program_id'  // Local key on enrollments table
+        );
+    }
+    
+    // Get packages through enrollments
+    public function packages()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Package::class,
+            \App\Models\Enrollment::class,
+            'student_id', // Foreign key on enrollments table
+            'package_id', // Foreign key on packages table
+            'student_id', // Local key on students table
+            'package_id'  // Local key on enrollments table
+        );
     }
     
     // Module completions relationship

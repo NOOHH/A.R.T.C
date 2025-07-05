@@ -70,25 +70,25 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <a href="{{ route('admin.professors.edit', $professor->id) }}" 
+                                                <a href="{{ route('admin.professors.edit', $professor->professor_id) }}" 
                                                    class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-info"
                                                         data-bs-toggle="modal" data-bs-target="#videosModal"
-                                                        data-professor-id="{{ $professor->id }}"
+                                                        data-professor-id="{{ $professor->professor_id }}"
                                                         data-professor-name="{{ $professor->full_name }}">
                                                     <i class="bi bi-play-circle"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-warning"
                                                         data-bs-toggle="modal" data-bs-target="#archiveModal"
-                                                        data-professor-id="{{ $professor->id }}"
+                                                        data-professor-id="{{ $professor->professor_id }}"
                                                         data-professor-name="{{ $professor->full_name }}">
                                                     <i class="bi bi-archive"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                                         data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                                        data-professor-id="{{ $professor->id }}"
+                                                        data-professor-id="{{ $professor->professor_id }}"
                                                         data-professor-name="{{ $professor->full_name }}">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -216,7 +216,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="archiveForm" method="POST" style="display: inline;">
+                <form id="archiveForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="btn btn-warning">Archive</button>
@@ -240,7 +240,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" method="POST" style="display: inline;">
+                <form id="deleteForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Delete</button>
