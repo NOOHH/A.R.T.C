@@ -17,6 +17,14 @@ class Registration extends Model
         'firstname',
         'middlename',
         'user_id',
+        'package_id',
+        'program_id',
+        'plan_id',
+        'package_name',
+        'program_name',
+        'plan_name',
+        'enrollment_type',
+        'learning_mode',
         'student_school',
         'school_name', // New dynamic field
         'street_address',
@@ -29,12 +37,6 @@ class Registration extends Model
         'selected_modules', // New dynamic field
         'Start_Date',
         'status',
-        'package_id',
-        'package_name',
-        'plan_id',
-        'plan_name',
-        'program_id',
-        'program_name',
         'good_moral',
         'PSA',
         'Course_Cert',
@@ -93,6 +95,21 @@ class Registration extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(Package::class, 'package_id', 'package_id');
+    }
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class, 'plan_id', 'plan_id');
     }
 
     public function modules()

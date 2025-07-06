@@ -7,7 +7,6 @@ use App\Models\Program;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 
 class AdminModuleController extends Controller
 {
@@ -16,47 +15,18 @@ class AdminModuleController extends Controller
      */
     public function index(Request $request)
     {
-        Log::info('AdminModuleController::index called', [
-            'program_id' => $request->input('program_id'),
-            'request_all' => $request->all()
-        ]);
-        
-        // Get all programs for the dropdown, including archived ones but mark them
-        $programs = Program::orderBy('is_archived', 'asc')
-                          ->orderBy('program_name', 'asc')
-                          ->get();
-        
+        $programs = Program::all();
         $modules = collect();
-        $selectedProgram = null;
-        $modulesByType = collect(); // Initialize modulesByType with an empty collection
         
         if ($request->has('program_id') && $request->program_id != '') {
-            // Get the selected program with its details
-            $selectedProgram = Program::findOrFail($request->program_id);
-            
-            // Get modules for the selected program
             $modules = Module::where('program_id', $request->program_id)
                            ->where('is_archived', false)
                            ->with('program')
-                           ->orderBy('created_at', 'asc')   // Otherwise by creation date
+                           ->orderBy('created_at', 'desc')
                            ->get();
-                           
-            Log::info('Modules found for program', [
-                'program_id' => $request->program_id,
-                'modules_count' => $modules->count(),
-                'modules' => $modules->toArray()
-            ]);
-                           
-            // Group modules by content type for better organization
-            $modulesByType = $modules->groupBy('content_type');
         }
 
-        return view('admin.admin-modules.admin-modules', [
-            'programs' => $programs,
-            'modules' => $modules,
-            'selectedProgram' => $selectedProgram,
-            'modulesByType' => $modulesByType
-        ]);
+        return view('admin.admin-modules.admin-modules', compact('programs', 'modules'));
     }
 
     /**
@@ -73,35 +43,19 @@ class AdminModuleController extends Controller
      */
     public function store(Request $request)
     {
-        // Add debugging
-        Log::info('AdminModuleController::store called', [
-            'request_data' => $request->all(),
-            'files' => $request->hasFile('attachment') ? 'yes' : 'no'
+        $request->validate([
+            'module_name' => 'required|string|max:255',
+            'module_description' => 'nullable|string',
+            'program_id' => 'required|exists:programs,program_id',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg|max:10240',
+            'content_type' => 'nullable|string|in:module,assignment,quiz,test,link',
         ]);
-        
-        try {
-            $request->validate([
-                'module_name' => 'required|string|max:255',
-                'module_description' => 'nullable|string',
-                'program_id' => 'required|exists:programs,program_id',
-                'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg|max:10240',
-                'content_type' => 'nullable|string|in:module,assignment,quiz,test,link,file',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation failed in AdminModuleController::store', $e->errors());
-            return back()->withErrors($e->errors())->withInput();
-        }
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            try {
-                $file = $request->file('attachment');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $attachmentPath = $file->storeAs('modules', $filename, 'public');
-            } catch (\Exception $e) {
-                Log::error('File upload failed in AdminModuleController::store', ['error' => $e->getMessage()]);
-                return back()->with('error', 'File upload failed: ' . $e->getMessage())->withInput();
-            }
+            $file = $request->file('attachment');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $attachmentPath = $file->storeAs('modules', $filename, 'public');
         }
 
         // Prepare content-specific data
@@ -143,36 +97,20 @@ class AdminModuleController extends Controller
                     'link_type' => $request->input('link_type', 'other'),
                 ];
                 break;
-            case 'file':
-                // File uploads are handled through the attachment field
-                $contentData = [
-                    'file_description' => $request->input('module_description'),
-                ];
-                break;
         }
 
-        try {
-            $module = Module::create([
-                'module_name' => $request->module_name,
-                'module_description' => $request->module_description,
-                'program_id' => $request->program_id,
-                'attachment' => $attachmentPath,
-                'content_type' => $contentType,
-                'content_data' => $contentData,
-                'is_archived' => false,
-            ]);
-            
-            Log::info('Module created successfully', ['module_id' => $module->modules_id]);
+        Module::create([
+            'module_name' => $request->module_name,
+            'module_description' => $request->module_description,
+            'program_id' => $request->program_id,
+            'attachment' => $attachmentPath,
+            'content_type' => $contentType,
+            'content_data' => $contentData,
+            'is_archived' => false,
+        ]);
 
-            return redirect()->route('admin.modules.index', ['program_id' => $request->program_id])
-                            ->with('success', ucfirst($contentType) . ' created successfully!');
-        } catch (\Exception $e) {
-            Log::error('Module creation failed in AdminModuleController::store', [
-                'error' => $e->getMessage(),
-                'request_data' => $request->all()
-            ]);
-            return back()->with('error', 'Failed to create module: ' . $e->getMessage())->withInput();
-        }
+        return redirect()->route('admin.modules.index', ['program_id' => $request->program_id])
+                        ->with('success', 'Module created successfully!');
     }
 
     /**
@@ -411,36 +349,5 @@ class AdminModuleController extends Controller
         }
         
         return view('admin.admin-modules.admin-modules-archived', compact('programs', 'modules'));
-    }
-
-    /**
-     * Update module order within a program
-     */
-    public function updateOrder(Request $request)
-    {
-        $request->validate([
-            'moduleIds' => 'required|array',
-            'moduleIds.*' => 'integer|exists:modules,modules_id',
-        ]);
-        
-        // Update the order of modules
-        foreach ($request->moduleIds as $index => $moduleId) {
-            Module::where('modules_id', $moduleId)
-                ->update(['module_order' => $index + 1]);
-        }
-        
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Preview a module for admin review
-     */
-    public function preview(Module $module)
-    {
-        // Load the module with its program
-        $module->load('program');
-        
-        // Return the module data as JSON for the preview modal
-        return response()->json($module);
     }
 }

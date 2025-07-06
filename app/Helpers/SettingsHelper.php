@@ -231,16 +231,16 @@ class SettingsHelper
 
     public static function getNavbarStyles()
     {
-        $settings = self::getSettings();
-        $navbar = $settings['navbar'] ?? [];
+        $settingsCollection = \App\Models\UiSetting::getSection('navbar');
+        $navbar = $settingsCollection ? $settingsCollection->toArray() : [];
         
         $backgroundStyle = '';
         
         // Check if gradient is enabled
-        if (isset($navbar['gradient_color']) && !empty($navbar['gradient_color'])) {
-            $backgroundStyle = "background: linear-gradient(135deg, " . ($navbar['background_color'] ?? '#f1f1f1') . " 0%, " . $navbar['gradient_color'] . " 100%) !important;";
+        if (isset($navbar['navbar_gradient_color']) && !empty($navbar['navbar_gradient_color'])) {
+            $backgroundStyle = "background: linear-gradient(135deg, " . ($navbar['navbar_bg_color'] ?? '#f1f1f1') . " 0%, " . $navbar['navbar_gradient_color'] . " 100%) !important;";
         } else {
-            $backgroundStyle = "background-color: " . ($navbar['background_color'] ?? '#f1f1f1') . " !important;";
+            $backgroundStyle = "background-color: " . ($navbar['navbar_bg_color'] ?? '#f1f1f1') . " !important;";
         }
         
         $styles = "
@@ -250,11 +250,15 @@ class SettingsHelper
             
             .navbar .navbar-brand,
             .navbar .nav-link {
-                color: " . ($navbar['text_color'] ?? '#222222') . " !important;
+                color: " . ($navbar['navbar_text_color'] ?? '#222222') . " !important;
             }
             
             .navbar .nav-link:hover {
-                color: " . self::darkenColor($navbar['text_color'] ?? '#222222', 20) . " !important;
+                color: " . ($navbar['navbar_hover_color'] ?? self::darkenColor($navbar['navbar_text_color'] ?? '#222222', 20)) . " !important;
+            }
+            
+            .navbar .nav-link.active {
+                color: " . ($navbar['navbar_active_color'] ?? '#0056b3') . " !important;
             }
         ";
         
@@ -263,22 +267,30 @@ class SettingsHelper
 
     public static function getFooterStyles()
     {
-        $settings = self::getSettings();
-        $footer = $settings['footer'] ?? [];
+        $settingsCollection = \App\Models\UiSetting::getSection('footer');
+        $footer = $settingsCollection ? $settingsCollection->toArray() : [];
         
         $backgroundStyle = '';
         
         // Check if gradient is enabled
-        if (isset($footer['gradient_color']) && !empty($footer['gradient_color'])) {
-            $backgroundStyle = "background: linear-gradient(135deg, " . ($footer['background_color'] ?? '#ffffff') . " 0%, " . $footer['gradient_color'] . " 100%) !important;";
+        if (isset($footer['footer_gradient_color']) && !empty($footer['footer_gradient_color'])) {
+            $backgroundStyle = "background: linear-gradient(135deg, " . ($footer['footer_bg_color'] ?? '#ffffff') . " 0%, " . $footer['footer_gradient_color'] . " 100%) !important;";
         } else {
-            $backgroundStyle = "background-color: " . ($footer['background_color'] ?? '#ffffff') . " !important;";
+            $backgroundStyle = "background-color: " . ($footer['footer_bg_color'] ?? '#ffffff') . " !important;";
         }
         
         $styles = "
             .footer {
                 " . $backgroundStyle . "
-                color: " . ($footer['text_color'] ?? '#444444') . " !important;
+                color: " . ($footer['footer_text_color'] ?? '#444444') . " !important;
+            }
+            
+            .footer-links a {
+                color: " . ($footer['footer_link_color'] ?? '#adb5bd') . " !important;
+            }
+            
+            .footer-links a:hover {
+                color: " . ($footer['footer_link_hover_color'] ?? '#ffffff') . " !important;
             }
         ";
         
@@ -500,6 +512,119 @@ class SettingsHelper
         return $styles;
     }
 
+    public static function getHomepageCustomStyles()
+    {
+        $settingsCollection = \App\Models\UiSetting::getSection('homepage');
+        $settings = $settingsCollection ? $settingsCollection->toArray() : [];
+        
+        // Default values
+        $defaults = [
+            'hero_bg_color' => '#667eea',
+            'hero_text_color' => '#ffffff',
+            'hero_button_color' => '#4CAF50',
+            'programs_bg_color' => '#f8f9fa',
+            'programs_text_color' => '#333333',
+            'modalities_bg_color' => '#667eea',
+            'modalities_text_color' => '#ffffff',
+            'about_bg_color' => '#ffffff',
+            'about_text_color' => '#333333',
+        ];
+        
+        // Merge with defaults
+        $settings = array_merge($defaults, $settings);
+        
+        $css = "<style>";
+        
+        // Hero section styles
+        $css .= "
+        .homepage-hero {
+            background: linear-gradient(135deg, {$settings['hero_bg_color']} 0%, {$settings['hero_bg_color']}dd 100%) !important;
+            color: {$settings['hero_text_color']} !important;
+        }
+        .homepage-hero .hero-title {
+            color: {$settings['hero_text_color']} !important;
+        }
+        .homepage-hero .hero-subtitle {
+            color: {$settings['hero_text_color']} !important;
+        }
+        .homepage-hero .enroll-btn {
+            background-color: {$settings['hero_button_color']} !important;
+            border-color: {$settings['hero_button_color']} !important;
+        }
+        .homepage-hero .enroll-btn:hover {
+            background-color: {$settings['hero_button_color']}dd !important;
+            border-color: {$settings['hero_button_color']}dd !important;
+        }
+        ";
+        
+        // Programs section styles
+        $css .= "
+        .programs-section {
+            background-color: {$settings['programs_bg_color']} !important;
+            color: {$settings['programs_text_color']} !important;
+        }
+        .programs-section h2 {
+            color: {$settings['programs_text_color']} !important;
+        }
+        .programs-section .lead {
+            color: {$settings['programs_text_color']}aa !important;
+        }
+        ";
+        
+        // Modalities section styles
+        $css .= "
+        .modalities-section {
+            background: linear-gradient(135deg, {$settings['modalities_bg_color']} 0%, {$settings['modalities_bg_color']}dd 100%) !important;
+            color: {$settings['modalities_text_color']} !important;
+        }
+        .modalities-section h2 {
+            color: {$settings['modalities_text_color']} !important;
+        }
+        .modalities-section .lead {
+            color: {$settings['modalities_text_color']}aa !important;
+        }
+        ";
+        
+        // About section styles
+        $css .= "
+        .about-section {
+            background-color: {$settings['about_bg_color']} !important;
+            color: {$settings['about_text_color']} !important;
+        }
+        .about-section h2 {
+            color: {$settings['about_text_color']} !important;
+        }
+        .about-section .lead {
+            color: {$settings['about_text_color']}aa !important;
+        }
+        ";
+        
+        $css .= "</style>";
+        
+        return $css;
+    }
+    
+    public static function getHomepageContent()
+    {
+        $settingsCollection = \App\Models\UiSetting::getSection('homepage');
+        $settings = $settingsCollection ? $settingsCollection->toArray() : [];
+        
+        // Default content
+        $defaults = [
+            'hero_title' => 'Review <span style="color: #4CAF50;">Smarter.</span><br>Learn <span style="color: #4CAF50;">Better.</span><br>Succeed <span style="color: #4CAF50;">Faster.</span>',
+            'hero_subtitle' => 'At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.',
+            'hero_button_text' => 'ENROLL NOW',
+            'programs_title' => 'Programs Offered',
+            'programs_subtitle' => 'Choose from our comprehensive review programs designed for success',
+            'modalities_title' => 'Learning Modalities',
+            'modalities_subtitle' => 'Choose the learning style that works best for you',
+            'about_title' => 'About Us',
+            'about_subtitle' => 'Learn more about our mission and values',
+        ];
+        
+        return array_merge($defaults, $settings);
+    }
+
     public static function getAllStyles()
     {
         $allStyles = '';
@@ -539,11 +664,11 @@ class SettingsHelper
         $rgb = array_map('hexdec', str_split($hex, 2));
         
         foreach ($rgb as &$color) {
-            $color = max(0, min(255, $color - ($color * $percent / 100)));
+            $color = max(0, min(255, (int)round($color - ($color * $percent / 100))));
         }
         
         return '#' . implode('', array_map(function($color) {
-            return str_pad(dechex($color), 2, '0', STR_PAD_LEFT);
+            return str_pad(dechex((int)$color), 2, '0', STR_PAD_LEFT);
         }, $rgb));
     }
 }

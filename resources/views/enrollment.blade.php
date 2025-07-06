@@ -1,6 +1,7 @@
 @extends('layouts.navbar')
 
 @section('title', 'Enrollment')
+@section('hide_footer', true)
 
 @push('styles')
 
@@ -12,13 +13,18 @@
 {!! App\Helpers\SettingsHelper::getProgramCardStyles() !!}
 {!! App\Helpers\SettingsHelper::getButtonStyles() !!}
 
-/* Bootstrap Enrollment Page Styles */
+body {
+    padding-top: 0 !important;
+}
+
 .enrollment-hero {
     min-height: 70vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 3rem 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    flex-direction: column;
 }
 
 .enrollment-card {
@@ -29,11 +35,10 @@
     transition: all 0.3s ease;
     border: 2px solid transparent;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    min-height: 280px;
+    justify-content: space-between; /* ⬅️ Important to push button to bottom */
+    height: 100%; /* ⬅️ Make card take full height */
 }
 
 .enrollment-card:hover {
@@ -75,7 +80,7 @@
 
 .page-title {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
     color: inherit;
 }
 
@@ -91,32 +96,31 @@
     margin: 0;
 }
 
+.enrollment-card .form-group {
+    margin-bottom: 1.2rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .enrollment-hero {
-        min-height: 60vh;
-        padding: 2rem 0;
+        padding-top: 30px;
+        padding-bottom: 30px;
     }
-    
     .enrollment-card {
         margin-bottom: 2rem;
         padding: 2rem 1.5rem;
         min-height: 240px;
     }
-    
     .enrollment-card h3 {
         font-size: 1.75rem;
     }
-    
     .enrollment-btn {
         padding: 0.6rem 2rem;
         font-size: 1rem;
     }
-    
     .page-title h1 {
         font-size: 2rem;
     }
-    
     .page-title p {
         font-size: 1rem;
     }
@@ -127,12 +131,10 @@
         min-height: 200px;
         padding: 1.5rem 1rem;
     }
-    
     .enrollment-card h3 {
         font-size: 1.5rem;
         margin-bottom: 1rem;
     }
-    
     .enrollment-btn {
         padding: 0.5rem 1.5rem;
         font-size: 0.9rem;
@@ -149,24 +151,24 @@
                 <h1>Choose Your Learning Path</h1>
                 <p>Select the program that best fits your educational goals</p>
             </div>
-            
+
             <div class="row justify-content-center g-4">
-                <div class="col-12 col-md-6 col-lg-5">
-                    <div class="enrollment-card program-card enrollment-program-card">
+                <div class="col-12 col-md-6 col-lg-5 d-flex">
+                    <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Complete Plan</h3>
                         <p class="text-muted mb-4">Comprehensive program covering all essential topics</p>
-                        <button onclick="window.location.href='{{ route('enrollment.full') }}'" 
+                        <button onclick="window.location.href='{{ route('enrollment.full') }}'"
                                 class="btn enrollment-btn enroll-btn">
                             <i class="bi bi-mortarboard"></i> Enroll Now
                         </button>
                     </div>
                 </div>
-                
-                <div class="col-12 col-md-6 col-lg-5">
-                    <div class="enrollment-card program-card enrollment-program-card">
+
+                <div class="col-12 col-md-6 col-lg-5 d-flex">
+                    <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Modular Plan</h3>
                         <p class="text-muted mb-4">Flexible modules tailored to your specific needs</p>
-                        <button onclick="window.location.href='{{ route('enrollment.modular') }}'" 
+                        <button onclick="window.location.href='{{ route('enrollment.modular') }}'"
                                 class="btn enrollment-btn enroll-btn">
                             <i class="bi bi-puzzle"></i> Enroll Now
                         </button>

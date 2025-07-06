@@ -185,10 +185,17 @@
                 Go to Homepage
             </a>
             
-            <a href="{{ route('login') }}" class="btn-secondary">
-                <i class="bi bi-box-arrow-in-right"></i>
-                Login to Account
-            </a>
+            @if(session('user_id'))
+                <a href="#" class="btn-secondary" onclick="goToStudentDashboard()">
+                    <i class="bi bi-speedometer2"></i>
+                    Go to Student Dashboard
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="btn-secondary">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Login to Account
+                </a>
+            @endif
         </div>
         
         <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #ecf0f1;">
@@ -200,4 +207,13 @@
         </div>
     </div>
 </div>
+
+<script>
+function goToStudentDashboard() {
+    // For now, redirect to home. You can update this to the actual student dashboard route
+    window.location.href = '{{ route("home") }}';
+    // TODO: Replace with actual student dashboard route when implemented
+    // window.location.href = '{{ route("student.dashboard") }}';
+}
+</script>
 @endsection

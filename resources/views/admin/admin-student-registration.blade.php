@@ -66,13 +66,52 @@
                                 @endif
                             </td>
                             <td class="text-uppercase">
-                                {{ $registration->package_name ?? ($registration->package->package_name ?? 'N/A') }}
+                                @if(isset($history) && $history)
+                                    {{-- For history (students), get from enrollments --}}
+                                    @if($registration->enrollments && $registration->enrollments->count() > 0)
+                                        @foreach($registration->enrollments as $index => $enrollment)
+                                            @if($index > 0)<br>@endif
+                                            {{ $enrollment->package->package_name ?? 'N/A' }}
+                                        @endforeach
+                                    @else
+                                        N/A
+                                    @endif
+                                @else
+                                    {{-- For pending (registrations), get from registration --}}
+                                    {{ $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A') }}
+                                @endif
                             </td>
                             <td>
-                                {{ $registration->plan_name ?? ($registration->plan->plan_name ?? 'N/A') }}
+                                @if(isset($history) && $history)
+                                    {{-- For history (students), get from enrollments --}}
+                                    @if($registration->enrollments && $registration->enrollments->count() > 0)
+                                        @foreach($registration->enrollments as $index => $enrollment)
+                                            @if($index > 0)<br>@endif
+                                            {{ $enrollment->enrollment_type ?? 'N/A' }}
+                                        @endforeach
+                                    @else
+                                        N/A
+                                    @endif
+                                @else
+                                    {{-- For pending (registrations), get from registration --}}
+                                    {{ $registration->plan_name ?? ($registration->enrollment_type ? ucfirst($registration->enrollment_type) : 'N/A') }}
+                                @endif
                             </td>
                             <td>
-                                {{ $registration->program_name ?? ($registration->program->program_name ?? 'N/A') }}
+                                @if(isset($history) && $history)
+                                    {{-- For history (students), get from enrollments --}}
+                                    @if($registration->enrollments && $registration->enrollments->count() > 0)
+                                        @foreach($registration->enrollments as $index => $enrollment)
+                                            @if($index > 0)<br>@endif
+                                            {{ $enrollment->program->program_name ?? 'N/A' }}
+                                        @endforeach
+                                    @else
+                                        N/A
+                                    @endif
+                                @else
+                                    {{-- For pending (registrations), get from registration --}}
+                                    {{ $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A') }}
+                                @endif
                             </td>
                             @if(isset($history) && $history)
                                 <td>

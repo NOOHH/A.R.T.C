@@ -88,52 +88,71 @@ class AdminController extends Controller
                 $user->save();
             }
 
-            // Generate unique, non-duplicating student_id
-            $now       = now();
-            $yearMonth = $now->format('Y-m');
+            // Check if student already exists for this user (multiple enrollment scenario)
+            $student = Student::where('user_id', $user->user_id)->first();
+            
+            if (!$student) {
+                // Generate unique, non-duplicating student_id
+                $now       = now();
+                $yearMonth = $now->format('Y-m');
 
-            $lastStudent = Student::where('student_id', 'like', "{$yearMonth}-%")
-                                  ->orderBy('student_id', 'desc')
-                                  ->first();
+                $lastStudent = Student::where('student_id', 'like', "{$yearMonth}-%")
+                                      ->orderBy('student_id', 'desc')
+                                      ->first();
 
-            $nextSeq = $lastStudent
-                ? ((int) substr($lastStudent->student_id, strlen($yearMonth) + 1)) + 1
-                : 1;
+                $nextSeq = $lastStudent
+                    ? ((int) substr($lastStudent->student_id, strlen($yearMonth) + 1)) + 1
+                    : 1;
 
-            $studentId = $yearMonth . '-' . str_pad($nextSeq, 5, '0', STR_PAD_LEFT);
+                $studentId = $yearMonth . '-' . str_pad($nextSeq, 5, '0', STR_PAD_LEFT);
 
-            // Create the Student record
-            Student::create([
-                'student_id'               => $studentId,
-                'user_id'                  => $user?->user_id,
-                'firstname'                => $registration->firstname,
-                'middlename'               => $registration->middlename,
-                'lastname'                 => $registration->lastname,
-                'student_school'           => $registration->student_school,
-                'street_address'           => $registration->street_address,
-                'state_province'           => $registration->state_province,
-                'city'                     => $registration->city,
-                'zipcode'                  => $registration->zipcode,
-                'contact_number'           => $registration->contact_number,
-                'emergency_contact_number' => $registration->emergency_contact_number,
-                'good_moral'               => $registration->good_moral,
-                'PSA'                      => $registration->PSA,
-                'Course_Cert'              => $registration->Course_Cert,
-                'TOR'                      => $registration->TOR,
-                'Cert_of_Grad'             => $registration->Cert_of_Grad,
-                'Undergraduate'            => $registration->Undergraduate,
-                'Graduate'                 => $registration->Graduate,
-                'photo_2x2'                => $registration->photo_2x2,
-                'Start_Date'               => $registration->Start_Date,
-                'date_approved'            => $now,
-                'program_id'               => $registration->program_id,
-                'package_id'               => $registration->package_id,
-                'plan_id'                  => $registration->plan_id,
-                'package_name'             => $registration->package_name,
-                'plan_name'                => $registration->plan_name,
-                'program_name'             => $registration->program_name,
-                'email'                    => $user?->email,
-            ]);
+                // Create the Student record
+                $student = Student::create([
+                    'student_id'               => $studentId,
+                    'user_id'                  => $user?->user_id,
+                    'firstname'                => $registration->firstname,
+                    'middlename'               => $registration->middlename,
+                    'lastname'                 => $registration->lastname,
+                    'student_school'           => $registration->student_school,
+                    'street_address'           => $registration->street_address,
+                    'state_province'           => $registration->state_province,
+                    'city'                     => $registration->city,
+                    'zipcode'                  => $registration->zipcode,
+                    'contact_number'           => $registration->contact_number,
+                    'emergency_contact_number' => $registration->emergency_contact_number,
+                    'good_moral'               => $registration->good_moral,
+                    'PSA'                      => $registration->PSA,
+                    'Course_Cert'              => $registration->Course_Cert,
+                    'TOR'                      => $registration->TOR,
+                    'Cert_of_Grad'             => $registration->Cert_of_Grad,
+                    'Undergraduate'            => $registration->Undergraduate,
+                    'Graduate'                 => $registration->Graduate,
+                    'photo_2x2'                => $registration->photo_2x2,
+                    'Start_Date'               => $registration->Start_Date,
+                    'date_approved'            => $now,
+                    'email'                    => $user?->email,
+                ]);
+            }
+
+            // Find existing enrollment for this registration (created during registration process)
+            $enrollment = Enrollment::where('registration_id', $registration->registration_id)->first();
+            
+            if ($enrollment) {
+                // Update enrollment with student_id now that student is approved
+                $enrollment->student_id = $student->student_id;
+                $enrollment->enrollment_status = 'approved';
+                $enrollment->save();
+            } else {
+                // Fallback: Create enrollment record if it doesn't exist
+                Enrollment::create([
+                    'student_id' => $student->student_id,
+                    'program_id' => $registration->program_id,
+                    'package_id' => $registration->package_id,
+                    'enrollment_type' => $registration->plan_name === 'Modular' ? 'Modular' : 'Complete',
+                    'learning_mode' => $registration->learning_mode ?? 'Synchronous',
+                    'enrollment_status' => 'approved',
+                ]);
+            }
 
             // Remove from pending
             $registration->delete();
@@ -142,7 +161,7 @@ class AdminController extends Controller
 
             return redirect()
                 ->route('admin.student.registration.history')
-                ->with('success', "Student “{$studentId}” approved and moved to history.");
+                ->with('success', "Student \"" . $student->student_id . "\" approved and moved to history.");
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
@@ -167,7 +186,7 @@ class AdminController extends Controller
 
     public function studentRegistration()
     {
-        $registrations = Registration::with('user')->get();
+        $registrations = Registration::with(['user', 'package', 'program', 'plan'])->get();
         return view('admin.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => false,
@@ -176,7 +195,7 @@ class AdminController extends Controller
 
     public function studentRegistrationHistory()
     {
-        $registrations = Student::with(['user', 'program', 'package'])->get();
+        $registrations = Student::with(['user', 'enrollments.program', 'enrollments.package'])->get();
         return view('admin.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => true,

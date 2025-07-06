@@ -8,7 +8,8 @@ class UIHelper
 {
     public static function getNavbarStyles()
     {
-        $settings = UiSetting::getSection('navbar');
+        $settingsCollection = UiSetting::getSection('navbar');
+        $settings = $settingsCollection ? $settingsCollection->toArray() : [];
         
         $defaults = [
             'header_bg' => '#ffffff',
@@ -28,7 +29,7 @@ class UIHelper
         ];
         
         // Merge with defaults
-        $colors = array_merge($defaults, $settings->toArray());
+        $colors = array_merge($defaults, $settings);
         
         return "
         <style>

@@ -672,8 +672,8 @@ class AdminSettingsController extends Controller
                         'field_label' => $reqData['field_label'],
                         'field_type' => $reqData['field_type'],
                         'program_type' => $reqData['program_type'],
-                        'is_required' => isset($reqData['is_required']),
-                        'is_active' => isset($reqData['is_active']),
+                        'is_required' => isset($reqData['is_required']) && $reqData['is_required'] === '1',
+                        'is_active' => isset($reqData['is_active']) && $reqData['is_active'] === '1',
                         'sort_order' => $reqData['sort_order'] ?? $index,
                         'section_name' => $reqData['section_name'] ?? null,
                         'is_bold' => isset($reqData['is_bold']) && $reqData['is_bold'] === '1',
@@ -770,6 +770,34 @@ class AdminSettingsController extends Controller
     public function getNavbarSettings()
     {
         $settings = UiSetting::getSection('navbar');
+        return response()->json($settings);
+    }
+
+    public function saveFooterSettings(Request $request)
+    {
+        try {
+            $footerSettings = [
+                'footer_bg_color', 'footer_text_color', 'footer_text',
+                'footer_link_color', 'footer_link_hover_color'
+            ];
+            
+            foreach ($footerSettings as $setting) {
+                if ($request->has($setting)) {
+                    $type = in_array($setting, ['footer_bg_color', 'footer_text_color', 'footer_link_color', 'footer_link_hover_color']) ? 'color' : 'text';
+                    UiSetting::set('footer', $setting, $request->input($setting), $type);
+                }
+            }
+            
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error saving footer settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    public function getFooterSettings()
+    {
+        $settings = UiSetting::getSection('footer');
         return response()->json($settings);
     }
 
@@ -975,5 +1003,90 @@ class AdminSettingsController extends Controller
         
         // Return as array for JSON storage
         return array_values($options);
+    }
+
+    public function getHomepageSettings()
+    {
+        $settings = UiSetting::getSection('homepage');
+        return response()->json($settings);
+    }
+    
+    public function saveHomepageSettings(Request $request)
+    {
+        try {
+            $request->validate([
+                'hero_bg_color' => 'nullable|string|max:7',
+                'hero_text_color' => 'nullable|string|max:7',
+                'hero_title' => 'nullable|string|max:500',
+                'hero_subtitle' => 'nullable|string|max:1000',
+                'hero_button_text' => 'nullable|string|max:100',
+                'hero_button_color' => 'nullable|string|max:7',
+                'programs_bg_color' => 'nullable|string|max:7',
+                'programs_text_color' => 'nullable|string|max:7',
+                'programs_title' => 'nullable|string|max:200',
+                'programs_subtitle' => 'nullable|string|max:500',
+                'modalities_bg_color' => 'nullable|string|max:7',
+                'modalities_text_color' => 'nullable|string|max:7',
+                'modalities_title' => 'nullable|string|max:200',
+                'modalities_subtitle' => 'nullable|string|max:500',
+                'about_bg_color' => 'nullable|string|max:7',
+                'about_text_color' => 'nullable|string|max:7',
+                'about_title' => 'nullable|string|max:200',
+                'about_subtitle' => 'nullable|string|max:500',
+            ]);
+            
+            // Save all homepage settings
+            $settings = [
+                'hero_bg_color', 'hero_text_color', 'hero_title', 'hero_subtitle', 
+                'hero_button_text', 'hero_button_color',
+                'programs_bg_color', 'programs_text_color', 'programs_title', 'programs_subtitle',
+                'modalities_bg_color', 'modalities_text_color', 'modalities_title', 'modalities_subtitle',
+                'about_bg_color', 'about_text_color', 'about_title', 'about_subtitle'
+            ];
+            
+            foreach ($settings as $setting) {
+                if ($request->has($setting)) {
+                    $type = str_contains($setting, 'color') ? 'color' : 'text';
+                    UiSetting::set('homepage', $setting, $request->input($setting), $type);
+                }
+            }
+            
+            return response()->json(['success' => true]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error saving homepage settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    public function getAllSettings()
+    {
+        $settings = [
+            'navbar' => UiSetting::getSection('navbar'),
+            'homepage' => UiSetting::getSection('homepage'),
+            'student_portal' => UiSetting::getSection('student_portal'),
+        ];
+        
+        return response()->json($settings);
+    }
+    
+    public function saveAllSettings(Request $request)
+    {
+        try {
+            $sections = $request->input('sections', []);
+            
+            foreach ($sections as $section => $settings) {
+                foreach ($settings as $key => $value) {
+                    $type = str_contains($key, 'color') ? 'color' : 'text';
+                    UiSetting::set($section, $key, $value, $type);
+                }
+            }
+            
+            return response()->json(['success' => true]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error saving all settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 }

@@ -40,7 +40,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // STUDENT GUARD
+        'student' => [
+            'driver'   => 'session',
+            'provider' => 'students',
+        ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------
@@ -62,14 +69,16 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model'  => App\Models\User::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // STUDENT PROVIDER
+        'students' => [
+            'driver' => 'eloquent',
+            'model'  => App\Models\Student::class,
+        ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------

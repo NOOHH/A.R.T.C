@@ -42,6 +42,21 @@
     background-color: #28a745;
     border-color: #28a745;
 }
+
+/* Drag and drop styling */
+.dragging-placeholder {
+    opacity: 0.5;
+    background-color: #e9ecef;
+    border: 2px dashed #adb5bd;
+}
+
+/* Unsaved changes indicator */
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
 </style>
 @endpush
 
@@ -164,6 +179,9 @@
                                         <div class="mt-4 pt-3 border-top">
                                             <h6 class="text-secondary">Quick Actions</h6>
                                             <div class="d-flex gap-2 flex-wrap">
+                                                <button type="button" class="btn btn-success btn-sm" onclick="saveFormRequirements()">
+                                                    <i class="fas fa-save"></i> Save Form Fields
+                                                </button>
                                                 <a href="{{ route('enrollment.full') }}" class="btn btn-outline-info btn-sm" target="_blank">
                                                     <i class="fas fa-external-link-alt"></i> Preview Full Form
                                                 </a>
@@ -199,37 +217,149 @@
                     {{-- Home Tab --}}
                     <div class="tab-pane fade" id="home" role="tabpanel">
                         <div class="row g-4">
+                            {{-- Homepage Hero Section --}}
                             <div class="col-md-6">
-                                <div class="card">
+                                <div class="card h-100 shadow-sm">
                                     <div class="card-header bg-info text-white">
-                                        <h5 class="mb-0">HOMEPAGE CUSTOMIZATION</h5>
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-home me-2"></i>Hero Section
+                                        </h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">COLOR</label>
-                                            <input type="color" class="form-control form-control-color" value="#17a2b8">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">COLOR</label>
-                                            <input type="color" class="form-control form-control-color" value="#28a745">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">TEXT</label>
-                                            <input type="text" class="form-control" value="Welcome Text">
-                                        </div>
-                                        <button type="button" class="btn btn-primary">COLOR</button>
+                                        <form id="heroSectionForm">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="form-label">Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="hero_bg_color" value="#667eea">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="hero_text_color" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Main Title</label>
+                                                <textarea class="form-control" name="hero_title" rows="3">Review Smarter. Learn Better. Succeed Faster.</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Subtitle</label>
+                                                <textarea class="form-control" name="hero_subtitle" rows="3">At Ascendo Review and Training Center, we guide future licensed professionals toward exam success with expert-led reviews and flexible learning options.</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Button Text</label>
+                                                <input type="text" class="form-control" name="hero_button_text" value="ENROLL NOW">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Button Color</label>
+                                                <input type="color" class="form-control form-control-color" name="hero_button_color" value="#4CAF50">
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
+                            
+                            {{-- Programs Section --}}
                             <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header bg-warning text-dark">
-                                        <h5 class="mb-0">Navpanel</h5>
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-graduation-cap me-2"></i>Programs Section
+                                        </h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="mb-3">
-                                            <input type="color" class="form-control form-control-color" value="#ffc107">
-                                        </div>
+                                        <form id="programsSectionForm">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="form-label">Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="programs_bg_color" value="#f8f9fa">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="programs_text_color" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Section Title</label>
+                                                <input type="text" class="form-control" name="programs_title" value="Programs Offered">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Section Subtitle</label>
+                                                <input type="text" class="form-control" name="programs_subtitle" value="Choose from our comprehensive review programs designed for success">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {{-- Modalities Section --}}
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-laptop me-2"></i>Modalities Section
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="modalitiesSectionForm">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="form-label">Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="modalities_bg_color" value="#667eea">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="modalities_text_color" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Section Title</label>
+                                                <input type="text" class="form-control" name="modalities_title" value="Learning Modalities">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Section Subtitle</label>
+                                                <input type="text" class="form-control" name="modalities_subtitle" value="Choose the learning style that works best for you">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {{-- About Section --}}
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>About Section
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="aboutSectionForm">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="form-label">Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="about_bg_color" value="#ffffff">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="about_text_color" value="#333333">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Section Title</label>
+                                                <input type="text" class="form-control" name="about_title" value="About Us">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Section Subtitle</label>
+                                                <input type="text" class="form-control" name="about_subtitle" value="Learn more about our mission and values">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {{-- Save Button --}}
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <button type="button" class="btn btn-primary btn-lg" onclick="saveHomepageSettings()">
+                                            <i class="fas fa-save me-2"></i>Save Homepage Settings
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -298,16 +428,93 @@
             {{-- Admin Tab --}}
             <div class="tab-pane fade" id="admin" role="tabpanel">
                 <div class="row g-4">
-                    {{-- Navbar Color Customization --}}
-                    <div class="col-md-12">
+                    {{-- Navbar Customization --}}
+                    <div class="col-md-6">
                         <div class="card shadow-sm">
                             <div class="card-header bg-primary text-white">
                                 <h5 class="card-title mb-0">
-                                    <i class="fas fa-palette me-2"></i>Navbar Customization
+                                    <i class="fas fa-bars me-2"></i>Navbar Customization
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <form id="navbarSettingsForm">
+                                <form id="navbarCustomizationForm">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label">Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="navbar_bg_color" value="#ffffff">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="navbar_text_color" value="#333333">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Brand Name</label>
+                                        <input type="text" class="form-control" name="navbar_brand_name" value="Ascendo Review and Training Center">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Link Hover Color</label>
+                                        <input type="color" class="form-control form-control-color" name="navbar_hover_color" value="#007bff">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Active Link Color</label>
+                                        <input type="color" class="form-control form-control-color" name="navbar_active_color" value="#0056b3">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- Footer Customization --}}
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-bars me-2"></i>Footer Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="footerCustomizationForm">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label">Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="footer_bg_color" value="#212529">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="footer_text_color" value="#ffffff">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Footer Text</label>
+                                        <textarea class="form-control" name="footer_text" rows="3">© Copyright Ascendo Review and Training Center. All Rights Reserved.</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Link Color</label>
+                                        <input type="color" class="form-control form-control-color" name="footer_link_color" value="#adb5bd">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Link Hover Color</label>
+                                        <input type="color" class="form-control form-control-color" name="footer_link_hover_color" value="#ffffff">
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-primary" onclick="saveFooterSettings()">
+                                            <i class="fas fa-save me-2"></i>Save Footer Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- Advanced Navbar Colors --}}
+                    <div class="col-md-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-palette me-2"></i>Advanced Navbar Colors
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="advancedNavbarForm">
                                     @csrf
                                     <div class="row">
                                         <div class="col-md-4">
@@ -343,14 +550,14 @@
                                         <div class="col-md-4">
                                             <h6 class="text-secondary mb-3">Actions</h6>
                                             <div class="d-grid gap-2">
-                                                <button type="button" class="btn btn-outline-primary" id="previewColors">
+                                                <button type="button" class="btn btn-outline-primary" onclick="previewNavbarColors()">
                                                     <i class="fas fa-eye"></i> Preview Colors
                                                 </button>
-                                                <button type="button" class="btn btn-outline-secondary" id="resetColors">
+                                                <button type="button" class="btn btn-outline-secondary" onclick="resetNavbarColors()">
                                                     <i class="fas fa-undo"></i> Reset to Default
                                                 </button>
-                                                <button type="submit" class="btn btn-primary">
-                                                    <i class="fas fa-save"></i> Save Changes
+                                                <button type="button" class="btn btn-primary" onclick="saveAllNavbarSettings()">
+                                                    <i class="fas fa-save"></i> Save All Changes
                                                 </button>
                                             </div>
                                         </div>
@@ -366,6 +573,9 @@
 @endsection
 @push('scripts')
 <script>
+// Global variables
+let hasUnsavedChanges = false;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize main tabs
     var triggerTabList = [].slice.call(document.querySelectorAll('#settingsTabs button[data-bs-toggle="tab"]'));
@@ -392,12 +602,62 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load existing form requirements and settings
     loadFormRequirements();
     loadNavbarSettings();
+    loadFooterSettings();
     loadStudentPortalSettings();
+    loadHomepageSettings();
+    loadHomepageSettings();
     
     // Add new requirement functionality
-    document.getElementById('addRequirement').addEventListener('click', function() {
-        addRequirementField();
+    const addRequirementButton = document.getElementById('addRequirement');
+    if (addRequirementButton) {
+        addRequirementButton.addEventListener('click', function() {
+            addRequirementField();
+            showAlert('New field added. Remember to save your changes!', 'info');
+        });
+    }
+    
+    // Track changes in form fields
+    document.addEventListener('change', function(e) {
+        if (e.target.closest('#studentRequirementsForm')) {
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
+        }
     });
+    
+    // Track changes in input fields
+    document.addEventListener('input', function(e) {
+        if (e.target.closest('#studentRequirementsForm')) {
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
+        }
+    });
+    
+    // Warn user about unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+    
+    function updateSaveButtonState() {
+        const submitButton = document.querySelector('#studentRequirementsForm button[type="submit"]');
+        if (submitButton && hasUnsavedChanges) {
+            submitButton.classList.add('btn-warning');
+            submitButton.classList.remove('btn-success');
+            submitButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Save Changes';
+        }
+    }
+    
+    function resetSaveButtonState() {
+        const submitButton = document.querySelector('#studentRequirementsForm button[type="submit"]');
+        if (submitButton) {
+            submitButton.classList.remove('btn-warning');
+            submitButton.classList.add('btn-success');
+            submitButton.innerHTML = '<i class="fas fa-save"></i> Save Form Fields';
+        }
+        hasUnsavedChanges = false;
+    }
 
     // Navbar color preview functionality
     document.getElementById('previewColors').addEventListener('click', function() {
@@ -416,16 +676,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Save student requirements
-    document.getElementById('studentRequirementsForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveFormRequirements();
-    });
+    const studentRequirementsForm = document.getElementById('studentRequirementsForm');
+    if (studentRequirementsForm) {
+        studentRequirementsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            updateSortOrder(); // Update sort order before saving
+            saveFormRequirements();
+        });
+    }
     
     // Save student portal settings
-    document.getElementById('studentPortalForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveStudentPortalSettings();
-    });
+    const studentPortalForm = document.getElementById('studentPortalForm');
+    if (studentPortalForm) {
+        studentPortalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveStudentPortalSettings();
+        });
+    }
 
     // ✅ Initialize Sortable for requirements container (drag & drop)
     const requirementsContainer = document.getElementById('requirementsContainer');
@@ -437,42 +704,84 @@ document.addEventListener('DOMContentLoaded', function() {
             onEnd: function (evt) {
                 console.log(`Item moved: ${evt.oldIndex} -> ${evt.newIndex}`);
                 updateSortOrder();
+                hasUnsavedChanges = true;
+                updateSaveButtonState();
+                showAlert('Field order changed. Remember to save your changes!', 'info');
             }
         });
     }
 });
 
+function updateSaveButtonState() {
+    const submitButton = document.querySelector('#studentRequirementsForm button[type="submit"]');
+    if (submitButton && hasUnsavedChanges) {
+        submitButton.classList.add('btn-warning');
+        submitButton.classList.remove('btn-success');
+        submitButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Save Changes';
+    }
+}
+
+function resetSaveButtonState() {
+    const submitButton = document.querySelector('#studentRequirementsForm button[type="submit"]');
+    if (submitButton) {
+        submitButton.classList.remove('btn-warning');
+        submitButton.classList.add('btn-success');
+        submitButton.innerHTML = '<i class="fas fa-save"></i> Save Form Fields';
+    }
+    hasUnsavedChanges = false;
+}
+
 function loadFormRequirements() {
+    console.log('Loading form requirements...');
+    
     fetch('/admin/settings/form-requirements')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Load response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Loaded requirements:', data);
             const container = document.getElementById('requirementsContainer');
+            if (!container) {
+                console.error('Requirements container not found');
+                return;
+            }
+            
             container.innerHTML = '';
             
-            data.forEach(requirement => {
+            // Sort data by sort_order
+            const sortedData = data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            
+            sortedData.forEach(requirement => {
                 addRequirementField(requirement);
             });
             
             if (data.length === 0) {
-                // Add default requirements
+                // Add default requirements if none exist
                 addRequirementField({
                     field_name: 'phone_number',
                     field_label: 'Phone Number', 
                     field_type: 'tel',
                     program_type: 'both',
-                    is_required: true
+                    is_required: true,
+                    is_active: true
                 });
                 addRequirementField({
                     field_name: 'tor_document',
                     field_label: 'Transcript of Records (TOR)',
                     field_type: 'file',
                     program_type: 'both', 
-                    is_required: true
+                    is_required: true,
+                    is_active: true
                 });
             }
         })
         .catch(error => {
             console.error('Error loading requirements:', error);
+            showAlert('Error loading form requirements: ' + error.message, 'danger');
         });
 }
 function addRequirementField(data = {}) {
@@ -557,12 +866,14 @@ function addRequirementField(data = {}) {
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox"
                                name="requirements[${index}][is_required]"
+                               value="1"
                                ${data.is_required ? 'checked' : ''}>
                     </div>
                     <label class="form-label mt-2">Active</label>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox"
                                name="requirements[${index}][is_active]"
+                               value="1"
                                onchange="toggleFieldActiveStatus(this)"
                                ${isActive ? 'checked' : ''}>
                     </div>
@@ -600,7 +911,16 @@ function addRequirementField(data = {}) {
 
 
 function removeRequirement(button) {
-    button.closest('.requirement-item').remove();
+    const requirementItem = button.closest('.requirement-item');
+    const fieldLabel = requirementItem.querySelector('input[name*="[field_label]"]').value || 'this field';
+    
+    if (confirm(`Are you sure you want to remove "${fieldLabel}"?`)) {
+        requirementItem.remove();
+        updateSortOrder();
+        hasUnsavedChanges = true;
+        updateSaveButtonState();
+        showAlert('Field removed. Remember to save your changes!', 'warning');
+    }
 }
 
 function handleFieldTypeChange(selectElement) {
@@ -664,7 +984,52 @@ function updateSortOrder() {
 
 function saveFormRequirements() {
     const form = document.getElementById('studentRequirementsForm');
-    const formData = new FormData(form);
+    
+    // Validate form before saving
+    if (!validateRequirementsForm()) {
+        return;
+    }
+    
+    // Process form data to handle checkboxes properly
+    const formData = new FormData();
+    const requirementItems = document.querySelectorAll('.requirement-item');
+    
+    requirementItems.forEach((item, index) => {
+        const data = {
+            id: item.querySelector('input[name*="[id]"]')?.value || '',
+            section_name: item.querySelector('input[name*="[section_name]"]')?.value || '',
+            field_name: item.querySelector('input[name*="[field_name]"]')?.value || '',
+            field_label: item.querySelector('input[name*="[field_label]"]')?.value || '',
+            field_type: item.querySelector('select[name*="[field_type]"]')?.value || '',
+            program_type: item.querySelector('select[name*="[program_type]"]')?.value || '',
+            is_required: item.querySelector('input[name*="[is_required]"]')?.checked ? '1' : '0',
+            is_active: item.querySelector('input[name*="[is_active]"]')?.checked ? '1' : '0',
+            is_bold: item.querySelector('input[name*="[is_bold]"]')?.value || '0',
+            sort_order: item.querySelector('input[name*="[sort_order]"]')?.value || index,
+            field_options: item.querySelector('textarea[name*="[field_options]"]')?.value || ''
+        };
+        
+        // Add to FormData
+        Object.keys(data).forEach(key => {
+            formData.append(`requirements[${index}][${key}]`, data[key]);
+        });
+    });
+    
+    // Add CSRF token
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    
+    console.log('Saving form requirements...');
+    
+    // Log form data for debugging
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+    
+    // Show loading state
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    submitButton.disabled = true;
     
     fetch('/admin/settings/form-requirements', {
         method: 'POST',
@@ -673,19 +1038,77 @@ function saveFormRequirements() {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             showAlert('Form fields saved successfully!', 'success');
-            loadFormRequirements();
+            resetSaveButtonState();
+            // Reload the requirements to show the updated state
+            setTimeout(() => {
+                loadFormRequirements();
+            }, 1000);
         } else {
-            showAlert('Error saving form fields', 'danger');
+            showAlert(data.error || 'Error saving form fields', 'danger');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showAlert('Error saving form fields', 'danger');
+        showAlert('Error saving form fields: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
     });
+}
+
+function validateRequirementsForm() {
+    const requirementItems = document.querySelectorAll('.requirement-item');
+    let isValid = true;
+    let errors = [];
+    
+    requirementItems.forEach((item, index) => {
+        const fieldType = item.querySelector('select[name*="[field_type]"]').value;
+        const fieldName = item.querySelector('input[name*="[field_name]"]').value.trim();
+        const fieldLabel = item.querySelector('input[name*="[field_label]"]').value.trim();
+        const sectionName = item.querySelector('input[name*="[section_name]"]').value.trim();
+        
+        // Validate based on field type
+        if (fieldType === 'section') {
+            if (!sectionName) {
+                errors.push(`Row ${index + 1}: Section header must have a section name`);
+                isValid = false;
+            }
+        } else {
+            if (!fieldName) {
+                errors.push(`Row ${index + 1}: Field name is required`);
+                isValid = false;
+            }
+            if (!fieldLabel) {
+                errors.push(`Row ${index + 1}: Display label is required`);
+                isValid = false;
+            }
+            
+            // Validate field name format
+            if (fieldName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(fieldName)) {
+                errors.push(`Row ${index + 1}: Field name must start with a letter and contain only letters, numbers, and underscores`);
+                isValid = false;
+            }
+        }
+    });
+    
+    if (!isValid) {
+        showAlert('Please fix the following errors:<br>' + errors.join('<br>'), 'danger');
+    }
+    
+    return isValid;
 }
 
 function loadNavbarSettings() {
@@ -701,6 +1124,22 @@ function loadNavbarSettings() {
         })
         .catch(error => {
             console.error('Error loading navbar settings:', error);
+        });
+}
+
+function loadFooterSettings() {
+    fetch('/admin/settings/footer')
+        .then(response => response.json())
+        .then(data => {
+            Object.keys(data).forEach(key => {
+                const input = document.querySelector(`input[name="${key}"], textarea[name="${key}"]`);
+                if (input && data[key]) {
+                    input.value = data[key];
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading footer settings:', error);
         });
 }
 
@@ -720,32 +1159,395 @@ function loadStudentPortalSettings() {
         });
 }
 
-function saveNavbarSettings() {
-    const form = document.getElementById('navbarSettingsForm');
-    const formData = new FormData(form);
+function loadHomepageSettings() {
+    console.log('Loading homepage settings...');
+    
+    fetch('/admin/settings/homepage')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Homepage settings loaded:', data);
+            
+            // Update hero section form
+            const heroForm = document.getElementById('heroSectionForm');
+            if (heroForm) {
+                Object.keys(data).forEach(key => {
+                    const input = heroForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+            
+            // Update programs section form
+            const programsForm = document.getElementById('programsSectionForm');
+            if (programsForm) {
+                Object.keys(data).forEach(key => {
+                    const input = programsForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+            
+            // Update modalities section form
+            const modalitiesForm = document.getElementById('modalitiesSectionForm');
+            if (modalitiesForm) {
+                Object.keys(data).forEach(key => {
+                    const input = modalitiesForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+            
+            // Update about section form
+            const aboutForm = document.getElementById('aboutSectionForm');
+            if (aboutForm) {
+                Object.keys(data).forEach(key => {
+                    const input = aboutForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading homepage settings:', error);
+        });
+}
+
+function loadNavbarCustomizationSettings() {
+    console.log('Loading navbar customization settings...');
+    
+    fetch('/admin/settings/navbar')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Navbar settings loaded:', data);
+            
+            // Update navbar customization form
+            const navbarForm = document.getElementById('navbarCustomizationForm');
+            if (navbarForm) {
+                Object.keys(data).forEach(key => {
+                    const input = navbarForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+            
+            // Update advanced navbar form
+            const advancedForm = document.getElementById('advancedNavbarForm');
+            if (advancedForm) {
+                Object.keys(data).forEach(key => {
+                    const input = advancedForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading navbar settings:', error);
+        });
+}
+
+function loadFooterCustomizationSettings() {
+    console.log('Loading footer customization settings...');
+    
+    fetch('/admin/settings/footer')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Footer settings loaded:', data);
+            
+            // Update footer form
+            const footerForm = document.getElementById('footerCustomizationForm');
+            if (footerForm) {
+                Object.keys(data).forEach(key => {
+                    const input = footerForm.querySelector(`[name="${key}"]`);
+                    if (input && data[key]) {
+                        input.value = data[key];
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading footer settings:', error);
+        });
+}
+
+function saveAllNavbarSettings() {
+    console.log('Saving all navbar settings...');
+    
+    // Collect all navbar form data
+    const allData = {};
+    
+    // Get data from navbar customization form
+    const navbarForm = document.getElementById('navbarCustomizationForm');
+    if (navbarForm) {
+        const formData = new FormData(navbarForm);
+        for (let [key, value] of formData.entries()) {
+            allData[key] = value;
+        }
+    }
+    
+    // Get data from advanced navbar form
+    const advancedForm = document.getElementById('advancedNavbarForm');
+    if (advancedForm) {
+        const formData = new FormData(advancedForm);
+        for (let [key, value] of formData.entries()) {
+            allData[key] = value;
+        }
+    }
+    
+    // Add CSRF token
+    allData._token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
     fetch('/admin/settings/navbar', {
         method: 'POST',
-        body: formData,
         headers: {
+            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+        },
+        body: JSON.stringify(allData)
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Navbar settings saved:', data);
         if (data.success) {
             showAlert('Navbar settings saved successfully!', 'success');
         } else {
-            showAlert('Error saving navbar settings', 'danger');
+            showAlert(data.error || 'Error saving navbar settings', 'danger');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error saving navbar settings', 'danger');
+        console.error('Error saving navbar settings:', error);
+        showAlert('Error saving navbar settings: ' + error.message, 'danger');
+    });
+}
+
+function saveFooterSettings() {
+    console.log('Saving footer settings...');
+    
+    const footerForm = document.getElementById('footerCustomizationForm');
+    const formData = new FormData(footerForm);
+    
+    const allData = {};
+    for (let [key, value] of formData.entries()) {
+        allData[key] = value;
+    }
+    
+    allData._token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch('/admin/settings/footer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(allData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Footer settings saved:', data);
+        if (data.success) {
+            showAlert('Footer settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving footer settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving footer settings:', error);
+        showAlert('Error saving footer settings: ' + error.message, 'danger');
+    });
+}
+
+function previewNavbarColors() {
+    showAlert('Preview functionality coming soon!', 'info');
+}
+
+function resetNavbarColors() {
+    const defaultColors = {
+        navbar_bg_color: '#ffffff',
+        navbar_text_color: '#333333', 
+        navbar_brand_name: 'Ascendo Review and Training Center',
+        navbar_hover_color: '#007bff',
+        navbar_active_color: '#0056b3',
+        header_bg: '#ffffff',
+        header_text: '#333333',
+        header_border: '#e0e0e0',
+        sidebar_bg: '#343a40',
+        sidebar_text: '#ffffff',
+        active_link_bg: '#007bff'
+    };
+    
+    // Reset navbar customization form
+    const navbarForm = document.getElementById('navbarCustomizationForm');
+    if (navbarForm) {
+        Object.keys(defaultColors).forEach(key => {
+            const input = navbarForm.querySelector(`[name="${key}"]`);
+            if (input && defaultColors[key]) {
+                input.value = defaultColors[key];
+            }
+        });
+    }
+    
+    // Reset advanced navbar form
+    const advancedForm = document.getElementById('advancedNavbarForm');
+    if (advancedForm) {
+        Object.keys(defaultColors).forEach(key => {
+            const input = advancedForm.querySelector(`[name="${key}"]`);
+            if (input && defaultColors[key]) {
+                input.value = defaultColors[key];
+            }
+        });
+    }
+    
+    showAlert('Colors reset to defaults', 'info');
+}
+
+// Missing utility functions
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        <div>${message}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-dismiss after 5 seconds (except for error messages)
+    if (type !== 'danger') {
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.classList.remove('show');
+                setTimeout(() => alertDiv.remove(), 150);
+            }
+        }, 5000);
+    }
+    
+    // Manually dismiss on click
+    alertDiv.querySelector('.btn-close').addEventListener('click', () => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 150);
+    });
+}
+
+function toggleFieldActiveStatus(checkbox) {
+    const requirementItem = checkbox.closest('.requirement-item');
+    
+    if (checkbox.checked) {
+        // Field is active
+        requirementItem.classList.remove('requirement-inactive');
+        requirementItem.style.opacity = '1';
+        requirementItem.style.backgroundColor = '';
+        
+        // Remove inactive warning
+        const warningAlert = requirementItem.querySelector('.alert-warning');
+        if (warningAlert) {
+            warningAlert.remove();
+        }
+    } else {
+        // Field is inactive
+        requirementItem.classList.add('requirement-inactive');
+        requirementItem.style.opacity = '0.6';
+        requirementItem.style.backgroundColor = '#f8f9fa';
+        
+        // Add inactive warning if not already present
+        const flexGrow = requirementItem.querySelector('.flex-grow-1');
+        const existingWarning = flexGrow.querySelector('.alert-warning');
+        if (!existingWarning) {
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'alert alert-warning py-1 px-2 mb-2 small';
+            warningDiv.innerHTML = '<i class="fas fa-eye-slash"></i> This field is currently <strong>inactive</strong> and hidden from registration forms';
+            flexGrow.insertBefore(warningDiv, flexGrow.firstChild);
+        }
+    }
+    
+    // Track changes
+    hasUnsavedChanges = true;
+    updateSaveButtonState();
+    
+    // Show immediate feedback
+    showAlert('Field status updated. Remember to save your changes!', 'info');
+}
+
+function toggleBoldText(button) {
+    const requirementItem = button.closest('.requirement-item');
+    const labelInput = requirementItem.querySelector('input[name*="[field_label]"]');
+    const hiddenBoldInput = requirementItem.querySelector('input[name*="[is_bold]"]');
+    
+    if (labelInput.style.fontWeight === 'bold') {
+        labelInput.style.fontWeight = 'normal';
+        button.classList.remove('btn-secondary');
+        button.classList.add('btn-outline-secondary');
+        if (hiddenBoldInput) {
+            hiddenBoldInput.value = '0';
+        }
+    } else {
+        labelInput.style.fontWeight = 'bold';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-secondary');
+        if (hiddenBoldInput) {
+            hiddenBoldInput.value = '1';
+        }
+    }
+    
+    // Track changes
+    hasUnsavedChanges = true;
+    updateSaveButtonState();
+    
+    showAlert('Text style updated. Remember to save your changes!', 'info');
+}
+
+function saveHomepageSettings() {
+    console.log('Saving homepage settings...');
+    
+    const allData = {};
+    
+    // Collect data from all homepage forms
+    const forms = ['heroSectionForm', 'programsSectionForm', 'modalitiesSectionForm', 'aboutSectionForm'];
+    
+    forms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            const formData = new FormData(form);
+            for (let [key, value] of formData.entries()) {
+                allData[key] = value;
+            }
+        }
+    });
+    
+    // Add CSRF token
+    allData._token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch('/admin/settings/homepage', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(allData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Homepage settings saved:', data);
+        if (data.success) {
+            showAlert('Homepage settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving homepage settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving homepage settings:', error);
+        showAlert('Error saving homepage settings: ' + error.message, 'danger');
     });
 }
 
 function saveStudentPortalSettings() {
+    console.log('Saving student portal settings...');
+    
     const form = document.getElementById('studentPortalForm');
     const formData = new FormData(form);
     
@@ -758,225 +1560,21 @@ function saveStudentPortalSettings() {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Student portal settings saved:', data);
         if (data.success) {
             showAlert('Student portal settings saved successfully!', 'success');
         } else {
-            showAlert('Error saving student portal settings', 'danger');
+            showAlert(data.error || 'Error saving student portal settings', 'danger');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error saving student portal settings', 'danger');
+        console.error('Error saving student portal settings:', error);
+        showAlert('Error saving student portal settings: ' + error.message, 'danger');
     });
 }
 
-function previewNavbarColors() {
-    showAlert('Preview functionality would be implemented here', 'info');
+function previewForm(type) {
+    showAlert(`Preview ${type} form functionality coming soon!`, 'info');
 }
-
-function resetNavbarColors() {
-    const defaultColors = {
-        header_bg: '#ffffff',
-        header_text: '#333333',
-        header_border: '#e0e0e0',
-        sidebar_bg: '#343a40',
-        sidebar_text: '#ffffff',
-        active_link_bg: '#007bff'
-    };
-    
-    Object.keys(defaultColors).forEach(key => {
-        const input = document.querySelector(`input[name="${key}"]`);
-        if (input) input.value = defaultColors[key];
-    });
-    
-    showAlert('Colors reset to defaults', 'info');
-}
-
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 3000);
-}
-
-function toggleBoldText(btn) {
-  // climb up to the .requirement-item wrapper
-  const itemDiv    = btn.closest('.requirement-item');
-  // find the Display Label input and the hidden is_bold within that same item
-  const labelInput = itemDiv.querySelector('input[name*="[field_label]"]');
-  const boldInput  = itemDiv.querySelector('input[name*="[is_bold]"]');
-  if (!labelInput || !boldInput) return;
-
-  // toggle
-  const nowBold = labelInput.style.fontWeight !== 'bold';
-  labelInput.style.fontWeight = nowBold ? 'bold' : '';
-  boldInput.value            = nowBold ? '1' : '0';
-}
-
-function toggleFieldActiveStatus(checkbox) {
-    const requirementItem = checkbox.closest('.requirement-item');
-    const isActive = checkbox.checked;
-    
-    if (isActive) {
-        // Make field active - restore normal appearance
-        requirementItem.style.opacity = '1';
-        requirementItem.style.backgroundColor = '';
-        requirementItem.classList.remove('requirement-inactive');
-        
-        // Remove inactive warning if it exists
-        const warning = requirementItem.querySelector('.alert-warning');
-        if (warning) {
-            warning.remove();
-        }
-    } else {
-        // Make field inactive - dim appearance
-        requirementItem.style.opacity = '0.6';
-        requirementItem.style.backgroundColor = '#f8f9fa';
-        requirementItem.classList.add('requirement-inactive');
-        
-        // Add inactive warning if it doesn't exist
-        const flexGrow = requirementItem.querySelector('.flex-grow-1');
-        const existingWarning = flexGrow.querySelector('.alert-warning');
-        if (!existingWarning) {
-            const warning = document.createElement('div');
-            warning.className = 'alert alert-warning py-1 px-2 mb-2 small';
-            warning.innerHTML = '<i class="fas fa-eye-slash"></i> This field is currently <strong>inactive</strong> and hidden from registration forms';
-            
-            const rowDiv = flexGrow.querySelector('.row');
-            flexGrow.insertBefore(warning, rowDiv);
-        }
-    }
-}
-
-// Show field management help
-function showFieldManagementHelp() {
-    const helpModal = document.createElement('div');
-    helpModal.className = 'modal fade';
-    helpModal.innerHTML = `
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Dynamic Registration System Help</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>How the Dynamic Registration System Works:</h6>
-                    <ul>
-                        <li><strong>Static Columns:</strong> Each field has a corresponding column in the registrations table</li>
-                        <li><strong>No Data Loss:</strong> When you disable a field, data is preserved in the database</li>
-                        <li><strong>Flexible Forms:</strong> Enable/disable fields without affecting existing registrations</li>
-                    </ul>
-                    
-                    <h6>Field Management:</h6>
-                    <ul>
-                        <li><strong>Add Field:</strong> Creates a new form field and optionally adds a database column</li>
-                        <li><strong>Disable Field:</strong> Hides field from forms but keeps data intact</li>
-                        <li><strong>Enable Field:</strong> Shows field in forms again, using existing data</li>
-                    </ul>
-                    
-                    <h6>Best Practices:</h6>
-                    <ul>
-                        <li>Test new fields in preview before making them live</li>
-                        <li>Consider program type when adding fields (complete vs modular)</li>
-                        <li>Use meaningful field names that won't conflict with existing columns</li>
-                    </ul>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(helpModal);
-    const modal = new bootstrap.Modal(helpModal);
-    modal.show();
-    
-    // Remove modal from DOM after it's hidden
-    helpModal.addEventListener('hidden.bs.modal', function () {
-        document.body.removeChild(helpModal);
-    });
-}
-
-// Add field deactivation functionality
-function toggleFieldActive(fieldId, isActive) {
-    fetch('/admin/settings/form-requirements/toggle-active', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            field_id: fieldId,
-            is_active: isActive
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(`Field '${data.field_name}' ${isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
-            loadFormRequirements();
-        } else {
-            showAlert('Error updating field status', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error updating field status', 'danger');
-    });
-}
-
-// Add new column to database
-function addDynamicColumn() {
-    const fieldName = prompt('Enter field name (e.g., middle_name):');
-    if (!fieldName) return;
-    
-    const fieldType = prompt('Enter field type (string, text, integer, date, boolean):', 'string');
-    if (!fieldType) return;
-    
-    const nullable = confirm('Should this field be nullable?');
-    
-    fetch('/admin/settings/form-requirements/add-column', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            field_name: fieldName,
-            field_type: fieldType,
-            nullable: nullable
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-        } else {
-            showAlert(data.error, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error adding column', 'danger');
-    });
-}
-
-// Preview form
-function previewForm(programType) {
-    window.open(`/admin/settings/form-requirements/preview/${programType}`, '_blank');
-}
-
 </script>
 @endpush

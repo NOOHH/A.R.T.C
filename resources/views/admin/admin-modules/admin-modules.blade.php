@@ -25,43 +25,6 @@
   .header-buttons .btn {
     margin-left: 0.75rem;
   }
-  
-  .add-module-btn, .view-archived-btn, .batch-upload-btn {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    margin-left: 10px;
-  }
-  
-  .add-module-btn:hover, .view-archived-btn:hover, .batch-upload-btn:hover {
-    background: #2980b9;
-    transform: translateY(-2px);
-  }
-  
-  .view-archived-btn {
-    background: #f39c12;
-  }
-  
-  .view-archived-btn:hover {
-    background: #e67e22;
-  }
-  
-  .batch-upload-btn {
-    background: #9b59b6;
-  }
-  
-  .batch-upload-btn:hover {
-    background: #8e44ad;
-  }
 
   .program-selector select {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -73,338 +36,481 @@
     border-color: #667eea;
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
   }
-  
-  /* Program Overview Section */
-  .program-overview {
-    background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  }
-  
-  .program-overview h2 {
-    font-size: 2rem;
-    margin: 0 0 10px 0;
-    font-weight: 700;
-  }
-  
-  .program-description {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin-bottom: 25px;
-  }
-  
-  .program-stats {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  
-  .stat-card {
-    background: rgba(255,255,255,0.2);
-    padding: 15px 25px;
-    border-radius: 10px;
-    min-width: 120px;
-    text-align: center;
-  }
-  
-  .stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    display: block;
-  }
-  
-  .stat-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-  
-  /* Module Controls */
-  .module-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
-  
-  .module-filters {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  
-  .filter-btn {
-    background: #f1f2f6;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 30px;
-    color: #555;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-  
-  .filter-btn:hover {
-    background: #e2e5ec;
-  }
-  
-  .filter-btn.active {
-    background: #3498db;
-    color: white;
-  }
-  
-  .save-order-btn {
-    background: #2ecc71;
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-  }
-  
-  .save-order-btn:hover {
-    background: #27ae60;
-    transform: translateY(-2px);
-  }
-  
-  /* Modules List - New Card Style */
-  .modules-list {
-    margin-top: 30px;
-  }
-  
+
+  /* Module cards with Bootstrap integration */
   .module-card {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    margin-bottom: 15px;
-    display: flex;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    border-left: 5px solid #3498db;
-  }
-  
-  .module-card[data-type="module"] { border-left-color: #3498db; }
-  .module-card[data-type="assignment"] { border-left-color: #f39c12; }
-  .module-card[data-type="quiz"] { border-left-color: #9b59b6; }
-  .module-card[data-type="test"] { border-left-color: #e74c3c; }
-  .module-card[data-type="link"] { border-left-color: #2ecc71; }
-  
-  .module-card:hover {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    transform: translateY(-3px);
-  }
-  
-  .drag-handle {
-    background: #f8f9fa;
-    color: #aaa;
-    width: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    cursor: move;
-    transition: all 0.2s;
-  }
-  
-  .drag-handle:hover {
-    background: #eaecef;
-    color: #555;
-  }
-  
-  .module-content {
-    flex: 1;
-    padding: 20px;
-  }
-  
-  .module-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .module-description {
-    color: #555;
-    margin-bottom: 15px;
-    line-height: 1.5;
-  }
-  
-  .content-details {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-  }
-  
-  .content-type-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  
-  .download-link {
-    display: inline-flex;
-    align-items: center;
-    background: #f1f2f6;
-    color: #555;
-    padding: 8px 15px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s;
-    margin-top: 10px;
-    font-size: 0.9rem;
-  }
-  
-  .download-link:hover {
-    background: #e2e5ec;
-    color: #3498db;
-  }
-  
-  .module-actions {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    border-left: 1px solid #eee;
-  }
-  
-  .edit-module-btn, .archive-btn, .preview-btn {
-    padding: 8px 15px;
-    border-radius: 6px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-    font-size: 0.9rem;
-  }
-  
-  .edit-module-btn {
-    background: #3498db;
-    color: white;
-  }
-  
-  .edit-module-btn:hover {
-    background: #2980b9;
-  }
-  
-  .archive-btn {
-    background: #f39c12;
-    color: white;
-  }
-  
-  .archive-btn:hover {
-    background: #e67e22;
-  }
-  
-  .preview-btn {
-    background: #2ecc71;
-    color: white;
-  }
-  
-  .preview-btn:hover {
-    background: #27ae60;
-  }
-  
-  /* Welcome Message */
-  .select-program-msg {
-    text-align: center;
-    padding: 60px 20px;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-radius: 15px;
-    color: #2c3e50;
-  }
-  
-  .select-program-msg h3 {
-    font-size: 1.8rem;
-    margin: 0 0 15px 0;
-    font-weight: 700;
-  }
-  
-  .select-program-msg p {
-    font-size: 1.1rem;
-    margin-bottom: 25px;
-  }
-  
-  .lms-features {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: inline-block;
-    text-align: left;
-  }
-  
-  .lms-features li {
-    padding: 8px 0;
-    font-size: 1.1rem;
-  }
-  
-  /* No modules state */
-  .no-modules {
-    text-align: center;
-    padding: 60px 20px;
-    background: #f8f9fa;
-    border-radius: 10px;
-    color: #6c757d;
-    font-size: 1.1rem;
-    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Modal styles for preview */
-  #previewModal .modal-body {
-    padding: 0;
+  .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
   }
-  
-  #previewModal .preview-header {
-    background: #f8f9fa;
-    padding: 15px 20px;
-    border-bottom: 1px solid #e1e5e9;
+
+  .module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15) !important;
   }
-  
-  #previewModal .preview-title {
-    font-size: 1.5rem;
+
+  .module-title {
+    font-size: 1.4rem;
     font-weight: 700;
-    margin: 0;
+    color: #2c3e50;
   }
-  
-  #previewModal .preview-content {
-    padding: 20px;
+
+  .module-title::before {
+    content: '📚';
+    margin-right: 0.5rem;
   }
-  
-  #previewModal .preview-tabs {
-    display: flex;
-    background: #f1f2f6;
-    padding: 10px 20px 0;
-  }
-  
-  #previewModal .preview-tab {
-    padding: 10px 20px;
-    background: none;
+
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
-    border-radius: 6px 6px 0 0;
-    cursor: pointer;
+    color: white;
+    transition: all 0.3s ease;
   }
-  
-  #previewModal .preview-tab.active {
-    background: white;
+
+  .btn-gradient-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+  }
+
+  .btn-gradient-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    color: white;
+  }
+
+  .btn-gradient-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    color: white;
+  }
+
+  .btn-gradient-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+  }
+
+  .floating-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 100;
+    border-radius: 50px !important;
+    padding: 15px 30px;
+    font-size: 1.1rem;
     font-weight: 600;
   }
-  
-  /* Modal Styles */
+
+  /* Modal enhancements */
+  .modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #e1e5e9;
+    border-radius: 15px 15px 0 0;
+  }
+
+  .modal-title {
+    color: #2c3e50;
+    font-weight: 700;
+  }
+
+  .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  /* Batch upload specific styles */
+  .batch-module-item {
+    background: #f8f9fa;
+    border: 2px solid #e1e5e9;
+    transition: border-color 0.3s ease;
+  }
+
+  .batch-module-item:hover {
+    border-color: #667eea;
+  }
+
+  .remove-module-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .remove-module-btn:hover {
+    background: #c82333;
+    transform: scale(1.1);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state::before {
+    content: '📚';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  /* Analytics integration */
+  .analytics-cards {
+    margin-bottom: 2rem;
+  }
+
+  .analytics-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .analytics-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+  }
+
+  .analytics-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+  }
+
+  .analytics-card.modules {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .analytics-card.active {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  .analytics-card.archived {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+
+  .analytics-card.recent {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  }
+
+  .card-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-trend {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    position: relative;
+    z-index: 2;
+  }
+  .card-trend.up {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+  }
+  .program-selector label {
+    display: block;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+  }
+  .program-selector select {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: border-color 0.3s ease;
+  }
+  .program-selector select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  /* Modules grid */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+  }
+
+  /* Module card */
+  .module-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+    padding: 25px;
+    transition: all 0.3s ease;
+    border: 1px solid #e1e5e9;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  }
+  .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+  }
+
+  .module-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .module-title::before {
+    content: '📚';
+    font-size: 1.2rem;
+  }
+
+  .module-description {
+    color: #6c757d;
+    margin-bottom: 15px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+  }
+
+  .download-link {
+    display: inline-block;
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin: 8px 0;
+    padding: 4px 8px;
+    border: 1px solid #667eea;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  .download-link:hover {
+    background-color: #667eea;
+    color: white;
+    text-decoration: none;
+  }
+
+  .module-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+  }
+
+  .module-program {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .module-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .edit-module-btn, .delete-module-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .edit-module-btn {
+    background: #28a745;
+    color: white;
+  }
+  .edit-module-btn:hover {
+    background: #218838;
+    transform: scale(1.05);
+  }
+
+  .delete-module-btn {
+    background: #dc3545;
+    color: white;
+  }
+  .delete-module-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+  }
+
+  /* Add button */
+  .add-module-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .add-module-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  }
+
+  .batch-upload-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  }
+  .batch-upload-btn:hover {
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+  }
+
+  /* Batch actions and selection styles */
+
+
+  .archive-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .archive-btn:hover {
+    background: #5a6268;
+    transform: scale(1.05);
+  }
+
+  .archive-btn.unarchive {
+    background: #28a745;
+  }
+
+  .archive-btn.unarchive:hover {
+    background: #218838;
+  }
+
+  .content-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 8px;
+  }
+
+  .content-type-badge.module { background: #e7f3ff; color: #0066cc; }
+  .content-type-badge.assignment { background: #fff3e0; color: #ff9800; }
+  .content-type-badge.quiz { background: #f3e5f5; color: #9c27b0; }
+  .content-type-badge.test { background: #ffebee; color: #f44336; }
+  .content-type-badge.link { background: #e8f5e8; color: #4caf50; }
+
+  .content-specific-fields {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+  }
+
+  .view-archived-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .view-archived-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    color: white;
+    text-decoration: none;
+  }
+
+  /* Modal styles */
   .modal-bg {
     display: none;
     position: fixed;
@@ -412,116 +518,206 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
     align-items: center;
     justify-content: center;
-    overflow-y: auto;
   }
-  
   .modal-bg.show {
-    display: flex !important;
+    display: flex;
   }
-  
+
   .modal {
-    background-color: white;
+    background: white;
     padding: 30px;
     border-radius: 15px;
-    max-width: 600px;
+    max-width: 500px;
     width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease;
   }
-  
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .modal h3 {
-    margin: 0 0 20px 0;
     color: #2c3e50;
+    margin: 0 0 20px 0;
     font-size: 1.5rem;
+    text-align: center;
   }
-  
-  .modal input, .modal textarea, .modal select {
+
+  .modal input, .modal select, .modal textarea {
     width: 100%;
-    padding: 12px;
+    padding: 12px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
     margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
     font-size: 1rem;
+    transition: border-color 0.3s ease;
     box-sizing: border-box;
   }
-  
+
+  .modal input:focus, .modal select:focus, .modal textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
   .modal textarea {
     resize: vertical;
     min-height: 80px;
   }
-  
-  .content-type-fields {
-    border: 1px solid #e1e5e9;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    background: #f8f9fa;
+
+  .modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
   }
-  
-  .dropzone {
-    border: 2px dashed #ddd;
+
+  .cancel-btn, .add-btn, .update-btn {
+    padding: 12px 25px;
+    border: none;
     border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 20px;
-    background: #fafafa;
-    position: relative;
     cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 1rem;
   }
-  
-  .dropzone:hover {
-    border-color: #3498db;
-    background: #f0f8ff;
+
+  .cancel-btn {
+    background: #6c757d;
+    color: white;
   }
-  
+  .cancel-btn:hover {
+    background: #5a6268;
+  }
+
+  .add-btn, .update-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  .add-btn:hover, .update-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  /* Drag-and-drop zone */
+  .dropzone {
+    border: 2px dashed #667eea;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    color: #6c757d;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    position: relative;
+    margin-bottom: 15px;
+  }
+  .dropzone.dragover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+  .dropzone p {
+    margin: 0;
+    font-size: 1rem;
+  }
   .dropzone input[type="file"] {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
     opacity: 0;
     cursor: pointer;
   }
-  
-  .modal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 20px;
+
+  /* Empty state */
+  .no-modules {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    font-size: 1.1rem;
   }
-  
-  .cancel-btn, .add-btn {
-    padding: 12px 25px;
+  .no-modules::before {
+    content: '📚';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  /* Program not selected state */
+  .select-program-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    font-size: 1.1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+  }
+  .select-program-msg::before {
+    content: '👆';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+  }
+
+  /* Batch upload styles */
+  .batch-module-item {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    position: relative;
+  }
+
+  .batch-module-item h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+  }
+
+  .remove-module-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #dc3545;
+    color: white;
     border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+  .remove-module-btn:hover {
+    background: #c82333;
+    transform: scale(1.1);
+  }
+
+  .add-another-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
     border-radius: 6px;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
   }
-  
-  .cancel-btn {
-    background: #95a5a6;
-    color: white;
-  }
-  
-  .cancel-btn:hover {
-    background: #7f8c8d;
-  }
-  
-  .add-btn {
-    background: #3498db;
-    color: white;
-  }
-  
-  .add-btn:hover {
-    background: #2980b9;
+  .add-another-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
   }
 </style>
 @endpush
@@ -549,7 +745,7 @@
 
 <div class="modules-container">
     <div class="modules-header">
-        <h1>Learning Management</h1>
+        <h1>Modules</h1>
         <div class="header-buttons">
             <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
                 <span>🗃️</span> View Archived
@@ -565,13 +761,13 @@
 
     <!-- Program Selector -->
     <div class="program-selector">
-        <label for="programSelect">Select Program to Manage Learning Content:</label>
+        <label for="programSelect">Select Program to View/Manage Modules:</label>
         <select id="programSelect" name="program_id">
             <option value="">-- Select a Program --</option>
             @foreach($programs as $program)
                 <option value="{{ $program->program_id }}"
                     {{ request('program_id') == $program->program_id ? 'selected' : '' }}>
-                    {{ $program->program_name }}{{ $program->is_archived ? ' (Archived)' : '' }}
+                    {{ $program->program_name }}
                 </option>
             @endforeach
         </select>
@@ -579,147 +775,105 @@
 
     <!-- Modules Display Area -->
     <div id="modulesDisplayArea">
-        @if(request('program_id') && isset($selectedProgram))
-            <div class="program-overview">
-                <h2>{{ $selectedProgram->program_name }}</h2>
-                <p class="program-description">{{ $selectedProgram->program_description ?: 'No description available.' }}</p>
-                
-                <div class="program-stats">
-                    <div class="stat-card">
-                        <span class="stat-number">{{ $modules->count() }}</span>
-                        <span class="stat-label">Content Items</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number">{{ $modules->where('content_type', 'module')->count() }}</span>
-                        <span class="stat-label">Modules</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-number">{{ $modules->where('content_type', 'assignment')->count() + $modules->where('content_type', 'quiz')->count() + $modules->where('content_type', 'test')->count() }}</span>
-                        <span class="stat-label">Assessments</span>
-                    </div>
-                </div>
-            </div>
-            
+        @if(request('program_id') && isset($modules))
             @if($modules->count() > 0)
-                <!-- Module sorting controls -->
-                <div class="module-controls">
-                    <div class="module-filters">
-                        <button class="filter-btn active" data-filter="all">All Content</button>
-                        <button class="filter-btn" data-filter="module">Modules</button>
-                        <button class="filter-btn" data-filter="assignment">Assignments</button>
-                        <button class="filter-btn" data-filter="quiz">Quizzes</button>
-                        <button class="filter-btn" data-filter="test">Tests</button>
-                    </div>
-                    <div class="sort-controls">
-                        <button id="saveModuleOrder" class="save-order-btn" style="display:none;">Save Order</button>
-                    </div>
-                </div>
-                
-                <div class="modules-list sortable-modules" id="sortableModules">
+                <div class="modules-grid">
                     @foreach($modules as $module)
-                        <div class="module-card" data-id="{{ $module->modules_id }}" data-type="{{ $module->content_type }}">
-                            <div class="drag-handle">≡</div>
-                            <div class="module-content">
-                                <div class="module-title">
-                                    {{ $module->content_type_icon ?? '📚' }} {{ $module->module_name }}
-                                    <span class="content-type-badge {{ $module->content_type ?? 'module' }}">
-                                        {{ ucfirst($module->content_type) }}
-                                    </span>
-                                </div>
-                                
-                                <div class="module-description">
-                                    {{ $module->module_description }}
-                                </div>
-
-                                @if($module->content_data)
-                                    <div class="content-details">
-                                        @php $data = $module->content_data @endphp
-                                        @switch($module->content_type)
-                                            @case('assignment')
-                                                @if(!empty($data['assignment_title']))
-                                                    <strong>Title:</strong> {{ $data['assignment_title'] }}<br>
-                                                @endif
-                                                @if(!empty($data['due_date']))
-                                                    <strong>Due:</strong> {{ \Carbon\Carbon::parse($data['due_date'])->format('M d, Y g:i A') }}<br>
-                                                @endif
-                                                @if(!empty($data['max_points']))
-                                                    <strong>Points:</strong> {{ $data['max_points'] }}
-                                                @endif
-                                                @break
-                                            @case('quiz')
-                                                @if(!empty($data['quiz_title']))
-                                                    <strong>Title:</strong> {{ $data['quiz_title'] }}<br>
-                                                @endif
-                                                @if(!empty($data['time_limit']))
-                                                    <strong>Time:</strong> {{ $data['time_limit'] }} minutes<br>
-                                                @endif
-                                                @if(!empty($data['question_count']))
-                                                    <strong>Questions:</strong> {{ $data['question_count'] }}
-                                                @endif
-                                                @break
-                                            @case('test')
-                                                @if(!empty($data['test_title']))
-                                                    <strong>Title:</strong> {{ $data['test_title'] }}<br>
-                                                @endif
-                                                @if(!empty($data['test_date']))
-                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($data['test_date'])->format('M d, Y g:i A') }}<br>
-                                                @endif
-                                                @if(!empty($data['total_marks']))
-                                                    <strong>Total Marks:</strong> {{ $data['total_marks'] }}
-                                                @endif
-                                                @break
-                                            @case('link')
-                                                @if(!empty($data['link_title']))
-                                                    <strong>Link:</strong> {{ $data['link_title'] }}<br>
-                                                @endif
-                                                @if(!empty($data['external_url']))
-                                                    <a href="{{ $data['external_url'] }}" target="_blank" class="download-link">
-                                                        🔗 Open Link
-                                                    </a>
-                                                @endif
-                                                @break
-                                        @endswitch
-                                    </div>
-                                @endif
-
-                                @if($module->attachment)
-                                    <a href="{{ asset('storage/'.$module->attachment) }}" target="_blank" class="download-link">
-                                        📎 Download file
-                                    </a>
-                                @endif
+                        <div class="module-card">
+                            <div class="module-title">
+                                {{ $module->content_type_icon ?? '📚' }} {{ $module->module_name }}
+                                <span class="content-type-badge {{ $module->content_type ?? 'module' }}">
+                                    {{ $module->content_type_display ?? 'Module/Lesson' }}
+                                </span>
                             </div>
                             
-                            <div class="module-actions">
-                                <button class="archive-btn" onclick="toggleArchiveModule({{ $module->modules_id }}, false)">
-                                    Archive
-                                </button>
-                                <button class="edit-module-btn" onclick="editModule({{ $module->modules_id }}, '{{ $module->module_name }}', '{{ addslashes($module->module_description ?? '') }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
-                                    Edit
-                                </button>
-                                <button class="preview-btn" onclick="previewModule({{ $module->modules_id }})">
-                                    Preview
-                                </button>
+                            <div class="module-description">
+                                {{ $module->module_description }}
+                            </div>
+
+                            @if($module->content_data)
+                                <div class="content-details" style="margin: 10px 0; font-size: 0.9rem; color: #666;">
+                                    @php $data = $module->content_data @endphp
+                                    @switch($module->content_type)
+                                        @case('assignment')
+                                            @if(!empty($data['assignment_title']))
+                                                <strong>Title:</strong> {{ $data['assignment_title'] }}<br>
+                                            @endif
+                                            @if(!empty($data['due_date']))
+                                                <strong>Due:</strong> {{ \Carbon\Carbon::parse($data['due_date'])->format('M d, Y g:i A') }}<br>
+                                            @endif
+                                            @if(!empty($data['max_points']))
+                                                <strong>Points:</strong> {{ $data['max_points'] }}
+                                            @endif
+                                            @break
+                                        @case('quiz')
+                                            @if(!empty($data['quiz_title']))
+                                                <strong>Title:</strong> {{ $data['quiz_title'] }}<br>
+                                            @endif
+                                            @if(!empty($data['time_limit']))
+                                                <strong>Time:</strong> {{ $data['time_limit'] }} minutes<br>
+                                            @endif
+                                            @if(!empty($data['question_count']))
+                                                <strong>Questions:</strong> {{ $data['question_count'] }}
+                                            @endif
+                                            @break
+                                        @case('test')
+                                            @if(!empty($data['test_title']))
+                                                <strong>Title:</strong> {{ $data['test_title'] }}<br>
+                                            @endif
+                                            @if(!empty($data['test_date']))
+                                                <strong>Date:</strong> {{ \Carbon\Carbon::parse($data['test_date'])->format('M d, Y g:i A') }}<br>
+                                            @endif
+                                            @if(!empty($data['total_marks']))
+                                                <strong>Total Marks:</strong> {{ $data['total_marks'] }}
+                                            @endif
+                                            @break
+                                        @case('link')
+                                            @if(!empty($data['link_title']))
+                                                <strong>Link:</strong> {{ $data['link_title'] }}<br>
+                                            @endif
+                                            @if(!empty($data['external_url']))
+                                                <a href="{{ $data['external_url'] }}" target="_blank" class="download-link">
+                                                    🔗 Open Link
+                                                </a>
+                                            @endif
+                                            @break
+                                    @endswitch
+                                </div>
+                            @endif
+
+                            @if($module->attachment)
+                                <p><a href="{{ asset('storage/'.$module->attachment) }}" target="_blank" class="download-link">
+                                    📎 Download file
+                                </a></p>
+                            @endif
+                            
+                            <div class="module-meta">
+                                <span class="module-program">
+                                    {{ $module->program->program_name }}
+                                </span>
+                                <div class="module-actions">
+                                    <button class="archive-btn" 
+                                            onclick="toggleArchiveModule({{ $module->modules_id }}, false)">
+                                        Archive
+                                    </button>
+                                    <button class="edit-module-btn" onclick="editModule({{ $module->modules_id }}, '{{ $module->module_name }}', '{{ addslashes($module->module_description ?? '') }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
+                                        Edit
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
             @else
                 <div class="no-modules">
-                    No learning content found for this program.<br>
-                    <small>Click "Add Content" to create your first module.</small>
+                    No modules found for this program.<br>
+                    <small>Click "Add Module" to create the first module.</small>
                 </div>
             @endif
         @else
             <div class="select-program-msg">
-                <img src="{{ asset('images/lms-illustration.png') }}" alt="LMS Illustration" style="max-width: 200px; margin-bottom: 20px;">
-                <h3>Welcome to the Learning Management System</h3>
-                <p>Please select a program above to manage its learning content.</p>
-                <ul class="lms-features">
-                    <li>📚 Create and organize educational modules</li>
-                    <li>📝 Add quizzes, assignments, and tests</li>
-                    <li>🔄 Drag and drop to reorder content</li>
-                    <li>🔍 Preview content as students will see it</li>
-                </ul>
+                Please select a program above to view and manage its modules.
             </div>
         @endif
     </div>
@@ -746,60 +900,19 @@
 
             <select name="content_type" id="addContentType" required>
                 <option value="">-- Select Content Type --</option>
-                <option value="module">📚 Module/Lesson</option>
-                <option value="assignment">📝 Assignment</option>
-                <option value="quiz">❓ Quiz</option>
-                <option value="test">📋 Test</option>
-                <option value="link">🔗 External Link</option>
-                <option value="file">📎 File Upload</option>
+                <option value="module">Module/Lesson</option>
+                <option value="assignment">Assignment</option>
+                <option value="quiz">Quiz</option>
+                <option value="test">Test</option>
+                <option value="link">External Link</option>
             </select>
 
             <div class="content-specific-fields" id="addContentFields">
                 <!-- Dynamic fields will be added here based on content type -->
             </div>
 
-            <!-- Assignment specific fields -->
-            <div class="content-type-fields" id="assignmentFields" style="display: none;">
-                <input type="text" name="assignment_title" placeholder="Assignment Title">
-                <textarea name="assignment_instructions" placeholder="Assignment Instructions"></textarea>
-                <input type="datetime-local" name="due_date" placeholder="Due Date">
-                <input type="number" name="max_points" placeholder="Maximum Points" min="1">
-            </div>
-
-            <!-- Quiz specific fields -->
-            <div class="content-type-fields" id="quizFields" style="display: none;">
-                <input type="text" name="quiz_title" placeholder="Quiz Title">
-                <textarea name="quiz_description" placeholder="Quiz Description"></textarea>
-                <input type="number" name="time_limit" placeholder="Time Limit (minutes)" min="1">
-                <input type="number" name="question_count" placeholder="Number of Questions" min="1">
-            </div>
-
-            <!-- Test specific fields -->
-            <div class="content-type-fields" id="testFields" style="display: none;">
-                <input type="text" name="test_title" placeholder="Test Title">
-                <textarea name="test_description" placeholder="Test Description"></textarea>
-                <input type="datetime-local" name="test_date" placeholder="Test Date">
-                <input type="number" name="duration" placeholder="Duration (minutes)" min="1">
-                <input type="number" name="total_marks" placeholder="Total Marks" min="1">
-            </div>
-
-            <!-- External Link specific fields -->
-            <div class="content-type-fields" id="linkFields" style="display: none;">
-                <input type="text" name="link_title" placeholder="Link Title">
-                <input type="url" name="external_url" placeholder="External URL (https://...)">
-                <textarea name="link_description" placeholder="Link Description"></textarea>
-                <select name="link_type">
-                    <option value="video">📹 Video</option>
-                    <option value="article">📄 Article</option>
-                    <option value="website">🌐 Website</option>
-                    <option value="tool">🔧 Tool</option>
-                    <option value="other">📂 Other</option>
-                </select>
-            </div>
-
             <div class="dropzone" id="addDropzone">
-                <p>📁 Drop files here or click to browse</p>
-                <small>Supported formats: PDF, DOC, DOCX, ZIP, PNG, JPG, JPEG (Max 10MB)</small>
+                <p>Drop files here or click to browse</p>
                 <input type="file"
                        name="attachment"
                        id="addAttachment"
@@ -808,7 +921,7 @@
 
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="cancelAddModal">Cancel</button>
-                <button type="submit" class="add-btn" id="submitAddContent">Add Content</button>
+                <button type="submit" class="add-btn">Add Content</button>
             </div>
         </form>
     </div>
@@ -896,732 +1009,319 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin modules page loaded');
+// Global edit function called from edit buttons
+function editModule(moduleId, moduleName, moduleDescription, programId, attachment) {
+    console.log('Editing module:', moduleId, moduleName, moduleDescription, programId);
+    
+    const editModalBg = document.getElementById('editModalBg');
+    const editForm = document.getElementById('editModuleForm');
+    const editProgramSelect = document.getElementById('editModalProgramSelect');
+    const editModuleName = document.getElementById('editModuleName');
+    const editModuleDescription = document.getElementById('editModuleDescription');
+    
+    editForm.action = `/admin/modules/${moduleId}`;
+    editProgramSelect.value = programId;
+    editModuleName.value = moduleName;
+    editModuleDescription.value = moduleDescription || '';
+    
+    editModalBg.classList.add('show');
+}
+
+// Archive/Unarchive module function
+function toggleArchiveModule(moduleId, isArchived) {
+    if (confirm(isArchived ? 'Are you sure you want to unarchive this module?' : 'Are you sure you want to archive this module?')) {
+        fetch(`/admin/modules/${moduleId}/archive`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ is_archived: !isArchived })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the module.');
+        });
+    }
+}
+
+// Batch delete functionality
+let selectedModules = new Set();
+
+function toggleModuleSelection(moduleId, checkbox) {
+    if (checkbox.checked) {
+        selectedModules.add(moduleId);
+    } else {
+        selectedModules.delete(moduleId);
+    }
+    updateBatchDeleteButton();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllModules');
+    const moduleCheckboxes = document.querySelectorAll('.module-checkbox');
+    
+    moduleCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+        const moduleId = parseInt(checkbox.dataset.moduleId);
+        if (selectAllCheckbox.checked) {
+            selectedModules.add(moduleId);
+        } else {
+            selectedModules.delete(moduleId);
+        }
+    });
+    
+    updateBatchDeleteButton();
+}
+
+
+
+// Function to update content-specific fields
+function updateContentFields(index, contentType, isAdd = false) {
+    const prefix = isAdd ? 'add' : 'batch';
+    const fieldsContainer = document.getElementById(`${prefix}ContentFields${isAdd ? '' : index}`);
+    if (!fieldsContainer) return;
+    
+    let fieldsHtml = '';
+    const namePrefix = isAdd ? '' : `modules[${index}]`;
+    
+    switch (contentType) {
+        case 'assignment':
+            fieldsHtml = `
+                <input type="text" name="${namePrefix}[assignment_title]" placeholder="Assignment Title">
+                <textarea name="${namePrefix}[assignment_instructions]" placeholder="Assignment Instructions"></textarea>
+                <input type="datetime-local" name="${namePrefix}[due_date]" placeholder="Due Date">
+                <input type="number" name="${namePrefix}[max_points]" placeholder="Maximum Points" min="1">
+            `;
+            break;
+        case 'quiz':
+            fieldsHtml = `
+                <input type="text" name="${namePrefix}[quiz_title]" placeholder="Quiz Title">
+                <textarea name="${namePrefix}[quiz_description]" placeholder="Quiz Description"></textarea>
+                <input type="number" name="${namePrefix}[time_limit]" placeholder="Time Limit (minutes)" min="1">
+                <input type="number" name="${namePrefix}[question_count]" placeholder="Number of Questions" min="1">
+            `;
+            break;
+        case 'test':
+            fieldsHtml = `
+                <input type="text" name="${namePrefix}[test_title]" placeholder="Test Title">
+                <textarea name="${namePrefix}[test_description]" placeholder="Test Description"></textarea>
+                <input type="datetime-local" name="${namePrefix}[test_date]" placeholder="Test Date">
+                <input type="number" name="${namePrefix}[duration]" placeholder="Duration (minutes)" min="1">
+                <input type="number" name="${namePrefix}[total_marks]" placeholder="Total Marks" min="1">
+            `;
+            break;
+        case 'link':
+            fieldsHtml = `
+                <input type="url" name="${namePrefix}[external_url]" placeholder="External URL" required>
+                <input type="text" name="${namePrefix}[link_title]" placeholder="Link Title">
+                <textarea name="${namePrefix}[link_description]" placeholder="Link Description"></textarea>
+                <select name="${namePrefix}[link_type]">
+                    <option value="video">Video</option>
+                    <option value="article">Article</option>
+                    <option value="resource">Resource</option>
+                    <option value="tool">Tool</option>
+                    <option value="other">Other</option>
+                </select>
+            `;
+            break;
+    }
+    
+    fieldsContainer.innerHTML = fieldsHtml;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing module functions...');
     
     // Program selector
     const programSelect = document.getElementById('programSelect');
     if (programSelect) {
         programSelect.addEventListener('change', function() {
             const pid = this.value;
-            window.location.href = pid 
+            window.location.href = pid
                 ? `{{ route('admin.modules.index') }}?program_id=${pid}`
                 : `{{ route('admin.modules.index') }}`;
         });
     }
 
-    // Add Content modal functionality
+    // Modal elements
     const showAddModal = document.getElementById('showAddModal');
     const addModalBg = document.getElementById('addModalBg');
     const cancelAdd = document.getElementById('cancelAddModal');
-    
-    // Initialize the Add Content modal
-    if (showAddModal) {
+    const editModalBg = document.getElementById('editModalBg');
+    const cancelEdit = document.getElementById('cancelEditModal');
+    const showBatchModal = document.getElementById('showBatchModal');
+    const batchModalBg = document.getElementById('batchModalBg');
+    const cancelBatch = document.getElementById('cancelBatchModal');
+
+    // Add Modal functionality
+    if (showAddModal && addModalBg) {
         showAddModal.addEventListener('click', function(e) {
             e.preventDefault();
-            showAddContentModal();
-        });
-    }
-    
-    // Close modal when cancel button is clicked
-    if (cancelAdd && addModalBg) {
-        cancelAdd.addEventListener('click', function() {
-            addModalBg.classList.remove('show');
-            addModalBg.style.display = 'none';
-        });
-    }
-    
-    // Close modal when clicking outside the modal content
-    if (addModalBg) {
-        addModalBg.addEventListener('click', function(e) {
-            if (e.target === addModalBg) {
-                addModalBg.classList.remove('show');
-                addModalBg.style.display = 'none';
-            }
-        });
-    }
-    
-    // Handle content type selection to show/hide specific fields
-    const contentTypeSelect = document.getElementById('addContentType');
-    if (contentTypeSelect) {
-        contentTypeSelect.addEventListener('change', function() {
-            // Hide all content type specific fields
-            const allFields = document.querySelectorAll('.content-type-fields');
-            allFields.forEach(field => {
-                field.style.display = 'none';
-            });
-            
-            // Remove required attribute from all conditional fields
-            const conditionalInputs = document.querySelectorAll('#linkFields input[name="external_url"]');
-            conditionalInputs.forEach(input => {
-                input.removeAttribute('required');
-            });
-            
-            // Show relevant fields based on selection
-            const selectedType = this.value;
-            switch (selectedType) {
-                case 'assignment':
-                    document.getElementById('assignmentFields').style.display = 'block';
-                    break;
-                case 'quiz':
-                    document.getElementById('quizFields').style.display = 'block';
-                    break;
-                case 'test':
-                    document.getElementById('testFields').style.display = 'block';
-                    break;
-                case 'link':
-                    document.getElementById('linkFields').style.display = 'block';
-                    // Make URL required only for link type
-                    const urlInput = document.querySelector('#linkFields input[name="external_url"]');
-                    if (urlInput) {
-                        urlInput.setAttribute('required', 'required');
-                    }
-                    break;
-                default:
-                    // For 'module' and 'file' types, no additional fields needed
-                    break;
-            }
-        });
-    }
-    
-    // Make modules sortable
-    const sortableEl = document.getElementById('sortableModules');
-    if (sortableEl) {
-        const sortable = new Sortable(sortableEl, {
-            handle: '.drag-handle',
-            animation: 150,
-            ghostClass: 'module-card-ghost',
-            onStart: function() {
-                document.getElementById('saveModuleOrder').style.display = 'block';
-            }
-        });
-        
-        // Save module order button
-        const saveOrderBtn = document.getElementById('saveModuleOrder');
-        if (saveOrderBtn) {
-            saveOrderBtn.addEventListener('click', function() {
-                const moduleIds = Array.from(sortableEl.querySelectorAll('.module-card')).map(card => {
-                    return parseInt(card.getAttribute('data-id'));
-                });
-                
-                fetch('{{ route("admin.modules.updateOrder") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ moduleIds })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        saveOrderBtn.textContent = 'Order Saved!';
-                        setTimeout(() => {
-                            saveOrderBtn.textContent = 'Save Order';
-                            saveOrderBtn.style.display = 'none';
-                        }, 2000);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error saving order:', error);
-                    alert('Error saving module order.');
-                });
-            });
-        }
-    }
-    
-    // Module filtering functionality
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    if (filterButtons.length) {
-        filterButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Remove active class from all buttons
-                filterButtons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
-                this.classList.add('active');
-                
-                const filter = this.getAttribute('data-filter');
-                const modules = document.querySelectorAll('.module-card');
-                
-                modules.forEach(card => {
-                    if (filter === 'all' || card.getAttribute('data-type') === filter) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-        });
-    }
-    
-    // Module preview functionality
-    window.previewModule = function(moduleId) {
-        fetch(`/admin/modules/${moduleId}/preview`)
-            .then(response => response.json())
-            .then(data => {
-                showPreviewModal(data);
-            })
-            .catch(error => {
-                console.error('Error fetching module preview:', error);
-                alert('Error loading module preview.');
-            });
-    };
-    
-    function showPreviewModal(moduleData) {
-        // Create modal if it doesn't exist
-        let previewModal = document.getElementById('previewModal');
-        if (!previewModal) {
-            previewModal = document.createElement('div');
-            previewModal.id = 'previewModal';
-            previewModal.className = 'modal-bg';
-            previewModal.innerHTML = `
-                <div class="modal" style="max-width: 800px;">
-                    <div class="preview-header">
-                        <h2 class="preview-title">Module Preview</h2>
-                        <p class="preview-subtitle">This is how students will see this content</p>
-                    </div>
-                    <div class="preview-tabs">
-                        <button class="preview-tab active" data-tab="student">Student View</button>
-                        <button class="preview-tab" data-tab="details">Module Details</button>
-                    </div>
-                    <div class="preview-content">
-                        <div class="preview-tab-content" id="student-view"></div>
-                        <div class="preview-tab-content" id="details-view" style="display:none;"></div>
-                    </div>
-                    <div class="modal-actions">
-                        <button class="cancel-btn" id="closePreview">Close</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(previewModal);
-            
-            // Set up tab switching
-            const tabs = previewModal.querySelectorAll('.preview-tab');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const tabId = this.getAttribute('data-tab');
-                    const tabContents = previewModal.querySelectorAll('.preview-tab-content');
-                    
-                    tabContents.forEach(content => {
-                        content.style.display = 'none';
-                    });
-                    
-                    if (tabId === 'student') {
-                        document.getElementById('student-view').style.display = 'block';
-                    } else {
-                        document.getElementById('details-view').style.display = 'block';
-                    }
-                });
-            });
-            
-            // Set up close button
-            const closeBtn = document.getElementById('closePreview');
-            closeBtn.addEventListener('click', function() {
-                previewModal.classList.remove('show');
-            });
-            
-            // Close when clicking outside
-            previewModal.addEventListener('click', function(e) {
-                if (e.target === previewModal) {
-                    previewModal.classList.remove('show');
+            const currentProgramId = programSelect?.value;
+            if (currentProgramId) {
+                const modalProgramSelect = document.getElementById('modalProgramSelect');
+                if (modalProgramSelect) {
+                    modalProgramSelect.value = currentProgramId;
                 }
-            });
-        }
-        
-        // Update modal content with module data
-        const titleEl = previewModal.querySelector('.preview-title');
-        titleEl.textContent = moduleData.module_name;
-        
-        // Student view tab
-        const studentView = document.getElementById('student-view');
-        studentView.innerHTML = `
-            <div class="student-module-view">
-                <h3>${moduleData.module_name}</h3>
-                <div class="module-description">${moduleData.module_description || 'No description available.'}</div>
-                
-                ${moduleData.content_type === 'module' ? `
-                    <div class="module-content-preview">
-                        ${moduleData.attachment ? `
-                            <div class="attachment-preview">
-                                <a href="/storage/${moduleData.attachment}" target="_blank" class="download-link">
-                                    📎 Download Learning Material
-                                </a>
-                            </div>
-                        ` : ''}
-                    </div>
-                ` : ''}
-                
-                ${moduleData.content_type === 'assignment' ? `
-                    <div class="assignment-preview">
-                        <h4>${moduleData.content_data?.assignment_title || 'Assignment'}</h4>
-                        <div class="assignment-instructions">
-                            ${moduleData.content_data?.assignment_instructions || 'No instructions provided.'}
-                        </div>
-                        <div class="assignment-meta">
-                            ${moduleData.content_data?.due_date ? `<p><strong>Due:</strong> ${moduleData.content_data.due_date}</p>` : ''}
-                            ${moduleData.content_data?.max_points ? `<p><strong>Points:</strong> ${moduleData.content_data.max_points}</p>` : ''}
-                        </div>
-                        <div class="assignment-submit">
-                            <button disabled>Submit Assignment</button>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${moduleData.content_type === 'quiz' || moduleData.content_type === 'test' ? `
-                    <div class="quiz-preview">
-                        <h4>${moduleData.content_data?.quiz_title || moduleData.content_data?.test_title || 'Assessment'}</h4>
-                        <div class="quiz-instructions">
-                            ${moduleData.content_data?.quiz_description || moduleData.content_data?.test_description || 'No description provided.'}
-                        </div>
-                        <div class="quiz-meta">
-                            ${moduleData.content_data?.time_limit ? `<p><strong>Time Limit:</strong> ${moduleData.content_data.time_limit} minutes</p>` : ''}
-                            ${moduleData.content_data?.question_count ? `<p><strong>Questions:</strong> ${moduleData.content_data.question_count}</p>` : ''}
-                            ${moduleData.content_data?.total_marks ? `<p><strong>Total Marks:</strong> ${moduleData.content_data.total_marks}</p>` : ''}
-                        </div>
-                        <div class="quiz-start">
-                            <button disabled>Start ${moduleData.content_type === 'quiz' ? 'Quiz' : 'Test'}</button>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${moduleData.content_type === 'link' ? `
-                    <div class="link-preview">
-                        <h4>${moduleData.content_data?.link_title || 'External Resource'}</h4>
-                        <p>${moduleData.content_data?.link_description || 'No description provided.'}</p>
-                        <a href="${moduleData.content_data?.external_url || '#'}" target="_blank" class="external-link">
-                            🔗 Visit External Resource
-                        </a>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-        
-        // Details view tab
-        const detailsView = document.getElementById('details-view');
-        detailsView.innerHTML = `
-            <div class="module-details">
-                <table class="details-table">
-                    <tr>
-                        <th>ID:</th>
-                        <td>${moduleData.modules_id}</td>
-                    </tr>
-                    <tr>
-                        <th>Name:</th>
-                        <td>${moduleData.module_name}</td>
-                    </tr>
-                    <tr>
-                        <th>Description:</th>
-                        <td>${moduleData.module_description || 'No description'}</td>
-                    </tr>
-                    <tr>
-                        <th>Content Type:</th>
-                        <td><span class="content-type-badge ${moduleData.content_type}">${moduleData.content_type}</span></td>
-                    </tr>
-                    <tr>
-                        <th>Program:</th>
-                        <td>${moduleData.program?.program_name || 'Unknown program'}</td>
-                    </tr>
-                    <tr>
-                        <th>Created:</th>
-                        <td>${new Date(moduleData.created_at).toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                        <th>Last Updated:</th>
-                        <td>${new Date(moduleData.updated_at).toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                        <th>Order:</th>
-                        <td>${moduleData.module_order || 'Not set'}</td>
-                    </tr>
-                    <tr>
-                        <th>Has Attachment:</th>
-                        <td>${moduleData.attachment ? 'Yes' : 'No'}</td>
-                    </tr>
-                </table>
-            </div>
-        `;
-        
-        // Show the modal
-        previewModal.classList.add('show');
+            }
+            addModalBg.classList.add('show');
+        });
     }
 
-    // Function to show Add Content modal
-    window.showAddContentModal = function() {
-        console.log('showAddContentModal called');
-        
-        const programSelect = document.getElementById('programSelect');
-        const addModalBg = document.getElementById('addModalBg');
-        
-        if (!programSelect || !addModalBg) {
-            console.error('Required elements not found');
-            return;
-        }
-        
-        const currentProgramId = programSelect.value;
-        
-        // Check if a program is selected
-        if (!currentProgramId) {
-            alert('Please select a program first before adding content.');
-            return;
-        }
-        
-        // Check if program is archived
-        const selectedOption = programSelect.options[programSelect.selectedIndex];
-        if (selectedOption.text.includes('(Archived)')) {
-            alert('Cannot add content to archived programs.');
-            return;
-        }
-        
-        // Set the program in the modal form
-        const modalProgramSelect = document.getElementById('modalProgramSelect');
-        if (modalProgramSelect) {
-            modalProgramSelect.value = currentProgramId;
-        }
-        
-        // Reset form fields
-        document.getElementById('addModuleForm').reset();
-        modalProgramSelect.value = currentProgramId;
-        
-        // Hide all content type specific fields
-        const allFields = document.querySelectorAll('.content-type-fields');
-        allFields.forEach(field => {
-            field.style.display = 'none';
-        });
-        
-        // Show the modal
-        addModalBg.classList.add('show');
-        addModalBg.style.display = 'flex';
-        
-        console.log('Modal should now be visible');
-    };
-    
-    // Handle file drop functionality
-    const dropzone = document.getElementById('addDropzone');
-    const fileInput = document.getElementById('addAttachment');
-    
-    if (dropzone && fileInput) {
-        dropzone.addEventListener('click', function() {
-            fileInput.click();
-        });
-        
-        dropzone.addEventListener('dragover', function(e) {
+    // Batch Modal functionality - FIXED
+    if (showBatchModal && batchModalBg) {
+        showBatchModal.addEventListener('click', function(e) {
             e.preventDefault();
-            dropzone.style.borderColor = '#3498db';
-            dropzone.style.background = '#f0f8ff';
-        });
-        
-        dropzone.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            dropzone.style.borderColor = '#ddd';
-            dropzone.style.background = '#fafafa';
-        });
-        
-        dropzone.addEventListener('drop', function(e) {
-            e.preventDefault();
-            dropzone.style.borderColor = '#ddd';
-            dropzone.style.background = '#fafafa';
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                updateDropzoneText(files[0].name);
-            }
-        });
-        
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                updateDropzoneText(this.files[0].name);
-            }
-        });
-    }
-    
-    function updateDropzoneText(fileName) {
-        const dropzoneText = dropzone.querySelector('p');
-        if (dropzoneText) {
-            dropzoneText.textContent = `Selected: ${fileName}`;
-        }
-    }
-    
-    // Form validation for Add Content
-    const addForm = document.getElementById('addModuleForm');
-    if (addForm) {
-        addForm.addEventListener('submit', function(e) {
-            console.log('Form submit event triggered');
-            
-            const moduleName = document.querySelector('input[name="module_name"]').value.trim();
-            const contentType = document.querySelector('select[name="content_type"]').value;
-            const programId = document.querySelector('select[name="program_id"]').value;
-            
-            console.log('Form data:', { moduleName, contentType, programId });
-            
-            if (!moduleName) {
-                console.log('Validation failed: No module name');
-                e.preventDefault();
-                alert('Please enter a content name.');
-                return false;
-            }
-            
-            if (!contentType) {
-                console.log('Validation failed: No content type');
-                e.preventDefault();
-                alert('Please select a content type.');
-                return false;
-            }
-            
-            if (!programId) {
-                console.log('Validation failed: No program ID');
-                e.preventDefault();
-                alert('Please select a program.');
-                return false;
-            }
-            
-            // Additional validation for external links
-            if (contentType === 'link') {
-                const externalUrl = document.querySelector('input[name="external_url"]').value.trim();
-                if (!externalUrl) {
-                    console.log('Validation failed: No external URL for link');
-                    e.preventDefault();
-                    alert('Please enter an external URL for link content.');
-                    return false;
-                }
-                
-                // Basic URL validation
-                try {
-                    new URL(externalUrl);
-                } catch {
-                    console.log('Validation failed: Invalid URL');
-                    e.preventDefault();
-                    alert('Please enter a valid URL (including http:// or https://).');
-                    return false;
+            e.stopPropagation();
+            console.log('Batch modal button clicked - showing modal');
+            const currentProgramId = programSelect?.value;
+            if (currentProgramId) {
+                const batchProgramSelect = document.getElementById('batchModalProgramSelect');
+                if (batchProgramSelect) {
+                    batchProgramSelect.value = currentProgramId;
                 }
             }
-            
-            console.log('Form validation passed, submitting...');
-            
-            // Show loading state
-            const submitBtn = document.getElementById('submitAddContent');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Adding...';
-            }
-            
-            return true;
+            batchModalBg.classList.add('show');
         });
     } else {
-        console.error('Form element not found!');
-    }
-    
-    // Debug: Add click handler to submit button
-    const submitBtn = document.getElementById('submitAddContent');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', function(e) {
-            console.log('Submit button clicked');
-            console.log('Form element:', document.getElementById('addModuleForm'));
-            const form = document.getElementById('addModuleForm');
-            if (form) {
-                console.log('Form action:', form.action);
-                console.log('Form method:', form.method);
-                console.log('Form CSRF token:', form.querySelector('input[name="_token"]')?.value);
-            }
+        console.log('Batch modal elements not found:', {
+            showBatchModal: !!showBatchModal,
+            batchModalBg: !!batchModalBg
         });
     }
-    
-    // Alternative form submission method in case normal submission fails
-    window.submitAddContentForm = function() {
-        console.log('Alternative form submission triggered');
-        const form = document.getElementById('addModuleForm');
-        if (form) {
-            // Manually trigger form validation
-            if (form.checkValidity()) {
-                console.log('Form is valid, submitting...');
-                form.submit();
-            } else {
-                console.log('Form validation failed');
-                form.reportValidity();
+
+    // Cancel buttons
+    if (cancelAdd && addModalBg) {
+        cancelAdd.addEventListener('click', () => {
+            addModalBg.classList.remove('show');
+        });
+    }
+    if (cancelEdit && editModalBg) {
+        cancelEdit.addEventListener('click', () => {
+            editModalBg.classList.remove('show');
+        });
+    }
+    if (cancelBatch && batchModalBg) {
+        cancelBatch.addEventListener('click', function() {
+            batchModalBg.classList.remove('show');
+        });
+    }
+
+    // Click outside to close modals
+    [addModalBg, editModalBg, batchModalBg].forEach(modal => {
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        }
+    });
+
+    // Content type change handlers
+    const addContentType = document.getElementById('addContentType');
+    if (addContentType) {
+        addContentType.addEventListener('change', function() {
+            updateContentFields(0, this.value, true);
+        });
+    }
+
+    // XML Batch Upload Functionality
+    const batchXmlFiles = document.getElementById('batchXmlFiles');
+    const batchDropzone = document.getElementById('batchDropzone');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const fileList = document.getElementById('fileList');
+    const uploadXmlBtn = document.getElementById('uploadXmlBtn');
+
+    if (batchXmlFiles && batchDropzone) {
+        // Handle file selection
+        batchXmlFiles.addEventListener('change', function(e) {
+            handleFileSelection(e.target.files);
+        });
+
+        // Handle drag and drop
+        batchDropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        batchDropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+
+        batchDropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            handleFileSelection(files);
+            batchXmlFiles.files = files; // Update the input's files
+        });
+    }
+
+    function handleFileSelection(files) {
+        if (!files || files.length === 0) {
+            selectedFiles.style.display = 'none';
+            uploadXmlBtn.disabled = true;
+            return;
+        }
+
+        // Filter only XML files
+        const xmlFiles = Array.from(files).filter(file => 
+            file.name.toLowerCase().endsWith('.xml')
+        );
+
+        if (xmlFiles.length === 0) {
+            alert('Please select only XML files.');
+            return;
+        }
+
+        // Show selected files
+        selectedFiles.style.display = 'block';
+        fileList.innerHTML = '';
+        
+        xmlFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.style.cssText = 'padding: 8px 12px; background: #f8f9fa; margin-bottom: 5px; border-radius: 5px; border-left: 3px solid #667eea; display: flex; justify-content: space-between; align-items: center;';
+            li.innerHTML = `
+                <span>📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)</span>
+                <button type="button" onclick="removeFile(${index})" style="background: #dc3545; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; font-size: 12px;">×</button>
+            `;
+            fileList.appendChild(li);
+        });
+
+        uploadXmlBtn.disabled = false;
+        uploadXmlBtn.textContent = `Upload ${xmlFiles.length} XML File${xmlFiles.length > 1 ? 's' : ''}`;
+    }
+
+    // Make removeFile function global for the onclick handler
+    window.removeFile = function(index) {
+        // This is a simplified version - in a real implementation,
+        // you'd need to maintain a separate array of files
+        const currentFiles = Array.from(batchXmlFiles.files);
+        const newFileList = new DataTransfer();
+        
+        currentFiles.forEach((file, i) => {
+            if (i !== index && file.name.toLowerCase().endsWith('.xml')) {
+                newFileList.items.add(file);
             }
-        }
-    };
-    
-    // Debug function - commented out since feature is working
-    /*
-    window.testFormSubmission = function() {
-        console.log('Test form submission triggered');
-        const form = document.getElementById('addModuleForm');
-        if (form) {
-            // Clone the form data
-            const formData = new FormData(form);
-            
-            // Log form data
-            console.log('Form data being sent:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
-            
-            fetch('/admin/modules', { // Changed to a safe route that exists
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return response.json();
-            })
-            .then(data => {
-                console.log('Test submission response:', data);
-                alert('Test submission successful! Check console for details.');
-            })
-            .catch(error => {
-                console.error('Test submission error:', error);
-                console.error('Error details:', error.message);
-                alert(`Test submission failed! Error: ${error.message}. Check console for details.`);
-            });
-        } else {
-            console.error('Form not found!');
-            alert('Form not found!');
-        }
-    };
-    */
-    
-    // Complete debugging function
-    window.debugFormState = function() {
-        console.log('=== FORM DEBUG START ===');
+        });
         
-        const form = document.getElementById('addModuleForm');
-        console.log('Form element:', form);
-        
-        if (form) {
-            console.log('Form action:', form.action);
-            console.log('Form method:', form.method);
-            console.log('Form enctype:', form.enctype);
-            
-            const inputs = form.querySelectorAll('input, select, textarea');
-            console.log('Form inputs:', inputs.length);
-            
-            inputs.forEach((input, index) => {
-                console.log(`Input ${index}:`, {
-                    name: input.name,
-                    type: input.type,
-                    value: input.value,
-                    required: input.required,
-                    valid: input.checkValidity()
-                });
-            });
-            
-            const csrfToken = form.querySelector('input[name="_token"]');
-            console.log('CSRF Token:', csrfToken ? csrfToken.value : 'NOT FOUND');
-            
-            console.log('Form validity:', form.checkValidity());
-            
-            // Test simple fetch to check server connection
-            fetch('/admin/modules', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                console.log('Server connection test - Status:', response.status);
-                console.log('Server connection test - OK:', response.ok);
-            })
-            .catch(error => {
-                console.error('Server connection test failed:', error);
-            });
-        }
-        
-        console.log('Current URL:', window.location.href);
-        console.log('Base URL:', window.location.origin);
-        console.log('=== FORM DEBUG END ===');
+        batchXmlFiles.files = newFileList.files;
+        handleFileSelection(batchXmlFiles.files);
     };
-    
-    // Test actual form route
-    window.testActualSubmission = function() {
-        console.log('Testing actual form submission route');
-        const form = document.getElementById('addModuleForm');
-        if (form) {
-            const formData = new FormData(form);
-            
-            fetch('{{ route("admin.modules.store") }}', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                console.log('Actual route response status:', response.status);
-                console.log('Actual route response ok:', response.ok);
-                
-                if (response.redirected) {
-                    console.log('Response was redirected to:', response.url);
-                    alert('Form submission worked! Response was redirected (likely success).');
-                } else if (response.ok) {
-                    return response.text();
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-            })
-            .then(data => {
-                if (data) {
-                    console.log('Response data:', data);
-                    alert('Form submission completed. Check console for details.');
-                }
-            })
-            .catch(error => {
-                console.error('Actual route error:', error);
-                alert(`Actual route test failed: ${error.message}`);
-            });
-        }
-    };
+
+    console.log('Module initialization complete');
 });
 </script>
 @endpush
-
-@section('head')
-<style>
-    /* Specific fixes for the Add Content modal to ensure it displays correctly */
-    #addModalBg {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 9999 !important;
-        align-items: center;
-        justify-content: center;
-        overflow-y: auto;
-    }
-    
-    #addModalBg.show {
-        display: flex !important;
-    }
-    
-    #addModalBg .modal {
-        position: relative !important;
-        display: block !important;
-        background-color: white;
-        padding: 30px;
-        border-radius: 15px;
-        max-width: 500px;
-        width: 90%;
-        margin: 1.75rem auto !important;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        z-index: 10000 !important;
-        transform: none !important;
-        opacity: 1 !important;
-        transition: transform 0.3s ease-out !important;
-        pointer-events: auto !important;
-    }
-</style>
-@endsection
