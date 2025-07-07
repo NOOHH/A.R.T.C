@@ -1,7 +1,8 @@
 @extends('admin.admin-dashboard-layout')
 
 @section('title', 'List of Students')
-
+<style>
+    </style>
 @section('content')
 <div class="container-fluid py-4">
     <div class="row">
@@ -32,5 +33,8 @@
 @endsection
 
 @push('styles')
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
 @endpush
