@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Director;
 use App\Models\Program;
+use App\Http\Controllers\UnifiedLoginController;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -31,15 +32,22 @@ class AdminDirectorController extends Controller
         $validated = $request->validate([
             'directors_first_name' => 'required|string|max:100',
             'directors_last_name' => 'required|string|max:100',
-            'directors_email' => 'required|email|unique:directors,directors_email',
+            'directors_email' => 'required|email',
             'directors_password' => 'required|string|min:6',
             'program_access' => 'required',
         ]);
 
-        $validated['directors_password'] = bcrypt($validated['directors_password']);
+        // Check email uniqueness across all user tables
+        if (!UnifiedLoginController::isEmailUnique($validated['directors_email'])) {
+            return back()->withErrors(['directors_email' => 'This email address is already registered in the system.'])->withInput();
+        }
+
+        // Store plain text password - will be hashed on first login
+        $plainPassword = $validated['directors_password'];
+        $validated['directors_password'] = $plainPassword; // Store as plain text initially
         
         // Get admin_id from session or set a default value for testing
-        $admin_id = session('admin_id') ?? session('admin.admin_id') ?? auth()->id() ?? 1;
+        $admin_id = session('user_id') ?? session('admin_id') ?? auth()->id() ?? 1;
         $validated['admin_id'] = $admin_id;
         
         $validated['directors_name'] = $validated['directors_first_name'] . ' ' . $validated['directors_last_name'];
@@ -49,6 +57,14 @@ class AdminDirectorController extends Controller
         $validated['has_all_program_access'] = is_array($programAccess) ? in_array('all', $programAccess) : $programAccess === 'all';
 
         $director = Director::create($validated);
+
+        // Sync to users table for email uniqueness tracking
+        UnifiedLoginController::syncToUsersTable(
+            $validated['directors_email'], 
+            $validated['directors_name'], 
+            'director',
+            $plainPassword
+        );
 
         // Handle program assignment
         if (!$validated['has_all_program_access']) {
@@ -71,11 +87,11 @@ class AdminDirectorController extends Controller
 
         // Check if request is from modal (AJAX/modal submission)
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Director added successfully!']);
+            return response()->json(['success' => true, 'message' => 'Director added successfully! They can now log in using the main login page.']);
         }
 
         return redirect()->route('admin.directors.index')
-            ->with('success', 'Director added successfully!');
+            ->with('success', 'Director added successfully! They can now log in using the main login page.');
     }
 
     public function show(Director $director)

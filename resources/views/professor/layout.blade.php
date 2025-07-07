@@ -63,7 +63,7 @@
                 <div class="position-sticky pt-3">
                     <div class="text-center mb-4">
                         <h4 class="text-white">Professor Portal</h4>
-                        <small class="text-light">{{ auth()->user()->full_name ?? 'Professor' }}</small>
+                        <small class="text-light">{{ session('professor_name', 'Professor') }}</small>
                     </div>
                     
                     <ul class="nav flex-column">
@@ -82,13 +82,44 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link {{ request()->routeIs('professor.students*') ? 'active' : '' }}" 
+                               href="{{ route('professor.students') }}">
+                                <i class="bi bi-people me-2"></i>
+                                Student Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('professor.attendance*') ? 'active' : '' }}" 
+                               href="{{ route('professor.attendance') }}">
+                                <i class="bi bi-check2-square me-2"></i>
+                                Attendance
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('professor.grading*') ? 'active' : '' }}" 
+                               href="{{ route('professor.grading') }}">
+                                <i class="bi bi-award me-2"></i>
+                                Grading
+                            </a>
+                        </li>
+                        @if(isset($aiQuizEnabled) && $aiQuizEnabled)
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('professor.quiz-generator*') ? 'active' : '' }}" 
+                               href="{{ route('professor.quiz-generator') }}">
+                                <i class="bi bi-robot me-2"></i>
+                                AI Quiz Generator
+                            </a>
+                        </li>
+                        @endif
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('professor.profile*') ? 'active' : '' }}" 
+                               href="{{ route('professor.profile') }}">
                                 <i class="bi bi-person-circle me-2"></i>
                                 Profile
                             </a>
                         </li>
                         <li class="nav-item mt-3">
-                            <form method="POST" action="{{ route('logout') }}">
+                            <form method="POST" action="{{ route('professor.logout') }}">
                                 @csrf
                                 <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start">
                                     <i class="bi bi-box-arrow-right me-2"></i>

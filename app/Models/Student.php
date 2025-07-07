@@ -103,6 +103,18 @@ class Student extends Model
         return $this->hasMany(\App\Models\ModuleCompletion::class, 'student_id', 'student_id');
     }
     
+    // Get attendance records for this student
+    public function attendanceRecords()
+    {
+        return $this->hasMany(Attendance::class, 'student_id', 'student_id');
+    }
+    
+    // Get grades for this student
+    public function grades()
+    {
+        return $this->hasMany(StudentGrade::class, 'student_id', 'student_id');
+    }
+    
     // Get all completed module IDs for this student
     public function getCompletedModuleIdsAttribute()
     {

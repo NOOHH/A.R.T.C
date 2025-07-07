@@ -60,7 +60,7 @@
 
     <!-- Quick Actions -->
     <div class="row mb-4">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">
                     <i class="bi bi-collection text-primary" style="font-size: 3rem;"></i>
@@ -70,26 +70,72 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">
-                    <i class="bi bi-camera-video text-success" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Upload Videos</h5>
-                    <p class="card-text">Add or update video content for your programs.</p>
-                    <a href="{{ route('professor.programs') }}" class="btn btn-success">Manage Videos</a>
+                    <i class="bi bi-check2-square text-success" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Attendance</h5>
+                    <p class="card-text">Track and manage student attendance.</p>
+                    <a href="{{ route('professor.attendance') }}" class="btn btn-success">Manage Attendance</a>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-award text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Grading</h5>
+                    <p class="card-text">Evaluate and assign grades to students.</p>
+                    <a href="{{ route('professor.grading') }}" class="btn btn-warning">Manage Grades</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">
                     <i class="bi bi-person-circle text-info" style="font-size: 3rem;"></i>
                     <h5 class="card-title mt-3">Profile</h5>
                     <p class="card-text">Update your profile information and settings.</p>
-                    <a href="#" class="btn btn-info">Edit Profile</a>
+                    <a href="{{ route('professor.profile') }}" class="btn btn-info">Edit Profile</a>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Additional Tools -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-camera-video text-secondary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Upload Videos</h5>
+                    <p class="card-text">Add or update video content for your programs.</p>
+                    <a href="{{ route('professor.programs') }}" class="btn btn-secondary">Manage Videos</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people text-dark" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Students</h5>
+                    <p class="card-text">View and manage your students.</p>
+                    <a href="{{ route('professor.students') }}" class="btn btn-dark">View Students</a>
+                </div>
+            </div>
+        </div>
+        @if($aiQuizEnabled ?? false)
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-robot text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">AI Quiz Generator</h5>
+                    <p class="card-text">Generate quizzes from uploaded documents using AI.</p>
+                    <a href="{{ route('professor.quiz-generator') }}" class="btn btn-danger">Generate Quiz</a>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- Recent Programs -->
