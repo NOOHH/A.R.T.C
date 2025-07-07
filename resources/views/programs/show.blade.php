@@ -14,14 +14,16 @@
     gap: 20px;
     align-items: flex-start;
     margin: 40px auto;
-    max-width: 1400px;
+    margin-right: -200px;
+    margin-left: 200px;
+    max-width: 900px;
     padding: 0 20px;
 }
 
 .program-content {
     background: white;
     border-radius: 20px;
-    padding: 40px;
+    padding: 10px;
     flex: 1 1 60%;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }

@@ -119,7 +119,7 @@ body {
     color: black; /* Match navbar text color */
 }
 .dropdown:hover .dropdown-menu {
-    max-height: 120px; /* Reduced max height for smaller dropdown */
+    max-height: 220px; /* Reduced max height for smaller dropdown */
     padding: 8px 0; /* Less vertical padding */
 }
 .dropdown-menu a {
@@ -149,7 +149,7 @@ body {
     pointer-events: auto;
 }
 .dropdown-menu a:hover {
-    background: #e2d6f3; /* Slightly darker for hover, but still harmonious */
+    background: #797580; /* Slightly darker for hover, but still harmonious */
 }
 
 /* Main Section */

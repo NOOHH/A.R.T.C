@@ -1,6 +1,9 @@
 @extends('layouts.navbar')
 
 @section('title', 'Registration Successful')
+@section('hide_navbar', true)
+@section('hide_footer', true)
+
 
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -13,6 +16,7 @@
         align-items: center;
         justify-content: center;
         padding: 40px 20px;
+        margin-top: -100px;
     }
     
     .success-card {
@@ -22,6 +26,7 @@
         padding: 60px 40px;
         text-align: center;
         max-width: 600px;
+        max-height: 600px;
         width: 100%;
     }
     

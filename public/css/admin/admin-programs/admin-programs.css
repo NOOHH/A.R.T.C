@@ -225,8 +225,8 @@
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    align-items: center;
-    justify-content: center;
+    align-items: center; /* ✅ ensures vertical centering */
+    justify-content: center; /* ✅ ensures horizontal centering */
     z-index: 1000;
 }
 
@@ -241,8 +241,28 @@
     max-width: 500px;
     width: 100%;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.3s ease; /* optional smooth animation */
 }
 
+.modal-bg .modal {
+  display: block !important;
+  /* now your white box will appear */
+}
+
+
+.modal {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.3s ease;
+}
+
+.modal-bg.active .modal {
+    opacity: 1;
+    transform: scale(1);
+}
+/* General styles */
 /* Button styles */
 .view-enrollees-btn, .archive-btn {
     padding: 8px 12px;

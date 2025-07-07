@@ -4,6 +4,10 @@
 
 @push('styles')
 <style>
+  .modal-bg .modal {
+  display: block !important;
+  /* now your white box will appear */
+}
   /* Custom styles that complement Bootstrap */
   .modules-container {
     background: #fff;
