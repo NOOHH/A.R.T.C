@@ -39,6 +39,7 @@ class Professor extends Authenticatable
         'professor_name',
         'admin_id',
         'professor_archived',
+        'dynamic_data',
     ];
 
     /**
@@ -59,6 +60,7 @@ class Professor extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'professor_archived' => 'boolean',
+        'dynamic_data' => 'array',
     ];
 
     /**
@@ -201,6 +203,30 @@ class Professor extends Authenticatable
     public function admin()
     {
         return $this->belongsTo(Admin::class, 'admin_id');
+    }
+
+    /**
+     * Get attendance records created by this professor.
+     */
+    public function attendanceRecords()
+    {
+        return $this->hasMany(Attendance::class, 'professor_id', 'professor_id');
+    }
+
+    /**
+     * Get grades assigned by this professor.
+     */
+    public function gradesAssigned()
+    {
+        return $this->hasMany(StudentGrade::class, 'professor_id', 'professor_id');
+    }
+
+    /**
+     * Get quiz questions created by this professor.
+     */
+    public function quizQuestions()
+    {
+        return $this->hasMany(QuizQuestion::class, 'created_by_professor', 'professor_id');
     }
 
     /**

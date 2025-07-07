@@ -216,7 +216,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="archiveForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
+                <form id="archiveForm" action="" method="POST" style="display: inline;">
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="btn btn-warning">Archive</button>
@@ -240,7 +240,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
+                <form id="deleteForm" action="" method="POST" style="display: inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Delete</button>
@@ -260,8 +260,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const professorId = button.getAttribute('data-professor-id');
         const professorName = button.getAttribute('data-professor-name');
         
+        console.log('Archive modal - Professor ID:', professorId);
         document.getElementById('archiveProfessorName').textContent = professorName;
-        document.getElementById('archiveForm').action = `/admin/professors/${professorId}/archive`;
+        const actionUrl = `/admin/professors/${professorId}/archive`;
+        document.getElementById('archiveForm').action = actionUrl;
+        console.log('Archive form action set to:', actionUrl);
     });
 
     // Delete modal
@@ -270,8 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const professorId = button.getAttribute('data-professor-id');
         const professorName = button.getAttribute('data-professor-name');
         
+        console.log('Delete modal - Professor ID:', professorId);
         document.getElementById('deleteProfessorName').textContent = professorName;
-        document.getElementById('deleteForm').action = `/admin/professors/${professorId}`;
+        const actionUrl = `/admin/professors/${professorId}`;
+        document.getElementById('deleteForm').action = actionUrl;
+        console.log('Delete form action set to:', actionUrl);
     });
 
     // Videos modal

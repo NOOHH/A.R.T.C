@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,22 +51,23 @@
             </div>
         @endif
 
-       <form class="login-form" method="POST" action="{{ route('student.login') }}">
-    @csrf
-    <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
-    <label for="email">Enter your email address</label>
-    <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
+        <form class="login-form" method="POST" action="{{ route('login.submit') }}">
+            @csrf
+            <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
+            
+            <label for="email">Enter your email address</label>
+            <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
 
-    <label for="password">Enter your password</label>
-    <div class="input-row">
-        <input type="password" id="password" name="password" placeholder="at least 8 characters" required>
-        <span class="toggle-password" onclick="togglePassword()">👁️</span>
-    </div>
-    <a href="#" class="forgot">Forgot your password? Click here.</a>
-    <button type="submit">LOG IN</button>
-    <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
-    <div style="margin-top: 8px; font-size: 1em;">Don't have an account? <a href="#" class="register-link">Register here.</a></div>
-</form>
+            <label for="password">Enter your password</label>
+            <div class="input-row">
+                <input type="password" id="password" name="password" placeholder="at least 8 characters" required>
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+            <a href="#" class="forgot">Forgot your password? Click here.</a>
+            <button type="submit">LOG IN</button>
+            <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
+            <div style="margin-top: 8px; font-size: 1em;">Don't have an account? <a href="#" class="register-link">Register here.</a></div>
+        </form>
     </div>
     <script>
         function togglePassword() {

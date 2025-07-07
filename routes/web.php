@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\StudentLoginController;
+use App\Http\Controllers\UnifiedLoginController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
@@ -136,12 +136,16 @@ Route::get('/enrollment/modular', function () {
     return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules'));
 })->name('enrollment.modular');
 
-// Login page
-Route::get('/login', fn() => view('Login.login'))->name('login');
+// Unified login page and authentication for all user types
+Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [UnifiedLoginController::class, 'login'])->name('login.submit');
+Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout');
 
-// Student authentication routes
-Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login');
-Route::post('/student/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
+// Legacy routes (redirect to unified)
+Route::post('/student/login', function() {
+    return redirect()->route('login');
+})->name('student.login');
+Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name('student.logout');
 
 // Student dashboard and related routes  
 Route::middleware(['student.auth'])->group(function () {
@@ -512,6 +516,20 @@ Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminD
 
 /*
 |--------------------------------------------------------------------------
+| Director Dashboard Routes
+|--------------------------------------------------------------------------
+*/
+// Simple director dashboard (can be expanded later)
+Route::get('/director/dashboard', function() {
+    if (!session('logged_in') || session('user_role') !== 'director') {
+        return redirect()->route('login')->with('error', 'Please log in as a director.');
+    }
+    // For now, redirect to admin dashboard - can be customized later
+    return redirect()->route('admin.dashboard')->with('success', 'Welcome to the director area!');
+})->name('director.dashboard');
+
+/*
+|--------------------------------------------------------------------------
 | Admin Students List
 |--------------------------------------------------------------------------
 */
@@ -558,22 +576,22 @@ Route::get('/admin/professors/archived', [AdminProfessorController::class, 'arch
 Route::post('/admin/professors', [AdminProfessorController::class, 'store'])
      ->name('admin.professors.store');
 
-Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
+Route::get('/admin/professors/{professor_id}/edit', [AdminProfessorController::class, 'edit'])
      ->name('admin.professors.edit');
 
-Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
+Route::put('/admin/professors/{professor_id}', [AdminProfessorController::class, 'update'])
      ->name('admin.professors.update');
 
-Route::patch('/admin/professors/{professor}/archive', [AdminProfessorController::class, 'archive'])
+Route::patch('/admin/professors/{professor_id}/archive', [AdminProfessorController::class, 'archive'])
      ->name('admin.professors.archive');
 
-Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController::class, 'restore'])
+Route::patch('/admin/professors/{professor_id}/restore', [AdminProfessorController::class, 'restore'])
      ->name('admin.professors.restore');
 
-Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
+Route::delete('/admin/professors/{professor_id}', [AdminProfessorController::class, 'destroy'])
      ->name('admin.professors.destroy');
 
-Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
+Route::post('/admin/professors/{professor_id}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
      ->name('admin.professors.video.update');
 
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
@@ -582,10 +600,24 @@ Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsContro
 
 /*
 |--------------------------------------------------------------------------
+| Professor Authentication Routes (Redirected to Unified Login)
+|--------------------------------------------------------------------------
+*/
+// Redirect old professor login to unified login
+Route::get('/professor/login', function() {
+    return redirect()->route('login');
+})->name('professor.login');
+
+// Professor logout should use the unified logout
+Route::post('/professor/logout', [UnifiedLoginController::class, 'logout'])
+     ->name('professor.logout');
+
+/*
+|--------------------------------------------------------------------------
 | Professor Dashboard Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:professor'])
+Route::middleware(['professor.auth'])
      ->prefix('professor')
      ->name('professor.')
      ->group(function () {
@@ -601,6 +633,50 @@ Route::middleware(['auth:professor'])
 
     Route::post('/programs/{program}/video', [ProfessorDashboardController::class, 'updateVideo'])
          ->name('program.video.update');
+    
+    // Profile Management
+    Route::get('/profile', [ProfessorDashboardController::class, 'profile'])
+         ->name('profile');
+    Route::put('/profile', [ProfessorDashboardController::class, 'updateProfile'])
+         ->name('profile.update');
+    
+    // Student Management
+    Route::get('/students', [ProfessorDashboardController::class, 'studentList'])
+         ->name('students');
+    Route::post('/students/{student}/grade', [ProfessorDashboardController::class, 'gradeStudent'])
+         ->name('students.grade');
+    
+    // Attendance Management
+    Route::get('/attendance', [\App\Http\Controllers\ProfessorAttendanceController::class, 'index'])
+         ->name('attendance');
+    Route::post('/attendance', [\App\Http\Controllers\ProfessorAttendanceController::class, 'store'])
+         ->name('attendance.store');
+    Route::get('/attendance/reports', [\App\Http\Controllers\ProfessorAttendanceController::class, 'reports'])
+         ->name('attendance.reports');
+    
+    // Grading Management
+    Route::get('/grading', [\App\Http\Controllers\ProfessorGradingController::class, 'index'])
+         ->name('grading');
+    Route::post('/grading', [\App\Http\Controllers\ProfessorGradingController::class, 'store'])
+         ->name('grading.store');
+    Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
+         ->name('grading.update');
+    Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
+         ->name('grading.destroy');
+    Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
+         ->name('grading.student');
+    
+    // AI Quiz Generator (if enabled)
+    Route::get('/quiz-generator', [\App\Http\Controllers\AIQuizController::class, 'professorIndex'])
+         ->name('quiz-generator');
+    Route::post('/quiz-generator/generate', [\App\Http\Controllers\AIQuizController::class, 'generateQuiz'])
+         ->name('quiz-generator.generate');
+    Route::get('/quiz-generator/{quiz}/preview', [\App\Http\Controllers\AIQuizController::class, 'previewQuiz'])
+         ->name('quiz-generator.preview');
+    Route::get('/quiz-generator/{quiz}/export', [\App\Http\Controllers\AIQuizController::class, 'exportQuiz'])
+         ->name('quiz-generator.export');
+    Route::delete('/quiz-generator/{quiz}', [\App\Http\Controllers\AIQuizController::class, 'deleteQuiz'])
+         ->name('quiz-generator.delete');
 });
 
 /*
