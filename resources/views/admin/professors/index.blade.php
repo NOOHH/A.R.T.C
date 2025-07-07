@@ -216,7 +216,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="archiveForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
+                <form id="archiveForm" action="#" method="POST" style="display: inline;">
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="btn btn-warning">Archive</button>
@@ -240,7 +240,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" action="{{ route('admin.professors.index') }}" method="POST" style="display: inline;">
+                <form id="deleteForm" action="#" method="POST" style="display: inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Delete</button>

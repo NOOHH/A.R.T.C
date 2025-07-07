@@ -201,4 +201,30 @@ class AdminController extends Controller
             'history'       => true,
         ]);
     }
+
+    public function paymentPending()
+    {
+        // Get enrollments with pending payments
+        $enrollments = Enrollment::with(['student.user', 'program', 'package'])
+                                ->where('payment_status', 'pending')
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+
+        return view('admin.admin-payment-pending', [
+            'enrollments' => $enrollments,
+        ]);
+    }
+
+    public function paymentHistory()
+    {
+        // Get all enrollments with payment history
+        $enrollments = Enrollment::with(['student.user', 'program', 'package'])
+                                ->whereIn('payment_status', ['completed', 'failed', 'cancelled'])
+                                ->orderBy('updated_at', 'desc')
+                                ->get();
+
+        return view('admin.admin-payment-history', [
+            'enrollments' => $enrollments,
+        ]);
+    }
 }

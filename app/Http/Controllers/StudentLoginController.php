@@ -21,7 +21,44 @@ class StudentLoginController extends Controller
             'password' => 'required|string|min:6'
         ]);
 
-        // First, try to find in admins table
+        // Check users table first for student accounts
+        $user = User::where('email', $credentials['email'])->first();
+        
+        if ($user && Hash::check($credentials['password'], $user->password)) {
+            // Allow all users to access dashboard (students, unverified, etc.)
+            // Store user info in session for authentication
+            session([
+                'user_id' => $user->user_id,
+                'user_name' => $user->user_firstname . ' ' . $user->user_lastname,
+                'user_firstname' => $user->user_firstname,
+                'user_lastname' => $user->user_lastname,
+                'user_email' => $user->email,
+                'user_role' => $user->role,
+                'logged_in' => true
+            ]);
+
+            // Check if user is coming from enrollment process
+            if ($request->has('from_enrollment') && $request->from_enrollment === 'true') {
+                // Store email in session to help with auto-fill if needed
+                session(['user_email' => $user->email]);
+                
+                // Check if it's from modular enrollment
+                $referer = $request->headers->get('referer');
+                if (strpos($referer, 'modular') !== false) {
+                    return redirect()->route('enrollment.modular')
+                        ->with('success', 'Welcome back! Continue your enrollment process.');
+                }
+                
+                // Default to full enrollment (the most common case)
+                return redirect()->route('enrollment.full')
+                    ->with('success', 'Welcome back! Continue your enrollment process.');
+            }
+
+            // Default redirect to student dashboard
+            return redirect()->route('student.dashboard')->with('success', 'Welcome back!');
+        }
+
+        // If not found in users table, try admins table
         $admin = Admin::where('email', $credentials['email'])->first();
         
         if ($admin && Hash::check($credentials['password'], $admin->password)) {
@@ -33,50 +70,6 @@ class StudentLoginController extends Controller
                 'logged_in' => true
             ]);
             return redirect()->route('admin.dashboard')->with('success','Admin logged in!');
-        } 
-
-        // If not found in admins, try users table for students
-        $user = User::where('email', $credentials['email'])->first();
-
-        if ($user && Hash::check($credentials['password'], $user->password)) {
-            // Check if user has student role
-            if ($user->role === 'student') {
-                // Store user info in session for authentication
-                session([
-                    'user_id' => $user->user_id,
-                    'user_name' => $user->user_firstname . ' ' . $user->user_lastname,
-                    'user_firstname' => $user->user_firstname,
-                    'user_lastname' => $user->user_lastname,
-                    'user_email' => $user->email,
-                    'user_role' => $user->role,
-                    'logged_in' => true
-                ]);
-
-                // Check if user is coming from enrollment process
-                if ($request->has('from_enrollment') && $request->from_enrollment === 'true') {
-                    // Store email in session to help with auto-fill if needed
-                    session(['user_email' => $user->email]);
-                    
-                    // Check if it's from modular enrollment
-                    $referer = $request->headers->get('referer');
-                    if (strpos($referer, 'modular') !== false) {
-                        return redirect()->route('enrollment.modular')
-                            ->with('success', 'Welcome back! Continue your enrollment process.');
-                    }
-                    
-                    // Default to full enrollment (the most common case)
-                    return redirect()->route('enrollment.full')
-                        ->with('success', 'Welcome back! Continue your enrollment process.');
-                }
-
-                // Default redirect to student dashboard
-                return redirect()->route('student.dashboard')->with('success', 'Welcome back!');
-            } else {
-                // If user is unverified or has other role, deny access
-                return back()->withErrors([
-                    'email' => 'Your account is not verified or does not have proper access permissions.',
-                ])->withInput($request->only('email'));
-            }
         }
 
         return back()->withErrors([

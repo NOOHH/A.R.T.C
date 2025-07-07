@@ -134,6 +134,28 @@
         transform: translateY(-2px);
     }
     
+    /* Button states */
+    .resume-btn.pending {
+        background: #f39c12;
+        cursor: not-allowed;
+    }
+    
+    .resume-btn.payment-required {
+        background: #e74c3c;
+        animation: pulse 2s infinite;
+    }
+    
+    .resume-btn.rejected {
+        background: #95a5a6;
+        cursor: not-allowed;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
     /* Course enrollment info badges */
     .course-enrollment-info {
         margin: 10px 0;
@@ -225,7 +247,15 @@
                             <span>{{ $course['completed_modules'] ?? 0 }} / {{ $course['total_modules'] ?? 0 }} modules complete</span>
                         </div>
                     </div>
-                    <a href="{{ route('student.course', ['courseId' => $course['id']]) }}" class="resume-btn">Continue Learning</a>
+                    @if($course['button_action'] === '#')
+                        <button class="{{ $course['button_class'] }}" onclick="showStatusModal('{{ $course['enrollment_status'] }}', '{{ $course['name'] }}')" disabled>
+                            {{ $course['button_text'] }}
+                        </button>
+                    @else
+                        <a href="{{ $course['button_action'] }}" class="{{ $course['button_class'] }}">
+                            {{ $course['button_text'] }}
+                        </a>
+                    @endif
                 </div>
             @empty
                 <div class="no-courses">
@@ -267,4 +297,66 @@
         </div>
     </div>
 </div>
+
+<!-- Status Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalTitle">Enrollment Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="statusModalBody">
+                <!-- Content will be filled by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showStatusModal(status, courseName) {
+    const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+    const title = document.getElementById('statusModalTitle');
+    const body = document.getElementById('statusModalBody');
+    
+    let modalContent = '';
+    
+    switch(status) {
+        case 'pending':
+            title.textContent = 'Pending Verification';
+            modalContent = `
+                <div class="text-center">
+                    <i class="bi bi-hourglass-split text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Enrollment Under Review</h5>
+                    <p>Your enrollment for <strong>${courseName}</strong> is currently being reviewed by our administrators.</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Please wait for admin approval. You will be notified once your registration is verified.
+                    </div>
+                </div>
+            `;
+            break;
+        case 'rejected':
+            title.textContent = 'Enrollment Rejected';
+            modalContent = `
+                <div class="text-center">
+                    <i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Enrollment Rejected</h5>
+                    <p>Unfortunately, your enrollment for <strong>${courseName}</strong> has been rejected.</p>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Please contact our support team for more information.
+                    </div>
+                </div>
+            `;
+            break;
+    }
+    
+    body.innerHTML = modalContent;
+    modal.show();
+}
+</script>
 @endsection

@@ -54,6 +54,25 @@ class StudentDashboardController extends Controller
                     // Get completed modules count (you can implement this based on your completion tracking)
                     $completedCount = 0; // Implement based on your module completion logic
                     
+                    // Determine button text and action based on status
+                    $buttonText = 'Continue Learning';
+                    $buttonClass = 'resume-btn';
+                    $buttonAction = route('student.course', ['courseId' => $enrollment->program->program_id]);
+                    
+                    if ($enrollment->enrollment_status === 'pending') {
+                        $buttonText = 'Pending Verification';
+                        $buttonClass = 'resume-btn pending';
+                        $buttonAction = '#';
+                    } elseif ($enrollment->enrollment_status === 'approved' && $enrollment->payment_status !== 'paid') {
+                        $buttonText = 'Payment Required';
+                        $buttonClass = 'resume-btn payment-required';
+                        $buttonAction = route('student.course', ['courseId' => $enrollment->program->program_id]);
+                    } elseif ($enrollment->enrollment_status === 'rejected') {
+                        $buttonText = 'Enrollment Rejected';
+                        $buttonClass = 'resume-btn rejected';
+                        $buttonAction = '#';
+                    }
+                    
                     $courses[] = [
                         'id' => $enrollment->program->program_id,
                         'name' => $enrollment->program->program_name,
@@ -64,7 +83,12 @@ class StudentDashboardController extends Controller
                         'enrollment_type' => $enrollment->enrollment_type,
                         'package_name' => $enrollment->package->package_name ?? 'Unknown Package',
                         'total_modules' => $moduleCount,
-                        'completed_modules' => $completedCount
+                        'completed_modules' => $completedCount,
+                        'enrollment_status' => $enrollment->enrollment_status,
+                        'payment_status' => $enrollment->payment_status,
+                        'button_text' => $buttonText,
+                        'button_class' => $buttonClass,
+                        'button_action' => $buttonAction,
                     ];
                 }
             }
@@ -113,6 +137,7 @@ class StudentDashboardController extends Controller
         }
         
         // Check if student is enrolled in this program
+        $enrollment = null;
         $isEnrolled = false;
         if ($student) {
             // Check if student has any enrollment for this program
@@ -123,7 +148,24 @@ class StudentDashboardController extends Controller
         if ($student && !$isEnrolled) {
             return redirect()->route('student.dashboard')->with('error', 'You are not enrolled in this course.');
         }
+
+        // Check payment status
+        $paymentStatus = $enrollment ? $enrollment->payment_status : 'unpaid';
+        $enrollmentStatus = $enrollment ? $enrollment->enrollment_status : 'pending';
         
+        // If not paid or not approved, show paywall
+        if ($paymentStatus !== 'paid' || $enrollmentStatus !== 'approved') {
+            return view('student.paywall', compact(
+                'user', 
+                'program', 
+                'enrollment', 
+                'paymentStatus', 
+                'enrollmentStatus',
+                'courseId'
+            ));
+        }
+        
+        // Continue with normal course view if paid and approved
         // Get all modules for this program, ordered by creation date
         $modules = Module::where('program_id', $courseId)
                         ->orderBy('created_at', 'asc')

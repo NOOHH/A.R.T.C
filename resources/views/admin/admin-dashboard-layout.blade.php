@@ -79,6 +79,12 @@
                                 <li class="@if(Route::currentRouteName() === 'admin.student.registration.history') active @endif">
                                     <a href="{{ route('admin.student.registration.history') }}">History</a>
                                 </li>
+                                <li class="@if(Route::currentRouteName() === 'admin.student.registration.payment.pending') active @endif">
+                                    <a href="{{ route('admin.student.registration.payment.pending') }}">Payment Pending</a>
+                                </li>
+                                <li class="@if(Route::currentRouteName() === 'admin.student.registration.payment.history') active @endif">
+                                    <a href="{{ route('admin.student.registration.payment.history') }}">Payment History</a>
+                                </li>
                             </ul>
                         </li>
 

@@ -68,4 +68,78 @@ class StudentController extends Controller
             'ocr_suggestions' => $ocrSuggestions,
         ]);
     }
+
+    public function settings()
+    {
+        // Check if user is logged in via session
+        if (!session('logged_in') || !session('user_id')) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
+        // Check if user is a student
+        if (session('user_role') !== 'student') {
+            return redirect()->route('admin.dashboard')->with('error', 'Access denied.');
+        }
+
+        // Get user data from session
+        $userData = [
+            'user_id' => session('user_id'),
+            'user_firstname' => session('user_firstname'),
+            'user_lastname' => session('user_lastname'),
+            'user_email' => session('user_email'),
+            'user_name' => session('user_name'),
+            'user_role' => session('user_role')
+        ];
+
+        // Create a student object-like array to match the view expectations
+        $student = (object) [
+            'firstname' => session('user_firstname'),
+            'middlename' => session('user_middlename', ''),
+            'lastname' => session('user_lastname'),
+            'student_school' => session('user_school', ''),
+            'street_address' => session('user_address', ''),
+            'state_province' => session('user_state', ''),
+            'city' => session('user_city', ''),
+            'zipcode' => session('user_zip', ''),
+            'contact_number' => session('user_contact', ''),
+            'emergency_contact_number' => session('user_emergency_contact', ''),
+            'good_moral' => null,
+            'PSA' => null,
+            'Course_Cert' => null,
+            'TOR' => null,
+            'Cert_of_Grad' => null,
+            'photo_2x2' => null,
+            'Undergraduate' => false,
+            'Graduate' => false,
+            'program_name' => session('user_program', '')
+        ];
+
+        return view('student.settings', compact('userData', 'student'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        // Check authentication
+        if (!session('logged_in') || !session('user_id')) {
+            return redirect()->route('login')->with('error', 'Please log in to access this page.');
+        }
+
+        // Validate the input
+        $validated = $request->validate([
+            'user_firstname' => 'required|string|max:255',
+            'user_lastname' => 'required|string|max:255',
+            'user_email' => 'required|email|max:255',
+        ]);
+
+        // Here you would typically update the database
+        // For now, just update the session
+        session([
+            'user_firstname' => $validated['user_firstname'],
+            'user_lastname' => $validated['user_lastname'],
+            'user_email' => $validated['user_email'],
+            'user_name' => $validated['user_firstname'] . ' ' . $validated['user_lastname']
+        ]);
+
+        return redirect()->back()->with('success', 'Settings updated successfully!');
+    }
 }

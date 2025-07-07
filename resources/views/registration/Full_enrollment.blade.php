@@ -10,6 +10,148 @@
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
+<!-- Critical JavaScript functions for immediate availability -->
+<script>
+// Define critical functions immediately for onclick handlers
+function selectPackage(packageId, packageName, packagePrice) {
+    // Remove selection from all package cards
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Highlight selected package
+    if (event && event.target) {
+        event.target.closest('.package-card').classList.add('selected');
+    }
+    
+    // Store selection in global variable (will be defined in main script)
+    if (typeof window.selectedPackageId !== 'undefined') {
+        window.selectedPackageId = packageId;
+    }
+    
+    // Store package selection in session storage
+    sessionStorage.setItem('selectedPackageId', packageId);
+    sessionStorage.setItem('selectedPackageName', packageName);
+    sessionStorage.setItem('selectedPackagePrice', packagePrice);
+    
+    // Update hidden form input
+    const packageInput = document.querySelector('input[name="package_id"]');
+    if (packageInput) {
+        packageInput.value = packageId;
+    }
+    
+    // Show selected package display
+    const selectedDisplay = document.getElementById('selectedPackageName');
+    const selectedPackageDisplay = document.getElementById('selectedPackageDisplay');
+    if (selectedDisplay) selectedDisplay.textContent = packageName;
+    if (selectedPackageDisplay) selectedPackageDisplay.style.display = 'block';
+    
+    // Enable next button
+    const nextBtn = document.getElementById('packageNextBtn');
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.classList.add('enabled');
+    }
+}
+
+function scrollPackages(direction) {
+    const carousel = document.getElementById('packagesCarousel');
+    if (!carousel) return;
+    
+    const scrollAmount = 340; // Package card width + gap
+    
+    if (direction === 'left') {
+        carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+        carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+}
+
+function selectLearningMode(mode) {
+    // Remove selection from all learning mode cards
+    document.querySelectorAll('.learning-mode-card').forEach(card => {
+        card.style.border = '3px solid transparent';
+        card.style.boxShadow = 'none';
+    });
+    
+    // Highlight selected learning mode
+    if (event && event.target) {
+        const selectedCard = event.target.closest('.learning-mode-card');
+        if (selectedCard) {
+            selectedCard.style.border = '3px solid #667eea';
+            selectedCard.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
+        }
+    }
+    
+    // Update hidden input
+    const learningModeInput = document.getElementById('learning_mode');
+    if (learningModeInput) {
+        learningModeInput.value = mode;
+    }
+    
+    // Update display
+    const modeNames = {
+        'synchronous': 'Synchronous (Live Classes)',
+        'asynchronous': 'Asynchronous (Self-Paced)'
+    };
+    
+    const selectedDisplay = document.getElementById('selectedLearningModeName');
+    const displayContainer = document.getElementById('selectedLearningModeDisplay');
+    
+    if (selectedDisplay) selectedDisplay.textContent = modeNames[mode] || mode;
+    if (displayContainer) displayContainer.style.display = 'block';
+    
+    // Enable next button
+    const nextBtn = document.getElementById('learningModeNextBtn');
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+    }
+}
+
+function nextStep() {
+    console.log('nextStep called, current step:', typeof window.currentStep !== 'undefined' ? window.currentStep : 1);
+    
+    // If currentStep is not defined yet, default to 1
+    const currentStep = typeof window.currentStep !== 'undefined' ? window.currentStep : 1;
+    
+    if (currentStep === 1) {
+        // Go to learning mode selection
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        if (step1) step1.classList.remove('active');
+        if (step2) step2.classList.add('active');
+        if (typeof window.currentStep !== 'undefined') window.currentStep = 2;
+    } else if (currentStep === 2) {
+        // Check if user is logged in
+        const isLoggedIn = typeof window.isUserLoggedIn !== 'undefined' ? window.isUserLoggedIn : false;
+        if (isLoggedIn) {
+            // Skip to student registration
+            const step2 = document.getElementById('step-2');
+            const step4 = document.getElementById('step-4');
+            if (step2) step2.classList.remove('active');
+            if (step4) step4.classList.add('active');
+            if (typeof window.currentStep !== 'undefined') window.currentStep = 4;
+        } else {
+            // Go to account registration
+            const step2 = document.getElementById('step-2');
+            const step3 = document.getElementById('step-3');
+            if (step2) step2.classList.remove('active');
+            if (step3) step3.classList.add('active');
+            if (typeof window.currentStep !== 'undefined') window.currentStep = 3;
+        }
+    } else if (currentStep === 3) {
+        // Go to student registration
+        const step3 = document.getElementById('step-3');
+        const step4 = document.getElementById('step-4');
+        if (step3) step3.classList.remove('active');
+        if (step4) step4.classList.add('active');
+        if (typeof window.currentStep !== 'undefined') window.currentStep = 4;
+    }
+}
+</script>
+
 
 <style>
   .navbar > .container-fluid {
@@ -1020,67 +1162,8 @@
         </div>
     </div>
 
-    {{-- STEP 4: PAYMENT INFORMATION --}}
+    {{-- STEP 4: FULL STUDENT REGISTRATION --}}
     <div class="step" id="step-4">
-        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
-            PAYMENT INFORMATION
-        </h2>
-        
-        <div style="max-width: 600px; margin: 0 auto;">
-            <h3 style="margin-bottom: 20px;">Choose Payment Method</h3>
-            
-            <div class="payment-method" onclick="selectPaymentMethod('credit_card')">
-                <div class="payment-icon">💳</div>
-                <div>
-                    <h4 style="margin: 0 0 5px 0;">Credit/Debit Card</h4>
-                    <p style="margin: 0; color: #666; font-size: 14px;">Pay securely with your credit or debit card</p>
-                </div>
-            </div>
-            
-            <div class="payment-method" onclick="selectPaymentMethod('gcash')">
-                <div class="payment-icon">�</div>
-                <div>
-                    <h4 style="margin: 0 0 5px 0;">GCash</h4>
-                    <p style="margin: 0; color: #666; font-size: 14px;">Pay using your GCash mobile wallet</p>
-                </div>
-            </div>
-            
-            <div class="payment-method" onclick="selectPaymentMethod('bank_transfer')">
-                <div class="payment-icon">🏦</div>
-                <div>
-                    <h4 style="margin: 0 0 5px 0;">Bank Transfer</h4>
-                    <p style="margin: 0; color: #666; font-size: 14px;">Transfer payment directly to our bank account</p>
-                </div>
-            </div>
-            
-            <div class="payment-method" onclick="selectPaymentMethod('installment')">
-                <div class="payment-icon">📅</div>
-                <div>
-                    <h4 style="margin: 0 0 5px 0;">Installment Plan</h4>
-                    <p style="margin: 0; color: #666; font-size: 14px;">Pay in monthly installments</p>
-                </div>
-            </div>
-            
-            <div id="selectedPaymentDisplay" style="display: none; margin: 20px 0; padding: 15px; background: #e8f5e8; border-radius: 8px; text-align: center;">
-                <strong>Selected Payment Method: <span id="selectedPaymentName"></span></strong>
-            </div>
-            
-            <div style="display:flex; gap:16px; justify-content:center; margin-top: 30px;">
-                <button type="button" onclick="prevStep()" class="back-btn"
-                        style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
-                    Back
-                </button>
-                <button type="button" onclick="nextStep()" id="paymentNextBtn" disabled
-                        style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff; border:none; 
-                               border-radius:8px; padding:12px 40px; font-size:1.1rem; cursor:pointer; opacity: 0.5;">
-                    Next
-                </button>
-            </div>
-        </div>
-    </div>
-
-    {{-- STEP 5: FULL STUDENT REGISTRATION --}}
-    <div class="step" id="step-5">
         <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
             STUDENT FULL PROGRAM REGISTRATION
         </h2>
@@ -1177,7 +1260,7 @@
         <p style="color:#666; font-size:1.1rem; margin:0 0 30px; line-height:1.5;">{{ session('success') }}</p>
         
         <!-- Buttons -->
-        <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+        <div style="display:flex; gap:15px; justify-content:center, flex-wrap:wrap;">
           <button id="successOk" type="button" class="btn btn-primary btn-lg"
                  style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; padding:12px 30px; border-radius:10px; color:white; font-weight:600; cursor:pointer; transition:all 0.3s ease;">
             <i class="bi bi-house-door me-2"></i>Go to Homepage
@@ -1224,6 +1307,27 @@
   </style>
 @endif
 
+{{-- Warning Modal - Shows validation warnings --}}
+<div id="warningModal"
+     style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); 
+            display:none; justify-content:center; align-items:center; z-index:10000;">
+  <div class="warning-modal-content" style="background:white; border-radius:20px; max-width:500px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideIn 0.3s ease-out;">
+    <div style="background:linear-gradient(135deg, #FFA726 0%, #FF9800 100%); padding:30px; color:white;">
+      <i class="bi bi-exclamation-triangle" style="font-size:3rem; margin-bottom:15px;"></i>
+      <h3 style="margin:0; font-weight:600;">Warning</h3>
+    </div>
+    <div style="padding:30px;">
+      <p id="warningMessage" style="margin:0 0 25px 0; font-size:16px; color:#555; line-height:1.5;"></p>
+      <button onclick="closeWarningModal()" 
+              style="background:linear-gradient(135deg, #FFA726 0%, #FF9800 100%); color:white; border:none; 
+                     padding:12px 30px; border-radius:25px; font-size:16px; font-weight:600; 
+                     cursor:pointer; transition:all 0.3s ease; box-shadow:0 4px 15px rgba(255,152,0,0.3);">
+        OK
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Global variables (declared once at the top)
 let currentStep = 1;
@@ -1240,31 +1344,10 @@ const loggedInUserFirstname = '@if(session("user_firstname")){{ session("user_fi
 const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_lastname") }}@endif';
 const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
 
-// Package carousel functionality
-function scrollPackages(direction) {
-    const carousel = document.getElementById('packagesCarousel');
-    if (!carousel) return;
-    
-    const scrollAmount = 340; // Package card width + gap
-    
-    if (direction === 'left') {
-        carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    } else {
-        carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-}
+// Make functions globally accessible immediately
+window.selectedPackageId = selectedPackageId;
 
-// Keep the old function name for compatibility
-function slidePackages(direction) {
-    scrollPackages(direction === 1 ? 'right' : 'left');
-}
-
-function updateArrowStates() {
-    // This function is no longer needed with the new carousel but keeping for compatibility
-    return;
-}
-
-// Step navigation with animations
+// Add other essential functions for immediate access
 function nextStep() {
     console.log('Current step:', currentStep, 'User logged in:', isUserLoggedIn);
     
@@ -1275,8 +1358,8 @@ function nextStep() {
     } else if (currentStep === 2) {
         // From learning mode, check if user is logged in
         if (isUserLoggedIn) {
-            // Skip account registration and go directly to payment
-            console.log('User logged in - skipping to payment');
+            // Skip account registration and go directly to student registration
+            console.log('User logged in - skipping to student registration');
             animateStepTransition('step-2', 'step-4');
             currentStep = 4;
         } else {
@@ -1286,30 +1369,23 @@ function nextStep() {
             currentStep = 3;
         }
     } else if (currentStep === 3) {
-        // From account registration to payment
+        // From account registration to student registration
         copyAccountDataToStudentForm();
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
-    } else if (currentStep === 4) {
-        // From payment to student registration
-        animateStepTransition('step-4', 'step-5');
-        currentStep = 5;
         // Auto-fill user data if logged in
-        fillLoggedInUserData();
-        // Also auto-fill in case user comes directly to step 5
-        copyAccountDataToStudentForm();
+        setTimeout(() => {
+            fillLoggedInUserData();
+            copyAccountDataToStudentForm();
+        }, 300); // Delay to ensure DOM is ready after transition
     }
 }
 
 function prevStep() {
     console.log('Going back from step:', currentStep, 'User logged in:', isUserLoggedIn);
     
-    if (currentStep === 5) {
-        // From student registration back to payment
-        animateStepTransition('step-5', 'step-4', true);
-        currentStep = 4;
-    } else if (currentStep === 4) {
-        // From payment, check if user is logged in
+    if (currentStep === 4) {
+        // From student registration, check if user is logged in
         if (isUserLoggedIn) {
             // Skip account registration and go back to learning mode
             console.log('User logged in - going back to learning mode');
@@ -1332,108 +1408,6 @@ function prevStep() {
     }
 }
 
-function animateStepTransition(fromStepId, toStepId, isBack = false) {
-    const fromStep = document.getElementById(fromStepId);
-    const toStep = document.getElementById(toStepId);
-    
-    // Add slide-out class to current step
-    fromStep.classList.add(isBack ? 'slide-out-right' : 'slide-out-left');
-    
-    setTimeout(() => {
-        fromStep.classList.remove('active', 'slide-out-left', 'slide-out-right');
-        toStep.classList.add('active');
-    }, 250);
-}
-
-// Package Selection
-function selectPackage(packageId, packageName, packagePrice) {
-    // Remove selection from all package cards
-    document.querySelectorAll('.package-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Highlight selected package
-    event.target.closest('.package-card').classList.add('selected');
-    
-    // Store selection
-    selectedPackageId = packageId;
-    
-    // Store package selection in session storage
-    sessionStorage.setItem('selectedPackageId', packageId);
-    sessionStorage.setItem('selectedPackageName', packageName);
-    sessionStorage.setItem('selectedPackagePrice', packagePrice);
-    
-    // Update hidden input
-    const packageInput = document.querySelector('input[name="package_id"]');
-    if (packageInput) {
-        packageInput.value = packageId;
-    } else {
-        // Create hidden input if it doesn't exist
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = 'package_id';
-        hiddenInput.value = packageId;
-        document.querySelector('form').appendChild(hiddenInput);
-    }
-    
-    // Show selected package display with price
-    const selectedDisplay = document.getElementById('selectedPackageDisplay');
-    const selectedNameElement = document.getElementById('selectedPackageName');
-    const selectedPriceElement = document.getElementById('selectedPackagePrice');
-    
-    if (selectedNameElement) {
-        selectedNameElement.textContent = packageName;
-    }
-    
-    if (selectedPriceElement) {
-        selectedPriceElement.textContent = '₱' + parseFloat(packagePrice).toLocaleString('en-PH', {minimumFractionDigits: 2});
-    }
-    
-    if (selectedDisplay) {
-        selectedDisplay.style.display = 'block';
-    }
-    
-    // Enable next button
-    const nextBtn = document.getElementById('packageNextBtn');
-    if (nextBtn) {
-        nextBtn.disabled = false;
-        nextBtn.style.opacity = '1';
-    }
-    
-    console.log('Package selected:', packageId, packageName, packagePrice);
-}
-
-// Payment Method Selection
-function selectPaymentMethod(method) {
-    // Remove selection from all payment methods
-    document.querySelectorAll('.payment-method').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Highlight selected payment method
-    event.target.closest('.payment-method').classList.add('selected');
-    
-    // Store selection
-    selectedPaymentMethod = method;
-    
-    // Update display
-    const methodNames = {
-        'credit_card': 'Credit/Debit Card',
-        'gcash': 'GCash',
-        'bank_transfer': 'Bank Transfer',
-        'installment': 'Installment Plan'
-    };
-    
-    document.getElementById('selectedPaymentName').textContent = methodNames[method];
-    document.getElementById('selectedPaymentDisplay').style.display = 'block';
-    
-    // Enable next button
-    const nextBtn = document.getElementById('paymentNextBtn');
-    nextBtn.disabled = false;
-    nextBtn.style.opacity = '1';
-}
-
-// Learning Mode Selection
 function selectLearningMode(mode) {
     // Remove selection from all learning mode cards
     document.querySelectorAll('.learning-mode-card').forEach(card => {
@@ -1450,28 +1424,53 @@ function selectLearningMode(mode) {
     document.getElementById('learning_mode').value = mode;
     
     // Update display
-    const modeNames = {
-        'synchronous': 'Synchronous (Live Classes)',
-        'asynchronous': 'Asynchronous (Self-Paced)'
-    };
-    
-    document.getElementById('selectedLearningModeName').textContent = modeNames[mode];
+    document.getElementById('selectedLearningMode').textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
     document.getElementById('selectedLearningModeDisplay').style.display = 'block';
     
     // Enable next button
     const nextBtn = document.getElementById('learningModeNextBtn');
-    nextBtn.disabled = false;
-    nextBtn.style.opacity = '1';
-    nextBtn.style.cursor = 'pointer';
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+    }
 }
 
+// Make all functions globally accessible
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.selectLearningMode = selectLearningMode;
+
+// Keep the old function name for compatibility
+function slidePackages(direction) {
+    scrollPackages(direction === 1 ? 'right' : 'left');
+}
+
+function updateArrowStates() {
+    // This function is no longer needed with the new carousel but keeping for compatibility
+    return;
+}
+
+function animateStepTransition(fromStepId, toStepId, isBack = false) {
+    const fromStep = document.getElementById(fromStepId);
+    const toStep = document.getElementById(toStepId);
+    
+    // Add slide-out class to current step
+    fromStep.classList.add(isBack ? 'slide-out-right' : 'slide-out-left');
+    
+    setTimeout(() => {
+        fromStep.classList.remove('active', 'slide-out-left', 'slide-out-right');
+        toStep.classList.add('active');
+    }, 250);
+}
+
+// Payment Method Selection
 // Make functions globally accessible
 window.scrollPackages = scrollPackages;
 window.slidePackages = slidePackages;
 window.nextStep = nextStep;
 window.prevStep = prevStep;
 window.selectPackage = selectPackage;
-window.selectPaymentMethod = selectPaymentMethod;
 window.selectLearningMode = selectLearningMode;
 window.loginWithPackage = loginWithPackage;
 
@@ -1496,24 +1495,19 @@ function fillLoggedInUserData() {
     if (isUserLoggedIn) {
         console.log('Filling logged-in user data...');
         
-        // Auto-fill Step 5 (Full Student Registration) fields with logged-in user data
-        const firstnameField = document.getElementById('firstname');
-        const lastnameField = document.getElementById('lastname');
-        const middlenameField = document.getElementById('middlename');
-        const emailField = document.querySelector('input[name="email"]');
+        // Auto-fill Step 4 (Full Student Registration) fields with logged-in user data
+        const firstnameField = document.getElementById('First_Name');
+        const lastnameField = document.getElementById('Last_Name');
+        const middlenameField = document.getElementById('Middle_Name');
         
         // Use session data if available
         if (firstnameField && loggedInUserFirstname) {
             firstnameField.value = loggedInUserFirstname;
-            console.log('Auto-filled firstname from session:', loggedInUserFirstname);
+            console.log('Auto-filled First_Name from session:', loggedInUserFirstname);
         }
         if (lastnameField && loggedInUserLastname) {
             lastnameField.value = loggedInUserLastname;
-            console.log('Auto-filled lastname from session:', loggedInUserLastname);
-        }
-        if (emailField && loggedInUserEmail) {
-            emailField.value = loggedInUserEmail;
-            console.log('Auto-filled email from session:', loggedInUserEmail);
+            console.log('Auto-filled Last_Name from session:', loggedInUserLastname);
         }
         
         // Auto-fill other fields from student data if available
@@ -1541,7 +1535,7 @@ function fillLoggedInUserData() {
         });
         @endif
         
-        // Also auto-fill Step 2 (Account Registration) fields if user navigates back
+        // Also auto-fill Step 3 (Account Registration) fields if user navigates back
         const userFirstnameField = document.getElementById('user_firstname');
         const userLastnameField = document.getElementById('user_lastname');
         const userEmailField = document.getElementById('user_email');
@@ -1562,22 +1556,24 @@ function fillLoggedInUserData() {
 
 // Function to copy Account Registration data to Full Student Registration
 function copyAccountDataToStudentForm() {
-    // Get values from Step 2 (Account Registration)
+    // Get values from Step 3 (Account Registration)
     const userFirstname = document.getElementById('user_firstname')?.value || '';
     const userLastname = document.getElementById('user_lastname')?.value || '';
     const userEmail = document.getElementById('user_email')?.value || '';
     
-    // Set values in Step 4 (Full Student Registration)
-    const firstnameField = document.getElementById('firstname');
-    const lastnameField = document.getElementById('lastname');
+    console.log('Copying account data - firstname:', userFirstname, 'lastname:', userLastname, 'email:', userEmail);
+    
+    // Set values in Step 4 (Full Student Registration) - using field names from form requirements
+    const firstnameField = document.getElementById('First_Name');
+    const lastnameField = document.getElementById('Last_Name');
     
     if (firstnameField && userFirstname && !firstnameField.value) {
         firstnameField.value = userFirstname;
-        console.log('Auto-filled firstname:', userFirstname);
+        console.log('Auto-filled First_Name:', userFirstname);
     }
     if (lastnameField && userLastname && !lastnameField.value) {
         lastnameField.value = userLastname;
-        console.log('Auto-filled lastname:', userLastname);
+        console.log('Auto-filled Last_Name:', userLastname);
     }
     
     console.log('Auto-filled student registration fields from account data');
@@ -1935,6 +1931,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        }
+
         // Add event listener for checkbox change
         termsCheckbox.addEventListener('change', function() {
             enrollBtn.disabled = !this.checked;
@@ -2002,7 +2000,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (missingFields.length > 0) {
                 console.error('Missing required fields:', missingFields);
                 e.preventDefault();
-                alert('Please fill in all required fields: ' + missingFields.join(', '));
+                showWarningModal('Please fill in all required fields: ' + missingFields.join(', '));
                 return;
             }
             
@@ -2011,7 +2009,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (programSelect && !programSelect.value) {
                 console.error('No program selected');
                 e.preventDefault();
-                alert('Please select a program');
+                showWarningModal('Please select a program');
                 return;
             }
             
@@ -2020,7 +2018,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (packageInput && !packageInput.value) {
                 console.error('No package selected');
                 e.preventDefault();
-                alert('Please select a package');
+                showWarningModal('Please select a package');
                 return;
             }
             
@@ -2029,7 +2027,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (learningModeInput && !learningModeInput.value) {
                 console.error('No learning mode selected');
                 e.preventDefault();
-                alert('Please select a learning mode');
+                showWarningModal('Please select a learning mode');
                 return;
             }
             
@@ -2060,8 +2058,9 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     console.log('Form submission attempted');
     
     // Check if we're on the final step
-    if (currentStep !== 5) {
-        alert('Please complete all steps before enrolling.');
+    if (currentStep !== 4) {
+        // Show warning modal instead of alert
+        showWarningModal('Please complete all steps before enrolling.');
         return false;
     }
     
@@ -2096,7 +2095,7 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     }
     
     if (missingFields.length > 0) {
-        alert('Please fill in the following required fields:\n• ' + missingFields.join('\n• '));
+        showWarningModal('Please fill in the following required fields:\n• ' + missingFields.join('\n• '));
         return false;
     }
     
@@ -2105,6 +2104,56 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     this.submit();
 });
 
+// Warning modal functions
+function showWarningModal(message) {
+    const modal = document.getElementById('warningModal');
+    const messageElement = document.getElementById('warningMessage');
+    
+    if (messageElement) {
+        messageElement.textContent = message;
+    }
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
 
+function closeWarningModal() {
+    const modal = document.getElementById('warningModal');
+    
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Initialize prefill on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing prefill logic');
+    
+    // If user is logged in and we're on step 4, fill their data
+    if (isUserLoggedIn && currentStep === 4) {
+        fillLoggedInUserData();
+    }
+    
+    // Auto-fill step 4 when step becomes active (for transitions)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.id === 'step-4' && target.classList.contains('active')) {
+                    setTimeout(() => {
+                        fillLoggedInUserData();
+                        copyAccountDataToStudentForm();
+                    }, 100);
+                }
+            }
+        });
+    });
+    
+    const step4Element = document.getElementById('step-4');
+    if (step4Element) {
+        observer.observe(step4Element, { attributes: true });
+    }
+});
 </script>
 @endsection

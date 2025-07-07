@@ -139,6 +139,10 @@ Route::get('/enrollment/modular', function () {
 // Login page
 Route::get('/login', fn() => view('Login.login'))->name('login');
 
+// Signup page
+Route::get('/signup', [App\Http\Controllers\SignupController::class, 'showSignupForm'])->name('signup');
+Route::post('/signup', [App\Http\Controllers\SignupController::class, 'signup'])->name('user.signup');
+
 // Student authentication routes
 Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login');
 Route::post('/student/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
@@ -147,9 +151,14 @@ Route::post('/student/logout', [StudentLoginController::class, 'logout'])->name(
 Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
+    Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
+    
+    // Payment routes
+    Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
+    Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
 });
 
 /*
@@ -253,6 +262,12 @@ Route::get('/admin-student-registration/pending', [AdminController::class, 'stud
      ->name('admin.student.registration.pending');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
+
+// Payment management routes
+Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
+     ->name('admin.student.registration.payment.pending');
+Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
+     ->name('admin.student.registration.payment.history');
 
 // View one student registration’s details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
