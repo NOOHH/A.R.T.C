@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use App\Models\FormRequirement;
 use App\Models\UiSetting;
+use App\Models\AdminSetting;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -1087,6 +1088,70 @@ class AdminSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Error saving all settings: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function updateProfessorFeatures(Request $request)
+    {
+        $request->validate([
+            'ai_quiz_enabled' => 'nullable|boolean',
+            'grading_enabled' => 'nullable|boolean', 
+            'upload_videos_enabled' => 'nullable|boolean',
+            'attendance_enabled' => 'nullable|boolean',
+            'view_programs_enabled' => 'nullable|boolean',
+        ]);
+
+        try {
+            // Use AdminSetting model to store professor feature settings
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'ai_quiz_enabled'],
+                ['setting_value' => $request->input('ai_quiz_enabled', false) ? 'true' : 'false']
+            );
+
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'grading_enabled'],
+                ['setting_value' => $request->input('grading_enabled', true) ? 'true' : 'false']
+            );
+
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'upload_videos_enabled'],
+                ['setting_value' => $request->input('upload_videos_enabled', true) ? 'true' : 'false']
+            );
+
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'attendance_enabled'],
+                ['setting_value' => $request->input('attendance_enabled', true) ? 'true' : 'false']
+            );
+
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'view_programs_enabled'],
+                ['setting_value' => $request->input('view_programs_enabled', true) ? 'true' : 'false']
+            );
+
+            return back()->with('success', 'Professor feature settings updated successfully!');
+
+        } catch (\Exception $e) {
+            Log::error('Error updating professor feature settings: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update settings. Please try again.');
+        }
+    }
+
+    public function getProfessorFeatures()
+    {
+        try {
+            $features = [
+                'ai_quiz_enabled' => AdminSetting::where('setting_key', 'ai_quiz_enabled')->value('setting_value') === 'true',
+                'grading_enabled' => AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false',
+                'upload_videos_enabled' => AdminSetting::where('setting_key', 'upload_videos_enabled')->value('setting_value') !== 'false',
+                'attendance_enabled' => AdminSetting::where('setting_key', 'attendance_enabled')->value('setting_value') !== 'false',
+                'view_programs_enabled' => AdminSetting::where('setting_key', 'view_programs_enabled')->value('setting_value') !== 'false',
+            ];
+
+            return response()->json($features);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting professor features: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load settings'], 500);
         }
     }
 }

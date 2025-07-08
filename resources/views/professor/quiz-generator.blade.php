@@ -226,29 +226,192 @@
     </div>
 </div>
 
+<!-- AI-Generated Quiz Modal with Edit Capability -->
+<div class="modal fade" id="editQuizModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Review and Edit Generated Quiz</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="editQuizContent">
+                <!-- Quiz content will be loaded here for editing -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="regenerateQuiz()">
+                    <i class="bi bi-arrow-clockwise"></i> Regenerate
+                </button>
+                <button type="button" class="btn btn-success" onclick="approveQuiz()">
+                    <i class="bi bi-check-circle"></i> Approve & Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-document.getElementById('quizForm').addEventListener('submit', function() {
+// Enhanced quiz generation with modal preview
+let currentQuizData = null;
+
+function showQuizPreview(quizData) {
+    currentQuizData = quizData;
+    
+    let html = `
+        <div class="quiz-preview-edit">
+            <div class="mb-3">
+                <label class="form-label">Quiz Title</label>
+                <input type="text" class="form-control" id="editQuizTitle" value="${quizData.title}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Instructions</label>
+                <textarea class="form-control" id="editQuizInstructions" rows="2">${quizData.instructions || ''}</textarea>
+            </div>
+            <hr>
+            <h6>Questions (Click to edit)</h6>
+            <div id="questionsContainer">`;
+    
+    quizData.questions.forEach((question, index) => {
+        html += `
+            <div class="question-edit-card mb-3 p-3 border rounded" data-question-index="${index}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h6 class="mb-2">Question ${index + 1}</h6>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" onclick="editQuestion(${index})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteQuestion(${index})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="question-text">${question.question}</p>
+                <div class="options-preview">`;
+        
+        if (question.type === 'multiple_choice') {
+            Object.entries(question.options).forEach(([key, option]) => {
+                const isCorrect = key === question.correct_answer;
+                html += `
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" disabled ${isCorrect ? 'checked' : ''}>
+                        <label class="form-check-label ${isCorrect ? 'text-success fw-bold' : ''}">
+                            ${key}. ${option}
+                        </label>
+                    </div>`;
+            });
+        } else {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" disabled ${question.correct_answer === 'A' ? 'checked' : ''}>
+                    <label class="form-check-label ${question.correct_answer === 'A' ? 'text-success fw-bold' : ''}">True</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" disabled ${question.correct_answer === 'B' ? 'checked' : ''}>
+                    <label class="form-check-label ${question.correct_answer === 'B' ? 'text-success fw-bold' : ''}">False</label>
+                </div>`;
+        }
+        
+        html += `
+                </div>
+                <small class="text-muted">Points: ${question.points || 1}</small>
+            </div>`;
+    });
+    
+    html += `
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="addNewQuestion()">
+                <i class="bi bi-plus"></i> Add Question
+            </button>
+        </div>`;
+    
+    document.getElementById('editQuizContent').innerHTML = html;
+    const modal = new bootstrap.Modal(document.getElementById('editQuizModal'));
+    modal.show();
+}
+
+function editQuestion(index) {
+    const question = currentQuizData.questions[index];
+    // Implementation for editing individual questions
+    console.log('Editing question:', question);
+}
+
+function deleteQuestion(index) {
+    if (confirm('Are you sure you want to delete this question?')) {
+        currentQuizData.questions.splice(index, 1);
+        showQuizPreview(currentQuizData);
+    }
+}
+
+function addNewQuestion() {
+    // Implementation for adding new questions
+    console.log('Adding new question');
+}
+
+function regenerateQuiz() {
+    if (confirm('This will generate new questions. Continue?')) {
+        // Re-submit the form to regenerate
+        document.getElementById('quizForm').submit();
+    }
+}
+
+function approveQuiz() {
+    // Update the form data with edited content
+    const editedTitle = document.getElementById('editQuizTitle').value;
+    const editedInstructions = document.getElementById('editQuizInstructions').value;
+    
+    // Create hidden inputs with the approved quiz data
+    const form = document.getElementById('quizForm');
+    
+    // Add approved flag
+    const approvedInput = document.createElement('input');
+    approvedInput.type = 'hidden';
+    approvedInput.name = 'approved_quiz';
+    approvedInput.value = JSON.stringify({
+        title: editedTitle,
+        instructions: editedInstructions,
+        questions: currentQuizData.questions
+    });
+    form.appendChild(approvedInput);
+    
+    // Submit the form
+    form.submit();
+}
+
+// Override the original form submission to show preview first
+document.getElementById('quizForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Show loading modal
     const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
     loadingModal.show();
     
-    document.getElementById('generateBtn').disabled = true;
+    // Simulate AI processing and show preview
+    setTimeout(() => {
+        loadingModal.hide();
+        
+        // Mock generated quiz data (in real implementation, this would come from server)
+        const mockQuizData = {
+            title: document.getElementById('quiz_title').value,
+            instructions: document.getElementById('instructions').value,
+            questions: [
+                {
+                    question: "Sample question generated from your document content?",
+                    type: "multiple_choice",
+                    options: {
+                        "A": "Correct answer based on document",
+                        "B": "Incorrect option",
+                        "C": "Another incorrect option", 
+                        "D": "Yet another incorrect option"
+                    },
+                    correct_answer: "A",
+                    points: 1
+                }
+                // Add more mock questions as needed
+            ]
+        };
+        
+        showQuizPreview(mockQuizData);
+    }, 3000);
 });
-
-function previewQuiz(quizId) {
-    fetch(`{{ route('professor.quiz-generator.preview', ':id') }}`.replace(':id', quizId))
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('previewContent').innerHTML = data.html;
-            const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-            modal.show();
-        })
-        .catch(error => {
-            alert('Error loading quiz preview');
-        });
-}
-
-function exportQuiz(quizId) {
-    window.open(`{{ route('professor.quiz-generator.export', ':id') }}`.replace(':id', quizId), '_blank');
-}
 </script>
 @endsection

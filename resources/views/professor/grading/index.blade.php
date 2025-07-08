@@ -1,13 +1,13 @@
 @extends('professor.layout')
 
-@section('title', 'Grade Management')
+@section('title', 'Grading Management')
 
 @section('content')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Grade Management</h2>
+                <h2><i class="bi bi-clipboard-check"></i> Grading Management</h2>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGradeModal">
                     <i class="bi bi-plus-circle"></i> Add Grade
                 </button>

@@ -7,6 +7,7 @@ use App\Models\Program;
 use App\Models\Student;
 use App\Models\AdminSetting;
 use App\Models\FormRequirement;
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -65,7 +66,7 @@ class ProfessorDashboardController extends Controller
     public function programDetails($programId)
     {
         $professor = Professor::find(session('professor_id'));
-        $program = $professor->programs()->where('program_id', $programId)->with(['modules'])->firstOrFail();
+        $program = $professor->programs()->where('professor_program.program_id', $programId)->with(['modules'])->firstOrFail();
         
         // Calculate students for this program
         $program->students = Student::whereHas('enrollments', function ($query) use ($program) {
@@ -73,7 +74,7 @@ class ProfessorDashboardController extends Controller
         })->get();
         
         // Get the video for this professor-program combination
-        $videoData = $professor->programs()->where('program_id', $programId)->first()->pivot;
+        $videoData = $professor->programs()->where('professor_program.program_id', $programId)->first()->pivot;
         
         return view('professor.program-details', compact('professor', 'program', 'videoData'));
     }
@@ -94,7 +95,20 @@ class ProfessorDashboardController extends Controller
             'updated_at' => now()
         ]);
 
-        return redirect()->back()->with('success', 'Video link updated successfully!');
+        // Create announcement for students about the new video
+        $program = Program::find($programId);
+        
+        Announcement::create([
+            'professor_id' => $professor->professor_id,
+            'program_id' => $programId,
+            'title' => 'New Video Available: ' . $program->program_name,
+            'content' => $request->video_description ?? 'A new video has been uploaded for this program.',
+            'type' => 'video',
+            'video_link' => $request->video_link,
+            'is_active' => true,
+        ]);
+
+        return redirect()->back()->with('success', 'Video link updated successfully and announcement sent to students!');
     }
 
     public function profile()

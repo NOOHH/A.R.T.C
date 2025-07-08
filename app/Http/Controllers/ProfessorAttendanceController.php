@@ -19,7 +19,7 @@ class ProfessorAttendanceController extends Controller
     public function index(Request $request)
     {
         $professor = Professor::find(session('professor_id'));
-        $assignedPrograms = $professor->programs()->with(['students'])->get();
+        $assignedPrograms = $professor->programs()->get();
         
         $selectedProgramId = $request->get('program_id');
         $selectedDate = $request->get('date', Carbon::today()->format('Y-m-d'));

@@ -12,6 +12,21 @@
 
 <!-- Critical JavaScript functions for immediate availability -->
 <script>
+// Global variables (declare first for immediate availability)
+let currentStep = 1;
+let selectedPackageId = null;
+let selectedPaymentMethod = null;
+let currentPackageIndex = 0;
+let packagesPerView = 2;
+let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
+
+// Check if user is logged in (set from server)
+const isUserLoggedIn = @if(session('user_id')) true @else false @endif;
+const loggedInUserName = '@if(session("user_name")){{ session("user_name") }}@endif';
+const loggedInUserFirstname = '@if(session("user_firstname")){{ session("user_firstname") }}@endif';
+const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_lastname") }}@endif';
+const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
+
 // Define critical functions immediately for onclick handlers
 function selectPackage(packageId, packageName, packagePrice) {
     // Remove selection from all package cards
@@ -24,10 +39,11 @@ function selectPackage(packageId, packageName, packagePrice) {
         event.target.closest('.package-card').classList.add('selected');
     }
     
-    // Store selection in global variable (will be defined in main script)
-    if (typeof window.selectedPackageId !== 'undefined') {
-        window.selectedPackageId = packageId;
-    }
+    // Store selection in global variable
+    selectedPackageId = packageId;
+    window.selectedPackageId = packageId;
+    
+    console.log('Package selected:', packageId, packageName); // Debug log
     
     // Store package selection in session storage
     sessionStorage.setItem('selectedPackageId', packageId);
@@ -51,6 +67,8 @@ function selectPackage(packageId, packageName, packagePrice) {
     if (nextBtn) {
         nextBtn.disabled = false;
         nextBtn.classList.add('enabled');
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
     }
 }
 
@@ -68,25 +86,29 @@ function scrollPackages(direction) {
 }
 
 function selectLearningMode(mode) {
+    console.log('Selecting learning mode:', mode);
+    
     // Remove selection from all learning mode cards
     document.querySelectorAll('.learning-mode-card').forEach(card => {
         card.style.border = '3px solid transparent';
         card.style.boxShadow = 'none';
     });
     
-    // Highlight selected learning mode
-    if (event && event.target) {
-        const selectedCard = event.target.closest('.learning-mode-card');
-        if (selectedCard) {
-            selectedCard.style.border = '3px solid #667eea';
-            selectedCard.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
-        }
+    // Highlight selected learning mode using data attribute
+    const selectedCard = document.querySelector(`[data-mode="${mode}"]`);
+    if (selectedCard) {
+        selectedCard.style.border = '3px solid #667eea';
+        selectedCard.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
+        console.log('Selected card highlighted:', selectedCard);
+    } else {
+        console.error('No card found for mode:', mode);
     }
     
     // Update hidden input
     const learningModeInput = document.getElementById('learning_mode');
     if (learningModeInput) {
         learningModeInput.value = mode;
+        console.log('Learning mode input updated:', mode);
     }
     
     // Update display
@@ -101,54 +123,178 @@ function selectLearningMode(mode) {
     if (selectedDisplay) selectedDisplay.textContent = modeNames[mode] || mode;
     if (displayContainer) displayContainer.style.display = 'block';
     
-    // Enable next button
+    // Enable next button with proper styling
     const nextBtn = document.getElementById('learningModeNextBtn');
     if (nextBtn) {
         nextBtn.disabled = false;
         nextBtn.style.opacity = '1';
         nextBtn.style.cursor = 'pointer';
+        nextBtn.style.background = 'linear-gradient(90deg,#a259c6,#6a82fb)';
+        nextBtn.classList.add('enabled');
+        console.log('Next button enabled and styled');
+    } else {
+        console.error('Next button not found');
     }
 }
 
 function nextStep() {
-    console.log('nextStep called, current step:', typeof window.currentStep !== 'undefined' ? window.currentStep : 1);
-    
-    // If currentStep is not defined yet, default to 1
-    const currentStep = typeof window.currentStep !== 'undefined' ? window.currentStep : 1;
+    console.log('nextStep called, current step:', currentStep);
+    console.log('selectedPackageId:', selectedPackageId);
+    console.log('window.selectedPackageId:', window.selectedPackageId);
     
     if (currentStep === 1) {
+        // Validate package selection with multiple checks
+        const packageInput = document.querySelector('input[name="package_id"]');
+        const sessionPackageId = sessionStorage.getItem('selectedPackageId');
+        
+        console.log('Package validation - selectedPackageId:', selectedPackageId);
+        console.log('Package validation - window.selectedPackageId:', window.selectedPackageId);
+        console.log('Package validation - packageInput.value:', packageInput?.value);
+        console.log('Package validation - sessionStorage:', sessionPackageId);
+        
+        if (!selectedPackageId && !window.selectedPackageId && !packageInput?.value && !sessionPackageId) {
+            showWarning('Please select a package before proceeding.');
+            return;
+        }
+        
+        // Ensure selectedPackageId is set if any other method has the value
+        if (!selectedPackageId && (window.selectedPackageId || packageInput?.value || sessionPackageId)) {
+            selectedPackageId = window.selectedPackageId || packageInput?.value || sessionPackageId;
+            console.log('Updated selectedPackageId to:', selectedPackageId);
+        }
+        
         // Go to learning mode selection
-        const step1 = document.getElementById('step-1');
-        const step2 = document.getElementById('step-2');
-        if (step1) step1.classList.remove('active');
-        if (step2) step2.classList.add('active');
-        if (typeof window.currentStep !== 'undefined') window.currentStep = 2;
+        animateStepTransition('step-1', 'step-2');
+        currentStep = 2;
     } else if (currentStep === 2) {
+        // Validate learning mode selection
+        const learningModeValue = document.getElementById('learning_mode')?.value;
+        if (!learningModeValue) {
+            showWarning('Please select a learning mode before proceeding.');
+            return;
+        }
         // Check if user is logged in
-        const isLoggedIn = typeof window.isUserLoggedIn !== 'undefined' ? window.isUserLoggedIn : false;
-        if (isLoggedIn) {
+        if (isUserLoggedIn) {
             // Skip to student registration
-            const step2 = document.getElementById('step-2');
-            const step4 = document.getElementById('step-4');
-            if (step2) step2.classList.remove('active');
-            if (step4) step4.classList.add('active');
-            if (typeof window.currentStep !== 'undefined') window.currentStep = 4;
+            console.log('User logged in - skipping to student registration');
+            animateStepTransition('step-2', 'step-4');
+            currentStep = 4;
+            // Auto-fill user data
+            setTimeout(() => {
+                fillLoggedInUserData();
+            }, 300);
         } else {
             // Go to account registration
-            const step2 = document.getElementById('step-2');
-            const step3 = document.getElementById('step-3');
-            if (step2) step2.classList.remove('active');
-            if (step3) step3.classList.add('active');
-            if (typeof window.currentStep !== 'undefined') window.currentStep = 3;
+            console.log('User not logged in - going to account registration');
+            animateStepTransition('step-2', 'step-3');
+            currentStep = 3;
         }
     } else if (currentStep === 3) {
+        // Validate account registration
+        if (!validateStep3()) {
+            showWarning('Please fill in all required fields correctly.');
+            return;
+        }
         // Go to student registration
-        const step3 = document.getElementById('step-3');
-        const step4 = document.getElementById('step-4');
-        if (step3) step3.classList.remove('active');
-        if (step4) step4.classList.add('active');
-        if (typeof window.currentStep !== 'undefined') window.currentStep = 4;
+        copyAccountDataToStudentForm();
+        animateStepTransition('step-3', 'step-4');
+        currentStep = 4;
+        // Auto-fill user data
+        setTimeout(() => {
+            fillLoggedInUserData();
+            copyAccountDataToStudentForm();
+        }, 300);
     }
+}
+
+function prevStep() {
+    console.log('prevStep called, current step:', currentStep);
+    
+    if (currentStep === 4) {
+        // From student registration, check if user is logged in
+        if (isUserLoggedIn) {
+            // Skip account registration and go back to learning mode
+            console.log('User logged in - going back to learning mode');
+            animateStepTransition('step-4', 'step-2', true);
+            currentStep = 2;
+        } else {
+            // User not logged in, go back to account registration
+            console.log('User not logged in - going back to account registration');
+            animateStepTransition('step-4', 'step-3', true);
+            currentStep = 3;
+        }
+    } else if (currentStep === 3) {
+        // From account registration back to learning mode
+        animateStepTransition('step-3', 'step-2', true);
+        currentStep = 2;
+    } else if (currentStep === 2) {
+        // From learning mode back to package selection
+        animateStepTransition('step-2', 'step-1', true);
+        currentStep = 1;
+    }
+}
+
+// Helper function to show warning messages
+function showWarning(message) {
+    const warningModal = document.getElementById('warningModal');
+    const warningMessage = document.getElementById('warningMessage');
+    if (warningModal && warningMessage) {
+        warningMessage.textContent = message;
+        warningModal.style.display = 'flex';
+    } else {
+        alert(message); // Fallback
+    }
+}
+
+// Helper function to close warning modal
+function closeWarningModal() {
+    const warningModal = document.getElementById('warningModal');
+    if (warningModal) {
+        warningModal.style.display = 'none';
+    }
+}
+
+// Function to handle step transitions with animation
+function animateStepTransition(fromStep, toStep, isBack = false) {
+    const from = document.getElementById(fromStep);
+    const to = document.getElementById(toStep);
+    
+    if (!from || !to) {
+        console.error('Step elements not found:', fromStep, toStep);
+        return;
+    }
+    
+    // Add transition classes
+    from.style.transition = 'all 0.3s ease-in-out';
+    to.style.transition = 'all 0.3s ease-in-out';
+    
+    // Hide current step
+    from.style.opacity = '0';
+    from.style.transform = isBack ? 'translateX(50px)' : 'translateX(-50px)';
+    
+    setTimeout(() => {
+        // Hide current step completely
+        from.style.display = 'none';
+        from.classList.remove('active');
+        
+        // Show new step
+        to.style.display = 'block';
+        to.style.opacity = '0';
+        to.style.transform = isBack ? 'translateX(-50px)' : 'translateX(50px)';
+        to.classList.add('active');
+        
+        // Animate in new step
+        setTimeout(() => {
+            to.style.opacity = '1';
+            to.style.transform = 'translateX(0)';
+        }, 50);
+        
+        // Reset transforms after animation
+        setTimeout(() => {
+            from.style.transform = '';
+            to.style.transform = '';
+        }, 350);
+    }, 300);
 }
 </script>
 
@@ -941,6 +1087,23 @@ function nextStep() {
         color: #555;
     }
     
+    /* BUTTON STATES */
+    button.enabled {
+        opacity: 1 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease;
+    }
+    
+    button.enabled:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    button:disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+    }
+    
     /* FORM INPUT FIXES */
     input[type="password"],
     input[type="email"],
@@ -1329,149 +1492,17 @@ function nextStep() {
 </div>
 
 <script>
-// Global variables (declared once at the top)
-let currentStep = 1;
-let selectedPackageId = null;
-let selectedPaymentMethod = null;
-let currentPackageIndex = 0;
-let packagesPerView = 2;
-let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
-
-// Check if user is logged in (set from server)
-const isUserLoggedIn = @if(session('user_id')) true @else false @endif;
-const loggedInUserName = '@if(session("user_name")){{ session("user_name") }}@endif';
-const loggedInUserFirstname = '@if(session("user_firstname")){{ session("user_firstname") }}@endif';
-const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_lastname") }}@endif';
-const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
-
-// Make functions globally accessible immediately
-window.selectedPackageId = selectedPackageId;
-
-// Add other essential functions for immediate access
-function nextStep() {
-    console.log('Current step:', currentStep, 'User logged in:', isUserLoggedIn);
-    
-    if (currentStep === 1) {
-        // Always go to learning mode selection first
-        animateStepTransition('step-1', 'step-2');
-        currentStep = 2;
-    } else if (currentStep === 2) {
-        // From learning mode, check if user is logged in
-        if (isUserLoggedIn) {
-            // Skip account registration and go directly to student registration
-            console.log('User logged in - skipping to student registration');
-            animateStepTransition('step-2', 'step-4');
-            currentStep = 4;
-        } else {
-            // User not logged in, go to account registration
-            console.log('User not logged in - going to account registration');
-            animateStepTransition('step-2', 'step-3');
-            currentStep = 3;
-        }
-    } else if (currentStep === 3) {
-        // From account registration to student registration
-        copyAccountDataToStudentForm();
-        animateStepTransition('step-3', 'step-4');
-        currentStep = 4;
-        // Auto-fill user data if logged in
-        setTimeout(() => {
-            fillLoggedInUserData();
-            copyAccountDataToStudentForm();
-        }, 300); // Delay to ensure DOM is ready after transition
-    }
-}
-
-function prevStep() {
-    console.log('Going back from step:', currentStep, 'User logged in:', isUserLoggedIn);
-    
-    if (currentStep === 4) {
-        // From student registration, check if user is logged in
-        if (isUserLoggedIn) {
-            // Skip account registration and go back to learning mode
-            console.log('User logged in - going back to learning mode');
-            animateStepTransition('step-4', 'step-2', true);
-            currentStep = 2;
-        } else {
-            // User not logged in, go back to account registration
-            console.log('User not logged in - going back to account registration');
-            animateStepTransition('step-4', 'step-3', true);
-            currentStep = 3;
-        }
-    } else if (currentStep === 3) {
-        // From account registration back to learning mode
-        animateStepTransition('step-3', 'step-2', true);
-        currentStep = 2;
-    } else if (currentStep === 2) {
-        // From learning mode back to package selection
-        animateStepTransition('step-2', 'step-1', true);
-        currentStep = 1;
-    }
-}
-
-function selectLearningMode(mode) {
-    // Remove selection from all learning mode cards
-    document.querySelectorAll('.learning-mode-card').forEach(card => {
-        card.style.border = '3px solid transparent';
-        card.style.boxShadow = 'none';
-    });
-    
-    // Highlight selected learning mode
-    const selectedCard = event.target.closest('.learning-mode-card');
-    selectedCard.style.border = '3px solid #667eea';
-    selectedCard.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
-    
-    // Update hidden input
-    document.getElementById('learning_mode').value = mode;
-    
-    // Update display
-    document.getElementById('selectedLearningMode').textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
-    document.getElementById('selectedLearningModeDisplay').style.display = 'block';
-    
-    // Enable next button
-    const nextBtn = document.getElementById('learningModeNextBtn');
-    if (nextBtn) {
-        nextBtn.disabled = false;
-        nextBtn.style.opacity = '1';
-        nextBtn.style.cursor = 'pointer';
-    }
-}
+// Functions are defined above in the critical section for immediate availability
 
 // Make all functions globally accessible
-window.nextStep = nextStep;
-window.prevStep = prevStep;
-window.selectLearningMode = selectLearningMode;
-
-// Keep the old function name for compatibility
-function slidePackages(direction) {
-    scrollPackages(direction === 1 ? 'right' : 'left');
-}
-
-function updateArrowStates() {
-    // This function is no longer needed with the new carousel but keeping for compatibility
-    return;
-}
-
-function animateStepTransition(fromStepId, toStepId, isBack = false) {
-    const fromStep = document.getElementById(fromStepId);
-    const toStep = document.getElementById(toStepId);
-    
-    // Add slide-out class to current step
-    fromStep.classList.add(isBack ? 'slide-out-right' : 'slide-out-left');
-    
-    setTimeout(() => {
-        fromStep.classList.remove('active', 'slide-out-left', 'slide-out-right');
-        toStep.classList.add('active');
-    }, 250);
-}
-
-// Payment Method Selection
-// Make functions globally accessible
-window.scrollPackages = scrollPackages;
-window.slidePackages = slidePackages;
-window.nextStep = nextStep;
-window.prevStep = prevStep;
+window.selectedPackageId = selectedPackageId;
 window.selectPackage = selectPackage;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
 window.selectLearningMode = selectLearningMode;
+window.showWarning = showWarning;
+window.closeWarningModal = closeWarningModal;
+window.animateStepTransition = animateStepTransition;
 window.loginWithPackage = loginWithPackage;
 
 // Function to handle login with package selection
@@ -1630,8 +1661,8 @@ async function validateEmail() {
         emailError.style.display = 'none';
     }
     
-    // Validate all Step 2 fields after email validation
-    setTimeout(validateStep2, 100);
+    // Validate all Step 3 fields after email validation
+    setTimeout(validateStep3, 100);
 }
 
 // Function to validate password length
@@ -2000,7 +2031,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (missingFields.length > 0) {
                 console.error('Missing required fields:', missingFields);
                 e.preventDefault();
-                showWarningModal('Please fill in all required fields: ' + missingFields.join(', '));
+                showWarning('Please fill in all required fields: ' + missingFields.join(', '));
                 return;
             }
             
@@ -2009,7 +2040,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (programSelect && !programSelect.value) {
                 console.error('No program selected');
                 e.preventDefault();
-                showWarningModal('Please select a program');
+                showWarning('Please select a program');
                 return;
             }
             
@@ -2018,7 +2049,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (packageInput && !packageInput.value) {
                 console.error('No package selected');
                 e.preventDefault();
-                showWarningModal('Please select a package');
+                showWarning('Please select a package');
                 return;
             }
             
@@ -2027,7 +2058,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (learningModeInput && !learningModeInput.value) {
                 console.error('No learning mode selected');
                 e.preventDefault();
-                showWarningModal('Please select a learning mode');
+                showWarning('Please select a learning mode');
                 return;
             }
             
@@ -2060,7 +2091,7 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     // Check if we're on the final step
     if (currentStep !== 4) {
         // Show warning modal instead of alert
-        showWarningModal('Please complete all steps before enrolling.');
+        showWarning('Please complete all steps before enrolling.');
         return false;
     }
     
@@ -2095,7 +2126,7 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     }
     
     if (missingFields.length > 0) {
-        showWarningModal('Please fill in the following required fields:\n• ' + missingFields.join('\n• '));
+        showWarning('Please fill in the following required fields:\n• ' + missingFields.join('\n• '));
         return false;
     }
     
@@ -2103,28 +2134,6 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     console.log('Form validation passed, submitting...');
     this.submit();
 });
-
-// Warning modal functions
-function showWarningModal(message) {
-    const modal = document.getElementById('warningModal');
-    const messageElement = document.getElementById('warningMessage');
-    
-    if (messageElement) {
-        messageElement.textContent = message;
-    }
-    
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
-
-function closeWarningModal() {
-    const modal = document.getElementById('warningModal');
-    
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
 
 // Initialize prefill on page load
 document.addEventListener('DOMContentLoaded', function() {

@@ -272,7 +272,26 @@
             <h2>Deadlines</h2>
         </div>
         <div class="deadlines-content">
-            <p style="padding: 30px 20px; text-align: center; color: #7f8c8d;">No upcoming deadlines at this time.</p>
+            @forelse($deadlines as $deadline)
+                <div class="deadline-item" style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #2c3e50;">{{ $deadline->title }}</div>
+                        <div style="font-size: 0.85rem; color: #7f8c8d;">{{ $deadline->description }}</div>
+                        <div style="font-size: 0.8rem; color: #e74c3c;">
+                            <i class="bi bi-clock"></i> Due: {{ \Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A') }}
+                        </div>
+                    </div>
+                    <span class="badge" style="background: 
+                        @if($deadline->status === 'completed') #28a745
+                        @elseif($deadline->status === 'overdue') #dc3545  
+                        @else #ffc107
+                        @endif; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
+                        {{ ucfirst($deadline->status) }}
+                    </span>
+                </div>
+            @empty
+                <p style="padding: 30px 20px; text-align: center; color: #7f8c8d;">No upcoming deadlines at this time.</p>
+            @endforelse
         </div>
     </div>
 
@@ -288,12 +307,31 @@
     </div>
 
     <!-- Announcements Section -->
-    <div class="dashboard-card announcements-card">
+    <div class="dashboard-card announcement-card">
         <div class="card-header">
-            <h2>Announcement</h2>
+            <h2>Announcements</h2>
         </div>
-        <div class="announcement-content" style="padding: 20px;">
-            <p style="margin-bottom: 0;">Welcome to your student dashboard! Here you can access your courses, track your progress, and stay updated with important announcements.</p>
+        <div class="announcement-content">
+            @forelse($announcements as $announcement)
+                <div class="announcement-item" style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                    <div style="display: flex; justify-content: between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-weight: 600; color: #2c3e50; flex: 1;">{{ $announcement->title }}</div>
+                        @if($announcement->announcement_type === 'video')
+                            <span class="badge" style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
+                                📹 Video
+                            </span>
+                        @endif
+                    </div>
+                    <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">{{ $announcement->content }}</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">
+                        <i class="bi bi-clock"></i> {{ $announcement->created_at->diffForHumans() }}
+                    </div>
+                </div>
+            @empty
+                <div style="padding: 20px;">
+                    <p style="margin-bottom: 0;">Welcome to your student dashboard! Here you can access your courses, track your progress, and stay updated with important announcements.</p>
+                </div>
+            @endforelse
         </div>
     </div>
 </div>

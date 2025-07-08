@@ -11,6 +11,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * UnifiedLoginController
+ * 
+ * This controller handles login for all user types in the system:
+ * - Admin (from admins table)
+ * - Director (from directors table)  
+ * - Professor (from professors table)
+ * - Student/User (from users table)
+ * 
+ * MERGED FROM: StudentLoginController.php
+ * All functionality from the original StudentLoginController has been
+ * preserved and integrated into this unified system.
+ * 
+ * Priority Order: Admin -> Director -> Professor -> Student
+ * This ensures higher privilege users get priority access.
+ */
 class UnifiedLoginController extends Controller
 {
     /**
@@ -34,7 +50,7 @@ class UnifiedLoginController extends Controller
         $email = $request->email;
         $password = $request->password;
 
-        // Priority order: Admin -> Director -> Professor -> Student
+        // Priority order: Admin -> Director -> Professor -> Student (Users table)
         // This ensures admins and directors have priority access
 
         // 1. Check if user is an admin
@@ -55,14 +71,14 @@ class UnifiedLoginController extends Controller
             return $this->loginProfessor($professor, $password, $request);
         }
 
-        // 4. Check if user is a student (via users table)
-        $user = User::where('email', $email)->where('role', 'student')->first();
+        // 4. Check users table for any user (students, unverified, etc.) - preserving original behavior
+        $user = User::where('email', $email)->first();
         if ($user) {
             return $this->loginStudent($user, $password, $request);
         }
 
         // If no account found in any table
-        return back()->withErrors(['email' => 'No account found with this email address.'])->withInput();
+        return back()->withErrors(['email' => 'The provided credentials do not match our records.'])->withInput($request->only('email'));
     }
 
     /**
@@ -75,12 +91,8 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
-        // Check if user has student role
-        if ($user->role !== 'student') {
-            return back()->withErrors(['email' => 'Your account does not have proper access permissions.'])->withInput();
-        }
-
-        // Create session (using the same format as StudentLoginController)
+        // Allow all users to access dashboard (students, unverified, etc.) - preserving original behavior
+        // Store user info in session for authentication (using exact same format as original StudentLoginController)
         session([
             'user_id' => $user->user_id,
             'user_name' => $user->user_firstname . ' ' . $user->user_lastname,
@@ -93,7 +105,7 @@ class UnifiedLoginController extends Controller
 
         Log::info('Student logged in successfully', ['user_id' => $user->user_id]);
 
-        // Check if user is coming from enrollment process (preserve existing functionality)
+        // Check if user is coming from enrollment process (preserve exact original functionality)
         if ($request->has('from_enrollment') && $request->from_enrollment === 'true') {
             // Store email in session to help with auto-fill if needed
             session(['user_email' => $user->email]);
@@ -169,7 +181,7 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
-        // Create session
+        // Create session (preserving original format)
         session([
             'user_id' => $admin->admin_id,
             'user_name' => $admin->admin_name,
@@ -180,8 +192,8 @@ class UnifiedLoginController extends Controller
 
         Log::info('Admin logged in successfully', ['admin_id' => $admin->admin_id]);
 
-        // Redirect to admin dashboard
-        return redirect()->route('admin.dashboard')->with('success', 'Welcome back, ' . $admin->admin_name . '!');
+        // Redirect to admin dashboard (preserving original success message format)
+        return redirect()->route('admin.dashboard')->with('success', 'Admin logged in!');
     }
 
     /**
@@ -238,7 +250,8 @@ class UnifiedLoginController extends Controller
         $request->session()->flush();
         $request->session()->regenerateToken();
         
-        return redirect()->route('login')->with('success', 'You have been logged out successfully.');
+        // Redirect to home page (preserving original behavior)
+        return redirect('/')->with('success', 'You have been logged out successfully.');
     }
 
     /**

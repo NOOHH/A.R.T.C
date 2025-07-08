@@ -430,7 +430,7 @@
                                class="form-control" 
                                id="Start_Date" 
                                name="Start_Date" 
-                               value="{{ old('Start_Date', $student->Start_Date ? \Carbon\Carbon::parse($student->Start_Date)->format('Y-m-d') : '') }}">
+                               value="{{ old('Start_Date', isset($student->Start_Date) && $student->Start_Date ? \Carbon\Carbon::parse($student->Start_Date)->format('Y-m-d') : '') }}">
                     </div>
                 </div>
             </div>

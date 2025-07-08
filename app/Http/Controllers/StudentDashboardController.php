@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Program;
 use App\Models\Module;
+use App\Models\Deadline;
+use App\Models\Announcement;
 
 class StudentDashboardController extends Controller
 {
@@ -99,7 +101,29 @@ class StudentDashboardController extends Controller
             $courses = [];
         }
 
-        return view('student.student-dashboard.student-dashboard', compact('user', 'courses'));
+        // Get student deadlines
+        $deadlines = [];
+        $announcements = [];
+        
+        if ($student) {
+            // Get deadlines for this student from all enrolled programs
+            $enrolledProgramIds = $enrollments->pluck('program_id')->toArray();
+            
+            $deadlines = \App\Models\Deadline::where('student_id', $student->student_id)
+                ->orWhereIn('program_id', $enrolledProgramIds)
+                ->where('due_date', '>=', now())
+                ->orderBy('due_date', 'asc')
+                ->limit(5)
+                ->get();
+            
+            // Get announcements for this student from all enrolled programs
+            $announcements = \App\Models\Announcement::whereIn('program_id', $enrolledProgramIds)
+                ->orderBy('created_at', 'desc')
+                ->limit(3)
+                ->get();
+        }
+
+        return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements'));
     }
 
     public function calendar()

@@ -91,6 +91,11 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="professor-tab" data-bs-toggle="tab" data-bs-target="#professor" type="button" role="tab">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Professor
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
                         <i class="fas fa-user-shield me-2"></i>Admin
                     </button>
@@ -425,6 +430,127 @@
                 </div>
             </div>
 
+            {{-- Professor Tab --}}
+            <div class="tab-pane fade" id="professor" role="tabpanel">
+                <div class="row g-4">
+                    {{-- Professor Features --}}
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chalkboard-teacher me-2"></i>Professor Features
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Control which features are available to professors in their dashboard.</p>
+                                
+                                <form id="professorFeaturesForm">
+                                    @csrf
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="aiQuizEnabled" name="ai_quiz_enabled" checked>
+                                                <label class="form-check-label" for="aiQuizEnabled">
+                                                    <strong>AI Quiz Generator</strong><br>
+                                                    <small class="text-muted">Allow professors to generate quizzes from documents</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="gradingEnabled" name="grading_enabled" checked>
+                                                <label class="form-check-label" for="gradingEnabled">
+                                                    <strong>Grading System</strong><br>
+                                                    <small class="text-muted">Allow professors to grade assignments and quizzes</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="videoUploadEnabled" name="video_upload_enabled" checked>
+                                                <label class="form-check-label" for="videoUploadEnabled">
+                                                    <strong>Video Upload</strong><br>
+                                                    <small class="text-muted">Allow professors to upload video links</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="attendanceEnabled" name="attendance_enabled" checked>
+                                                <label class="form-check-label" for="attendanceEnabled">
+                                                    <strong>Attendance Management</strong><br>
+                                                    <small class="text-muted">Allow professors to track student attendance</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="viewProgramsEnabled" name="view_programs_enabled" checked>
+                                                <label class="form-check-label" for="viewProgramsEnabled">
+                                                    <strong>View Programs</strong><br>
+                                                    <small class="text-muted">Allow professors to view assigned programs</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="studentListEnabled" name="student_list_enabled" checked>
+                                                <label class="form-check-label" for="studentListEnabled">
+                                                    <strong>Student Lists</strong><br>
+                                                    <small class="text-muted">Allow professors to view student lists and details</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save me-2"></i>Save Professor Settings
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="loadProfessorSettings()">
+                                            <i class="fas fa-refresh me-2"></i>Reset to Defaults
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- Professor Settings Info --}}
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>Feature Controls</h6>
+                                <p class="text-muted small">These settings control what features are visible and accessible to professors in their dashboard.</p>
+                                
+                                <h6>AI Quiz Generator</h6>
+                                <p class="text-muted small">When enabled, professors can upload documents and generate quizzes automatically. Quizzes sync to student deadlines.</p>
+                                
+                                <h6>Video Upload</h6>
+                                <p class="text-muted small">When enabled, professors can add video links (Zoom, YouTube, etc.) which appear as announcements for students.</p>
+                                
+                                <h6>Grading System</h6>
+                                <p class="text-muted small">Allows professors to grade assignments, activities, and quizzes, updating student progress.</p>
+                                
+                                <div class="alert alert-warning mt-3">
+                                    <small><strong>Note:</strong> Disabling features will hide them from professor dashboards but won't delete existing data.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Admin Tab --}}
             <div class="tab-pane fade" id="admin" role="tabpanel">
                 <div class="row g-4">
@@ -606,6 +732,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadStudentPortalSettings();
     loadHomepageSettings();
     loadHomepageSettings();
+    loadProfessorSettings();
     
     // Add new requirement functionality
     const addRequirementButton = document.getElementById('addRequirement');
@@ -691,6 +818,15 @@ document.addEventListener('DOMContentLoaded', function() {
         studentPortalForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveStudentPortalSettings();
+        });
+    }
+
+    // Save professor features settings
+    const professorFeaturesForm = document.getElementById('professorFeaturesForm');
+    if (professorFeaturesForm) {
+        professorFeaturesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveProfessorSettings();
         });
     }
 
@@ -1575,6 +1711,73 @@ function saveStudentPortalSettings() {
 
 function previewForm(type) {
     showAlert(`Preview ${type} form functionality coming soon!`, 'info');
+}
+
+// Professor Settings Functions
+function loadProfessorSettings() {
+    fetch('/admin/settings/professor-features', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Professor settings loaded:', data);
+        if (data.success && data.settings) {
+            // Set checkbox values based on loaded settings
+            Object.keys(data.settings).forEach(key => {
+                const checkbox = document.querySelector(`input[name="${key}"]`);
+                if (checkbox) {
+                    checkbox.checked = data.settings[key] === 'true' || data.settings[key] === true;
+                }
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading professor settings:', error);
+        // Set default values if loading fails
+        const checkboxes = document.querySelectorAll('#professorFeaturesForm input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true; // Default to enabled
+        });
+    });
+}
+
+function saveProfessorSettings() {
+    const form = document.getElementById('professorFeaturesForm');
+    const formData = new FormData(form);
+    
+    // Add unchecked checkboxes as false
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            formData.set(checkbox.name, 'false');
+        } else {
+            formData.set(checkbox.name, 'true');
+        }
+    });
+
+    fetch('/admin/settings/professor-features', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Professor settings saved:', data);
+        if (data.success) {
+            showAlert('Professor feature settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving professor settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving professor settings:', error);
+        showAlert('Error saving professor settings: ' + error.message, 'danger');
+    });
 }
 </script>
 @endpush
