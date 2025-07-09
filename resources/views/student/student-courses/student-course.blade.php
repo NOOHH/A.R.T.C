@@ -506,3 +506,87 @@
     });
 </script>
 @endpush
+
+@if(isset($showAccessModal) && $showAccessModal)
+<!-- Special Access Notification Modal -->
+<div class="modal fade" id="specialAccessModal" tabindex="-1" aria-labelledby="specialAccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="specialAccessModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Special Access Granted
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Important Notice
+                    </h6>
+                    <p class="mb-2">You have been granted special access to this program as part of your batch enrollment.</p>
+                    <hr class="my-2">
+                    <p class="mb-1">
+                        <strong>Current Status:</strong>
+                        <span class="badge bg-{{ $enrollmentStatus === 'approved' ? 'success' : 'warning' }} ms-2">
+                            {{ ucfirst($enrollmentStatus) }}
+                        </span>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Payment Status:</strong>
+                        <span class="badge bg-{{ $paymentStatus === 'paid' ? 'success' : 'warning' }} ms-2">
+                            {{ ucfirst($paymentStatus) }}
+                        </span>
+                    </p>
+                </div>
+                
+                <div class="d-flex align-items-start mb-3">
+                    <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
+                    <div>
+                        <h6 class="mb-1">What you can do:</h6>
+                        <ul class="mb-0 text-muted">
+                            <li>Access all course materials and modules</li>
+                            <li>Participate in live sessions and discussions</li>
+                            <li>Submit assignments and take quizzes</li>
+                            <li>Track your learning progress</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                @if($enrollmentStatus !== 'approved' || $paymentStatus !== 'paid')
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill text-primary me-3 fs-4"></i>
+                    <div>
+                        <h6 class="mb-1">Action Required:</h6>
+                        <p class="mb-0 text-muted">
+                            @if($enrollmentStatus !== 'approved')
+                                Your registration is still being reviewed by the administration.
+                            @endif
+                            @if($paymentStatus !== 'paid')
+                                @if($enrollmentStatus !== 'approved') Additionally, @endif
+                                Please complete your payment to finalize your enrollment.
+                            @endif
+                            Contact the admin office if you need assistance.
+                        </p>
+                    </div>
+                </div>
+                @endif
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg me-2"></i>I Understand
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show the modal automatically when page loads
+    const specialAccessModal = new bootstrap.Modal(document.getElementById('specialAccessModal'));
+    specialAccessModal.show();
+});
+</script>
+@endif

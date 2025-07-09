@@ -229,6 +229,15 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label for="professor_id" class="form-label">Assigned Professor (Optional)</label>
+                        <select class="form-control" id="professor_id" name="professor_id">
+                            <option value="">Select a professor</option>
+                            @foreach($professors as $professor)
+                                <option value="{{ $professor->professor_id }}">{{ $professor->professor_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="max_capacity" class="form-label">Maximum Capacity</label>
                         <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="1" required>
                     </div>
@@ -254,6 +263,73 @@
     </div>
 </div>
 
+<!-- Edit Batch Modals -->
+@foreach($batches as $batch)
+<div class="modal fade" id="editBatchModal{{ $batch->batch_id }}" tabindex="-1" aria-labelledby="editBatchModalLabel{{ $batch->batch_id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBatchModalLabel{{ $batch->batch_id }}">Edit Batch: {{ $batch->batch_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editBatchForm{{ $batch->batch_id }}" onsubmit="updateBatch(event, '{{ $batch->batch_id }}')">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_batch_name{{ $batch->batch_id }}" class="form-label">Batch Name</label>
+                        <input type="text" class="form-control" id="edit_batch_name{{ $batch->batch_id }}" name="batch_name" value="{{ $batch->batch_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_program_id{{ $batch->batch_id }}" class="form-label">Program</label>
+                        <select class="form-control" id="edit_program_id{{ $batch->batch_id }}" name="program_id" required>
+                            <option value="">Select a program</option>
+                            @foreach($programs as $program)
+                                <option value="{{ $program->program_id }}" {{ $batch->program_id == $program->program_id ? 'selected' : '' }}>
+                                    {{ $program->program_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_professor_id{{ $batch->batch_id }}" class="form-label">Assigned Professor (Optional)</label>
+                        <select class="form-control" id="edit_professor_id{{ $batch->batch_id }}" name="professor_id">
+                            <option value="">Select a professor</option>
+                            @foreach($professors as $professor)
+                                <option value="{{ $professor->professor_id }}" {{ $batch->professor_id == $professor->professor_id ? 'selected' : '' }}>
+                                    {{ $professor->professor_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_max_capacity{{ $batch->batch_id }}" class="form-label">Maximum Capacity</label>
+                        <input type="number" class="form-control" id="edit_max_capacity{{ $batch->batch_id }}" name="max_capacity" value="{{ $batch->max_capacity }}" min="{{ $batch->current_capacity }}" required>
+                        <small class="text-muted">Current enrollment: {{ $batch->current_capacity }} students</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_registration_deadline{{ $batch->batch_id }}" class="form-label">Registration Deadline</label>
+                        <input type="date" class="form-control" id="edit_registration_deadline{{ $batch->batch_id }}" name="registration_deadline" value="{{ $batch->registration_deadline->format('Y-m-d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_start_date{{ $batch->batch_id }}" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="edit_start_date{{ $batch->batch_id }}" name="start_date" value="{{ $batch->start_date->format('Y-m-d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description{{ $batch->batch_id }}" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="edit_description{{ $batch->batch_id }}" name="description" rows="3">{{ $batch->description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Batch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
+
 <!-- Student Management Modals -->
 @foreach($batches as $batch)
 <!-- Manage Batch Students Modal -->
@@ -269,66 +345,115 @@
             <div class="modal-body">
                 <!-- Batch Info -->
                 <div class="row mb-4">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <h6>Batch Information</h6>
                         <p><strong>Program:</strong> {{ $batch->program->program_name ?? 'N/A' }}</p>
-                        <p><strong>Capacity:</strong> {{ $batch->current_capacity }}/{{ $batch->max_capacity }}</p>
+                        <p><strong>Capacity:</strong> <span id="currentCapacity{{ $batch->batch_id }}">0</span>/{{ $batch->max_capacity }}</p>
                         <p><strong>Status:</strong> 
                             <span class="badge {{ $batch->batch_status === 'available' ? 'bg-success' : ($batch->batch_status === 'ongoing' ? 'bg-warning' : 'bg-danger') }}">
                                 {{ ucfirst($batch->batch_status) }}
                             </span>
                         </p>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Add Students to Batch</h6>
-                        <form action="{{ route('admin.batches.add-students', $batch->batch_id) }}" method="POST">
-                            @csrf
-                            <div class="mb-3">
-                                <select name="student_ids[]" class="form-select" multiple required>
-                                    <option value="">Select students to add...</option>
-                                    <!-- Students will be loaded via AJAX -->
-                                </select>
-                                <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple students</small>
+                    <div class="col-md-8">
+                        <h6>Available Students (Drag to add to batch)</h6>
+                        <div class="border rounded p-3" style="height: 120px; overflow-y: auto; background-color: #f8f9fa;">
+                            <div id="availableStudentsList{{ $batch->batch_id }}" class="available-students-list">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading available students...
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Add Selected Students
-                            </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Current Students -->
+                <!-- Student Tables -->
                 <div class="row">
-                    <div class="col-12">
-                        <h6>Current Students ({{ $batch->current_capacity }})</h6>
-                        <div class="table-responsive">
-                            <table class="table table-hover batch-students-table" data-batch-id="{{ $batch->batch_id }}">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Enrollment Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Students will be loaded via AJAX -->
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <i class="fas fa-spinner fa-spin"></i> Loading students...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <!-- Pending Students -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-clock"></i> 
+                                    Pending Students 
+                                    (<span id="pendingCount{{ $batch->batch_id }}">0</span>)
+                                </h6>
+                                <small>Registration pending, payment pending, or waiting approval</small>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="student-drop-zone" id="pendingDropZone{{ $batch->batch_id }}" 
+                                     data-batch-id="{{ $batch->batch_id }}" data-target="pending"
+                                     style="min-height: 300px; max-height: 400px; overflow-y: auto;">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th width="25%">Name</th>
+                                                    <th width="25%">Email</th>
+                                                    <th width="15%">Registration</th>
+                                                    <th width="15%">Payment</th>
+                                                    <th width="20%">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="pendingStudentsBody{{ $batch->batch_id }}">
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted p-4">
+                                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Students -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-check-circle"></i> 
+                                    Current Students 
+                                    (<span id="currentCount{{ $batch->batch_id }}">0</span>)
+                                </h6>
+                                <small>Approved registration and paid</small>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="student-drop-zone" id="currentDropZone{{ $batch->batch_id }}" 
+                                     data-batch-id="{{ $batch->batch_id }}" data-target="current"
+                                     style="min-height: 300px; max-height: 400px; overflow-y: auto;">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th width="25%">Name</th>
+                                                    <th width="25%">Email</th>
+                                                    <th width="15%">Registration</th>
+                                                    <th width="15%">Payment</th>
+                                                    <th width="20%">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="currentStudentsBody{{ $batch->batch_id }}">
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted p-4">
+                                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="{{ route('admin.batches.export', $batch->batch_id) }}" class="btn btn-success me-auto">
+                <button type="button" class="btn btn-success" onclick="exportStudentList('{{ $batch->batch_id }}')">
                     <i class="fas fa-download"></i> Export Student List
-                </a>
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -365,45 +490,173 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadBatchStudents(batchId) {
-    const table = document.querySelector(`[data-batch-id="${batchId}"] tbody`);
+    const currentTable = document.querySelector(`[data-batch-id="${batchId}"].batch-students-table tbody`);
+    const pendingTable = document.querySelector(`[data-batch-id="${batchId}"].batch-pending-table tbody`);
     
     fetch(`{{ url('admin/batches') }}/${batchId}/students`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                let rows = '';
-                if (data.students.length === 0) {
-                    rows = '<tr><td colspan="5" class="text-center text-muted">No students enrolled yet</td></tr>';
+                // Update counters
+                document.getElementById(`currentCount${batchId}`).textContent = data.total_current || 0;
+                document.getElementById(`pendingCount${batchId}`).textContent = data.total_pending || 0;
+                
+                // Load current students
+                let currentRows = '';
+                if (data.current_students.length === 0) {
+                    currentRows = '<tr><td colspan="9" class="text-center text-muted">No current students</td></tr>';
                 } else {
-                    data.students.forEach(student => {
-                        rows += `
-                            <tr>
-                                <td>${student.firstname} ${student.lastname}</td>
-                                <td>${student.email}</td>
-                                <td>${new Date(student.enrollment_date).toLocaleDateString()}</td>
-                                <td>
-                                    <span class="badge ${student.status === 'active' ? 'bg-success' : 'bg-warning'}">
-                                        ${student.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-danger" 
-                                            onclick="removeStudentFromBatch(${batchId}, ${student.user_id})"
-                                            title="Remove from batch">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
+                    data.current_students.forEach(student => {
+                        currentRows += generateStudentRow(student, batchId, false);
                     });
                 }
-                table.innerHTML = rows;
+                currentTable.innerHTML = currentRows;
+                
+                // Load pending students
+                let pendingRows = '';
+                if (data.pending_students.length === 0) {
+                    pendingRows = '<tr><td colspan="9" class="text-center text-muted">No pending students</td></tr>';
+                } else {
+                    data.pending_students.forEach(student => {
+                        pendingRows += generateStudentRow(student, batchId, true);
+                    });
+                }
+                pendingTable.innerHTML = pendingRows;
             }
         })
         .catch(error => {
             console.error('Error loading students:', error);
-            table.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading students</td></tr>';
+            currentTable.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading students</td></tr>';
+            pendingTable.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading students</td></tr>';
         });
+}
+
+function generateStudentRow(student, batchId, isPending) {
+    const approvalBadge = getStatusBadge(student.enrollment_status, 'approval');
+    const paymentBadge = getStatusBadge(student.payment_status, 'payment');
+    const amount = student.amount ? `₱${parseFloat(student.amount).toLocaleString()}` : 'N/A';
+    
+    let actions = `
+        <button type="button" class="btn btn-sm btn-danger" 
+                onclick="removeStudentFromBatch(${batchId}, ${student.user_id})"
+                title="Remove from batch">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    if (isPending) {
+        if (student.enrollment_status === 'pending') {
+            actions += `
+                <button type="button" class="btn btn-sm btn-success ms-1" 
+                        onclick="approveStudent(${student.enrollment_id})"
+                        title="Approve enrollment">
+                    <i class="fas fa-check"></i>
+                </button>
+            `;
+        }
+        if (student.payment_status === 'pending') {
+            actions += `
+                <button type="button" class="btn btn-sm btn-primary ms-1" 
+                        onclick="markAsPaid(${student.enrollment_id})"
+                        title="Mark as paid">
+                    <i class="fas fa-dollar-sign"></i>
+                </button>
+            `;
+        }
+    }
+    
+    return `
+        <tr>
+            <td>${student.firstname} ${student.lastname}</td>
+            <td>${student.email}</td>
+            <td>${student.program_name}</td>
+            <td>${student.package_name}</td>
+            <td>${amount}</td>
+            <td>${new Date(student.enrollment_date).toLocaleDateString()}</td>
+            <td>${approvalBadge}</td>
+            <td>${paymentBadge}</td>
+            <td>${actions}</td>
+        </tr>
+    `;
+}
+
+function getStatusBadge(status, type) {
+    const statusClass = {
+        'approved': 'bg-success',
+        'pending': 'bg-warning',
+        'rejected': 'bg-danger',
+        'paid': 'bg-success',
+        'failed': 'bg-danger'
+    };
+    
+    const badgeClass = statusClass[status] || 'bg-secondary';
+    return `<span class="badge ${badgeClass}">${status}</span>`;
+}
+
+function approveStudent(enrollmentId) {
+    if (!confirm('Are you sure you want to approve this student enrollment?')) {
+        return;
+    }
+    
+    fetch(`{{ url('admin/enrollment') }}/${enrollmentId}/approve`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Student enrollment approved successfully');
+            // Reload students for all open modals
+            document.querySelectorAll('[id^="manageBatchModal"]').forEach(modal => {
+                if (modal.classList.contains('show')) {
+                    const batchId = modal.getAttribute('id').replace('manageBatchModal', '');
+                    loadBatchStudents(batchId);
+                }
+            });
+        } else {
+            alert(data.message || 'Error approving student');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error approving student');
+    });
+}
+
+function markAsPaid(enrollmentId) {
+    if (!confirm('Are you sure you want to mark this payment as paid?')) {
+        return;
+    }
+    
+    fetch(`{{ url('admin/enrollment') }}/${enrollmentId}/mark-paid`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment marked as paid successfully');
+            // Reload students for all open modals
+            document.querySelectorAll('[id^="manageBatchModal"]').forEach(modal => {
+                if (modal.classList.contains('show')) {
+                    const batchId = modal.getAttribute('id').replace('manageBatchModal', '');
+                    loadBatchStudents(batchId);
+                }
+            });
+        } else {
+            alert(data.message || 'Error marking payment as paid');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error marking payment as paid');
+    });
 }
 
 function removeStudentFromBatch(batchId, studentId) {
@@ -486,7 +739,535 @@ function toggleStatus(batchId) {
         });
     }
 }
+
+function updateBatch(event, batchId) {
+    event.preventDefault();
+    
+    const form = document.getElementById(`editBatchForm${batchId}`);
+    const formData = new FormData(form);
+    
+    fetch(`{{ url('admin/batches') }}/${batchId}`, {
+        method: 'PUT',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(Object.fromEntries(formData))
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error updating batch');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating batch');
+    });
+}
+
+function loadBatchStudents(batchId) {
+    fetch(`{{ url('admin/batches') }}/${batchId}/students`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStudentTables(batchId, data);
+                loadAvailableStudents(batchId);
+                
+                // Update capacity display
+                document.getElementById(`currentCapacity${batchId}`).textContent = data.total_current;
+                document.getElementById(`currentCount${batchId}`).textContent = data.total_current;
+                document.getElementById(`pendingCount${batchId}`).textContent = data.total_pending;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading students:', error);
+        });
+}
+
+function updateStudentTables(batchId, data) {
+    // Update current students table
+    const currentBody = document.getElementById(`currentStudentsBody${batchId}`);
+    if (data.current_students.length > 0) {
+        currentBody.innerHTML = data.current_students.map(student => `
+            <tr class="student-row" draggable="true" data-enrollment-id="${student.enrollment_id}" data-student-type="current">
+                <td><strong>${student.name}</strong></td>
+                <td><small>${student.email}</small></td>
+                <td><span class="badge bg-success">${student.enrollment_status}</span></td>
+                <td><span class="badge bg-success">${student.payment_status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="moveStudentToPending('${batchId}', '${student.enrollment_id}')" title="Move to Pending">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="removeStudent('${batchId}', '${student.enrollment_id}')" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } else {
+        currentBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No current students</td></tr>';
+    }
+
+    // Update pending students table
+    const pendingBody = document.getElementById(`pendingStudentsBody${batchId}`);
+    if (data.pending_students.length > 0) {
+        pendingBody.innerHTML = data.pending_students.map(student => `
+            <tr class="student-row" draggable="true" data-enrollment-id="${student.enrollment_id}" data-student-type="pending">
+                <td><strong>${student.name}</strong></td>
+                <td><small>${student.email}</small></td>
+                <td><span class="badge bg-${student.enrollment_status === 'approved' ? 'success' : 'warning'}">${student.enrollment_status}</span></td>
+                <td><span class="badge bg-${student.payment_status === 'paid' ? 'success' : 'warning'}">${student.payment_status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="moveStudentToCurrent('${batchId}', '${student.enrollment_id}')" title="Move to Current">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="removeStudent('${batchId}', '${student.enrollment_id}')" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } else {
+        pendingBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No pending students</td></tr>';
+    }
+
+    // Setup drag and drop for student rows
+    setupDragAndDrop(batchId);
+}
+
+function loadAvailableStudents(batchId) {
+    const container = document.getElementById(`availableStudentsList${batchId}`);
+    
+    fetch(`{{ url('admin/batches') }}/${batchId}/students`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.available_students) {
+                if (data.available_students.length > 0) {
+                    container.innerHTML = data.available_students.map(student => `
+                        <div class="available-student-item p-2 mb-2 bg-white border rounded" 
+                             draggable="true" 
+                             data-enrollment-id="${student.enrollment_id}"
+                             data-student-type="available"
+                             style="cursor: move;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${student.name}</strong><br>
+                                    <small class="text-muted">${student.email}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-${student.enrollment_status === 'approved' ? 'success' : 'warning'}">${student.enrollment_status}</span><br>
+                                    <span class="badge bg-${student.payment_status === 'paid' ? 'success' : 'warning'}">${student.payment_status}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="text-center text-muted">No available students</div>';
+                }
+                
+                // Setup drag for available students
+                setupAvailableStudentsDrag(batchId);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading available students:', error);
+            container.innerHTML = '<div class="text-center text-danger">Error loading students</div>';
+        });
+}
+
+function setupDragAndDrop(batchId) {
+    // Setup drag for student rows
+    const studentRows = document.querySelectorAll(`#manageBatchModal${batchId} .student-row`);
+    studentRows.forEach(row => {
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragend', handleDragEnd);
+    });
+
+    // Setup drop zones
+    const dropZones = document.querySelectorAll(`#manageBatchModal${batchId} .student-drop-zone`);
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+        zone.addEventListener('dragenter', handleDragEnter);
+        zone.addEventListener('dragleave', handleDragLeave);
+    });
+}
+
+function setupAvailableStudentsDrag(batchId) {
+    const availableItems = document.querySelectorAll(`#availableStudentsList${batchId} .available-student-item`);
+    availableItems.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = e.target;
+    e.dataTransfer.effectAllowed = 'move';
+    e.target.style.opacity = '0.4';
+}
+
+function handleDragEnd(e) {
+    e.target.style.opacity = '1';
+    draggedElement = null;
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    e.target.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    e.target.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    e.target.classList.remove('drag-over');
+    
+    if (draggedElement) {
+        const batchId = e.target.dataset.batchId;
+        const targetType = e.target.dataset.target;
+        const enrollmentId = draggedElement.dataset.enrollmentId;
+        const studentType = draggedElement.dataset.studentType;
+        
+        // Don't allow dropping in the same zone
+        if ((targetType === 'current' && studentType === 'current') ||
+            (targetType === 'pending' && studentType === 'pending')) {
+            return false;
+        }
+        
+        // Handle different drop scenarios
+        if (studentType === 'available') {
+            // Adding from available to either pending or current
+            addStudentToBatch(batchId, enrollmentId, targetType);
+        } else if (targetType === 'current' && studentType === 'pending') {
+            // Moving from pending to current - UPDATE DATABASE to give dashboard access
+            moveStudentToCurrent(batchId, enrollmentId);
+        } else if (targetType === 'pending' && studentType === 'current') {
+            // Moving from current to pending - UPDATE DATABASE to remove dashboard access
+            moveStudentToPending(batchId, enrollmentId);
+        }
+    }
+    
+    return false;
+}
+
+function moveStudentToCurrent(batchId, enrollmentId) {
+    fetch(`{{ url('admin/batches') }}/${batchId}/enrollments/${enrollmentId}/move-to-current`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the students table to reflect database changes
+            loadBatchStudents(batchId);
+            showToast(data.message, 'success');
+        } else {
+            alert(data.message || 'Error moving student to current');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error moving student to current');
+    });
+}
+
+function moveStudentToPending(batchId, enrollmentId) {
+    fetch(`{{ url('admin/batches') }}/${batchId}/enrollments/${enrollmentId}/move-to-pending`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the students table to reflect database changes
+            loadBatchStudents(batchId);
+            showToast(data.message, 'success');
+        } else {
+            alert(data.message || 'Error moving student to pending');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error moving student to pending');
+    });
+}
+
+function moveStudentVisually(studentElement, targetType, batchId) {
+    // Get student data
+    const enrollmentId = studentElement.dataset.enrollmentId;
+    const studentName = studentElement.querySelector('td:nth-child(2)').textContent;
+    const studentEmail = studentElement.querySelector('td:nth-child(3)').textContent;
+    const enrollmentStatus = studentElement.querySelector('td:nth-child(4)').textContent;
+    const paymentStatus = studentElement.querySelector('td:nth-child(5)').textContent;
+    
+    // Remove from current location
+    studentElement.remove();
+    
+    // Find target table body
+    const targetTableBody = document.querySelector(`#manageBatchModal${batchId} .${targetType}-students-table tbody`);
+    
+    // Create new row in target location
+    const newRow = document.createElement('tr');
+    newRow.className = 'student-row';
+    newRow.draggable = true;
+    newRow.dataset.enrollmentId = enrollmentId;
+    newRow.dataset.studentType = targetType;
+    
+    newRow.innerHTML = `
+        <td>
+            <i class="fas fa-grip-vertical text-muted" style="cursor: grab;"></i>
+        </td>
+        <td>${studentName}</td>
+        <td>${studentEmail}</td>
+        <td>
+            <span class="badge badge-${enrollmentStatus === 'approved' ? 'success' : enrollmentStatus === 'pending' ? 'warning' : 'secondary'}">
+                ${enrollmentStatus}
+            </span>
+        </td>
+        <td>
+            <span class="badge badge-${paymentStatus === 'paid' ? 'success' : paymentStatus === 'pending' ? 'warning' : 'secondary'}">
+                ${paymentStatus}
+            </span>
+        </td>
+        <td>
+            <button class="btn btn-sm btn-danger" onclick="removeStudentFromBatch(${batchId}, ${enrollmentId})">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
+    
+    // Add drag event listeners to the new row
+    newRow.addEventListener('dragstart', handleDragStart);
+    newRow.addEventListener('dragend', handleDragEnd);
+    
+    // Append to target table
+    targetTableBody.appendChild(newRow);
+    
+    // Update counters
+    updateStudentCounts(batchId);
+    
+    // Show success message
+    showToast('Student moved successfully! Note: This is a visual change only and does not affect the actual enrollment or payment status in the database.', 'success');
+}
+
+function addStudentToBatch(batchId, enrollmentId, targetType) {
+    fetch(`{{ url('admin/batches') }}/${batchId}/enrollments/${enrollmentId}/add-to-batch`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ target_type: targetType })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the students table to reflect database changes
+            loadBatchStudents(batchId);
+            showToast(data.message, 'success');
+        } else {
+            alert(data.message || 'Error adding student');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding student');
+    });
+}
+
+function removeStudent(batchId, enrollmentId) {
+    if (confirm('Are you sure you want to remove this student from the batch? This will move them back to the available students list.')) {
+        // Remove student from batch by setting batch_id to null
+        fetch(`{{ url('admin/batches') }}/${batchId}/enrollments/${enrollmentId}/remove-from-batch`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadBatchStudents(batchId);
+                showToast(data.message, 'success');
+            } else {
+                alert(data.message || 'Error removing student');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing student from batch');
+        });
+    }
+}
+
+function exportStudentList(batchId) {
+    window.open(`{{ url('admin/batches') }}/${batchId}/export`, '_blank');
+}
+
+// Helper functions
+function updateStudentCounts(batchId) {
+    // Count current and pending students
+    const currentCount = document.querySelectorAll(`#manageBatchModal${batchId} .current-students-table tbody tr`).length;
+    const pendingCount = document.querySelectorAll(`#manageBatchModal${batchId} .pending-students-table tbody tr`).length;
+    
+    // Update counter displays
+    const currentCounter = document.querySelector(`#manageBatchModal${batchId} .current-count`);
+    const pendingCounter = document.querySelector(`#manageBatchModal${batchId} .pending-count`);
+    
+    if (currentCounter) currentCounter.textContent = currentCount;
+    if (pendingCounter) pendingCounter.textContent = pendingCount;
+}
+
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    
+    // Add to body
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 5000);
+}
+
+// Load batch students when modals are opened
+document.addEventListener('DOMContentLoaded', function() {
+    // Load students when manage batch modals are shown
+    const manageModals = document.querySelectorAll('[id^="manageBatchModal"]');
+    manageModals.forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const batchId = this.id.replace('manageBatchModal', '');
+            loadBatchStudents(batchId);
+        });
+    });
+});
 </script>
+@endpush
+
+@push('styles')
+<style>
+.available-student-item {
+    transition: all 0.2s ease;
+}
+
+.available-student-item:hover {
+    background-color: #e9ecef !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.student-row {
+    transition: all 0.2s ease;
+    cursor: move;
+}
+
+.student-row:hover {
+    background-color: #f8f9fa;
+}
+
+.drag-over {
+    background-color: #e3f2fd !important;
+    border: 2px dashed #2196f3 !important;
+}
+
+.student-drop-zone {
+    transition: all 0.2s ease;
+}
+
+.student-drop-zone:hover {
+    background-color: #f8f9fa;
+}
+
+/* Dragging styles */
+.student-row[draggable="true"]:active,
+.available-student-item[draggable="true"]:active {
+    cursor: grabbing;
+    opacity: 0.7;
+}
+
+/* Badge styles for status */
+.badge {
+    font-size: 0.75em;
+}
+
+/* Sticky header for tables */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Custom scrollbar for drop zones */
+.student-drop-zone::-webkit-scrollbar {
+    width: 6px;
+}
+
+.student-drop-zone::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.student-drop-zone::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.student-drop-zone::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animation for adding/removing students */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.student-row {
+    animation: slideIn 0.3s ease;
+}
+</style>
 @endpush
 
 @endsection

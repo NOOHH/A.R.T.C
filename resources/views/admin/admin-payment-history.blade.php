@@ -33,6 +33,7 @@
                                         <th>Program</th>
                                         <th>Package</th>
                                         <th>Amount</th>
+                                        <th>Enrollment Date</th>
                                         <th>Payment Date</th>
                                         <th>Status</th>
                                         <th>Actions</th>
@@ -42,16 +43,36 @@
                                     @foreach($enrollments as $enrollment)
                                     <tr>
                                         <td>
-                                            {{ $enrollment->student->user->user_firstname ?? 'N/A' }} 
-                                            {{ $enrollment->student->user->user_lastname ?? '' }}
+                                            @if($enrollment->student && $enrollment->student->user)
+                                                {{ $enrollment->student->user->user_name ?? ($enrollment->student->firstname . ' ' . $enrollment->student->lastname) }}
+                                            @elseif($enrollment->user)
+                                                {{ $enrollment->user->user_name }}
+                                            @elseif($enrollment->student)
+                                                {{ $enrollment->student->firstname ?? 'N/A' }} {{ $enrollment->student->lastname ?? '' }}
+                                            @else
+                                                N/A
+                                            @endif
                                         </td>
-                                        <td>{{ $enrollment->student->user->user_email ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($enrollment->student && $enrollment->student->user)
+                                                {{ $enrollment->student->user->user_email ?? $enrollment->student->email }}
+                                            @elseif($enrollment->user)
+                                                {{ $enrollment->user->user_email }}
+                                            @elseif($enrollment->student)
+                                                {{ $enrollment->student->email ?? 'N/A' }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
                                         <td>{{ $enrollment->program->program_name ?? 'N/A' }}</td>
                                         <td>{{ $enrollment->package->package_name ?? 'N/A' }}</td>
-                                        <td>₱{{ number_format($enrollment->package->amount ?? 0, 2) }}</td>
+                                        <td>₱{{ number_format($enrollment->package->package_price ?? $enrollment->package->amount ?? 0, 2) }}</td>
+                                        <td>{{ $enrollment->created_at->format('M d, Y h:i A') }}</td>
                                         <td>{{ $enrollment->updated_at->format('M d, Y h:i A') }}</td>
                                         <td>
-                                            @if($enrollment->payment_status === 'completed')
+                                            @if($enrollment->payment_status === 'paid')
+                                                <span class="badge bg-success">Paid</span>
+                                            @elseif($enrollment->payment_status === 'completed')
                                                 <span class="badge bg-success">Completed</span>
                                             @elseif($enrollment->payment_status === 'failed')
                                                 <span class="badge bg-danger">Failed</span>
@@ -64,12 +85,12 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-info" 
-                                                        onclick="viewDetails({{ $enrollment->id }})">
+                                                        onclick="viewDetails({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
                                                 @if($enrollment->payment_status === 'failed')
                                                     <button type="button" class="btn btn-sm btn-warning" 
-                                                            onclick="retryPayment({{ $enrollment->id }})">
+                                                            onclick="retryPayment({{ $enrollment->enrollment_id }})">
                                                         <i class="bi bi-arrow-clockwise"></i> Retry
                                                     </button>
                                                 @endif

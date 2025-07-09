@@ -195,6 +195,8 @@
                                                 </a>
                                                 <button type="button" class="btn btn-outline-success btn-sm" onclick="previewForm('full')">
                                                     <i class="fas fa-eye"></i> Preview Full Form
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="previewForm('full')">
+                                                    <i class="fas fa-eye"></i> Preview Full Form
                                                 </button>
                                                 <button type="button" class="btn btn-outline-success btn-sm" onclick="previewForm('modular')">
                                                     <i class="fas fa-eye"></i> Preview Modular Form

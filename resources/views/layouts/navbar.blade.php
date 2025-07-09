@@ -214,25 +214,25 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link" href="#" id="navbarProgramsBtn" 
+                        <a class="nav-link" href="javascript:void(0)" id="navbarProgramsBtn" 
                            onclick="toggleProgramsModal(event)">
                             <i class="bi bi-book"></i> Review Programs
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="javascript:void(0)">
                             <i class="bi bi-people"></i> About Us
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="javascript:void(0)">
                             <i class="bi bi-envelope"></i> Contact Us
                         </a>
                     </li>
                     <li class="nav-item dropdown">
                         @if(session('user_id'))
                             {{-- User is logged in - show user name with dropdown --}}
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" 
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarUserDropdown" role="button" 
                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-circle"></i> {{ explode(' ', session('user_name'))[0] ?? 'User' }}
                             </a>
@@ -261,7 +261,7 @@
                             </ul>
                         @else
                             {{-- User is not logged in - show Account dropdown --}}
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" 
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdown" role="button" 
                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-plus"></i> Account
                             </a>

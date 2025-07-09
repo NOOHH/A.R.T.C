@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\StudentBatch;
 use App\Models\Program;
 use App\Models\Enrollment;
+use App\Models\Professor;
+use App\Models\User;
 use Carbon\Carbon;
 
 class BatchEnrollmentController extends Controller
@@ -17,10 +19,12 @@ class BatchEnrollmentController extends Controller
 
         $batches = StudentBatch::with(['program', 'assignedProfessor'])->orderBy('created_at', 'desc')->get();
         $programs = Program::where('is_archived', 0)->get();
+        $professors = Professor::where('professor_archived', 0)->get();
 
         return view('admin.admin-student-enrollment.batch-enroll', [
             'batches' => $batches,
-            'programs' => $programs
+            'programs' => $programs,
+            'professors' => $professors
         ]);
     }
 
@@ -31,6 +35,7 @@ class BatchEnrollmentController extends Controller
         $request->validate([
             'batch_name' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,program_id',
+            'professor_id' => 'nullable|exists:professors,professor_id',
             'max_capacity' => 'required|integer|min:1',
             'registration_deadline' => 'required|date|after:today',
             'start_date' => 'required|date|after:registration_deadline',
@@ -40,6 +45,7 @@ class BatchEnrollmentController extends Controller
         $batch = StudentBatch::create([
             'batch_name' => $request->batch_name,
             'program_id' => $request->program_id,
+            'professor_id' => $request->professor_id,
             'max_capacity' => $request->max_capacity,
             'current_capacity' => 0,
             'batch_status' => 'available',
@@ -71,6 +77,7 @@ class BatchEnrollmentController extends Controller
         $request->validate([
             'batch_name' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,program_id',
+            'professor_id' => 'nullable|integer', // Changed from exists check
             'max_capacity' => 'required|integer|min:1',
             'registration_deadline' => 'required|date',
             'start_date' => 'required|date|after:registration_deadline',
@@ -92,6 +99,7 @@ class BatchEnrollmentController extends Controller
         $batch->update([
             'batch_name' => $request->batch_name,
             'program_id' => $request->program_id,
+            'professor_id' => $request->professor_id,
             'max_capacity' => $request->max_capacity,
             'registration_deadline' => Carbon::parse($request->registration_deadline),
             'start_date' => Carbon::parse($request->start_date),
@@ -132,22 +140,101 @@ class BatchEnrollmentController extends Controller
             return response()->json(['error' => 'Batch not found'], 404);
         }
 
-        $students = $batch->enrollments()
-            ->with(['user', 'student'])
+        $enrollments = $batch->enrollments()
+            ->with(['user', 'student', 'program', 'package'])
             ->get()
             ->map(function ($enrollment) {
+                $studentName = '';
+                $studentEmail = '';
+                
+                // Get student name and email from user or student relationship
+                if ($enrollment->user) {
+                    $studentName = trim(($enrollment->user->user_firstname ?? '') . ' ' . ($enrollment->user->user_lastname ?? ''));
+                    $studentEmail = $enrollment->user->email ?? '';
+                } elseif ($enrollment->student) {
+                    $studentName = trim(($enrollment->student->firstname ?? '') . ' ' . ($enrollment->student->lastname ?? ''));
+                    $studentEmail = $enrollment->student->email ?? '';
+                }
+                
+                // Determine if student is pending or current based on batch access
+                $isPending = !$enrollment->batch_access_granted;
+                $isCurrent = $enrollment->batch_access_granted;
+
                 return [
-                    'firstname' => $enrollment->user->user_firstname ?? $enrollment->student->first_name ?? 'N/A',
-                    'lastname' => $enrollment->user->user_lastname ?? $enrollment->student->last_name ?? 'N/A',
-                    'email' => $enrollment->user->email ?? 'N/A',
+                    'user_id' => $enrollment->user_id,
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'student_id' => $enrollment->student_id,
+                    'name' => $studentName ?: 'N/A',
+                    'email' => $studentEmail ?: 'N/A',
                     'enrollment_date' => $enrollment->created_at,
-                    'status' => $enrollment->enrollment_status
+                    'enrollment_status' => $enrollment->enrollment_status,
+                    'payment_status' => $enrollment->payment_status,
+                    'program_name' => $enrollment->program->program_name ?? 'N/A',
+                    'package_name' => $enrollment->package->package_name ?? 'N/A',
+                    'amount' => $enrollment->package->price ?? 0,
+                    'is_pending' => $isPending,
+                    'is_current' => $isCurrent
                 ];
             });
 
+        // Separate pending and current students
+        $pendingStudents = $enrollments->filter(function ($student) {
+            return $student['is_pending'];
+        })->values();
+
+        $currentStudents = $enrollments->filter(function ($student) {
+            return $student['is_current'];
+        })->values();
+
+        // Get available students (those who have enrollments but not in this batch or have no enrollment)
+        $enrolledUserIds = $enrollments->pluck('user_id')->filter()->toArray();
+        $enrolledStudentIds = $enrollments->pluck('student_id')->filter()->toArray();
+        
+        // Get students who could potentially be added to this batch
+        $availableStudents = Enrollment::with(['user', 'student'])
+            ->where('program_id', $batch->program_id)
+            ->where(function($query) use ($id) {
+                $query->where('batch_id', '!=', $id)
+                      ->orWhereNull('batch_id');
+            })
+            ->get()
+            ->map(function ($enrollment) {
+                $studentName = '';
+                $studentEmail = '';
+                
+                if ($enrollment->user) {
+                    $studentName = trim(($enrollment->user->user_firstname ?? '') . ' ' . ($enrollment->user->user_lastname ?? ''));
+                    $studentEmail = $enrollment->user->email ?? '';
+                } elseif ($enrollment->student) {
+                    $studentName = trim(($enrollment->student->firstname ?? '') . ' ' . ($enrollment->student->lastname ?? ''));
+                    $studentEmail = $enrollment->student->email ?? '';
+                }
+
+                return [
+                    'user_id' => $enrollment->user_id,
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'student_id' => $enrollment->student_id,
+                    'name' => $studentName ?: 'N/A',
+                    'email' => $studentEmail ?: 'N/A',
+                    'enrollment_status' => $enrollment->enrollment_status,
+                    'payment_status' => $enrollment->payment_status,
+                ];
+            })
+            ->filter(function ($student) use ($enrolledUserIds, $enrolledStudentIds) {
+                // Exclude students already in this batch
+                return !in_array($student['user_id'], $enrolledUserIds) && 
+                       !in_array($student['student_id'], $enrolledStudentIds);
+            })
+            ->values();
+
         return response()->json([
             'success' => true,
-            'students' => $students
+            'current_students' => $currentStudents,
+            'pending_students' => $pendingStudents,
+            'available_students' => $availableStudents,
+            'total_current' => $currentStudents->count(),
+            'total_pending' => $pendingStudents->count(),
+            'total_available' => $availableStudents->count()
         ]);
     }
 
@@ -374,5 +461,225 @@ class BatchEnrollmentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Get available students for batch assignment
+     */
+    public function getAvailableStudents($batchId)
+    {
+        // Authentication is handled by middleware
+        
+        $batch = StudentBatch::findOrFail($batchId);
+        
+        // Get students who are not already enrolled in this batch
+        $enrolledStudentIds = Enrollment::where('batch_id', $batchId)->pluck('user_id');
+        
+        $availableStudents = User::where('role', 'student')
+            ->whereNotIn('user_id', $enrolledStudentIds)
+            ->select('user_id', 'user_firstname', 'user_lastname', 'email')
+            ->orderBy('user_firstname')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'students' => $availableStudents
+        ]);
+    }
+
+
+
+    /**
+     * Add student from available list to batch
+     */
+    public function addStudentToBatch(Request $request, $batchId, $enrollmentId)
+    {
+        $enrollment = Enrollment::find($enrollmentId);
+        if (!$enrollment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enrollment not found'
+            ], 404);
+        }
+
+        $batch = StudentBatch::find($batchId);
+        if (!$batch) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Batch not found'
+            ], 404);
+        }
+
+        // Check if already in this batch
+        if ($enrollment->batch_id == $batchId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student already in this batch'
+            ], 400);
+        }
+
+        // Get target type from request (current or pending)
+        $requestData = $request->json()->all();
+        $targetType = $requestData['target_type'] ?? 'pending';
+
+        // Set status based on target type
+        if ($targetType === 'current') {
+            // Check capacity first
+            $currentCount = Enrollment::where('batch_id', $batchId)
+                ->where('batch_access_granted', true)
+                ->count();
+
+            if ($currentCount >= $batch->max_capacity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batch is at maximum capacity'
+                ], 400);
+            }
+
+            // Add to batch as current student (grant batch access)
+            $enrollment->update([
+                'batch_id' => $batchId,
+                'batch_access_granted' => true
+            ]);
+
+            // Update batch capacity
+            $newCurrentCount = Enrollment::where('batch_id', $batchId)
+                ->where('batch_access_granted', true)
+                ->count();
+            $batch->update(['current_capacity' => $newCurrentCount]);
+
+            $message = 'Student added to batch as current student (granted dashboard access)';
+        } else {
+            // Add to batch as pending student
+            $enrollment->update([
+                'batch_id' => $batchId,
+                'batch_access_granted' => false
+            ]);
+
+            $message = 'Student added to batch as pending student';
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message
+        ]);
+    }
+
+    /**
+     * Move student from pending to current (grants dashboard access without changing enrollment/payment status)
+     */
+    public function moveStudentToCurrent(Request $request, $batchId, $enrollmentId)
+    {
+        $enrollment = Enrollment::find($enrollmentId);
+        if (!$enrollment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enrollment not found'
+            ], 404);
+        }
+
+        $batch = StudentBatch::find($batchId);
+        if (!$batch) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Batch not found'
+            ], 404);
+        }
+
+        // Check capacity first - count only current students with batch access
+        $currentCount = Enrollment::where('batch_id', $batchId)
+            ->where('batch_access_granted', true)
+            ->count();
+
+        if ($currentCount >= $batch->max_capacity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Batch is at maximum capacity'
+            ], 400);
+        }
+
+        // Grant batch access without changing enrollment/payment status
+        $enrollment->update([
+            'batch_id' => $batchId,
+            'batch_access_granted' => true
+        ]);
+
+        // Update batch capacity based on batch access
+        $newCurrentCount = Enrollment::where('batch_id', $batchId)
+            ->where('batch_access_granted', true)
+            ->count();
+        $batch->update(['current_capacity' => $newCurrentCount]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student moved to current (granted dashboard access with status notification)'
+        ]);
+    }
+
+    /**
+     * Move student from current to pending (removes dashboard access but keeps in batch)
+     */
+    public function moveStudentToPending(Request $request, $batchId, $enrollmentId)
+    {
+        $enrollment = Enrollment::find($enrollmentId);
+        if (!$enrollment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enrollment not found'
+            ], 404);
+        }
+
+        // Remove batch access without changing enrollment/payment status
+        $enrollment->update([
+            'batch_access_granted' => false
+        ]);
+
+        // Update batch capacity
+        $batch = StudentBatch::find($batchId);
+        if ($batch) {
+            $newCurrentCount = Enrollment::where('batch_id', $batchId)
+                ->where('batch_access_granted', true)
+                ->count();
+            $batch->update(['current_capacity' => $newCurrentCount]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student moved to pending (dashboard access removed)'
+        ]);
+    }
+
+    /**
+     * Remove student from batch completely (moves back to available)
+     */
+    public function removeStudentFromBatchCompletely(Request $request, $batchId, $enrollmentId)
+    {
+        $enrollment = Enrollment::find($enrollmentId);
+        if (!$enrollment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enrollment not found'
+            ], 404);
+        }
+
+        // Remove from batch by setting batch_id to null
+        $enrollment->update([
+            'batch_id' => null
+        ]);
+
+        // Update batch capacity
+        $batch = StudentBatch::find($batchId);
+        if ($batch) {
+            $newCurrentCount = Enrollment::where('batch_id', $batchId)
+                ->where('enrollment_status', 'approved')
+                ->where('payment_status', 'paid')
+                ->count();
+            $batch->update(['current_capacity' => $newCurrentCount]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student removed from batch and moved to available students'
+        ]);
     }
 }
