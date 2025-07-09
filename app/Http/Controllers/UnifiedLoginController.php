@@ -181,7 +181,17 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
-        // Create session (preserving original format)
+        // Create session using PHP sessions (not Laravel sessions)
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['user_id'] = $admin->admin_id;
+        $_SESSION['user_type'] = 'admin';
+        $_SESSION['user_name'] = $admin->admin_name;
+        $_SESSION['user_email'] = $admin->email;
+        $_SESSION['logged_in'] = true;
+
+        // Also set Laravel session for middleware compatibility
         session([
             'user_id' => $admin->admin_id,
             'user_name' => $admin->admin_name,

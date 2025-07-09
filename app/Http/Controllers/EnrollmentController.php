@@ -20,10 +20,10 @@ class EnrollmentController extends Controller
         $enrollment = new Enrollment();
         if ($validated['enrollment_type'] === 'modular') {
             $enrollment->Modular_enrollment = $validated['course'];
-            $enrollment->Complete_Program = '';
+            $enrollment->Full_Program = '';
         } else {
             $enrollment->Modular_enrollment = '';
-            $enrollment->Complete_Program = $validated['course'];
+            $enrollment->Full_Program = $validated['course'];
         }
         $enrollment->package_id = $package->package_id;
         $enrollment->save();

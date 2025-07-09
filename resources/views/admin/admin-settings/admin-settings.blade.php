@@ -193,8 +193,8 @@
                                                 <a href="{{ route('enrollment.modular') }}" class="btn btn-outline-info btn-sm" target="_blank">
                                                     <i class="fas fa-external-link-alt"></i> Preview Modular Form
                                                 </a>
-                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="previewForm('complete')">
-                                                    <i class="fas fa-eye"></i> Preview Complete Form
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="previewForm('full')">
+                                                    <i class="fas fa-eye"></i> Preview Full Form
                                                 </button>
                                                 <button type="button" class="btn btn-outline-success btn-sm" onclick="previewForm('modular')">
                                                     <i class="fas fa-eye"></i> Preview Modular Form
@@ -895,25 +895,6 @@ function loadFormRequirements() {
                 addRequirementField(requirement);
             });
             
-            if (data.length === 0) {
-                // Add default requirements if none exist
-                addRequirementField({
-                    field_name: 'phone_number',
-                    field_label: 'Phone Number', 
-                    field_type: 'tel',
-                    program_type: 'both',
-                    is_required: true,
-                    is_active: true
-                });
-                addRequirementField({
-                    field_name: 'tor_document',
-                    field_label: 'Transcript of Records (TOR)',
-                    field_type: 'file',
-                    program_type: 'both', 
-                    is_required: true,
-                    is_active: true
-                });
-            }
         })
         .catch(error => {
             console.error('Error loading requirements:', error);
@@ -992,7 +973,7 @@ function addRequirementField(data = {}) {
                     <select class="form-select" 
                             name="requirements[${index}][program_type]">
                         <option value="both"     ${data.program_type==='both'     ? 'selected':''}>Both</option>
-                        <option value="complete" ${data.program_type==='complete' ? 'selected':''}>Complete</option>
+                        <option value="full" ${data.program_type==='full' ? 'selected':''}>Full</option>
                         <option value="modular"  ${data.program_type==='modular'  ? 'selected':''}>Modular</option>
                     </select>
                 </div>

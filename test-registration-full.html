@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Full Registration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-info { background: #f0f8ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .link { display: block; padding: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 5px 0; text-align: center; }
+        .link:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Test Full Registration Flow</h1>
+    
+    <div class="test-info">
+        <h3>Test Summary</h3>
+        <p><strong>Issue Fixed:</strong> Removed batch_id from registrations table insertion</p>
+        <p><strong>Changes Made:</strong></p>
+        <ul>
+            <li>Removed hidden batch_id input from registration form</li>
+            <li>Added form submission handler to include batch_id only when selected</li>
+            <li>Added multiple protection layers in controller to prevent batch_id insertion</li>
+            <li>Added guarded property to Registration model</li>
+            <li>Batch selection now stored in sessionStorage and added dynamically to form</li>
+        </ul>
+    </div>
+    
+    <h3>Test the Registration Process:</h3>
+    <a href="http://localhost/A.R.T.C/registration/full" class="link">
+        🎓 Test Full Enrollment Registration
+    </a>
+    
+    <h3>Expected Behavior:</h3>
+    <ul>
+        <li>✅ Registration should complete without batch_id database errors</li>
+        <li>✅ Batch selection should work for synchronous learning mode</li>
+        <li>✅ batch_id should be stored in session for later enrollment use</li>
+        <li>✅ User account creation should work correctly</li>
+        <li>✅ Dynamic form fields should save properly</li>
+    </ul>
+    
+    <h3>Test Steps:</h3>
+    <ol>
+        <li>Select a package (any package)</li>
+        <li>Select a program</li>
+        <li>Choose "Synchronous" learning mode</li>
+        <li>Select a batch (if available)</li>
+        <li>Fill in account details (use a new email)</li>
+        <li>Fill in student registration details</li>
+        <li>Submit the form</li>
+    </ol>
+    
+    <h3>Debug Links:</h3>
+    <a href="http://localhost/A.R.T.C/test-db" class="link">
+        🔍 Test Database Connection
+    </a>
+    
+    <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+        <h4>⚠️ Important Notes:</h4>
+        <ul>
+            <li>batch_id is now handled separately from registration and will be used during enrollment creation</li>
+            <li>The registrations table should NOT contain a batch_id column</li>
+            <li>Batch assignments belong in the student_batches table</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -859,7 +859,7 @@
 <div class="registration-container">
     <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="enrollmentForm" novalidate>
         @csrf
-        <input type="hidden" name="enrollment_type" value="modular">
+        <input type="hidden" name="enrollment_type" value="Modular">
         <input type="hidden" name="program_id" value="" id="hidden_program_id">
         <input type="hidden" name="package_id" value="">
         <input type="hidden" name="learning_mode" value="">
@@ -1002,10 +1002,10 @@
                 <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password" required
                        style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
             </div>
-            <div id="passwordError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; display: none; width: 100%;">
+            <div id="passwordError" style="background-color: #ffeaea; color: #b91c1c; padding: 8px 12px; border-radius: 6px; font-size: 14px; text-align: left; min-height: 20px; display: none; border: 1px solid #fca5a5; margin-top: 8px; width: 100%;">
                 Password must be at least 8 characters long.
             </div>
-            <div id="passwordMatchError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; display: none; width: 100%;">
+            <div id="passwordMatchError" style="background-color: #ffeaea; color: #b91c1c; padding: 8px 12px; border-radius: 6px; font-size: 14px; text-align: left; min-height: 20px; display: none; border: 1px solid #fca5a5; margin-top: 4px; width: 100%;">
                 Passwords do not match.
             </div>
             <div style="text-align: center; margin-top: 10px;">
@@ -1270,6 +1270,12 @@ const allModules = @json($allModules ?? []);
 function scrollPackages(direction) {
     const carousel = document.getElementById('packagesCarousel');
     if (!carousel) return;
+    
+    // Prevent any form validation from being triggered by carousel navigation
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
     
     const scrollAmount = 340; // Package card width + gap
     
@@ -2152,6 +2158,15 @@ document.addEventListener('DOMContentLoaded', function() {
         email: loggedInUserEmail
     });
     
+    // Prevent carousel navigation from triggering form validation
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.carousel-nav') || 
+            e.target.closest('.package-card') ||
+            e.target.classList.contains('carousel-nav')) {
+            e.stopPropagation();
+        }
+    });
+    
     // Check if we're returning from login with a package selection
     const continueEnrollment = sessionStorage.getItem('continueEnrollment');
     const skipToPayment = sessionStorage.getItem('skipToPayment');
@@ -2311,7 +2326,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('enrollmentForm');
         if (form) {
             form.addEventListener('input', function(e) {
-                if (e.target.closest('#step-3')) {
+                // Only validate step 3 if we're actually on step 3 and the event is from step 3
+                if (e.target.closest('#step-3') && currentStep === 3) {
+                    // Ignore carousel navigation button clicks
+                    if (e.target.classList.contains('carousel-nav') || 
+                        e.target.closest('.carousel-nav') ||
+                        e.target.closest('.package-card')) {
+                        return;
+                    }
                     setTimeout(validateStep3, 100);
                 }
             });
@@ -2556,3 +2578,4 @@ window.validateModuleSelection = validateModuleSelection;
 
 </script>
 @endsection
+

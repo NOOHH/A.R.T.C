@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('field_name'); // e.g., 'phone_number', 'date_of_birth', 'tor_document'
             $table->string('field_label'); // e.g., 'Phone Number', 'Date of Birth', 'Transcript of Records'
             $table->enum('field_type', ['text', 'email', 'tel', 'date', 'file', 'select', 'textarea', 'checkbox']);
-            $table->enum('program_type', ['complete', 'modular', 'both'])->default('both');
+            $table->enum('program_type', ['full', 'modular', 'both'])->default('both');
             $table->boolean('is_required')->default(true);
             $table->boolean('is_active')->default(true);
             $table->json('field_options')->nullable(); // For select options, file types, etc.

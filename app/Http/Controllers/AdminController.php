@@ -148,7 +148,7 @@ class AdminController extends Controller
                     'student_id' => $student->student_id,
                     'program_id' => $registration->program_id,
                     'package_id' => $registration->package_id,
-                    'enrollment_type' => $registration->plan_name === 'Modular' ? 'Modular' : 'Complete',
+                    'enrollment_type' => $registration->plan_name === 'Modular' ? 'Modular' : 'Full',
                     'learning_mode' => $registration->learning_mode ?? 'Synchronous',
                     'enrollment_status' => 'approved',
                 ]);

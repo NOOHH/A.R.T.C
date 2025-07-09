@@ -76,6 +76,11 @@ class Registration extends Model
         'monthly_income',
     ];
 
+    // Explicitly guard against batch_id assignment - it should never be in registrations table
+    protected $guarded = [
+        'batch_id',
+    ];
+
     protected $casts = [
         'dynamic_fields' => 'array',
         'selected_modules' => 'array', // Cast JSON field to array
