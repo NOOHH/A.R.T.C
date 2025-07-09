@@ -41,11 +41,8 @@
                                 <tbody>
                                     @foreach($enrollments as $enrollment)
                                     <tr>
-                                        <td>
-                                            {{ $enrollment->student->user->user_firstname ?? 'N/A' }} 
-                                            {{ $enrollment->student->user->user_lastname ?? '' }}
-                                        </td>
-                                        <td>{{ $enrollment->student->user->user_email ?? 'N/A' }}</td>
+                                        <td>{{ $enrollment->student_name }}</td>
+                                        <td>{{ $enrollment->student_email }}</td>
                                         <td>{{ $enrollment->program->program_name ?? 'N/A' }}</td>
                                         <td>{{ $enrollment->package->package_name ?? 'N/A' }}</td>
                                         <td>₱{{ number_format($enrollment->package->amount ?? 0, 2) }}</td>
@@ -58,11 +55,11 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-success" 
-                                                        onclick="markAsPaid({{ $enrollment->id }})">
+                                                        onclick="markAsPaid({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-check-circle"></i> Mark Paid
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-info" 
-                                                        onclick="viewDetails({{ $enrollment->id }})">
+                                                        onclick="viewDetails({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
                                             </div>

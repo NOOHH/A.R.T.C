@@ -78,11 +78,10 @@ class StudentRegistrationController extends Controller
 
             if ($validator->fails()) {
                 Log::error('Final registration validation failed', $validator->errors()->toArray());
-                return response()->json([
-                    'success' => false,
-                    'errors' => $validator->errors(),
-                    'message' => 'Registration validation failed'
-                ], 422);
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with('error', 'Registration validation failed');
             }
 
             DB::beginTransaction();
@@ -134,8 +133,14 @@ class StudentRegistrationController extends Controller
                 
                 Log::info('Created new user', ['user_id' => $user->user_id]);
                 
-                // Set session for future requests
-                session(['user_id' => $user->user_id]);
+                // Set complete session for future requests
+                session([
+                    'user_id' => $user->user_id,
+                    'user_name' => $user->user_name,
+                    'user_email' => $user->user_email,
+                    'user_role' => 'student',
+                    'logged_in' => true
+                ]);
             }
 
             if (!$user || !$user->user_id) {
@@ -259,14 +264,40 @@ class StudentRegistrationController extends Controller
             $registration->save();
             
             Log::info('Registration saved successfully', ['registration_id' => $registration->id]);
+            
+            // Also create an immediate enrollment record with the batch_id
+            // This ensures batch_id is preserved even if the session is cleared
+            $enrollmentData = [
+                'registration_id' => $registration->registration_id,
+                'user_id' => $user?->user_id, // Add user_id
+                'program_id' => $request->program_id,
+                'package_id' => $request->package_id,
+                'enrollment_type' => $request->enrollment_type,
+                'learning_mode' => strtolower($request->learning_mode),
+                'enrollment_status' => 'pending', // Will be updated to 'approved' when admin approves
+                'payment_status' => 'pending',
+            ];
+            
+            // Include batch_id if it was selected during registration
+            if ($request->batch_id) {
+                $enrollmentData['batch_id'] = $request->batch_id;
+                Log::info('Creating enrollment with batch_id during registration', [
+                    'batch_id' => $request->batch_id,
+                    'registration_id' => $registration->registration_id
+                ]);
+            }
+            
+            Enrollment::create($enrollmentData);
+            
+            Log::info('Initial enrollment created during registration', [
+                'registration_id' => $registration->registration_id,
+                'batch_id' => $request->batch_id ?? 'none'
+            ]);
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Registration submitted successfully',
-                'redirect' => route('registration.success')
-            ]);
+            // Redirect to success page 
+            return redirect()->route('registration.success')->with('success', 'Registration submitted successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -276,10 +307,9 @@ class StudentRegistrationController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred during registration: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'An error occurred during registration: ' . $e->getMessage());
         }
     }
 

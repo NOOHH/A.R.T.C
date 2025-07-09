@@ -42,27 +42,53 @@ class StudentDashboardController extends Controller
         
         $courses = [];
         
-        if ($student) {
-            // Get all enrollments for this student
-            $enrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
-                ->with(['program', 'package'])
+        // First, check for enrollments linked to this user_id (for pending registrations)
+        $enrollments = collect();
+        
+        if (session('user_id')) {
+            // Get enrollments by user_id (including pending ones)
+            $userEnrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->with(['program', 'package', 'batch'])
                 ->get();
+            $enrollments = $enrollments->merge($userEnrollments);
+        }
+        
+        if ($student) {
+            // Also get enrollments by student_id (for approved ones)
+            $studentEnrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
+                ->with(['program', 'package', 'batch'])
+                ->get();
+            $enrollments = $enrollments->merge($studentEnrollments);
+        }
+        
+        // Remove duplicates based on enrollment_id
+        $enrollments = $enrollments->unique('enrollment_id');
                 
-            foreach ($enrollments as $enrollment) {
-                if ($enrollment->program && !$enrollment->program->is_archived) {
-                    // Get module count for this program
-                    $moduleCount = \App\Models\Module::where('program_id', $enrollment->program->program_id)->count();
-                    
-                    // Get completed modules count (you can implement this based on your completion tracking)
-                    $completedCount = 0; // Implement based on your module completion logic
-                    
-                    // Determine button text and action based on status
+        foreach ($enrollments as $enrollment) {
+            // Show all enrollments, not just those with active programs
+            if ($enrollment->program) {
+                // Get module count for this program
+                $moduleCount = \App\Models\Module::where('program_id', $enrollment->program->program_id)->count();
+                
+                // Get completed modules count (you can implement this based on your completion tracking)
+                $completedCount = 0; // Implement based on your module completion logic
+                
+                // Determine button text and action based on status
+                $buttonText = 'Continue Learning';
+                $buttonClass = 'resume-btn';
+                $buttonAction = route('student.course', ['courseId' => $enrollment->program->program_id]);
+                $showAccessModal = false;
+                
+                // Check if student has batch access (overrides normal status checks)
+                if ($enrollment->batch_access_granted) {
                     $buttonText = 'Continue Learning';
-                    $buttonClass = 'resume-btn';
+                    $buttonClass = 'resume-btn batch-access';
                     $buttonAction = route('student.course', ['courseId' => $enrollment->program->program_id]);
-                    
+                    $showAccessModal = true; // Show modal about special access
+                } else {
+                    // Normal status checks
                     if ($enrollment->enrollment_status === 'pending') {
-                        $buttonText = 'Pending Verification';
+                        $buttonText = 'Pending Admin Approval';
                         $buttonClass = 'resume-btn pending';
                         $buttonAction = '#';
                     } elseif ($enrollment->enrollment_status === 'approved' && $enrollment->payment_status !== 'paid') {
@@ -74,25 +100,41 @@ class StudentDashboardController extends Controller
                         $buttonClass = 'resume-btn rejected';
                         $buttonAction = '#';
                     }
-                    
-                    $courses[] = [
-                        'id' => $enrollment->program->program_id,
-                        'name' => $enrollment->program->program_name,
-                        'description' => $enrollment->program->program_description ?? 'No description available.',
-                        'progress' => $moduleCount > 0 ? round(($completedCount / $moduleCount) * 100) : 0,
-                        'status' => 'in_progress',
-                        'learning_mode' => $enrollment->learning_mode ?? 'Synchronous',
-                        'enrollment_type' => $enrollment->enrollment_type,
-                        'package_name' => $enrollment->package->package_name ?? 'Unknown Package',
-                        'total_modules' => $moduleCount,
-                        'completed_modules' => $completedCount,
-                        'enrollment_status' => $enrollment->enrollment_status,
-                        'payment_status' => $enrollment->payment_status,
-                        'button_text' => $buttonText,
-                        'button_class' => $buttonClass,
-                        'button_action' => $buttonAction,
+                }
+                
+                // Get batch information
+                $batchInfo = null;
+                $batchDates = null;
+                if ($enrollment->batch) {
+                    $batchInfo = $enrollment->batch->batch_name;
+                    $batchDates = [
+                        'start' => $enrollment->batch->start_date ? \Carbon\Carbon::parse($enrollment->batch->start_date)->format('M d, Y') : 'TBA',
+                        'end' => $enrollment->batch->end_date ? \Carbon\Carbon::parse($enrollment->batch->end_date)->format('M d, Y') : 'TBA'
                     ];
                 }
+                
+                $courses[] = [
+                    'id' => $enrollment->program->program_id,
+                    'name' => $enrollment->program->program_name,
+                    'description' => $enrollment->program->program_description ?? 'No description available.',
+                    'progress' => $moduleCount > 0 ? round(($completedCount / $moduleCount) * 100) : 0,
+                    'status' => 'in_progress',
+                    'learning_mode' => $enrollment->learning_mode ?? 'Synchronous',
+                    'enrollment_type' => $enrollment->enrollment_type,
+                    'package_name' => $enrollment->package->package_name ?? 'Unknown Package',
+                    'total_modules' => $moduleCount,
+                    'completed_modules' => $completedCount,
+                    'enrollment_status' => $enrollment->enrollment_status,
+                    'payment_status' => $enrollment->payment_status,
+                    'button_text' => $buttonText,
+                    'button_class' => $buttonClass,
+                    'button_action' => $buttonAction,
+                    'batch_name' => $batchInfo,
+                    'batch_dates' => $batchDates,
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'show_access_modal' => $showAccessModal,
+                    'batch_access_granted' => $enrollment->batch_access_granted ?? false,
+                ];
             }
         }
         
@@ -100,6 +142,12 @@ class StudentDashboardController extends Controller
         if (empty($courses)) {
             $courses = [];
         }
+        
+        // Log final courses array for debugging
+        Log::info('Dashboard courses array', [
+            'courses_count' => count($courses),
+            'courses_data' => $courses
+        ]);
 
         // Get student deadlines
         $deadlines = [];
@@ -173,20 +221,28 @@ class StudentDashboardController extends Controller
             return redirect()->route('student.dashboard')->with('error', 'You are not enrolled in this course.');
         }
 
-        // Check payment status
+        // Check payment status and batch access
         $paymentStatus = $enrollment ? $enrollment->payment_status : 'unpaid';
         $enrollmentStatus = $enrollment ? $enrollment->enrollment_status : 'pending';
+        $batchAccessGranted = $enrollment ? $enrollment->batch_access_granted : false;
         
-        // If not paid or not approved, show paywall
-        if ($paymentStatus !== 'paid' || $enrollmentStatus !== 'approved') {
-            return view('student.paywall', compact(
-                'user', 
-                'program', 
-                'enrollment', 
-                'paymentStatus', 
-                'enrollmentStatus',
-                'courseId'
-            ));
+        // If batch access is granted, allow access but show modal
+        if ($batchAccessGranted) {
+            // Allow access with special notification
+            $showAccessModal = true;
+        } else {
+            // Normal access checks - if not paid or not approved, show paywall
+            if ($paymentStatus !== 'paid' || $enrollmentStatus !== 'approved') {
+                return view('student.paywall', compact(
+                    'user', 
+                    'program', 
+                    'enrollment', 
+                    'paymentStatus', 
+                    'enrollmentStatus',
+                    'courseId'
+                ));
+            }
+            $showAccessModal = false;
         }
         
         // Continue with normal course view if paid and approved
@@ -250,7 +306,19 @@ class StudentDashboardController extends Controller
         // Variables for the view
         $progress = $progressPercentage;
 
-        return view('student.student-courses.student-course', compact('user', 'course', 'program', 'progress', 'totalModules', 'completedModules', 'modulesByType'));
+        return view('student.student-courses.student-course', compact(
+            'user', 
+            'course', 
+            'program', 
+            'progress', 
+            'totalModules', 
+            'completedModules', 
+            'modulesByType',
+            'showAccessModal',
+            'enrollment',
+            'paymentStatus',
+            'enrollmentStatus'
+        ));
     }
 
     public function settings()

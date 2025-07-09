@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment History Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Payment History Debug</h1>
+    
+    <?php
+    try {
+        // Database connection
+        $host = 'localhost';
+        $dbname = 'artc';
+        $username = 'root';
+        $password = '';
+        
+        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        
+        echo '<div class="section success">Database connection successful!</div>';
+        
+        // Check enrollments
+        echo '<div class="section">';
+        echo '<h2>Enrollment Statistics</h2>';
+        
+        $stmt = $pdo->query("SELECT COUNT(*) as total FROM enrollments");
+        $total = $stmt->fetch()['total'];
+        echo "<p>Total enrollments: $total</p>";
+        
+        $stmt = $pdo->query("SELECT COUNT(*) as paid FROM enrollments WHERE payment_status = 'paid'");
+        $paid = $stmt->fetch()['paid'];
+        echo "<p>Paid enrollments: $paid</p>";
+        
+        $stmt = $pdo->query("SELECT COUNT(*) as history FROM payment_history");
+        $history = $stmt->fetch()['history'];
+        echo "<p>Payment history records: $history</p>";
+        
+        // Show payment statuses
+        echo '<h3>Payment Status Breakdown</h3>';
+        $stmt = $pdo->query("SELECT payment_status, COUNT(*) as count FROM enrollments GROUP BY payment_status");
+        echo '<table>';
+        echo '<tr><th>Status</th><th>Count</th></tr>';
+        while ($row = $stmt->fetch()) {
+            echo "<tr><td>{$row['payment_status']}</td><td>{$row['count']}</td></tr>";
+        }
+        echo '</table>';
+        echo '</div>';
+        
+        // Show paid enrollments with details
+        if ($paid > 0) {
+            echo '<div class="section">';
+            echo '<h2>Paid Enrollments Details</h2>';
+            
+            $stmt = $pdo->query("
+                SELECT 
+                    e.enrollment_id,
+                    e.user_id,
+                    e.student_id,
+                    e.program_id,
+                    e.package_id,
+                    e.payment_status,
+                    e.created_at,
+                    e.updated_at,
+                    u.user_name as user_name,
+                    s.firstname,
+                    s.lastname,
+                    s.email as student_email,
+                    p.program_name,
+                    pkg.package_name,
+                    pkg.price
+                FROM enrollments e
+                LEFT JOIN users u ON e.user_id = u.user_id
+                LEFT JOIN students s ON e.student_id = s.student_id
+                LEFT JOIN programs p ON e.program_id = p.program_id
+                LEFT JOIN packages pkg ON e.package_id = pkg.package_id
+                WHERE e.payment_status = 'paid'
+                ORDER BY e.updated_at DESC
+                LIMIT 10
+            ");
+            
+            echo '<table>';
+            echo '<tr><th>ID</th><th>User</th><th>Student</th><th>Program</th><th>Package</th><th>Price</th><th>Status</th><th>Updated</th></tr>';
+            
+            while ($row = $stmt->fetch()) {
+                echo '<tr>';
+                echo "<td>{$row['enrollment_id']}</td>";
+                echo "<td>{$row['user_name']}</td>";
+                echo "<td>{$row['firstname']} {$row['lastname']}<br><small>{$row['student_email']}</small></td>";
+                echo "<td>{$row['program_name']}</td>";
+                echo "<td>{$row['package_name']}</td>";
+                echo "<td>" . ($row['price'] ? '₱' . number_format($row['price'], 2) : 'N/A') . "</td>";
+                echo "<td>{$row['payment_status']}</td>";
+                echo "<td>{$row['updated_at']}</td>";
+                echo '</tr>';
+            }
+            echo '</table>';
+            echo '</div>';
+        }
+        
+        // Show payment history
+        if ($history > 0) {
+            echo '<div class="section">';
+            echo '<h2>Payment History Records</h2>';
+            
+            $stmt = $pdo->query("
+                SELECT 
+                    ph.*,
+                    u.user_name,
+                    s.firstname,
+                    s.lastname,
+                    p.program_name,
+                    pkg.package_name
+                FROM payment_history ph
+                LEFT JOIN users u ON ph.user_id = u.user_id
+                LEFT JOIN students s ON ph.student_id = s.student_id
+                LEFT JOIN programs p ON ph.program_id = p.program_id
+                LEFT JOIN packages pkg ON ph.package_id = pkg.package_id
+                ORDER BY ph.payment_date DESC
+                LIMIT 10
+            ");
+            
+            echo '<table>';
+            echo '<tr><th>ID</th><th>Enrollment ID</th><th>User</th><th>Student</th><th>Program</th><th>Package</th><th>Status</th><th>Method</th><th>Date</th></tr>';
+            
+            while ($row = $stmt->fetch()) {
+                echo '<tr>';
+                echo "<td>{$row['payment_history_id']}</td>";
+                echo "<td>{$row['enrollment_id']}</td>";
+                echo "<td>{$row['user_name']}</td>";
+                echo "<td>{$row['firstname']} {$row['lastname']}</td>";
+                echo "<td>{$row['program_name']}</td>";
+                echo "<td>{$row['package_name']}</td>";
+                echo "<td>{$row['payment_status']}</td>";
+                echo "<td>{$row['payment_method']}</td>";
+                echo "<td>{$row['payment_date']}</td>";
+                echo '</tr>';
+            }
+            echo '</table>';
+            echo '</div>';
+        }
+        
+    } catch (Exception $e) {
+        echo '<div class="section error">';
+        echo '<h2>Error</h2>';
+        echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+        echo '</div>';
+    }
+    ?>
+    
+    <div class="section">
+        <h2>Test Admin Payment History Route</h2>
+        <p><a href="/A.R.T.C/public/admin/payment-history" target="_blank">Open Admin Payment History</a></p>
+        <p><a href="/A.R.T.C/public/admin/student/registration/payment/pending" target="_blank">Open Payment Pending</a></p>
+    </div>
+</body>
+</html>

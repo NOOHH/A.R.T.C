@@ -14,8 +14,12 @@ return new class extends Migration
     public function up()
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            $table->unsignedBigInteger('batch_id')->nullable()->after('learning_mode');
-            $table->foreign('batch_id')->references('batch_id')->on('student_batches')->onDelete('set null');
+            // Add user_id field to link with users table
+            $table->unsignedBigInteger('user_id')->nullable()->after('student_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            
+            // Add index for better performance
+            $table->index('user_id');
         });
     }
 
@@ -27,8 +31,8 @@ return new class extends Migration
     public function down()
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            $table->dropForeign(['batch_id']);
-            $table->dropColumn('batch_id');
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
         });
     }
 };
