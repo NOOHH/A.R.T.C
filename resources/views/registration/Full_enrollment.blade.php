@@ -8,6 +8,7 @@
 {!! App\Helpers\UIHelper::getNavbarStyles() !!}
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -169,6 +170,7 @@ function nextStep() {
             showWarning('Please select a learning mode before proceeding.');
             return;
         }
+        // Check if user is logged in
         if (isUserLoggedIn) {
             animateStepTransition('step-2', 'step-4');
             currentStep = 4;
@@ -182,19 +184,20 @@ function nextStep() {
             updateStepper(currentStep);
         }
     } else if (currentStep === 3) {
+        // Validate account registration
         if (!validateStep3()) {
             showWarning('Please fill in all required fields correctly.');
             return;
         }
+        // Go to student registration
         copyAccountDataToStudentForm();
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
-        updateStepper(currentStep);
+        // Auto-fill user data
         setTimeout(() => {
             copyAccountDataToStudentForm();
         }, 300);
     }
-    // updateProgressBar(); <-- Only keep this in animateStepTransition
 }
 
 
@@ -202,9 +205,7 @@ function prevStep() {
     console.log('prevStep called, current step:', currentStep);
 
     if (currentStep === 4) {
-        // From student registration, check if user is logged in and learning mode
-        const learningMode = document.getElementById('learning_mode')?.value;
-
+        // From student registration, check if user is logged in
         if (isUserLoggedIn) {
             // Skip account registration and go back to learning mode
             console.log('User logged in - going back to learning mode');
@@ -216,12 +217,6 @@ function prevStep() {
             console.log('User not logged in - going back to account registration');
             animateStepTransition('step-4', 'step-3', true);
             currentStep = 3;
-            updateStepper(currentStep);
-            // Trigger validation after going back to step 3
-            setTimeout(() => {
-                validateStep3();
-                console.log('Step 3 validation triggered after going back');
-            }, 500);
         }
     } else if (currentStep === 3) {
         // From account registration, go back to learning mode
@@ -543,355 +538,354 @@ function fillLoggedInUserData() {
         
         console.log('Filled logged in user data:', loggedInUserFirstname, loggedInUserLastname);
     }
-}
-
-</script>
+</style>
 @endpush
 
 @section('content')
-<div class="form-container">
-    <div class="form-wrapper">
-        <!-- Progress Bar -->
-<!-- Stepper Progress Bar -->
-<div class="stepper-progress">
-  <div class="stepper">
-    <div class="step" id="stepper-1">
-      <div class="circle">1</div>
-      <div class="label">Package</div>
+<!-- Validation Errors Display -->
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin: 20px auto; max-width: 1200px;">
+        <h6><i class="bi bi-exclamation-triangle"></i> Please correct the following errors:</h6>
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="bar"></div>
-    <div class="step" id="stepper-2">
-      <div class="circle">2</div>
-      <div class="label">Mode</div>
-    </div>
-    <div class="bar"></div>
-    <div class="step" id="stepper-3">
-      <div class="circle">3</div>
-      <div class="label">Account</div>
-    </div>
-    <div class="bar"></div>
-    <div class="step" id="stepper-4">
-      <div class="circle">4</div>
-      <div class="label">Finish</div>
-    </div>
-  </div>
-</div>
+@endif
 
-        <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="enrollmentForm" novalidate onsubmit="return handleFormSubmission(event)">
-            @csrf
-            
-            <!-- Hidden inputs for form data -->
-            <input type="hidden" name="enrollment_type" value="Full">
-            <input type="hidden" name="package_id" value="" id="packageIdInput">
-            <input type="hidden" name="program_id" value="" id="hidden_program_id">
-            <input type="hidden" name="plan_id" value="1">
-            <input type="hidden" name="learning_mode" id="learning_mode" value="">
-            <input type="hidden" name="Start_Date" id="hidden_start_date" value="">
-            
-             <!-- Step 1 -->
-            <div class="step active" id="step-1">
-                <div class="step-header">
-                    <h2>
-                        <i class="bi bi-box-seam me-2"></i>
-                        Choose Your Package
-                    </h2>
-                    <p>Select the package that best fits your learning goals.</p>
-                </div>
+<!-- SINGLE CENTERED CONTAINER - No nested layers -->
+<div class="registration-container">
+    <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="enrollmentForm" novalidate>
+        @csrf
+        <input type="hidden" name="enrollment_type" value="full">
+        <input type="hidden" name="package_id" value="">
+        <input type="hidden" name="plan_id" value="1">
 
-                <div class="package-carousel-wrapper" style="position:relative;width:100%;display:flex;justify-content:center;align-items:center;">
-                    <!-- Left Arrow -->
-                    <button type="button" class="carousel-arrow left" onclick="scrollPackages('left')">&lt;</button>
-
-                    <!-- Cards Container (Horizontal Scroll/Flex) -->
-                    <div class="package-cards-container" id="packagesCarousel">
-                        @foreach($packages as $package)
-                        <div 
-                            class="package-card"
-                            onclick="selectPackage('{{ $package->package_id }}','{{ addslashes($package->package_name) }}','{{ $package->amount }}')"
-                        >
-                            <div class="card-body">
-                                <h5 class="card-title">{{ $package->package_name }}</h5>
-                                <p class="card-text">{{ $package->description ?? 'No description yet.' }}</p>
+    {{-- STEP 1: PACKAGE SELECTION --}}
+    <div class="step active" id="step-1">
+        <h2 style="text-align:center; margin-bottom:30px; font-weight:700; letter-spacing:1px;">
+            SELECT YOUR PACKAGE
+        </h2>
+        
+        <!-- Bootstrap Horizontal Scrolling Package Carousel -->
+        <div class="packages-carousel-container">
+            <div class="packages-carousel" id="packagesCarousel">
+                @foreach($packages as $package)
+                <div class="package-card-wrapper">
+                    <div class="card package-card h-100 shadow-lg" onclick="selectPackage('{{ $package->package_id }}', '{{ $package->package_name }}', '{{ $package->amount }}')" data-package-id="{{ $package->package_id }}" data-package-price="{{ $package->amount }}">
+                        <div class="package-image-header">
+                            <div class="package-icon">📦</div>
+                            @if($loop->first)
+                                <div class="package-badge">Popular</div>
+                            @endif
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title package-title">{{ $package->package_name }}</h5>
+                            <p class="card-text package-description flex-grow-1" title="{{ $package->description ?? 'Complete package with all features included.' }}">
+                                {{ $package->description ?? 'Complete package with all features included.' }}
+                            </p>
+                            <div class="mt-auto">
                                 <div class="package-price">₱{{ number_format($package->amount, 2) }}</div>
                             </div>
                         </div>
-                        @endforeach
                     </div>
-
-                    <!-- Right Arrow -->
-                    <button type="button" class="carousel-arrow right" onclick="scrollPackages('right')">&gt;</button>
                 </div>
+                @endforeach
+            </div>
+            
+            <!-- Navigation Arrows -->
+            @if($packages->count() > 2)
+                <button type="button" class="carousel-nav prev-btn" onclick="scrollPackages('left')" id="prevPackageBtn">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="button" class="carousel-nav next-btn" onclick="scrollPackages('right')" id="nextPackageBtn">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
 
-                <div class="selected-package-summary mt-3 mb-4" style="text-align:left;">
-                    <span class="ms-3">
-                        <i class="bi bi-check-circle-fill text-success"></i>
-                        Selected Package: <strong id="selectedPackageName">None</strong>
-                    </span>
+            @endif
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <div id="selectedPackageDisplay" style="display: none; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border-radius: 12px; border: 2px solid #4caf50; max-width: 400px; margin: 0 auto 20px;">
+                <strong style="color: #2e7d2e; font-size: 1.1rem;">Selected Package: <span id="selectedPackageName"></span></strong>
+                <div style="color: #2e7d2e; font-size: 1.2rem; font-weight: bold; margin-top: 8px;">
+                    Price: <span id="selectedPackagePrice"></span>
                 </div>
-
-                <div class="form-navigation">
-                    <button
-                        type="button"
-                        onclick="nextStep()"
-                        id="packageNextBtn"
-                        disabled
-                        class="btn btn-primary btn-lg"
-                    >
-                        Next <i class="bi bi-arrow-right ms-2"></i>
-                    </button>
-                </div>
             </div>
-
-<div class="step" id="step-2">
-    <div class="white-step-container">
-        <div class="step-header">
-            <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
-            <p>Select how you'd like to take your classes.</p>
-        </div>
-
-        <div class="learning-modes horizontal">
-            <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous">
-                <div class="mode-icon"><i class="bi bi-camera-video"></i></div>
-                <h4>Synchronous</h4>
-                <p>Live classes with real-time interaction</p>
-                <ul>
-                    <li>Live video sessions</li>
-                    <li>Real-time Q&A</li>
-                    <li>Interactive discussions</li>
-                    <li>Scheduled class times</li>
-                </ul>
-            </div>
-            <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous">
-                <div class="mode-icon"><i class="bi bi-play-circle"></i></div>
-                <h4>Asynchronous</h4>
-                <p>Self-paced learning with recorded content</p>
-                <ul>
-                    <li>Pre-recorded videos</li>
-                    <li>Study at your own pace</li>
-                    <li>24/7 access to materials</li>
-                    <li>Flexible scheduling</li>
-                </ul>
-            </div>
-        </div>
-
-        <div id="selectedLearningModeDisplay" class="selected-display" style="display: none;">
-            <div class="selected-item">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                <span>Selected Mode: <strong id="selectedLearningModeName"></strong></span>
-            </div>
-        </div>
-
-        <div class="form-navigation">
-            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                <i class="bi bi-arrow-left me-2"></i> Back
-            </button>
-            <button type="button" onclick="nextStep()" id="learningModeNextBtn" disabled class="btn btn-primary btn-lg">
-                Next <i class="bi bi-arrow-right ms-2"></i>
+            <button type="button" onclick="nextStep()" id="packageNextBtn" disabled
+                    class="btn btn-primary btn-lg" style="opacity: 0.5;">
+                Next<i class="bi bi-arrow-right ms-2"></i>
             </button>
         </div>
     </div>
-</div>
 
-<!-- Step 3: Account Registration (only for non-logged users) -->
-<div class="step" id="step-3">
-    <div class="account-step-card">
-        <div class="step-header">
-            <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
-            <p>Please provide your account information to continue.</p>
-        </div>
-
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="user_firstname">First Name</label>
-                <input type="text" id="user_firstname" name="user_firstname" class="form-control" required>
-                <div id="user_firstnameError" class="error-message" style="display: none;"></div>
+    {{-- STEP 2: LEARNING MODE SELECTION --}}
+    <div class="step" id="step-2">
+        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+            LEARNING MODE SELECTION
+        </h2>
+        
+        <div style="max-width: 600px; margin: 0 auto;">
+            <h3 style="margin-bottom: 20px; text-align: center;">Choose Your Learning Mode</h3>
+            
+            <div class="learning-mode-container" style="display: flex; gap: 30px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+                <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous"
+                     style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 15px; padding: 30px 20px; width: 250px; cursor: pointer; 
+                            transition: all 0.3s ease; border: 3px solid transparent; text-align: center; color: white;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🕐</div>
+                    <h4 style="margin: 0 0 10px 0; color: #fff;">Synchronous</h4>
+                    <p style="margin: 0; color: #ccc; font-size: 14px;">Real-time classes with live interaction, scheduled sessions, and immediate feedback.</p>
+                </div>
+                
+                <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous"
+                     style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 15px; padding: 30px 20px; width: 250px; cursor: pointer; 
+                            transition: all 0.3s ease; border: 3px solid transparent; text-align: center; color: white;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🎯</div>
+                    <h4 style="margin: 0 0 10px 0; color: #fff;">Asynchronous</h4>
+                    <p style="margin: 0; color: #ccc; font-size: 14px;">Self-paced learning with recorded materials, flexible schedule, and individual progress.</p>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="user_lastname">Last Name</label>
-                <input type="text" id="user_lastname" name="user_lastname" class="form-control" required>
-                <div id="user_lastnameError" class="error-message" style="display: none;"></div>
+            
+            <div id="selectedLearningModeDisplay" style="display: none; margin: 20px 0; padding: 15px; background: #e8f5e8; border-radius: 8px; text-align: center;">
+                <strong>Selected Learning Mode: <span id="selectedLearningModeName"></span></strong>
             </div>
-            <div class="form-group" style="grid-column: 1 / span 2;">
-                <label for="user_email">Email Address</label>
-                <input type="email" id="user_email" name="email" class="form-control" required>
-                <div id="emailError" class="error-message" style="display: none;"></div>
+            
+            <input type="hidden" name="learning_mode" id="learning_mode" value="">
+            
+            <div style="display:flex; gap:16px; justify-content:center; margin-top: 30px;">
+                <button type="button" onclick="prevStep()" class="back-btn"
+                        style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
+                    Back
+                </button>
+                <button type="button" onclick="nextStep()" id="learningModeNextBtn" disabled
+                        style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff; border:none; 
+                               border-radius:8px; padding:12px 40px; font-size:1.1rem; cursor:pointer; opacity: 0.5;">
+                    Next
+                </button>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-control" required>
-                <div id="passwordError" class="error-message" style="display: none;"></div>
-            </div>
-            <div class="form-group">
-                <label for="password_confirmation">Confirm Password</label>
-                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
-                <div id="passwordMatchError" class="error-message" style="display: none;"></div>
-            </div>
-        </div>
-
-        <div class="login-prompt">
-            <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
-        </div>
-
-        <div class="form-navigation">
-            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                <i class="bi bi-arrow-left me-2"></i> Back
-            </button>
-            <button type="button" onclick="nextStep()" id="step3NextBtn" disabled class="btn btn-primary btn-lg">
-                Next <i class="bi bi-arrow-right ms-2"></i>
-            </button>
         </div>
     </div>
-</div>
 
-
-<!-- Step 4: Student Registration -->
-<div class="step" id="step-4">
-    <div class="student-step-card">
-        <div class="step-header">
-            <h2><i class="bi bi-person-lines-fill me-2"></i>Complete Your Registration</h2>
-            <p>Fill in your personal and academic information.</p>
+    {{-- STEP 3: ACCOUNT REGISTRATION --}}
+    <div class="step" id="step-3">
+        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+            ACCOUNT REGISTRATION
+        </h2>
+        <div style="display:flex; flex-direction:column; gap:18px; align-items:center;">
+            <div style="display:flex; gap:16px; width:100%; max-width:500px;">
+                <input type="text" name="user_firstname" id="user_firstname" placeholder="First Name" required
+                       style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+                <input type="text" name="user_lastname" id="user_lastname" placeholder="Last Name" required
+                       style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+            </div>
+            <input type="email" name="email" id="user_email" placeholder="Email" required
+                   style="width:100%; max-width:500px; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+            <div id="emailError" style="display: none; color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center;">
+                This email is already registered. Please use a different email.
+            </div>
+            <div style="display:flex; gap:16px; width:100%; max-width:500px;">
+                <input type="password" name="password" id="password" placeholder="Password"
+                       style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+                <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password"
+                       style="flex:1; padding:12px 16px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+            </div>
+            <div id="passwordError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; display: none;">
+                Password must be at least 8 characters long.
+            </div>
+            <div id="passwordMatchError" style="color: #dc3545; font-size: 14px; margin-top: -10px; text-align: center; min-height: 20px; display: none;">
+                Passwords do not match.
+            </div>
+            <div style="text-align: center; margin-top: -10px;">
+                <p style="color: #666; font-size: 14px; margin: 0;">
+                    Already have an account? 
+                    <a href="#" onclick="loginWithPackage()" style="color: #1c2951; text-decoration: underline; font-weight: 600;">
+                        Click here to login
+                    </a>
+                </p>
+            </div>
+            <div style="display:flex; gap:16px; justify-content:center;">
+                <button type="button" onclick="prevStep()" class="back-btn"
+                        style="padding:12px 30px; border:none; border-radius:8px; background:#ccc; cursor:pointer;">
+                    Back
+                </button>
+                <button type="button" onclick="nextStep()" id="step3NextBtn"
+                        style="background:linear-gradient(90deg,#a259c6,#6a82fb); color:#fff;
+                               border:none; border-radius:8px; padding:12px 40px; font-size:1.1rem; font-weight:600;
+                               box-shadow:0 2px 8px rgba(160,89,198,0.08); cursor:not-allowed; opacity: 0.5;" disabled>
+                    Next
+                </button>
+            </div>
         </div>
+    </div>
 
-        <!-- Dynamic Form Fields -->
-        @if(isset($formRequirements) && $formRequirements->count() > 0)
-            @foreach($formRequirements as $field)
-                @if($field->field_type === 'section')
-                    <h3 style="margin-top:2.1rem"><i class="bi bi-folder me-2"></i>{{ $field->label }}</h3>
-                @else
-                    <div class="form-group">
-                        <label for="{{ $field->field_name }}">
-                            {{ $field->label }}
-                            @if($field->is_required) <span class="required">*</span> @endif
-                        </label>
-                        
-                        @if($field->field_type === 'text')
-                            <input type="text" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                        @elseif($field->field_type === 'email')
-                            <input type="email" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                        @elseif($field->field_type === 'number')
-                            <input type="number" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                        @elseif($field->field_type === 'date')
-                            <input type="date" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                        @elseif($field->field_type === 'file')
-                            <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                        @elseif($field->field_type === 'select')
-                            <select name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                    class="form-select" {{ $field->is_required ? 'required' : '' }}>
-                                <option value="">Select {{ $field->label }}</option>
-                                @if($field->options)
-                                    @foreach(json_decode($field->options, true) as $option)
-                                        <option value="{{ $option }}">{{ $option }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        @elseif($field->field_type === 'textarea')
-                            <textarea name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                      class="form-control" rows="3" {{ $field->is_required ? 'required' : '' }}></textarea>
-                        @elseif($field->field_type === 'checkbox')
-                            <div class="form-check">
-                                <input type="checkbox" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                       class="form-check-input" value="1" {{ $field->is_required ? 'required' : '' }}>
-                                <label class="form-check-label" for="{{ $field->field_name }}">
-                                    {{ $field->label }}
-                                </label>
-                            </div>
-                        @endif
-                        
-                        @if($field->help_text)
-                            <small class="form-text text-muted">{{ $field->help_text }}</small>
-                        @endif
-                    </div>
-                @endif
-            @endforeach
+    {{-- STEP 4: FULL STUDENT REGISTRATION --}}
+    <div class="step" id="step-4">
+        <h2 style="text-align:center; margin-bottom:24px; font-weight:700; letter-spacing:1px;">
+            STUDENT FULL PROGRAM REGISTRATION
+        </h2>
+
+        @if($student)
+        <div class="alert alert-info" style="background-color:#e7f3ff; border:1px solid #b3d9ff; color:#0066cc; padding:12px; border-radius:6px; margin-bottom:20px; text-align:center;">
+            <i class="bi bi-info-circle"></i> Your existing information has been pre-filled. You can update any field as needed.
+        </div>
         @endif
 
-        <div class="form-group" style="margin-top:2.2rem;">
-            <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program</label>
-            <select name="program_id" class="form-select" required id="programSelect" onchange="loadBatchesForProgram(); updateHiddenProgramId();">
+        {{-- Dynamic Form Fields (includes all sections) --}}
+        <div id="dynamic-fields-container">
+            <x-dynamic-enrollment-form :requirements="$formRequirements" />
+        </div>
+
+        <h3><i class="bi bi-book me-2"></i>Program</h3>
+        <div class="input-row">
+            <select name="program_id" class="form-select" required id="programSelect">
                 <option value="">Select Program</option>
                 @foreach($programs as $program)
-                    <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                    <option value="{{ $program->program_id }}"
+                        {{ old('program_id', $programId ?? '') == $program->program_id ? 'selected' : '' }}>
+                        {{ $program->program_name }}
+                    </option>
                 @endforeach
             </select>
         </div>
 
-        <!-- Batch Selection (only for synchronous learning) -->
-        <div id="batchSelectionContainer" style="display: none;">
-            <h3 style="font-size:1.13rem;font-weight:700;"><i class="bi bi-people me-2"></i>Select Batch</h3>
-            <div id="batchOptions" class="batch-options">
-                <!-- Batches will be loaded here -->
-            </div>
-            <!-- Selected Batch Display -->
-            <div id="selectedBatchDisplay" class="selected-display" style="display: none;">
-                <div class="selected-item">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    <span>Selected Batch: <strong id="selectedBatchName"></strong></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group" style="margin-top:2rem;">
-            <label for="start_date_input" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-calendar-event me-2"></i>Start Date</label>
-            <input type="date" name="Start_Date" id="start_date_input" class="form-control"
-                   value="{{ $student->start_date ?? old('Start_Date') }}" 
-                   onchange="updateHiddenStartDate()" required>
+        <h3><i class="bi bi-calendar-event me-2"></i>Start Date</h3>
+        <div class="course-box" style="margin-bottom:20px;">
+            <input type="date" name="Start_Date" class="form-control"
+                   value="{{ $student->start_date ?? old('Start_Date') }}" required>
         </div>
 
         <div class="form-check mb-4">
             <input class="form-check-input" type="checkbox" id="termsCheckbox" required>
             <label class="form-check-label" for="termsCheckbox">
-                I agree to the <a href="#" id="showTerms">Terms and Conditions</a>
+                I agree to the 
+                <a href="#" id="showTerms" class="text-primary text-decoration-underline">
+                  Terms and Conditions
+                </a>
             </label>
         </div>
 
-        <hr style="margin-bottom: 2.1rem; margin-top: 1.2rem;">
-
-        <div class="form-navigation" style="justify-content: space-between;">
-            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                <i class="bi bi-arrow-left me-2"></i> Back
+        <div class="d-flex gap-3 justify-content-center flex-column flex-md-row">
+            <!-- Mobile: Full width buttons, Tablet & PC: Side by side -->
+            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg order-2 order-md-1">
+                <i class="bi bi-arrow-left me-2"></i>Back
             </button>
-            <button type="submit" class="btn btn-success btn-lg">
-                <i class="bi bi-check-circle me-2"></i> Complete Registration
+            <button type="submit" class="btn btn-primary btn-lg order-1 order-md-2" id="enrollBtn">
+                <i class="bi bi-check-circle me-2"></i>Enroll Now
             </button>
         </div>
+    </div>    </form>
+</div> <!-- END SINGLE CENTERED CONTAINER -->
+
+{{-- Terms and Conditions Modal --}}
+<div id="termsModal"
+     style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
+            background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:30px; border-radius:16px; max-width:600px; width:90%;">
+    <h2>Terms and Conditions</h2>
+    <div style="max-height:300px; overflow-y:auto; margin:20px 0;">
+      <p>
+        By registering, you agree to abide by the rules and regulations of the review center.
+        You consent to the processing of your personal data for enrollment and communication.
+        All fees paid are non-refundable once the review program has started.
+      </p>
     </div>
+    <button id="agreeBtn" type="button"
+            style="background:#1c2951; color:#fff; border:none; border-radius:8px;
+                   padding:10px 30px; font-size:1rem; cursor:pointer;">
+      Agree and Continue
+    </button>
+  </div>
 </div>
 
-
-        </form>
-    </div>
-</div>
-
-<!-- Warning Modal -->
-<div id="warningModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <h3>Attention Required</h3>
-        <p id="warningMessage"></p>
-        <button onclick="closeWarningModal()" class="btn btn-primary">OK</button>
-    </div>
-</div>
-
-<!-- Terms and Conditions Modal -->
-<div id="termsModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3>Terms and Conditions</h3>
-        <div style="max-height: 320px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem;">
-            <p>
-                By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.
-            </p>
-            <!-- Add more actual terms here if you want -->
+{{-- Success Modal - Only show for registration completion messages --}}
+@if(session('success') && str_contains(session('success'), 'registration'))
+  <div id="successModal"
+       style="display:flex; position:fixed; top:0; left:0; width:100vw; height:100vh;
+              background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div class="success-modal-content" style="background:white; border-radius:20px; max-width:500px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideIn 0.3s ease-out;">
+      <!-- Success Icon -->
+      <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:40px 20px 20px; color:white;">
+        <div style="width:80px; height:80px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; backdrop-filter:blur(10px);">
+          <i class="bi bi-check-circle-fill" style="font-size:2.5rem; color:white;"></i>
         </div>
-        <button onclick="closeTermsModal()" class="btn btn-secondary">Close</button>
+        <h2 style="margin:0; font-size:1.8rem; font-weight:700; color:white;">Registration Successful!</h2>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding:30px;">
+        <p style="color:#666; font-size:1.1rem; margin:0 0 30px; line-height:1.5;">{{ session('success') }}</p>
+        
+        <!-- Buttons -->
+        <div style="display:flex; gap:15px; justify-content:center, flex-wrap:wrap;">
+          <button id="successOk" type="button" class="btn btn-primary btn-lg"
+                 style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; padding:12px 30px; border-radius:10px; color:white; font-weight:600; cursor:pointer; transition:all 0.3s ease;">
+            <i class="bi bi-house-door me-2"></i>Go to Homepage
+          </button>
+          <a href="{{ route('student.dashboard') }}" class="btn btn-outline-primary btn-lg" 
+             style="padding:12px 30px; border-radius:10px; text-decoration:none; transition:all 0.3s ease;">
+            <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+          </a>
+        </div>
+      </div>
     </div>
+  </div>
+  
+  <style>
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    .success-modal-content button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+  </style>
+@endif
+
+{{-- Login Success Modal - Shows welcome back message when returning from login --}}
+@if(session('success') && str_contains(session('success'), 'Welcome back'))
+  <div id="loginSuccessModal" 
+       style="position:fixed; top:20px; right:20px; background:#fff; padding:15px 20px; 
+              border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; 
+              max-width:300px; animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-out 5s forwards;">
+    <p style="margin:0; color:#333;"><strong>{{ session('success') }}</strong></p>
+  </div>
+  <style>
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; visibility: hidden; }
+    }
+  </style>
+@endif
+
+{{-- Warning Modal - Shows validation warnings --}}
+<div id="warningModal"
+     style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); 
+            display:none; justify-content:center; align-items:center; z-index:10000;">
+  <div class="warning-modal-content" style="background:white; border-radius:20px; max-width:500px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideIn 0.3s ease-out;">
+    <div style="background:linear-gradient(135deg, #FFA726 0%, #FF9800 100%); padding:30px; color:white;">
+      <i class="bi bi-exclamation-triangle" style="font-size:3rem; margin-bottom:15px;"></i>
+      <h3 style="margin:0; font-weight:600;">Warning</h3>
+    </div>
+    <div style="padding:30px;">
+      <p id="warningMessage" style="margin:0 0 25px 0; font-size:16px; color:#555; line-height:1.5;"></p>
+      <button onclick="closeWarningModal()" 
+              style="background:linear-gradient(135deg, #FFA726 0%, #FF9800 100%); color:white; border:none; 
+                     padding:12px 30px; border-radius:25px; font-size:16px; font-weight:600; 
+                     cursor:pointer; transition:all 0.3s ease; box-shadow:0 4px 15px rgba(255,152,0,0.3);">
+        OK
+      </button>
+    </div>
+  </div>
 </div>
 
-
-<!-- JavaScript for form validation and functionality -->
 <script>
 // Update hidden fields when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -1114,80 +1108,412 @@ function validateStep3() {
     return allFieldsFilled && allValidationsPassed;
 }
 
-// Handle form submission and add batch_id if selected
-function handleFormSubmission(event) {
-    const selectedBatchId = sessionStorage.getItem('selectedBatchId');
-    
-    // If a batch is selected, add it to the form before submission
-    if (selectedBatchId && selectedBatchId !== 'null' && selectedBatchId !== '') {
-        const form = event.target;
-        const batchInput = document.createElement('input');
-        batchInput.type = 'hidden';
-        batchInput.name = 'batch_id';
-        batchInput.value = selectedBatchId;
-        form.appendChild(batchInput);
-        console.log('Added batch_id to form submission:', selectedBatchId);
-    }
-    
-    return true; // Allow form to submit
-}
-
- document.addEventListener('DOMContentLoaded', function() {
-        // Show modal when link is clicked
-        const termsLink = document.getElementById('showTerms');
-        if (termsLink) {
-            termsLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.getElementById('termsModal').style.display = 'flex';
+// Initialize carousel
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide Step 2 if user is logged in and remove required attributes
+    if (isUserLoggedIn) {
+        const step2 = document.getElementById('step-2');
+        if (step2) {
+            step2.style.display = 'none';
+            
+            // Remove required attributes from Step 2 fields to prevent form validation errors
+            const step2Fields = step2.querySelectorAll('input[required]');
+            step2Fields.forEach(field => {
+                field.removeAttribute('required');
+                console.log('Removed required attribute from:', field.name);
             });
         }
-    });
-
-    function closeTermsModal() {
-        document.getElementById('termsModal').style.display = 'none';
+        console.log('User is logged in - Step 2 (Account Registration) hidden and validation disabled');
     }
-function showTermsModal() {
-  const modal = document.getElementById('termsModal');
-  if (!modal) return;
-  // make it take up the screen
-  modal.style.display = 'flex';
-  // give the browser a tick to apply that, then fade in
-  requestAnimationFrame(() => modal.classList.add('active'));
-  // lock background scrolling
-  document.body.style.overflow = 'hidden';
-}
+    
+    // Check if we're returning from login with a package selection
+    const continueEnrollment = sessionStorage.getItem('continueEnrollment');
+    const skipToPayment = sessionStorage.getItem('skipToPayment');
+    const savedPackageId = sessionStorage.getItem('selectedPackageId');
+    const savedPackageName = sessionStorage.getItem('selectedPackageName');
+    
+    if (continueEnrollment === 'true' && savedPackageId && savedPackageName) {
+        // Clear the session flags
+        sessionStorage.removeItem('continueEnrollment');
+        sessionStorage.removeItem('skipToPayment');
+        
+        // Auto-select the saved package
+        selectedPackageId = savedPackageId;
+        
+        // Find and highlight the package card
+        const packageCard = document.querySelector(`[data-package-id="${savedPackageId}"]`);
+        if (packageCard) {
+            packageCard.classList.add('selected');
+        }
+        
+        // Update the form
+        const packageInput = document.querySelector('input[name="package_id"]');
+        if (packageInput) {
+            packageInput.value = savedPackageId;
+        }
+        
+        // Show selected package display
+        document.getElementById('selectedPackageName').textContent = savedPackageName;
+        document.getElementById('selectedPackageDisplay').style.display = 'block';
+        
+        // Enable next button
+        const nextBtn = document.getElementById('packageNextBtn');
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        
+        // If user logged in from step 2 (account registration), skip to learning mode step (step 3)
+        if (skipToPayment === 'true') {
+            setTimeout(() => {
+                // Go to step 3 (learning mode)
+                animateStepTransition('step-1', 'step-3');
+                currentStep = 3;
+            }, 500);
+        }
+    }
+    
+    // Fill logged-in user data on page load
+    if (isUserLoggedIn) {
+        fillLoggedInUserData();
+    }
+    
+    // Add program selection handler to update hidden input
+    const programSelectField = document.getElementById('programSelect');
+    if (programSelectField) {
+        programSelectField.addEventListener('change', function() {
+            const hiddenProgramInput = document.querySelector('input[name="program_id"]');
+            if (hiddenProgramInput) {
+                hiddenProgramInput.value = this.value;
+                console.log('Updated hidden program_id input to:', this.value);
+            }
+        });
+    }
+    
+    // Initialize carousel first
+    updateArrowStates();
+    
+    // Adjust for responsive
+    function adjustCarousel() {
+        const slider = document.querySelector('.package-slider');
+        if (slider) {
+            if (window.innerWidth <= 768) {
+                packagesPerView = 1;
+                slider.style.width = '340px';
+            } else {
+                packagesPerView = 2;
+                slider.style.width = '700px';
+            }
+            // Reset position when switching views
+            currentPackageIndex = 0;
+            const track = document.getElementById('packageTrack');
+            if (track) {
+                track.style.transform = 'translateX(0px)';
+            }
+            updateArrowStates();
+        }
+    }
+    
+    adjustCarousel();
+    window.addEventListener('resize', adjustCarousel);
 
-function closeTermsModal() {
-  const modal = document.getElementById('termsModal');
-  if (!modal) return;
-  // fade out
-  modal.classList.remove('active');
-  // after the fade, remove it from flow
-  setTimeout(() => {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-  }, 300); // match your CSS transition-duration (0.3s)
-}
+    // Email validation
+    const emailField = document.getElementById('user_email');
+    if (emailField) {
+        emailField.addEventListener('blur', validateEmail);
+        emailField.addEventListener('input', function() {
+            // Reset styling when user starts typing
+            this.style.borderColor = '#ccc';
+            document.getElementById('emailError').style.display = 'none';
+            // Validate all fields when email changes
+            setTimeout(validateStep3, 100);
+        });
+    }
 
-document.addEventListener('DOMContentLoaded', () => {
-  // click the link
-  document.getElementById('showTerms')
-          .addEventListener('click', e => {
-    e.preventDefault();
-    showTermsModal();
-  });
+    // First name and last name validation
+    const firstnameField = document.getElementById('user_firstname');
+    const lastnameField = document.getElementById('user_lastname');
+    
+    if (firstnameField) {
+        firstnameField.addEventListener('input', function() {
+            // Validate all fields when first name changes
+            setTimeout(validateStep3, 100);
+        });
+    }
+    
+    if (lastnameField) {
+        lastnameField.addEventListener('input', function() {
+            // Validate all fields when last name changes
+            setTimeout(validateStep3, 100);
+        });
+    }
 
-  // click outside the content to close
-  document.getElementById('termsModal')
-          .addEventListener('click', e => {
-    if (e.target.id === 'termsModal') closeTermsModal();
-  });
+    // Password validation
+    const passwordField = document.getElementById('password');
+    const passwordConfirmField = document.getElementById('password_confirmation');
+    
+    if (passwordField) {
+        passwordField.addEventListener('blur', validatePassword);
+        passwordField.addEventListener('input', function() {
+            // Reset styling when user starts typing
+            this.style.borderColor = '#ccc';
+            // Don't hide the error here - let validatePassword handle it
+            // Also validate confirmation when password changes
+            setTimeout(validatePassword, 50);
+            setTimeout(validatePasswordConfirmation, 100);
+            setTimeout(validateStep3, 200);
+        });
+    }
+    
+    if (passwordConfirmField) {
+        passwordConfirmField.addEventListener('blur', validatePasswordConfirmation);
+        passwordConfirmField.addEventListener('input', function() {
+            // Reset styling when user starts typing
+            this.style.borderColor = '#ccc';
+            document.getElementById('passwordMatchError').style.display = 'none';
+            setTimeout(validateStep3, 100);
+        });
+    }
 
-  // escape key
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeTermsModal();
-  });
+    // Initial validation on page load
+    setTimeout(validateStep3, 500);
+
+    // Terms & Conditions
+    const showTerms = document.getElementById('showTerms');
+    const termsModal = document.getElementById('termsModal');
+    const agreeBtn = document.getElementById('agreeBtn');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const enrollBtn = document.getElementById('enrollBtn');
+
+    if (termsCheckbox && enrollBtn) {
+        // For logged-in users doing multiple enrollments, enable the button immediately
+        if (isUserLoggedIn) {
+            termsCheckbox.disabled = false;
+            termsCheckbox.checked = true;
+            enrollBtn.disabled = false;
+        } else {
+            // For new users, require terms agreement
+            termsCheckbox.disabled = true;
+            enrollBtn.disabled = true;
+        }
+
+        if (showTerms) {
+            showTerms.addEventListener('click', function(e) {
+                e.preventDefault();
+                agreeBtn.disabled = false;
+                termsModal.style.display = 'flex';
+            });
+        }
+
+        if (agreeBtn) {
+            agreeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                termsModal.style.display = 'none';
+                termsCheckbox.disabled = false;
+                termsCheckbox.checked = true;
+                enrollBtn.disabled = false;
+            });
+        }
+
+        }
+
+        // Add event listener for checkbox change
+        termsCheckbox.addEventListener('change', function() {
+            enrollBtn.disabled = !this.checked;
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === termsModal) {
+                termsModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Handle program selection
+    const programSelect = document.getElementById('programSelect');
+    if (programSelect) {
+        programSelect.addEventListener('change', function() {
+            // Update the hidden program_id input
+            const hiddenProgramInput = document.querySelector('input[name="program_id"]');
+            if (hiddenProgramInput) {
+                hiddenProgramInput.value = this.value;
+            }
+            console.log('Program selected:', this.value);
+        });
+    }
+
+    // Add form submission debugging
+    const enrollmentForm = document.getElementById('enrollmentForm');
+    if (enrollmentForm) {
+        enrollmentForm.addEventListener('submit', function(e) {
+            console.log('Form submission attempt detected');
+            console.log('User logged in:', isUserLoggedIn);
+            console.log('Selected package ID:', selectedPackageId);
+            console.log('Learning mode:', document.getElementById('learning_mode')?.value);
+            console.log('Payment method:', selectedPaymentMethod);
+            console.log('Terms checked:', document.getElementById('termsCheckbox')?.checked);
+            
+            // Check if required fields are filled
+            const programSelect = document.querySelector('select[name="program_id"]');
+            const startDate = document.querySelector('input[name="Start_Date"]');
+            
+            console.log('Program selected:', programSelect?.value);
+            console.log('Start date:', startDate?.value);
+            
+            // For debugging - don't prevent submission, just log
+            // e.preventDefault();
+        });
+    }
+
+    // Add form submission debugging
+    const formElement = document.getElementById('enrollmentForm');
+    if (formElement) {
+        formElement.addEventListener('submit', function(e) {
+            console.log('Form submission attempted...');
+            
+            // Check all required fields
+            const requiredFields = formElement.querySelectorAll('[required]');
+            let missingFields = [];
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    missingFields.push(field.name || field.id);
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                console.error('Missing required fields:', missingFields);
+                e.preventDefault();
+                showWarning('Please fill in all required fields: ' + missingFields.join(', '));
+                return;
+            }
+            
+            // Check if program is selected
+            const programSelect = document.getElementById('programSelect');
+            if (programSelect && !programSelect.value) {
+                console.error('No program selected');
+                e.preventDefault();
+                showWarning('Please select a program');
+                return;
+            }
+            
+            // Check if package is selected
+            const packageInput = document.querySelector('input[name="package_id"]');
+            if (packageInput && !packageInput.value) {
+                console.error('No package selected');
+                e.preventDefault();
+                showWarning('Please select a package');
+                return;
+            }
+            
+            // Check if learning mode is selected
+            const learningModeInput = document.getElementById('learning_mode');
+            if (learningModeInput && !learningModeInput.value) {
+                console.error('No learning mode selected');
+                e.preventDefault();
+                showWarning('Please select a learning mode');
+                return;
+            }
+            
+            console.log('Form validation passed, submitting...');
+            console.log('Program ID:', programSelect ? programSelect.value : 'not found');
+            console.log('Package ID:', packageInput ? packageInput.value : 'not found');
+            console.log('Learning Mode:', learningModeInput ? learningModeInput.value : 'not found');
+        });
+    }
+
+    // Success Modal
+    const successModal = document.getElementById('successModal');
+    const successOk = document.getElementById('successOk');
+    if (successModal) {
+        successModal.style.display = 'flex';
+        if (successOk) {
+            successOk.addEventListener('click', function() {
+                window.location.href = '{{ route("home") }}';
+            });
+        }
+    }
 });
 
+// Form validation before submission
+document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default submission
+    
+    console.log('Form submission attempted');
+    
+    // Check if we're on the final step
+    if (currentStep !== 4) {
+        // Show warning modal instead of alert
+        showWarning('Please complete all steps before enrolling.');
+        return false;
+    }
+    
+    // Validate required fields based on user login status
+    let missingFields = [];
+    
+    // Always required fields
+    const packageId = document.querySelector('input[name="package_id"]').value;
+    const programId = document.querySelector('select[name="program_id"]').value;
+    const startDate = document.querySelector('input[name="Start_Date"]').value;
+    const termsAccepted = document.querySelector('#termsCheckbox').checked;
+    
+    if (!packageId) missingFields.push('Package selection');
+    if (!programId) missingFields.push('Program selection');
+    if (!startDate) missingFields.push('Start date');
+    if (!termsAccepted) missingFields.push('Terms and conditions agreement');
+    
+    // Check password fields only if user is not logged in
+    if (!isUserLoggedIn) {
+        const password = document.querySelector('#password').value;
+        const passwordConfirm = document.querySelector('#password_confirmation').value;
+        const email = document.querySelector('#user_email').value;
+        const firstName = document.querySelector('#user_firstname').value;
+        const lastName = document.querySelector('#user_lastname').value;
+        
+        if (!email) missingFields.push('Email');
+        if (!firstName) missingFields.push('First name');
+        if (!lastName) missingFields.push('Last name');
+        if (!password) missingFields.push('Password');
+        if (!passwordConfirm) missingFields.push('Password confirmation');
+        if (password !== passwordConfirm) missingFields.push('Password confirmation (passwords must match)');
+    }
+    
+    if (missingFields.length > 0) {
+        showWarning('Please fill in the following required fields:\n• ' + missingFields.join('\n• '));
+        return false;
+    }
+    
+    // If validation passes, submit the form
+    console.log('Form validation passed, submitting...');
+    this.submit();
+});
+
+// Initialize prefill on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing prefill logic');
+    
+    // If user is logged in and we're on step 4, fill their data
+    if (isUserLoggedIn && currentStep === 4) {
+        fillLoggedInUserData();
+    }
+    
+    // Auto-fill step 4 when step becomes active (for transitions)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.id === 'step-4' && target.classList.contains('active')) {
+                    setTimeout(() => {
+                        fillLoggedInUserData();
+                        copyAccountDataToStudentForm();
+                    }, 100);
+                }
+            }
+        });
+    });
+    
+    const step4Element = document.getElementById('step-4');
+    if (step4Element) {
+        observer.observe(step4Element, { attributes: true });
+    }
+});
 </script>
 @endsection

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Registration;
@@ -14,6 +16,7 @@ use App\Models\Enrollment;
 use App\Models\Program;
 use App\Models\Package;
 use App\Models\FormRequirement;
+use App\Models\StudentBatch;
 use App\Models\StudentBatch;
 
 class StudentRegistrationController extends Controller
@@ -37,7 +40,35 @@ class StudentRegistrationController extends Controller
                 ->forProgram($programType)
                 ->ordered()
                 ->get();
+        Log::info('Registration attempt started', $request->all());
+        
+        // DEBUG: Check if batch_id is in the request
+        if ($request->has('batch_id')) {
+            Log::info('batch_id found in request:', ['batch_id' => $request->batch_id]);
+        }
+        
+        try {
+            // Get program type for dynamic validation (map to database values)
+            $enrollmentType = $request->input('enrollment_type');
+            $programType = $enrollmentType === 'Full' ? 'full' : 'modular';
+            
+            // Get active form requirements for the selected program type
+            $formRequirements = FormRequirement::active()
+                ->forProgram($programType)
+                ->ordered()
+                ->get();
 
+            // Base validation rules for final registration
+            $rules = [
+                'learning_mode' => 'required|in:synchronous,asynchronous,Synchronous,Asynchronous',
+                'package_id' => 'required|integer|exists:packages,package_id',
+                'enrollment_type' => 'required|in:Full,Modular',
+                'program_id' => 'required|integer|exists:programs,program_id',
+                'Start_Date' => 'required|date',
+                'registration_mode' => 'nullable|in:sync,async',
+                // batch_id is optional and will be stored in session, not in registrations table
+                'batch_id' => 'nullable|integer'
+            ];
             // Base validation rules for final registration
             $rules = [
                 'learning_mode' => 'required|in:synchronous,asynchronous,Synchronous,Asynchronous',
@@ -285,7 +316,9 @@ class StudentRegistrationController extends Controller
         $packages = Package::all();
         
         // Get requirements for "full" program
+        // Get requirements for "full" program
         $formRequirements = FormRequirement::active()
+            ->forProgram('full')
             ->forProgram('full')
             ->ordered()
             ->get();
@@ -367,12 +400,58 @@ class StudentRegistrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Error fetching batches: ' . $e->getMessage());
             return response()->json([]);
-        }
+        // This method can be used for future dynamic field mapping if needed
+        // For now, we handle dynamic fields directly in the store method
+        return null;
     }
 
     /**
+     * Get batches by program for public access (registration forms)
+     */
+    public function getBatchesByProgram(Request $request)
+    {
+        $programId = $request->get('program_id');
+        
+        if (!$programId) {
+            return response()->json([]);
+        }
+
+        try {
+            $batches = \App\Models\StudentBatch::where('program_id', $programId)
+                ->where('batch_status', '!=', 'closed')
+                ->where('registration_deadline', '>=', now())
+                ->with('program')
+                ->orderBy('start_date', 'asc')
+                ->get()
+                ->map(function ($batch) {
+                    return [
+                        'batch_id' => $batch->batch_id,
+                        'batch_name' => $batch->batch_name,
+                        'program_name' => $batch->program->program_name ?? 'N/A',
+                        'max_capacity' => $batch->max_capacity,
+                        'current_capacity' => $batch->current_capacity,
+                        'batch_status' => $batch->batch_status,
+                        'registration_deadline' => $batch->registration_deadline->format('M d, Y'),
+                        'start_date' => $batch->start_date->format('M d, Y'),
+                        'description' => $batch->description,
+                        'status' => $batch->batch_status === 'available' ? 'active' : 'inactive',
+                        'schedule' => 'Live Classes - ' . $batch->start_date->format('M d, Y')
+                    ];
+                });
+
+            return response()->json($batches);
+        } catch (\Exception $e) {
+            Log::error('Error fetching batches: ' . $e->getMessage());
+            return response()->json([]);
+        }
+    }
+
+
+    /**
+     * Check if email exists in users table
      * Check if email exists in users table
      */
+    public function checkEmailExists(Request $request)
     public function checkEmailExists(Request $request)
     {
         try {
@@ -398,7 +477,31 @@ class StudentRegistrationController extends Controller
                 'error' => true,
                 'message' => 'Error checking email availability'
             ], 500);
+        try {
+            $email = $request->input('email');
+            
+            if (!$email) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Email is required'
+                ], 400);
+            }
+
+            $exists = User::where('email', $email)->exists();
+            
+            return response()->json([
+                'exists' => $exists,
+                'message' => $exists ? 'Email already exists' : 'Email is available'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error checking email: ' . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'Error checking email availability'
+            ], 500);
         }
     }
+
 
 }
