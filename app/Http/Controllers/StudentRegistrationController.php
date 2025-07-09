@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Registration;
@@ -12,393 +14,269 @@ use App\Models\Enrollment;
 use App\Models\Program;
 use App\Models\Package;
 use App\Models\FormRequirement;
+use App\Models\StudentBatch;
 
 class StudentRegistrationController extends Controller
 {
     public function store(Request $request)
     {
-        // Get program type for dynamic validation
-        $programType = $request->input('enrollment_type') === 'full' ? 'complete' : 'modular';
+        Log::info('Registration attempt started', $request->all());
         
-        // Get active form requirements for the selected program type
-        $formRequirements = FormRequirement::active()
-            ->forProgram($programType)
-            ->ordered()
-            ->get();
-
-        // Check if user is already logged in (multiple enrollment scenario)
-        $isLoggedIn = session('user_id') !== null;
-
-        // Base validation rules for core fields
-        $rules = [
-            'Start_Date' => 'required|date',
-            'program_id' => 'required|integer|exists:programs,program_id',
-            'package_id' => 'required|integer|exists:packages,package_id',
-            'enrollment_type' => 'required|in:modular,full',
-            'learning_mode' => 'required|in:synchronous,asynchronous,Synchronous,Asynchronous',
-            'registration_mode' => 'nullable|in:sync,async',
-            'selected_modules' => 'nullable|array',
-            'selected_modules.*' => 'exists:modules,modules_id',
-        ];
-
-        // Add account validation rules only for new users (not logged in)
-        if (!$isLoggedIn) {
-            $rules['user_firstname'] = 'required|string|max:255';
-            $rules['user_lastname'] = 'required|string|max:255';
-            $rules['email'] = 'required|email|unique:users,email';
-            $rules['password'] = 'required|confirmed|min:6';
+        // DEBUG: Check if batch_id is in the request
+        if ($request->has('batch_id')) {
+            Log::info('batch_id found in request:', ['batch_id' => $request->batch_id]);
         }
         
-        // For logged-in users, check if they're already enrolled in this program
-        if ($isLoggedIn) {
-            $user = User::find(session('user_id'));
-            $student = Student::where('user_id', $user->user_id)->first();
+        try {
+            // Get program type for dynamic validation (map to database values)
+            $enrollmentType = $request->input('enrollment_type');
+            $programType = $enrollmentType === 'Full' ? 'full' : 'modular';
             
-            if ($student) {
-                $existingEnrollment = $student->enrollments()
-                    ->where('program_id', $request->input('program_id'))
-                    ->first();
-                    
-                if ($existingEnrollment) {
-                    return redirect()->back()
-                        ->withErrors(['program_id' => 'You are already enrolled in this program.'])
-                        ->withInput();
+            // Get active form requirements for the selected program type
+            $formRequirements = FormRequirement::active()
+                ->forProgram($programType)
+                ->ordered()
+                ->get();
+
+            // Base validation rules for final registration
+            $rules = [
+                'learning_mode' => 'required|in:synchronous,asynchronous,Synchronous,Asynchronous',
+                'package_id' => 'required|integer|exists:packages,package_id',
+                'enrollment_type' => 'required|in:Full,Modular',
+                'program_id' => 'required|integer|exists:programs,program_id',
+                'Start_Date' => 'required|date',
+                'registration_mode' => 'nullable|in:sync,async',
+                // batch_id is optional and will be stored in session, not in registrations table
+                'batch_id' => 'nullable|integer'
+            ];
+
+            // Add account validation rules only for new users (not logged in)
+            if (!session('user_id') && !auth()->check()) {
+                $rules['user_firstname'] = 'required|string|max:255';
+                $rules['user_lastname'] = 'required|string|max:255';
+                $rules['email'] = 'required|email|unique:users,email';
+                $rules['password'] = 'required|confirmed|min:8';
+            }
+
+            // Add dynamic form field validation only for active fields
+            foreach ($formRequirements as $field) {
+                // Skip sections as they don't need validation
+                if ($field->field_type === 'section') {
+                    continue;
                 }
-            }
-        }        // Add dynamic field validation rules based on form requirements
-        foreach ($formRequirements as $requirement) {
-            // Skip section type fields as they don't need validation
-            if ($requirement->field_type === 'section') {
-                continue;
-            }
-            
-            $fieldName = $requirement->field_name;
-            $fieldRules = [];
-
-            // Only add validation if the field is actually being submitted or is required
-            $fieldIsSubmitted = $request->has($fieldName) || $request->hasFile($fieldName);
-            $fieldIsRequired = $requirement->is_required;
-            
-            // Skip validation for fields that are required but not submitted (prevents errors for new fields)
-            if ($fieldIsRequired && !$fieldIsSubmitted) {
-                // Log this for debugging
-                Log::warning("Required field '$fieldName' not found in form submission", [
-                    'field_type' => $requirement->field_type,
-                    'program_type' => $programType,
-                    'submitted_fields' => array_keys($request->all())
-                ]);
-                continue;
-            }
-
-            // Add required rule if field is required and submitted
-            if ($fieldIsRequired && $fieldIsSubmitted) {
-                $fieldRules[] = 'required';
-            } else {
-                $fieldRules[] = 'nullable';
-            }
-
-            // Add specific validation rules based on field type
-            switch ($requirement->field_type) {
-                case 'text':
-                case 'textarea':
-                    $fieldRules[] = 'string|max:255';
-                    break;
-                case 'email':
-                    $fieldRules[] = 'email|max:255';
-                    break;
-                case 'number':
-                    $fieldRules[] = 'numeric';
-                    break;
-                case 'tel':
-                    $fieldRules[] = 'string|max:20';
-                    break;
-                case 'date':
-                    $fieldRules[] = 'date';
-                    break;
-                case 'file':
-                    if ($fieldIsSubmitted) {
-                        $fieldRules[] = 'file|mimes:pdf,jpg,jpeg,png|max:2048';
-                    }
-                    break;
-                case 'select':
-                case 'radio':
-                    if ($requirement->field_options && is_array($requirement->field_options)) {
-                        $options = implode(',', $requirement->field_options);
-                        $fieldRules[] = "in:$options";
-                    } else {
-                        $fieldRules[] = 'string|max:255';
-                    }
-                    break;
-                case 'checkbox':
-                    $fieldRules[] = 'nullable|in:0,1';
-                    break;
-                case 'module_selection':
-                    $fieldRules[] = 'array';
-                    if ($fieldIsRequired) {
-                        $fieldRules[] = 'min:1';
-                    }
-                    break;
-            }
-
-            // Add custom validation rules if specified
-            if ($requirement->validation_rules) {
-                $customRules = explode('|', $requirement->validation_rules);
-                $fieldRules = array_merge($fieldRules, $customRules);
-            }
-
-            // Only add rule if field is submitted or if it's a file field that could be optional
-            if ($fieldIsSubmitted || (!$fieldIsRequired && in_array($requirement->field_type, ['file']))) {
-                $rules[$fieldName] = implode('|', $fieldRules);
-            }
-        }
-
-        // Handle module selection validation separately
-        if (isset($rules['selected_modules']) && $request->has('selected_modules')) {
-            $moduleIds = $request->input('selected_modules');
-            if (is_array($moduleIds)) {
-                foreach ($moduleIds as $moduleId) {
-                    if (!is_numeric($moduleId)) {
-                        throw new \InvalidArgumentException("Invalid module ID: $moduleId");
-                    }
-                }
-            }
-        }
-
-        $validated = $request->validate($rules);
-
-        $enrollmentType = $validated['enrollment_type'] === 'full' ? 'Complete' : 'Modular';
-        
-        // Normalize learning mode to proper case
-        $learningMode = ucfirst(strtolower($validated['learning_mode']));
-
-        // Check if user is already logged in (multiple enrollment scenario)
-        $user = null;
-        $student = null;
-        
-        if (session('user_id')) {
-            // User is already logged in - this is a multiple enrollment
-            $user = User::find(session('user_id'));
-            $student = Student::where('user_id', $user->user_id)->first();
-            
-            Log::info('Multiple enrollment detected', [
-                'user_id' => $user->user_id,
-                'student_id' => $student ? $student->student_id : 'none',
-                'program_id' => $validated['program_id'],
-                'package_id' => $validated['package_id']
-            ]);
-        } else {
-            // New user registration
-            $user = User::create([
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'user_firstname' => $validated['user_firstname'],
-                'user_lastname' => $validated['user_lastname'],
-                'role' => 'unverified',
-            ]);
-            
-            Log::info('New user created', [
-                'user_id' => $user->user_id,
-                'email' => $user->email
-            ]);
-        }
-
-        // Create registration record first
-        $registration = new Registration();
-        $registration->user_id = $user->user_id;
-        $registration->Start_Date = $validated['Start_Date'];
-        $registration->status = 'pending';
-        
-        // Save package, program, and plan information
-        $registration->package_id = $validated['package_id'];
-        $registration->program_id = $validated['program_id'];
-        $registration->plan_id = $validated['plan_id'] ?? null;
-        $registration->enrollment_type = $enrollmentType;
-        $registration->learning_mode = $learningMode;
-        
-        // Get and save the names for easy display
-        if ($validated['package_id']) {
-            $package = \App\Models\Package::find($validated['package_id']);
-            $registration->package_name = $package ? $package->package_name : 'N/A';
-        }
-        
-        if ($validated['program_id']) {
-            $program = \App\Models\Program::find($validated['program_id']);
-            $registration->program_name = $program ? $program->program_name : 'N/A';
-        }
-        
-        if (isset($validated['plan_id']) && $validated['plan_id']) {
-            $plan = \App\Models\Plan::find($validated['plan_id']);
-            $registration->plan_name = $plan ? $plan->plan_name : 'N/A';
-        } else {
-            $registration->plan_name = $enrollmentType === 'full' ? 'Full Program' : 'Modular';
-        }
-
-        // Handle dynamic fields from form requirements
-        $dynamicFields = [];
-        
-        // Add registration mode to dynamic fields if provided
-        if (isset($validated['registration_mode'])) {
-            $dynamicFields['registration_mode'] = $validated['registration_mode'];
-        }
-        
-        foreach ($formRequirements as $requirement) {
-            if ($requirement->field_type === 'section') {
-                continue;
-            }
-            
-            $fieldName = $requirement->field_name;
-            if (isset($validated[$fieldName])) {
-                $value = $validated[$fieldName];
                 
-                // Handle different field types
-                switch ($requirement->field_type) {
-                    case 'checkbox':
-                        $value = $value ? 1 : 0;
-                        break;
-                    case 'module_selection':
-                        $value = is_array($value) ? $value : [$value];
-                        break;
-                    case 'file':
-                        // Handle file uploads
-                        if ($request->hasFile($fieldName)) {
-                            $file = $request->file($fieldName);
-                            $filename = time() . '_' . $fieldName . '.' . $file->getClientOriginalExtension();
-                            $path = $file->storeAs('uploads/registrations', $filename, 'public');
-                            $value = $path;
+                if ($field->is_required) {
+                    $rules[$field->field_name] = 'required';
+                    if ($field->field_type === 'file') {
+                        $rules[$field->field_name] .= '|file|max:10240'; // 10MB max
+                    }
+                }
+            }
+
+            // Validate request
+            $validator = Validator::make($request->all(), $rules);
+
+            if ($validator->fails()) {
+                Log::error('Final registration validation failed', $validator->errors()->toArray());
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors(),
+                    'message' => 'Registration validation failed'
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            // Create or get user
+            $user = null;
+            
+            if (auth()->check()) {
+                $user = auth()->user();
+                Log::info('Using authenticated user', ['user_id' => $user->user_id]);
+            } elseif (session('user_id')) {
+                $user = User::find(session('user_id'));
+                if ($user) {
+                    Log::info('Using session user', ['user_id' => $user->user_id]);
+                }
+            }
+            
+            // Create new user if no existing user found
+            if (!$user) {
+                // Validate that we have user creation data
+                if (!$request->has('user_firstname') || !$request->has('user_lastname') || 
+                    !$request->has('email') || !$request->has('password')) {
+                    throw new \Exception('User creation data missing. Please provide firstname, lastname, email, and password.');
+                }
+                
+                Log::info('Creating new user with data:', [
+                    'user_firstname' => $request->user_firstname,
+                    'user_lastname' => $request->user_lastname,
+                    'email' => $request->email
+                ]);
+                
+                $user = new User();
+                $user->user_firstname = $request->user_firstname;
+                $user->user_lastname = $request->user_lastname;
+                $user->email = $request->email;
+                $user->password = Hash::make($request->password);
+                $user->role = 'student';
+                
+                if (!$user->save()) {
+                    throw new \Exception('Failed to create user account');
+                }
+                
+                // Refresh the user instance to ensure we have the ID
+                $user = $user->fresh();
+                
+                if (!$user || !$user->user_id) {
+                    throw new \Exception('User created but ID not available');
+                }
+                
+                Log::info('Created new user', ['user_id' => $user->user_id]);
+                
+                // Set session for future requests
+                session(['user_id' => $user->user_id]);
+            }
+
+            if (!$user || !$user->user_id) {
+                throw new \Exception('Unable to create or find valid user');
+            }
+
+            // Create student registration with only base fields
+            $registration = new Registration();
+            $registration->user_id = $user->user_id;
+            $registration->program_id = $request->program_id;
+            $registration->package_id = $request->package_id;
+            $registration->enrollment_type = $request->enrollment_type;
+            $registration->learning_mode = strtolower($request->learning_mode);
+            $registration->start_date = $request->Start_Date;
+            $registration->status = 'pending';
+            
+            // CRITICAL: Ensure batch_id is NEVER set on registration object
+            // batch_id is not stored in registrations table - it belongs in student_batches
+            // Store batch selection in session for later use during enrollment
+            if ($request->batch_id) {
+                session(['selected_batch_id' => $request->batch_id]);
+                Log::info('Batch ID stored in session for later enrollment', ['batch_id' => $request->batch_id]);
+            }
+
+            // Only save dynamic form fields that have actual database columns
+            foreach ($formRequirements as $field) {
+                $fieldName = $field->field_name;
+                
+                // Skip sections as they don't need database columns
+                if ($field->field_type === 'section') {
+                    continue;
+                }
+                
+                // EXPLICITLY SKIP batch_id - it should never be stored in registrations table
+                if ($fieldName === 'batch_id') {
+                    Log::info('Skipping batch_id field - will be handled separately during enrollment');
+                    continue;
+                }
+                
+                // Check if the column exists in the registrations table
+                try {
+                    if (FormRequirement::columnExists($fieldName) && $request->has($fieldName)) {
+                        if ($field->field_type === 'file' && $request->hasFile($fieldName)) {
+                            // Handle file uploads
+                            $path = $request->file($fieldName)->store('uploads/registrations', 'public');
+                            $registration->{$fieldName} = $path;
+                        } elseif ($field->field_type === 'module_selection' && $request->has($fieldName)) {
+                            // Handle module selection (array of module IDs)
+                            $selectedModules = $request->input($fieldName, []);
+                            if (is_array($selectedModules)) {
+                                $registration->{$fieldName} = json_encode($selectedModules);
+                            } else {
+                                $registration->{$fieldName} = $selectedModules;
+                            }
+                        } elseif ($field->field_type === 'checkbox') {
+                            // Handle checkbox fields (convert to boolean)
+                            $registration->{$fieldName} = $request->has($fieldName) ? 1 : 0;
+                        } else {
+                            // Handle regular fields
+                            $fieldValue = $request->input($fieldName);
+                            if (!empty($fieldValue) || $fieldValue === '0') {
+                                // EXTRA SAFETY: Never allow batch_id to be set via dynamic fields
+                                if ($fieldName === 'batch_id') {
+                                    Log::warning("Attempted to set batch_id via dynamic field - blocked!");
+                                    continue;
+                                }
+                                $registration->{$fieldName} = $fieldValue;
+                            }
                         }
-                        break;
+                    } else {
+                        // Log fields that are skipped because column doesn't exist
+                        if ($request->has($fieldName)) {
+                            Log::warning("Field {$fieldName} skipped - column doesn't exist in registrations table");
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning("Error processing field {$fieldName}: " . $e->getMessage());
+                    // Continue processing other fields
                 }
-                
-                // Try to save directly to database column if it exists
-                if (FormRequirement::columnExists($fieldName)) {
-                    $registration->$fieldName = $value;
-                } else {
-                    // Fallback to dynamic_fields for backward compatibility
-                    $dynamicFields[$fieldName] = $value;
-                }
-                
-                // Also try to map to existing registration columns if they exist (legacy support)
-                $this->mapDynamicFieldToRegistrationColumn($registration, $fieldName, $value);
             }
-        }
-        
-        // Store any remaining dynamic fields as JSON (only if there are any)
-        if (!empty($dynamicFields)) {
-            $registration->dynamic_fields = $dynamicFields;
-        }
-        
-        // Handle legacy file uploads (for backward compatibility)
-        $this->handleLegacyFileUploads($request, $registration);
-        
-        $registration->save();
 
-        // Create the enrollment record with registration_id for tracking
-        $enrollment = Enrollment::create([
-            'student_id' => $student ? $student->student_id : null, // Will be updated after student creation or during approval
-            'program_id' => $validated['program_id'],
-            'package_id' => $validated['package_id'],
-            'enrollment_type' => $enrollmentType,
-            'learning_mode' => $learningMode,
-            'registration_id' => $registration->registration_id, // Link to the registration for admin approval process
-            'enrollment_status' => 'pending',
-        ]);
-
-        // Create or update Student record
-        if (!$student) {
-            // Create new student record with year-month-increment format
-            $currentYear = date('Y');
-            $currentMonth = date('m');
-            
-            // Get the latest student ID for the current month to generate the next increment
-            $latestStudent = Student::where('student_id', 'LIKE', $currentYear . '-' . $currentMonth . '-%')
-                ->orderBy('student_id', 'desc')
-                ->first();
-            
-            $increment = 1;
-            if ($latestStudent) {
-                // Extract the increment from the latest student ID
-                $lastIncrement = (int) substr($latestStudent->student_id, -5);
-                $increment = $lastIncrement + 1;
+            // Map common user fields to registration columns if they exist
+            try {
+                if (FormRequirement::columnExists('firstname')) {
+                    $registration->firstname = $user->user_firstname;
+                }
+                if (FormRequirement::columnExists('lastname')) {
+                    $registration->lastname = $user->user_lastname;
+                }
+            } catch (\Exception $e) {
+                Log::warning("Error mapping user fields to registration: " . $e->getMessage());
+                // Continue with registration save
             }
             
-            $studentId = $currentYear . '-' . $currentMonth . '-' . str_pad($increment, 5, '0', STR_PAD_LEFT);
-            
-            $student = Student::create([
-                'student_id' => $studentId,
-                'user_id' => $user->user_id,
-                'firstname' => $registration->firstname ?? $validated['user_firstname'] ?? '',
-                'middlename' => $registration->middlename ?? '',
-                'lastname' => $registration->lastname ?? $validated['user_lastname'] ?? '',
-                'student_school' => $registration->student_school ?? $registration->school_name ?? '',
-                'street_address' => $registration->street_address ?? '',
-                'state_province' => $registration->state_province ?? '',
-                'city' => $registration->city ?? '',
-                'zipcode' => $registration->zipcode ?? '',
-                'contact_number' => $registration->contact_number ?? $registration->phone_number ?? '',
-                'emergency_contact_number' => $registration->emergency_contact_number ?? '',
-                'good_moral' => $registration->good_moral ?? '',
-                'PSA' => $registration->PSA ?? '',
-                'Course_Cert' => $registration->Course_Cert ?? '',
-                'TOR' => $registration->TOR ?? '',
-                'Cert_of_Grad' => $registration->Cert_of_Grad ?? '',
-                'Undergraduate' => $registration->Undergraduate ?? '',
-                'Graduate' => $registration->Graduate ?? '',
-                'photo_2x2' => $registration->photo_2x2 ?? '',
-                'Start_Date' => $validated['Start_Date'],
-                'email' => $user->email,
-                'is_archived' => false,
+            Log::info('Saving registration with data:', [
+                'user_id' => $registration->user_id,
+                'program_id' => $registration->program_id,
+                'package_id' => $registration->package_id,
+                'enrollment_type' => $registration->enrollment_type
             ]);
             
-            Log::info('New student record created', [
-                'student_id' => $student->student_id,
-                'user_id' => $user->user_id
-            ]);
-        } else {
-            // For existing students, update the student record with new information if provided
-            $updateData = [];
-            if (isset($registration->firstname) && $registration->firstname) {
-                $updateData['firstname'] = $registration->firstname;
-            }
-            if (isset($registration->lastname) && $registration->lastname) {
-                $updateData['lastname'] = $registration->lastname;
-            }
-            if (isset($registration->middlename) && $registration->middlename) {
-                $updateData['middlename'] = $registration->middlename;
-            }
-            // Add other fields as needed
-            
-            if (!empty($updateData)) {
-                $student->update($updateData);
-                Log::info('Existing student record updated', [
-                    'student_id' => $student->student_id,
-                    'updated_fields' => array_keys($updateData)
+            // DEBUG: Check if batch_id is somehow set on the registration object
+            if (isset($registration->batch_id)) {
+                Log::error('ERROR: batch_id is set on registration object!', [
+                    'batch_id' => $registration->batch_id,
+                    'registration_attributes' => $registration->getAttributes()
                 ]);
+                // REMOVE batch_id from registration to prevent database error
+                unset($registration->batch_id);
+                Log::info('Removed batch_id from registration object');
             }
-        }
-
-        // Update enrollment with student_id if student was created
-        if (!$student && isset($student)) {
-            $enrollment->update([
-                'student_id' => $student->student_id
-            ]);
-        }
-
-        // Handle module selection for modular enrollment
-        if ($validated['enrollment_type'] === 'modular' && !empty($validated['selected_modules'])) {
-            $moduleIds = is_array($validated['selected_modules']) 
-                ? $validated['selected_modules'] 
-                : [$validated['selected_modules']];
             
-            $registration->modules()->sync($moduleIds);
+            // ADDITIONAL SAFETY: Ensure batch_id is not in the attributes array
+            $attributes = $registration->getAttributes();
+            if (array_key_exists('batch_id', $attributes)) {
+                Log::warning('Found batch_id in registration attributes, removing it');
+                $registration->unsetRelation('batch_id');
+                $registration->offsetUnset('batch_id');
+            }
+            
+            $registration->save();
+            
+            Log::info('Registration saved successfully', ['registration_id' => $registration->id]);
+
+            DB::commit();
+
+            
+            return redirect()->route('registration.success')->with('success', 'Registration submitted successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Registration error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during registration: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Set success message based on whether this is a new user or multiple enrollment
-        $successMessage = $isLoggedIn 
-            ? 'Successfully enrolled in additional program! You can view all your enrollments in your dashboard.'
-            : 'Registration submitted successfully!';
-
-        return redirect()->route('registration.success')
-            ->with('success', $successMessage);
     }
 
     public function showRegistrationForm(Request $request)
@@ -406,9 +284,9 @@ class StudentRegistrationController extends Controller
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
         $packages = Package::all();
         
-        // Get requirements for "complete" (full) program
+        // Get requirements for "full" program
         $formRequirements = FormRequirement::active()
-            ->forProgram('complete')
+            ->forProgram('full')
             ->ordered()
             ->get();
 
@@ -441,68 +319,86 @@ class StudentRegistrationController extends Controller
         return view('enrollment');
     }
 
-    public function checkEmail(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email'
-        ]);
-
-        $email = $request->input('email');
-        
-        // Check if email exists in users table
-        $exists = User::where('email', $email)->exists();
-        
-        return response()->json([
-            'exists' => $exists,
-            'message' => $exists ? 'Email already exists' : 'Email is available'
-        ]);
-    }
-
     /**
      * Map dynamic field to existing registration column if it exists
      */
     private function mapDynamicFieldToRegistrationColumn($registration, $fieldName, $value)
     {
-        // Mapping between dynamic field names and registration table columns
-        $fieldMapping = [
-            'firstname' => 'firstname',
-            'First_Name' => 'firstname',  // Added mapping for new field name
-            'middlename' => 'middlename',
-            'Middle_Name' => 'middlename',  // Added mapping for new field name
-            'lastname' => 'lastname',
-            'Last_Name' => 'lastname',  // Added mapping for new field name
-            'school_name' => 'student_school',
-            'phone_number' => 'contact_number',
-            'emergency_contact' => 'emergency_contact_number',
-            'street_address' => 'street_address',
-            'state_province' => 'state_province',
-            'city' => 'city',
-            'zipcode' => 'zipcode',
-        ];
-        
-        if (isset($fieldMapping[$fieldName])) {
-            $columnName = $fieldMapping[$fieldName];
-            $registration->$columnName = $value;
-        }
+        // This method can be used for future dynamic field mapping if needed
+        // For now, we handle dynamic fields directly in the store method
+        return null;
     }
-    
+
     /**
-     * Handle legacy file uploads for backward compatibility
+     * Get batches by program for public access (registration forms)
      */
-    private function handleLegacyFileUploads($request, $registration)
+    public function getBatchesByProgram(Request $request)
     {
-        $legacyFileFields = [
-            'good_moral', 'PSA', 'Course_Cert', 'TOR', 'Cert_of_Grad',
-            'Undergraduate', 'Graduate', 'photo_2x2'
-        ];
+        $programId = $request->get('program_id');
         
-        foreach ($legacyFileFields as $field) {
-            if ($request->hasFile($field)) {
-                $file = $request->file($field);
-                $filename = time() . '_' . $field . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('uploads/registrations', $filename, 'public');
-                $registration->$field = $path;
-            }
+        if (!$programId) {
+            return response()->json([]);
+        }
+
+        try {
+            $batches = \App\Models\StudentBatch::where('program_id', $programId)
+                ->where('batch_status', '!=', 'closed')
+                ->where('registration_deadline', '>=', now())
+                ->with('program')
+                ->orderBy('start_date', 'asc')
+                ->get()
+                ->map(function ($batch) {
+                    return [
+                        'batch_id' => $batch->batch_id,
+                        'batch_name' => $batch->batch_name,
+                        'program_name' => $batch->program->program_name ?? 'N/A',
+                        'max_capacity' => $batch->max_capacity,
+                        'current_capacity' => $batch->current_capacity,
+                        'batch_status' => $batch->batch_status,
+                        'registration_deadline' => $batch->registration_deadline->format('M d, Y'),
+                        'start_date' => $batch->start_date->format('M d, Y'),
+                        'description' => $batch->description,
+                        'status' => $batch->batch_status === 'available' ? 'active' : 'inactive',
+                        'schedule' => 'Live Classes - ' . $batch->start_date->format('M d, Y')
+                    ];
+                });
+
+            return response()->json($batches);
+        } catch (\Exception $e) {
+            Log::error('Error fetching batches: ' . $e->getMessage());
+            return response()->json([]);
         }
     }
+
+    /**
+     * Check if email exists in users table
+     */
+    public function checkEmailExists(Request $request)
+    {
+        try {
+            $email = $request->input('email');
+            
+            if (!$email) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Email is required'
+                ], 400);
+            }
+
+            $exists = User::where('email', $email)->exists();
+            
+            return response()->json([
+                'exists' => $exists,
+                'message' => $exists ? 'Email already exists' : 'Email is available'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error checking email: ' . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'Error checking email availability'
+            ], 500);
+        }
+    }
+
 }

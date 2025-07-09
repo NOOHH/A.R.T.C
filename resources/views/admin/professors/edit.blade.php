@@ -156,6 +156,101 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Batch Assignment Section -->
+            <div class="card shadow border-0 mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people-fill me-2"></i>
+                        Batch Assignments
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Assign New Batch -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Assign New Batch</h6>
+                        <form action="{{ route('admin.professors.assign-batch', $professor->professor_id) }}" method="POST" class="row g-3">
+                            @csrf
+                            <div class="col-md-8">
+                                <select name="batch_id" class="form-select" required>
+                                    <option value="">Select a batch to assign...</option>
+                                    @foreach($batches as $batch)
+                                        <option value="{{ $batch->batch_id }}">
+                                            {{ $batch->batch_name }} - {{ $batch->program->program_name }} 
+                                            ({{ $batch->current_capacity }}/{{ $batch->max_capacity }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-plus-circle"></i> Assign Batch
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Current Batch Assignments -->
+                    <div>
+                        <h6 class="mb-3">Current Assignments</h6>
+                        @if($assignedBatches->count() > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Batch Name</th>
+                                            <th>Program</th>
+                                            <th>Capacity</th>
+                                            <th>Status</th>
+                                            <th>Start Date</th>
+                                            <th>Assigned Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($assignedBatches as $batch)
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ $batch->batch_name }}</strong>
+                                                </td>
+                                                <td>{{ $batch->program->program_name }}</td>
+                                                <td>
+                                                    <span class="badge bg-info">
+                                                        {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge {{ $batch->batch_status === 'available' ? 'bg-success' : ($batch->batch_status === 'ongoing' ? 'bg-warning' : 'bg-danger') }}">
+                                                        {{ ucfirst($batch->batch_status) }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $batch->start_date->format('M d, Y') }}</td>
+                                                <td>{{ $batch->professor_assigned_at ? $batch->professor_assigned_at->format('M d, Y') : 'N/A' }}</td>
+                                                <td>
+                                                    <form action="{{ route('admin.professors.unassign-batch', [$professor->professor_id, $batch->batch_id]) }}" 
+                                                          method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                onclick="return confirm('Are you sure you want to unassign this batch?')">
+                                                            <i class="bi bi-x-circle"></i> Unassign
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                No batches assigned to this professor yet.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -16,13 +16,28 @@ class CheckAdminAuth
      */
     public function handle(Request $request, Closure $next)
     {
-        // Check if user is logged in via session
-        if (!session('logged_in') || !session('user_id')) {
+        // Start PHP session if not already started
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Check PHP session first (primary method)
+        $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
+        $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+
+        // Fallback to Laravel session if PHP session not found
+        if (!$isLoggedIn) {
+            $isLoggedIn = session('logged_in') && session('user_id');
+            $isAdmin = session('user_role') === 'admin';
+        }
+
+        // Check if user is logged in
+        if (!$isLoggedIn) {
             return redirect()->route('login')->with('error', 'Please log in to access this page.');
         }
 
         // Check if user is an admin
-        if (session('user_role') !== 'admin') {
+        if (!$isAdmin) {
             return redirect()->route('student.dashboard')->with('error', 'Access denied.');
         }
 
