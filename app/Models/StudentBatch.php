@@ -81,4 +81,49 @@ class StudentBatch extends Model
                $this->current_capacity < $this->max_capacity &&
                now()->lte($this->registration_deadline);
     }
+
+    /**
+     * Get current students count (only approved registration and paid payment)
+     */
+    public function getCurrentCapacityAttribute()
+    {
+        return $this->enrollments()
+            ->where('enrollment_status', 'approved')
+            ->where('payment_status', 'paid')
+            ->count();
+    }
+
+    /**
+     * Get pending students count
+     */
+    public function getPendingStudentsCountAttribute()
+    {
+        return $this->enrollments()
+            ->where(function($query) {
+                $query->where('enrollment_status', 'pending')
+                      ->orWhere('payment_status', 'pending');
+            })
+            ->where(function($query) {
+                // Exclude students who are both approved and paid (they are current)
+                $query->where('enrollment_status', '!=', 'approved')
+                      ->orWhere('payment_status', '!=', 'paid');
+            })
+            ->count();
+    }
+
+    /**
+     * Check if batch has available slots
+     */
+    public function hasAvailableSlots()
+    {
+        return $this->current_capacity < $this->max_capacity;
+    }
+
+    /**
+     * Get available slots count
+     */
+    public function getAvailableSlotsAttribute()
+    {
+        return max(0, $this->max_capacity - $this->current_capacity);
+    }
 }

@@ -14,8 +14,8 @@ return new class extends Migration
     public function up()
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            $table->unsignedBigInteger('batch_id')->nullable()->after('learning_mode');
-            $table->foreign('batch_id')->references('batch_id')->on('student_batches')->onDelete('set null');
+            $table->boolean('batch_access_granted')->default(false)->after('payment_status')
+                  ->comment('Grants dashboard access for batch students regardless of enrollment/payment status');
         });
     }
 
@@ -27,8 +27,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            $table->dropForeign(['batch_id']);
-            $table->dropColumn('batch_id');
+            $table->dropColumn('batch_access_granted');
         });
     }
 };

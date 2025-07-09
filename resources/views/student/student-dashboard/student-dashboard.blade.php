@@ -240,6 +240,24 @@
                             @endif
                         </div>
                         
+                        <!-- Batch Information -->
+                        @if(isset($course['batch_name']) && $course['batch_name'])
+                        <div class="batch-info" style="margin-top: 10px; padding: 8px 12px; background: #e8f5e8; border-radius: 6px; font-size: 0.9rem;">
+                            <div style="font-weight: 600; color: #27ae60; margin-bottom: 4px;">
+                                <i class="fas fa-users"></i> {{ $course['batch_name'] }}
+                            </div>
+                            @if(isset($course['batch_dates']) && $course['batch_dates'])
+                            <div style="color: #2c3e50; font-size: 0.85rem;">
+                                <i class="fas fa-calendar-alt"></i> 
+                                Start: {{ $course['batch_dates']['start'] }}
+                                @if($course['batch_dates']['end'] !== 'TBA')
+                                    | End: {{ $course['batch_dates']['end'] }}
+                                @endif
+                            </div>
+                            @endif
+                        </div>
+                        @endif
+                        
                         <div class="progress-bar" style="--progress: {{ $course['progress'] }}%">
                             <span class="progress-text">{{ $course['progress'] }}% complete</span>
                         </div>

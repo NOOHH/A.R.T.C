@@ -67,6 +67,10 @@ Route::prefix('admin/batches')->middleware(['admin.auth'])->group(function () {
     Route::post('/{id}/add-students', [BatchEnrollmentController::class, 'addStudentsToBatch'])->name('admin.batches.add-students');
     Route::delete('/{batchId}/students/{studentId}', [BatchEnrollmentController::class, 'removeStudentFromBatch'])->name('admin.batches.remove-student');
     Route::get('/{id}/export', [BatchEnrollmentController::class, 'exportBatchEnrollments'])->name('admin.batches.export');
+    Route::get('/{id}/available-students', [BatchEnrollmentController::class, 'getAvailableStudents'])->name('admin.batches.available-students');
+    
+    // Student movement routes - removed move-to-pending and move-to-current as drag-and-drop is now purely visual
+    Route::post('/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-to-batch');
 });
 
 // Registration and document validation routes
@@ -323,6 +327,10 @@ Route::get('/admin-student-registration/payment/pending', [AdminController::clas
      ->name('admin.student.registration.payment.pending');
 Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
      ->name('admin.student.registration.payment.history');
+
+// Mark enrollment as paid
+Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
+     ->name('admin.enrollment.mark-paid');
 
 // View one student registration’s details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
@@ -693,6 +701,27 @@ Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProf
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
 Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);
 Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsController::class, 'generateEnrollmentForm']);
+
+// Temporary debug route for payment history (bypassing middleware)
+Route::get('/debug-payment-history', function() {
+    $controller = new AdminController();
+    return $controller->paymentHistory();
+});
+
+// Payment management routes
+Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
+     ->name('admin.student.registration.payment.pending');
+Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
+     ->name('admin.student.registration.payment.history');
+
+// Mark enrollment as paid
+Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
+     ->name('admin.enrollment.mark-paid');
+
+// Approve enrollment
+Route::post('/admin/enrollment/{id}/approve', [AdminController::class, 'approveEnrollment'])
+     ->name('admin.enrollment.approve');
+
 }); // End of admin middleware group
 
 /*
@@ -835,6 +864,18 @@ Route::prefix('admin')->middleware(['web'])->group(function () {
     Route::post('/batches', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
     Route::put('/batches/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
     Route::delete('/batches/{id}', [BatchEnrollmentController::class, 'delete'])->name('admin.batches.delete');
+    
+    // Student management within batches
+    Route::get('/batches/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
+    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-student');
+    Route::delete('/batches/{batchId}/students/{studentId}', [BatchEnrollmentController::class, 'removeStudentFromBatch'])->name('admin.batches.remove-student');
+    Route::get('/batches/{id}/export', [BatchEnrollmentController::class, 'exportBatchEnrollments'])->name('admin.batches.export');
+    Route::post('/batches/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
+    
+    // Move student between pending/current (for visual drag-and-drop with actual status updates when moving to current)
+    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/move-to-current', [BatchEnrollmentController::class, 'moveStudentToCurrent'])->name('admin.batches.move-to-current');
+    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/move-to-pending', [BatchEnrollmentController::class, 'moveStudentToPending'])->name('admin.batches.move-to-pending');
+    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/remove-from-batch', [BatchEnrollmentController::class, 'removeStudentFromBatchCompletely'])->name('admin.batches.remove-from-batch');
 });
 
 Route::get('/test-user-creation', function() { 

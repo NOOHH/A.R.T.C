@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Registration;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Program;
 use App\Models\Module;
 use App\Models\Enrollment;
+use App\Models\PaymentHistory;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -137,21 +139,48 @@ class AdminController extends Controller
             // Find existing enrollment for this registration (created during registration process)
             $enrollment = Enrollment::where('registration_id', $registration->registration_id)->first();
             
+            // Get batch_id from session if it was stored during registration
+            $batchId = session('selected_batch_id');
+            
             if ($enrollment) {
-                // Update enrollment with student_id now that student is approved
+                // Update enrollment with student_id and user_id now that student is approved
                 $enrollment->student_id = $student->student_id;
+                $enrollment->user_id = $user?->user_id;
                 $enrollment->enrollment_status = 'approved';
+                
+                // Include batch_id if it was selected during registration
+                if ($batchId) {
+                    $enrollment->batch_id = $batchId;
+                    Log::info('Setting batch_id on existing enrollment', ['batch_id' => $batchId, 'enrollment_id' => $enrollment->enrollment_id]);
+                }
+                
                 $enrollment->save();
             } else {
                 // Fallback: Create enrollment record if it doesn't exist
-                Enrollment::create([
+                $enrollmentData = [
                     'student_id' => $student->student_id,
+                    'user_id' => $user?->user_id,
                     'program_id' => $registration->program_id,
                     'package_id' => $registration->package_id,
                     'enrollment_type' => $registration->plan_name === 'Modular' ? 'Modular' : 'Full',
                     'learning_mode' => $registration->learning_mode ?? 'Synchronous',
                     'enrollment_status' => 'approved',
-                ]);
+                    'payment_status' => 'pending',
+                ];
+                
+                // Include batch_id if it was selected during registration
+                if ($batchId) {
+                    $enrollmentData['batch_id'] = $batchId;
+                    Log::info('Creating new enrollment with batch_id', ['batch_id' => $batchId, 'student_id' => $student->student_id]);
+                }
+                
+                Enrollment::create($enrollmentData);
+            }
+            
+            // Clear the batch selection from session after using it
+            if ($batchId) {
+                session()->forget('selected_batch_id');
+                Log::info('Cleared batch_id from session after enrollment creation');
             }
 
             // Remove from pending
@@ -204,11 +233,32 @@ class AdminController extends Controller
 
     public function paymentPending()
     {
-        // Get enrollments with pending payments
-        $enrollments = Enrollment::with(['student.user', 'program', 'package'])
+        // Get enrollments with pending payments - include both user and student relationships
+        $enrollments = Enrollment::with(['user', 'student', 'program', 'package'])
                                 ->where('payment_status', 'pending')
                                 ->orderBy('created_at', 'desc')
-                                ->get();
+                                ->get()
+                                ->map(function ($enrollment) {
+                                    // Determine student name from either user or student relationship
+                                    $studentName = 'N/A';
+                                    $studentEmail = 'N/A';
+                                    
+                                    if ($enrollment->user) {
+                                        $firstName = $enrollment->user->user_firstname ?? '';
+                                        $lastName = $enrollment->user->user_lastname ?? '';
+                                        $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
+                                        $studentEmail = $enrollment->user->email ?? 'N/A';
+                                    } elseif ($enrollment->student) {
+                                        $firstName = $enrollment->student->firstname ?? '';
+                                        $lastName = $enrollment->student->lastname ?? '';
+                                        $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
+                                        $studentEmail = $enrollment->student->email ?? 'N/A';
+                                    }
+                                    
+                                    $enrollment->student_name = $studentName;
+                                    $enrollment->student_email = $studentEmail;
+                                    return $enrollment;
+                                });
 
         return view('admin.admin-payment-pending', [
             'enrollments' => $enrollments,
@@ -217,14 +267,152 @@ class AdminController extends Controller
 
     public function paymentHistory()
     {
-        // Get all enrollments with payment history
+        // Get all enrollments with completed payments (paid status)
         $enrollments = Enrollment::with(['student.user', 'program', 'package'])
-                                ->whereIn('payment_status', ['completed', 'failed', 'cancelled'])
+                                ->where('payment_status', 'paid')
                                 ->orderBy('updated_at', 'desc')
                                 ->get();
 
         return view('admin.admin-payment-history', [
             'enrollments' => $enrollments,
         ]);
+    }
+
+    public function markAsPaid($id)
+    {
+        try {
+            DB::beginTransaction();
+            
+            Log::info('Mark as paid request received', ['enrollment_id' => $id]);
+            
+            // Find enrollment by ID (enrollment_id is the primary key)
+            $enrollment = Enrollment::where('enrollment_id', $id)->first();
+            
+            if (!$enrollment) {
+                Log::error('Enrollment not found for mark as paid', ['enrollment_id' => $id]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Enrollment not found'
+                ], 404);
+            }
+            
+            // Check if already paid
+            if ($enrollment->payment_status === 'paid') {
+                Log::warning('Attempted to mark already paid enrollment', ['enrollment_id' => $id]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment is already marked as paid'
+                ], 400);
+            }
+            
+            Log::info('Creating payment history record', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'user_id' => $enrollment->user_id,
+                'student_id' => $enrollment->student_id
+            ]);
+            
+            // Create payment history record before updating enrollment
+            $paymentHistory = PaymentHistory::create([
+                'enrollment_id' => $enrollment->enrollment_id,
+                'user_id' => $enrollment->user_id,
+                'student_id' => $enrollment->student_id,
+                'program_id' => $enrollment->program_id,
+                'package_id' => $enrollment->package_id,
+                'payment_status' => 'paid',
+                'payment_method' => 'manual', // Since it's marked by admin
+                'payment_notes' => 'Payment marked as paid by administrator',
+                'payment_date' => now(),
+                'processed_by_admin_id' => session('admin_id') ?? session('user_id') ?? 1,
+            ]);
+            
+            Log::info('Payment history created', ['payment_history_id' => $paymentHistory->payment_history_id]);
+            
+            // Update enrollment payment status to paid
+            $enrollment->update([
+                'payment_status' => 'paid',
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+            
+            Log::info('Payment marked as paid successfully', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'admin_id' => session('admin_id') ?? session('user_id'),
+                'payment_history_id' => $paymentHistory->payment_history_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment marked as paid successfully and migrated to payment history'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error marking payment as paid', [
+                'enrollment_id' => $id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating payment status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function approveEnrollment($enrollmentId)
+    {
+        try {
+            DB::beginTransaction();
+            
+            // Find enrollment by enrollment_id
+            $enrollment = Enrollment::where('enrollment_id', $enrollmentId)->first();
+            
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Enrollment not found'
+                ], 404);
+            }
+            
+            // Check if already approved
+            if ($enrollment->enrollment_status === 'approved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Enrollment is already approved'
+                ], 400);
+            }
+            
+            // Update enrollment status to approved
+            $enrollment->update([
+                'enrollment_status' => 'approved',
+                'updated_at' => now()
+            ]);
+
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Enrollment approved successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error approving enrollment', [
+                'enrollment_id' => $enrollmentId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving enrollment: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
