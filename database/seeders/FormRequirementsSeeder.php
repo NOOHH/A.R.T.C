@@ -19,12 +19,12 @@ class FormRequirementsSeeder extends Seeder
         FormRequirement::truncate();
         
         $requirements = [
-            // Complete Program Requirements
+            // Full Program Requirements
             [
                 'field_name' => 'religion',
                 'field_label' => 'Religion',
                 'field_type' => 'text',
-                'program_type' => 'complete',
+                'program_type' => 'full',
                 'is_required' => false,
                 'is_active' => true,
                 'is_bold' => false,
@@ -34,7 +34,7 @@ class FormRequirementsSeeder extends Seeder
                 'field_name' => 'citizenship',
                 'field_label' => 'Citizenship',
                 'field_type' => 'text',
-                'program_type' => 'complete',
+                'program_type' => 'full',
                 'is_required' => true,
                 'is_active' => true,
                 'is_bold' => false,
@@ -164,7 +164,7 @@ class FormRequirementsSeeder extends Seeder
                 'field_name' => 'birth_certificate',
                 'field_label' => 'Birth Certificate',
                 'field_type' => 'file',
-                'program_type' => 'complete',
+                'program_type' => 'full',
                 'is_required' => true,
                 'is_active' => true,
                 'is_bold' => true,
@@ -184,7 +184,7 @@ class FormRequirementsSeeder extends Seeder
                 'field_name' => 'medical_certificate',
                 'field_label' => 'Medical Certificate',
                 'field_type' => 'file',
-                'program_type' => 'complete',
+                'program_type' => 'full',
                 'is_required' => false,
                 'is_active' => true,
                 'is_bold' => false,

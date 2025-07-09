@@ -84,7 +84,20 @@ class AdminProfessorController extends Controller
         $professor = Professor::with('programs')->findOrFail($professor_id);
         $programs = Program::all();
         
-        return view('admin.professors.edit', compact('professor', 'programs'));
+        // Get available batches for assignment (batches without assigned professors)
+        $batches = \App\Models\StudentBatch::with('program')
+            ->where('batch_status', '!=', 'closed')
+            ->whereNull('professor_id')
+            ->orderBy('start_date', 'asc')
+            ->get();
+        
+        // Get current batch assignments for this professor
+        $assignedBatches = \App\Models\StudentBatch::with('program')
+            ->where('professor_id', $professor_id)
+            ->orderBy('start_date', 'asc')
+            ->get();
+        
+        return view('admin.professors.edit', compact('professor', 'programs', 'batches', 'assignedBatches'));
     }
 
     public function update(Request $request, $professor_id)
@@ -174,5 +187,49 @@ class AdminProfessorController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Video link updated successfully!']);
+    }
+
+    public function assignBatch(Request $request, $professor_id)
+    {
+        $request->validate([
+            'batch_id' => 'required|exists:student_batches,batch_id'
+        ]);
+
+        $professor = Professor::findOrFail($professor_id);
+        $batch = \App\Models\StudentBatch::findOrFail($request->batch_id);
+
+        // Check if batch is already assigned to a professor
+        if ($batch->professor_id) {
+            return back()->with('error', 'This batch is already assigned to another professor.');
+        }
+
+        $batch->update([
+            'professor_id' => $professor_id,
+            'professor_assigned_at' => now(),
+            'professor_assigned_by' => session('admin_id')
+        ]);
+
+        return back()->with('success', "Batch '{$batch->batch_name}' assigned to {$professor->professor_name} successfully.");
+    }
+
+    public function unassignBatch($professor_id, $batch_id)
+    {
+        $batch = \App\Models\StudentBatch::where('batch_id', $batch_id)
+            ->where('professor_id', $professor_id)
+            ->first();
+
+        if (!$batch) {
+            return back()->with('error', 'Assignment not found.');
+        }
+
+        $professor = Professor::findOrFail($professor_id);
+        
+        $batch->update([
+            'professor_id' => null,
+            'professor_assigned_at' => null,
+            'professor_assigned_by' => null
+        ]);
+
+        return back()->with('success', "Batch '{$batch->batch_name}' unassigned from {$professor->professor_name} successfully.");
     }
 }

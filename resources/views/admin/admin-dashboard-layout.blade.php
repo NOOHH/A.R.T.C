@@ -95,11 +95,20 @@
                             </a>
                         </li>
 
-                        {{-- Enrollment Management --}}
-                        <li class="@if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
-                            <a href="{{ route('admin.enrollments.index') }}" class="sidebar-link">
-                                <span class="icon">📝</span> Enrollment Management
+                        {{-- Student Enroll Dropdown --}}
+                        <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'admin.batches') || Route::currentRouteName() === 'admin.enrollments.index') active @endif">
+                            <a href="#" class="sidebar-link">
+                                <span class="icon">📝</span> Student Enroll
+                                <span class="chevron">▼</span>
                             </a>
+                            <ul class="sidebar-submenu">
+                                <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
+                                    <a href="{{ route('admin.batches.index') }}">Batch Enroll</a>
+                                </li>
+                                <li class="@if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
+                                    <a href="{{ route('admin.enrollments.index') }}">Assign Course to Student</a>
+                                </li>
+                            </ul>
                         </li>
 
                         {{-- Directors --}}

@@ -1,0 +1,324 @@
+  /* Main wrapper */
+  .main-content-wrapper {
+    align-items: flex-start !important;
+  }
+
+  /* Container */
+  .modules-container {
+    background: #fff;
+    padding: 40px 20px 60px;
+    margin: 40px 0 0 0;
+    max-width: 1400px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+
+  /* Header with Bootstrap approach */
+  .modules-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #6c757d;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .back-to-modules-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .back-to-modules-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    color: white;
+    text-decoration: none;
+  }
+
+  /* Program selector */
+  .program-selector {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #6c757d;
+  }
+  .program-selector label {
+    display: block;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+  }
+  .program-selector select {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: border-color 0.3s ease;
+  }
+  .program-selector select:focus {
+    outline: none;
+    border-color: #6c757d;
+    box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
+  }
+
+  /* Modules grid */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+  }
+
+  /* Module card - archived styling */
+  .module-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 25px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    position: relative;
+    opacity: 0.7;
+    border-left: 5px solid #6c757d;
+  }
+
+  .module-card:hover {
+    opacity: 1;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+
+  .module-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #6c757d;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .module-description {
+    color: #6c757d;
+    margin-bottom: 15px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+  }
+
+  .download-link {
+    display: inline-block;
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin: 8px 0;
+    padding: 4px 8px;
+    border: 1px solid #6c757d;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  .download-link:hover {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+  }
+
+  .module-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+  }
+
+  .module-program {
+    background: #6c757d;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .module-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .unarchive-btn, .delete-module-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .unarchive-btn {
+    background: #28a745;
+    color: white;
+  }
+  .unarchive-btn:hover {
+    background: #218838;
+    transform: scale(1.05);
+  }
+
+  .delete-module-btn {
+    background: #dc3545;
+    color: white;
+  }
+  .delete-module-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+  }
+
+  .content-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 8px;
+    opacity: 0.7;
+  }
+
+  .content-type-badge.module { background: #e7f3ff; color: #0066cc; }
+  .content-type-badge.assignment { background: #fff3e0; color: #ff9800; }
+  .content-type-badge.quiz { background: #f3e5f5; color: #9c27b0; }
+  .content-type-badge.test { background: #ffebee; color: #f44336; }
+  .content-type-badge.link { background: #e8f5e8; color: #4caf50; }
+
+  .content-details {
+    margin: 10px 0;
+    font-size: 0.9rem;
+    color: #666;
+    opacity: 0.8;
+  }
+
+  /* Empty state */
+  .no-modules {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    font-size: 1.1rem;
+  }
+  .no-modules::before {
+    content: '🗃️';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  /* Program not selected state */
+  .select-program-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    font-size: 1.1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+  }
+  .select-program-msg::before {
+    content: '👆';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+  }
+
+  /* Messages */
+  .success-message, .error-message {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .success-message {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+  }
+
+  .error-message {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+  }
+
+  .error-message ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .archived-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #6c757d;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* Batch actions and selection styles */
+  .batch-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #6c757d;
+  }
+
+  .select-all-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+  }
+
+  .batch-delete-btn {
+    display: none;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .batch-delete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  }
+
+  .module-checkbox {
+    margin-right: 10px;
+    transform: scale(1.2);
+  }

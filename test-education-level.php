@@ -1,6 +1,10 @@
 <?php
 
-// Test file to verify education level field exists and dynamic form works
+// Test file to veri// Test 2: Check all form requirements for full program
+echo "Test 2: Checking all form requirements for full program...\n";
+$fullRequirements = FormRequirement::active()->forProgram('full')->ordered()->get();
+echo "Found " . $fullRequirements->count() . " active requirements for full program:\n";
+foreach ($fullRequirements as $req) {ucation level field exists and dynamic form works
 require 'vendor/autoload.php';
 
 // Bootstrap Laravel
@@ -27,11 +31,11 @@ if ($educationField) {
     echo "✗ Education level field not found!\n\n";
 }
 
-// Test 2: Check all form requirements for complete program
-echo "Test 2: Checking all form requirements for complete program...\n";
-$completeRequirements = FormRequirement::active()->forProgram('complete')->ordered()->get();
-echo "Found " . $completeRequirements->count() . " active requirements for complete program:\n";
-foreach ($completeRequirements as $req) {
+// Test 2: Check all form requirements for full program
+echo "Test 2: Checking all form requirements for full program...\n";
+$fullRequirements = FormRequirement::active()->forProgram('full')->ordered()->get();
+echo "Found " . $fullRequirements->count() . " active requirements for full program:\n";
+foreach ($fullRequirements as $req) {
     echo "  - " . $req->field_name . " (" . $req->field_label . ")\n";
 }
 echo "\n";

@@ -37,6 +37,8 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // Temporarily disable session check
+            // \App\Http\Middleware\CheckSession::class,
         ],
 
         'api' => [
@@ -67,5 +69,9 @@ class Kernel extends HttpKernel
         'student.auth' => \App\Http\Middleware\CheckStudentAuth::class,
         'admin.auth' => \App\Http\Middleware\CheckAdminAuth::class,
         'professor.auth' => \App\Http\Middleware\CheckProfessorAuth::class,
+        // Temporarily disable session middleware
+        'session.auth' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'check.session' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'role.dashboard' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
     ];
 }

@@ -16,6 +16,7 @@ use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminProfessorController;
+use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\FormRequirementController;
@@ -23,6 +24,8 @@ use App\Models\Program;
 use App\Http\Controllers\TestController;
 use App\Models\Package;
 use App\Http\Controllers\DatabaseTestController;
+use App\Http\Controllers\Admin\BatchEnrollmentController;
+use App\Http\Controllers\RegistrationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +46,35 @@ Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 
 // Test database structure
 Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection']);
+
+/*
+|--------------------------------------------------------------------------
+| Batch Enrollment Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin/batches')->middleware(['admin.auth'])->group(function () {
+    Route::get('/', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
+    Route::post('/', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
+    Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
+    Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
+    Route::post('/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
+    Route::get('/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
+    
+    // Additional batch management routes
+    Route::get('/get-by-program', [BatchEnrollmentController::class, 'getBatchesByProgram'])->name('admin.batches.get-by-program');
+    Route::put('/{id}/update', [BatchEnrollmentController::class, 'updateBatch'])->name('admin.batches.update-batch');
+    Route::delete('/{id}', [BatchEnrollmentController::class, 'deleteBatch'])->name('admin.batches.delete');
+    Route::post('/{id}/add-students', [BatchEnrollmentController::class, 'addStudentsToBatch'])->name('admin.batches.add-students');
+    Route::delete('/{batchId}/students/{studentId}', [BatchEnrollmentController::class, 'removeStudentFromBatch'])->name('admin.batches.remove-student');
+    Route::get('/{id}/export', [BatchEnrollmentController::class, 'exportBatchEnrollments'])->name('admin.batches.export');
+});
+
+// Registration and document validation routes
+Route::middleware(['session.auth'])->group(function () {
+    Route::post('/registration/validate-document', [RegistrationController::class, 'validateDocument'])->name('registration.validate-document');
+    Route::get('/api/batches/{programId}', [RegistrationController::class, 'getBatchesForProgram'])->name('api.batches.program');
+    Route::post('/registration/batch-enrollment', [RegistrationController::class, 'saveBatchEnrollment'])->name('registration.batch-enrollment');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -150,7 +182,7 @@ Route::post('/student/login', [UnifiedLoginController::class, 'login'])->name('s
 Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name('student.logout');
 
 // Student dashboard and related routes  
-Route::middleware(['student.auth'])->group(function () {
+Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
@@ -172,6 +204,14 @@ Route::middleware(['student.auth'])->group(function () {
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
 
+// Account creation POST (separate from full registration)
+Route::post('/student/account/create', [StudentRegistrationController::class, 'handleAccountCreation'])
+     ->name('student.account.create');
+
+// Public route for getting batches by program (for registration form)
+Route::get('/batches/by-program', [StudentRegistrationController::class, 'getBatchesByProgram'])
+     ->name('public.batches.by-program');
+
 // Registration success page
 Route::get('/registration/success', function() {
     return view('registration.success');
@@ -179,12 +219,20 @@ Route::get('/registration/success', function() {
 
 // Test registration form
 Route::get('/test-registration', function () {
-    $formRequirements = App\Models\FormRequirement::active()->forProgram('complete')->get();
+    $formRequirements = App\Models\FormRequirement::active()->forProgram('full')->get();
     return view('test-registration', compact('formRequirements'));
 })->name('test.registration');
 
+// Clean test route for registration fixes
+Route::get('/test-registration-fixes', function() { 
+    return view('test-fixes', [
+        'programs' => \App\Models\Program::where('is_archived', false)->get(), 
+        'packages' => \App\Models\Package::all()
+    ]); 
+});
+
 // Check if email exists
-Route::post('/check-email', [StudentRegistrationController::class, 'checkEmail'])
+Route::post('/check-email', [StudentRegistrationController::class, 'checkEmailExists'])
      ->name('check.email');
 
 /*
@@ -241,14 +289,19 @@ Route::post('/student/enroll', [StudentRegistrationController::class, 'enroll'])
 Route::get('/student/enrollment-status', [StudentRegistrationController::class, 'checkEnrollmentStatus'])
      ->name('student.enrollment.status');
 
+// OCR document processing
+Route::post('/ocr/process', [StudentRegistrationController::class, 'processOcrDocument'])
+     ->name('ocr.process');
+
 /*
 |--------------------------------------------------------------------------
 | Admin Dashboard & Registration
 |--------------------------------------------------------------------------
 */
-// Admin dashboard
-Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
-     ->name('admin.dashboard');
+// Admin dashboard and admin routes with middleware
+Route::middleware(['check.session', 'role.dashboard'])->group(function () {
+    Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
+         ->name('admin.dashboard');
 
 // Admin approve/reject registration
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
@@ -394,6 +447,43 @@ Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
 // Delete a package
 Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.delete');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Batches
+|--------------------------------------------------------------------------
+*/
+// Batch management
+Route::get('/admin/batches', [AdminBatchController::class, 'index'])
+     ->name('admin.batches.index');
+
+// Create batch form
+Route::get('/admin/batches/create', [AdminBatchController::class, 'create'])
+     ->name('admin.batches.create');
+
+// Store new batch
+Route::post('/admin/batches', [AdminBatchController::class, 'store'])
+     ->name('admin.batches.store');
+
+// Update batch
+Route::put('/admin/batches/{batch}', [AdminBatchController::class, 'update'])
+     ->name('admin.batches.update');
+
+// Delete batch
+Route::delete('/admin/batches/{batch}', [AdminBatchController::class, 'destroy'])
+     ->name('admin.batches.destroy');
+
+// Toggle batch status
+Route::patch('/admin/batches/{batch}/toggle-status', [AdminBatchController::class, 'toggleStatus'])
+     ->name('admin.batches.toggle-status');
+
+// Move student between batches
+Route::post('/admin/batches/move-student', [AdminBatchController::class, 'moveStudent'])
+     ->name('admin.batches.move-student');
+
+// Batch enrollment management
+Route::get('/admin/student-enrollment/batch-enroll', [AdminBatchController::class, 'batchEnroll'])
+     ->name('admin.student.enrollment.batch');
 
 /*
 |--------------------------------------------------------------------------
@@ -593,9 +683,17 @@ Route::delete('/admin/professors/{professor}', [AdminProfessorController::class,
 Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
      ->name('admin.professors.video.update');
 
+// Professor batch assignment routes
+Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorController::class, 'assignBatch'])
+     ->name('admin.professors.assign-batch');
+
+Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
+     ->name('admin.professors.unassign-batch');
+
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
 Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);
 Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsController::class, 'generateEnrollmentForm']);
+}); // End of admin middleware group
 
 /*
 |--------------------------------------------------------------------------
@@ -695,7 +793,7 @@ Route::middleware(['professor.auth'])
 */
 // Route::get('/test-ui', function () {
 //     $formRequirements = App\Models\FormRequirement::active()
-//         ->forProgram('complete')
+//         ->forProgram('full')
 //         ->ordered()
 //         ->get();
 //     
@@ -730,3 +828,15 @@ Route::post('/admin/settings/professor-features', [AdminSettingsController::clas
      ->name('admin.settings.professor-features');
 Route::get('/admin/settings/professor-features', [AdminSettingsController::class, 'getProfessorFeatures'])
      ->name('admin.settings.professor-features.get');
+
+// Batch Enrollment Management Routes
+Route::prefix('admin')->middleware(['web'])->group(function () {
+    Route::get('/batches', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
+    Route::post('/batches', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
+    Route::put('/batches/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
+    Route::delete('/batches/{id}', [BatchEnrollmentController::class, 'delete'])->name('admin.batches.delete');
+});
+
+Route::get('/test-user-creation', function() { 
+    return view('test-user-creation'); 
+});

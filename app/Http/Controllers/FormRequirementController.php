@@ -26,7 +26,7 @@ class FormRequirementController extends Controller
             'field_name' => 'required|string|max:255|unique:form_requirements,field_name',
             'field_label' => 'required|string|max:255',
             'field_type' => 'required|string|in:text,email,tel,date,file,select,textarea,checkbox,radio,number,section,module_selection',
-            'program_type' => 'required|string|in:both,modular,complete',
+            'program_type' => 'required|string|in:both,modular,full',
             'section_name' => 'nullable|string|max:255',
             'is_required' => 'nullable|boolean',
         ]);
@@ -111,7 +111,7 @@ class FormRequirementController extends Controller
             'field_name' => 'required|string|max:255|unique:form_requirements,field_name,' . $id,
             'field_label' => 'required|string|max:255',
             'field_type' => 'required|string|in:text,email,tel,date,file,select,textarea,checkbox,radio,number,section,module_selection',
-            'program_type' => 'required|string|in:both,modular,complete',
+            'program_type' => 'required|string|in:both,modular,full',
             'section_name' => 'nullable|string|max:255',
             'is_required' => 'nullable|boolean',
         ]);

@@ -28,7 +28,7 @@ try {
         'package_id' => 2,
         'program_id' => 1,
         'plan_id' => 1,
-        'enrollment_type' => 'Complete',
+        'enrollment_type' => 'Full',
         'learning_mode' => 'Synchronous',
         'package_name' => 'Premium Package',
         'program_name' => 'Nursing Board Review',
