@@ -418,7 +418,7 @@
                         
                         <div class="program-stats">
                             <div class="enrollment-count">
-                                <i class="fas fa-user-graduate me-2"></i>Enrolled Students: {{ $program->enrollments->count() }}
+                                <i class="fas fa-user-graduate me-2"></i>Enrolled Students: {{ $program->enrollments_count ?? 0 }}
                             </div>
                         </div>
                     </div>

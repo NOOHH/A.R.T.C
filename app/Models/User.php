@@ -27,8 +27,14 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
-     public function enrollment()
+    
+    public function enrollment()
     {
         return $this->belongsTo(Enrollment::class, 'enrollment_id', 'enrollment_id');
+    }
+    
+    public function registration()
+    {
+        return $this->hasOne(Registration::class, 'user_id', 'user_id');
     }
 }

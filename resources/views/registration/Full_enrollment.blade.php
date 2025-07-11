@@ -12,9 +12,12 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
 
 <!-- Critical JavaScript functions for immediate availability -->
 <script>
+    
     
 // Global variables (declare first for immediate availability)
 let currentStep = 1;
@@ -1043,6 +1046,12 @@ function toggleGraduationCertificate() {
                 </div>
             </div>
 
+<div class="step" id="step-2">
+    <div class="white-step-container">
+        <div class="step-header">
+            <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
+            <p>Select how you'd like to take your classes.</p>
+        </div>
 <div class="step" id="step-2">
     <div class="white-step-container">
         <div class="step-header">

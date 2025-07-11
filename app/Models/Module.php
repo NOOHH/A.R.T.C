@@ -20,23 +20,36 @@ class Module extends Model
         'module_name',
         'module_description',
         'program_id',
+        'batch_id',
+        'learning_mode',
         'attachment',
         'created_by_admin_id',
         'content_type',
         'content_data',
         'is_archived',
         'module_order',
+        'video_path',
+        'additional_content',
+        'order',
+        'admin_override',
     ];
 
     protected $casts = [
         'content_data' => 'array',
         'is_archived' => 'boolean',
         'module_order' => 'integer',
+        'order' => 'integer',
+        'admin_override' => 'array',
     ];
 
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    public function batch()
+    {
+        return $this->belongsTo(StudentBatch::class, 'batch_id', 'batch_id');
     }
 
     // Helper method to get content type display name
@@ -46,6 +59,7 @@ class Module extends Model
             'module' => 'Module/Lesson',
             'assignment' => 'Assignment',
             'quiz' => 'Quiz',
+            'ai_quiz' => 'AI-Powered Quiz',
             'test' => 'Test',
             'link' => 'External Link',
             'file' => 'File Upload',
@@ -60,6 +74,7 @@ class Module extends Model
             'module' => '📚',
             'assignment' => '📝',
             'quiz' => '❓',
+            'ai_quiz' => '🤖',
             'test' => '📋',
             'link' => '🔗',
             'file' => '📎',

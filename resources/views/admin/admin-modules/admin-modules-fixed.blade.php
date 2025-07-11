@@ -82,6 +82,7 @@
                     <option value="module">Module/Lesson</option>
                     <option value="assignment">Assignment</option>
                     <option value="quiz">Quiz</option>
+                    <option value="ai_quiz">AI Quiz</option>
                     <option value="test">Test</option>
                     <option value="link">External Link</option>
                 </select>
@@ -95,13 +96,10 @@
             <i class="bi bi-plus-circle"></i> Add New Content
         </button>
         <button type="button" class="batch-upload-btn" id="showBatchModal">
-            <i class="bi bi-upload"></i> Batch Upload Multiple PDFs
+            <i class="bi bi-upload"></i> Batch Upload
         </button>
         <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
             <i class="bi bi-archive"></i> View Archived
-        </a>
-        <a href="{{ route('admin.quiz-generator') }}" class="quiz-generator-btn">
-            <i class="bi bi-robot"></i> AI Quiz Generator
         </a>
     </div>
 
@@ -261,10 +259,6 @@
                                         onclick="editModule({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}', '{{ addslashes($module->module_description) }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
                                     <i class="bi bi-pencil"></i> Edit
                                 </button>
-                                <button class="action-btn btn-override" 
-                                        onclick="showOverrideModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
-                                    <i class="bi bi-unlock-fill"></i> Override
-                                </button>
                                 <button class="action-btn btn-archive" 
                                         onclick="showArchiveConfirmation({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
                                     <i class="bi bi-archive"></i> Archive
@@ -325,6 +319,7 @@
                         <option value="module">Module/Lesson</option>
                         <option value="assignment">Assignment</option>
                         <option value="quiz">Quiz</option>
+                        <option value="ai_quiz">AI Quiz</option>
                         <option value="test">Test</option>
                         <option value="link">External Link</option>
                     </select>
@@ -361,37 +356,6 @@
                     <label for="video_url">Video URL (YouTube/Vimeo)</label>
                     <input type="url" id="video_url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
                     <small class="text-muted">Enter a YouTube or Vimeo URL for video content</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Admin Override Settings</label>
-                    <div class="admin-override-checkboxes">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_completion" name="admin_override[]" value="completion">
-                            <label class="form-check-label" for="override_completion">
-                                <i class="bi bi-check-circle"></i> Override Completion Requirements
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_prerequisites" name="admin_override[]" value="prerequisites">
-                            <label class="form-check-label" for="override_prerequisites">
-                                <i class="bi bi-arrow-right-circle"></i> Override Prerequisites
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_time_limits" name="admin_override[]" value="time_limits">
-                            <label class="form-check-label" for="override_time_limits">
-                                <i class="bi bi-clock"></i> Override Time Limits
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_access_control" name="admin_override[]" value="access_control">
-                            <label class="form-check-label" for="override_access_control">
-                                <i class="bi bi-unlock"></i> Override Access Control
-                            </label>
-                        </div>
-                    </div>
-                    <small class="form-text text-muted">Select which admin overrides should be enabled for this module</small>
                 </div>
 
             </div>
@@ -435,11 +399,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="batchPdfFiles">PDF Files</label>
+                    <label for="batchXmlFiles">XML Files</label>
                     <div class="dropzone" id="batchDropzone">
-                        <input type="file" id="batchPdfFiles" name="pdf_files[]" multiple accept=".pdf" required>
-                        <p>Drop PDF files here or click to select</p>
-                        <small class="text-muted">Each PDF will be converted to a module automatically</small>
+                        <input type="file" id="batchXmlFiles" name="xml_files[]" multiple accept=".xml" required>
+                        <p>Drop XML files here or click to select</p>
                     </div>
                     <div id="selectedFiles" style="display: none;">
                         <strong>Selected Files:</strong>
@@ -450,7 +413,7 @@
             
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="closeBatchModalBtn">Cancel</button>
-                <button type="submit" class="add-btn" id="uploadPdfBtn" disabled>Upload PDF Files</button>
+                <button type="submit" class="add-btn" id="uploadXmlBtn" disabled>Upload XML Files</button>
             </div>
         </form>
     </div>
@@ -467,53 +430,6 @@
                 <button type="button" class="cancel-btn" onclick="closeArchiveModal()">Cancel</button>
                 <button type="button" class="add-btn" onclick="confirmArchive()">Archive</button>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Override Modal -->
-<div class="modal-bg" id="overrideModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3><i class="bi bi-unlock-fill"></i> Admin Override Settings</h3>
-            <button type="button" class="modal-close" id="closeOverrideModal">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <p>Configure admin override settings for: <strong id="overrideModuleName"></strong></p>
-            <form id="overrideForm">
-                <div class="admin-override-checkboxes">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="override_completion_modal" name="admin_override[]" value="completion">
-                        <label class="form-check-label" for="override_completion_modal">
-                            <i class="bi bi-check-circle"></i> Override Completion Requirements
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="override_prerequisites_modal" name="admin_override[]" value="prerequisites">
-                        <label class="form-check-label" for="override_prerequisites_modal">
-                            <i class="bi bi-arrow-right-circle"></i> Override Prerequisites
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="override_time_limits_modal" name="admin_override[]" value="time_limits">
-                        <label class="form-check-label" for="override_time_limits_modal">
-                            <i class="bi bi-clock"></i> Override Time Limits
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="override_access_control_modal" name="admin_override[]" value="access_control">
-                        <label class="form-check-label" for="override_access_control_modal">
-                            <i class="bi bi-unlock"></i> Override Access Control
-                        </label>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="cancel-btn" onclick="closeOverrideModal()">Cancel</button>
-            <button type="button" class="add-btn" onclick="saveOverrideSettings()">Save Override Settings</button>
         </div>
     </div>
 </div>
@@ -571,7 +487,6 @@
 <script>
 // Global variables
 let currentArchiveModuleId = null;
-let currentOverrideModuleId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize all functionality
@@ -725,15 +640,15 @@ function loadBatchesForProgram(programId, batchSelectId) {
 
 // Initialize batch upload functionality
 function initializeBatchUpload() {
-    const batchPdfFiles = document.getElementById('batchPdfFiles');
+    const batchXmlFiles = document.getElementById('batchXmlFiles');
     const batchDropzone = document.getElementById('batchDropzone');
     const selectedFiles = document.getElementById('selectedFiles');
     const fileList = document.getElementById('fileList');
-    const uploadPdfBtn = document.getElementById('uploadPdfBtn');
+    const uploadXmlBtn = document.getElementById('uploadXmlBtn');
 
-    if (batchPdfFiles && batchDropzone) {
+    if (batchXmlFiles && batchDropzone) {
         // Handle file selection
-        batchPdfFiles.addEventListener('change', function(e) {
+        batchXmlFiles.addEventListener('change', function(e) {
             handleFileSelection(e.target.files);
         });
 
@@ -753,39 +668,39 @@ function initializeBatchUpload() {
             this.classList.remove('dragover');
             const files = e.dataTransfer.files;
             handleFileSelection(files);
-            batchPdfFiles.files = files;
+            batchXmlFiles.files = files;
         });
     }
 
     function handleFileSelection(files) {
         if (!files || files.length === 0) {
             selectedFiles.style.display = 'none';
-            uploadPdfBtn.disabled = true;
+            uploadXmlBtn.disabled = true;
             return;
         }
 
-        // Filter only PDF files
-        const pdfFiles = Array.from(files).filter(file => 
-            file.name.toLowerCase().endsWith('.pdf')
+        // Filter only XML files
+        const xmlFiles = Array.from(files).filter(file => 
+            file.name.toLowerCase().endsWith('.xml')
         );
 
-        if (pdfFiles.length === 0) {
-            showNotification('Please select PDF files only', 'error');
+        if (xmlFiles.length === 0) {
+            showNotification('Please select XML files only', 'error');
             selectedFiles.style.display = 'none';
-            uploadPdfBtn.disabled = true;
+            uploadXmlBtn.disabled = true;
             return;
         }
 
         // Display selected files
         fileList.innerHTML = '';
-        pdfFiles.forEach(file => {
+        xmlFiles.forEach(file => {
             const li = document.createElement('li');
             li.textContent = file.name;
             fileList.appendChild(li);
         });
 
         selectedFiles.style.display = 'block';
-        uploadPdfBtn.disabled = false;
+        uploadXmlBtn.disabled = false;
     }
 }
 
@@ -845,23 +760,47 @@ function updateContentFields(contentType) {
                         <label for="quiz_description">Quiz Description</label>
                         <textarea id="quiz_description" name="quiz_description" class="form-control" rows="3"></textarea>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="time_limit">Time Limit (minutes)</label>
-                                <input type="number" id="time_limit" name="time_limit" class="form-control" min="1" value="30">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="question_count">Number of Questions</label>
-                                <input type="number" id="question_count" name="question_count" class="form-control" min="1" value="10">
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="time_limit">Time Limit (minutes)</label>
+                        <input type="number" id="time_limit" name="time_limit" class="form-control" min="1">
                     </div>
                     <div class="form-group">
-                        <label for="quiz_instructions">Quiz Instructions</label>
-                        <textarea id="quiz_instructions" name="quiz_instructions" class="form-control" rows="3"></textarea>
+                        <label for="question_count">Number of Questions</label>
+                        <input type="number" id="question_count" name="question_count" class="form-control" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="randomize_questions" name="randomize_questions" value="1">
+                            Randomize question order
+                        </label>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'ai_quiz':
+            fieldsContainer.innerHTML = `
+                <div class="content-specific-fields">
+                    <h5>AI Quiz Details</h5>
+                    <div class="form-group">
+                        <label for="ai_quiz_title">AI Quiz Title</label>
+                        <input type="text" id="ai_quiz_title" name="ai_quiz_title" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="ai_quiz_description">AI Quiz Description</label>
+                        <textarea id="ai_quiz_description" name="ai_quiz_description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="ai_time_limit">Time Limit (minutes)</label>
+                        <input type="number" id="ai_time_limit" name="ai_time_limit" class="form-control" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="ai_num_questions">Number of Questions</label>
+                        <input type="number" id="ai_num_questions" name="ai_num_questions" class="form-control" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="ai_document">AI Document (PDF)</label>
+                        <input type="file" id="ai_document" name="ai_document" class="form-control" accept=".pdf">
+                        <small class="text-muted">Upload a PDF document to generate questions from</small>
                     </div>
                 </div>
             `;
@@ -1015,90 +954,9 @@ function applyFilters() {
 
 // Initialize sorting
 function initializeSorting() {
-    const sortableModules = document.getElementById('sortableModules');
-    if (sortableModules) {
-        // Make modules sortable
-        sortableModules.addEventListener('dragstart', function(e) {
-            if (e.target.classList.contains('module-card')) {
-                e.target.classList.add('dragging');
-                e.dataTransfer.setData('text/plain', e.target.dataset.moduleId);
-            }
-        });
-
-        sortableModules.addEventListener('dragend', function(e) {
-            if (e.target.classList.contains('module-card')) {
-                e.target.classList.remove('dragging');
-            }
-        });
-
-        sortableModules.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            const draggingElement = document.querySelector('.dragging');
-            const afterElement = getDragAfterElement(sortableModules, e.clientY);
-            
-            if (afterElement == null) {
-                sortableModules.appendChild(draggingElement);
-            } else {
-                sortableModules.insertBefore(draggingElement, afterElement);
-            }
-        });
-
-        sortableModules.addEventListener('drop', function(e) {
-            e.preventDefault();
-            updateModuleOrder();
-        });
-
-        // Make module cards draggable
-        document.querySelectorAll('.module-card').forEach(card => {
-            card.setAttribute('draggable', true);
-        });
-    }
-}
-
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.module-card:not(.dragging)')];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-function updateModuleOrder() {
-    const moduleCards = document.querySelectorAll('.module-card');
-    const moduleIds = [];
-    
-    moduleCards.forEach((card, index) => {
-        moduleIds.push(card.getAttribute('data-module-id'));
-    });
-
-    // Send updated order to server
-    fetch('/admin/modules/update-order', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ module_ids: moduleIds })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Module order updated successfully!', 'success');
-        } else {
-            showNotification('Error updating module order: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating module order:', error);
-        showNotification('Error updating module order', 'error');
-    });
+    // Add drag and drop sorting if needed
+    // This would require a library like Sortable.js
+    console.log('Sorting initialized');
 }
 
 // Archive confirmation functions
@@ -1143,91 +1001,6 @@ function confirmArchive() {
     });
 }
 
-// Override modal functions
-function showOverrideModal(moduleId, moduleName) {
-    currentOverrideModuleId = moduleId;
-    document.getElementById('overrideModuleName').textContent = moduleName;
-    
-    // Load current override settings
-    fetch(`/admin/modules/${moduleId}/override-settings`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const overrides = data.overrides || [];
-                
-                // Clear all checkboxes first
-                document.querySelectorAll('#overrideModal input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                
-                // Set checked state based on current overrides
-                overrides.forEach(override => {
-                    const checkbox = document.getElementById(`override_${override}_modal`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-                
-                document.getElementById('overrideModal').classList.add('show');
-            } else {
-                showNotification('Error loading override settings', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading override settings:', error);
-            showNotification('Error loading override settings', 'error');
-        });
-}
-
-function closeOverrideModal() {
-    document.getElementById('overrideModal').classList.remove('show');
-    currentOverrideModuleId = null;
-}
-
-function saveOverrideSettings() {
-    if (!currentOverrideModuleId) return;
-    
-    const checkedBoxes = document.querySelectorAll('#overrideModal input[type="checkbox"]:checked');
-    const overrides = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-    
-    fetch(`/admin/modules/${currentOverrideModuleId}/override`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ admin_override: overrides })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Override settings saved successfully!', 'success');
-            closeOverrideModal();
-            // Update the module status indicator
-            const moduleCard = document.querySelector(`[data-module-id="${currentOverrideModuleId}"]`);
-            if (moduleCard) {
-                const statusIcon = moduleCard.querySelector('.module-status .bi-unlock-fill');
-                if (overrides.length > 0) {
-                    if (!statusIcon) {
-                        const statusContainer = moduleCard.querySelector('.module-status');
-                        statusContainer.innerHTML += '<span class="text-success"><i class="bi bi-unlock-fill"></i></span>';
-                    }
-                } else {
-                    if (statusIcon) {
-                        statusIcon.parentElement.remove();
-                    }
-                }
-            }
-        } else {
-            showNotification('Error saving override settings: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error saving override settings:', error);
-        showNotification('Error saving override settings', 'error');
-    });
-}
-
 // Edit module function
 function editModule(moduleId, moduleName, moduleDescription, programId, attachment) {
     console.log('Editing module:', moduleId, moduleName, moduleDescription, programId);
@@ -1251,14 +1024,26 @@ function editModule(moduleId, moduleName, moduleDescription, programId, attachme
 }
 
 // Notification function
-function showNotification(message, type = 'success') {
+function showNotification(message, type) {
+    // Create notification element
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
     
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to page
     document.body.appendChild(notification);
     
-    // Remove notification after 5 seconds
+    // Auto-remove after 5 seconds
     setTimeout(() => {
         notification.remove();
     }, 5000);

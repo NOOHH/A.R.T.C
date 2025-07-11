@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Storage Link Test</h1>
+    
+    <?php
+    // Check if storage symlink exists
+    $storageLink = __DIR__ . '/storage';
+    $storageExists = file_exists($storageLink);
+    
+    echo '<div class="test-result ' . ($storageExists ? 'success' : 'error') . '">';
+    echo '<strong>Storage Symlink:</strong> ' . ($storageExists ? 'EXISTS' : 'MISSING');
+    echo '</div>';
+    
+    // List files in storage/modules
+    $modulesDir = __DIR__ . '/storage/modules';
+    if (is_dir($modulesDir)) {
+        echo '<div class="test-result success">';
+        echo '<strong>Modules Directory:</strong> EXISTS<br>';
+        echo '<strong>Files:</strong><br>';
+        $files = scandir($modulesDir);
+        foreach ($files as $file) {
+            if ($file !== '.' && $file !== '..') {
+                $filePath = $modulesDir . '/' . $file;
+                $fileSize = filesize($filePath);
+                echo "- $file (" . number_format($fileSize / 1024, 2) . " KB)<br>";
+            }
+        }
+        echo '</div>';
+    } else {
+        echo '<div class="test-result error">';
+        echo '<strong>Modules Directory:</strong> MISSING';
+        echo '</div>';
+    }
+    
+    // Test PDF access
+    $pdfFiles = glob($modulesDir . '/*.pdf');
+    if (!empty($pdfFiles)) {
+        echo '<div class="test-result success">';
+        echo '<strong>PDF Files Test:</strong><br>';
+        foreach ($pdfFiles as $pdfFile) {
+            $fileName = basename($pdfFile);
+            $url = '/storage/modules/' . $fileName;
+            echo "<a href='$url' target='_blank'>$fileName</a><br>";
+        }
+        echo '</div>';
+    }
+    ?>
+</body>
+</html>

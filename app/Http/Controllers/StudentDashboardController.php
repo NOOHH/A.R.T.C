@@ -70,8 +70,13 @@ class StudentDashboardController extends Controller
                 // Get module count for this program
                 $moduleCount = \App\Models\Module::where('program_id', $enrollment->program->program_id)->count();
                 
-                // Get completed modules count (you can implement this based on your completion tracking)
-                $completedCount = 0; // Implement based on your module completion logic
+                // Get completed modules count based on actual completion records
+                $completedCount = 0;
+                if ($student) {
+                    $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                        ->where('program_id', $enrollment->program->program_id)
+                        ->count();
+                }
                 
                 // Determine button text and action based on status
                 $buttonText = 'Continue Learning';
@@ -220,6 +225,11 @@ class StudentDashboardController extends Controller
         if ($student && !$isEnrolled) {
             return redirect()->route('student.dashboard')->with('error', 'You are not enrolled in this course.');
         }
+        
+        // Check if program is archived - if so, only allow access if student is enrolled
+        if ($program->is_archived && !$isEnrolled) {
+            return redirect()->route('student.dashboard')->with('error', 'This program is no longer available.');
+        }
 
         // Check payment status and batch access
         $paymentStatus = $enrollment ? $enrollment->payment_status : 'unpaid';
@@ -246,52 +256,104 @@ class StudentDashboardController extends Controller
         }
         
         // Continue with normal course view if paid and approved
-        // Get all modules for this program, ordered by creation date
+        // Get all modules for this program, ordered by order column first, then creation date
         $modules = Module::where('program_id', $courseId)
+                        ->where('is_archived', false)
+                        ->orderBy('order', 'asc')
                         ->orderBy('created_at', 'asc')
                         ->get();
         
+        // Get completed modules for this student
+        $completedModuleIds = [];
+        if ($student) {
+            $completedModuleIds = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                ->where('program_id', $courseId)
+                ->pluck('module_id')
+                ->toArray();
+        }
+        
         // Format modules for the view
         $formattedModules = [];
+        $completedCount = 0;
+        $modulesByType = [];
+        
         foreach ($modules as $index => $module) {
-            $isLocked = $index > 0; // First module is available, others locked for now
-            $isCompleted = false; // You can implement completion tracking later
+            $isCompleted = in_array($module->modules_id, $completedModuleIds);
             
-            $formattedModules[] = [
+            // Check if module has admin override - if so, it's always available
+            $hasAdminOverride = $module->admin_override ?? false;
+            
+            // Original locking logic - only apply if no admin override
+            $isLocked = false;
+            if (!$hasAdminOverride) {
+                $isLocked = $index > 0 && !$isCompleted && !in_array($modules[$index - 1]->modules_id, $completedModuleIds);
+            }
+            
+            if ($isCompleted) {
+                $completedCount++;
+            }
+            
+            // Determine module type based on additional content
+            $moduleType = 'module';
+            $contentData = [];
+            
+            // Check if module has video content
+            if ($module->video_path) {
+                $moduleType = 'video';
+                $contentData['video_url'] = asset('storage/' . $module->video_path);
+            }
+            
+            // Check if module has additional content (links, etc.)
+            if ($module->additional_content) {
+                $additionalContent = json_decode($module->additional_content, true);
+                if (is_array($additionalContent)) {
+                    $contentData = array_merge($contentData, $additionalContent);
+                    
+                    // Set type based on additional content
+                    if (!empty($additionalContent['external_url'])) {
+                        $moduleType = 'link';
+                    } elseif (!empty($additionalContent['assignment_title'])) {
+                        $moduleType = 'assignment';
+                    } elseif (!empty($additionalContent['quiz_title'])) {
+                        $moduleType = 'quiz';
+                    } elseif (!empty($additionalContent['test_title'])) {
+                        $moduleType = 'test';
+                    }
+                }
+            }
+            
+            $formattedModule = [
                 'id' => $module->modules_id,
                 'name' => $module->module_name,
-                'title' => $module->module_name, // Add title key that template expects
+                'title' => $module->module_name,
                 'description' => $module->module_description ?? 'No description available',
-                'status' => $index === 0 ? 'available' : 'locked',
-                'progress' => $index === 0 ? 0 : 0,
+                'status' => $isCompleted ? 'completed' : ($isLocked ? 'locked' : 'available'),
+                'progress' => $isCompleted ? 100 : 0,
                 'attachment' => $module->attachment,
                 'attachment_url' => $module->attachment ? asset('storage/' . $module->attachment) : null,
                 'order' => $index + 1,
-                'type' => 'module', // Add type key that template expects
+                'type' => $moduleType,
                 'is_locked' => $isLocked,
                 'is_completed' => $isCompleted,
-                'content_data' => [] // Add empty content_data for template compatibility
+                'has_admin_override' => $hasAdminOverride,
+                'content_data' => $contentData,
+                'video_path' => $module->video_path,
+                'additional_content' => $module->additional_content
             ];
+            
+            $formattedModules[] = $formattedModule;
+            
+            // Group modules by type for filtering
+            if (!isset($modulesByType[$moduleType])) {
+                $modulesByType[$moduleType] = [];
+            }
+            $modulesByType[$moduleType][] = $formattedModule;
         }
         
-        // Calculate overall progress (you can implement this based on your requirements)
+        // Calculate overall progress based on completed modules
         $totalModules = count($formattedModules);
-        $completedModules = 0; // Implement completion tracking later
+        $completedModules = $completedCount;
         $progressPercentage = $totalModules > 0 ? round(($completedModules / $totalModules) * 100) : 0;
-        
-        // Group modules by type for the view (if needed)
-        $modulesByType = [
-            'module' => [],
-            'assignment' => [],
-            'quiz' => [],
-            'test' => [],
-            'link' => []
-        ];
-        
-        // You can categorize modules here if you have a module type field
-        foreach ($formattedModules as $module) {
-            $modulesByType['module'][] = $module; // Default to 'module' type
-        }
         
         $course = [
             'id' => $courseId,
@@ -452,8 +514,299 @@ class StudentDashboardController extends Controller
         // Get the program for context
         $program = Program::find($module->program_id);
         
-        // For now, just return a simple view with module details
-        // You can expand this to show module content, videos, assignments, etc.
-        return view('student.student-modules.student-module', compact('user', 'module', 'program'));
+        // Check if module is completed
+        $isCompleted = false;
+        if ($student) {
+            $completion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                ->where('module_id', $moduleId)
+                ->first();
+            $isCompleted = (bool) $completion;
+        }
+        
+        // Parse content data properly
+        $contentData = [];
+        
+        // First check the content_data field (new format)
+        if ($module->content_data) {
+            if (is_array($module->content_data)) {
+                $contentData = $module->content_data;
+            } else {
+                $decodedData = json_decode($module->content_data, true);
+                if (is_array($decodedData)) {
+                    $contentData = $decodedData;
+                }
+            }
+        }
+        
+        // Fallback to additional_content field (old format)
+        if (empty($contentData) && $module->additional_content) {
+            $additionalContent = json_decode($module->additional_content, true);
+            if (is_array($additionalContent)) {
+                $contentData = $additionalContent;
+            }
+        }
+        
+        // Determine module type based on content
+        $moduleType = $module->content_type ?? 'module';
+        
+        // Override based on content data if not explicitly set
+        if (!empty($contentData['external_url'])) {
+            $moduleType = 'link';
+        } elseif (!empty($contentData['assignment_title'])) {
+            $moduleType = 'assignment';
+        } elseif (!empty($contentData['quiz_title'])) {
+            $moduleType = 'quiz';
+        } elseif (!empty($contentData['ai_quiz_title'])) {
+            $moduleType = 'ai_quiz';
+        } elseif (!empty($contentData['test_title'])) {
+            $moduleType = 'test';
+        }
+        
+        // Format module data for the view
+        $moduleData = [
+            'id' => $module->modules_id,
+            'title' => $module->module_name,
+            'description' => $module->module_description,
+            'type' => $moduleType,
+            'attachment' => $module->attachment,
+            'attachment_url' => $module->attachment ? asset('storage/' . $module->attachment) : null,
+            'program_id' => $module->program_id,
+            'is_completed' => $isCompleted,
+            'content_data' => $contentData
+        ];
+        
+        // Check for video content
+        if ($module->video_path) {
+            $moduleData['content_data']['video_url'] = asset('storage/' . $module->video_path);
+        }
+        
+        return view('student.student-courses.student-module', compact('user', 'module', 'program', 'moduleData'));
+    }
+    
+    /**
+     * Mark a module as completed
+     */
+    public function completeModule(Request $request, $moduleId)
+    {
+        try {
+            // Get the student
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found.'
+                ]);
+            }
+            
+            // Get the module
+            $module = Module::find($moduleId);
+            
+            if (!$module) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module not found.'
+                ]);
+            }
+            
+            // Check if student is enrolled in the program
+            $enrollment = $student->enrollments()->where('program_id', $module->program_id)->first();
+            
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not enrolled in this course.'
+                ]);
+            }
+            
+            // Check if already completed
+            $existingCompletion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                ->where('module_id', $moduleId)
+                ->first();
+            
+            if ($existingCompletion) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module is already completed.'
+                ]);
+            }
+            
+            // Create completion record
+            \App\Models\ModuleCompletion::create([
+                'student_id' => $student->student_id,
+                'module_id' => $moduleId,
+                'program_id' => $module->program_id,
+                'completed_at' => now(),
+                'score' => 100, // Default score for completing the module
+                'time_spent' => 0, // You can track this if needed
+                'submission_data' => null
+            ]);
+            
+            // Calculate progress percentage
+            $totalModules = Module::where('program_id', $module->program_id)->count();
+            $completedModules = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                ->where('program_id', $module->program_id)
+                ->count();
+            
+            $progressPercentage = $totalModules > 0 ? round(($completedModules / $totalModules) * 100, 2) : 0;
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Module completed successfully!',
+                'progress_percentage' => $progressPercentage
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Module completion error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while completing the module.'
+            ]);
+        }
+    }
+    
+    /**
+     * Submit assignment
+     */
+    public function submitAssignment(Request $request)
+    {
+        try {
+            $request->validate([
+                'assignment_file' => 'required|file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:10240',
+                'module_id' => 'required|integer',
+                'comments' => 'nullable|string'
+            ]);
+            
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found.'
+                ]);
+            }
+            
+            $moduleId = $request->input('module_id');
+            $module = Module::find($moduleId);
+            
+            if (!$module) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module not found.'
+                ]);
+            }
+            
+            // Store the uploaded file
+            $file = $request->file('assignment_file');
+            $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('assignments', $fileName, 'public');
+            
+            // Create assignment submission record
+            \App\Models\AssignmentSubmission::create([
+                'student_id' => $student->student_id,
+                'module_id' => $moduleId,
+                'file_path' => $filePath,
+                'original_filename' => $file->getClientOriginalName(),
+                'comments' => $request->comments,
+                'submitted_at' => now(),
+                'status' => 'submitted'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Assignment submitted successfully!'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Assignment submission error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while submitting the assignment.'
+            ]);
+        }
+    }
+    
+    /**
+     * Start quiz
+     */
+    public function startQuiz($moduleId)
+    {
+        $module = Module::find($moduleId);
+        
+        if (!$module) {
+            return redirect()->back()->with('error', 'Module not found.');
+        }
+        
+        // For now, redirect to the module page
+        // In the future, you can create a dedicated quiz interface
+        return redirect()->route('student.module', ['moduleId' => $moduleId]);
+    }
+    
+    /**
+     * Practice quiz
+     */
+    public function practiceQuiz($moduleId)
+    {
+        $module = Module::find($moduleId);
+        
+        if (!$module) {
+            return redirect()->back()->with('error', 'Module not found.');
+        }
+        
+        // For now, redirect to the module page
+        // In the future, you can create a dedicated practice quiz interface
+        return redirect()->route('student.module', ['moduleId' => $moduleId]);
+    }
+    
+    /**
+     * Submit quiz
+     */
+    public function submitQuiz(Request $request, $moduleId)
+    {
+        try {
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found.'
+                ]);
+            }
+            
+            $module = Module::find($moduleId);
+            
+            if (!$module) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module not found.'
+                ]);
+            }
+            
+            // Create quiz submission record
+            \App\Models\QuizSubmission::create([
+                'student_id' => $student->student_id,
+                'module_id' => $moduleId,
+                'answers' => json_encode($request->answers ?? []),
+                'score' => $request->score ?? 0,
+                'total_questions' => $request->total_questions ?? 0,
+                'time_taken' => $request->time_taken ?? 0,
+                'submitted_at' => now()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz submitted successfully!'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Quiz submission error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while submitting the quiz.'
+            ]);
+        }
     }
 }

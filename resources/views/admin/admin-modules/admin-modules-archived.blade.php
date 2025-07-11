@@ -505,6 +505,10 @@
                                             onclick="toggleArchiveModule({{ $module->modules_id }}, true)">
                                         <i class="fas fa-folder-open me-1"></i>Unarchive
                                     </button>
+                                    <button class="btn btn-warning btn-sm fw-semibold" 
+                                            onclick="showOverrideModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
+                                        <i class="fas fa-unlock me-1"></i>Override
+                                    </button>
                                     <form action="{{ route('admin.modules.destroy', $module->modules_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete this module?')">
                                         @csrf
                                         @method('DELETE')
@@ -540,6 +544,58 @@
         @endif
     </div>
 </div>
+
+<!-- Override Modal -->
+<div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="overrideModalLabel">
+                    <i class="fas fa-unlock me-2"></i>Admin Override Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="overrideForm" method="POST">
+                    @csrf
+                    @method('PATCH')
+                    <p>Configure override settings for: <strong id="overrideModuleName"></strong></p>
+                    
+                    <div class="admin-override-checkboxes">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="override_completion_arch" name="admin_override[]" value="completion">
+                            <label class="form-check-label" for="override_completion_arch">
+                                <i class="bi bi-check-circle"></i> Override Completion Requirements
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="override_prerequisites_arch" name="admin_override[]" value="prerequisites">
+                            <label class="form-check-label" for="override_prerequisites_arch">
+                                <i class="bi bi-arrow-right-circle"></i> Override Prerequisites
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="override_time_limits_arch" name="admin_override[]" value="time_limits">
+                            <label class="form-check-label" for="override_time_limits_arch">
+                                <i class="bi bi-clock"></i> Override Time Limits
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="override_access_control_arch" name="admin_override[]" value="access_control">
+                            <label class="form-check-label" for="override_access_control_arch">
+                                <i class="bi bi-unlock"></i> Override Access Control
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyOverride()">Apply Override</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -557,7 +613,84 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Archive/Unarchive module function
+// Override functionality
+let currentOverrideModuleId = null;
+
+function showOverrideModal(moduleId, moduleName) {
+    currentOverrideModuleId = moduleId;
+    document.getElementById('overrideModuleName').textContent = moduleName;
+    document.getElementById('overrideForm').action = `/admin/modules/${moduleId}/override`;
+    
+    // Load current override settings
+    fetch(`/admin/modules/${moduleId}/override-settings`)
+        .then(response => response.json())
+        .then(data => {
+            // Clear all checkboxes first
+            document.querySelectorAll('#overrideModal input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Check boxes based on current settings
+            if (data.admin_override && Array.isArray(data.admin_override)) {
+                data.admin_override.forEach(override => {
+                    const checkbox = document.querySelector(`#override_${override}_arch`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Error loading override settings:', error));
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('overrideModal'));
+    modal.show();
+}
+
+function applyOverride() {
+    if (!currentOverrideModuleId) return;
+    
+    const form = document.getElementById('overrideForm');
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('overrideModal'));
+            modal.hide();
+            
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success alert-dismissible fade show';
+            successAlert.innerHTML = `
+                Override settings updated successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.modules-container').insertBefore(successAlert, document.querySelector('.modules-container').firstChild);
+            
+            // Auto-remove alert after 5 seconds
+            setTimeout(() => {
+                successAlert.remove();
+            }, 5000);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating override settings.');
+    });
+}
+
+// ...existing code...
 function toggleArchiveModule(moduleId, isArchived) {
     if (confirm(isArchived ? 'Are you sure you want to unarchive this module?' : 'Are you sure you want to archive this module?')) {
         fetch(`/admin/modules/${moduleId}/archive`, {
@@ -650,21 +783,46 @@ function batchDeleteModules() {
         });
     }
 }
-</script>
-    }
+
+// Show override modal
+function showOverrideModal(moduleId, moduleName) {
+    const modal = new bootstrap.Modal(document.getElementById('overrideModal'));
+    document.getElementById('overrideModuleName').textContent = moduleName;
+    document.getElementById('overrideForm').setAttribute('action', `/admin/modules/${moduleId}/override`);
+    
+    // Reset checkboxes
+    const checkboxes = document.querySelectorAll('.admin-override-checkboxes .form-check-input');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    modal.show();
 }
 
-// Program selector functionality
-document.addEventListener('DOMContentLoaded', () => {
-    const programSelect = document.getElementById('programSelect');
-    if (programSelect) {
-        programSelect.addEventListener('change', function() {
-            const pid = this.value;
-            window.location.href = pid
-                ? `{{ route('admin.modules.archived') }}?program_id=${pid}`
-                : `{{ route('admin.modules.archived') }}`;
-        });
-    }
-});
+// Apply override settings
+function applyOverride() {
+    const form = document.getElementById('overrideForm');
+    const formData = new FormData(form);
+    
+    fetch(form.getAttribute('action'), {
+        method: 'PATCH',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while applying overrides.');
+    });
+}
 </script>
 @endpush

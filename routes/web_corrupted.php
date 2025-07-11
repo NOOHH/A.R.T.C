@@ -1,12 +1,23 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use Illuminate\use App\Http\Controllers\ProfessorDashboardController;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\FormRequirementController;
+use App\Models\Program;
+use App\Models\Package;
+use App\Http\Controllers\DatabaseTestController;\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\FormRequirementController;
+use App\Models\Program;
+use App\Http\Controllers\TestController;
+use App\Models\Package;
+use App\Http\Controllers\DatabaseTestController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\UnifiedLoginController;
+use App\Http\Controllers\StudentLoginController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
@@ -16,17 +27,13 @@ use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminProfessorController;
-use App\Http\Controllers\AdminBatchController;
-use App\Http\Controllers\AdminAnalyticsController;
 use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\FormRequirementController;
 use App\Models\Program;
-use App\Http\Controllers\TestController;
+use App.Http\Controllers\TestController;
 use App\Models\Package;
-use App\Http\Controllers\DatabaseTestController;
-use App\Http\Controllers\Admin\BatchEnrollmentController;
-use App\Http\Controllers\RegistrationController;
+use App.Http\Controllers\DatabaseTestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,44 +54,6 @@ Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 
 // Test database structure
 Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection']);
-
-/*
-|--------------------------------------------------------------------------
-| Batch Enrollment Routes
-|--------------------------------------------------------------------------
-*/
-Route::prefix('admin/batches')->middleware(['admin.auth'])->group(function () {
-    Route::get('/', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
-    Route::post('/', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
-    Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
-    Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
-    Route::post('/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
-    Route::get('/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
-    
-    // Additional batch management routes
-    Route::get('/get-by-program', [BatchEnrollmentController::class, 'getBatchesByProgram'])->name('admin.batches.get-by-program');
-    Route::put('/{id}/update', [BatchEnrollmentController::class, 'updateBatch'])->name('admin.batches.update-batch');
-    Route::delete('/{id}', [BatchEnrollmentController::class, 'deleteBatch'])->name('admin.batches.delete');
-    Route::post('/{id}/add-students', [BatchEnrollmentController::class, 'addStudentsToBatch'])->name('admin.batches.add-students');
-    Route::delete('/{batchId}/students/{studentId}', [BatchEnrollmentController::class, 'removeStudentFromBatch'])->name('admin.batches.remove-student');
-    Route::get('/{id}/export', [BatchEnrollmentController::class, 'exportBatchEnrollments'])->name('admin.batches.export');
-    Route::get('/{id}/available-students', [BatchEnrollmentController::class, 'getAvailableStudents'])->name('admin.batches.available-students');
-    
-    // Student movement routes - removed move-to-pending and move-to-current as drag-and-drop is now purely visual
-    Route::post('/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-to-batch');
-});
-
-// Registration and document validation routes
-Route::middleware(['session.auth'])->group(function () {
-    Route::post('/registration/validate-document', [RegistrationController::class, 'validateDocument'])->name('registration.validate-document');
-    Route::get('/api/batches/{programId}', [RegistrationController::class, 'getBatchesForProgram'])->name('api.batches.program');
-    Route::post('/registration/batch-enrollment', [RegistrationController::class, 'saveBatchEnrollment'])->name('registration.batch-enrollment');
-});
-
-// OCR File validation routes
-Route::post('/registration/validate-file', [RegistrationController::class, 'validateFileUpload'])->name('registration.validate-file');
-Route::get('/registration/user-prefill', [RegistrationController::class, 'getUserPrefillData'])->name('registration.user-prefill');
-Route::get('/registration/user-prefill-data', [RegistrationController::class, 'getUserPrefillData'])->name('registration.user-prefill-data');
 
 /*
 |--------------------------------------------------------------------------
@@ -151,10 +120,6 @@ Route::get('/enrollment/modular', function () {
         ->ordered()
         ->get();
     
-    // Get plan data with learning mode settings
-    $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
-    $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
-    
     // Get existing student data if user is logged in
     $student = null;
     $enrolledProgramIds = [];
@@ -179,45 +144,23 @@ Route::get('/enrollment/modular', function () {
                                    ->orderBy('module_name')
                                    ->get(['modules_id', 'module_name', 'module_description', 'program_id']);
     
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules', 'fullPlan', 'modularPlan'));
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules'));
 })->name('enrollment.modular');
 
-// Unified login page and authentication for all user types
-Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [UnifiedLoginController::class, 'login'])->name('login.submit');
-Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout');
+// Login page
+Route::get('/login', fn() => view('Login.login'))->name('login');
 
-// Signup page
-Route::get('/signup', [App\Http\Controllers\SignupController::class, 'showSignupForm'])->name('signup');
-Route::post('/signup', [App\Http\Controllers\SignupController::class, 'signup'])->name('user.signup');
-
-// Legacy student authentication routes (now handled by UnifiedLoginController)
-Route::post('/student/login', [UnifiedLoginController::class, 'login'])->name('student.login');
-Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name('student.logout');
+// Student authentication routes
+Route::post('/student/login', [StudentLoginController::class, 'login'])->name('student.login');
+Route::post('/student/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
 
 // Student dashboard and related routes  
-Route::middleware(['check.session', 'role.dashboard'])->group(function () {
+Route::middleware(['student.auth'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
-    Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
-    
-    // Module completion route
-    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'completeModule'])->name('student.module.complete');
-    
-    // Assignment submission routes
-    Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
-    
-    // Quiz routes
-    Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
-    Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
-    Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
-    
-    // Payment routes
-    Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
-    Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
 });
 
 /*
@@ -229,14 +172,6 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
 
-// Account creation POST (separate from full registration)
-Route::post('/student/account/create', [StudentRegistrationController::class, 'handleAccountCreation'])
-     ->name('student.account.create');
-
-// Public route for getting batches by program (for registration form)
-Route::get('/batches/by-program', [StudentRegistrationController::class, 'getBatchesByProgram'])
-     ->name('public.batches.by-program');
-
 // Registration success page
 Route::get('/registration/success', function() {
     return view('registration.success');
@@ -244,20 +179,12 @@ Route::get('/registration/success', function() {
 
 // Test registration form
 Route::get('/test-registration', function () {
-    $formRequirements = App\Models\FormRequirement::active()->forProgram('full')->get();
+    $formRequirements = App\Models\FormRequirement::active()->forProgram('complete')->get();
     return view('test-registration', compact('formRequirements'));
 })->name('test.registration');
 
-// Clean test route for registration fixes
-Route::get('/test-registration-fixes', function() { 
-    return view('test-fixes', [
-        'programs' => \App\Models\Program::where('is_archived', false)->get(), 
-        'packages' => \App\Models\Package::all()
-    ]); 
-});
-
 // Check if email exists
-Route::post('/check-email', [StudentRegistrationController::class, 'checkEmailExists'])
+Route::post('/check-email', [StudentRegistrationController::class, 'checkEmail'])
      ->name('check.email');
 
 /*
@@ -307,26 +234,21 @@ Route::get('/api/programs', function () {
 |--------------------------------------------------------------------------
 */
 // Student enrollment form submission
-Route::post('/student/enroll', [StudentRegistrationController::class, 'enroll'])
+Route::post('/student/enroll', [StudentRegistrationController::class, 'store'])
      ->name('student.enroll');
 
 // Check enrollment status (AJAX)
 Route::get('/student/enrollment-status', [StudentRegistrationController::class, 'checkEnrollmentStatus'])
      ->name('student.enrollment.status');
 
-// OCR document processing
-Route::post('/ocr/process', [StudentRegistrationController::class, 'processOcrDocument'])
-     ->name('ocr.process');
-
 /*
 |--------------------------------------------------------------------------
 | Admin Dashboard & Registration
 |--------------------------------------------------------------------------
 */
-// Admin dashboard and admin routes with middleware
-Route::middleware(['check.session', 'role.dashboard'])->group(function () {
-    Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
-         ->name('admin.dashboard');
+// Admin dashboard
+Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
+     ->name('admin.dashboard');
 
 // Admin approve/reject registration
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
@@ -342,16 +264,6 @@ Route::get('/admin-student-registration/pending', [AdminController::class, 'stud
      ->name('admin.student.registration.pending');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
-
-// Payment management routes
-Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
-     ->name('admin.student.registration.payment.pending');
-Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
-     ->name('admin.student.registration.payment.history');
-
-// Mark enrollment as paid
-Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
-     ->name('admin.enrollment.mark-paid');
 
 // View one student registration’s details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
@@ -424,22 +336,6 @@ Route::get('/admin/modules', [AdminModuleController::class, 'index'])
 Route::post('/admin/modules', [AdminModuleController::class, 'store'])
      ->name('admin.modules.store');
 
-// Edit module
-Route::get('/admin/modules/{id}/edit', [AdminModuleController::class, 'edit'])
-     ->name('admin.modules.edit');
-
-// Update module
-Route::put('/admin/modules/{id}', [AdminModuleController::class, 'update'])
-     ->name('admin.modules.update');
-
-// Upload video for module
-Route::post('/admin/modules/{id}/upload-video', [AdminModuleController::class, 'uploadVideo'])
-     ->name('admin.modules.upload-video');
-
-// Add content to module
-Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'addContent'])
-     ->name('admin.modules.add-content');
-
 // Batch store modules
 Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
      ->name('admin.modules.batch-store');
@@ -456,6 +352,10 @@ Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'bat
 Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])
      ->name('admin.modules.archived');
 
+// Update module
+Route::put('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'update'])
+     ->name('admin.modules.update');
+
 // Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
      ->name('admin.modules.destroy');
@@ -463,34 +363,6 @@ Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::clas
 // Get modules by program (AJAX)
 Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
      ->name('admin.modules.by-program');
-
-// Update module order (drag and drop)
-Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updateOrder'])
-     ->name('admin.modules.update-order');
-
-// Toggle admin override for module
-Route::post('/admin/modules/{id}/toggle-admin-override', [AdminModuleController::class, 'toggleAdminOverride'])
-     ->name('admin.modules.toggle-admin-override');
-
-// Get batches for a program (AJAX)
-Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, 'getBatchesForProgram'])
-     ->name('admin.programs.batches');
-
-// Archive a module
-Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
-     ->name('admin.modules.archive');
-
-// Admin override settings
-Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
-     ->name('admin.modules.update-override');
-Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
-     ->name('admin.modules.get-override');
-
-// Admin AI Quiz Generator
-Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
-     ->name('admin.quiz-generator');
-Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
-     ->name('admin.quiz-generator.generate');
 
 /*
 |--------------------------------------------------------------------------
@@ -516,43 +388,6 @@ Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
 // Delete a package
 Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.delete');
-
-/*
-|--------------------------------------------------------------------------
-| Admin Batches
-|--------------------------------------------------------------------------
-*/
-// Batch management
-Route::get('/admin/batches', [AdminBatchController::class, 'index'])
-     ->name('admin.batches.index');
-
-// Create batch form
-Route::get('/admin/batches/create', [AdminBatchController::class, 'create'])
-     ->name('admin.batches.create');
-
-// Store new batch
-Route::post('/admin/batches', [AdminBatchController::class, 'store'])
-     ->name('admin.batches.store');
-
-// Update batch
-Route::put('/admin/batches/{batch}', [AdminBatchController::class, 'update'])
-     ->name('admin.batches.update');
-
-// Delete batch
-Route::delete('/admin/batches/{batch}', [AdminBatchController::class, 'destroy'])
-     ->name('admin.batches.destroy');
-
-// Toggle batch status
-Route::patch('/admin/batches/{batch}/toggle-status', [AdminBatchController::class, 'toggleStatus'])
-     ->name('admin.batches.toggle-status');
-
-// Move student between batches
-Route::post('/admin/batches/move-student', [AdminBatchController::class, 'moveStudent'])
-     ->name('admin.batches.move-student');
-
-// Batch enrollment management
-Route::get('/admin/student-enrollment/batch-enroll', [AdminBatchController::class, 'batchEnroll'])
-     ->name('admin.student.enrollment.batch');
 
 /*
 |--------------------------------------------------------------------------
@@ -591,6 +426,26 @@ Route::post('/admin/settings/buttons', [AdminSettingsController::class, 'updateB
 Route::post('/admin/settings/login', [AdminSettingsController::class, 'updateLogin'])
      ->name('admin.settings.update.login');
 
+// Update hero section settings
+Route::post('/admin/settings/hero', [AdminSettingsController::class, 'updateHero'])
+     ->name('admin.settings.update.hero');
+
+// Update programs section settings
+Route::post('/admin/settings/programs-section', [AdminSettingsController::class, 'updateProgramsSection'])
+     ->name('admin.settings.update.programs-section');
+
+// Update modalities section settings
+Route::post('/admin/settings/modalities-section', [AdminSettingsController::class, 'updateModalitiesSection'])
+     ->name('admin.settings.update.modalities-section');
+
+// Update about section settings
+Route::post('/admin/settings/about-section', [AdminSettingsController::class, 'updateAboutSection'])
+     ->name('admin.settings.update.about-section');
+
+// Update homepage general settings
+Route::post('/admin/settings/homepage-general', [AdminSettingsController::class, 'updateHomepageGeneral'])
+     ->name('admin.settings.update.homepage-general');
+
 // Global Logo routes
 Route::post('/admin/settings/global-logo', [AdminSettingsController::class, 'updateGlobalLogo'])
      ->name('admin.settings.global.logo');
@@ -605,25 +460,11 @@ Route::post('/admin/settings/remove-login-illustration', [AdminSettingsControlle
 Route::post('/admin/settings/remove-image', [AdminSettingsController::class, 'removeImage'])
      ->name('admin.settings.remove.image');
 
-// Plan Management Routes (Learning Mode Configuration)
-Route::prefix('admin/plans')->middleware(['admin.auth'])->group(function () {
-    Route::get('/', [AdminSettingsController::class, 'planSettings'])->name('admin.plans.index');
-    Route::post('/learning-modes', [AdminSettingsController::class, 'updateLearningModes'])->name('admin.plans.update-learning-modes');
-});
-
 // New settings routes for form requirements and UI customization
 Route::get('/admin/settings/form-requirements', [AdminSettingsController::class, 'getFormRequirements']);
 Route::post('/admin/settings/form-requirements', [AdminSettingsController::class, 'saveFormRequirements']);
 Route::get('/admin/settings/student-portal', [AdminSettingsController::class, 'getStudentPortalSettings']);
 Route::post('/admin/settings/student-portal', [AdminSettingsController::class, 'saveStudentPortalSettings']);
-Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'saveNavbarSettings']);
-Route::get('/admin/settings/navbar', [AdminSettingsController::class, 'getNavbarSettings']);
-Route::post('/admin/settings/footer', [AdminSettingsController::class, 'saveFooterSettings']);
-Route::get('/admin/settings/footer', [AdminSettingsController::class, 'getFooterSettings']);
-
-// Homepage customization routes
-Route::get('/admin/settings/homepage', [AdminSettingsController::class, 'getHomepageSettings']);
-Route::post('/admin/settings/homepage', [AdminSettingsController::class, 'saveHomepageSettings']);
 
 // Dynamic Field Management routes
 Route::post('/admin/settings/form-requirements/toggle-active', [AdminSettingsController::class, 'toggleFieldActive'])
@@ -633,54 +474,11 @@ Route::post('/admin/settings/form-requirements/add-column', [AdminSettingsContro
 Route::get('/admin/settings/form-requirements/preview/{programType}', [AdminSettingsController::class, 'previewForm'])
      ->name('admin.settings.form-requirements.preview');
 
-// Plan Settings routes
-Route::get('/admin/settings/plan-settings', [AdminSettingsController::class, 'getPlanSettings']);
-Route::post('/admin/settings/plan-settings', [AdminSettingsController::class, 'savePlanSettings']);
-
 // Module ordering routes
 Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updateSortOrder'])
      ->name('admin.modules.updateOrder');
 Route::get('/admin/modules/ordered', [ModuleController::class, 'getOrderedModules'])
      ->name('admin.modules.ordered');
-
-/*
-|--------------------------------------------------------------------------
-| Admin Analytics
-|--------------------------------------------------------------------------
-*/
-// Analytics dashboard
-Route::get('/admin/analytics', [AdminAnalyticsController::class, 'index'])
-     ->name('admin.analytics.index');
-
-// Analytics data endpoints
-Route::get('/admin/analytics/data', [AdminAnalyticsController::class, 'getData'])
-     ->name('admin.analytics.data');
-
-Route::get('/admin/analytics/batches', [AdminAnalyticsController::class, 'getBatches'])
-     ->name('admin.analytics.batches');
-
-Route::get('/admin/analytics/subjects', [AdminAnalyticsController::class, 'getSubjects'])
-     ->name('admin.analytics.subjects');
-
-Route::get('/admin/analytics/student/{id}', [AdminAnalyticsController::class, 'getStudentDetail'])
-     ->name('admin.analytics.student');
-
-Route::get('/admin/analytics/subject/{id}', [AdminAnalyticsController::class, 'getSubjectDetail'])
-     ->name('admin.analytics.subject.detail');
-
-// Export routes
-Route::get('/admin/analytics/export', [AdminAnalyticsController::class, 'export'])
-     ->name('admin.analytics.export');
-
-Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 'generateSubjectReport'])
-     ->name('admin.analytics.subject-report');
-
-// Board Passer Routes
-Route::post('/analytics/upload-board-passers', [AdminAnalyticsController::class, 'uploadBoardPassers']);
-Route::post('/analytics/add-board-passer', [AdminAnalyticsController::class, 'addBoardPasser']);
-Route::get('/analytics/download-template', [AdminAnalyticsController::class, 'downloadTemplate']);
-Route::get('/analytics/board-passer-stats', [AdminAnalyticsController::class, 'getBoardPasserStats']);
-Route::get('/analytics/students-list', [AdminAnalyticsController::class, 'getStudentsList']);
 
 /*
 |--------------------------------------------------------------------------
@@ -748,6 +546,10 @@ Route::get('/admin/students', [AdminStudentListController::class, 'index'])
 Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])
      ->name('admin.students.archived');
 
+// Bulk archive students
+Route::post('/admin/students/bulk-archive', [AdminStudentListController::class, 'bulkArchive'])
+     ->name('admin.students.bulk-archive');
+
 // Show student details
 Route::get('/admin/students/{student:student_id}', [AdminStudentListController::class, 'show'])
      ->name('admin.students.show');
@@ -801,59 +603,16 @@ Route::delete('/admin/professors/{professor}', [AdminProfessorController::class,
 Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
      ->name('admin.professors.video.update');
 
-// Professor batch assignment routes
-Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorController::class, 'assignBatch'])
-     ->name('admin.professors.assign-batch');
-
-Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
-     ->name('admin.professors.unassign-batch');
-
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
 Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);
 Route::get('/admin/settings/enrollment-form/{programType}', [AdminSettingsController::class, 'generateEnrollmentForm']);
-
-// Temporary debug route for payment history (bypassing middleware)
-Route::get('/debug-payment-history', function() {
-    $controller = new AdminController();
-    return $controller->paymentHistory();
-});
-
-// Payment management routes
-Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
-     ->name('admin.student.registration.payment.pending');
-Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
-     ->name('admin.student.registration.payment.history');
-
-// Mark enrollment as paid
-Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
-     ->name('admin.enrollment.mark-paid');
-
-// Approve enrollment
-Route::post('/admin/enrollment/{id}/approve', [AdminController::class, 'approveEnrollment'])
-     ->name('admin.enrollment.approve');
-
-}); // End of admin middleware group
-
-/*
-|--------------------------------------------------------------------------
-| Professor Authentication Routes (Redirected to Unified Login)
-|--------------------------------------------------------------------------
-*/
-// Redirect old professor login to unified login
-Route::get('/professor/login', function() {
-    return redirect()->route('login');
-})->name('professor.login');
-
-// Professor logout should use the unified logout
-Route::post('/professor/logout', [UnifiedLoginController::class, 'logout'])
-     ->name('professor.logout');
 
 /*
 |--------------------------------------------------------------------------
 | Professor Dashboard Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['professor.auth'])
+Route::middleware(['auth:professor'])
      ->prefix('professor')
      ->name('professor.')
      ->group(function () {
@@ -868,61 +627,7 @@ Route::middleware(['professor.auth'])
          ->name('program.details');
 
     Route::post('/programs/{program}/video', [ProfessorDashboardController::class, 'updateVideo'])
-         ->name('program.update-video');
-    
-    // Profile Management
-    Route::get('/profile', [ProfessorDashboardController::class, 'profile'])
-         ->name('profile');
-    Route::put('/profile', [ProfessorDashboardController::class, 'updateProfile'])
-         ->name('profile.update');
-    
-    // Student Management
-    Route::get('/students', [ProfessorDashboardController::class, 'studentList'])
-         ->name('students');
-    Route::post('/students/{student}/grade', [ProfessorDashboardController::class, 'gradeStudent'])
-         ->name('students.grade');
-    
-    // Attendance Management
-    Route::get('/attendance', [\App\Http\Controllers\ProfessorAttendanceController::class, 'index'])
-         ->name('attendance');
-    Route::post('/attendance', [\App\Http\Controllers\ProfessorAttendanceController::class, 'store'])
-         ->name('attendance.store');
-    Route::get('/attendance/reports', [\App\Http\Controllers\ProfessorAttendanceController::class, 'reports'])
-         ->name('attendance.reports');
-    
-    // Enhanced Grading Management
-    Route::get('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'index'])
-         ->name('grading');
-    Route::get('/grading/student/{student}', [\App\Http\Controllers\Professor\GradingController::class, 'studentDetails'])
-         ->name('grading.student-details');
-    Route::post('/grading/assignment/{student}/{assignment}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeAssignment'])
-         ->name('grading.assignment');
-    Route::post('/grading/activity/{student}/{activity}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeActivity'])
-         ->name('grading.activity');
-    Route::post('/grading/quiz/{student}/{quiz}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeQuiz'])
-         ->name('grading.quiz');
-    Route::post('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignment'])
-         ->name('assignments.create');
-    Route::post('/activities/create', [\App\Http\Controllers\Professor\GradingController::class, 'createActivity'])
-         ->name('activities.create');
-    
-    // AI Quiz Generator
-    Route::get('/quiz-generator', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'index'])
-         ->name('quiz-generator');
-    Route::post('/quiz-generator/generate', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'generate'])
-         ->name('quiz-generator.generate');
-    Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'preview'])
-         ->name('quiz-generator.preview');
-    Route::get('/quiz-generator/export/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'export'])
-         ->name('quiz-generator.export');
-    Route::delete('/quiz-generator/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'delete'])
-         ->name('quiz-generator.delete');
-    Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
-         ->name('grading.update');
-    Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
-         ->name('grading.destroy');
-    Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
-         ->name('grading.student');
+         ->name('program.video.update');
 });
 
 /*
@@ -932,7 +637,7 @@ Route::middleware(['professor.auth'])
 */
 // Route::get('/test-ui', function () {
 //     $formRequirements = App\Models\FormRequirement::active()
-//         ->forProgram('full')
+//         ->forProgram('complete')
 //         ->ordered()
 //         ->get();
 //     
@@ -962,38 +667,10 @@ Route::get('/test/db/students-schema', [DatabaseTestController::class, 'checkStu
 Route::get('/test/db/student-insert', [DatabaseTestController::class, 'testStudentInsert']);
 Route::get('/test/db/add-missing-columns', [DatabaseTestController::class, 'addMissingColumns']);
 
-// Professor Features Settings
-Route::post('/admin/settings/professor-features', [AdminSettingsController::class, 'updateProfessorFeatures'])
-     ->name('admin.settings.professor-features');
-Route::get('/admin/settings/professor-features', [AdminSettingsController::class, 'getProfessorFeatures'])
-     ->name('admin.settings.professor-features.get');
-
-// Batch Enrollment Management Routes
-Route::prefix('admin')->middleware(['web'])->group(function () {
-    Route::get('/batches', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
-    Route::post('/batches', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
-    Route::put('/batches/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
-    Route::delete('/batches/{id}', [BatchEnrollmentController::class, 'delete'])->name('admin.batches.delete');
-    
-    // Student management within batches
-    Route::get('/batches/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-student');
-    Route::delete('/batches/{batchId}/students/{studentId}', [BatchEnrollmentController::class, 'removeStudentFromBatch'])->name('admin.batches.remove-student');
-    Route::get('/batches/{id}/export', [BatchEnrollmentController::class, 'exportBatchEnrollments'])->name('admin.batches.export');
-    Route::post('/batches/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
-    
-    // Move student between pending/current (for visual drag-and-drop with actual status updates when moving to current)
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/move-to-current', [BatchEnrollmentController::class, 'moveStudentToCurrent'])->name('admin.batches.move-to-current');
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/move-to-pending', [BatchEnrollmentController::class, 'moveStudentToPending'])->name('admin.batches.move-to-pending');
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/remove-from-batch', [BatchEnrollmentController::class, 'removeStudentFromBatchCompletely'])->name('admin.batches.remove-from-batch');
-});
-
-Route::get('/test-user-creation', function() { 
-    return view('test-user-creation'); 
-});
-
-// Override functionality
-Route::get('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'getOverrideSettings'])
-     ->name('admin.modules.override-settings');
-Route::post('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
-     ->name('admin.modules.override');
+// Form requirements management routes for admin settings
+Route::post('/admin/settings/form-requirements/store', [AdminSettingsController::class, 'storeFormRequirement'])
+     ->name('admin.settings.form-requirements.store');
+Route::post('/admin/settings/form-requirements/toggle', [AdminSettingsController::class, 'toggleFormRequirement'])
+     ->name('admin.settings.form-requirements.toggle');
+Route::delete('/admin/settings/form-requirements/delete', [AdminSettingsController::class, 'deleteFormRequirement'])
+     ->name('admin.settings.form-requirements.delete');
