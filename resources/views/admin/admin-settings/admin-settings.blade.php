@@ -180,7 +180,7 @@
                                                 <i class="fas fa-plus"></i> Add Field/Section
                                             </button>
                                             <div class="d-grid">
-                                                <button type="submit" class="btn btn-success">
+                                                <button type="submit" id="saveRequirementsBtn" class="btn btn-success">
                                                     <i class="fas fa-save"></i> Save Form Fields
                                                 </button>
                                             </div>
@@ -769,6 +769,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHomepageSettings();
     loadProfessorSettings();
     
+    // Add event listener for plans tab
+    const plansTab = document.getElementById('plans-tab');
+    if (plansTab) {
+        plansTab.addEventListener('shown.bs.tab', function() {
+            loadPlanSettings();
+        });
+    }
+    
     // Add new requirement functionality
     const addRequirementButton = document.getElementById('addRequirement');
     if (addRequirementButton) {
@@ -803,7 +811,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function updateSaveButtonState() {
-        const submitButton = document.querySelector('#studentRequirementsForm button[type="submit"]');
+        const submitButton = document.getElementById('saveRequirementsBtn');
         if (submitButton && hasUnsavedChanges) {
             submitButton.classList.add('btn-warning');
             submitButton.classList.remove('btn-success');
@@ -812,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function resetSaveButtonState() {
-        const submitButton = document.querySelector('#studentRequirementsForm button[type="submit"]');
+        const submitButton = document.getElementById('saveRequirementsBtn');
         if (submitButton) {
             submitButton.classList.remove('btn-warning');
             submitButton.classList.add('btn-success');
@@ -822,20 +830,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Navbar color preview functionality
-    document.getElementById('previewColors').addEventListener('click', function() {
-        previewNavbarColors();
-    });
+    const previewBtn = document.getElementById('previewColors');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', previewNavbarColors);
+    }
 
     // Reset colors functionality
-    document.getElementById('resetColors').addEventListener('click', function() {
-        resetNavbarColors();
-    });
+    const resetBtn = document.getElementById('resetColors');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetNavbarColors);
+    }
 
     // Save navbar settings
-    document.getElementById('navbarSettingsForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveNavbarSettings();
-    });
+document
+  .getElementById('navbarCustomizationForm')
+  .addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveNavbarSettings();
+  });
 
     // Save student requirements
     const studentRequirementsForm = document.getElementById('studentRequirementsForm');
@@ -1203,7 +1215,7 @@ function saveFormRequirements() {
     }
     
     // Show loading state
-    const submitButton = form.querySelector('button[type="submit"]');
+    const submitButton = document.getElementById('saveRequirementsBtn');
     const originalText = submitButton.innerHTML;
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     submitButton.disabled = true;
@@ -1247,28 +1259,39 @@ function saveFormRequirements() {
 }
 
 function validateRequirementsForm() {
-    const requirementItems = document.querySelectorAll('.requirement-item');
+    const requirementItems = document.querySelectorAll('.requirement-item:not(.system-field)'); // Exclude system fields
     let isValid = true;
     let errors = [];
     
     requirementItems.forEach((item, index) => {
-        const fieldType = item.querySelector('select[name*="[field_type]"]').value;
-        const fieldName = item.querySelector('input[name*="[field_name]"]').value.trim();
-        const fieldLabel = item.querySelector('input[name*="[field_label]"]').value.trim();
-        const sectionName = item.querySelector('input[name*="[section_name]"]').value.trim();
+        const fieldTypeSelect = item.querySelector('select[name*="[field_type]"]');
+        const fieldNameInput = item.querySelector('input[name*="[field_name]"]');
+        const fieldLabelInput = item.querySelector('input[name*="[field_label]"]');
+        const sectionNameInput = item.querySelector('input[name*="[section_name]"]');
+        
+        // Check if elements exist before accessing their values
+        if (!fieldTypeSelect) {
+            console.warn(`Row ${index + 1}: Field type select not found`);
+            return; // Skip this item
+        }
+        
+        const fieldType = fieldTypeSelect.value;
+        const fieldName = fieldNameInput ? fieldNameInput.value.trim() : '';
+        const fieldLabel = fieldLabelInput ? fieldLabelInput.value.trim() : '';
+        const sectionName = sectionNameInput ? sectionNameInput.value.trim() : '';
         
         // Validate based on field type
         if (fieldType === 'section') {
-            if (!sectionName) {
+            if (!sectionName && sectionNameInput) {
                 errors.push(`Row ${index + 1}: Section header must have a section name`);
                 isValid = false;
             }
         } else {
-            if (!fieldName) {
+            if (!fieldName && fieldNameInput) {
                 errors.push(`Row ${index + 1}: Field name is required`);
                 isValid = false;
             }
-            if (!fieldLabel) {
+            if (!fieldLabel && fieldLabelInput) {
                 errors.push(`Row ${index + 1}: Display label is required`);
                 isValid = false;
             }
@@ -1860,16 +1883,6 @@ function addSystemFields() {
             is_system: true
         },
         {
-            field_name: 'learning_mode',
-            field_label: 'Learning Mode',
-            field_type: 'select',
-            is_required: true,
-            is_active: true,
-            program_type: 'both',
-            field_options: ['Synchronous (Live Classes)', 'Asynchronous (Self-Paced)'],
-            is_system: true
-        },
-        {
             field_name: 'start_date',
             field_label: 'Start Date',
             field_type: 'date',
@@ -1967,19 +1980,42 @@ function loadPlanSettings() {
         });
 }
 
-function renderPlanSettings(plans) {
-    const container = document.getElementById('planSettingsContainer');
-    let html = '';
+// Plan Settings Functions
+function loadPlanSettings() {
+    console.log('Loading plan settings...');
     
-    plans.forEach(plan => {
-        html += `
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">${plan.plan_name}</h6>
-                        <small class="text-muted">${plan.plan_description || 'No description'}</small>
-                    </div>
-                    <div class="card-body">
+    fetch('/admin/settings/plan-settings')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Plan settings loaded:', data);
+            renderPlanSettings(data.plans || []);
+        })
+        .catch(error => {
+            console.error('Error loading plan settings:', error);
+            showAlert('Error loading plan settings: ' + error.message, 'danger');
+        });
+}
+
+
+
+
+
+
+function renderPlanSettings(plans) {
+  const container = document.getElementById('planSettingsContainer');
+  container.innerHTML = plans.map(plan => `
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">${plan.plan_name}</h6>
+          <small class="text-muted">${plan.description || 'No description'}</small>
+        </div>
+        <div class="card-body">
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" 
                                    id="sync_${plan.plan_id}" 
@@ -1999,64 +2035,90 @@ function renderPlanSettings(plans) {
                             <small class="form-text text-muted d-block">Self-paced learning with recorded content</small>
                         </div>
                     </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
+      </div>
+    </div>
+  `).join('');
 }
+
+
+
+
+
+
+
 
 function refreshPlanSettings() {
     loadPlanSettings();
 }
 
 function savePlanSettings() {
+    console.log('Saving plan settings...');
+    
+    const saveButton = document.querySelector('button[onclick="savePlanSettings()"]');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    saveButton.disabled = true;
+    
     const plans = [];
     const planCards = document.querySelectorAll('#planSettingsContainer .card');
     
+    if (planCards.length === 0) {
+        console.error('No plan cards found');
+        showAlert('No plan settings found to save. Please refresh the page.', 'warning');
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+        return;
+    }
+    
     planCards.forEach(card => {
-        const planId = card.querySelector('[id^="sync_"]').id.split('_')[1];
-        const syncCheckbox = card.querySelector(`#sync_${planId}`);
-        const asyncCheckbox = card.querySelector(`#async_${planId}`);
+        const syncCheckbox = card.querySelector('[id^="sync_"]');
+        const asyncCheckbox = card.querySelector('[id^="async_"]');
         
-        plans.push({
-            plan_id: planId,
-            enable_synchronous: syncCheckbox.checked,
-            enable_asynchronous: asyncCheckbox.checked
-        });
+        if (syncCheckbox && asyncCheckbox) {
+            const planId = syncCheckbox.id.split('_')[1];
+            
+            plans.push({
+                plan_id: parseInt(planId),
+                enable_synchronous: syncCheckbox.checked,
+                enable_asynchronous: asyncCheckbox.checked
+            });
+        }
     });
+    
+    console.log('Plans to save:', plans);
     
     fetch('/admin/settings/plan-settings', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
         },
         body: JSON.stringify({ plans: plans })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Save response:', data);
         if (data.success) {
-            showAlert('Plan settings saved successfully!', 'success');
+            showAlert(data.message || 'Plan settings saved successfully!', 'success');
         } else {
-            showAlert(data.error || 'Error saving plan settings', 'danger');
+            throw new Error(data.message || 'Unknown error occurred');
         }
     })
     .catch(error => {
         console.error('Error saving plan settings:', error);
         showAlert('Error saving plan settings: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
     });
 }
-
-// Load plan settings when the plans tab is shown
-document.addEventListener('DOMContentLoaded', function() {
-    const plansTab = document.getElementById('plans-tab');
-    if (plansTab) {
-        plansTab.addEventListener('shown.bs.tab', function() {
-            loadPlanSettings();
-        });
-    }
-});
 </script>
 @endpush

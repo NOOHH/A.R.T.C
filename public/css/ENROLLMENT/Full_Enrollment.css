@@ -437,6 +437,13 @@ body.registration-page {
     margin-bottom: 3rem;
 }
 
+.learning-modes.horizontal {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
 .learning-mode-card {
     background: #ffffff;
     border: 2px solid #e2e8f0;
@@ -476,6 +483,29 @@ body.registration-page {
     color: #64748b;
     margin-bottom: 1.5rem;
     line-height: 1.6;
+}
+
+.learning-mode-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.learning-mode-card li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.learning-mode-card li::before {
+    content: '✓';
+    color: #10b981;
+    font-weight: bold;
+    font-size: 1rem;
 }
 
 .mode-features {

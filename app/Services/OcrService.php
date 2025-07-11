@@ -205,15 +205,6 @@ class OcrService
                 'ms ',
                 'ma ',
                 'md '
-            ],
-            'Undergraduate' => [
-                'bachelor of',
-                'undergraduate',
-                'bachelor\'s degree',
-                'baccalaureate',
-                'bs ',
-                'ba ',
-                'ab '
             ]
         ];
         

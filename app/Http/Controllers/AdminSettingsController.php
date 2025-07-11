@@ -1197,7 +1197,7 @@ class AdminSettingsController extends Controller
     public function getPlanSettings()
     {
         try {
-            $plans = \App\Models\Plan::select('plan_id', 'plan_name', 'plan_description', 'enable_synchronous', 'enable_asynchronous')
+            $plans = \App\Models\Plan::select('plan_id', 'plan_name', 'description', 'enable_synchronous', 'enable_asynchronous')
                 ->get();
             
             return response()->json([

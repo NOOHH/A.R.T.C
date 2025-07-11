@@ -30,12 +30,12 @@ let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (in
 // Plan configuration data
 const planConfig = {
     full: {
-        enableSynchronous: @json(isset($fullPlan) && $fullPlan->enable_synchronous ? true : false),
-        enableAsynchronous: @json(isset($fullPlan) && $fullPlan->enable_asynchronous ? true : false)
+        enableSynchronous: {{ isset($fullPlan) && $fullPlan->enable_synchronous ? 'true' : 'false' }},
+        enableAsynchronous: {!! isset($fullPlan) && $fullPlan->enable_asynchronous ? 'true' : 'false' !!}
     },
     modular: {
-        enableSynchronous: @json(isset($modularPlan) && $modularPlan->enable_synchronous ? true : false),
-        enableAsynchronous: @json(isset($modularPlan) && $modularPlan->enable_asynchronous ? true : false)
+        enableSynchronous: {!! isset($modularPlan) && $modularPlan->enable_synchronous ? 'true' : 'false' !!},
+        enableAsynchronous: {!! isset($modularPlan) && $modularPlan->enable_asynchronous ? 'true' : 'false' !!}
     }
 };
 
@@ -1045,47 +1045,46 @@ function toggleGraduationCertificate() {
                     </button>
                 </div>
             </div>
-
-<div class="step" id="step-2">
-    <div class="white-step-container">
-        <div class="step-header">
-            <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
-            <p>Select how you'd like to take your classes.</p>
         </div>
-<div class="step" id="step-2">
-    <div class="white-step-container">
-        <div class="step-header">
-            <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
-            <p>Select how you'd like to take your classes.</p>
-        </div>
+    </div>
 
-        <div class="learning-modes horizontal">
-            @if(isset($fullPlan) && $fullPlan->enable_synchronous)
-            <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous">
-                <div class="mode-icon"><i class="bi bi-camera-video"></i></div>
-                <h4>Synchronous</h4>
-                <p>Live classes with real-time interaction</p>
-                <ul>
-                    <li>Live video sessions</li>
-                    <li>Real-time Q&A</li>
-                    <li>Interactive discussions</li>
-                    <li>Scheduled class times</li>
-                </ul>
+    <!-- Step 2: Learning Mode Selection -->
+    <div class="step" id="step-2">
+        <div class="white-step-container">
+            <div class="step-header">
+                <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
+                <p>Select how you'd like to take your classes.</p>
             </div>
-            @endif
-            @if(isset($fullPlan) && $fullPlan->enable_asynchronous)
-            <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous">
-                <div class="mode-icon"><i class="bi bi-play-circle"></i></div>
-                <h4>Asynchronous</h4>
-                <p>Self-paced learning with recorded content</p>
-                <ul>
-                    <li>Pre-recorded videos</li>
-                    <li>Study at your own pace</li>
-                    <li>24/7 access to materials</li>
-                    <li>Flexible scheduling</li>
-                </ul>
+
+            <div class="learning-modes horizontal">
+                @if(isset($fullPlan) && $fullPlan->enable_synchronous)
+                <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous">
+                    <div class="mode-icon"><i class="bi bi-camera-video"></i></div>
+                    <h4>Synchronous</h4>
+                    <p>Live classes with real-time interaction</p>
+                    <ul>
+                        <li>Live video sessions</li>
+                        <li>Real-time Q&A</li>
+                        <li>Interactive discussions</li>
+                        <li>Scheduled class times</li>
+                    </ul>
+                </div>
+                @endif
+                
+                @if(isset($fullPlan) && $fullPlan->enable_asynchronous)
+                <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous">
+                    <div class="mode-icon"><i class="bi bi-play-circle"></i></div>
+                    <h4>Asynchronous</h4>
+                    <p>Self-paced learning with recorded content</p>
+                    <ul>
+                        <li>Pre-recorded videos</li>
+                        <li>Study at your own pace</li>
+                        <li>24/7 access to materials</li>
+                        <li>Flexible scheduling</li>
+                    </ul>
+                </div>
+                @endif
             </div>
-            @endif
         </div>
 
         <div id="selectedLearningModeDisplay" class="selected-display" style="display: none;">
