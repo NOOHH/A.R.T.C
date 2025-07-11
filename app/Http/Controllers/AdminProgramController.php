@@ -243,12 +243,20 @@ class AdminProgramController extends Controller
 
     public function archived()
     {
-        $archivedPrograms = Program::where('is_archived', true)
-            ->with('enrollments')
-            ->orderBy('updated_at', 'desc')
-            ->get();
+        try {
+            $archivedPrograms = Program::where('is_archived', true)
+                ->withCount('enrollments')
+                ->orderBy('updated_at', 'desc')
+                ->get();
 
-        return view('admin.admin-programs.admin-programs-archived', compact('archivedPrograms'));
+            return view('admin.admin-programs.admin-programs-archived', compact('archivedPrograms'));
+        } catch (\Exception $e) {
+            Log::error('Archived programs error: ' . $e->getMessage());
+            return view('admin.admin-programs.admin-programs-archived', [
+                'archivedPrograms' => collect(),
+                'error' => 'Unable to load archived programs data.'
+            ]);
+        }
     }
 
     public function enrollments($id)

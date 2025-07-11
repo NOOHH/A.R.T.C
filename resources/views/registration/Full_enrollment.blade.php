@@ -10,9 +10,12 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
 
 <!-- Critical JavaScript functions for immediate availability -->
 <script>
+    
 // Global variables (declare first for immediate availability)
 let currentStep = 1;
 let selectedPackageId = null;
@@ -143,99 +146,77 @@ function selectLearningMode(mode) {
     }
 }
 
+
 function nextStep() {
     console.log('nextStep called, current step:', currentStep);
-    console.log('selectedPackageId:', selectedPackageId);
-    console.log('window.selectedPackageId:', window.selectedPackageId);
-    
+
     if (currentStep === 1) {
-        // Validate package selection with multiple checks
         const packageInput = document.querySelector('input[name="package_id"]');
         const sessionPackageId = sessionStorage.getItem('selectedPackageId');
-        
-        console.log('Package validation - selectedPackageId:', selectedPackageId);
-        console.log('Package validation - window.selectedPackageId:', window.selectedPackageId);
-        console.log('Package validation - packageInput.value:', packageInput?.value);
-        console.log('Package validation - sessionStorage:', sessionPackageId);
-        
         if (!selectedPackageId && !window.selectedPackageId && !packageInput?.value && !sessionPackageId) {
             showWarning('Please select a package before proceeding.');
             return;
         }
-        
-        // Ensure selectedPackageId is set if any other method has the value
         if (!selectedPackageId && (window.selectedPackageId || packageInput?.value || sessionPackageId)) {
             selectedPackageId = window.selectedPackageId || packageInput?.value || sessionPackageId;
-            console.log('Updated selectedPackageId to:', selectedPackageId);
         }
-        
-        // Go to learning mode selection
         animateStepTransition('step-1', 'step-2');
         currentStep = 2;
+        updateStepper(currentStep);
     } else if (currentStep === 2) {
-        // Validate learning mode selection
         const learningModeValue = document.getElementById('learning_mode')?.value;
         if (!learningModeValue) {
             showWarning('Please select a learning mode before proceeding.');
             return;
         }
-        
-        // Check if user is logged in for both learning modes
         if (isUserLoggedIn) {
-            // Skip to student registration
-            console.log('User logged in - skipping to student registration');
             animateStepTransition('step-2', 'step-4');
             currentStep = 4;
-            // Auto-fill user data
+            updateStepper(currentStep);
             setTimeout(() => {
                 fillLoggedInUserData();
             }, 300);
         } else {
-            // Go to account registration
-            console.log('User not logged in - going to account registration');
             animateStepTransition('step-2', 'step-3');
             currentStep = 3;
+            updateStepper(currentStep);
         }
     } else if (currentStep === 3) {
-        // Validate account registration fields but DON'T create account yet
         if (!validateStep3()) {
             showWarning('Please fill in all required fields correctly.');
             return;
         }
-        
-        // Just proceed to next step - account will be created during final submission
         copyAccountDataToStudentForm();
         animateStepTransition('step-3', 'step-4');
         currentStep = 4;
-        
-        // Auto-fill user data
+        updateStepper(currentStep);
         setTimeout(() => {
             copyAccountDataToStudentForm();
         }, 300);
     }
-    // Form submission only happens when user clicks "Complete Registration" in Step 4
-    
-    // Update progress bar
-    updateProgressBar();
+    // updateProgressBar(); <-- Only keep this in animateStepTransition
 }
+
 
 function prevStep() {
     console.log('prevStep called, current step:', currentStep);
-    
+
     if (currentStep === 4) {
         // From student registration, check if user is logged in and learning mode
         const learningMode = document.getElementById('learning_mode')?.value;
-        
+
         if (isUserLoggedIn) {
             // Skip account registration and go back to learning mode
             console.log('User logged in - going back to learning mode');
             animateStepTransition('step-4', 'step-2', true);
             currentStep = 2;
+            updateStepper(currentStep);
         } else {
             // User not logged in, go back to account registration
             console.log('User not logged in - going back to account registration');
             animateStepTransition('step-4', 'step-3', true);
             currentStep = 3;
+            updateStepper(currentStep);
             // Trigger validation after going back to step 3
             setTimeout(() => {
                 validateStep3();
@@ -246,11 +227,25 @@ function prevStep() {
         // From account registration, go back to learning mode
         animateStepTransition('step-3', 'step-2', true);
         currentStep = 2;
+        updateStepper(currentStep);
     } else if (currentStep === 2) {
         // From learning mode back to package selection
         animateStepTransition('step-2', 'step-1', true);
         currentStep = 1;
+        updateStepper(currentStep);
     }
+}
+
+function updateStepper(currentStep) {
+  for (let i = 1; i <= 4; i++) {
+    let step = document.getElementById('stepper-' + i);
+    if (!step) continue;
+    if (i <= currentStep) {
+      step.classList.add('active');
+    } else {
+      step.classList.remove('active');
+    }
+  }
 }
 
 // Helper function to show warning messages
@@ -549,6 +544,7 @@ function fillLoggedInUserData() {
         console.log('Filled logged in user data:', loggedInUserFirstname, loggedInUserLastname);
     }
 }
+
 </script>
 @endpush
 
@@ -556,9 +552,30 @@ function fillLoggedInUserData() {
 <div class="form-container">
     <div class="form-wrapper">
         <!-- Progress Bar -->
-        <div class="progress-container">
-            <div class="progress-bar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
+<!-- Stepper Progress Bar -->
+<div class="stepper-progress">
+  <div class="stepper">
+    <div class="step" id="stepper-1">
+      <div class="circle">1</div>
+      <div class="label">Package</div>
+    </div>
+    <div class="bar"></div>
+    <div class="step" id="stepper-2">
+      <div class="circle">2</div>
+      <div class="label">Mode</div>
+    </div>
+    <div class="bar"></div>
+    <div class="step" id="stepper-3">
+      <div class="circle">3</div>
+      <div class="label">Account</div>
+    </div>
+    <div class="bar"></div>
+    <div class="step" id="stepper-4">
+      <div class="circle">4</div>
+      <div class="label">Finish</div>
+    </div>
+  </div>
+</div>
 
         <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="enrollmentForm" novalidate onsubmit="return handleFormSubmission(event)">
             @csrf
@@ -570,276 +587,282 @@ function fillLoggedInUserData() {
             <input type="hidden" name="plan_id" value="1">
             <input type="hidden" name="learning_mode" id="learning_mode" value="">
             <input type="hidden" name="Start_Date" id="hidden_start_date" value="">
-
-            <!-- Step 1: Package Selection -->
+            
+             <!-- Step 1 -->
             <div class="step active" id="step-1">
                 <div class="step-header">
-                    <h2><i class="bi bi-box-seam me-2"></i>Choose Your Package</h2>
+                    <h2>
+                        <i class="bi bi-box-seam me-2"></i>
+                        Choose Your Package
+                    </h2>
                     <p>Select the package that best fits your learning goals.</p>
                 </div>
 
-                <div class="packages-container">
-                    <div class="packages-carousel" id="packagesCarousel">
+                <div class="package-carousel-wrapper" style="position:relative;width:100%;display:flex;justify-content:center;align-items:center;">
+                    <!-- Left Arrow -->
+                    <button type="button" class="carousel-arrow left" onclick="scrollPackages('left')">&lt;</button>
+
+                    <!-- Cards Container (Horizontal Scroll/Flex) -->
+                    <div class="package-cards-container" id="packagesCarousel">
                         @foreach($packages as $package)
-                        <div class="card package-card h-100 shadow-lg" onclick="selectPackage('{{ $package->package_id }}', '{{ $package->package_name }}', '{{ $package->amount }}')" data-package-id="{{ $package->package_id }}" data-package-price="{{ $package->amount }}">
-                            <div class="card-body d-flex flex-column">
+                        <div 
+                            class="package-card"
+                            onclick="selectPackage('{{ $package->package_id }}','{{ addslashes($package->package_name) }}','{{ $package->amount }}')"
+                        >
+                            <div class="card-body">
                                 <h5 class="card-title">{{ $package->package_name }}</h5>
-                                <p class="card-text flex-grow-1">{{ $package->description }}</p>
+                                <p class="card-text">{{ $package->description ?? 'No description yet.' }}</p>
                                 <div class="package-price">₱{{ number_format($package->amount, 2) }}</div>
                             </div>
                         </div>
                         @endforeach
                     </div>
-                    
-                    @if(count($packages) > 2)
-                    <button class="carousel-nav prev-btn" onclick="scrollPackages('left')" type="button">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <button class="carousel-nav next-btn" onclick="scrollPackages('right')" type="button">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                    @endif
+
+                    <!-- Right Arrow -->
+                    <button type="button" class="carousel-arrow right" onclick="scrollPackages('right')">&gt;</button>
                 </div>
 
-                <!-- Selected Package Display -->
-                <div id="selectedPackageDisplay" class="selected-display" style="display: none;">
-                    <div class="selected-item">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <span>Selected Package: <strong id="selectedPackageName"></strong></span>
-                    </div>
+                <div class="selected-package-summary mt-3 mb-4" style="text-align:left;">
+                    <span class="ms-3">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        Selected Package: <strong id="selectedPackageName">None</strong>
+                    </span>
                 </div>
 
                 <div class="form-navigation">
-                    <button type="button" onclick="nextStep()" id="packageNextBtn" disabled class="btn btn-primary btn-lg">
+                    <button
+                        type="button"
+                        onclick="nextStep()"
+                        id="packageNextBtn"
+                        disabled
+                        class="btn btn-primary btn-lg"
+                    >
                         Next <i class="bi bi-arrow-right ms-2"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Step 2: Learning Mode Selection -->
-            <div class="step" id="step-2">
-                <div class="step-header">
-                    <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
-                    <p>Select how you'd like to take your classes.</p>
-                </div>
+<div class="step" id="step-2">
+    <div class="white-step-container">
+        <div class="step-header">
+            <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
+            <p>Select how you'd like to take your classes.</p>
+        </div>
 
-                <div class="learning-modes">
-                    <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous">
-                        <div class="mode-icon">
-                            <i class="bi bi-camera-video"></i>
-                        </div>
-                        <h4>Synchronous</h4>
-                        <p>Live classes with real-time interaction</p>
-                        <ul>
-                            <li>Live video sessions</li>
-                            <li>Real-time Q&A</li>
-                            <li>Interactive discussions</li>
-                            <li>Scheduled class times</li>
-                        </ul>
-                    </div>
-
-                    <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous">
-                        <div class="mode-icon">
-                            <i class="bi bi-play-circle"></i>
-                        </div>
-                        <h4>Asynchronous</h4>
-                        <p>Self-paced learning with recorded content</p>
-                        <ul>
-                            <li>Pre-recorded videos</li>
-                            <li>Study at your own pace</li>
-                            <li>24/7 access to materials</li>
-                            <li>Flexible scheduling</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Selected Learning Mode Display -->
-                <div id="selectedLearningModeDisplay" class="selected-display" style="display: none;">
-                    <div class="selected-item">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <span>Selected Mode: <strong id="selectedLearningModeName"></strong></span>
-                    </div>
-                </div>
-
-                <div class="form-navigation">
-                    <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-arrow-left me-2"></i> Back
-                    </button>
-                    <button type="button" onclick="nextStep()" id="learningModeNextBtn" disabled class="btn btn-primary btn-lg">
-                        Next <i class="bi bi-arrow-right ms-2"></i>
-                    </button>
-                </div>
+        <div class="learning-modes horizontal">
+            <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous">
+                <div class="mode-icon"><i class="bi bi-camera-video"></i></div>
+                <h4>Synchronous</h4>
+                <p>Live classes with real-time interaction</p>
+                <ul>
+                    <li>Live video sessions</li>
+                    <li>Real-time Q&A</li>
+                    <li>Interactive discussions</li>
+                    <li>Scheduled class times</li>
+                </ul>
             </div>
-
-            <!-- Step 3: Account Registration (only for non-logged users) -->
-            <div class="step" id="step-3">
-                <div class="step-header">
-                    <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
-                    <p>Please provide your account information to continue.</p>
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="user_firstname">First Name</label>
-                        <input type="text" id="user_firstname" name="user_firstname" class="form-control" required>
-                        <div id="user_firstnameError" class="error-message" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="user_lastname">Last Name</label>
-                        <input type="text" id="user_lastname" name="user_lastname" class="form-control" required>
-                        <div id="user_lastnameError" class="error-message" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="user_email">Email Address</label>
-                        <input type="email" id="user_email" name="email" class="form-control" required>
-                        <div id="emailError" class="error-message" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" class="form-control" required>
-                        <div id="passwordError" class="error-message" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password_confirmation">Confirm Password</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
-                        <div id="passwordMatchError" class="error-message" style="display: none;"></div>
-                    </div>
-                </div>
-
-                <div class="login-prompt">
-                    <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
-                </div>
-
-                <div class="form-navigation">
-                    <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-arrow-left me-2"></i> Back
-                    </button>
-                    <button type="button" onclick="nextStep()" id="step3NextBtn" disabled class="btn btn-primary btn-lg">
-                        Next <i class="bi bi-arrow-right ms-2"></i>
-                    </button>
-                </div>
+            <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous">
+                <div class="mode-icon"><i class="bi bi-play-circle"></i></div>
+                <h4>Asynchronous</h4>
+                <p>Self-paced learning with recorded content</p>
+                <ul>
+                    <li>Pre-recorded videos</li>
+                    <li>Study at your own pace</li>
+                    <li>24/7 access to materials</li>
+                    <li>Flexible scheduling</li>
+                </ul>
             </div>
+        </div>
 
-            <!-- Step 4: Student Registration -->
-            <div class="step" id="step-4">
-                <div class="step-header">
-                    <h2><i class="bi bi-person-lines-fill me-2"></i>Complete Your Registration</h2>
-                    <p>Fill in your personal and academic information.</p>
-                </div>
+        <div id="selectedLearningModeDisplay" class="selected-display" style="display: none;">
+            <div class="selected-item">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span>Selected Mode: <strong id="selectedLearningModeName"></strong></span>
+            </div>
+        </div>
 
-                <!-- Dynamic Form Fields -->
-                @if(isset($formRequirements) && $formRequirements->count() > 0)
-                    @foreach($formRequirements as $field)
-                        @if($field->field_type === 'section')
-                            <h3><i class="bi bi-folder me-2"></i>{{ $field->label }}</h3>
-                        @else
-                            <div class="form-group">
-                                <label for="{{ $field->field_name }}">
+        <div class="form-navigation">
+            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-left me-2"></i> Back
+            </button>
+            <button type="button" onclick="nextStep()" id="learningModeNextBtn" disabled class="btn btn-primary btn-lg">
+                Next <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Step 3: Account Registration (only for non-logged users) -->
+<div class="step" id="step-3">
+    <div class="account-step-card">
+        <div class="step-header">
+            <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
+            <p>Please provide your account information to continue.</p>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="user_firstname">First Name</label>
+                <input type="text" id="user_firstname" name="user_firstname" class="form-control" required>
+                <div id="user_firstnameError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="user_lastname">Last Name</label>
+                <input type="text" id="user_lastname" name="user_lastname" class="form-control" required>
+                <div id="user_lastnameError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="form-group" style="grid-column: 1 / span 2;">
+                <label for="user_email">Email Address</label>
+                <input type="email" id="user_email" name="email" class="form-control" required>
+                <div id="emailError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+                <div id="passwordError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="password_confirmation">Confirm Password</label>
+                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
+                <div id="passwordMatchError" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="login-prompt">
+            <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
+        </div>
+
+        <div class="form-navigation">
+            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-left me-2"></i> Back
+            </button>
+            <button type="button" onclick="nextStep()" id="step3NextBtn" disabled class="btn btn-primary btn-lg">
+                Next <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Step 4: Student Registration -->
+<div class="step" id="step-4">
+    <div class="student-step-card">
+        <div class="step-header">
+            <h2><i class="bi bi-person-lines-fill me-2"></i>Complete Your Registration</h2>
+            <p>Fill in your personal and academic information.</p>
+        </div>
+
+        <!-- Dynamic Form Fields -->
+        @if(isset($formRequirements) && $formRequirements->count() > 0)
+            @foreach($formRequirements as $field)
+                @if($field->field_type === 'section')
+                    <h3 style="margin-top:2.1rem"><i class="bi bi-folder me-2"></i>{{ $field->label }}</h3>
+                @else
+                    <div class="form-group">
+                        <label for="{{ $field->field_name }}">
+                            {{ $field->label }}
+                            @if($field->is_required) <span class="required">*</span> @endif
+                        </label>
+                        
+                        @if($field->field_type === 'text')
+                            <input type="text" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                        @elseif($field->field_type === 'email')
+                            <input type="email" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                        @elseif($field->field_type === 'number')
+                            <input type="number" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                        @elseif($field->field_type === 'date')
+                            <input type="date" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                        @elseif($field->field_type === 'file')
+                            <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                   class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                        @elseif($field->field_type === 'select')
+                            <select name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                    class="form-select" {{ $field->is_required ? 'required' : '' }}>
+                                <option value="">Select {{ $field->label }}</option>
+                                @if($field->options)
+                                    @foreach(json_decode($field->options, true) as $option)
+                                        <option value="{{ $option }}">{{ $option }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        @elseif($field->field_type === 'textarea')
+                            <textarea name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                      class="form-control" rows="3" {{ $field->is_required ? 'required' : '' }}></textarea>
+                        @elseif($field->field_type === 'checkbox')
+                            <div class="form-check">
+                                <input type="checkbox" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
+                                       class="form-check-input" value="1" {{ $field->is_required ? 'required' : '' }}>
+                                <label class="form-check-label" for="{{ $field->field_name }}">
                                     {{ $field->label }}
-                                    @if($field->is_required) <span class="required">*</span> @endif
                                 </label>
-                                
-                                @if($field->field_type === 'text')
-                                    <input type="text" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                           class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'email')
-                                    <input type="email" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                           class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'number')
-                                    <input type="number" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                           class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'date')
-                                    <input type="date" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                           class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'file')
-                                    <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                           class="form-control" {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'select')
-                                    <select name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                            class="form-select" {{ $field->is_required ? 'required' : '' }}>
-                                        <option value="">Select {{ $field->label }}</option>
-                                        @if($field->options)
-                                            @foreach(json_decode($field->options, true) as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                @elseif($field->field_type === 'textarea')
-                                    <textarea name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                              class="form-control" rows="3" {{ $field->is_required ? 'required' : '' }}></textarea>
-                                @elseif($field->field_type === 'checkbox')
-                                    <div class="form-check">
-                                        <input type="checkbox" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                               class="form-check-input" value="1" {{ $field->is_required ? 'required' : '' }}>
-                                        <label class="form-check-label" for="{{ $field->field_name }}">
-                                            {{ $field->label }}
-                                        </label>
-                                    </div>
-                                @endif
-                                
-                                @if($field->help_text)
-                                    <small class="form-text text-muted">{{ $field->help_text }}</small>
-                                @endif
                             </div>
                         @endif
-                    @endforeach
+                        
+                        @if($field->help_text)
+                            <small class="form-text text-muted">{{ $field->help_text }}</small>
+                        @endif
+                    </div>
                 @endif
+            @endforeach
+        @endif
 
-                <h3><i class="bi bi-book me-2"></i>Program</h3>
-                <div class="form-group">
-                    <select name="program_id" class="form-select" required id="programSelect" onchange="loadBatchesForProgram(); updateHiddenProgramId();">
-                        <option value="">Select Program</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+        <div class="form-group" style="margin-top:2.2rem;">
+            <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program</label>
+            <select name="program_id" class="form-select" required id="programSelect" onchange="loadBatchesForProgram(); updateHiddenProgramId();">
+                <option value="">Select Program</option>
+                @foreach($programs as $program)
+                    <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                @endforeach
+            </select>
+        </div>
 
-                <!-- Batch Selection (only for synchronous learning) -->
-                <div id="batchSelectionContainer" style="display: none;">
-                    <h3><i class="bi bi-people me-2"></i>Select Batch</h3>
-                    <div id="batchOptions" class="batch-options">
-                        <!-- Batches will be loaded here -->
-                    </div>
-                    <!-- Note: batch_id is not submitted with registration form -->
-                    <!-- It will be handled separately during enrollment creation -->
-                    
-                    <!-- Selected Batch Display -->
-                    <div id="selectedBatchDisplay" class="selected-display" style="display: none;">
-                        <div class="selected-item">
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                            <span>Selected Batch: <strong id="selectedBatchName"></strong></span>
-                        </div>
-                    </div>
-                </div>
-
-                <h3><i class="bi bi-calendar-event me-2"></i>Start Date</h3>
-                <div class="form-group">
-                    <input type="date" name="Start_Date" id="start_date_input" class="form-control"
-                           value="{{ $student->start_date ?? old('Start_Date') }}" 
-                           onchange="updateHiddenStartDate()" required>
-                </div>
-
-                <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" id="termsCheckbox" required>
-                    <label class="form-check-label" for="termsCheckbox">
-                        I agree to the <a href="#" id="showTerms">Terms and Conditions</a>
-                    </label>
-                </div>
-
-                <div class="form-navigation">
-                    <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-arrow-left me-2"></i> Back
-                    </button>
-                    <button type="submit" class="btn btn-success btn-lg">
-                        <i class="bi bi-check-circle me-2"></i> Complete Registration
-                    </button>
+        <!-- Batch Selection (only for synchronous learning) -->
+        <div id="batchSelectionContainer" style="display: none;">
+            <h3 style="font-size:1.13rem;font-weight:700;"><i class="bi bi-people me-2"></i>Select Batch</h3>
+            <div id="batchOptions" class="batch-options">
+                <!-- Batches will be loaded here -->
+            </div>
+            <!-- Selected Batch Display -->
+            <div id="selectedBatchDisplay" class="selected-display" style="display: none;">
+                <div class="selected-item">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span>Selected Batch: <strong id="selectedBatchName"></strong></span>
                 </div>
             </div>
+        </div>
+
+        <div class="form-group" style="margin-top:2rem;">
+            <label for="start_date_input" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-calendar-event me-2"></i>Start Date</label>
+            <input type="date" name="Start_Date" id="start_date_input" class="form-control"
+                   value="{{ $student->start_date ?? old('Start_Date') }}" 
+                   onchange="updateHiddenStartDate()" required>
+        </div>
+
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="termsCheckbox" required>
+            <label class="form-check-label" for="termsCheckbox">
+                I agree to the <a href="#" id="showTerms">Terms and Conditions</a>
+            </label>
+        </div>
+
+        <hr style="margin-bottom: 2.1rem; margin-top: 1.2rem;">
+
+        <div class="form-navigation" style="justify-content: space-between;">
+            <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-left me-2"></i> Back
+            </button>
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle me-2"></i> Complete Registration
+            </button>
+        </div>
+    </div>
+</div>
+
+
         </form>
     </div>
 </div>
@@ -852,6 +875,21 @@ function fillLoggedInUserData() {
         <button onclick="closeWarningModal()" class="btn btn-primary">OK</button>
     </div>
 </div>
+
+<!-- Terms and Conditions Modal -->
+<div id="termsModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+        <h3>Terms and Conditions</h3>
+        <div style="max-height: 320px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem;">
+            <p>
+                By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.
+            </p>
+            <!-- Add more actual terms here if you want -->
+        </div>
+        <button onclick="closeTermsModal()" class="btn btn-secondary">Close</button>
+    </div>
+</div>
+
 
 <!-- JavaScript for form validation and functionality -->
 <script>
@@ -1093,5 +1131,63 @@ function handleFormSubmission(event) {
     
     return true; // Allow form to submit
 }
+
+ document.addEventListener('DOMContentLoaded', function() {
+        // Show modal when link is clicked
+        const termsLink = document.getElementById('showTerms');
+        if (termsLink) {
+            termsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('termsModal').style.display = 'flex';
+            });
+        }
+    });
+
+    function closeTermsModal() {
+        document.getElementById('termsModal').style.display = 'none';
+    }
+function showTermsModal() {
+  const modal = document.getElementById('termsModal');
+  if (!modal) return;
+  // make it take up the screen
+  modal.style.display = 'flex';
+  // give the browser a tick to apply that, then fade in
+  requestAnimationFrame(() => modal.classList.add('active'));
+  // lock background scrolling
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTermsModal() {
+  const modal = document.getElementById('termsModal');
+  if (!modal) return;
+  // fade out
+  modal.classList.remove('active');
+  // after the fade, remove it from flow
+  setTimeout(() => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }, 300); // match your CSS transition-duration (0.3s)
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // click the link
+  document.getElementById('showTerms')
+          .addEventListener('click', e => {
+    e.preventDefault();
+    showTermsModal();
+  });
+
+  // click outside the content to close
+  document.getElementById('termsModal')
+          .addEventListener('click', e => {
+    if (e.target.id === 'termsModal') closeTermsModal();
+  });
+
+  // escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeTermsModal();
+  });
+});
+
 </script>
 @endsection

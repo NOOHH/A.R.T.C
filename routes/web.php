@@ -17,6 +17,7 @@ use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
+use App\Http\Controllers\AdminAnalyticsController;
 use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\FormRequirementController;
@@ -193,6 +194,17 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
+    
+    // Module completion route
+    Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'completeModule'])->name('student.module.complete');
+    
+    // Assignment submission routes
+    Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
+    
+    // Quiz routes
+    Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
+    Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
+    Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
     
     // Payment routes
     Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
@@ -403,6 +415,22 @@ Route::get('/admin/modules', [AdminModuleController::class, 'index'])
 Route::post('/admin/modules', [AdminModuleController::class, 'store'])
      ->name('admin.modules.store');
 
+// Edit module
+Route::get('/admin/modules/{id}/edit', [AdminModuleController::class, 'edit'])
+     ->name('admin.modules.edit');
+
+// Update module
+Route::put('/admin/modules/{id}', [AdminModuleController::class, 'update'])
+     ->name('admin.modules.update');
+
+// Upload video for module
+Route::post('/admin/modules/{id}/upload-video', [AdminModuleController::class, 'uploadVideo'])
+     ->name('admin.modules.upload-video');
+
+// Add content to module
+Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'addContent'])
+     ->name('admin.modules.add-content');
+
 // Batch store modules
 Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
      ->name('admin.modules.batch-store');
@@ -419,10 +447,6 @@ Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'bat
 Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])
      ->name('admin.modules.archived');
 
-// Update module
-Route::put('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'update'])
-     ->name('admin.modules.update');
-
 // Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
      ->name('admin.modules.destroy');
@@ -430,6 +454,34 @@ Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::clas
 // Get modules by program (AJAX)
 Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
      ->name('admin.modules.by-program');
+
+// Update module order (drag and drop)
+Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updateOrder'])
+     ->name('admin.modules.update-order');
+
+// Toggle admin override for module
+Route::post('/admin/modules/{id}/toggle-admin-override', [AdminModuleController::class, 'toggleAdminOverride'])
+     ->name('admin.modules.toggle-admin-override');
+
+// Get batches for a program (AJAX)
+Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, 'getBatchesForProgram'])
+     ->name('admin.programs.batches');
+
+// Archive a module
+Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
+     ->name('admin.modules.archive');
+
+// Admin override settings
+Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
+     ->name('admin.modules.update-override');
+Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
+     ->name('admin.modules.get-override');
+
+// Admin AI Quiz Generator
+Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
+     ->name('admin.quiz-generator');
+Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
+     ->name('admin.quiz-generator.generate');
 
 /*
 |--------------------------------------------------------------------------
@@ -571,6 +623,45 @@ Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updat
      ->name('admin.modules.updateOrder');
 Route::get('/admin/modules/ordered', [ModuleController::class, 'getOrderedModules'])
      ->name('admin.modules.ordered');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Analytics
+|--------------------------------------------------------------------------
+*/
+// Analytics dashboard
+Route::get('/admin/analytics', [AdminAnalyticsController::class, 'index'])
+     ->name('admin.analytics.index');
+
+// Analytics data endpoints
+Route::get('/admin/analytics/data', [AdminAnalyticsController::class, 'getData'])
+     ->name('admin.analytics.data');
+
+Route::get('/admin/analytics/batches', [AdminAnalyticsController::class, 'getBatches'])
+     ->name('admin.analytics.batches');
+
+Route::get('/admin/analytics/subjects', [AdminAnalyticsController::class, 'getSubjects'])
+     ->name('admin.analytics.subjects');
+
+Route::get('/admin/analytics/student/{id}', [AdminAnalyticsController::class, 'getStudentDetail'])
+     ->name('admin.analytics.student');
+
+Route::get('/admin/analytics/subject/{id}', [AdminAnalyticsController::class, 'getSubjectDetail'])
+     ->name('admin.analytics.subject.detail');
+
+// Export routes
+Route::get('/admin/analytics/export', [AdminAnalyticsController::class, 'export'])
+     ->name('admin.analytics.export');
+
+Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 'generateSubjectReport'])
+     ->name('admin.analytics.subject-report');
+
+// Board Passer Routes
+Route::post('/analytics/upload-board-passers', [AdminAnalyticsController::class, 'uploadBoardPassers']);
+Route::post('/analytics/add-board-passer', [AdminAnalyticsController::class, 'addBoardPasser']);
+Route::get('/analytics/download-template', [AdminAnalyticsController::class, 'downloadTemplate']);
+Route::get('/analytics/board-passer-stats', [AdminAnalyticsController::class, 'getBoardPasserStats']);
+Route::get('/analytics/students-list', [AdminAnalyticsController::class, 'getStudentsList']);
 
 /*
 |--------------------------------------------------------------------------
@@ -881,3 +972,9 @@ Route::prefix('admin')->middleware(['web'])->group(function () {
 Route::get('/test-user-creation', function() { 
     return view('test-user-creation'); 
 });
+
+// Override functionality
+Route::get('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'getOverrideSettings'])
+     ->name('admin.modules.override-settings');
+Route::post('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
+     ->name('admin.modules.override');

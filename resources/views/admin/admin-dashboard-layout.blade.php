@@ -143,6 +143,13 @@
                                 <span class="icon">👨‍🏫</span> Professors
                             </a>
                         </li>
+
+                        {{-- Analytics --}}
+                        <li class="@if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
+                            <a href="{{ route('admin.analytics.index') }}" class="sidebar-link">
+                                <span class="icon">📈</span> Analytics
+                            </a>
+                        </li>
                     </ul>
                 </nav>
 
