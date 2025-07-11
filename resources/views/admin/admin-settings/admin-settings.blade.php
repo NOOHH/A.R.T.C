@@ -100,6 +100,11 @@
                         <i class="fas fa-user-shield me-2"></i>Admin
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans" type="button" role="tab">
+                        <i class="fas fa-graduation-cap me-2"></i>Plans
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -184,9 +189,6 @@
                                         <div class="mt-4 pt-3 border-top">
                                             <h6 class="text-secondary">Quick Actions</h6>
                                             <div class="d-flex gap-2 flex-wrap">
-                                                <button type="button" class="btn btn-success btn-sm" onclick="saveFormRequirements()">
-                                                    <i class="fas fa-save"></i> Save Form Fields
-                                                </button>
                                                 <a href="{{ route('enrollment.full') }}" class="btn btn-outline-info btn-sm" target="_blank">
                                                     <i class="fas fa-external-link-alt"></i> Preview Full Form
                                                 </a>
@@ -694,6 +696,39 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Plans Tab --}}
+            <div class="tab-pane fade" id="plans" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-graduation-cap me-2"></i>Learning Mode Configuration
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-4">Configure which learning modes are available for each plan type.</p>
+                                
+                                <div class="row" id="planSettingsContainer">
+                                    <!-- Plans will be loaded here -->
+                                </div>
+                                
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="refreshPlanSettings()">
+                                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="savePlanSettings()">
+                                            <i class="fas fa-save me-2"></i>Save All Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection
@@ -846,6 +881,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Add event listeners for system field toggles
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('system-field-toggle') || 
+            e.target.classList.contains('system-field-program')) {
+            const fieldName = e.target.getAttribute('data-field');
+            const toggleType = e.target.getAttribute('data-type');
+            
+            if (e.target.classList.contains('system-field-toggle')) {
+                const isChecked = e.target.checked;
+                console.log(`System field ${fieldName} ${toggleType} changed to:`, isChecked);
+                
+                // You can implement API calls here to save system field settings
+                // For now, just show a notification
+                showAlert(`System field "${fieldName}" ${toggleType} status updated`, 'success');
+            } else if (e.target.classList.contains('system-field-program')) {
+                const programType = e.target.value;
+                console.log(`System field ${fieldName} program type changed to:`, programType);
+                showAlert(`System field "${fieldName}" program type updated to ${programType}`, 'success');
+            }
+        }
+    });
 });
 
 function updateSaveButtonState() {
@@ -887,6 +944,9 @@ function loadFormRequirements() {
             }
             
             container.innerHTML = '';
+            
+            // Add system/hardcoded fields first
+            addSystemFields();
             
             // Sort data by sort_order
             const sortedData = data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -1760,5 +1820,243 @@ function saveProfessorSettings() {
         showAlert('Error saving professor settings: ' + error.message, 'danger');
     });
 }
+
+function addSystemFields() {
+    const container = document.getElementById('requirementsContainer');
+    
+    // Create a header for system fields
+    const systemHeader = document.createElement('div');
+    systemHeader.className = 'system-fields-header border rounded p-3 mb-3';
+    systemHeader.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+    systemHeader.style.color = 'white';
+    systemHeader.innerHTML = `
+        <h6 class="mb-0">
+            <i class="fas fa-cogs me-2"></i>System/Predefined Fields
+            <small class="ms-2 opacity-75">(Cannot be deleted, only toggled)</small>
+        </h6>
+    `;
+    container.appendChild(systemHeader);
+    
+    // Define system fields
+    const systemFields = [
+        {
+            field_name: 'education_level',
+            field_label: 'Education Level',
+            field_type: 'select',
+            is_required: true,
+            is_active: true,
+            program_type: 'both',
+            field_options: ['High School', 'Undergraduate', 'Graduate'],
+            is_system: true
+        },
+        {
+            field_name: 'program_id',
+            field_label: 'Program',
+            field_type: 'select',
+            is_required: true,
+            is_active: true,
+            program_type: 'both',
+            field_options: ['Dynamic - Loaded from Programs'],
+            is_system: true
+        },
+        {
+            field_name: 'learning_mode',
+            field_label: 'Learning Mode',
+            field_type: 'select',
+            is_required: true,
+            is_active: true,
+            program_type: 'both',
+            field_options: ['Synchronous (Live Classes)', 'Asynchronous (Self-Paced)'],
+            is_system: true
+        },
+        {
+            field_name: 'start_date',
+            field_label: 'Start Date',
+            field_type: 'date',
+            is_required: false,
+            is_active: true,
+            program_type: 'both',
+            field_options: [],
+            is_system: true
+        }
+    ];
+    
+    // Add each system field
+    systemFields.forEach(field => {
+        addSystemField(field);
+    });
+}
+
+function addSystemField(data) {
+    const container = document.getElementById('requirementsContainer');
+    
+    const systemFieldDiv = document.createElement('div');
+    systemFieldDiv.className = 'requirement-item system-field border rounded p-3 mb-3';
+    systemFieldDiv.style.borderColor = '#007bff';
+    systemFieldDiv.style.background = '#f8f9ff';
+    
+    const optionsHtml = data.field_options && data.field_options.length > 0 
+        ? data.field_options.map(opt => `<span class="badge bg-light text-dark me-1">${opt}</span>`).join('')
+        : '<span class="text-muted">No options</span>';
+    
+    systemFieldDiv.innerHTML = `
+        <div class="row w-100">
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Field Name</label>
+                <div class="form-control-plaintext bg-light rounded px-3 py-2">
+                    <i class="fas fa-lock me-2 text-primary"></i>${data.field_name}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Field Label</label>
+                <div class="form-control-plaintext bg-light rounded px-3 py-2">${data.field_label}</div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Type</label>
+                <div class="form-control-plaintext bg-light rounded px-3 py-2">
+                    <span class="badge bg-primary">${data.field_type}</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Options</label>
+                <div class="form-control-plaintext bg-light rounded px-3 py-2" style="min-height: 38px;">
+                    ${optionsHtml}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="d-flex flex-column gap-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input system-field-toggle" type="checkbox" 
+                               ${data.is_active ? 'checked' : ''} 
+                               data-field="${data.field_name}" data-type="active">
+                        <label class="form-check-label">Active</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input system-field-toggle" type="checkbox" 
+                               ${data.is_required ? 'checked' : ''} 
+                               data-field="${data.field_name}" data-type="required">
+                        <label class="form-check-label">Required</label>
+                    </div>
+                    <select class="form-select form-select-sm system-field-program" 
+                            data-field="${data.field_name}">
+                        <option value="both" ${data.program_type === 'both' ? 'selected' : ''}>Both</option>
+                        <option value="full" ${data.program_type === 'full' ? 'selected' : ''}>Full Only</option>
+                        <option value="modular" ${data.program_type === 'modular' ? 'selected' : ''}>Modular Only</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(systemFieldDiv);
+}
+
+// Plan Settings Functions
+function loadPlanSettings() {
+    fetch('/admin/settings/plan-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderPlanSettings(data.plans);
+            } else {
+                console.error('Failed to load plan settings:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading plan settings:', error);
+        });
+}
+
+function renderPlanSettings(plans) {
+    const container = document.getElementById('planSettingsContainer');
+    let html = '';
+    
+    plans.forEach(plan => {
+        html += `
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">${plan.plan_name}</h6>
+                        <small class="text-muted">${plan.plan_description || 'No description'}</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" 
+                                   id="sync_${plan.plan_id}" 
+                                   ${plan.enable_synchronous ? 'checked' : ''}>
+                            <label class="form-check-label" for="sync_${plan.plan_id}">
+                                <i class="fas fa-video me-2"></i>Enable Synchronous Learning
+                            </label>
+                            <small class="form-text text-muted d-block">Live classes with real-time interaction</small>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   id="async_${plan.plan_id}" 
+                                   ${plan.enable_asynchronous ? 'checked' : ''}>
+                            <label class="form-check-label" for="async_${plan.plan_id}">
+                                <i class="fas fa-play-circle me-2"></i>Enable Asynchronous Learning
+                            </label>
+                            <small class="form-text text-muted d-block">Self-paced learning with recorded content</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function refreshPlanSettings() {
+    loadPlanSettings();
+}
+
+function savePlanSettings() {
+    const plans = [];
+    const planCards = document.querySelectorAll('#planSettingsContainer .card');
+    
+    planCards.forEach(card => {
+        const planId = card.querySelector('[id^="sync_"]').id.split('_')[1];
+        const syncCheckbox = card.querySelector(`#sync_${planId}`);
+        const asyncCheckbox = card.querySelector(`#async_${planId}`);
+        
+        plans.push({
+            plan_id: planId,
+            enable_synchronous: syncCheckbox.checked,
+            enable_asynchronous: asyncCheckbox.checked
+        });
+    });
+    
+    fetch('/admin/settings/plan-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ plans: plans })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Plan settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving plan settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving plan settings:', error);
+        showAlert('Error saving plan settings: ' + error.message, 'danger');
+    });
+}
+
+// Load plan settings when the plans tab is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const plansTab = document.getElementById('plans-tab');
+    if (plansTab) {
+        plansTab.addEventListener('shown.bs.tab', function() {
+            loadPlanSettings();
+        });
+    }
+});
 </script>
 @endpush

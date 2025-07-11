@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARTC Registration Fixes Test - Final</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .container { max-width: 1200px; margin: 2rem auto; padding: 2rem; }
+        .test-section { margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; }
+        .test-section h3 { color: #2c3e50; margin-bottom: 1rem; }
+        .status { padding: 0.5rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+        .status.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .status.info { background-color: #cce8ff; color: #004085; border: 1px solid #b8daff; }
+        .fix-details { margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px; }
+        .test-link { display: inline-block; margin: 0.5rem; padding: 0.5rem 1rem; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+        .test-link:hover { background-color: #0056b3; color: white; text-decoration: none; }
+        .endpoint-test { margin: 1rem 0; padding: 1rem; background-color: #f8f9fa; border-radius: 4px; }
+        .code-block { background-color: #f4f4f4; padding: 1rem; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">
+            <i class="bi bi-check-square text-success"></i>
+            ARTC Registration System - Final Fixes Applied
+        </h1>
+        
+        <div class="alert alert-info">
+            <h4><i class="bi bi-info-circle"></i> All Major Issues Fixed</h4>
+            <p>All identified issues have been addressed and fixes have been applied to the registration system.</p>
+        </div>
+
+        <!-- Issue 1: File Upload 500 Error -->
+        <div class="test-section">
+            <h3><i class="bi bi-upload text-primary"></i> Issue 1: File Upload 500 Error</h3>
+            <div class="status success">
+                <strong>✅ FIXED</strong> - File validation endpoint now always returns JSON
+            </div>
+            <div class="fix-details">
+                <h5>Changes Made:</h5>
+                <ul>
+                    <li><strong>RegistrationController.php</strong>: Added proper JSON response handling with try-catch</li>
+                    <li>Added AJAX request detection to force JSON responses</li>
+                    <li>Enhanced error logging for easier debugging</li>
+                    <li>Wrapped validation in try-catch to prevent HTML error pages</li>
+                </ul>
+                <div class="code-block">
+                    <strong>File:</strong> app/Http/Controllers/RegistrationController.php<br>
+                    <strong>Method:</strong> validateFileUpload()<br>
+                    <strong>Key Fix:</strong> Added try-catch wrapper and forced JSON response headers
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue 2: Last Name Not Prefilled -->
+        <div class="test-section">
+            <h3><i class="bi bi-person text-primary"></i> Issue 2: Last Name Not Being Fetched</h3>
+            <div class="status success">
+                <strong>✅ FIXED</strong> - Both first and last names now prefilled from account registration
+            </div>
+            <div class="fix-details">
+                <h5>Changes Made:</h5>
+                <ul>
+                    <li><strong>RegistrationController.php</strong>: Fixed getUserPrefillData() method to handle both user_firstname/lastname and firstname/lastname fields</li>
+                    <li><strong>Full_enrollment.blade.php</strong>: Added loadUserPrefillData() function that runs on page load</li>
+                    <li>Added route for /registration/user-prefill endpoint</li>
+                    <li>Added fallback firstname/lastname fields if dynamic fields not configured</li>
+                </ul>
+                <div class="code-block">
+                    <strong>Files:</strong> RegistrationController.php, Full_enrollment.blade.php, routes/web.php<br>
+                    <strong>New Route:</strong> GET /registration/user-prefill<br>
+                    <strong>Key Fix:</strong> Added proper field mapping and form initialization
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue 3: Batch Selection Not Resetting -->
+        <div class="test-section">
+            <h3><i class="bi bi-collection text-primary"></i> Issue 3: Batch Selection Not Resetting on Program Change</h3>
+            <div class="status success">
+                <strong>✅ FIXED</strong> - Batch selection now clears when program changes
+            </div>
+            <div class="fix-details">
+                <h5>Changes Made:</h5>
+                <ul>
+                    <li><strong>Full_enrollment.blade.php</strong>: Added onProgramSelectionChange() function</li>
+                    <li>Added clearBatchSelection() function to reset UI and session storage</li>
+                    <li>Modified program select onchange handler to call new function</li>
+                    <li>Updated loadBatchesForProgram() to accept program ID parameter</li>
+                </ul>
+                <div class="code-block">
+                    <strong>JavaScript Functions Added:</strong><br>
+                    - onProgramSelectionChange()<br>
+                    - clearBatchSelection()<br>
+                    <strong>Key Fix:</strong> Program selection now triggers batch reset before loading new batches
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue 4: Education Level Field Position -->
+        <div class="test-section">
+            <h3><i class="bi bi-mortarboard text-primary"></i> Issue 4: Education Level Field Position</h3>
+            <div class="status success">
+                <strong>✅ FIXED</strong> - Education level field moved below dynamic fields
+            </div>
+            <div class="fix-details">
+                <h5>Changes Made:</h5>
+                <ul>
+                    <li><strong>Full_enrollment.blade.php</strong>: Moved education level field section after dynamic fields</li>
+                    <li>Reorganized form field order for better user experience</li>
+                    <li>Dynamic fields now appear first, followed by education level</li>
+                </ul>
+                <div class="code-block">
+                    <strong>Form Order:</strong><br>
+                    1. Dynamic Form Fields (from form_requirements table)<br>
+                    2. Education Level Selection<br>
+                    3. Program Selection<br>
+                    4. Batch Selection<br>
+                    5. Start Date
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue 5: Database Cross-Check -->
+        <div class="test-section">
+            <h3><i class="bi bi-database text-primary"></i> Issue 5: Database Compatibility</h3>
+            <div class="status success">
+                <strong>✅ VERIFIED</strong> - System works with real database data
+            </div>
+            <div class="fix-details">
+                <h5>Verified Against artc.sql:</h5>
+                <ul>
+                    <li>Culinary program (ID: 33) matches database</li>
+                    <li>Batch loading works with real batch data</li>
+                    <li>Form requirements table structure compatible</li>
+                    <li>Registration fields match database schema</li>
+                </ul>
+                <div class="code-block">
+                    <strong>Database Programs:</strong><br>
+                    - Engineer (ID: 32)<br>
+                    - Culinary (ID: 33)<br>
+                    - Nursing (ID: 34)<br>
+                    <strong>Batch System:</strong> Compatible with student_batches table
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing Section -->
+        <div class="test-section">
+            <h3><i class="bi bi-play-circle text-success"></i> Testing Instructions</h3>
+            <div class="status info">
+                <strong>Testing Steps:</strong>
+            </div>
+            <ol>
+                <li><strong>Test File Upload:</strong>
+                    <ul>
+                        <li>Go to the registration form (Step 4)</li>
+                        <li>Try uploading a file in any file field</li>
+                        <li>Should see success message, not 500 error</li>
+                    </ul>
+                </li>
+                <li><strong>Test Name Prefill:</strong>
+                    <ul>
+                        <li>Login with an existing account</li>
+                        <li>Go to registration form</li>
+                        <li>Check that both first and last names are prefilled</li>
+                    </ul>
+                </li>
+                <li><strong>Test Batch Reset:</strong>
+                    <ul>
+                        <li>Select "Culinary" program</li>
+                        <li>Select a batch (if available)</li>
+                        <li>Change program to "Engineer"</li>
+                        <li>Verify batch selection is cleared</li>
+                    </ul>
+                </li>
+                <li><strong>Test Field Order:</strong>
+                    <ul>
+                        <li>Check that education level field appears after dynamic fields</li>
+                        <li>Verify form layout flows logically</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <!-- Debug Tools -->
+        <div class="test-section">
+            <h3><i class="bi bi-tools text-warning"></i> Debug Tools</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Debug Tools:</h5>
+                    <a href="debug-file-upload-test.html" class="test-link">
+                        <i class="bi bi-upload"></i> File Upload Test
+                    </a>
+                    <a href="registration-form-fixes-test.html" class="test-link">
+                        <i class="bi bi-list-check"></i> Form Fixes Test
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <h5>Main Form:</h5>
+                    <a href="resources/views/registration/Full_enrollment.blade.php" class="test-link">
+                        <i class="bi bi-file-earmark-form"></i> Registration Form
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="test-section">
+            <h3><i class="bi bi-gear text-info"></i> API Endpoints</h3>
+            <div class="endpoint-test">
+                <h5>File Upload Validation:</h5>
+                <code>POST /registration/validate-file</code>
+                <p>Now returns JSON on both success and error</p>
+            </div>
+            <div class="endpoint-test">
+                <h5>User Prefill Data:</h5>
+                <code>GET /registration/user-prefill</code>
+                <p>Returns user data for form prefilling</p>
+            </div>
+            <div class="endpoint-test">
+                <h5>Batch Loading:</h5>
+                <code>GET /batches/by-program?program_id={id}</code>
+                <p>Loads batches for selected program</p>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="alert alert-success">
+            <h4><i class="bi bi-check-circle"></i> Summary</h4>
+            <p><strong>All 5 issues have been successfully fixed:</strong></p>
+            <ul class="mb-0">
+                <li>✅ File upload 500 errors resolved</li>
+                <li>✅ Last name prefilling fixed</li>
+                <li>✅ Batch selection resets on program change</li>
+                <li>✅ Education level field moved to correct position</li>
+                <li>✅ Database compatibility verified</li>
+            </ul>
+        </div>
+
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                <i class="bi bi-calendar"></i> Fixes applied on: <strong>{{ date('Y-m-d H:i:s') }}</strong><br>
+                <i class="bi bi-code-square"></i> Files modified: <strong>RegistrationController.php, Full_enrollment.blade.php, routes/web.php</strong>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

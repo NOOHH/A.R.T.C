@@ -80,6 +80,11 @@ Route::middleware(['session.auth'])->group(function () {
     Route::post('/registration/batch-enrollment', [RegistrationController::class, 'saveBatchEnrollment'])->name('registration.batch-enrollment');
 });
 
+// OCR File validation routes
+Route::post('/registration/validate-file', [RegistrationController::class, 'validateFileUpload'])->name('registration.validate-file');
+Route::get('/registration/user-prefill', [RegistrationController::class, 'getUserPrefillData'])->name('registration.user-prefill');
+Route::get('/registration/user-prefill-data', [RegistrationController::class, 'getUserPrefillData'])->name('registration.user-prefill-data');
+
 /*
 |--------------------------------------------------------------------------
 | Test Settings
@@ -145,6 +150,10 @@ Route::get('/enrollment/modular', function () {
         ->ordered()
         ->get();
     
+    // Get plan data with learning mode settings
+    $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
+    $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
+    
     // Get existing student data if user is logged in
     $student = null;
     $enrolledProgramIds = [];
@@ -169,7 +178,7 @@ Route::get('/enrollment/modular', function () {
                                    ->orderBy('module_name')
                                    ->get(['modules_id', 'module_name', 'module_description', 'program_id']);
     
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules'));
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules', 'fullPlan', 'modularPlan'));
 })->name('enrollment.modular');
 
 // Unified login page and authentication for all user types
@@ -544,6 +553,12 @@ Route::post('/admin/settings/remove-login-illustration', [AdminSettingsControlle
 Route::post('/admin/settings/remove-image', [AdminSettingsController::class, 'removeImage'])
      ->name('admin.settings.remove.image');
 
+// Plan Management Routes (Learning Mode Configuration)
+Route::prefix('admin/plans')->middleware(['admin.auth'])->group(function () {
+    Route::get('/', [AdminSettingsController::class, 'planSettings'])->name('admin.plans.index');
+    Route::post('/learning-modes', [AdminSettingsController::class, 'updateLearningModes'])->name('admin.plans.update-learning-modes');
+});
+
 // New settings routes for form requirements and UI customization
 Route::get('/admin/settings/form-requirements', [AdminSettingsController::class, 'getFormRequirements']);
 Route::post('/admin/settings/form-requirements', [AdminSettingsController::class, 'saveFormRequirements']);
@@ -565,6 +580,10 @@ Route::post('/admin/settings/form-requirements/add-column', [AdminSettingsContro
      ->name('admin.settings.form-requirements.add-column');
 Route::get('/admin/settings/form-requirements/preview/{programType}', [AdminSettingsController::class, 'previewForm'])
      ->name('admin.settings.form-requirements.preview');
+
+// Plan Settings routes
+Route::get('/admin/settings/plan-settings', [AdminSettingsController::class, 'getPlanSettings']);
+Route::post('/admin/settings/plan-settings', [AdminSettingsController::class, 'savePlanSettings']);
 
 // Module ordering routes
 Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updateSortOrder'])

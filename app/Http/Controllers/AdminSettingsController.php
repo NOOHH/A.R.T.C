@@ -1154,4 +1154,79 @@ class AdminSettingsController extends Controller
             return response()->json(['error' => 'Failed to load settings'], 500);
         }
     }
+
+    /**
+     * Show plan settings page for learning mode configuration
+     */
+    public function planSettings()
+    {
+        $plans = \App\Models\Plan::all();
+        return view('admin.admin-settings.plan-settings', compact('plans'));
+    }
+
+    /**
+     * Update learning mode settings for plans
+     */
+    public function updateLearningModes(Request $request)
+    {
+        $request->validate([
+            'plans' => 'required|array',
+            'plans.*.plan_id' => 'required|exists:plan,plan_id',
+            'plans.*.enable_synchronous' => 'boolean',
+            'plans.*.enable_asynchronous' => 'boolean',
+        ]);
+
+        try {
+            foreach ($request->input('plans') as $planData) {
+                $plan = \App\Models\Plan::find($planData['plan_id']);
+                if ($plan) {
+                    $plan->enable_synchronous = $planData['enable_synchronous'] ?? false;
+                    $plan->enable_asynchronous = $planData['enable_asynchronous'] ?? false;
+                    $plan->save();
+                }
+            }
+
+            return response()->json(['success' => true, 'message' => 'Learning mode settings updated successfully']);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating learning mode settings: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update settings'], 500);
+        }
+    }
+
+    public function getPlanSettings()
+    {
+        try {
+            $plans = \App\Models\Plan::select('plan_id', 'plan_name', 'plan_description', 'enable_synchronous', 'enable_asynchronous')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'plans' => $plans
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching plan settings: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch plan settings'], 500);
+        }
+    }
+
+    public function savePlanSettings(Request $request)
+    {
+        try {
+            $plans = $request->input('plans', []);
+            
+            foreach ($plans as $planData) {
+                \App\Models\Plan::where('plan_id', $planData['plan_id'])
+                    ->update([
+                        'enable_synchronous' => $planData['enable_synchronous'],
+                        'enable_asynchronous' => $planData['enable_asynchronous']
+                    ]);
+            }
+            
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('Error saving plan settings: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to save plan settings'], 500);
+        }
+    }
 }

@@ -17,7 +17,49 @@ class Plan extends Model
         'plan_id',
         'plan_name',
         'description',
+        'enable_synchronous',
+        'enable_asynchronous',
+        'learning_mode_config'
     ];
+
+    protected $casts = [
+        'enable_synchronous' => 'boolean',
+        'enable_asynchronous' => 'boolean',
+        'learning_mode_config' => 'array'
+    ];
+
+    /**
+     * Get available learning modes for this plan
+     */
+    public function getAvailableLearningModes()
+    {
+        $modes = [];
+        
+        if ($this->enable_synchronous) {
+            $modes[] = 'synchronous';
+        }
+        
+        if ($this->enable_asynchronous) {
+            $modes[] = 'asynchronous';
+        }
+        
+        return $modes;
+    }
+
+    /**
+     * Check if a learning mode is enabled for this plan
+     */
+    public function isLearningModeEnabled($mode)
+    {
+        switch ($mode) {
+            case 'synchronous':
+                return $this->enable_synchronous;
+            case 'asynchronous':
+                return $this->enable_asynchronous;
+            default:
+                return false;
+        }
+    }
 
     public function students()
     {

@@ -89,6 +89,10 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Program</th>
+                <th>Batch</th>
+                <th>Learning Mode</th>
+                <th>Start Date</th>
+                <th>End Date</th>
                 <th>Status</th>
                 <th>Registered</th>
                 <th class="text-center">Actions</th>
@@ -105,6 +109,40 @@
                       <span class="badge bg-info">{{ $student->program->program_name }}</span>
                     @else
                       <span class="text-muted">No Program</span>
+                    @endif
+                  </td>
+                  <td>
+                    @if($student->enrollment && $student->enrollment->batch)
+                      <span class="badge bg-secondary">{{ $student->enrollment->batch->batch_name }}</span>
+                    @else
+                      <span class="text-muted">-</span>
+                    @endif
+                  </td>
+                  <td>
+                    @if($student->enrollment && $student->enrollment->learning_mode)
+                      <span class="badge bg-{{ $student->enrollment->learning_mode === 'synchronous' ? 'primary' : 'success' }}">
+                        {{ ucfirst($student->enrollment->learning_mode) }}
+                      </span>
+                    @else
+                      <span class="text-muted">-</span>
+                    @endif
+                  </td>
+                  <td>
+                    @if($student->enrollment && $student->enrollment->start_date)
+                      {{ \Carbon\Carbon::parse($student->enrollment->start_date)->format('M d, Y') }}
+                    @elseif($student->enrollment && $student->enrollment->batch && $student->enrollment->batch->start_date)
+                      {{ \Carbon\Carbon::parse($student->enrollment->batch->start_date)->format('M d, Y') }}
+                    @else
+                      <span class="text-muted">-</span>
+                    @endif
+                  </td>
+                  <td>
+                    @if($student->enrollment && $student->enrollment->end_date)
+                      {{ \Carbon\Carbon::parse($student->enrollment->end_date)->format('M d, Y') }}
+                    @elseif($student->enrollment && $student->enrollment->batch && $student->enrollment->batch->end_date)
+                      {{ \Carbon\Carbon::parse($student->enrollment->batch->end_date)->format('M d, Y') }}
+                    @else
+                      <span class="text-muted">-</span>
                     @endif
                   </td>
                   <td>

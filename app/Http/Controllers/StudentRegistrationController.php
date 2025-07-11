@@ -44,11 +44,16 @@ class StudentRegistrationController extends Controller
                 'package_id' => 'required|integer|exists:packages,package_id',
                 'enrollment_type' => 'required|in:Full,Modular',
                 'program_id' => 'required|integer|exists:programs,program_id',
-                'Start_Date' => 'required|date',
                 'registration_mode' => 'nullable|in:sync,async',
                 // batch_id is optional and will be stored in session, not in registrations table
                 'batch_id' => 'nullable|integer'
             ];
+
+            // Add start date validation only for asynchronous mode
+            $learningMode = strtolower($request->input('learning_mode'));
+            if ($learningMode === 'asynchronous') {
+                $rules['Start_Date'] = 'required|date';
+            }
 
             // Add account validation rules only for new users (not logged in)
             if (!session('user_id') && !auth()->check()) {
@@ -154,7 +159,16 @@ class StudentRegistrationController extends Controller
             $registration->package_id = $request->package_id;
             $registration->enrollment_type = $request->enrollment_type;
             $registration->learning_mode = strtolower($request->learning_mode);
-            $registration->start_date = $request->Start_Date;
+            
+            // Handle start date based on learning mode
+            if ($learningMode === 'synchronous') {
+                // For synchronous mode, set start date to 2 weeks from registration
+                $registration->start_date = now()->addDays(14)->format('Y-m-d');
+            } else {
+                // For asynchronous mode, use the user-provided start date
+                $registration->start_date = $request->Start_Date;
+            }
+            
             $registration->status = 'pending';
             
             // CRITICAL: Ensure batch_id is NEVER set on registration object
@@ -276,6 +290,7 @@ class StudentRegistrationController extends Controller
                 'learning_mode' => strtolower($request->learning_mode),
                 'enrollment_status' => 'pending', // Will be updated to 'approved' when admin approves
                 'payment_status' => 'pending',
+                'batch_access_granted' => false, // Default to false, admin will grant access
             ];
             
             // Include batch_id if it was selected during registration
@@ -324,6 +339,10 @@ class StudentRegistrationController extends Controller
             ->ordered()
             ->get();
 
+        // Get plan data with learning mode settings
+        $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
+        $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
+        
         // Get existing student data if user is logged in
         $student = null;
         $enrolledProgramIds = [];
@@ -344,7 +363,7 @@ class StudentRegistrationController extends Controller
             ->whereNotIn('program_id', $enrolledProgramIds)
             ->get();
 
-        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements'));
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan'));
     }
 
 
@@ -375,13 +394,17 @@ class StudentRegistrationController extends Controller
         }
 
         try {
+            Log::info('Fetching batches for program: ' . $programId);
+
             $batches = \App\Models\StudentBatch::where('program_id', $programId)
-                ->where('batch_status', '!=', 'closed')
-                ->where('registration_deadline', '>=', now())
+                ->where('batch_status', '=', 'available')
+                // Temporarily remove deadline filter for testing
+                // ->where('registration_deadline', '>=', now())
                 ->with('program')
                 ->orderBy('start_date', 'asc')
                 ->get()
                 ->map(function ($batch) {
+                    $deadlinePassed = $batch->registration_deadline < now();
                     return [
                         'batch_id' => $batch->batch_id,
                         'batch_name' => $batch->batch_name,
@@ -392,10 +415,13 @@ class StudentRegistrationController extends Controller
                         'registration_deadline' => $batch->registration_deadline->format('M d, Y'),
                         'start_date' => $batch->start_date->format('M d, Y'),
                         'description' => $batch->description,
-                        'status' => $batch->batch_status === 'available' ? 'active' : 'inactive',
-                        'schedule' => 'Live Classes - ' . $batch->start_date->format('M d, Y')
+                        'status' => $deadlinePassed ? 'deadline_passed' : 'active',
+                        'schedule' => 'Live Classes - ' . $batch->start_date->format('M d, Y'),
+                        'duration' => 'TBD' // Add default duration
                     ];
                 });
+
+            Log::info('Found batches: ' . $batches->count());
 
             return response()->json($batches);
         } catch (\Exception $e) {

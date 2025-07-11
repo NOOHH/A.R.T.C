@@ -145,4 +145,9 @@ class Student extends Model
         return round(($completedModules / $totalModules) * 100);
     }
 
+    // Latest enrollment relationship (for admin views)
+    public function enrollment()
+    {
+        return $this->hasOne(\App\Models\Enrollment::class, 'student_id', 'student_id')->latest();
+    }
 }

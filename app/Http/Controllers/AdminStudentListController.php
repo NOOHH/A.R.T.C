@@ -19,7 +19,7 @@ class AdminStudentListController extends Controller
                            ->get();
 
         // Build the students query
-        $students = Student::with(['user', 'program'])
+        $students = Student::with(['user', 'program', 'enrollment.batch'])
             ->where('is_archived', false)
 
             // Filter by selected program via the relation (qualified column)
