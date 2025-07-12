@@ -10,7 +10,7 @@ use App\Models\Professor;
 use App\Models\Admin;
 use App\Models\Director;
 use App\Jobs\SendMessageJob;
-use App\Models\Message;
+use App\Models\Chat;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
@@ -311,8 +311,14 @@ class ChatController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $messages = Message::betweenUsers($user->id, $otherUser->id)
-            ->with(['sender', 'receiver'])
+        $messages = Chat::where(function ($query) use ($user, $otherUser) {
+                $query->where('sender_id', $user->id)
+                      ->where('receiver_id', $otherUser->id);
+            })
+            ->orWhere(function ($query) use ($user, $otherUser) {
+                $query->where('sender_id', $otherUser->id)
+                      ->where('receiver_id', $user->id);
+            })
             ->orderBy('created_at', 'desc')
             ->limit($request->input('limit', 20))
             ->get()
@@ -606,5 +612,531 @@ class ChatController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get users for session-based chat
+     */
+    public function getSessionUsers(Request $request)
+    {
+        $type = $request->input('type');
+        $search = $request->input('q', '');
+        $program = $request->input('program', '');
+        $batch = $request->input('batch', '');
+        $mode = $request->input('mode', '');
+        
+        // Get current user from session - check both session formats
+        $currentUserId = null;
+        $currentUserRole = 'guest';
+        
+        // Check admin session first
+        if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
+            $currentUserId = $_SESSION['admin_id'] ?? null;
+            $currentUserRole = 'admin';
+        }
+        // Check Laravel session
+        elseif (session('user_id')) {
+            $currentUserId = session('user_id');
+            $currentUserRole = session('user_role') ?? session('role') ?? 'user';
+        }
+        
+        if (!$currentUserId) {
+            return response()->json([
+                'error' => 'Not authenticated',
+                'debug' => [
+                    'session_user_id' => session('user_id'),
+                    'session_user_role' => session('user_role'),
+                    'session_role' => session('role'),
+                    'php_session_admin_id' => $_SESSION['admin_id'] ?? null,
+                    'php_session_admin_logged_in' => $_SESSION['admin_logged_in'] ?? false,
+                    'session_logged_in' => session('logged_in'),
+                ]
+            ], 401);
+        }
+        
+        try {
+            $users = collect();
+            
+            // If no specific type or type is 'all', search all user types
+            if (!$type || $type === 'all') {
+                // Get all user types
+                $professors = $this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode);
+                $admins = $this->getSessionAdmins($search, $currentUserRole);
+                $directors = $this->getSessionDirectors($search, $currentUserRole);
+                $students = $this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode);
+                
+                // Merge all results
+                $users = $professors->merge($admins)->merge($directors)->merge($students);
+            } else {
+                // Search specific type
+                switch ($type) {
+                    case 'student':
+                        $users = $this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode);
+                        break;
+                    case 'professor':
+                        $users = $this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode);
+                        break;
+                    case 'admin':
+                        $users = $this->getSessionAdmins($search, $currentUserRole);
+                        break;
+                    case 'director':
+                        $users = $this->getSessionDirectors($search, $currentUserRole);
+                        break;
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $users->toArray(),
+                'total' => $users->count(),
+                'debug' => [
+                    'current_user_id' => $currentUserId,
+                    'current_user_role' => $currentUserRole,
+                    'search_type' => $type,
+                    'search_query' => $search
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching session users: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to fetch users',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Send message via session-based chat
+     */
+    public function sendSessionMessage(Request $request)
+    {
+        $request->validate([
+            'receiver_id' => 'required|integer',
+            'message' => 'required|string|max:1000'
+        ]);
+        
+        // Get sender info from either session type
+        $senderId = null;
+        $senderName = 'Guest';
+        $senderRole = 'user';
+        
+        // Check admin session first
+        if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
+            $senderId = $_SESSION['admin_id'] ?? null;
+            $senderName = $_SESSION['admin_name'] ?? 'Admin';
+            $senderRole = 'admin';
+        }
+        // Check Laravel session
+        elseif (session('user_id')) {
+            $senderId = session('user_id');
+            $senderName = session('user_name', 'User');
+            $senderRole = session('user_role', 'user');
+        }
+        
+        if (!$senderId) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        
+        try {
+            // Create message record
+            $message = Chat::create([
+                'sender_id' => $senderId,
+                'receiver_id' => $request->receiver_id,
+                'message' => $request->message,
+                'sent_at' => now()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'id' => $message->chat_id,
+                'message' => 'Message sent successfully',
+                'data' => [
+                    'id' => $message->id,
+                    'sender_id' => $senderId,
+                    'receiver_id' => $request->receiver_id,
+                    'message' => $request->message,
+                    'sent_at' => $message->created_at->toISOString(),
+                    'sender_name' => $senderName,
+                    'sender_role' => $senderRole
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error sending session message: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to send message',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get messages for session-based chat
+     */
+    public function getSessionMessages(Request $request)
+    {
+        $with = $request->input('with');
+        
+        // Get current user ID from either session type
+        $currentUserId = null;
+        
+        // Check admin session first
+        if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
+            $currentUserId = $_SESSION['admin_id'] ?? null;
+        }
+        // Check Laravel session
+        elseif (session('user_id')) {
+            $currentUserId = session('user_id');
+        }
+        
+        if (!$currentUserId) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+          try {
+            $messages = Chat::where(function ($query) use ($currentUserId, $with) {
+                $query->where('sender_id', $currentUserId)
+                      ->where('receiver_id', $with);
+            })
+            ->orWhere(function ($query) use ($currentUserId, $with) {
+                $query->where('sender_id', $with)
+                      ->where('receiver_id', $currentUserId);
+            })
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($message) {
+                return [
+                    'id' => $message->chat_id,
+                    'sender_id' => $message->sender_id,
+                    'receiver_id' => $message->receiver_id,
+                    'content' => $message->message,
+                    'created_at' => $message->created_at->toISOString(),
+                    'is_read' => !is_null($message->read_at),
+                    'sender_role' => 'user'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $messages->toArray()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching session messages: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to fetch messages',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Clear chat history for session-based chat
+     */
+    public function clearSessionHistory(Request $request)
+    {
+        $with = $request->input('with');
+        $currentUserId = session('user_id');
+        
+        if (!$currentUserId) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        
+        try {
+            Chat::where(function ($query) use ($currentUserId, $with) {
+                $query->where('sender_id', $currentUserId)
+                      ->where('receiver_id', $with);
+            })
+            ->orWhere(function ($query) use ($currentUserId, $with) {
+                $query->where('sender_id', $with)
+                      ->where('receiver_id', $currentUserId);
+            })
+            ->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Chat history cleared successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error clearing session chat history: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to clear chat history',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get programs for session-based chat
+     */
+    public function getSessionPrograms(Request $request)
+    {
+        try {
+            $programs = \App\Models\Program::where('is_archived', false)
+                ->select('program_id', 'program_name', 'program_description')
+                ->orderBy('program_name')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $programs->toArray()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching session programs: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to fetch programs',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get students for session-based chat
+     */
+    private function getSessionStudents($search, $currentUserRole, $program, $batch, $mode)
+    {
+        // Only admins, directors, and professors can chat with students
+        if (!in_array($currentUserRole, ['admin', 'director', 'professor'])) {
+            return collect();
+        }
+        
+        try {
+            $query = User::where('role', 'student');
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            }
+            
+            return $query->select('id', 'name', 'email', 'role', 'created_at')
+                        ->orderBy('name')
+                        ->limit(20)
+                        ->get()
+                        ->map(function ($user) {
+                            return [
+                                'id' => $user->id,
+                                'name' => $user->name ?? 'Unknown',
+                                'email' => $user->email ?? 'No email',
+                                'role' => $user->role ?? 'student'
+                            ];
+                        });
+        } catch (\Exception $e) {
+            Log::error('Error fetching students: ' . $e->getMessage());
+            return collect();
+        }
+    }
+    
+    /**
+     * Get professors for session-based chat
+     */
+    private function getSessionProfessors($search, $currentUserRole, $program, $batch, $mode)
+    {
+        try {
+            // Search in professors table - don't filter by archived status initially
+            $query = Professor::query();
+            
+            // Only filter by archived if the field exists
+            try {
+                $query->where('professor_archived', false);
+            } catch (\Exception $e) {
+                // If professor_archived field doesn't exist, just ignore this filter
+            }
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('professor_name', 'like', '%' . $search . '%')
+                      ->orWhere('professor_email', 'like', '%' . $search . '%');
+                    
+                    // Try to search first/last name fields if they exist
+                    try {
+                        $q->orWhere('professor_first_name', 'like', '%' . $search . '%')
+                          ->orWhere('professor_last_name', 'like', '%' . $search . '%');
+                    } catch (\Exception $e) {
+                        // If these fields don't exist, just ignore them
+                    }
+                });
+            }
+            
+            return $query->select('professor_id as id', 'professor_name as name', 'professor_email as email')
+                        ->orderBy('professor_name')
+                        ->limit(20)
+                        ->get()
+                        ->map(function ($professor) {
+                            return [
+                                'id' => $professor->id,
+                                'name' => $professor->name ?? 'Unknown Professor',
+                                'email' => $professor->email ?? 'No email',
+                                'role' => 'professor'
+                            ];
+                        });
+        } catch (\Exception $e) {
+            Log::error('Error fetching professors: ' . $e->getMessage());
+            return collect();
+        }
+    }
+    
+    /**
+     * Get admins for session-based chat
+     */
+    private function getSessionAdmins($search, $currentUserRole)
+    {
+        try {
+            // Search in admins table
+            $query = Admin::query();
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('admin_name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%');
+                    
+                    // Try other possible field names
+                    try {
+                        $q->orWhere('name', 'like', '%' . $search . '%');
+                    } catch (\Exception $e) {
+                        // If name field doesn't exist, ignore
+                    }
+                });
+            }
+            
+            return $query->select('admin_id as id', 'admin_name as name', 'email', 'created_at')
+                        ->orderBy('admin_name')
+                        ->limit(20)
+                        ->get()
+                        ->map(function ($admin) {
+                            return [
+                                'id' => $admin->id,
+                                'name' => $admin->name ?? 'Unknown Admin',
+                                'email' => $admin->email ?? 'No email',
+                                'role' => 'admin'
+                            ];
+                        });
+        } catch (\Exception $e) {
+            Log::error('Error fetching admins: ' . $e->getMessage());
+            return collect();
+        }
+    }
+    
+    /**
+     * Get directors for session-based chat
+     */
+    private function getSessionDirectors($search, $currentUserRole)
+    {
+        try {
+            // Search in directors table
+            $query = Director::query();
+            
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('director_name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%');
+                    
+                    // Try other possible field names
+                    try {
+                        $q->orWhere('name', 'like', '%' . $search . '%');
+                    } catch (\Exception $e) {
+                        // If name field doesn't exist, ignore
+                    }
+                });
+            }
+            
+            return $query->select('director_id as id', 'director_name as name', 'email', 'created_at')
+                        ->orderBy('director_name')
+                        ->limit(20)
+                        ->get()
+                        ->map(function ($director) {
+                            return [
+                                'id' => $director->id,
+                                'name' => $director->name ?? 'Unknown Director',
+                                'email' => $director->email ?? 'No email',
+                                'role' => 'director'
+                            ];
+                        });
+        } catch (\Exception $e) {
+            Log::error('Error fetching directors: ' . $e->getMessage());
+            return collect();
+        }
+    }
+
+    /**
+     * Get professors for session-based chat API
+     */
+    public function getSessionProfessorsAPI(Request $request)
+    {
+        $search = $request->get('search', '');
+        $program = $request->get('program');
+        $batch = $request->get('batch');
+        $mode = $request->get('mode');
+        
+        // Get current user role
+        $currentUserRole = $this->getCurrentUserRole();
+        
+        $users = $this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+            'count' => $users->count(),
+            'search_term' => $search,
+            'debug' => [
+                'user_role' => $currentUserRole,
+                'auth_session' => isset($_SESSION['admin_logged_in']),
+                'laravel_session' => session()->has('user_id')
+            ]
+        ]);
+    }
+    
+    /**
+     * Get admins for session-based chat API
+     */
+    public function getSessionAdminsAPI(Request $request)
+    {
+        $search = $request->get('search', '');
+        
+        // Get current user role
+        $currentUserRole = $this->getCurrentUserRole();
+        
+        $users = $this->getSessionAdmins($search, $currentUserRole);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+            'count' => $users->count(),
+            'search_term' => $search,
+            'debug' => [
+                'user_role' => $currentUserRole,
+                'auth_session' => isset($_SESSION['admin_logged_in']),
+                'laravel_session' => session()->has('user_id')
+            ]
+        ]);
+    }
+    
+    /**
+     * Get directors for session-based chat API
+     */
+    public function getSessionDirectorsAPI(Request $request)
+    {
+        $search = $request->get('search', '');
+        
+        // Get current user role
+        $currentUserRole = $this->getCurrentUserRole();
+        
+        $users = $this->getSessionDirectors($search, $currentUserRole);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+            'count' => $users->count(),
+            'search_term' => $search,
+            'debug' => [
+                'user_role' => $currentUserRole,
+                'auth_session' => isset($_SESSION['admin_logged_in']),
+                'laravel_session' => session()->has('user_id')
+            ]
+        ]);
     }
 }

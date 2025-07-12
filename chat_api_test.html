@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Chat API Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Chat API Test</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Search Users</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="searchType" class="form-label">User Type</label>
+                            <select class="form-select" id="searchType">
+                                <option value="all">All Users</option>
+                                <option value="student">Students</option>
+                                <option value="professor">Professors</option>
+                                <option value="admin">Admins</option>
+                                <option value="director">Directors</option>
+                                <option value="support">Support (Admin/Director)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="searchQuery" class="form-label">Search Query</label>
+                            <input type="text" class="form-control" id="searchQuery" placeholder="Enter search term">
+                        </div>
+                        <button class="btn btn-primary" onclick="searchUsers()">Search</button>
+                        <div id="searchResults" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Send Message</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="receiverId" class="form-label">Receiver ID</label>
+                            <input type="number" class="form-control" id="receiverId" placeholder="Enter receiver ID">
+                        </div>
+                        <div class="mb-3">
+                            <label for="messageText" class="form-label">Message</label>
+                            <textarea class="form-control" id="messageText" rows="3" placeholder="Enter message"></textarea>
+                        </div>
+                        <button class="btn btn-success" onclick="sendMessage()">Send Message</button>
+                        <div id="messageResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Load Messages</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="chatWithId" class="form-label">Chat with User ID</label>
+                            <input type="number" class="form-control" id="chatWithId" placeholder="Enter user ID">
+                        </div>
+                        <button class="btn btn-info" onclick="loadMessages()">Load Messages</button>
+                        <div id="messagesResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Session Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-secondary" onclick="checkSession()">Check Session</button>
+                        <div id="sessionResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        function searchUsers() {
+            const type = document.getElementById('searchType').value;
+            const query = document.getElementById('searchQuery').value;
+            const resultsDiv = document.getElementById('searchResults');
+            
+            resultsDiv.innerHTML = '<div class="alert alert-info">Searching...</div>';
+            
+            const params = new URLSearchParams({
+                type: type,
+                q: query
+            });
+            
+            fetch('/api/chat/session/users?' + params, {
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data) {
+                    let html = '<div class="alert alert-success">Found ' + data.data.length + ' users</div>';
+                    html += '<div class="list-group">';
+                    data.data.forEach(user => {
+                        html += `<div class="list-group-item">
+                            <strong>${user.name}</strong> (${user.role})
+                            <br><small>ID: ${user.id} | Email: ${user.email}</small>
+                        </div>`;
+                    });
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="alert alert-warning">No users found</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+            });
+        }
+        
+        function sendMessage() {
+            const receiverId = document.getElementById('receiverId').value;
+            const message = document.getElementById('messageText').value;
+            const resultDiv = document.getElementById('messageResult');
+            
+            if (!receiverId || !message) {
+                resultDiv.innerHTML = '<div class="alert alert-warning">Please fill in both receiver ID and message</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="alert alert-info">Sending message...</div>';
+            
+            fetch('/api/chat/session/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    receiver_id: parseInt(receiverId),
+                    message: message
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-success">Message sent successfully! ID: ' + data.id + '</div>';
+                    document.getElementById('messageText').value = '';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + data.error + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Send error:', error);
+                resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+            });
+        }
+        
+        function loadMessages() {
+            const chatWithId = document.getElementById('chatWithId').value;
+            const resultDiv = document.getElementById('messagesResult');
+            
+            if (!chatWithId) {
+                resultDiv.innerHTML = '<div class="alert alert-warning">Please enter a user ID</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="alert alert-info">Loading messages...</div>';
+            
+            fetch('/api/chat/session/messages?' + new URLSearchParams({
+                with: chatWithId
+            }), {
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data) {
+                    let html = '<div class="alert alert-success">Found ' + data.data.length + ' messages</div>';
+                    if (data.data.length > 0) {
+                        html += '<div class="list-group">';
+                        data.data.forEach(message => {
+                            html += `<div class="list-group-item">
+                                <strong>From: ${message.sender_id} To: ${message.receiver_id}</strong>
+                                <br>${message.message}
+                                <br><small>${message.created_at}</small>
+                            </div>`;
+                        });
+                        html += '</div>';
+                    }
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-warning">No messages found</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Load messages error:', error);
+                resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+            });
+        }
+        
+        function checkSession() {
+            const resultDiv = document.getElementById('sessionResult');
+            
+            // This would need to be implemented as a server endpoint
+            resultDiv.innerHTML = '<div class="alert alert-info">Session check not implemented yet</div>';
+        }
+    </script>
+</body>
+</html>

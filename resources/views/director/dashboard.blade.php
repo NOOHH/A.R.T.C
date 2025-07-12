@@ -147,8 +147,8 @@
                                         <h5 class="card-title">{{ $program->program_name }}</h5>
                                         <p class="card-text">{{ $program->program_description ?? 'No description available' }}</p>
                                         <div class="d-flex justify-content-between">
-                                            <small class="text-muted">{{ $program->modules->count() }} modules</small>
-                                            <small class="text-muted">{{ $program->students->count() }} students</small>
+                                            <small class="text-muted">{{ $program->modules_count }} modules</small>
+                                            <small class="text-muted">{{ $program->students_count }} students</small>
                                         </div>
                                     </div>
                                 </div>

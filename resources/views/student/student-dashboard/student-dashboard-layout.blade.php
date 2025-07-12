@@ -7,6 +7,10 @@
     <title>@yield('title', 'Student Dashboard')</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/student/student-dashboard-layout.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     @yield('head')
     @stack('styles')
 </head>
@@ -31,9 +35,13 @@
         </div>
         
         <div class="header-right">
-            <span class="notification-icon chat-trigger" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas" aria-label="Open chat">
-                <i class="bi bi-chat-dots"></i>
-            </span>
+<span class="notification-icon chat-trigger"
+      data-bs-toggle="offcanvas"     {{-- ✅ correct attribute --}}
+      data-bs-target="#chatOffcanvas"
+      aria-label="Open chat"
+      role="button">
+    <i class="bi bi-chat-dots"></i>
+</span>
             <span class="profile-icon">👤</span>
         </div>
     </header>

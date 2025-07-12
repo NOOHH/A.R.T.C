@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Program;
 
 class DirectorController extends Controller
 {
@@ -47,8 +48,8 @@ class DirectorController extends Controller
             ->limit(10)
             ->get();
         
-        // Get accessible programs
-        $accessiblePrograms = DB::table('programs')
+        // Get accessible programs with counts
+        $programs = Program::withCount(['modules', 'students'])
             ->where('is_archived', false)
             ->orderBy('program_name')
             ->get();
@@ -58,7 +59,7 @@ class DirectorController extends Controller
             ->where('directors_id', $directorId)
             ->first();
         
-        return view('director.dashboard', compact('analytics', 'recentRegistrations', 'accessiblePrograms', 'director'));
+        return view('director.dashboard', compact('analytics', 'recentRegistrations', 'programs', 'director'));
     }
     
     /**

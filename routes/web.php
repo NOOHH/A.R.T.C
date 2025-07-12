@@ -591,11 +591,22 @@ Route::get('/admin/settings/director-features', [AdminSettingsController::class,
 Route::post('/admin/settings/director-features', [AdminSettingsController::class, 'updateDirectorFeatures']);
 
 // Chat functionality routes
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['web'])->group(function () {
     Route::get('/chat/search-users', [ChatController::class, 'searchUsers'])->name('chat.search-users');
     Route::get('/chat/messages', [ChatController::class, 'getMessages'])->name('chat.messages');
     Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
     Route::get('/chat/conversations', [ChatController::class, 'getConversations'])->name('chat.conversations');
+    
+    // API routes for session-based chat
+    Route::get('/api/chat/session/users', [ChatController::class, 'getSessionUsers'])->name('api.chat.session.users');
+    Route::get('/api/chat/session/search/professors', [ChatController::class, 'getSessionProfessorsAPI'])->name('api.chat.session.search.professors');
+    Route::get('/api/chat/session/search/admins', [ChatController::class, 'getSessionAdminsAPI'])->name('api.chat.session.search.admins');
+    Route::get('/api/chat/session/search/directors', [ChatController::class, 'getSessionDirectorsAPI'])->name('api.chat.session.search.directors');
+    Route::get('/api/chat/session/search/users', [ChatController::class, 'getSessionUsers'])->name('api.chat.session.search.users');
+    Route::post('/api/chat/session/send', [ChatController::class, 'sendSessionMessage'])->name('api.chat.session.send');
+    Route::get('/api/chat/session/messages', [ChatController::class, 'getSessionMessages'])->name('api.chat.session.messages');
+    Route::post('/api/chat/session/clear-history', [ChatController::class, 'clearSessionHistory'])->name('api.chat.session.clear-history');
+    Route::get('/api/chat/session/programs', [ChatController::class, 'getSessionPrograms'])->name('api.chat.session.programs');
 });
 
 // Legacy chat routes for backwards compatibility
@@ -921,7 +932,267 @@ Route::middleware(['professor.auth'])
          ->name('grading.student');
 });
 
+// API routes for student and professor data
+Route::get('/api/student/enrolled-programs', function() {
+    $userId = session('user_id');
+    $userRole = session('user_role', 'guest');
+    
+    if (!$userId || $userRole !== 'student') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    try {
+        $programs = collect();
+        
+        if (class_exists('App\Models\Student')) {
+            $student = \App\Models\Student::where('user_id', $userId)->first();
+            
+            if ($student) {
+                $enrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
+                    ->with('program')
+                    ->get();
+                
+                $programs = $enrollments->map(function($enrollment) {
+                    return [
+                        'program_id' => $enrollment->program->program_id,
+                        'program_name' => $enrollment->program->program_name,
+                        'program_description' => $enrollment->program->program_description
+                    ];
+                });
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'programs' => $programs->toArray()
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Failed to fetch enrolled programs',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
+Route::get('/api/professor/assigned-programs', function() {
+    $userId = session('user_id');
+    $userRole = session('user_role', 'guest');
+    
+    if (!$userId || $userRole !== 'professor') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    try {
+        $programs = collect();
+        
+        if (class_exists('App\Models\Professor')) {
+            $professor = \App\Models\Professor::where('user_id', $userId)->first();
+            
+            if ($professor) {
+                $batches = \App\Models\Batch::where('professor_id', $professor->professor_id)
+                    ->with('program')
+                    ->get();
+                
+                $programs = $batches->map(function($batch) {
+                    return [
+                        'program_id' => $batch->program->program_id,
+                        'program_name' => $batch->program->program_name,
+                        'program_description' => $batch->program->program_description
+                    ];
+                })->unique('program_id');
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'programs' => $programs->values()->toArray()
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Failed to fetch assigned programs',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
+// Chat test routes
+Route::get('/test-chat-api', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Chat API is working!',
+        'data' => [
+            [
+                'id' => 1,
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+                'role' => 'student'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Test Professor',
+                'email' => 'professor@example.com',
+                'role' => 'professor'
+            ]
+        ]
+    ]);
+});
+
+Route::post('/test-chat-send', function(Request $request) {
+    return response()->json([
+        'success' => true,
+        'id' => rand(1, 1000),
+        'message' => 'Message sent successfully',
+        'data' => [
+            'id' => rand(1, 1000),
+            'sender_id' => 1,
+            'receiver_id' => $request->input('receiver_id', 2),
+            'message' => $request->input('message', 'Test message'),
+            'sent_at' => now()->toISOString(),
+            'sender_name' => 'Test User'
+        ]
+    ]);
+});
+
+Route::get('/test-chat-function', function() {
+    return view('chat-function-test');
+});
+
 // Chat test route
-Route::get('/chat-test', function () {
-    return view('chat-test');
-})->name('chat.test');
+Route::get('/test-chat', function () {
+    return view('test-chat');
+});
+
+// Admin chat test route
+Route::get('/admin/chat-test', function() {
+    return view('admin.chat-test');
+})->name('admin.chat.test');
+
+// Temporary test routes for chat search (bypassing authentication)
+Route::get('/test/chat/search/professors', function (Request $request) {
+    $search = $request->get('search', '');
+    
+    try {
+        $query = \App\Models\Professor::query();
+        
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('professor_name', 'like', '%' . $search . '%')
+                  ->orWhere('professor_email', 'like', '%' . $search . '%')
+                  ->orWhere('professor_first_name', 'like', '%' . $search . '%')
+                  ->orWhere('professor_last_name', 'like', '%' . $search . '%');
+            });
+        }
+        
+        $results = $query->select('professor_id as id', 'professor_name as name', 'professor_email as email', 'created_at')
+                        ->orderBy('professor_name')
+                        ->limit(20)
+                        ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+            'count' => $results->count(),
+            'search_term' => $search
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'search_term' => $search
+        ]);
+    }
+});
+
+Route::get('/test/chat/search/users', function (Request $request) {
+    $search = $request->get('search', '');
+    
+    try {
+        $query = \App\Models\User::query();
+        
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%');
+            });
+        }
+        
+        $results = $query->select('id', 'name', 'email', 'role', 'created_at')
+                        ->orderBy('name')
+                        ->limit(20)
+                        ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+            'count' => $results->count(),
+            'search_term' => $search
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'search_term' => $search
+        ]);
+    }
+});
+
+// Debug routes to understand the search issue
+Route::get('/debug/professors', function () {
+    try {
+        $professors = \App\Models\Professor::all();
+        return response()->json([
+            'success' => true,
+            'total_professors' => $professors->count(),
+            'professors' => $professors->take(10)->map(function($prof) {
+                return [
+                    'id' => $prof->professor_id,
+                    'name' => $prof->professor_name,
+                    'first_name' => $prof->professor_first_name,
+                    'last_name' => $prof->professor_last_name,
+                    'email' => $prof->professor_email,
+                    'full_name' => ($prof->professor_first_name ?? '') . ' ' . ($prof->professor_last_name ?? ''),
+                ];
+            }),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
+Route::get('/debug/tables', function () {
+    try {
+        $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
+        $tableNames = array_map(function($table) {
+            return array_values((array)$table)[0];
+        }, $tables);
+        
+        return response()->json([
+            'success' => true,
+            'tables' => $tableNames
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
+// Test route for final chat test
+Route::get('/final-chat-test', function () {
+    return view('final-chat-test');
+});
+
+// Route for final chat test HTML file
+Route::get('/final-chat-test-html', function () {
+    return response()->file(public_path('../final-chat-test.html'));
+});

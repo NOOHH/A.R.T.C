@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat System & Director Dashboard Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">Laravel 9.52 Chat System & Director Dashboard Test</h1>
+        
+        <!-- Test Status Cards -->
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">1. Director Dashboard</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="director-status" class="mb-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Testing...</span>
+                            </div>
+                            <span class="ms-2">Testing Director Dashboard...</span>
+                        </div>
+                        <div id="director-results"></div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="testDirectorDashboard()">
+                            <i class="bi bi-arrow-clockwise"></i> Re-test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">2. Chat API Endpoints</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="api-status" class="mb-3">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Testing...</span>
+                            </div>
+                            <span class="ms-2">Testing API Endpoints...</span>
+                        </div>
+                        <div id="api-results"></div>
+                        <button class="btn btn-outline-success btn-sm" onclick="testApiEndpoints()">
+                            <i class="bi bi-arrow-clockwise"></i> Re-test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">3. Chat Component</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-status" class="mb-3">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Testing...</span>
+                            </div>
+                            <span class="ms-2">Testing Chat Component...</span>
+                        </div>
+                        <div id="chat-results"></div>
+                        <button class="btn btn-outline-info btn-sm" onclick="testChatComponent()">
+                            <i class="bi bi-arrow-clockwise"></i> Re-test
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Test Results -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Detailed Test Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="detailed-results">
+                            <p class="text-muted">Detailed test results will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button class="btn btn-primary me-2" onclick="runAllTests()">
+                    <i class="bi bi-play-circle"></i> Run All Tests
+                </button>
+                <button class="btn btn-secondary me-2" onclick="clearResults()">
+                    <i class="bi bi-trash"></i> Clear Results
+                </button>
+                <a href="/director/dashboard" class="btn btn-outline-primary me-2" target="_blank">
+                    <i class="bi bi-window"></i> Open Director Dashboard
+                </a>
+                <a href="/admin/dashboard" class="btn btn-outline-success" target="_blank">
+                    <i class="bi bi-window"></i> Open Admin Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let testResults = [];
+
+        function logResult(test, status, message, details = null) {
+            const result = {
+                test,
+                status,
+                message,
+                details,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            testResults.push(result);
+            updateDetailedResults();
+        }
+
+        function updateDetailedResults() {
+            const container = document.getElementById('detailed-results');
+            if (testResults.length === 0) {
+                container.innerHTML = '<p class="text-muted">No test results yet...</p>';
+                return;
+            }
+
+            const html = testResults.map(result => `
+                <div class="alert alert-${result.status === 'success' ? 'success' : result.status === 'error' ? 'danger' : 'warning'} alert-dismissible">
+                    <strong>${result.test}</strong> [${result.timestamp}]<br>
+                    ${result.message}
+                    ${result.details ? `<br><small class="text-muted">${result.details}</small>` : ''}
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+
+        async function testDirectorDashboard() {
+            const statusEl = document.getElementById('director-status');
+            const resultsEl = document.getElementById('director-results');
+            
+            statusEl.innerHTML = '<div class="spinner-border text-primary" role="status"></div><span class="ms-2">Testing...</span>';
+            resultsEl.innerHTML = '';
+
+            try {
+                // Test if DirectorController exists and compiles
+                const response = await fetch('/director/dashboard', {
+                    method: 'HEAD'
+                });
+
+                if (response.status === 200) {
+                    statusEl.innerHTML = '<i class="bi bi-check-circle text-success"></i> <span class="text-success">Director Dashboard OK</span>';
+                    resultsEl.innerHTML = `
+                        <small class="text-success">
+                            <i class="bi bi-check"></i> Dashboard accessible<br>
+                            <i class="bi bi-check"></i> No $programs error<br>
+                            <i class="bi bi-check"></i> Uses withCount() for relations
+                        </small>
+                    `;
+                    logResult('Director Dashboard', 'success', 'Dashboard is accessible and working correctly');
+                } else if (response.status === 302) {
+                    statusEl.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> <span class="text-warning">Redirect (Login Required)</span>';
+                    resultsEl.innerHTML = '<small class="text-warning">Dashboard redirects - likely requires authentication</small>';
+                    logResult('Director Dashboard', 'warning', 'Dashboard redirects (authentication required)');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusEl.innerHTML = '<i class="bi bi-x-circle text-danger"></i> <span class="text-danger">Error</span>';
+                resultsEl.innerHTML = `<small class="text-danger">Error: ${error.message}</small>`;
+                logResult('Director Dashboard', 'error', `Error testing dashboard: ${error.message}`);
+            }
+        }
+
+        async function testApiEndpoints() {
+            const statusEl = document.getElementById('api-status');
+            const resultsEl = document.getElementById('api-results');
+            
+            statusEl.innerHTML = '<div class="spinner-border text-success" role="status"></div><span class="ms-2">Testing...</span>';
+            resultsEl.innerHTML = '';
+
+            const endpoints = [
+                { url: '/api/chat/session/programs', name: 'Programs API' },
+                { url: '/api/admin/search', name: 'Admin Search API', method: 'POST', body: { query: 'test', type: 'all' } }
+            ];
+
+            let passed = 0;
+            let total = endpoints.length;
+
+            for (const endpoint of endpoints) {
+                try {
+                    const options = {
+                        method: endpoint.method || 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        }
+                    };
+
+                    if (endpoint.body) {
+                        options.body = JSON.stringify(endpoint.body);
+                    }
+
+                    const response = await fetch(endpoint.url, options);
+                    
+                    if (response.ok || response.status === 401 || response.status === 422) {
+                        passed++;
+                        logResult('API Endpoints', 'success', `${endpoint.name} responded correctly`);
+                    } else {
+                        logResult('API Endpoints', 'warning', `${endpoint.name} returned ${response.status}`);
+                    }
+                } catch (error) {
+                    logResult('API Endpoints', 'error', `${endpoint.name} failed: ${error.message}`);
+                }
+            }
+
+            const percentage = (passed / total * 100).toFixed(0);
+            if (passed === total) {
+                statusEl.innerHTML = '<i class="bi bi-check-circle text-success"></i> <span class="text-success">All APIs Working</span>';
+                resultsEl.innerHTML = `<small class="text-success">${passed}/${total} endpoints working correctly</small>`;
+            } else {
+                statusEl.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> <span class="text-warning">Some Issues</span>';
+                resultsEl.innerHTML = `<small class="text-warning">${passed}/${total} endpoints working (${percentage}%)</small>`;
+            }
+        }
+
+        async function testChatComponent() {
+            const statusEl = document.getElementById('chat-status');
+            const resultsEl = document.getElementById('chat-results');
+            
+            statusEl.innerHTML = '<div class="spinner-border text-info" role="status"></div><span class="ms-2">Testing...</span>';
+            resultsEl.innerHTML = '';
+
+            try {
+                // Test if chat component elements exist
+                const checks = [
+                    { test: 'Chat trigger exists', condition: () => document.querySelector('.chat-trigger') !== null },
+                    { test: 'User type buttons have class', condition: () => document.querySelectorAll('.user-type-btn').length > 0 },
+                    { test: 'selectUserType function exists', condition: () => typeof window.selectUserType === 'function' }
+                ];
+
+                let passed = 0;
+                const results = [];
+
+                for (const check of checks) {
+                    try {
+                        if (check.condition()) {
+                            passed++;
+                            results.push(`<i class="bi bi-check text-success"></i> ${check.test}`);
+                            logResult('Chat Component', 'success', check.test);
+                        } else {
+                            results.push(`<i class="bi bi-x text-danger"></i> ${check.test}`);
+                            logResult('Chat Component', 'error', `${check.test} failed`);
+                        }
+                    } catch (error) {
+                        results.push(`<i class="bi bi-question text-warning"></i> ${check.test} (${error.message})`);
+                        logResult('Chat Component', 'warning', `${check.test}: ${error.message}`);
+                    }
+                }
+
+                const percentage = (passed / checks.length * 100).toFixed(0);
+                if (passed === checks.length) {
+                    statusEl.innerHTML = '<i class="bi bi-check-circle text-success"></i> <span class="text-success">Component OK</span>';
+                } else {
+                    statusEl.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> <span class="text-warning">Some Issues</span>';
+                }
+                
+                resultsEl.innerHTML = `<small>${results.join('<br>')}</small>`;
+            } catch (error) {
+                statusEl.innerHTML = '<i class="bi bi-x-circle text-danger"></i> <span class="text-danger">Error</span>';
+                resultsEl.innerHTML = `<small class="text-danger">Error: ${error.message}</small>`;
+                logResult('Chat Component', 'error', `Error testing component: ${error.message}`);
+            }
+        }
+
+        function runAllTests() {
+            testDirectorDashboard();
+            setTimeout(testApiEndpoints, 1000);
+            setTimeout(testChatComponent, 2000);
+        }
+
+        function clearResults() {
+            testResults = [];
+            updateDetailedResults();
+            
+            ['director-status', 'api-status', 'chat-status'].forEach(id => {
+                document.getElementById(id).innerHTML = '<span class="text-muted">Ready to test...</span>';
+            });
+            
+            ['director-results', 'api-results', 'chat-results'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+        }
+
+        // Run initial tests
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

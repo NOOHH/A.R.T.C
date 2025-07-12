@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Chat System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .debug-info { font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Final Chat System Test</h1>
+        
+        <!-- Admin Session Test -->
+        <div class="test-section">
+            <h3>1. Admin Session Test</h3>
+            <button class="btn btn-primary" onclick="testAdminSession()">Test Admin Session</button>
+            <div id="adminSessionResult" class="result"></div>
+        </div>
+        
+        <!-- Professor Search Test -->
+        <div class="test-section">
+            <h3>2. Professor Search Test</h3>
+            <input type="text" id="professorSearchInput" class="form-control mb-2" placeholder="Search professors..." value="robert">
+            <button class="btn btn-primary" onclick="testProfessorSearch()">Search Professors</button>
+            <div id="professorSearchResult" class="result"></div>
+        </div>
+        
+        <!-- All Users Search Test -->
+        <div class="test-section">
+            <h3>3. All Users Search Test</h3>
+            <input type="text" id="allUsersSearchInput" class="form-control mb-2" placeholder="Search all users..." value="robert">
+            <button class="btn btn-primary" onclick="testAllUsersSearch()">Search All Users</button>
+            <div id="allUsersSearchResult" class="result"></div>
+        </div>
+        
+        <!-- Message Send Test -->
+        <div class="test-section">
+            <h3>4. Message Send Test</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="number" id="receiverId" class="form-control mb-2" placeholder="Receiver ID" value="1">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" id="messageContent" class="form-control mb-2" placeholder="Message content" value="Test message">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="testMessageSend()">Send Message</button>
+            <div id="messageSendResult" class="result"></div>
+        </div>
+        
+        <!-- Message Receive Test -->
+        <div class="test-section">
+            <h3>5. Message Receive Test</h3>
+            <input type="number" id="chatWithId" class="form-control mb-2" placeholder="Chat with user ID" value="1">
+            <button class="btn btn-primary" onclick="testMessageReceive()">Get Messages</button>
+            <div id="messageReceiveResult" class="result"></div>
+        </div>
+        
+        <!-- Database Structure Test -->
+        <div class="test-section">
+            <h3>6. Database Structure Test</h3>
+            <button class="btn btn-info" onclick="testDatabaseStructure()">Check Database</button>
+            <div id="databaseResult" class="result"></div>
+        </div>
+        
+        <!-- Live Chat Test -->
+        <div class="test-section">
+            <h3>7. Live Chat Test</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Search & Select User</h5>
+                    <input type="text" id="liveSearchInput" class="form-control mb-2" placeholder="Search users..." onkeyup="liveSearch()">
+                    <div id="liveSearchResults" class="border p-2 mb-2" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                <div class="col-md-6">
+                    <h5>Chat Messages</h5>
+                    <div id="chatMessages" class="border p-2 mb-2" style="height: 200px; overflow-y: auto;"></div>
+                    <div class="input-group">
+                        <input type="text" id="liveChatInput" class="form-control" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
+                        <button class="btn btn-primary" onclick="sendLiveMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+            <div id="liveChatResult" class="result"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedUserId = null;
+        let selectedUserName = '';
+        
+        // Test admin session
+        function testAdminSession() {
+            fetch('/test-admin-auth.php')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('adminSessionResult').innerHTML = 
+                        '<div class="info debug-info">' + data + '</div>';
+                })
+                .catch(error => {
+                    document.getElementById('adminSessionResult').innerHTML = 
+                        '<div class="error">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Test professor search
+        function testProfessorSearch() {
+            const search = document.getElementById('professorSearchInput').value;
+            fetch(`/api/chat/session/search/professors?search=${encodeURIComponent(search)}`)
+                .then(response => response.json())
+                .then(data => {
+                    let resultHtml = '';
+                    if (data.success) {
+                        resultHtml = '<div class="success">Found ' + data.count + ' professors</div>';
+                        if (data.data && data.data.length > 0) {
+                            resultHtml += '<ul>';
+                            data.data.forEach(user => {
+                                resultHtml += '<li>' + user.name + ' (' + user.email + ') - ' + user.role + '</li>';
+                            });
+                            resultHtml += '</ul>';
+                        }
+                    } else {
+                        resultHtml = '<div class="error">Error: ' + (data.error || 'Unknown error') + '</div>';
+                    }
+                    resultHtml += '<div class="debug-info">Debug: ' + JSON.stringify(data.debug || {}, null, 2) + '</div>';
+                    document.getElementById('professorSearchResult').innerHTML = resultHtml;
+                })
+                .catch(error => {
+                    document.getElementById('professorSearchResult').innerHTML = 
+                        '<div class="error">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Test all users search
+        function testAllUsersSearch() {
+            const search = document.getElementById('allUsersSearchInput').value;
+            fetch(`/api/chat/session/search/users?q=${encodeURIComponent(search)}`)
+                .then(response => response.json())
+                .then(data => {
+                    let resultHtml = '';
+                    if (data.success) {
+                        resultHtml = '<div class="success">Found ' + data.total + ' users</div>';
+                        if (data.data && data.data.length > 0) {
+                            resultHtml += '<ul>';
+                            data.data.forEach(user => {
+                                resultHtml += '<li>' + user.name + ' (' + user.email + ') - ' + user.role + '</li>';
+                            });
+                            resultHtml += '</ul>';
+                        }
+                    } else {
+                        resultHtml = '<div class="error">Error: ' + (data.error || 'Unknown error') + '</div>';
+                    }
+                    resultHtml += '<div class="debug-info">Debug: ' + JSON.stringify(data.debug || {}, null, 2) + '</div>';
+                    document.getElementById('allUsersSearchResult').innerHTML = resultHtml;
+                })
+                .catch(error => {
+                    document.getElementById('allUsersSearchResult').innerHTML = 
+                        '<div class="error">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Test message send
+        function testMessageSend() {
+            const receiverId = document.getElementById('receiverId').value;
+            const message = document.getElementById('messageContent').value;
+            
+            fetch('/api/chat/session/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    receiver_id: receiverId,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let resultHtml = '';
+                if (data.success) {
+                    resultHtml = '<div class="success">Message sent successfully! ID: ' + data.id + '</div>';
+                } else {
+                    resultHtml = '<div class="error">Error: ' + (data.error || data.message || 'Unknown error') + '</div>';
+                }
+                resultHtml += '<div class="debug-info">' + JSON.stringify(data, null, 2) + '</div>';
+                document.getElementById('messageSendResult').innerHTML = resultHtml;
+            })
+            .catch(error => {
+                document.getElementById('messageSendResult').innerHTML = 
+                    '<div class="error">Error: ' + error.message + '</div>';
+            });
+        }
+        
+        // Test message receive
+        function testMessageReceive() {
+            const withId = document.getElementById('chatWithId').value;
+            fetch(`/api/chat/session/messages?with=${withId}`)
+                .then(response => response.json())
+                .then(data => {
+                    let resultHtml = '';
+                    if (data.success) {
+                        resultHtml = '<div class="success">Found ' + data.data.length + ' messages</div>';
+                        if (data.data && data.data.length > 0) {
+                            resultHtml += '<ul>';
+                            data.data.forEach(msg => {
+                                resultHtml += '<li>From ' + msg.sender_id + ' to ' + msg.receiver_id + ': ' + msg.content + '</li>';
+                            });
+                            resultHtml += '</ul>';
+                        }
+                    } else {
+                        resultHtml = '<div class="error">Error: ' + (data.error || 'Unknown error') + '</div>';
+                    }
+                    resultHtml += '<div class="debug-info">' + JSON.stringify(data, null, 2) + '</div>';
+                    document.getElementById('messageReceiveResult').innerHTML = resultHtml;
+                })
+                .catch(error => {
+                    document.getElementById('messageReceiveResult').innerHTML = 
+                        '<div class="error">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Test database structure
+        function testDatabaseStructure() {
+            fetch('/debug/professors')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('databaseResult').innerHTML = 
+                        '<div class="info debug-info">' + JSON.stringify(data, null, 2) + '</div>';
+                })
+                .catch(error => {
+                    document.getElementById('databaseResult').innerHTML = 
+                        '<div class="error">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Live search
+        function liveSearch() {
+            const search = document.getElementById('liveSearchInput').value;
+            if (search.length < 2) {
+                document.getElementById('liveSearchResults').innerHTML = '';
+                return;
+            }
+            
+            fetch(`/api/chat/session/search/users?q=${encodeURIComponent(search)}`)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '';
+                    if (data.success && data.data) {
+                        data.data.forEach(user => {
+                            html += `<div class="p-2 border-bottom" style="cursor: pointer;" onclick="selectUser(${user.id}, '${user.name}')">
+                                <strong>${user.name}</strong> (${user.role})<br>
+                                <small class="text-muted">${user.email}</small>
+                            </div>`;
+                        });
+                    } else {
+                        html = '<div class="text-muted p-2">No users found</div>';
+                    }
+                    document.getElementById('liveSearchResults').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('liveSearchResults').innerHTML = 
+                        '<div class="text-danger p-2">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        // Select user for chat
+        function selectUser(userId, userName) {
+            selectedUserId = userId;
+            selectedUserName = userName;
+            document.getElementById('liveSearchResults').innerHTML = 
+                '<div class="p-2 bg-success text-white">Selected: ' + userName + '</div>';
+            loadChatMessages();
+        }
+        
+        // Load chat messages
+        function loadChatMessages() {
+            if (!selectedUserId) return;
+            
+            fetch(`/api/chat/session/messages?with=${selectedUserId}`)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '';
+                    if (data.success && data.data) {
+                        data.data.forEach(msg => {
+                            const isOwn = msg.sender_id != selectedUserId;
+                            html += `<div class="mb-2 ${isOwn ? 'text-end' : 'text-start'}">
+                                <div class="badge ${isOwn ? 'bg-primary' : 'bg-secondary'}">${msg.content}</div>
+                                <div class="small text-muted">${new Date(msg.created_at).toLocaleTimeString()}</div>
+                            </div>`;
+                        });
+                    }
+                    document.getElementById('chatMessages').innerHTML = html;
+                    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                })
+                .catch(error => {
+                    document.getElementById('chatMessages').innerHTML = 
+                        '<div class="text-danger">Error loading messages: ' + error.message + '</div>';
+                });
+        }
+        
+        // Send live message
+        function sendLiveMessage() {
+            const message = document.getElementById('liveChatInput').value;
+            if (!message || !selectedUserId) return;
+            
+            fetch('/api/chat/session/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    receiver_id: selectedUserId,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('liveChatInput').value = '';
+                    loadChatMessages();
+                } else {
+                    alert('Error sending message: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+        
+        // Handle chat key press
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendLiveMessage();
+            }
+        }
+        
+        // Auto-run tests on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            testAdminSession();
+            testProfessorSearch();
+            testAllUsersSearch();
+            testDatabaseStructure();
+        });
+    </script>
+</body>
+</html>

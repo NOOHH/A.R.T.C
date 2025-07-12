@@ -38,8 +38,38 @@
         <div class="header-search">
             <div class="search-box">
                 <span class="search-icon">🔍</span>
-                <input type="text" placeholder="Search">
-                <button class="search-btn">🔍</button>
+                <input type="text" 
+                       id="universalSearchInput" 
+                       class="form-control search-input" 
+                       placeholder="Search students, professors, programs..." 
+                       autocomplete="off"
+                       onkeyup="handleSearchInput()"
+                       onfocus="showSearchDropdown()"
+                       onblur="hideSearchDropdown()">
+                <button class="search-btn" type="button" onclick="performSearch()">🔍</button>
+            </div>
+            
+            <!-- Search Results Dropdown -->
+            <div id="searchResultsDropdown" class="search-dropdown" style="display: none;">
+                <div class="search-dropdown-content">
+                    <!-- Search suggestions -->
+                    <div id="searchSuggestions" class="search-suggestions">
+                        <!-- Dynamic suggestions -->
+                    </div>
+                    
+                    <!-- Search results -->
+                    <div id="searchResults" class="search-results">
+                        <!-- Dynamic results -->
+                    </div>
+                    
+                    <!-- Loading indicator -->
+                    <div id="searchLoading" class="search-loading d-none">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="ms-2">Searching...</span>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -269,8 +299,327 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- Enhanced Search JavaScript -->
+<script>
+// Search functionality
+let searchTimeout;
+let currentSearchType = 'all';
+
+function handleSearchInput() {
+    const searchInput = document.getElementById('universalSearchInput');
+    const query = searchInput.value.trim();
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // If query is empty, hide dropdown
+    if (query.length === 0) {
+        hideSearchDropdown();
+        return;
+    }
+    
+    // Show loading and perform search after delay
+    showSearchLoading(true);
+    searchTimeout = setTimeout(() => {
+        performSearch(query);
+    }, 300);
+}
+
+function performSearch(query = null) {
+    const searchInput = document.getElementById('universalSearchInput');
+    const searchQuery = query || searchInput.value.trim();
+    
+    if (searchQuery.length === 0) {
+        hideSearchDropdown();
+        return;
+    }
+    
+    showSearchLoading(true);
+    
+    // Make API call to search
+    fetch('/api/admin/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            query: searchQuery,
+            type: currentSearchType
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Search request failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        displaySearchResults(data);
+        showSearchLoading(false);
+    })
+    .catch(error => {
+        console.error('Search error:', error);
+        showSearchLoading(false);
+        // Display error message
+        const resultsContainer = document.getElementById('searchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Search temporarily unavailable
+                </div>
+            `;
+        }
+        showSearchDropdown();
+    });
+}
+
+function displaySearchResults(data) {
+    const resultsContainer = document.getElementById('searchResults');
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    // Clear previous results
+    resultsContainer.innerHTML = '';
+    suggestionsContainer.innerHTML = '';
+    
+    // Show suggestions
+    if (data.suggestions && data.suggestions.length > 0) {
+        suggestionsContainer.innerHTML = `
+            <div class="suggestions-header">Suggestions</div>
+            ${data.suggestions.map(suggestion => `
+                <div class="suggestion-item" onclick="selectSuggestion('${suggestion}')">
+                    <i class="bi bi-search me-2"></i>${suggestion}
+                </div>
+            `).join('')}
+        `;
+    }
+    
+    // Show results
+    if (data.results && data.results.length > 0) {
+        resultsContainer.innerHTML = `
+            <div class="results-header">Results (${data.results.length})</div>
+            ${data.results.map(result => `
+                <div class="result-item" onclick="selectResult('${result.type}', '${result.id}')">
+                    <div class="result-icon">
+                        <i class="bi bi-${getResultIcon(result.type)}"></i>
+                    </div>
+                    <div class="result-details">
+                        <div class="result-title">${result.name}</div>
+                        <div class="result-subtitle">${result.subtitle}</div>
+                    </div>
+                    <div class="result-type">${result.type}</div>
+                </div>
+            `).join('')}
+        `;
+    } else {
+        resultsContainer.innerHTML = `
+            <div class="no-results">
+                <i class="bi bi-search me-2"></i>
+                No results found
+            </div>
+        `;
+    }
+    
+    showSearchDropdown();
+}
+
+function getResultIcon(type) {
+    switch(type) {
+        case 'student': return 'person-circle';
+        case 'professor': return 'person-badge';
+        case 'program': return 'book';
+        case 'batch': return 'people';
+        case 'admin': return 'shield-check';
+        default: return 'search';
+    }
+}
+
+function selectSuggestion(suggestion) {
+    const searchInput = document.getElementById('universalSearchInput');
+    searchInput.value = suggestion;
+    performSearch(suggestion);
+}
+
+function selectResult(type, id) {
+    // Navigate to appropriate page based on result type
+    switch(type) {
+        case 'student':
+            window.location.href = `/admin/students/${id}`;
+            break;
+        case 'professor':
+            window.location.href = `/admin/professors/${id}`;
+            break;
+        case 'program':
+            window.location.href = `/admin/programs/${id}`;
+            break;
+        case 'batch':
+            window.location.href = `/admin/batches/${id}`;
+            break;
+        default:
+            console.log('Unknown result type:', type);
+    }
+}
+
+function showSearchDropdown() {
+    const dropdown = document.getElementById('searchResultsDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'block';
+    }
+}
+
+function hideSearchDropdown() {
+    // Add a small delay to allow for click events on results
+    setTimeout(() => {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    }, 200);
+}
+
+function showSearchLoading(show) {
+    const loading = document.getElementById('searchLoading');
+    if (loading) {
+        if (show) {
+            loading.classList.remove('d-none');
+        } else {
+            loading.classList.add('d-none');
+        }
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const searchContainer = document.querySelector('.header-search');
+    const dropdown = document.getElementById('searchResultsDropdown');
+    
+    if (searchContainer && !searchContainer.contains(event.target)) {
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    }
+});
+
+// Handle Enter key in search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('universalSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.search-dropdown-content {
+    padding: 8px;
+}
+
+.suggestions-header, .results-header {
+    font-weight: 600;
+    color: #666;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+
+.suggestion-item, .result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+.suggestion-item:hover, .result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.result-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.result-details {
+    flex: 1;
+}
+
+.result-title {
+    font-weight: 500;
+    color: #333;
+}
+
+.result-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.result-type {
+    font-size: 0.8rem;
+    color: #999;
+    text-transform: capitalize;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.search-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: #666;
+}
+
+.header-search {
+    position: relative;
+}
+
+.header-search .search-box {
+    position: relative;
+}
+</style>
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 @stack('scripts')
 

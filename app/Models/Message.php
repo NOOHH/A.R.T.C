@@ -14,7 +14,8 @@ class Message extends Model
         'sender_id',
         'receiver_id', 
         'content',
-        'is_read'
+        'is_read',
+        'sender_role'
     ];
 
     protected $casts = [
@@ -27,12 +28,12 @@ class Message extends Model
     // Relationships
     public function sender()
     {
-        return $this->belongsTo(User::class, 'sender_id', 'user_id');
+        return $this->belongsTo(User::class, 'sender_id');
     }
 
     public function receiver()
     {
-        return $this->belongsTo(User::class, 'receiver_id', 'user_id');
+        return $this->belongsTo(User::class, 'receiver_id');
     }
 
     // Scopes

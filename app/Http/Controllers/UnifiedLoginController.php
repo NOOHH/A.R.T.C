@@ -100,6 +100,7 @@ class UnifiedLoginController extends Controller
             'user_lastname' => $user->user_lastname,
             'user_email' => $user->email,
             'user_role' => $user->role,
+            'role'      => $user->role,
             'logged_in' => true
         ]);
 
@@ -162,6 +163,7 @@ class UnifiedLoginController extends Controller
             'user_name' => $professor->full_name,
             'user_email' => $professor->professor_email,
             'user_role' => 'professor',
+            'role'      => 'professor',
             'logged_in' => true
         ]);
 
@@ -197,6 +199,7 @@ class UnifiedLoginController extends Controller
             'user_name' => $admin->admin_name,
             'user_email' => $admin->email,
             'user_role' => 'admin',
+            'role'       => 'admin',
             'logged_in' => true
         ]);
 
@@ -242,6 +245,7 @@ class UnifiedLoginController extends Controller
             'user_name' => $director->directors_name,
             'user_email' => $director->directors_email,
             'user_role' => 'director',
+            'role'      => 'director',
             'logged_in' => true
         ]);
 
