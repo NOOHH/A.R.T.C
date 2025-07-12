@@ -16,3 +16,13 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+// Private chat channels - users can only listen to their own chat channels
+Broadcast::channel('chat.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
+
+// Global chat channel - all authenticated users can join
+Broadcast::channel('global-chat', function ($user) {
+    return $user !== null;
+});

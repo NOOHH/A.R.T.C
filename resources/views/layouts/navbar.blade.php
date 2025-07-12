@@ -207,6 +207,15 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Universal Search Component (for authenticated users) -->
+                @if(session('user_id'))
+                <div class="navbar-nav me-auto">
+                    <div class="nav-item" style="min-width: 300px;">
+                        @include('components.universal-search')
+                    </div>
+                </div>
+                @endif
+                
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url('/') }}">
@@ -229,6 +238,62 @@
                             <i class="bi bi-envelope"></i> Contact Us
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        @if(session('user_id'))
+                            {{-- User is logged in - show user name with dropdown --}}
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarUserDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle"></i> {{ explode(' ', session('user_name'))[0] ?? 'User' }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                @if(session('user_role') === 'student')
+                                    <li><a class="dropdown-item" href="{{ route('student.dashboard') }}">
+                                        <i class="bi bi-speedometer2"></i> Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('student.settings') }}">
+                                        <i class="bi bi-gear"></i> Settings
+                                    </a></li>
+                                @elseif(session('user_role') === 'admin')
+                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">
+                                        <i class="bi bi-speedometer2"></i> Admin Dashboard
+                                    </a></li>
+                                @endif
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{{ route('student.logout') }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        @else
+                            {{-- User is not logged in - show Account dropdown --}}
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-plus"></i> Account
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url('/login') }}">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url('/enrollment') }}">
+                                    <i class="bi bi-person-plus-fill"></i> Sign Up
+                                </a></li>
+                            </ul>
+                        @endif
+                    </li>
+                    
+                    <!-- Chat Button (for authenticated users) -->
+                    @if(session('user_id'))
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)" onclick="document.getElementById('chatOffcanvas').classList.add('show'); document.body.style.overflow = 'hidden';" title="Live Chat">
+                            <i class="bi bi-chat-dots"></i> Chat
+                        </a>
+                    </li>
+                    @endif
+                    
                     <li class="nav-item dropdown">
                         @if(session('user_id'))
                             {{-- User is logged in - show user name with dropdown --}}
@@ -662,4 +727,8 @@
     
     @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
 </body>
+
+<!-- Global Chat Component -->
+@include('components.global-chat')
+
 </html>

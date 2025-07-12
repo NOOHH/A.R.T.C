@@ -13,7 +13,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        'App\Models\Message' => 'App\Policies\MessagePolicy',
     ];
 
     /**
@@ -25,6 +25,13 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // Define gates for message authorization
+        Gate::define('send-message', function ($user, $receiver) {
+            return $user->can('sendMessage', [$receiver]);
+        });
+
+        Gate::define('view-messages', function ($user, $otherUser) {
+            return $user->can('viewMessages', [$otherUser]);
+        });
     }
 }

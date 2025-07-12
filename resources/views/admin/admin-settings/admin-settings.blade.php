@@ -96,6 +96,11 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="director-tab" data-bs-toggle="tab" data-bs-target="#director" type="button" role="tab">
+                        <i class="fas fa-user-tie me-2"></i>Director
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
                         <i class="fas fa-user-shield me-2"></i>Admin
                     </button>
@@ -553,6 +558,157 @@
                 </div>
             </div>
 
+            {{-- Director Tab --}}
+            <div class="tab-pane fade" id="director" role="tabpanel">
+                <div class="row g-4">
+                    {{-- Director Features --}}
+                    <div class="col-md-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-user-tie me-2"></i>Director Features
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Control which features are available to directors in their admin dashboard.</p>
+                                
+                                <form id="directorFeaturesForm">
+                                    @csrf
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorViewStudents" name="view_students" checked>
+                                                <label class="form-check-label" for="directorViewStudents">
+                                                    <strong>View Students</strong><br>
+                                                    <small class="text-muted">Allow directors to view student information and lists</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManagePrograms" name="manage_programs">
+                                                <label class="form-check-label" for="directorManagePrograms">
+                                                    <strong>Manage Programs</strong><br>
+                                                    <small class="text-muted">Allow directors to create and edit programs</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManageModules" name="manage_modules">
+                                                <label class="form-check-label" for="directorManageModules">
+                                                    <strong>Manage Modules</strong><br>
+                                                    <small class="text-muted">Allow directors to create and edit modules</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManageEnrollments" name="manage_enrollments" checked>
+                                                <label class="form-check-label" for="directorManageEnrollments">
+                                                    <strong>Manage Enrollments</strong><br>
+                                                    <small class="text-muted">Allow directors to manage student enrollments</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorViewAnalytics" name="view_analytics" checked>
+                                                <label class="form-check-label" for="directorViewAnalytics">
+                                                    <strong>View Analytics</strong><br>
+                                                    <small class="text-muted">Allow directors to view analytics and reports</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManageProfessors" name="manage_professors">
+                                                <label class="form-check-label" for="directorManageProfessors">
+                                                    <strong>Manage Professors</strong><br>
+                                                    <small class="text-muted">Allow directors to manage professor accounts</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManageBatches" name="manage_batches">
+                                                <label class="form-check-label" for="directorManageBatches">
+                                                    <strong>Manage Batches</strong><br>
+                                                    <small class="text-muted">Allow directors to manage student batches</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorViewChatLogs" name="view_chat_logs">
+                                                <label class="form-check-label" for="directorViewChatLogs">
+                                                    <strong>View Chat Logs</strong><br>
+                                                    <small class="text-muted">Allow directors to view chat history and logs</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManageSettings" name="manage_settings">
+                                                <label class="form-check-label" for="directorManageSettings">
+                                                    <strong>Manage Settings</strong><br>
+                                                    <small class="text-muted">Allow directors to access admin settings</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Save Director Settings
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="loadDirectorSettings()">
+                                            <i class="fas fa-refresh me-2"></i>Reset to Defaults
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- Director Settings Info --}}
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>Director Access Control</h6>
+                                <p class="text-muted small">These settings control what features are visible and accessible to directors in their admin dashboard.</p>
+                                
+                                <h6>Program Management</h6>
+                                <p class="text-muted small">When enabled, directors can create, edit, and manage programs within their access scope.</p>
+                                
+                                <h6>Module Management</h6>
+                                <p class="text-muted small">When enabled, directors can create and edit modules for their assigned programs.</p>
+                                
+                                <h6>Settings Access</h6>
+                                <p class="text-muted small">When enabled, directors can access certain admin settings. Main admin settings are always restricted.</p>
+                                
+                                <div class="alert alert-warning mt-3">
+                                    <small><strong>Note:</strong> Directors can only access data for programs they are assigned to, unless they have "all program access" enabled.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Admin Tab --}}
             <div class="tab-pane fade" id="admin" role="tabpanel">
                 <div class="row g-4">
@@ -768,6 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHomepageSettings();
     loadHomepageSettings();
     loadProfessorSettings();
+    loadDirectorSettings();
     
     // Add event listener for plans tab
     const plansTab = document.getElementById('plans-tab');
@@ -874,6 +1031,15 @@ document
         professorFeaturesForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveProfessorSettings();
+        });
+    }
+
+    // Save director features settings
+    const directorFeaturesForm = document.getElementById('directorFeaturesForm');
+    if (directorFeaturesForm) {
+        directorFeaturesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveDirectorSettings();
         });
     }
 
@@ -1841,6 +2007,73 @@ function saveProfessorSettings() {
     .catch(error => {
         console.error('Error saving professor settings:', error);
         showAlert('Error saving professor settings: ' + error.message, 'danger');
+    });
+}
+
+// Director Settings Functions
+function loadDirectorSettings() {
+    fetch('/admin/settings/director-features', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Director settings loaded:', data);
+        if (data.success && data.settings) {
+            // Set checkbox values based on loaded settings
+            Object.keys(data.settings).forEach(key => {
+                const checkbox = document.querySelector(`input[name="${key}"]`);
+                if (checkbox) {
+                    checkbox.checked = data.settings[key] === 'true' || data.settings[key] === true;
+                }
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading director settings:', error);
+        // Set default values if loading fails
+        const checkboxes = document.querySelectorAll('#directorFeaturesForm input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true; // Default to enabled
+        });
+    });
+}
+
+function saveDirectorSettings() {
+    const form = document.getElementById('directorFeaturesForm');
+    const formData = new FormData(form);
+    
+    // Add unchecked checkboxes as false
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            formData.set(checkbox.name, 'false');
+        } else {
+            formData.set(checkbox.name, 'true');
+        }
+    });
+
+    fetch('/admin/settings/director-features', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Director settings saved:', data);
+        if (data.success) {
+            showAlert('Director feature settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving director settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving director settings:', error);
+        showAlert('Error saving director settings: ' + error.message, 'danger');
     });
 }
 

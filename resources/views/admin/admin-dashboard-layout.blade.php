@@ -44,7 +44,9 @@
         </div>
         
         <div class="header-right">
-            <span class="notification-icon">💬</span>
+            <span class="notification-icon chat-trigger" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas" aria-label="Open chat">
+                <i class="bi bi-chat-dots"></i>
+            </span>
             <span class="profile-icon">👤</span>
         </div>
     </header>
@@ -148,6 +150,20 @@
                         <li class="@if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
                             <a href="{{ route('admin.analytics.index') }}" class="sidebar-link">
                                 <span class="icon">📈</span> Analytics
+                            </a>
+                        </li>
+                        
+                        {{-- Chat Management --}}
+                        <li class="@if(Route::currentRouteName() === 'admin.chat.index') active @endif">
+                            <a href="{{ route('admin.chat.index', ['default' => 'true']) }}" class="sidebar-link">
+                                <span class="icon">💬</span> Chat Logs
+                            </a>
+                        </li>
+                        
+                        {{-- FAQ Management --}}
+                        <li class="@if(Route::currentRouteName() === 'admin.faq.index') active @endif">
+                            <a href="{{ route('admin.faq.index') }}" class="sidebar-link">
+                                <span class="icon">❓</span> FAQ Management
                             </a>
                         </li>
                     </ul>
@@ -257,5 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 @stack('scripts')
+
+<!-- Include Global Chat Component -->
+@include('components.global-chat')
+
 </body>
 </html>

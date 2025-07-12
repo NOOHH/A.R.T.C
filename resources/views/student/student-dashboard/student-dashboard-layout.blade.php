@@ -31,7 +31,9 @@
         </div>
         
         <div class="header-right">
-            <span class="notification-icon">💬</span>
+            <span class="notification-icon chat-trigger" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas" aria-label="Open chat">
+                <i class="bi bi-chat-dots"></i>
+            </span>
             <span class="profile-icon">👤</span>
         </div>
     </header>
@@ -160,5 +162,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Include Global Chat Component -->
+@include('components.global-chat')
+
 </body>
 </html>

@@ -415,4 +415,263 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Display chat logs for admin monitoring
+     */
+    public function chatIndex(Request $request)
+    {
+        // In a real application, this would fetch chat messages from a database
+        // For now, we'll create a sample chat log interface
+        
+        $chatRooms = [
+            [
+                'id' => 1,
+                'name' => 'General Support',
+                'participants' => 15,
+                'last_message' => 'Thanks for your help!',
+                'last_activity' => Carbon::now()->subMinutes(5),
+                'unread_count' => 3,
+                'type' => 'support'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Technical Issues',
+                'participants' => 8,
+                'last_message' => 'The system is working now',
+                'last_activity' => Carbon::now()->subMinutes(15),
+                'unread_count' => 1,
+                'type' => 'technical'
+            ],
+            [
+                'id' => 3,
+                'name' => 'Course Inquiries',
+                'participants' => 12,
+                'last_message' => 'When does the next batch start?',
+                'last_activity' => Carbon::now()->subMinutes(30),
+                'unread_count' => 0,
+                'type' => 'courses'
+            ],
+            [
+                'id' => 4,
+                'name' => 'Student Services',
+                'participants' => 25,
+                'last_message' => 'Payment confirmation received',
+                'last_activity' => Carbon::now()->subHour(),
+                'unread_count' => 7,
+                'type' => 'services'
+            ]
+        ];
+        
+        $recentMessages = [
+            [
+                'id' => 1,
+                'user_name' => 'John Doe',
+                'user_type' => 'student',
+                'room' => 'General Support',
+                'message' => 'I need help with my course enrollment',
+                'timestamp' => Carbon::now()->subMinutes(2),
+                'status' => 'unread'
+            ],
+            [
+                'id' => 2,
+                'user_name' => 'Jane Smith',
+                'user_type' => 'professor',
+                'room' => 'Technical Issues',
+                'message' => 'The quiz generator is not working properly',
+                'timestamp' => Carbon::now()->subMinutes(10),
+                'status' => 'read'
+            ],
+            [
+                'id' => 3,
+                'user_name' => 'Mike Johnson',
+                'user_type' => 'student',
+                'room' => 'Course Inquiries',
+                'message' => 'What are the prerequisites for Advanced Programming?',
+                'timestamp' => Carbon::now()->subMinutes(25),
+                'status' => 'responded'
+            ]
+        ];
+        
+        $stats = [
+            'total_conversations' => count($chatRooms),
+            'active_users' => 45,
+            'unread_messages' => collect($chatRooms)->sum('unread_count'),
+            'response_time_avg' => '2.5 minutes'
+        ];
+        
+        return view('admin.chat.index', compact('chatRooms', 'recentMessages', 'stats'));
+    }
+    
+    /**
+     * Display specific chat room
+     */
+    public function chatRoom($roomId)
+    {
+        // Sample chat messages for the room
+        $messages = [
+            [
+                'id' => 1,
+                'user_name' => 'John Doe',
+                'user_type' => 'student',
+                'message' => 'Hello, I need help with my course enrollment',
+                'timestamp' => Carbon::now()->subMinutes(30),
+                'avatar' => 'JD'
+            ],
+            [
+                'id' => 2,
+                'user_name' => 'Admin Support',
+                'user_type' => 'admin',
+                'message' => 'Hi John! I\'d be happy to help you with your enrollment. Which course are you trying to enroll in?',
+                'timestamp' => Carbon::now()->subMinutes(28),
+                'avatar' => 'AS'
+            ],
+            [
+                'id' => 3,
+                'user_name' => 'John Doe',
+                'user_type' => 'student',
+                'message' => 'I\'m looking at the Advanced Programming course, but I can\'t find the enrollment button',
+                'timestamp' => Carbon::now()->subMinutes(25),
+                'avatar' => 'JD'
+            ],
+            [
+                'id' => 4,
+                'user_name' => 'Admin Support',
+                'user_type' => 'admin',
+                'message' => 'Let me check your account status. Can you please provide your student ID?',
+                'timestamp' => Carbon::now()->subMinutes(20),
+                'avatar' => 'AS'
+            ]
+        ];
+        
+        $roomInfo = [
+            'id' => $roomId,
+            'name' => 'General Support',
+            'participants' => 15,
+            'type' => 'support'
+        ];
+        
+        return view('admin.chat.room', compact('messages', 'roomInfo'));
+    }
+    
+    /**
+     * Display FAQ management page
+     */
+    public function faqIndex()
+    {
+        $faqs = [
+            [
+                'id' => 1,
+                'question' => 'How do I enroll in a course?',
+                'answer' => 'To enroll in a course, go to your dashboard, select "Available Courses", choose your desired course, and click "Enroll Now". Complete the payment process to finalize your enrollment.',
+                'category' => 'Enrollment',
+                'category_id' => 1,
+                'keywords' => 'enroll, register, course, signup',
+                'status' => 'active',
+                'views' => 145,
+                'updated_at' => Carbon::now()->subDays(2)->format('M j, Y')
+            ],
+            [
+                'id' => 2,
+                'question' => 'What are the payment options?',
+                'answer' => 'We accept credit/debit cards, PayPal, bank transfers, and installment plans for select courses. All payments are processed securely.',
+                'category' => 'Payment',
+                'category_id' => 2,
+                'keywords' => 'payment, pay, fee, money, cost',
+                'status' => 'active',
+                'views' => 98,
+                'updated_at' => Carbon::now()->subDays(1)->format('M j, Y')
+            ],
+            [
+                'id' => 3,
+                'question' => 'How do I check my class schedule?',
+                'answer' => 'Login to your dashboard, go to "My Courses", and click the "Schedule" tab. You can also export your schedule to your calendar.',
+                'category' => 'Schedule',
+                'category_id' => 3,
+                'keywords' => 'schedule, time, class, timetable',
+                'status' => 'active',
+                'views' => 87,
+                'updated_at' => Carbon::now()->subDays(3)->format('M j, Y')
+            ],
+            [
+                'id' => 4,
+                'question' => 'How do I get my certificate?',
+                'answer' => 'Complete all course modules, pass assessments, maintain 80% attendance, and complete the final project. Certificates are generated automatically within 5-7 business days.',
+                'category' => 'Certificate',
+                'category_id' => 4,
+                'keywords' => 'certificate, diploma, completion, graduate',
+                'status' => 'active',
+                'views' => 156,
+                'updated_at' => Carbon::now()->subDays(5)->format('M j, Y')
+            ],
+            [
+                'id' => 5,
+                'question' => 'How do I contact support?',
+                'answer' => 'Contact support via live chat, email (support@artc.edu), phone (+1-555-123-4567), or submit a ticket through the support portal.',
+                'category' => 'Support',
+                'category_id' => 5,
+                'keywords' => 'support, help, contact, assistance',
+                'status' => 'active',
+                'views' => 234,
+                'updated_at' => Carbon::now()->subDays(1)->format('M j, Y')
+            ]
+        ];
+        
+        $categories = [
+            [
+                'id' => 1,
+                'name' => 'Enrollment',
+                'count' => 1
+            ],
+            [
+                'id' => 2,
+                'name' => 'Payment',
+                'count' => 1
+            ],
+            [
+                'id' => 3,
+                'name' => 'Schedule',
+                'count' => 1
+            ],
+            [
+                'id' => 4,
+                'name' => 'Certificate',
+                'count' => 1
+            ],
+            [
+                'id' => 5,
+                'name' => 'Support',
+                'count' => 1
+            ]
+        ];
+        
+        return view('admin.faq.index', compact('faqs', 'categories'));
+    }
+    
+    /**
+     * Store new FAQ
+     */
+    public function storeFaq(Request $request)
+    {
+        // In a real application, this would save to database
+        return response()->json(['message' => 'FAQ saved successfully']);
+    }
+    
+    /**
+     * Update FAQ
+     */
+    public function updateFaq(Request $request, $id)
+    {
+        // In a real application, this would update the database
+        return response()->json(['message' => 'FAQ updated successfully']);
+    }
+    
+    /**
+     * Delete FAQ
+     */
+    public function deleteFaq($id)
+    {
+        // In a real application, this would delete from database
+        return response()->json(['message' => 'FAQ deleted successfully']);
+    }
 }

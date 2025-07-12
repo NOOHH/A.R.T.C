@@ -27,6 +27,9 @@ use App\Models\Package;
 use App\Http\Controllers\DatabaseTestController;
 use App\Http\Controllers\Admin\BatchEnrollmentController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\DirectorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -486,73 +489,33 @@ Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'upd
 Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
      ->name('admin.modules.get-override');
 
+// Admin Packages Routes
+Route::get('/admin/packages', [AdminPackageController::class, 'index'])
+     ->name('admin.packages.index');
+Route::post('/admin/packages', [AdminPackageController::class, 'store'])
+     ->name('admin.packages.store');
+Route::get('/admin/packages/{id}/edit', [AdminPackageController::class, 'edit'])
+     ->name('admin.packages.edit');
+Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
+     ->name('admin.packages.update');
+Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
+     ->name('admin.packages.destroy');
+
 // Admin AI Quiz Generator
 Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
      ->name('admin.quiz-generator');
 Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
      ->name('admin.quiz-generator.generate');
 
-/*
-|--------------------------------------------------------------------------
-| Admin Packages
-|--------------------------------------------------------------------------
-*/
-// Packages list
-Route::get('/admin/packages', [AdminPackageController::class, 'index'])
-     ->name('admin.packages.index');
+// Chat routes
+Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
+Route::get('/admin/chat/room/{roomId}', [AdminController::class, 'chatRoom'])->name('admin.chat.room');
 
-// Show "Add New Package" form
-Route::get('/admin/packages/create', [AdminPackageController::class, 'create'])
-     ->name('admin.packages.create');
-
-// Store new package
-Route::post('/admin/packages', [AdminPackageController::class, 'store'])
-     ->name('admin.packages.store');
-
-// Update a package
-Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
-     ->name('admin.packages.update');
-
-// Delete a package
-Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
-     ->name('admin.packages.delete');
-
-/*
-|--------------------------------------------------------------------------
-| Admin Batches
-|--------------------------------------------------------------------------
-*/
-// Batch management
-Route::get('/admin/batches', [AdminBatchController::class, 'index'])
-     ->name('admin.batches.index');
-
-// Create batch form
-Route::get('/admin/batches/create', [AdminBatchController::class, 'create'])
-     ->name('admin.batches.create');
-
-// Store new batch
-Route::post('/admin/batches', [AdminBatchController::class, 'store'])
-     ->name('admin.batches.store');
-
-// Update batch
-Route::put('/admin/batches/{batch}', [AdminBatchController::class, 'update'])
-     ->name('admin.batches.update');
-
-// Delete batch
-Route::delete('/admin/batches/{batch}', [AdminBatchController::class, 'destroy'])
-     ->name('admin.batches.destroy');
-
-// Toggle batch status
-Route::patch('/admin/batches/{batch}/toggle-status', [AdminBatchController::class, 'toggleStatus'])
-     ->name('admin.batches.toggle-status');
-
-// Move student between batches
-Route::post('/admin/batches/move-student', [AdminBatchController::class, 'moveStudent'])
-     ->name('admin.batches.move-student');
-
-// Batch enrollment management
-Route::get('/admin/student-enrollment/batch-enroll', [AdminBatchController::class, 'batchEnroll'])
-     ->name('admin.student.enrollment.batch');
+// FAQ Management routes
+Route::get('/admin/faq', [AdminController::class, 'faqIndex'])->name('admin.faq.index');
+Route::post('/admin/faq', [AdminController::class, 'storeFaq'])->name('admin.faq.store');
+Route::put('/admin/faq/{id}', [AdminController::class, 'updateFaq'])->name('admin.faq.update');
+Route::delete('/admin/faq/{id}', [AdminController::class, 'deleteFaq'])->name('admin.faq.delete');
 
 /*
 |--------------------------------------------------------------------------
@@ -620,6 +583,31 @@ Route::post('/admin/settings/navbar', [AdminSettingsController::class, 'saveNavb
 Route::get('/admin/settings/navbar', [AdminSettingsController::class, 'getNavbarSettings']);
 Route::post('/admin/settings/footer', [AdminSettingsController::class, 'saveFooterSettings']);
 Route::get('/admin/settings/footer', [AdminSettingsController::class, 'getFooterSettings']);
+
+// Professor and Director Feature Management routes
+Route::get('/admin/settings/professor-features', [AdminSettingsController::class, 'getProfessorFeatures']);
+Route::post('/admin/settings/professor-features', [AdminSettingsController::class, 'updateProfessorFeatures']);
+Route::get('/admin/settings/director-features', [AdminSettingsController::class, 'getDirectorFeatures']);
+Route::post('/admin/settings/director-features', [AdminSettingsController::class, 'updateDirectorFeatures']);
+
+// Chat functionality routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/chat/search-users', [ChatController::class, 'searchUsers'])->name('chat.search-users');
+    Route::get('/chat/messages', [ChatController::class, 'getMessages'])->name('chat.messages');
+    Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
+    Route::get('/chat/conversations', [ChatController::class, 'getConversations'])->name('chat.conversations');
+});
+
+// Legacy chat routes for backwards compatibility
+Route::get('/chat/enhanced-search', [ChatController::class, 'enhancedSearch'])->name('chat.enhanced-search');
+Route::get('/chat/history/{user_id}', [ChatController::class, 'getChatHistory'])->name('chat.history');
+Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])->name('chat.send-message');
+Route::post('/chat/save-message', [ChatController::class, 'saveChatMessage'])->name('chat.save-message');
+
+// Enhanced Search functionality routes
+Route::get('/search', [SearchController::class, 'search'])->name('search');
+Route::get('/search/advanced', [SearchController::class, 'advancedSearch'])->name('search.advanced');
+Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
 
 // Homepage customization routes
 Route::get('/admin/settings/homepage', [AdminSettingsController::class, 'getHomepageSettings']);
@@ -734,6 +722,14 @@ Route::post('/admin/directors/{director:directors_id}/assign-program', [AdminDir
 // Unassign program from director
 Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminDirectorController::class, 'unassignProgram'])
      ->name('admin.directors.unassign-program');
+
+// Director Dashboard Routes
+Route::get('/director/dashboard', [DirectorController::class, 'dashboard'])
+     ->name('director.dashboard');
+Route::get('/director/profile', [DirectorController::class, 'profile'])
+     ->name('director.profile');
+Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
+     ->name('director.profile.update');
 
 /*
 |--------------------------------------------------------------------------
@@ -925,75 +921,7 @@ Route::middleware(['professor.auth'])
          ->name('grading.student');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Test UI and Form Requirements (Development Only - Remove in Production)
-|--------------------------------------------------------------------------
-*/
-// Route::get('/test-ui', function () {
-//     $formRequirements = App\Models\FormRequirement::active()
-//         ->forProgram('full')
-//         ->ordered()
-//         ->get();
-//     
-//     $navbarSettings = App\Models\UiSetting::getSection('navbar');
-//     
-//     return view('test-ui', compact('formRequirements', 'navbarSettings'));
-// });
-
-// Test dynamic registration system
-Route::get('/test-dynamic-registration', function () {
-    $activeFields = App\Models\FormRequirement::active()->get();
-    $inactiveFields = App\Models\FormRequirement::where('is_active', false)->get();
-    
-    return view('test-dynamic-registration', compact('activeFields', 'inactiveFields'));
-})->name('test.dynamic.registration');
-
-// Form Requirements Management Routes
-Route::get('/admin/form-requirements', [FormRequirementController::class, 'index'])->name('admin.form-requirements');
-Route::post('/admin/form-requirements', [FormRequirementController::class, 'store'])->name('admin.form-requirements.store');
-Route::post('/admin/form-requirements/archive', [FormRequirementController::class, 'archive'])->name('admin.form-requirements.archive');
-Route::post('/admin/form-requirements/restore', [FormRequirementController::class, 'restore'])->name('admin.form-requirements.restore');
-Route::put('/admin/form-requirements/{id}', [FormRequirementController::class, 'update'])->name('admin.form-requirements.update');
-Route::delete('/admin/form-requirements/{id}', [FormRequirementController::class, 'destroy'])->name('admin.form-requirements.destroy');
-
-// Database testing routes
-Route::get('/test/db/students-schema', [DatabaseTestController::class, 'checkStudentsSchema']);
-Route::get('/test/db/student-insert', [DatabaseTestController::class, 'testStudentInsert']);
-Route::get('/test/db/add-missing-columns', [DatabaseTestController::class, 'addMissingColumns']);
-
-// Professor Features Settings
-Route::post('/admin/settings/professor-features', [AdminSettingsController::class, 'updateProfessorFeatures'])
-     ->name('admin.settings.professor-features');
-Route::get('/admin/settings/professor-features', [AdminSettingsController::class, 'getProfessorFeatures'])
-     ->name('admin.settings.professor-features.get');
-
-// Batch Enrollment Management Routes
-Route::prefix('admin')->middleware(['web'])->group(function () {
-    Route::get('/batches', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
-    Route::post('/batches', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
-    Route::put('/batches/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
-    Route::delete('/batches/{id}', [BatchEnrollmentController::class, 'delete'])->name('admin.batches.delete');
-    
-    // Student management within batches
-    Route::get('/batches/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-student');
-    Route::delete('/batches/{batchId}/students/{studentId}', [BatchEnrollmentController::class, 'removeStudentFromBatch'])->name('admin.batches.remove-student');
-    Route::get('/batches/{id}/export', [BatchEnrollmentController::class, 'exportBatchEnrollments'])->name('admin.batches.export');
-    Route::post('/batches/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
-    
-    // Move student between pending/current (for visual drag-and-drop with actual status updates when moving to current)
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/move-to-current', [BatchEnrollmentController::class, 'moveStudentToCurrent'])->name('admin.batches.move-to-current');
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/move-to-pending', [BatchEnrollmentController::class, 'moveStudentToPending'])->name('admin.batches.move-to-pending');
-    Route::post('/batches/{batchId}/enrollments/{enrollmentId}/remove-from-batch', [BatchEnrollmentController::class, 'removeStudentFromBatchCompletely'])->name('admin.batches.remove-from-batch');
-});
-
-Route::get('/test-user-creation', function() { 
-    return view('test-user-creation'); 
-});
-
-// Override functionality
-Route::get('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'getOverrideSettings'])
-     ->name('admin.modules.override-settings');
-Route::post('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
-     ->name('admin.modules.override');
+// Chat test route
+Route::get('/chat-test', function () {
+    return view('chat-test');
+})->name('chat.test');
