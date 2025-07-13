@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Professor;
@@ -626,19 +627,8 @@ class ChatController extends Controller
         $mode = $request->input('mode', '');
         
         // Get current user from session - check both session formats
-        $currentUserId = null;
-        $currentUserRole = 'guest';
-        
-        // Check admin session first
-        if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
-            $currentUserId = $_SESSION['admin_id'] ?? null;
-            $currentUserRole = 'admin';
-        }
-        // Check Laravel session
-        elseif (session('user_id')) {
-            $currentUserId = session('user_id');
-            $currentUserRole = session('user_role') ?? session('role') ?? 'user';
-        }
+        $currentUserId = session('user_id') ?? $_SESSION['user_id'] ?? null;
+        $currentUserRole = session('user_role') ?? session('role') ?? $_SESSION['user_type'] ?? 'guest';
         
         if (!$currentUserId) {
             return response()->json([
@@ -647,8 +637,8 @@ class ChatController extends Controller
                     'session_user_id' => session('user_id'),
                     'session_user_role' => session('user_role'),
                     'session_role' => session('role'),
-                    'php_session_admin_id' => $_SESSION['admin_id'] ?? null,
-                    'php_session_admin_logged_in' => $_SESSION['admin_logged_in'] ?? false,
+                    'php_session_user_id' => $_SESSION['user_id'] ?? null,
+                    'php_session_user_type' => $_SESSION['user_type'] ?? null,
                     'session_logged_in' => session('logged_in'),
                 ]
             ], 401);
@@ -657,32 +647,19 @@ class ChatController extends Controller
         try {
             $users = collect();
             
-            // If no specific type or type is 'all', search all user types
-            if (!$type || $type === 'all') {
-                // Get all user types
-                $professors = $this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode);
-                $admins = $this->getSessionAdmins($search, $currentUserRole);
-                $directors = $this->getSessionDirectors($search, $currentUserRole);
-                $students = $this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode);
-                
-                // Merge all results
-                $users = $professors->merge($admins)->merge($directors)->merge($students);
-            } else {
-                // Search specific type
-                switch ($type) {
-                    case 'student':
-                        $users = $this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode);
-                        break;
-                    case 'professor':
-                        $users = $this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode);
-                        break;
-                    case 'admin':
-                        $users = $this->getSessionAdmins($search, $currentUserRole);
-                        break;
-                    case 'director':
-                        $users = $this->getSessionDirectors($search, $currentUserRole);
-                        break;
-                }
+            switch ($type) {
+                case 'student':
+                    $users = $this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode);
+                    break;
+                case 'professor':
+                    $users = $this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode);
+                    break;
+                case 'admin':
+                    $users = $this->getSessionAdmins($search, $currentUserRole);
+                    break;
+                case 'director':
+                    $users = $this->getSessionDirectors($search, $currentUserRole);
+                    break;
             }
             
             return response()->json([
@@ -712,54 +689,49 @@ class ChatController extends Controller
      */
     public function sendSessionMessage(Request $request)
     {
-        $request->validate([
-            'receiver_id' => 'required|integer',
-            'message' => 'required|string|max:1000'
-        ]);
+        $currentUser = $this->getCurrentSessionUser();
         
-        // Get sender info from either session type
-        $senderId = null;
-        $senderName = 'Guest';
-        $senderRole = 'user';
-        
-        // Check admin session first
-        if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
-            $senderId = $_SESSION['admin_id'] ?? null;
-            $senderName = $_SESSION['admin_name'] ?? 'Admin';
-            $senderRole = 'admin';
-        }
-        // Check Laravel session
-        elseif (session('user_id')) {
-            $senderId = session('user_id');
-            $senderName = session('user_name', 'User');
-            $senderRole = session('user_role', 'user');
-        }
-        
-        if (!$senderId) {
+        if (!$currentUser['id']) {
             return response()->json(['error' => 'Not authenticated'], 401);
         }
         
         try {
-            // Create message record
-            $message = Chat::create([
-                'sender_id' => $senderId,
-                'receiver_id' => $request->receiver_id,
-                'message' => $request->message,
-                'sent_at' => now()
-            ]);
+            // Basic validation
+            $receiverId = $request->input('receiver_id');
+            $message = $request->input('message');
+            $receiverType = $request->input('receiver_type');
+            
+            if (!$receiverId || !$message) {
+                return response()->json(['error' => 'Receiver ID and message are required'], 400);
+            }
+            
+            // Create message entry in database
+            $messageData = [
+                'sender_id' => $currentUser['id'],
+                'sender_type' => $currentUser['role'],
+                'receiver_id' => $receiverId,
+                'receiver_type' => $receiverType,
+                'message' => $message,
+                'sent_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+            
+            // Insert into messages table
+            $messageId = DB::table('messages')->insertGetId($messageData);
             
             return response()->json([
                 'success' => true,
-                'id' => $message->chat_id,
+                'id' => $messageId,
                 'message' => 'Message sent successfully',
                 'data' => [
-                    'id' => $message->id,
-                    'sender_id' => $senderId,
-                    'receiver_id' => $request->receiver_id,
-                    'message' => $request->message,
-                    'sent_at' => $message->created_at->toISOString(),
-                    'sender_name' => $senderName,
-                    'sender_role' => $senderRole
+                    'id' => $messageId,
+                    'sender_id' => $currentUser['id'],
+                    'receiver_id' => $receiverId,
+                    'message' => $message,
+                    'sent_at' => now()->toISOString(),
+                    'sender_name' => $currentUser['name'],
+                    'receiver_type' => $receiverType
                 ]
             ]);
             
@@ -778,48 +750,39 @@ class ChatController extends Controller
     public function getSessionMessages(Request $request)
     {
         $with = $request->input('with');
+        $currentUser = $this->getCurrentSessionUser();
         
-        // Get current user ID from either session type
-        $currentUserId = null;
-        
-        // Check admin session first
-        if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
-            $currentUserId = $_SESSION['admin_id'] ?? null;
-        }
-        // Check Laravel session
-        elseif (session('user_id')) {
-            $currentUserId = session('user_id');
-        }
-        
-        if (!$currentUserId) {
+        if (!$currentUser['id']) {
             return response()->json(['error' => 'Not authenticated'], 401);
         }
-          try {
-            $messages = Chat::where(function ($query) use ($currentUserId, $with) {
-                $query->where('sender_id', $currentUserId)
-                      ->where('receiver_id', $with);
-            })
-            ->orWhere(function ($query) use ($currentUserId, $with) {
-                $query->where('sender_id', $with)
-                      ->where('receiver_id', $currentUserId);
-            })
-            ->orderBy('created_at', 'asc')
-            ->get()
-            ->map(function ($message) {
-                return [
-                    'id' => $message->chat_id,
-                    'sender_id' => $message->sender_id,
-                    'receiver_id' => $message->receiver_id,
-                    'content' => $message->message,
-                    'created_at' => $message->created_at->toISOString(),
-                    'is_read' => !is_null($message->read_at),
-                    'sender_role' => 'user'
-                ];
-            });
-
+        
+        try {
+            // Get messages between current user and specified user
+            $messages = collect([]);
+            
+            if ($with) {
+                // Get messages from database
+                $messages = DB::table('messages')
+                    ->where(function ($query) use ($currentUser, $with) {
+                        $query->where('sender_id', $currentUser['id'])
+                              ->where('receiver_id', $with);
+                    })
+                    ->orWhere(function ($query) use ($currentUser, $with) {
+                        $query->where('sender_id', $with)
+                              ->where('receiver_id', $currentUser['id']);
+                    })
+                    ->orderBy('sent_at', 'asc')
+                    ->get();
+            }
+            
             return response()->json([
                 'success' => true,
-                'data' => $messages->toArray()
+                'data' => $messages->toArray(),
+                'debug' => [
+                    'current_user_id' => $currentUser['id'],
+                    'with_user_id' => $with,
+                    'message' => 'Messages loaded successfully'
+                ]
             ]);
             
         } catch (\Exception $e) {
@@ -844,7 +807,7 @@ class ChatController extends Controller
         }
         
         try {
-            Chat::where(function ($query) use ($currentUserId, $with) {
+            Message::where(function ($query) use ($currentUserId, $with) {
                 $query->where('sender_id', $currentUserId)
                       ->where('receiver_id', $with);
             })
@@ -937,39 +900,29 @@ class ChatController extends Controller
     private function getSessionProfessors($search, $currentUserRole, $program, $batch, $mode)
     {
         try {
-            // Search in professors table - don't filter by archived status initially
-            $query = Professor::query();
-            
-            // Only filter by archived if the field exists
-            try {
-                $query->where('professor_archived', false);
-            } catch (\Exception $e) {
-                // If professor_archived field doesn't exist, just ignore this filter
-            }
+            // Search in professors table instead of users table
+            $query = Professor::where('professor_archived', false);
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('professor_name', 'like', '%' . $search . '%')
+                      ->orWhere('professor_first_name', 'like', '%' . $search . '%')
+                      ->orWhere('professor_last_name', 'like', '%' . $search . '%')
                       ->orWhere('professor_email', 'like', '%' . $search . '%');
-                    
-                    // Try to search first/last name fields if they exist
-                    try {
-                        $q->orWhere('professor_first_name', 'like', '%' . $search . '%')
-                          ->orWhere('professor_last_name', 'like', '%' . $search . '%');
-                    } catch (\Exception $e) {
-                        // If these fields don't exist, just ignore them
-                    }
                 });
             }
             
-            return $query->select('professor_id as id', 'professor_name as name', 'professor_email as email')
+            return $query->select('professor_id as id', 'professor_name as name', 'professor_first_name as first_name', 'professor_last_name as last_name', 'professor_email as email')
                         ->orderBy('professor_name')
                         ->limit(20)
                         ->get()
                         ->map(function ($professor) {
+                            $fullName = trim(($professor->first_name ?? '') . ' ' . ($professor->last_name ?? ''));
                             return [
                                 'id' => $professor->id,
-                                'name' => $professor->name ?? 'Unknown Professor',
+                                'name' => $fullName ?: ($professor->name ?? 'Unknown Professor'),
+                                'first_name' => $professor->first_name ?? '',
+                                'last_name' => $professor->last_name ?? '',
                                 'email' => $professor->email ?? 'No email',
                                 'role' => 'professor'
                             ];
@@ -986,20 +939,13 @@ class ChatController extends Controller
     private function getSessionAdmins($search, $currentUserRole)
     {
         try {
-            // Search in admins table
+            // Search in admins table using correct column names
             $query = Admin::query();
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('admin_name', 'like', '%' . $search . '%')
                       ->orWhere('email', 'like', '%' . $search . '%');
-                    
-                    // Try other possible field names
-                    try {
-                        $q->orWhere('name', 'like', '%' . $search . '%');
-                    } catch (\Exception $e) {
-                        // If name field doesn't exist, ignore
-                    }
                 });
             }
             
@@ -1011,6 +957,8 @@ class ChatController extends Controller
                             return [
                                 'id' => $admin->id,
                                 'name' => $admin->name ?? 'Unknown Admin',
+                                'first_name' => $admin->name ?? 'Unknown',
+                                'last_name' => '',
                                 'email' => $admin->email ?? 'No email',
                                 'role' => 'admin'
                             ];
@@ -1027,31 +975,28 @@ class ChatController extends Controller
     private function getSessionDirectors($search, $currentUserRole)
     {
         try {
-            // Search in directors table
+            // Search in directors table instead of users table
             $query = Director::query();
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('director_name', 'like', '%' . $search . '%')
-                      ->orWhere('email', 'like', '%' . $search . '%');
-                    
-                    // Try other possible field names
-                    try {
-                        $q->orWhere('name', 'like', '%' . $search . '%');
-                    } catch (\Exception $e) {
-                        // If name field doesn't exist, ignore
-                    }
+                    $q->where('directors_name', 'like', '%' . $search . '%')
+                      ->orWhere('directors_first_name', 'like', '%' . $search . '%')
+                      ->orWhere('directors_last_name', 'like', '%' . $search . '%')
+                      ->orWhere('directors_email', 'like', '%' . $search . '%');
                 });
             }
             
-            return $query->select('director_id as id', 'director_name as name', 'email', 'created_at')
-                        ->orderBy('director_name')
+            return $query->select('directors_id as id', 'directors_name as name', 'directors_first_name as first_name', 'directors_last_name as last_name', 'directors_email as email', 'created_at')
+                        ->orderBy('directors_name')
                         ->limit(20)
                         ->get()
                         ->map(function ($director) {
                             return [
                                 'id' => $director->id,
-                                'name' => $director->name ?? 'Unknown Director',
+                                'name' => $director->name ?? (($director->first_name ?? '') . ' ' . ($director->last_name ?? '')),
+                                'first_name' => $director->first_name ?? '',
+                                'last_name' => $director->last_name ?? '',
                                 'email' => $director->email ?? 'No email',
                                 'role' => 'director'
                             ];
@@ -1138,5 +1083,37 @@ class ChatController extends Controller
                 'laravel_session' => session()->has('user_id')
             ]
         ]);
+    }
+
+    /**
+     * Get current session user info
+     */
+    private function getCurrentSessionUser()
+    {
+        $userId = session('user_id');
+        $userRole = session('user_role') ?? session('role');
+        
+        // If no user_id, check for specific role-based IDs
+        if (!$userId) {
+            if (session('professor_id')) {
+                $userId = session('professor_id');
+                $userRole = 'professor';
+            } elseif (session('student_id')) {
+                $userId = session('student_id');
+                $userRole = 'student';
+            } elseif (session('director_id')) {
+                $userId = session('director_id');
+                $userRole = 'director';
+            } elseif (session('admin_id') || isset($_SESSION['admin_id'])) {
+                $userId = session('admin_id') ?? $_SESSION['admin_id'];
+                $userRole = 'admin';
+            }
+        }
+        
+        return [
+            'id' => $userId,
+            'role' => $userRole,
+            'name' => session('user_name') ?? session('name') ?? 'Unknown User'
+        ];
     }
 }

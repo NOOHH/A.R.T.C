@@ -13,6 +13,7 @@ class QuizSubmission extends Model
         'student_id',
         'module_id',
         'program_id',
+        'quiz_id',
         'answers',
         'score',
         'total_questions',
@@ -46,5 +47,10 @@ class QuizSubmission extends Model
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    public function quiz()
+    {
+        return $this->belongsTo(Quiz::class, 'quiz_id', 'quiz_id');
     }
 }

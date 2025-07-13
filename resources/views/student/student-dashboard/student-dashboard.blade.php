@@ -292,20 +292,29 @@
         <div class="deadlines-content">
             @forelse($deadlines as $deadline)
                 <div class="deadline-item" style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
+                    <div style="flex: 1;">
                         <div style="font-weight: 600; color: #2c3e50;">{{ $deadline->title }}</div>
                         <div style="font-size: 0.85rem; color: #7f8c8d;">{{ $deadline->description }}</div>
                         <div style="font-size: 0.8rem; color: #e74c3c;">
                             <i class="bi bi-clock"></i> Due: {{ \Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A') }}
                         </div>
                     </div>
-                    <span class="badge" style="background: 
-                        @if($deadline->status === 'completed') #28a745
-                        @elseif($deadline->status === 'overdue') #dc3545  
-                        @else #ffc107
-                        @endif; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
-                        {{ ucfirst($deadline->status) }}
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        @if($deadline->type === 'quiz' && $deadline->status === 'pending')
+                            <a href="{{ route('student.ai-quiz.start', $deadline->reference_id) }}" 
+                               class="btn btn-primary btn-sm" 
+                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 5px 15px; border-radius: 15px; color: white; text-decoration: none; font-size: 0.8rem;">
+                                <i class="bi bi-play-circle"></i> Take Quiz
+                            </a>
+                        @endif
+                        <span class="badge" style="background: 
+                            @if($deadline->status === 'completed') #28a745
+                            @elseif($deadline->status === 'overdue') #dc3545  
+                            @else #ffc107
+                            @endif; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
+                            {{ ucfirst($deadline->status) }}
+                        </span>
+                    </div>
                 </div>
             @empty
                 <p style="padding: 30px 20px; text-align: center; color: #7f8c8d;">No upcoming deadlines at this time.</p>

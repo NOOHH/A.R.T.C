@@ -69,8 +69,7 @@ class Kernel extends HttpKernel
         'student.auth' => \App\Http\Middleware\CheckStudentAuth::class,
         'admin.auth' => \App\Http\Middleware\CheckAdminAuth::class,
         'professor.auth' => \App\Http\Middleware\CheckProfessorAuth::class,
-        // Temporarily disable session middleware
-        'session.auth' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'session.auth' => \App\Http\Middleware\SessionAuth::class,
         'check.session' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'role.dashboard' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
     ];

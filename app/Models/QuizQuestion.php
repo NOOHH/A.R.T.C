@@ -10,14 +10,19 @@ class QuizQuestion extends Model
     use HasFactory;
 
     protected $table = 'quiz_questions';
+    protected $primaryKey = 'quiz_id'; // Note: This table uses quiz_id as primary key
 
     protected $fillable = [
+        'quiz_id',
         'quiz_title',
+        'program_id',
         'question_text',
         'question_type',
         'options',
         'correct_answer',
         'explanation',
+        'difficulty',
+        'instructions',
         'points',
         'source_file',
         'is_active',
@@ -30,6 +35,22 @@ class QuizQuestion extends Model
         'is_active' => 'boolean',
         'points' => 'integer',
     ];
+
+    /**
+     * Get the quiz this question belongs to.
+     */
+    public function quiz()
+    {
+        return $this->belongsTo(Quiz::class, 'quiz_id', 'quiz_id');
+    }
+
+    /**
+     * Get the program this question belongs to.
+     */
+    public function program()
+    {
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
 
     /**
      * Get the admin who created the question.
@@ -61,14 +82,6 @@ class QuizQuestion extends Model
     public function scopeOfType($query, $type)
     {
         return $query->where('question_type', $type);
-    }
-
-    /**
-     * Scope to get questions by quiz title.
-     */
-    public function scopeForQuiz($query, $quizTitle)
-    {
-        return $query->where('quiz_title', $quizTitle);
     }
 
     /**

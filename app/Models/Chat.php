@@ -4,59 +4,70 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 class Chat extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     */
     protected $table = 'chats';
-
-    /**
-     * The primary key for the model.
-     */
     protected $primaryKey = 'chat_id';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     */
-    public $incrementing = true;
-
-    /**
-     * The "type" of the primary key ID.
-     */
-    protected $keyType = 'int';
-
-    /**
-     * Enable Laravel's created_at/updated_at timestamps.
-     */
     public $timestamps = true;
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'sender_id',
         'receiver_id',
-        'message',
+        'body_cipher',
+        'is_read',
         'sent_at',
         'read_at',
     ];
 
-    /**
-     * Cast attributes to native types.
-     */
     protected $casts = [
-        'sent_at'    => 'datetime',
-        'read_at'    => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'sent_at' => 'datetime',
+        'read_at' => 'datetime',
+        'is_read' => 'boolean',
     ];
 
     /**
-     * Relationship: the user who sent this message.
+     * Encrypt the message body when setting
+     */
+    public function setBodyAttribute($value)
+    {
+        $this->attributes['body_cipher'] = Crypt::encryptString($value);
+    }
+
+    /**
+     * Decrypt the message body when getting
+     */
+    public function getBodyAttribute()
+    {
+        try {
+            return Crypt::decryptString($this->attributes['body_cipher']);
+        } catch (\Exception $e) {
+            // If decryption fails, return the original value (for backward compatibility)
+            return $this->attributes['body_cipher'];
+        }
+    }
+
+    /**
+     * For API compatibility, map message to body
+     */
+    public function getMessageAttribute()
+    {
+        return $this->body;
+    }
+
+    /**
+     * For API compatibility, map message to body
+     */
+    public function setMessageAttribute($value)
+    {
+        $this->body = $value;
+    }
+
+    /**
+     * Get the sender of the message
      */
     public function sender()
     {
@@ -64,7 +75,7 @@ class Chat extends Model
     }
 
     /**
-     * Relationship: the user who receives this message.
+     * Get the receiver of the message
      */
     public function receiver()
     {
@@ -72,18 +83,40 @@ class Chat extends Model
     }
 
     /**
-     * Mark this message as read.
+     * Mark message as read
      */
-    public function markAsRead(): void
+    public function markAsRead()
     {
-        $this->update(['read_at' => now()]);
+        $this->is_read = true;
+        $this->read_at = now();
+        $this->save();
     }
 
     /**
-     * Determine if the message has been read.
+     * Check if message is read
      */
-    public function isRead(): bool
+    public function isRead()
     {
-        return ! is_null($this->read_at);
+        return $this->is_read;
+    }
+
+    /**
+     * Scope to get conversation between two users
+     */
+    public function scopeConversation($query, $user1, $user2)
+    {
+        return $query->where(function($q) use ($user1, $user2) {
+            $q->where('sender_id', $user1)->where('receiver_id', $user2);
+        })->orWhere(function($q) use ($user1, $user2) {
+            $q->where('sender_id', $user2)->where('receiver_id', $user1);
+        });
+    }
+
+    /**
+     * Scope to get unread messages for a user
+     */
+    public function scopeUnreadForUser($query, $userId)
+    {
+        return $query->where('receiver_id', $userId)->where('is_read', false);
     }
 }

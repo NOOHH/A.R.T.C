@@ -809,4 +809,127 @@ class StudentDashboardController extends Controller
             ]);
         }
     }
+    
+    /**
+     * Start AI-generated quiz
+     */
+    public function startAiQuiz($quizId)
+    {
+        $quiz = \App\Models\Quiz::with('questions')->find($quizId);
+        
+        if (!$quiz) {
+            return redirect()->back()->with('error', 'Quiz not found.');
+        }
+        
+        $student = Student::where('user_id', session('user_id'))->first();
+        
+        if (!$student) {
+            return redirect()->back()->with('error', 'Student not found.');
+        }
+        
+        // Check if student has permission to take this quiz
+        $deadline = Deadline::where('student_id', $student->student_id)
+            ->where('type', 'quiz')
+            ->where('reference_id', $quizId)
+            ->first();
+            
+        if (!$deadline) {
+            return redirect()->back()->with('error', 'You do not have permission to take this quiz.');
+        }
+        
+        if ($deadline->status === 'completed') {
+            return redirect()->back()->with('error', 'You have already completed this quiz.');
+        }
+        
+        return view('student.take-quiz', compact('quiz', 'deadline'));
+    }
+    
+    /**
+     * Submit AI-generated quiz
+     */
+    public function submitAiQuiz(Request $request, $quizId)
+    {
+        try {
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found.'
+                ]);
+            }
+            
+            $quiz = \App\Models\Quiz::with('questions')->find($quizId);
+            
+            if (!$quiz) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz not found.'
+                ]);
+            }
+            
+            // Check if student has permission to take this quiz
+            $deadline = Deadline::where('student_id', $student->student_id)
+                ->where('type', 'quiz')
+                ->where('reference_id', $quizId)
+                ->first();
+                
+            if (!$deadline) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to take this quiz.'
+                ]);
+            }
+            
+            if ($deadline->status === 'completed') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have already completed this quiz.'
+                ]);
+            }
+            
+            // Calculate score
+            $answers = $request->answers ?? [];
+            $score = 0;
+            $totalQuestions = $quiz->questions->count();
+            
+            foreach ($quiz->questions as $question) {
+                $questionId = $question->quiz_id; // Using quiz_id as question identifier
+                $studentAnswer = $answers[$questionId] ?? null;
+                
+                if ($studentAnswer && $studentAnswer === $question->correct_answer) {
+                    $score += $question->points;
+                }
+            }
+            
+            // Create quiz submission record
+            \App\Models\QuizSubmission::create([
+                'student_id' => $student->student_id,
+                'quiz_id' => $quizId,
+                'answers' => json_encode($answers),
+                'score' => $score,
+                'total_questions' => $totalQuestions,
+                'time_taken' => $request->time_taken ?? 0,
+                'submitted_at' => now()
+            ]);
+            
+            // Update deadline status
+            $deadline->status = 'completed';
+            $deadline->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz submitted successfully!',
+                'score' => $score,
+                'total_questions' => $totalQuestions
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Quiz submission error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while submitting the quiz.'
+            ]);
+        }
+    }
 }

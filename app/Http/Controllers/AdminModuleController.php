@@ -792,6 +792,7 @@ class AdminModuleController extends Controller
     {
         $request->validate([
             'program_id' => 'required|exists:programs,program_id',
+            'batch_id' => 'required|exists:student_batches,batch_id',
             'document' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240',
             'quiz_title' => 'required|string|max:255',
             'num_questions' => 'required|integer|min:1|max:50',
@@ -806,30 +807,107 @@ class AdminModuleController extends Controller
             $filename = time() . '_ai_quiz_' . $file->getClientOriginalName();
             $documentPath = $file->storeAs('modules/ai_documents', $filename, 'public');
 
-            // Here you would integrate with your AI service
-            // For now, we'll return a mock response
-            $quizData = [
-                'title' => $request->quiz_title,
-                'description' => 'AI Generated Quiz from ' . $file->getClientOriginalName(),
-                'num_questions' => $request->num_questions,
-                'difficulty' => $request->difficulty,
-                'quiz_type' => $request->quiz_type,
-                'time_limit' => $request->time_limit,
-                'document_path' => $documentPath,
-            ];
+            // Create the quiz in the database
+            $quiz = new \App\Models\Quiz();
+            $quiz->professor_id = null; // Admin generated
+            $quiz->program_id = $request->program_id;
+            $quiz->quiz_title = $request->quiz_title;
+            $quiz->instructions = $request->quiz_description ?? 'AI Generated Quiz from ' . $file->getClientOriginalName();
+            $quiz->difficulty = $request->difficulty;
+            $quiz->total_questions = $request->num_questions;
+            $quiz->time_limit = $request->time_limit;
+            $quiz->document_path = $documentPath;
+            $quiz->is_active = true;
+            $quiz->save();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'AI Quiz generated successfully',
-                'quiz' => $quizData
-            ]);
+            // Generate mock questions for now (replace with actual AI integration)
+            $this->generateMockQuestions($quiz, $request->num_questions, $request->quiz_type);
+
+            // Create assignment for the batch
+            $this->createQuizAssignment($quiz, $request->batch_id);
+
+            $programs = \App\Models\Program::all();
+            return view('admin.admin-modules.admin-quiz-generator', compact('programs', 'quiz'))
+                ->with('success', 'Quiz generated successfully and assigned to the batch!');
 
         } catch (\Exception $e) {
-            Log::error('AI Quiz generation error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating AI quiz: ' . $e->getMessage()
-            ], 500);
+            \Illuminate\Support\Facades\Log::error('AI Quiz generation error: ' . $e->getMessage());
+            $programs = \App\Models\Program::all();
+            return view('admin.admin-modules.admin-quiz-generator', compact('programs'))
+                ->with('error', 'Error generating AI quiz: ' . $e->getMessage());
+        }
+    }
+
+    private function generateMockQuestions($quiz, $numQuestions, $quizType)
+    {
+        $sampleQuestions = [
+            'multiple_choice' => [
+                ['question' => 'What is the capital of France?', 'options' => ['Paris', 'London', 'Berlin', 'Madrid'], 'correct' => 'Paris'],
+                ['question' => 'Which planet is closest to the Sun?', 'options' => ['Venus', 'Mercury', 'Earth', 'Mars'], 'correct' => 'Mercury'],
+                ['question' => 'What is 2 + 2?', 'options' => ['3', '4', '5', '6'], 'correct' => '4'],
+                ['question' => 'Which programming language is used for web development?', 'options' => ['Python', 'JavaScript', 'C++', 'Java'], 'correct' => 'JavaScript'],
+                ['question' => 'What is the largest ocean on Earth?', 'options' => ['Atlantic', 'Indian', 'Arctic', 'Pacific'], 'correct' => 'Pacific'],
+            ],
+            'true_false' => [
+                ['question' => 'The Earth is flat.', 'correct' => 'false'],
+                ['question' => 'Water boils at 100°C.', 'correct' => 'true'],
+                ['question' => 'There are 12 months in a year.', 'correct' => 'true'],
+                ['question' => 'The sun rises in the west.', 'correct' => 'false'],
+                ['question' => 'HTML stands for HyperText Markup Language.', 'correct' => 'true'],
+            ]
+        ];
+
+        for ($i = 0; $i < $numQuestions; $i++) {
+            $question = new \App\Models\QuizQuestion();
+            $question->quiz_id = $quiz->quiz_id;
+            $question->quiz_title = $quiz->quiz_title;
+            $question->program_id = $quiz->program_id;
+            $question->difficulty = $quiz->difficulty;
+            $question->points = 1;
+            $question->is_active = true;
+            $question->created_by_admin = 1; // Admin created
+            
+            if ($quizType === 'multiple_choice' || ($quizType === 'mixed' && $i % 2 === 0)) {
+                $mcQuestions = $sampleQuestions['multiple_choice'];
+                $sample = $mcQuestions[$i % count($mcQuestions)];
+                
+                $question->question_type = 'multiple_choice';
+                $question->question_text = $sample['question'];
+                $question->options = $sample['options'];
+                $question->correct_answer = $sample['correct'];
+            } else {
+                $tfQuestions = $sampleQuestions['true_false'];
+                $sample = $tfQuestions[$i % count($tfQuestions)];
+                
+                $question->question_type = 'true_false';
+                $question->question_text = $sample['question'];
+                $question->options = ['true', 'false'];
+                $question->correct_answer = $sample['correct'];
+            }
+            
+            $question->save();
+        }
+    }
+
+    private function createQuizAssignment($quiz, $batchId)
+    {
+        // Get all students in the batch
+        $students = \App\Models\StudentBatch::where('batch_id', $batchId)
+            ->where('enrollment_status', 'enrolled')
+            ->get();
+
+        foreach ($students as $student) {
+            // Create assignment in deadlines table (using existing table structure)
+            $deadline = new \App\Models\Deadline();
+            $deadline->student_id = $student->student_id;
+            $deadline->program_id = $quiz->program_id;
+            $deadline->title = $quiz->quiz_title;
+            $deadline->description = $quiz->instructions;
+            $deadline->due_date = now()->addDays(7); // 7 days from now
+            $deadline->type = 'quiz';
+            $deadline->reference_id = $quiz->quiz_id;
+            $deadline->status = 'pending';
+            $deadline->save();
         }
     }
 }

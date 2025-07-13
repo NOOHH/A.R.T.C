@@ -45,6 +45,11 @@ Route::get('/test-db', function () {
     }
 });
 
+// Chat debug route
+Route::get('/chat-debug', function () {
+    return view('chat-debug');
+});
+
 // Quick test to create sample programs
 Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 
@@ -217,6 +222,10 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
     Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
     Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
+    
+    // AI-generated quiz routes
+    Route::get('/student/ai-quiz/{quizId}/start', [StudentDashboardController::class, 'startAiQuiz'])->name('student.ai-quiz.start');
+    Route::post('/student/ai-quiz/{quizId}/submit', [StudentDashboardController::class, 'submitAiQuiz'])->name('student.ai-quiz.submit');
     
     // Payment routes
     Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
@@ -450,7 +459,7 @@ Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore']
 // Toggle archive status
 Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
      ->name('admin.modules.toggle-archive');
-
+     
 // Batch delete modules (used only by archived modules view)
 Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])
      ->name('admin.modules.batch-delete');
@@ -591,7 +600,7 @@ Route::get('/admin/settings/director-features', [AdminSettingsController::class,
 Route::post('/admin/settings/director-features', [AdminSettingsController::class, 'updateDirectorFeatures']);
 
 // Chat functionality routes
-Route::middleware(['web'])->group(function () {
+Route::middleware(['session.auth'])->group(function () {
     Route::get('/chat/search-users', [ChatController::class, 'searchUsers'])->name('chat.search-users');
     Route::get('/chat/messages', [ChatController::class, 'getMessages'])->name('chat.messages');
     Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
@@ -1195,4 +1204,127 @@ Route::get('/final-chat-test', function () {
 // Route for final chat test HTML file
 Route::get('/final-chat-test-html', function () {
     return response()->file(public_path('../final-chat-test.html'));
+});
+
+// Chat System Debug Route
+Route::get('/chat-test-debug', function () {
+    return view('chat-test-debug');
+})->name('chat.test.debug');
+
+// Test route for logout functionality
+Route::get('/logout-test', function () {
+    return view('logout-test');
+})->name('logout.test');
+
+// Debug route to check session state
+Route::get('/debug/session', function () {
+    return response()->json([
+        'session_user_id' => session('user_id'),
+        'session_user_role' => session('user_role'),
+        'session_role' => session('role'),
+        'session_logged_in' => session('logged_in'),
+        'php_session_user_id' => $_SESSION['user_id'] ?? null,
+        'php_session_user_type' => $_SESSION['user_type'] ?? null,
+        'all_session_data' => session()->all(),
+        'php_session_data' => $_SESSION ?? []
+    ]);
+});
+
+// Test route to check database tables
+Route::get('/debug/chat-tables', function () {
+    try {
+        $tables = [];
+        
+        // Check if required tables exist
+        $checkTables = ['students', 'professors', 'admins', 'directors', 'messages'];
+        
+        foreach ($checkTables as $table) {
+            try {
+                $count = DB::table($table)->count();
+                $tables[$table] = [
+                    'exists' => true,
+                    'count' => $count
+                ];
+            } catch (\Exception $e) {
+                $tables[$table] = [
+                    'exists' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'tables' => $tables
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
+// Working chat test page
+Route::get('/chat-test-working', function () {
+    return response()->file(public_path('chat-test-working.html'));
+})->name('chat.test.working');
+
+// Fixed chat test page
+Route::get('/chat-test-fixed', function () {
+    return response()->file(public_path('chat-system-test-fixed.html'));
+})->name('chat.test.fixed');
+
+// Quick login test page
+Route::get('/quick-login-test', function () {
+    return response()->file(public_path('quick-login-test.html'));
+})->name('quick.login.test');
+
+// Debug route to test admin table structure
+Route::get('/debug/admin-table', function () {
+    try {
+        // Get first admin to see structure
+        $admin = DB::table('admins')->first();
+        $columns = DB::select('SHOW COLUMNS FROM admins');
+        
+        return response()->json([
+            'success' => true,
+            'columns' => $columns,
+            'sample_admin' => $admin,
+            'admin_count' => DB::table('admins')->count()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
+// Debug route to test messages table
+Route::get('/debug/messages-table', function () {
+    try {
+        // Check if table exists
+        $tables = DB::select("SHOW TABLES LIKE 'messages'");
+        if (count($tables) > 0) {
+            $columns = DB::select('SHOW COLUMNS FROM messages');
+            return response()->json([
+                'success' => true,
+                'table_exists' => true,
+                'columns' => $columns
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'table_exists' => false,
+                'message' => 'Messages table does not exist'
+            ]);
+        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
 });

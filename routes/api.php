@@ -158,23 +158,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/send', [App\Http\Controllers\Api\ChatApiController::class, 'send']);
 });
 
-// Session-based chat API routes (alternative for session auth)
-Route::middleware('web')->group(function () {
+// Session-based chat API routes (with proper session auth)
+Route::middleware(['web', App\Http\Middleware\SessionAuth::class])->group(function () {
+    // User info endpoint
+    Route::get('/me', [App\Http\Controllers\Api\UserController::class, 'me']);
+    
+    // Chat endpoints
     Route::get('/chat/session/programs', [App\Http\Controllers\Api\ProgramApiController::class, 'index']);
     Route::get('/chat/session/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
     Route::get('/chat/session/users', [App\Http\Controllers\Api\ChatApiController::class, 'users']);
     Route::get('/chat/session/messages', [App\Http\Controllers\Api\ChatApiController::class, 'messages']);
     Route::post('/chat/session/send', [App\Http\Controllers\Api\ChatApiController::class, 'send']);
-    Route::post('/chat/session/clear-history', [App\Http\Controllers\Api\ChatApiController::class, 'clearHistory']);
-});
-
-// Student and Professor specific API routes
-Route::middleware('web')->group(function () {
+    Route::get('/chat/session/recent', [App\Http\Controllers\Api\ChatApiController::class, 'recent']);
+    
+    // User search
+    Route::get('/users/search', [App\Http\Controllers\Api\UserController::class, 'search']);
+    
+    // Professor specific routes
+    Route::get('/professor/assigned-programs', [App\Http\Controllers\Api\ProfessorProgramController::class, 'index']);
+    
+    // Student specific routes
     Route::get('/student/enrolled-programs', function () {
-        if (!session('logged_in', false)) {
-            return response()->json(['error' => 'Unauthorized', 'programs' => []], 401);
-        }
-        
         $studentId = session('user_id');
         if (!$studentId) {
             return response()->json(['programs' => []]);
@@ -188,23 +192,16 @@ Route::middleware('web')->group(function () {
             
         return response()->json(['programs' => $programs]);
     });
+});
+
+// Remove old deprecated routes
+Route::middleware('web')->group(function () {
+    // Keep existing deprecated routes for backward compatibility
+    Route::get('/api/student/enrolled-programs', function () {
+        return response()->json(['programs' => []]);
+    });
     
-    Route::get('/professor/assigned-programs', function () {
-        if (!session('logged_in', false)) {
-            return response()->json(['error' => 'Unauthorized', 'programs' => []], 401);
-        }
-        
-        $professorId = session('user_id');
-        if (!$professorId) {
-            return response()->json(['programs' => []]);
-        }
-        
-        // Get assigned programs for professor (simplified)
-        $programs = \Illuminate\Support\Facades\DB::table('programs')
-            ->where('is_archived', false)
-            ->select('program_id as id', 'program_name')
-            ->get();
-            
-        return response()->json(['programs' => $programs]);
+    Route::get('/api/professor/assigned-programs', function () {
+        return response()->json(['programs' => []]);
     });
 });

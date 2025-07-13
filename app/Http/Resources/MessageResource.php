@@ -18,9 +18,10 @@ class MessageResource extends JsonResource
             'id' => $this->chat_id,
             'sender_id' => $this->sender_id,
             'receiver_id' => $this->receiver_id,
-            'message' => $this->message,
+            'message' => $this->message, // This will be decrypted automatically
             'sent_at' => $this->sent_at,
             'read_at' => $this->read_at,
+            'is_read' => $this->is_read,
             'sender' => new UserResource($this->whenLoaded('sender')),
             'receiver' => new UserResource($this->whenLoaded('receiver')),
             'created_at' => $this->created_at,

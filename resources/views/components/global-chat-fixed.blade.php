@@ -149,307 +149,6 @@
 </style>
 </head>
 
-<head>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.x/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/chat/chat.css') }}">
-<style>
-.user-item {
-    transition: all 0.3s ease;
-    cursor: pointer;
-    border-radius: 8px;
-    margin-bottom: 8px;
-}
-
-.user-item:hover {
-    background-color: #f8f9fa;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-}
-
-.user-item .fw-bold {
-    color: #333;
-    font-size: 14px;
-}
-
-.user-item .text-muted {
-    font-size: 12px;
-}
-
-#searchResults {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.search-loading {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
-}
-
-.search-loading .spinner-border {
-    width: 1rem;
-    height: 1rem;
-}
-
-.message {
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    border-radius: 12px;
-    max-width: 80%;
-    word-wrap: break-word;
-}
-
-.message.user {
-    background-color: #007bff;
-    color: white;
-    margin-left: auto;
-    text-align: right;
-}
-
-.message.bot,
-.message.system {
-    background-color: #f8f9fa;
-    color: #333;
-    margin-right: auto;
-    text-align: left;
-}
-
-.message.other-message {
-    background-color: #e9ecef;
-    color: #333;
-    margin-right: auto;
-    text-align: left;
-}
-
-.message-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.message-sender {
-    font-weight: bold;
-    font-size: 0.9em;
-    margin-bottom: 4px;
-    color: #666;
-}
-
-.message-text {
-    margin-bottom: 4px;
-    line-height: 1.4;
-}
-
-.message-time {
-    font-size: 0.8em;
-    opacity: 0.7;
-}
-
-.user-message .message-sender {
-    color: #cce7ff;
-}
-
-.user-message .message-time {
-    color: #cce7ff;
-}
-
-#chatMessages {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.chat-loading {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-}
-
-.user-item {
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.user-item:hover {
-    background-color: #f8f9fa;
-}
-
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #dee2e6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-}
-</style>
-</head>
-
-<head>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.x/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/chat/chat.css') }}">
-<style>
-.user-item {
-    transition: all 0.3s ease;
-    cursor: pointer;
-    border-radius: 8px;
-    margin-bottom: 8px;
-}
-
-.user-item:hover {
-    background-color: #f8f9fa;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 18px;
-}
-
-.user-item .fw-bold {
-    color: #333;
-    font-size: 14px;
-}
-
-.user-item .text-muted {
-    font-size: 12px;
-}
-
-#searchResults {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.search-loading {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
-}
-
-.search-loading .spinner-border {
-    width: 1rem;
-    height: 1rem;
-}
-
-.message {
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    border-radius: 12px;
-    max-width: 80%;
-    word-wrap: break-word;
-}
-
-.message.user {
-    background-color: #007bff;
-    color: white;
-    margin-left: auto;
-    text-align: right;
-}
-
-.message.bot,
-.message.system {
-    background-color: #f8f9fa;
-    color: #333;
-    margin-right: auto;
-    text-align: left;
-}
-
-.message.other-message {
-    background-color: #e9ecef;
-    color: #333;
-    margin-right: auto;
-    text-align: left;
-}
-
-.message-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.message-sender {
-    font-weight: bold;
-    font-size: 0.9em;
-    margin-bottom: 4px;
-    color: #666;
-}
-
-.message-text {
-    margin-bottom: 4px;
-    line-height: 1.4;
-}
-
-.message-time {
-    font-size: 0.8em;
-    opacity: 0.7;
-}
-
-.user-message .message-sender {
-    color: #cce7ff;
-}
-
-.user-message .message-time {
-    color: #cce7ff;
-}
-
-#chatMessages {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.chat-loading {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-}
-
-search-loading {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-}
-
-.user-item {
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.user-item:hover {
-    background-color: #f8f9fa;
-}
-
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #dee2e6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-}
-</style>
-</head>
 <!-- Chat Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="chatOffcanvas" aria-labelledby="chatOffcanvasLabel" style="width: 400px;">
     <div class="offcanvas-header border-bottom">
@@ -465,14 +164,6 @@ search-loading {
         
         <!-- User Type Selection -->
         <div class="user-type-selection mb-3">
-            @php
-                $role     = session('user_role', 'guest');
-                $loggedIn = session('logged_in', false);
-                $userName = session('user_name', 'Guest');
-            @endphp
-
-            @if($loggedIn)
-                @if($role === 'admin' || $role === 'director')
             @php
                 $role     = session('user_role', 'guest');
                 $loggedIn = session('logged_in', false);
@@ -517,13 +208,12 @@ search-loading {
                         </div>
                     </div>
                 @elseif($role === 'student')
-                @elseif($role === 'student')
                     <div class="row g-2">
                         <div class="col-4">
                             <button type="button" class="btn btn-outline-success w-100 btn-sm user-type-btn" data-type="professor">
                                 <i class="bi bi-person-badge d-block"></i>
                                 <small>Professors</small>
-                                </button>
+                            </button>
                         </div>
                         <div class="col-4">
                             <button class="btn btn-outline-info w-100 btn-sm user-type-btn" data-type="admin">
@@ -776,8 +466,7 @@ function fetchCurrentUserInfo() {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         credentials: 'include'
     })
@@ -799,8 +488,7 @@ function loadUsersByType(type) {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         credentials: 'include'
     })
@@ -811,9 +499,7 @@ function loadUsersByType(type) {
         return response.json();
     })
     .then(data => {
-        if (data.success && data.data && Array.isArray(data.data)) {
-            displayUsers(data.data);
-        } else if (data.data && Array.isArray(data.data)) {
+        if (data.data && Array.isArray(data.data)) {
             displayUsers(data.data);
         } else {
             document.getElementById('searchResults').innerHTML = '<div class="text-center text-muted py-3">No users found.</div>';
@@ -897,13 +583,7 @@ function performRealTimeSearch() {
         type: currentChatType,
         q: q
     }), {
-        method: 'GET',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'include'
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
     })
     .then(r => {
         if (!r.ok) {
@@ -912,15 +592,11 @@ function performRealTimeSearch() {
         return r.json();
     })
     .then(json => {
-        if (json.success && json.data) {
-            const users = Array.isArray(json.data) ? json.data : [];
-            if (!users.length) {
-                container.innerHTML = `<p class="text-center text-muted">No users found for "${q}".</p>`;
-            } else {
-                displayUsers(users);
-            }
+        const users = Array.isArray(json.data) ? json.data : [];
+        if (!users.length) {
+            container.innerHTML = `<p class="text-center text-muted">No users found for "${q}".</p>`;
         } else {
-            container.innerHTML = `<p class="text-center text-danger">Error: ${json.error || 'Unknown error'}</p>`;
+            displayUsers(users);
         }
     })
     .catch(err => {
@@ -939,8 +615,7 @@ function loadMessages(userId) {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         credentials: 'include'
     })
@@ -951,9 +626,7 @@ function loadMessages(userId) {
         return response.json();
     })
     .then(data => {
-        if (data.success && data.data && Array.isArray(data.data)) {
-            displayChatMessages(data.data);
-        } else if (data.data && Array.isArray(data.data)) {
+        if (data.data && Array.isArray(data.data)) {
             displayChatMessages(data.data);
         } else {
             chatMessages.innerHTML = '<div class="text-center text-muted py-3">No messages yet. Start a conversation!</div>';
@@ -1005,8 +678,7 @@ function sendMessageToUser(userId, message) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         credentials: 'include',
         body: JSON.stringify({

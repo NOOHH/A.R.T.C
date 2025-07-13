@@ -320,9 +320,9 @@
                             <div class="options">
                                 @foreach($question->options as $option)
                                     <div class="option-item">
-                                        <span class="{{ $option->is_correct ? 'correct-answer' : '' }}">
-                                            {{ $option->option_text }}
-                                            @if($option->is_correct)
+                                        <span class="{{ $option === $question->correct_answer ? 'correct-answer' : '' }}">
+                                            {{ $option }}
+                                            @if($option === $question->correct_answer)
                                                 <i class="bi bi-check-circle-fill text-success"></i>
                                             @endif
                                         </span>
@@ -375,29 +375,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const generateBtn = document.getElementById('generateBtn');
     const quizForm = document.getElementById('adminQuizForm');
 
+    // Define the batch URL template
+    const batchUrlTemplate = '{{ url("/admin/programs/:PID/batches") }}';
+
     // Handle program selection
     programSelect.addEventListener('change', function() {
-        const programId = this.value;
-        batchSelect.innerHTML = '<option value="">Choose a batch...</option>';
+        const pid = this.value;
+        batchSelect.innerHTML = '<option value="">Choose a batch…</option>';
         batchSelect.disabled = true;
 
-        if (programId) {
-            fetch(`/admin/batches/by-program/${programId}`)
-                .then(response => response.json())
-                .then(batches => {
-                    if (batches.length > 0) {
-                        batches.forEach(batch => {
-                            const option = document.createElement('option');
-                            option.value = batch.batch_id;
-                            option.textContent = batch.batch_name;
-                            batchSelect.appendChild(option);
-                        });
-                        batchSelect.disabled = false;
-                    }
-                })
-                .catch(error => console.error('Error fetching batches:', error));
+        if (!pid) {
+            return;
         }
+
+        const url = batchUrlTemplate.replace(':PID', pid);
+        console.log('Fetching batches from:', url);
+
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                if (data.success && data.batches) {
+                    data.batches.forEach(batch => {
+                        batchSelect.add(new Option(batch.batch_name, batch.id));
+                    });
+                    batchSelect.disabled = false;
+                } else {
+                    console.error('Error in response:', data.message || 'Unknown error');
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching batches:', err);
+                batchSelect.disabled = false;
+            });
     });
+  
 
     // Handle file upload
     documentInput.addEventListener('change', function() {
