@@ -110,6 +110,11 @@
                         <i class="fas fa-graduation-cap me-2"></i>Plans
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="payment-methods-tab" data-bs-toggle="tab" data-bs-target="#payment-methods" type="button" role="tab">
+                        <i class="fas fa-credit-card me-2"></i>Payment Methods
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -883,6 +888,151 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {{-- Payment Methods Tab --}}
+            <div class="tab-pane fade" id="payment-methods" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-credit-card me-2"></i>Payment Methods Management
+                                </h5>
+                                <button type="button" class="btn btn-light btn-sm" onclick="openAddPaymentMethodModal()">
+                                    <i class="fas fa-plus me-1"></i>Add Payment Method
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-4">Manage payment methods available to students. Enable/disable methods and upload QR codes for digital payment options.</p>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="50">Order</th>
+                                                <th>Method Name</th>
+                                                <th>Type</th>
+                                                <th>QR Code</th>
+                                                <th>Status</th>
+                                                <th width="120">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="paymentMethodsTableBody">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">
+                                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading payment methods...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Tips:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            <li>Drag rows to reorder payment methods as they appear to students</li>
+                                            <li>Upload QR codes for digital payment methods (GCash, Maya, etc.)</li>
+                                            <li>Only enabled payment methods will be visible to students</li>
+                                            <li>Provide clear instructions for each payment method</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Modal -->
+    <div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-labelledby="paymentMethodModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentMethodModalTitle">Add Payment Method</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentMethodForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="method_name" class="form-label">Method Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="e.g., GCash, Maya, Bank Transfer">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="method_type" class="form-label">Method Type <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="method_type" name="method_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="credit_card">Credit Card</option>
+                                        <option value="gcash">GCash</option>
+                                        <option value="maya">Maya</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of this payment method"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="instructions" class="form-label">Payment Instructions</label>
+                            <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Detailed instructions for students on how to use this payment method"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="qr_code" class="form-label">QR Code (Optional)</label>
+                                    <input type="file" class="form-control" id="qr_code" name="qr_code" accept="image/*">
+                                    <small class="text-muted">Upload a QR code image for this payment method</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="is_enabled" name="is_enabled" checked>
+                                        <label class="form-check-label" for="is_enabled">
+                                            Enable this payment method
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Current QR Code Display (for editing) -->
+                        <div id="currentQrCode" style="display: none;" class="mb-3">
+                            <!-- QR code will be populated here -->
+                        </div>
+                        
+                        <!-- Remove QR Code Option (for editing) -->
+                        <div id="removeQrCodeSection" style="display: none;" class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="remove_qr_code" name="remove_qr_code">
+                                <label class="form-check-label" for="remove_qr_code">
+                                    Remove current QR code
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="savePaymentMethodBtn" onclick="savePaymentMethod()">
+                        <i class="fas fa-save"></i> Save Payment Method
+                    </button>
                 </div>
             </div>
         </div>
@@ -2353,5 +2503,283 @@ function savePlanSettings() {
         saveButton.disabled = false;
     });
 }
+
+// Payment Methods functionality
+let paymentMethods = [];
+let editingPaymentMethodId = null;
+
+function loadPaymentMethods() {
+    fetch('/admin/settings/payment-methods/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                paymentMethods = data.data;
+                renderPaymentMethodsTable();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading payment methods:', error);
+            showAlert('Failed to load payment methods', 'danger');
+        });
+}
+
+function renderPaymentMethodsTable() {
+    const tableBody = document.getElementById('paymentMethodsTableBody');
+    if (!tableBody) return;
+
+    if (paymentMethods.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted">No payment methods configured</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML = paymentMethods.map(method => `
+        <tr data-id="${method.payment_method_id}">
+            <td>
+                <span class="drag-handle" style="cursor: move;">⋮⋮</span>
+            </td>
+            <td>${method.method_name}</td>
+            <td>
+                <span class="badge badge-${getMethodTypeBadgeClass(method.method_type)}">
+                    ${method.method_type.replace('_', ' ').toUpperCase()}
+                </span>
+            </td>
+            <td>
+                ${method.qr_code_path ? 
+                    `<img src="/storage/${method.qr_code_path}" alt="QR Code" style="width: 40px; height: 40px; object-fit: cover;">` : 
+                    '<span class="text-muted">No QR Code</span>'
+                }
+            </td>
+            <td>
+                <span class="badge badge-${method.is_enabled ? 'success' : 'secondary'}">
+                    ${method.is_enabled ? 'Enabled' : 'Disabled'}
+                </span>
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editPaymentMethod(${method.payment_method_id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deletePaymentMethod(${method.payment_method_id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Initialize sortable
+    if (window.Sortable) {
+        new Sortable(tableBody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function(evt) {
+                updatePaymentMethodOrder();
+            }
+        });
+    }
+}
+
+function getMethodTypeBadgeClass(type) {
+    const badgeClasses = {
+        'credit_card': 'primary',
+        'gcash': 'success',
+        'maya': 'info',
+        'bank_transfer': 'warning',
+        'cash': 'secondary',
+        'other': 'dark'
+    };
+    return badgeClasses[type] || 'secondary';
+}
+
+function openAddPaymentMethodModal() {
+    editingPaymentMethodId = null;
+    document.getElementById('paymentMethodModalTitle').textContent = 'Add Payment Method';
+    document.getElementById('paymentMethodForm').reset();
+    document.getElementById('currentQrCode').style.display = 'none';
+    document.getElementById('removeQrCodeSection').style.display = 'none';
+    
+    // Use Bootstrap 5 vanilla JavaScript instead of jQuery
+    const modal = new bootstrap.Modal(document.getElementById('paymentMethodModal'));
+    modal.show();
+}
+
+function editPaymentMethod(id) {
+    const method = paymentMethods.find(m => m.payment_method_id == id);
+    if (!method) return;
+
+    editingPaymentMethodId = id;
+    document.getElementById('paymentMethodModalTitle').textContent = 'Edit Payment Method';
+    
+    // Populate form
+    document.getElementById('method_name').value = method.method_name;
+    document.getElementById('method_type').value = method.method_type;
+    document.getElementById('description').value = method.description || '';
+    document.getElementById('instructions').value = method.instructions || '';
+    document.getElementById('is_enabled').checked = method.is_enabled;
+
+    // Handle QR code display
+    const currentQrCode = document.getElementById('currentQrCode');
+    const removeQrCodeSection = document.getElementById('removeQrCodeSection');
+    
+    if (method.qr_code_path) {
+        currentQrCode.style.display = 'block';
+        currentQrCode.innerHTML = `
+            <label class="form-label">Current QR Code:</label>
+            <div>
+                <img src="/storage/${method.qr_code_path}" alt="Current QR Code" style="max-width: 150px; height: auto;">
+            </div>
+        `;
+        removeQrCodeSection.style.display = 'block';
+    } else {
+        currentQrCode.style.display = 'none';
+        removeQrCodeSection.style.display = 'none';
+    }
+
+    // Use Bootstrap 5 vanilla JavaScript instead of jQuery
+    const modal = new bootstrap.Modal(document.getElementById('paymentMethodModal'));
+    modal.show();
+}
+
+function savePaymentMethod() {
+    const form = document.getElementById('paymentMethodForm');
+    const formData = new FormData(form);
+    
+    const url = editingPaymentMethodId ? 
+        `/admin/settings/payment-methods/${editingPaymentMethodId}` : 
+        '/admin/settings/payment-methods/';
+    
+    const method = editingPaymentMethodId ? 'PUT' : 'POST';
+
+    // Add CSRF token
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    
+    if (editingPaymentMethodId) {
+        formData.append('_method', 'PUT');
+    }
+
+    const saveButton = document.getElementById('savePaymentMethodBtn');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveButton.disabled = true;
+
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(async response => {
+        let data;
+        try {
+            const text = await response.text();
+            
+            // Check if response is HTML (error page) instead of JSON
+            if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                console.error('Server returned HTML instead of JSON:', text.substring(0, 200));
+                showAlert('Server error occurred. Please check server logs.', 'danger');
+                return;
+            }
+            
+            data = JSON.parse(text);
+        } catch (jsonError) {
+            console.error('JSON parse error:', jsonError);
+            console.error('Raw response:', text.substring(0, 500));
+            showAlert('Server returned invalid response format.', 'danger');
+            return;
+        }
+        
+        if (response.ok && data.success) {
+            showAlert(data.message || 'Payment method saved successfully', 'success');
+            
+            // Use Bootstrap 5 vanilla JavaScript instead of jQuery
+            const modal = bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal'));
+            modal.hide();
+            loadPaymentMethods();
+        } else {
+            showAlert(data.error || data.message || 'Failed to save payment method', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Network error:', error);
+        showAlert('Network error occurred. Please try again.', 'danger');
+    })
+    .finally(() => {
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+function deletePaymentMethod(id) {
+    if (!confirm('Are you sure you want to delete this payment method?')) return;
+
+    fetch(`/admin/settings/payment-methods/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            loadPaymentMethods();
+        } else {
+            showAlert(data.error || 'Failed to delete payment method', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Failed to delete payment method', 'danger');
+    });
+}
+
+function updatePaymentMethodOrder() {
+    const rows = document.querySelectorAll('#paymentMethodsTableBody tr[data-id]');
+    const paymentMethodsOrder = Array.from(rows).map((row, index) => ({
+        id: parseInt(row.dataset.id),
+        sort_order: index + 1
+    }));
+
+    fetch('/admin/settings/payment-methods/reorder', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            payment_methods: paymentMethodsOrder
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Payment method order updated', 'success');
+            loadPaymentMethods();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating order:', error);
+    });
+}
+
+// Load payment methods when the payment methods tab is shown
+document.addEventListener('DOMContentLoaded', function() {
+    // Load payment methods if we're on the payment methods tab
+    const paymentMethodsTab = document.getElementById('payment-methods-tab');
+    if (paymentMethodsTab) {
+        paymentMethodsTab.addEventListener('shown.bs.tab', function() {
+            loadPaymentMethods();
+        });
+        
+        // Also load if payment methods tab is initially active
+        if (paymentMethodsTab.classList.contains('active')) {
+            loadPaymentMethods();
+        }
+    }
+});
 </script>
 @endpush

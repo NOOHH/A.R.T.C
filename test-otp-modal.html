@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OTP Modal Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .otp-digit {
+            width: 50px; 
+            height: 50px; 
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .status-message {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status-message.status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-message.status-success {
+            background: #d1edff;
+            color: #084298;
+            border: 1px solid #b6d4fe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>OTP Modal Test</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#otpModal">
+            Test OTP Modal
+        </button>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div class="modal fade" id="otpModal" tabindex="-1" aria-labelledby="otpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="otpModalLabel">
+                        <i class="fas fa-shield-alt me-2"></i> Verify your email
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-3">The verification code has been sent to your email</p>
+                    <p class="fw-bold text-primary mb-4" id="otpTargetEmail">example@gmail.com</p>
+                    
+                    <div class="otp-input-group d-flex justify-content-center mb-3">
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control text-center otp-digit" maxlength="1">
+                            <input type="text" class="form-control text-center otp-digit" maxlength="1">
+                            <input type="text" class="form-control text-center otp-digit" maxlength="1">
+                            <input type="text" class="form-control text-center otp-digit" maxlength="1">
+                            <input type="text" class="form-control text-center otp-digit" maxlength="1">
+                            <input type="text" class="form-control text-center otp-digit" maxlength="1">
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="otp_code_modal" name="otp_code">
+                    
+                    <div id="otpStatusModal" class="status-message mt-3" style="display: none;"></div>
+                    
+                    <p class="text-muted small mt-3">
+                        Not received yet? <a href="#" onclick="alert('Resend clicked')" class="text-decoration-none">Resend verification code</a>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="verifyOtpBtnModal" class="btn btn-primary w-100" onclick="testVerify()">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function initializeOTPInputs() {
+            const otpInputs = document.querySelectorAll('.otp-digit');
+            const hiddenOtpInput = document.getElementById('otp_code_modal');
+            const continueBtn = document.getElementById('verifyOtpBtnModal');
+
+            otpInputs.forEach((input, idx) => {
+                input.addEventListener('input', () => {
+                    // only digits
+                    input.value = input.value.replace(/\D/, '');
+
+                    // move forward
+                    if (input.value && idx < otpInputs.length - 1) {
+                        otpInputs[idx + 1].focus();
+                    }
+
+                    // combine them
+                    const code = Array.from(otpInputs).map(i => i.value).join('');
+                    hiddenOtpInput.value = code;
+                    
+                    console.log('Current OTP code:', code);
+
+                    // Auto-verify when 6 digits are entered
+                    if (code.length === 6) {
+                        const statusElement = document.getElementById('otpStatusModal');
+                        if (statusElement) {
+                            statusElement.textContent = 'Code complete! Click Continue to verify.';
+                            statusElement.className = 'status-message status-success';
+                            statusElement.style.display = 'block';
+                        }
+                        continueBtn.disabled = false;
+                    } else {
+                        const statusElement = document.getElementById('otpStatusModal');
+                        if (statusElement) {
+                            statusElement.style.display = 'none';
+                        }
+                        continueBtn.disabled = true;
+                    }
+                });
+
+                // backspace moves you back
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Backspace' && !input.value && idx > 0) {
+                        otpInputs[idx - 1].focus();
+                    }
+                });
+
+                // handle paste of full code
+                input.addEventListener('paste', e => {
+                    e.preventDefault();
+                    const txt = (e.clipboardData || window.clipboardData).getData('text')
+                        .replace(/\D/g, '').slice(0, 6);
+                    txt.split('').forEach((d, i) => {
+                        if (otpInputs[i]) otpInputs[i].value = d;
+                    });
+                    otpInputs[Math.min(txt.length, 5)].focus();
+                    input.dispatchEvent(new Event('input')); // re-run the input handler
+                });
+            });
+        }
+
+        function testVerify() {
+            const otp = document.getElementById('otp_code_modal').value;
+            const statusElement = document.getElementById('otpStatusModal');
+            
+            if (otp.length !== 6) {
+                statusElement.textContent = 'Please enter a valid 6-digit OTP.';
+                statusElement.className = 'status-message status-error';
+                statusElement.style.display = 'block';
+                return;
+            }
+            
+            // Simulate success
+            statusElement.textContent = 'Email verified successfully!';
+            statusElement.className = 'status-message status-success';
+            statusElement.style.display = 'block';
+            
+            console.log('Verifying OTP:', otp);
+        }
+
+        // Initialize when modal is shown
+        document.addEventListener('DOMContentLoaded', function() {
+            const otpModal = document.getElementById('otpModal');
+            if (otpModal) {
+                otpModal.addEventListener('shown.bs.modal', function() {
+                    initializeOTPInputs();
+                    // Clear all inputs when modal opens
+                    document.querySelectorAll('.otp-digit').forEach(input => input.value = '');
+                    document.getElementById('otp_code_modal').value = '';
+                    document.getElementById('otpStatusModal').style.display = 'none';
+                    document.getElementById('verifyOtpBtnModal').disabled = true;
+                    
+                    // Focus first input
+                    setTimeout(() => {
+                        document.querySelector('.otp-digit').focus();
+                    }, 100);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

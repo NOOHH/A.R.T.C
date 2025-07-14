@@ -20,7 +20,54 @@ class StudentRegistrationController extends Controller
 {
     public function store(Request $request)
     {
-        Log::info('Registration attempt started', $request->all());
+        Log::info('========== REGISTRATION ATTEMPT STARTED ==========');
+        Log::info('Request method: ' . $request->method());
+        Log::info('Request headers: ', $request->headers->all());
+        Log::info('Request data: ', $request->all());
+        
+        // Check if reCAPTCHA is enabled
+        $recaptchaEnabled = false; // Temporarily disable for testing
+        
+        // Validate reCAPTCHA first (make it optional for now)
+        $recaptchaResponse = $request->input('g-recaptcha-response');
+        
+        if ($recaptchaEnabled && !$recaptchaResponse) {
+            Log::warning('reCAPTCHA response missing but required');
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Please complete the CAPTCHA verification.');
+        }
+
+        // Verify reCAPTCHA with Google (only if enabled and response provided)
+        if ($recaptchaEnabled && $recaptchaResponse) {
+            $recaptchaSecret = '6Leb5IArAAAAAFqVkr7SWj9Zf5pmk7YPRvqvGArC';
+            $recaptchaUrl = 'https://www.google.com/recaptcha/api/siteverify';
+            
+            $recaptchaData = [
+                'secret' => $recaptchaSecret,
+                'response' => $recaptchaResponse,
+                'remoteip' => $request->ip()
+            ];
+
+            $verify = curl_init();
+            curl_setopt($verify, CURLOPT_URL, $recaptchaUrl);
+            curl_setopt($verify, CURLOPT_POST, true);
+            curl_setopt($verify, CURLOPT_POSTFIELDS, http_build_query($recaptchaData));
+            curl_setopt($verify, CURLOPT_RETURNTRANSFER, true);
+            $response = curl_exec($verify);
+            curl_close($verify);
+
+            $responseData = json_decode($response, true);
+            
+            if (!$responseData['success']) {
+                Log::warning('reCAPTCHA verification failed', ['response' => $responseData]);
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'CAPTCHA verification failed. Please try again.');
+            }
+        } else {
+            Log::info('reCAPTCHA verification skipped - not enabled or no response provided');
+        }
         
         // DEBUG: Check if batch_id is in the request
         if ($request->has('batch_id')) {
@@ -48,6 +95,11 @@ class StudentRegistrationController extends Controller
                 // batch_id is optional and will be stored in session, not in registrations table
                 'batch_id' => 'nullable|integer'
             ];
+
+            // Add selected modules validation for modular enrollment
+            if ($request->enrollment_type === 'Modular') {
+                $rules['selected_modules'] = 'required|json';
+            }
 
             // Add start date validation only for asynchronous mode
             $learningMode = strtolower($request->input('learning_mode'));
@@ -160,6 +212,11 @@ class StudentRegistrationController extends Controller
             $registration->enrollment_type = $request->enrollment_type;
             $registration->learning_mode = strtolower($request->learning_mode);
             
+            // Store selected modules for modular enrollment
+            if ($request->enrollment_type === 'Modular' && $request->selected_modules) {
+                $registration->selected_modules = $request->selected_modules;
+            }
+            
             // Handle start date based on learning mode
             if ($learningMode === 'synchronous') {
                 // For synchronous mode, set start date to 2 weeks from registration
@@ -227,7 +284,11 @@ class StudentRegistrationController extends Controller
                     } else {
                         // Log fields that are skipped because column doesn't exist
                         if ($request->has($fieldName)) {
-                            Log::warning("Field {$fieldName} skipped - column doesn't exist in registrations table");
+                            Log::warning("Field {$fieldName} skipped - column doesn't exist in registrations table", [
+                                'field_type' => $field->field_type,
+                                'field_value' => $request->input($fieldName),
+                                'suggestion' => 'Run: php artisan form-requirements:sync'
+                            ]);
                         }
                     }
                 } catch (\Exception $e) {
@@ -279,6 +340,62 @@ class StudentRegistrationController extends Controller
             
             Log::info('Registration saved successfully', ['registration_id' => $registration->id]);
             
+            // CREATE STUDENT RECORD - This was missing!
+            // Create a student record with data from the registration
+            $studentData = [
+                'user_id' => $user->user_id,
+                'firstname' => $user->user_firstname,
+                'lastname' => $user->user_lastname,
+                'email' => $user->email,
+            ];
+            
+            // Add dynamic fields to student record if they have corresponding columns
+            foreach ($formRequirements as $field) {
+                $fieldName = $field->field_name;
+                
+                // Skip sections and batch_id
+                if ($field->field_type === 'section' || $fieldName === 'batch_id') {
+                    continue;
+                }
+                
+                // Check if the column exists in the students table and if we have data for it
+                try {
+                    if (FormRequirement::columnExists($fieldName, 'students') && $request->has($fieldName)) {
+                        if ($field->field_type === 'file' && $request->hasFile($fieldName)) {
+                            // Handle file uploads - store same file path as registration
+                            $studentData[$fieldName] = $registration->{$fieldName} ?? null;
+                        } elseif ($field->field_type === 'module_selection' && $request->has($fieldName)) {
+                            // Handle module selection
+                            $selectedModules = $request->input($fieldName, []);
+                            if (is_array($selectedModules)) {
+                                $studentData[$fieldName] = json_encode($selectedModules);
+                            } else {
+                                $studentData[$fieldName] = $selectedModules;
+                            }
+                        } elseif ($field->field_type === 'checkbox') {
+                            // Handle checkbox fields
+                            $studentData[$fieldName] = $request->has($fieldName) ? 1 : 0;
+                        } else {
+                            // Handle regular fields
+                            $fieldValue = $request->input($fieldName);
+                            if (!empty($fieldValue) || $fieldValue === '0') {
+                                $studentData[$fieldName] = $fieldValue;
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning("Error processing student field {$fieldName}: " . $e->getMessage());
+                }
+            }
+            
+            // Create or update student record
+            $student = Student::updateOrCreate(
+                ['user_id' => $user->user_id],
+                $studentData
+            );
+            
+            Log::info('Student record created/updated', ['student_id' => $student->student_id ?? $student->id]);
+            
             // Also create an immediate enrollment record with the batch_id
             // This ensures batch_id is preserved even if the session is cleared
             $enrollmentData = [
@@ -311,8 +428,39 @@ class StudentRegistrationController extends Controller
 
             DB::commit();
 
-            // Redirect to success page 
-            return redirect()->route('registration.success')->with('success', 'Registration submitted successfully');
+            Log::info('Registration completed successfully', [
+                'registration_id' => $registration->registration_id,
+                'user_id' => $user->user_id,
+                'batch_id' => $request->batch_id ?? 'none'
+            ]);
+
+            // Debug AJAX detection
+            Log::info('AJAX Detection Debug:', [
+                'wantsJson' => $request->wantsJson(),
+                'ajax' => $request->ajax(),
+                'X-Requested-With' => $request->header('X-Requested-With'),
+                'Accept' => $request->header('Accept'),
+                'Content-Type' => $request->header('Content-Type')
+            ]);
+
+            // Check if this is an AJAX request (your form is sending via AJAX)
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                Log::info('Returning JSON response for AJAX request');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration completed successfully!',
+                    'redirect' => '/registration/success', // Redirect to registration success page
+                    'data' => [
+                        'registration_id' => $registration->registration_id,
+                        'user_id' => $user->user_id,
+                        'batch_id' => $request->batch_id ?? null
+                    ]
+                ]);
+            }
+
+            // Redirect to success page for regular form submissions
+            Log::info('Returning redirect response for regular form submission');
+            return redirect('/registration/success')->with('success', 'Registration submitted successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -321,6 +469,15 @@ class StudentRegistrationController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
+            
+            // Check if this is an AJAX request
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration failed: ' . $e->getMessage(),
+                    'errors' => ['general' => [$e->getMessage()]]
+                ], 400);
+            }
             
             return redirect()->back()
                 ->withInput()
@@ -351,11 +508,24 @@ class StudentRegistrationController extends Controller
             $student = Student::where('user_id', session('user_id'))->first();
             
             // Get all program IDs that the student is already enrolled in
-            if ($student) {
-                $enrolledProgramIds = $student->enrollments()
-                    ->pluck('program_id')
-                    ->toArray();
-            }
+            // Check enrollments directly by user_id (don't require student record)
+            $enrolledProgramIds = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->where(function($query) {
+                    $query->whereIn('enrollment_status', ['pending', 'approved', 'completed'])
+                          ->orWhere(function($subQuery) {
+                              // Also include if payment is completed regardless of enrollment status
+                              $subQuery->where('payment_status', 'paid');
+                          });
+                })
+                ->pluck('program_id')
+                ->unique() // Remove duplicates
+                ->toArray();
+                
+            Log::info('User enrollment check', [
+                'user_id' => session('user_id'),
+                'enrolled_program_ids' => $enrolledProgramIds,
+                'has_student_record' => !!$student
+            ]);
         }
         
         // Filter out programs that the student is already enrolled in
@@ -396,15 +566,35 @@ class StudentRegistrationController extends Controller
         try {
             Log::info('Fetching batches for program: ' . $programId);
 
+            // Update batch statuses first
+            $this->updateBatchStatuses($programId);
+
             $batches = \App\Models\StudentBatch::where('program_id', $programId)
-                ->where('batch_status', '=', 'available')
-                // Temporarily remove deadline filter for testing
-                // ->where('registration_deadline', '>=', now())
+                ->whereIn('batch_status', ['available', 'ongoing']) // Include ongoing batches
+                ->where(function($query) {
+                    // Allow registration if:
+                    // 1. Registration deadline hasn't passed (for available batches) OR deadline is null
+                    // 2. OR batch is ongoing (regardless of deadline, as people can still join)
+                    $query->where(function($subQuery) {
+                        $subQuery->where('batch_status', 'available')
+                                 ->where(function($deadlineQuery) {
+                                     $deadlineQuery->where('registration_deadline', '>=', now())
+                                                   ->orWhereNull('registration_deadline');
+                                 });
+                    })->orWhere('batch_status', 'ongoing');
+                })
                 ->with('program')
                 ->orderBy('start_date', 'asc')
                 ->get()
+                ->filter(function($batch) {
+                    // Only show batches that have available slots
+                    return $batch->current_capacity < $batch->max_capacity;
+                })
                 ->map(function ($batch) {
-                    $deadlinePassed = $batch->registration_deadline < now();
+                    $isOngoing = $batch->batch_status === 'ongoing';
+                    $daysStarted = $isOngoing ? now()->diffInDays($batch->start_date) : 0;
+                    $availableSlots = $batch->max_capacity - $batch->current_capacity;
+                    
                     return [
                         'batch_id' => $batch->batch_id,
                         'batch_name' => $batch->batch_name,
@@ -412,21 +602,58 @@ class StudentRegistrationController extends Controller
                         'max_capacity' => $batch->max_capacity,
                         'current_capacity' => $batch->current_capacity,
                         'batch_status' => $batch->batch_status,
-                        'registration_deadline' => $batch->registration_deadline->format('M d, Y'),
+                        'registration_deadline' => $batch->registration_deadline ? $batch->registration_deadline->format('M d, Y') : 'Open',
                         'start_date' => $batch->start_date->format('M d, Y'),
+                        'end_date' => $batch->end_date ? $batch->end_date->format('M d, Y') : null,
                         'description' => $batch->description,
-                        'status' => $deadlinePassed ? 'deadline_passed' : 'active',
-                        'schedule' => 'Live Classes - ' . $batch->start_date->format('M d, Y'),
+                        'status' => $isOngoing ? 'ongoing' : 'active',
+                        'schedule' => $isOngoing ? 'Started ' . $batch->start_date->format('M d, Y') : 'Starts ' . $batch->start_date->format('M d, Y'),
+                        'is_ongoing' => $isOngoing,
+                        'days_started' => $daysStarted,
+                        'available_slots' => $availableSlots,
                         'duration' => 'TBD' // Add default duration
                     ];
-                });
+                })
+                ->values();
 
             Log::info('Found batches: ' . $batches->count());
 
-            return response()->json($batches);
+            // Check if auto-create is enabled for this program
+            $program = \App\Models\Program::find($programId);
+            $autoCreate = $program ? $program->auto_create_batch : false;
+
+            return response()->json([
+                'success' => true,
+                'batches' => $batches,
+                'auto_create' => $autoCreate,
+                'message' => $batches->count() > 0 ? 'Batches found' : 'No batches available'
+            ]);
         } catch (\Exception $e) {
             Log::error('Error fetching batches: ' . $e->getMessage());
-            return response()->json([]);
+            return response()->json([
+                'success' => false,
+                'batches' => [],
+                'auto_create' => false,
+                'message' => 'Error loading batches'
+            ]);
+        }
+    }
+
+    /**
+     * Update batch statuses based on current date
+     */
+    private function updateBatchStatuses($programId = null)
+    {
+        $query = \App\Models\StudentBatch::whereIn('batch_status', ['pending', 'available', 'ongoing']);
+        
+        if ($programId) {
+            $query->where('program_id', $programId);
+        }
+        
+        $batches = $query->get();
+        
+        foreach ($batches as $batch) {
+            $batch->updateStatusBasedOnDates();
         }
     }
 

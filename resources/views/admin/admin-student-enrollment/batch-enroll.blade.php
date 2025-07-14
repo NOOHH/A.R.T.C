@@ -39,7 +39,7 @@
 
                     <!-- Batch Statistics Cards -->
                     <div class="row mb-4">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="card bg-primary text-white">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
@@ -54,7 +54,22 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Pending</h6>
+                                            <h3 class="mb-0">{{ $batches->where('batch_status', 'pending')->count() }}</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-clock fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
                             <div class="card bg-success text-white">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
@@ -69,7 +84,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="card bg-warning text-white">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
@@ -84,7 +99,22 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <div class="card bg-secondary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title">Completed</h6>
+                                            <h3 class="mb-0">{{ $batches->where('batch_status', 'completed')->count() }}</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-trophy fa-2x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
                             <div class="card bg-danger text-white">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
@@ -113,6 +143,7 @@
                                     <th>Status</th>
                                     <th>Registration Deadline</th>
                                     <th>Start Date</th>
+                                    <th>End Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -143,14 +174,20 @@
                                     </td>
                                     <td>
                                         <span class="badge 
-                                            @if($batch->batch_status === 'available') badge-success
-                                            @elseif($batch->batch_status === 'ongoing') badge-warning
-                                            @else badge-danger
+                                            @if($batch->batch_status === 'pending') bg-info
+                                            @elseif($batch->batch_status === 'available') bg-success
+                                            @elseif($batch->batch_status === 'ongoing') bg-warning
+                                            @elseif($batch->batch_status === 'completed') bg-secondary
+                                            @else bg-danger
                                             @endif">
-                                            @if($batch->batch_status === 'available')
+                                            @if($batch->batch_status === 'pending')
+                                                Pending Admin Approval
+                                            @elseif($batch->batch_status === 'available')
                                                 Available
                                             @elseif($batch->batch_status === 'ongoing')
                                                 Ongoing
+                                            @elseif($batch->batch_status === 'completed')
+                                                Completed
                                             @else
                                                 Closed
                                             @endif
@@ -159,7 +196,21 @@
                                     <td>{{ \Carbon\Carbon::parse($batch->registration_deadline)->format('M d, Y') }}</td>
                                     <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
                                     <td>
+                                        @if($batch->end_date)
+                                            {{ \Carbon\Carbon::parse($batch->end_date)->format('M d, Y') }}
+                                        @else
+                                            <span class="text-muted">Ongoing</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <div class="btn-group" role="group">
+                                            @if($batch->batch_status === 'pending')
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="approveBatch({{ $batch->batch_id }})"
+                                                        title="Approve Batch">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                            @endif
                                             <button type="button" class="btn btn-sm btn-info" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#editBatchModal{{ $batch->batch_id }}"
@@ -250,6 +301,11 @@
                         <input type="date" class="form-control" id="start_date" name="start_date" required>
                     </div>
                     <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date (Optional)</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date">
+                        <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
+                    </div>
+                    <div class="mb-3">
                         <label for="description" class="form-label">Description (Optional)</label>
                         <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                     </div>
@@ -314,6 +370,11 @@
                     <div class="mb-3">
                         <label for="edit_start_date{{ $batch->batch_id }}" class="form-label">Start Date</label>
                         <input type="date" class="form-control" id="edit_start_date{{ $batch->batch_id }}" name="start_date" value="{{ $batch->start_date->format('Y-m-d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_end_date{{ $batch->batch_id }}" class="form-label">End Date (Optional)</label>
+                        <input type="date" class="form-control" id="edit_end_date{{ $batch->batch_id }}" name="end_date" value="{{ $batch->end_date ? $batch->end_date->format('Y-m-d') : '' }}">
+                        <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_description{{ $batch->batch_id }}" class="form-label">Description (Optional)</label>
@@ -469,15 +530,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const registrationDeadlineInput = document.getElementById('registration_deadline');
     const startDateInput = document.getElementById('start_date');
     
+    // Note: We allow registration deadline to be any date to support ongoing batches
     if(registrationDeadlineInput) {
-        registrationDeadlineInput.min = today;
+        // Don't set minimum date for registration deadline - allow flexibility for ongoing batches
         
         // Update start date minimum when registration deadline changes
         registrationDeadlineInput.addEventListener('change', function() {
             if(startDateInput) {
-                startDateInput.min = this.value;
+                // Allow start date to be same or before registration deadline for ongoing batches
+                // But don't enforce minimum based on registration deadline
             }
         });
+    }
+    
+    // Allow start date to be any date (including past dates for ongoing batches)
+    if(startDateInput) {
+        // Don't set minimum date for start date - allow flexibility for ongoing batches
     }
 
     // Load students when manage modal is opened
@@ -688,6 +756,31 @@ function removeStudentFromBatch(batchId, studentId) {
         console.error('Error:', error);
         alert('Error removing student from batch');
     });
+}
+
+function approveBatch(batchId) {
+    if(confirm('Are you sure you want to approve this batch? This will change its status to "available".')) {
+        fetch(`{{ url('admin/batches') }}/${batchId}/approve`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error approving batch');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error approving batch');
+        });
+    }
 }
 
 function deleteBatch(batchId) {
