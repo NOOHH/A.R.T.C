@@ -35,27 +35,69 @@ class BatchEnrollmentController extends Controller
         $request->validate([
             'batch_name' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,program_id',
-            'professor_id' => 'nullable|exists:professors,professor_id',
-            'max_capacity' => 'required|integer|min:1',
-            'registration_deadline' => 'required|date|after:today',
-            'start_date' => 'required|date|after:registration_deadline',
-            'description' => 'nullable|string'
+            'professor_ids' => 'nullable|array',
+            'professor_ids.*' => 'exists:professors,professor_id',
+            'batch_capacity' => 'required|integer|min:1',
+            'enrollment_deadline' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'batch_description' => 'nullable|string',
+            'batch_status' => 'required|in:available,ongoing,closed,completed'
         ]);
+
+        // Auto-determine status based on start date if provided
+        $status = $request->batch_status;
+        if ($request->start_date) {
+            $startDate = \Carbon\Carbon::parse($request->start_date);
+            $today = \Carbon\Carbon::today();
+            $endDate = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null;
+            
+            if ($startDate->equalTo($today) || $startDate->lessThan($today)) {
+                if ($endDate && $today->greaterThan($endDate)) {
+                    $status = 'completed';
+                } else {
+                    $status = 'ongoing';
+                }
+            } else {
+                $status = 'available';
+            }
+        }
 
         $batch = StudentBatch::create([
             'batch_name' => $request->batch_name,
             'program_id' => $request->program_id,
-            'professor_id' => $request->professor_id,
-            'max_capacity' => $request->max_capacity,
+            'max_capacity' => $request->batch_capacity,
             'current_capacity' => 0,
-            'batch_status' => 'available',
-            'registration_deadline' => Carbon::parse($request->registration_deadline),
-            'start_date' => Carbon::parse($request->start_date),
-            'description' => $request->description,
-            'created_by' => session('admin_id') // Track who created the batch
+            'batch_status' => $status,
+            'registration_deadline' => $request->enrollment_deadline ? \Carbon\Carbon::parse($request->enrollment_deadline) : null,
+            'start_date' => $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null,
+            'end_date' => $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null,
+            'description' => $request->batch_description,
+            'created_by' => session('admin_id'), // Track who created the batch
+            'professor_id' => $request->professor_ids ? $request->professor_ids[0] : null // Keep for backward compatibility
         ]);
 
-        return redirect()->back()->with('success', 'Batch "' . $batch->batch_name . '" created successfully!');
+        // Assign multiple professors if provided
+        if ($request->professor_ids && count($request->professor_ids) > 0) {
+            $professorData = [];
+            foreach ($request->professor_ids as $professorId) {
+                $professorData[$professorId] = [
+                    'assigned_at' => now(),
+                    'assigned_by' => session('admin_id'),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+            }
+            $batch->professors()->attach($professorData);
+        }
+
+        $professorCount = $request->professor_ids ? count($request->professor_ids) : 0;
+        $message = 'Batch "' . $batch->batch_name . '" created successfully with status: ' . $status;
+        if ($professorCount > 0) {
+            $message .= ' and ' . $professorCount . ' professor(s) assigned.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function show($id)
@@ -80,7 +122,8 @@ class BatchEnrollmentController extends Controller
             'professor_id' => 'nullable|integer', // Changed from exists check
             'max_capacity' => 'required|integer|min:1',
             'registration_deadline' => 'required|date',
-            'start_date' => 'required|date|after:registration_deadline',
+            'start_date' => 'required|date', // Removed after:registration_deadline for flexibility
+            'end_date' => 'nullable|date|after:start_date',
             'description' => 'nullable|string'
         ]);
 
@@ -96,7 +139,7 @@ class BatchEnrollmentController extends Controller
             ], 400);
         }
 
-        $batch->update([
+        $updateData = [
             'batch_name' => $request->batch_name,
             'program_id' => $request->program_id,
             'professor_id' => $request->professor_id,
@@ -104,7 +147,19 @@ class BatchEnrollmentController extends Controller
             'registration_deadline' => Carbon::parse($request->registration_deadline),
             'start_date' => Carbon::parse($request->start_date),
             'description' => $request->description
-        ]);
+        ];
+        
+        // Handle end_date
+        if ($request->end_date) {
+            $updateData['end_date'] = Carbon::parse($request->end_date);
+        } else {
+            $updateData['end_date'] = null;
+        }
+
+        $batch->update($updateData);
+        
+        // Update batch status based on new dates
+        $batch->updateStatusBasedOnDates();
 
         return response()->json([
             'success' => true,
@@ -128,6 +183,28 @@ class BatchEnrollmentController extends Controller
             'success' => true,
             'message' => 'Batch status updated successfully',
             'new_status' => $newStatus
+        ]);
+    }
+
+    public function approveBatch($id)
+    {
+        // Authentication is handled by middleware
+
+        $batch = StudentBatch::find($id);
+        if (!$batch) {
+            return response()->json(['error' => 'Batch not found'], 404);
+        }
+
+        if ($batch->batch_status !== 'pending') {
+            return response()->json(['error' => 'Only pending batches can be approved'], 400);
+        }
+
+        $batch->update(['batch_status' => 'available']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Batch approved successfully',
+            'new_status' => 'available'
         ]);
     }
 
@@ -251,13 +328,23 @@ class BatchEnrollmentController extends Controller
             return response()->json([]);
         }
 
+        // Update batch statuses first
+        $this->updateBatchStatuses();
+
         $batches = StudentBatch::where('program_id', $programId)
-            ->where('batch_status', '!=', 'closed')
-            ->where('registration_deadline', '>=', now())
+            ->whereIn('batch_status', ['available', 'ongoing']) // Include ongoing batches
+            ->where(function($query) {
+                // Allow registration if deadline hasn't passed OR if batch is ongoing but still accepting
+                $query->where('registration_deadline', '>=', now())
+                      ->orWhere('batch_status', 'ongoing');
+            })
             ->with('program')
             ->orderBy('start_date', 'asc')
             ->get()
             ->map(function ($batch) {
+                $isOngoing = $batch->batch_status === 'ongoing';
+                $daysStarted = $isOngoing ? now()->diffInDays($batch->start_date) : 0;
+                
                 return [
                     'batch_id' => $batch->batch_id,
                     'batch_name' => $batch->batch_name,
@@ -265,15 +352,38 @@ class BatchEnrollmentController extends Controller
                     'max_capacity' => $batch->max_capacity,
                     'current_capacity' => $batch->current_capacity,
                     'batch_status' => $batch->batch_status,
-                    'registration_deadline' => $batch->registration_deadline->format('M d, Y'),
+                    'registration_deadline' => $batch->registration_deadline ? $batch->registration_deadline->format('M d, Y') : 'Open',
                     'start_date' => $batch->start_date->format('M d, Y'),
+                    'end_date' => $batch->end_date ? $batch->end_date->format('M d, Y') : null,
                     'description' => $batch->description,
-                    'status' => $batch->batch_status === 'available' ? 'active' : 'inactive',
-                    'schedule' => 'Live Classes - ' . $batch->start_date->format('M d, Y')
+                    'status' => $batch->batch_status === 'available' ? 'active' : ($isOngoing ? 'ongoing' : 'inactive'),
+                    'schedule' => $isOngoing ? 'Ongoing - Started ' . $batch->start_date->format('M d, Y') : 'Live Classes - ' . $batch->start_date->format('M d, Y'),
+                    'is_ongoing' => $isOngoing,
+                    'days_started' => $daysStarted,
+                    'has_available_slots' => $batch->hasAvailableSlots(),
+                    'available_slots' => $batch->available_slots
                 ];
-            });
+            })
+            ->filter(function($batch) {
+                // Only show batches that have available slots
+                return $batch['has_available_slots'];
+            })
+            ->values();
 
         return response()->json($batches);
+    }
+
+    /**
+     * Update batch statuses based on current date
+     */
+    private function updateBatchStatuses()
+    {
+        $batches = StudentBatch::whereIn('batch_status', ['pending', 'available', 'ongoing'])
+            ->get();
+        
+        foreach ($batches as $batch) {
+            $batch->updateStatusBasedOnDates();
+        }
     }
 
     /**

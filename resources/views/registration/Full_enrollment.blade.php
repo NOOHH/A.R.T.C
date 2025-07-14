@@ -5,14 +5,235 @@
 @section('body_class', 'registration-page')
 
 @push('styles')
-{!! App\Helpers\UIHelper::getNavbarStyles() !!}
+    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
 
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+      // now these will resolve correctly
+      const PREFILL_URL  = "{{ route('registration.userPrefill') }}";
+      const VALIDATE_URL = "{{ route('registration.validateFile') }}";
+      const CSRF_TOKEN   = "{{ csrf_token() }}";
+    </script>
+
+    <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- reCAPTCHA -->
+@if(env('RECAPTCHA_SITE_KEY'))
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+@endif
+
+<style>
+/* OTP Verification Styles */
+.email-input-group {
+    position: relative;
+}
+
+.email-input-group .btn-otp {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 6px 12px;
+    font-size: 12px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.email-input-group .btn-otp:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    transform: translateY(-50%) translateY(-1px);
+}
+
+.email-input-group input {
+    padding-right: 100px;
+}
+
+.otp-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.otp-container.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.otp-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.otp-icon {
+    width: 40px;
+    height: 40px;
+    background: #0d6efd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.otp-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.otp-input {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 3px;
+    padding: 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-otp {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+}
+
+.btn-otp:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+.btn-otp:disabled {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-otp.verified {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+}
+
+.status-message {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-success {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0f5132;
+}
+
+.status-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #842029;
+}
+
+.step-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.step-indicator.completed {
+    background: #198754;
+}
+
+/* OTP Modal Styles */
+#otpModal .modal-dialog {
+    max-width: 400px;
+}
+
+#otpModal .modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#otpModal .modal-title {
+    color: #495057;
+    font-weight: 600;
+}
+
+#otpModal .otp-digit {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#otpModal .otp-digit:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+#otpModal .status-message {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#otpModal .status-message.status-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+#otpModal .status-message.status-success {
+    background: #d1edff;
+    color: #084298;
+    border: 1px solid #b6d4fe;
+}
+
+#otpModal .btn-primary.verified {
+    background: #198754;
+    border-color: #198754;
+}
+
+#otpModal .modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+}
+</style>
 
 
 <!-- Critical JavaScript functions for immediate availability -->
@@ -26,6 +247,9 @@ let selectedPaymentMethod = null;
 let currentPackageIndex = 0;
 let packagesPerView = 2;
 let totalPackages = <?php echo isset($packages) && is_countable($packages) ? (int)count($packages) : 0; ?>;
+
+// reCAPTCHA configuration
+const hasRecaptcha = @if(env('RECAPTCHA_SITE_KEY')) true @else false @endif;
 
 // Plan configuration data
 const planConfig = {
@@ -42,12 +266,22 @@ const planConfig = {
 console.log('Plan configuration:', planConfig);
 
 // Check if user is logged in (set from server)
-const isUserLoggedIn = @if(session('user_id')) true @else false @endif;
-const loggedInUserId = '@if(session("user_id")){{ session("user_id") }}@endif';
-const loggedInUserName = '@if(session("user_name")){{ session("user_name") }}@endif';
-const loggedInUserFirstname = '@if(session("user_firstname")){{ session("user_firstname") }}@endif';
-const loggedInUserLastname = '@if(session("user_lastname")){{ session("user_lastname") }}@endif';
-const loggedInUserEmail = '@if(session("user_email")){{ session("user_email") }}@endif';
+// User authentication state - check both Laravel session and PHP session
+@php
+    $userLoggedIn = session('user_id') || (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
+    $userId = session('user_id') ?: (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '');
+    $userName = session('user_name') ?: (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '');
+    $userFirstname = session('user_firstname') ?: (isset($_SESSION['user_firstname']) ? $_SESSION['user_firstname'] : '');
+    $userLastname = session('user_lastname') ?: (isset($_SESSION['user_lastname']) ? $_SESSION['user_lastname'] : '');
+    $userEmail = session('user_email') ?: (isset($_SESSION['user_email']) ? $_SESSION['user_email'] : '');
+@endphp
+
+const isUserLoggedIn = {{ $userLoggedIn ? 'true' : 'false' }};
+const loggedInUserId = '{{ $userId }}';
+const loggedInUserName = '{{ $userName }}';
+const loggedInUserFirstname = '{{ $userFirstname }}';
+const loggedInUserLastname = '{{ $userLastname }}';
+const loggedInUserEmail = '{{ $userEmail }}';
 
 console.log('Session check:', {
     isUserLoggedIn,
@@ -225,6 +459,11 @@ function nextStep() {
             updateStepper(currentStep);
             setTimeout(() => {
                 fillLoggedInUserData();
+                // Load batches when entering step 4
+                const programSelect = document.getElementById('programSelect');
+                if (programSelect && programSelect.value) {
+                    loadBatchesForProgram(programSelect.value);
+                }
             }, 300);
         } else {
             animateStepTransition('step-2', 'step-3');
@@ -242,6 +481,11 @@ function nextStep() {
         updateStepper(currentStep);
         setTimeout(() => {
             copyAccountDataToStudentForm();
+            // Load batches when entering step 4
+            const programSelect = document.getElementById('programSelect');
+            if (programSelect && programSelect.value) {
+                loadBatchesForProgram(programSelect.value);
+            }
         }, 300);
     }
     // updateProgressBar(); <-- Only keep this in animateStepTransition
@@ -464,64 +708,235 @@ async function loadBatchesForProgram(programId = null) {
             throw new Error(`Failed to fetch batches: ${response.status} ${response.statusText}`);
         }
         
-        const batches = await response.json();
-        console.log('Fetched batches:', batches);
+        const response_data = await response.json();
+        console.log('Fetched response:', response_data);
+        
+        // Handle the new API response format
+        const batches = response_data.batches || [];
+        const auto_create = response_data.auto_create || false;
+        const message = response_data.message || '';
         
         if (batchOptions) {
-            if (batches.length === 0) {
+            if (batches.length === 0 || auto_create) {
                 batchOptions.innerHTML = `
-                    <div class="no-batches-info" style="text-align:center; padding:20px; background:#f8f9fa; border-radius:8px; margin:10px 0;">
-                        <i class="bi bi-info-circle" style="font-size:2rem; color:#6c757d; margin-bottom:10px;"></i>
-                        <p style="margin:0; color:#6c757d;">No active batches available for this program.</p>
-                        <p style="margin:5px 0 0 0; font-size:0.9rem; color:#6c757d;">
-                            <strong>Don't worry!</strong> You can continue with your registration. 
-                            We'll automatically create a new batch for you and notify you when it's ready.
-                        </p>
+                    <div class="no-batches-info" style="text-align:center; padding:20px; background:#e8f4fd; border:2px solid #0066cc; border-radius:12px; margin:10px 0;">
+                        <div style="margin-bottom:15px;">
+                            <i class="fas fa-magic" style="font-size:2.5rem; color:#0066cc; margin-bottom:10px;"></i>
+                        </div>
+                        <h5 style="margin:0 0 10px 0; color:#0066cc; font-weight:600;">Auto-Batch Creation Enabled</h5>
+                        <p style="margin:0; color:#004499; font-weight:500;">No active batches available for this program.</p>
+                        <div style="background:#ffffff; padding:15px; border-radius:8px; margin:15px 0; border-left:4px solid #0066cc;">
+                            <p style="margin:0; font-size:0.95rem; color:#333;">
+                                <strong><i class="fas fa-sparkles"></i> Good news!</strong> You can continue with your registration. 
+                                Our system will automatically create a new batch for you with <span style="color:#0066cc; font-weight:600;">'pending'</span> status.
+                            </p>
+                            <p style="margin:8px 0 0 0; font-size:0.9rem; color:#666;">
+                                <i class="fas fa-clock"></i> An admin will review and activate your batch, then notify you when it's ready to start.
+                            </p>
+                        </div>
+                        <div style="font-size:0.85rem; color:#666; margin-top:10px;">
+                            <i class="fas fa-info-circle"></i> This ensures you don't miss enrollment opportunities!
+                        </div>
                     </div>
                 `;
             } else {
                 batchOptions.innerHTML = batches.map(batch => {
-                    const availableSlots = batch.max_capacity - batch.current_capacity;
+                    const availableSlots = batch.available_slots || (batch.max_capacity - batch.current_capacity);
                     const isNearFull = availableSlots <= 3 && availableSlots > 0;
                     const isFull = availableSlots <= 0;
-                    const isOngoing = batch.batch_status === 'ongoing';
+                    
+                    // Enhanced status detection
+                    const batchStatus = (batch.batch_status || '').toLowerCase();
+                    const isOngoing = batchStatus === 'ongoing' || batch.is_ongoing;
+                    const isAvailable = batchStatus === 'available' || batchStatus === 'active' || batchStatus === 'open';
+                    const isPending = batchStatus === 'pending';
+                    const isClosed = batchStatus === 'closed' || batchStatus === 'completed' || isFull;
                     
                     let statusText = '';
                     let statusClass = '';
+                    let canEnroll = true;
                     
-                    if (isFull) {
+                    if (isClosed || isFull) {
                         statusText = 'Closed (Full)';
                         statusClass = 'status-closed';
+                        canEnroll = false;
                     } else if (isOngoing && availableSlots > 0) {
-                        statusText = 'Ongoing - Available to Join';
+                        statusText = `Ongoing - ${availableSlots} slots available`;
                         statusClass = 'status-ongoing';
-                    } else if (isNearFull) {
-                        statusText = `Available (${availableSlots} slots left)`;
-                        statusClass = 'status-limited';
+                        canEnroll = true;
+                    } else if (isPending) {
+                        statusText = `Pending (${availableSlots} slots reserved)`;
+                        statusClass = 'status-pending';
+                        canEnroll = false;
+                    } else if (isAvailable || availableSlots > 0) {
+                        if (isNearFull) {
+                            statusText = `Available (${availableSlots} slots left)`;
+                            statusClass = 'status-limited';
+                        } else {
+                            statusText = `Available (${availableSlots} slots)`;
+                            statusClass = 'status-available';
+                        }
+                        canEnroll = true;
                     } else {
-                        statusText = `Available (${availableSlots} slots)`;
-                        statusClass = 'status-available';
+                        statusText = 'Not Available';
+                        statusClass = 'status-closed';
+                        canEnroll = false;
                     }
                     
+                    console.log(`Batch ${batch.batch_name}:`, {
+                        batch_status: batch.batch_status,
+                        batchStatus,
+                        isOngoing,
+                        isAvailable,
+                        isPending,
+                        isClosed,
+                        isFull,
+                        availableSlots,
+                        canEnroll,
+                        statusText
+                    });
+                    
+                    const ongoingBadge = isOngoing ? 
+                        `<div class="ongoing-badge">
+                            <i class="bi bi-play-circle me-1"></i>
+                            Started ${batch.days_started || 0} days ago
+                        </div>` : '';
+                    
                     return `
-                        <div class="batch-option ${isFull ? 'disabled' : ''}" 
-                             onclick="${isFull ? '' : `selectBatch(${batch.batch_id}, '${batch.batch_name}', '${batch.batch_status}')`}" 
+                        <div class="batch-option ${!canEnroll ? 'disabled' : ''}" 
+                             onclick="${!canEnroll ? '' : `selectBatch(${batch.batch_id}, '${batch.batch_name}', '${batch.batch_status}')`}" 
                              data-batch-id="${batch.batch_id}"
                              data-batch-status="${batch.batch_status}">
                             <div class="batch-header">
-                                <div class="batch-name">${batch.batch_name}</div>
+                                <div class="batch-name">
+                                    ${batch.batch_name}
+                                    ${isOngoing ? '<span class="ongoing-indicator">🔴 LIVE</span>' : ''}
+                                </div>
                                 <div class="batch-status ${statusClass}">${statusText}</div>
                             </div>
                             <div class="batch-details">
                                 <div class="batch-info">
-                                    <span class="batch-schedule">Start: ${batch.start_date}</span>
-                                    <span class="batch-capacity">Students: ${batch.current_capacity}/${batch.max_capacity}</span>
+                                    <span class="batch-schedule">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        ${isOngoing ? 'Started' : 'Starts'}: ${batch.start_date}
+                                    </span>
+                                    <span class="batch-capacity">
+                                        <i class="bi bi-people me-1"></i>
+                                        Students: ${batch.current_capacity}/${batch.max_capacity}
+                                    </span>
+                                    ${batch.end_date ? `
+                                        <span class="batch-end-date">
+                                            <i class="bi bi-calendar-check me-1"></i>
+                                            Ends: ${batch.end_date}
+                                        </span>
+                                    ` : ''}
                                 </div>
-                                ${isOngoing ? '<div class="ongoing-warning">⚠️ This batch has already started</div>' : ''}
+                                ${ongoingBadge}
+                                ${isOngoing ? `
+                                    <div class="ongoing-warning">
+                                        <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                                        This batch has already started - you can still join but will need to catch up
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     `;
                 }).join('');
+                
+                // Add enhanced styling for batch options
+                const style = document.createElement('style');
+                style.textContent = `
+                    .batch-option {
+                        border: 2px solid #e9ecef;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 10px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        background: #ffffff;
+                    }
+                    .batch-option:hover:not(.disabled) {
+                        border-color: #0d6efd;
+                        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+                        transform: translateY(-1px);
+                    }
+                    .batch-option.selected {
+                        border-color: #0d6efd;
+                        background: #f8f9ff;
+                        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+                    }
+                    .batch-option.disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                        background: #f8f9fa;
+                    }
+                    .batch-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 10px;
+                    }
+                    .batch-name {
+                        font-weight: 600;
+                        color: #212529;
+                        font-size: 1.1rem;
+                    }
+                    .ongoing-indicator {
+                        font-size: 0.75rem;
+                        color: #dc3545;
+                        font-weight: 700;
+                        margin-left: 8px;
+                    }
+                    .batch-status {
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                    }
+                    .status-available {
+                        background: #d1edff;
+                        color: #084298;
+                    }
+                    .status-ongoing {
+                        background: #fff3cd;
+                        color: #664d03;
+                    }
+                    .status-limited {
+                        background: #f8d7da;
+                        color: #721c24;
+                    }
+                    .status-closed {
+                        background: #f1f3f4;
+                        color: #6c757d;
+                    }
+                    .batch-info {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 15px;
+                        font-size: 0.9rem;
+                        color: #6c757d;
+                    }
+                    .ongoing-badge {
+                        margin-top: 8px;
+                        padding: 6px 10px;
+                        background: #fff3cd;
+                        border: 1px solid #ffeaa7;
+                        border-radius: 4px;
+                        font-size: 0.85rem;
+                        color: #664d03;
+                        display: inline-block;
+                    }
+                    .ongoing-warning {
+                        margin-top: 8px;
+                        padding: 8px 10px;
+                        background: #fff3cd;
+                        border-left: 4px solid #ffc107;
+                        border-radius: 4px;
+                        font-size: 0.85rem;
+                        color: #664d03;
+                    }
+                `;
+                document.head.appendChild(style);
             }
         }
     } catch (error) {
@@ -536,22 +951,119 @@ async function loadBatchesForProgram(programId = null) {
 function selectBatch(batchId, batchName, batchStatus) {
     console.log('Selecting batch:', batchId, batchName, batchStatus);
     
-    // Check if batch is ongoing and show warning
+    // Check if batch is ongoing and show warning modal
     if (batchStatus === 'ongoing') {
-        const confirmOngoing = confirm(
-            `Warning: The batch "${batchName}" has already started.\n\n` +
-            `If you join this ongoing batch, you will need to:\n` +
-            `• Start from the beginning of the course\n` +
-            `• Catch up with current activities and assignments\n` +
-            `• Meet deadlines that may have already passed\n\n` +
-            `Are you sure you want to join this ongoing batch?`
-        );
-        
-        if (!confirmOngoing) {
-            return; // User cancelled, don't select the batch
-        }
+        showOngoingBatchModal(batchId, batchName);
+        return;
     }
     
+    // Proceed with normal selection
+    confirmBatchSelection(batchId, batchName);
+}
+
+// Function to show ongoing batch warning modal
+function showOngoingBatchModal(batchId, batchName) {
+    const modalHtml = `
+        <div class="modal fade" id="ongoingBatchModal" tabindex="-1" aria-labelledby="ongoingBatchModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="ongoingBatchModalLabel">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Ongoing Batch Warning
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning mb-4">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-clock-history me-2"></i>The batch "${batchName}" has already started
+                            </h6>
+                            <p class="mb-0">You can still join, but you'll need to catch up with ongoing activities.</p>
+                        </div>
+                        
+                        <h6 class="mb-3">What this means for you:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-warning mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="bi bi-book me-2"></i>Course Content
+                                        </h6>
+                                        <ul class="list-unstyled mb-0 small">
+                                            <li><i class="bi bi-check2 me-2 text-success"></i>Access to all course materials</li>
+                                            <li><i class="bi bi-check2 me-2 text-success"></i>Previous recorded sessions</li>
+                                            <li><i class="bi bi-arrow-clockwise me-2 text-info"></i>Start from the beginning</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-danger mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-danger">
+                                            <i class="bi bi-calendar-x me-2"></i>Assignments & Deadlines
+                                        </h6>
+                                        <ul class="list-unstyled mb-0 small">
+                                            <li><i class="bi bi-exclamation-circle me-2 text-warning"></i>Some deadlines may have passed</li>
+                                            <li><i class="bi bi-clock me-2 text-info"></i>Catch up on current activities</li>
+                                            <li><i class="bi bi-calendar-plus me-2 text-success"></i>Join upcoming assignments</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            <strong>Recommendation:</strong> Contact the instructor or support team for a catch-up plan before joining.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="confirmOngoingBatch(${batchId}, '${batchName}')">
+                            <i class="bi bi-check-circle me-2"></i>I Understand, Join Anyway
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('ongoingBatchModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('ongoingBatchModal'));
+    modal.show();
+}
+
+// Function to confirm ongoing batch selection
+function confirmOngoingBatch(batchId, batchName) {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('ongoingBatchModal'));
+    modal.hide();
+    
+    // Remove modal from DOM after hiding
+    setTimeout(() => {
+        const modalElement = document.getElementById('ongoingBatchModal');
+        if (modalElement) {
+            modalElement.remove();
+        }
+    }, 300);
+    
+    // Proceed with batch selection
+    confirmBatchSelection(batchId, batchName);
+}
+
+// Function to actually select and confirm the batch
+function confirmBatchSelection(batchId, batchName) {
     // Remove selection from all batch options
     document.querySelectorAll('.batch-option').forEach(option => {
         option.classList.remove('selected');
@@ -625,9 +1137,10 @@ function fillLoggedInUserData() {
         // Fetch comprehensive user data from server
         fetch('/registration/user-prefill-data', {
             method: 'GET',
+            credentials: 'same-origin',               // ← send Laravel session cookie
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'Accept': 'application/json',
+                
             }
         })
         .then(response => response.json())
@@ -653,6 +1166,23 @@ function fillLoggedInUserData() {
                 });
                 
                 console.log('Filled user data:', data.data);
+            } else if (!data.success && data.message === 'Not logged in') {
+                // User not logged in - this is normal, just use fallback data
+                console.log('User not logged in, using session fallback data');
+                // Use the session data we already have
+                const firstnameField = document.querySelector('input[name="firstname"]');
+                const lastnameField = document.querySelector('input[name="lastname"]');
+                const emailField = document.querySelector('input[name="email"]');
+                
+                if (firstnameField && loggedInUserFirstname) {
+                    firstnameField.value = loggedInUserFirstname;
+                }
+                if (lastnameField && loggedInUserLastname) {
+                    lastnameField.value = loggedInUserLastname;
+                }
+                if (emailField && loggedInUserEmail) {
+                    emailField.value = loggedInUserEmail;
+                }
             }
         })
         .catch(error => {
@@ -706,7 +1236,7 @@ function handleFileUpload(inputElement) {
     let firstName = loggedInUserFirstname || '';
     let lastName = loggedInUserLastname || '';
     
-    // Try to find first name
+    // Try to find first name if not already set
     if (!firstName) {
         for (const selector of firstNameSelectors) {
             const element = document.querySelector(selector);
@@ -717,7 +1247,7 @@ function handleFileUpload(inputElement) {
         }
     }
     
-    // Try to find last name
+    // Try to find last name if not already set
     if (!lastName) {
         for (const selector of lastNameSelectors) {
             const element = document.querySelector(selector);
@@ -728,8 +1258,20 @@ function handleFileUpload(inputElement) {
         }
     }
     
-    console.log('Found names:', firstName, lastName); // Debug log
-    console.log('Logged in user names:', loggedInUserFirstname, loggedInUserLastname); // Debug log
+    console.log('Found names:', firstName, lastName);
+    
+    if (!firstName || !lastName) {
+        // Try harder to find the names by checking if we're in step 4 and can copy from step 3
+        if (currentStep >= 3) {
+            const step3FirstName = document.querySelector('input[name="user_firstname"]')?.value?.trim();
+            const step3LastName = document.querySelector('input[name="user_lastname"]')?.value?.trim();
+            
+            if (step3FirstName && !firstName) firstName = step3FirstName;
+            if (step3LastName && !lastName) lastName = step3LastName;
+        }
+    }
+    
+    console.log('Names after fallback check:', firstName, lastName);
     
     if (!firstName || !lastName) {
         showErrorModal('Please enter your first name and last name in the form before uploading documents.');
@@ -746,10 +1288,11 @@ function handleFileUpload(inputElement) {
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     
-    fetch('/registration/validate-file', {
+    fetch(VALIDATE_URL, {
         method: 'POST',
+        credentials: 'same-origin',    // ensure Laravel session cookie is sent
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-CSRF-TOKEN': CSRF_TOKEN, // use the constant defined in your blade
             'Accept': 'application/json'
         },
         body: formData
@@ -761,7 +1304,6 @@ function handleFileUpload(inputElement) {
         try {
             data = await response.json();
         } catch (jsonError) {
-            // If JSON parsing fails, get raw text for debugging
             const rawText = await response.text();
             console.error('JSON parse error:', jsonError);
             console.error('Raw response:', rawText);
@@ -770,22 +1312,20 @@ function handleFileUpload(inputElement) {
             return;
         }
         
+        console.log('File validation response:', data); // Debug log
+        
         if (data.success) {
-            // Show success message
             showSuccessModal('Document validated successfully!');
             
-            // Handle program suggestions if available
             if (data.suggestions && data.suggestions.length > 0) {
                 showProgramSuggestions(data.suggestions);
             }
             
-            // Handle education level detection
             if (data.certificate_level) {
                 handleEducationLevelDetection(data.certificate_level);
             }
-            
         } else {
-            // Show error modal and clear file input
+            console.error('File validation failed:', data);
             showErrorModal(data.message || 'File validation failed');
             inputElement.value = '';
         }
@@ -1126,9 +1666,16 @@ function toggleGraduationCertificate() {
             </div>
             <div class="form-group" style="grid-column: 1 / span 2;">
                 <label for="user_email">Email Address</label>
-                <input type="email" id="user_email" name="email" class="form-control" required>
+                <div class="email-input-group">
+                    <input type="email" id="user_email" name="email" class="form-control" required>
+                    <button type="button" id="sendOtpBtn" class="btn-otp" onclick="sendEnrollmentOTP()">
+                        <i class="fas fa-paper-plane"></i> Send OTP
+                    </button>
+                </div>
                 <div id="emailError" class="error-message" style="display: none;"></div>
             </div>
+
+
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" class="form-control" required>
@@ -1321,11 +1868,18 @@ function toggleGraduationCertificate() {
         </div>
 
         <div class="form-check mb-4">
-            <input class="form-check-input" type="checkbox" id="termsCheckbox" required>
+            <input class="form-check-input" type="checkbox" id="termsCheckbox" name="terms_accepted" required>
             <label class="form-check-label" for="termsCheckbox">
                 I agree to the <a href="#" id="showTerms">Terms and Conditions</a>
             </label>
         </div>
+
+        <!-- reCAPTCHA -->
+        @if(env('RECAPTCHA_SITE_KEY'))
+        <div class="form-group mb-4 d-flex justify-content-center">
+            <div class="g-recaptcha" data-sitekey="{{ env('RECAPTCHA_SITE_KEY') }}"></div>
+        </div>
+        @endif
 
         <hr style="margin-bottom: 2.1rem; margin-top: 1.2rem;">
 
@@ -1333,7 +1887,7 @@ function toggleGraduationCertificate() {
             <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
                 <i class="bi bi-arrow-left me-2"></i> Back
             </button>
-            <button type="submit" class="btn btn-success btn-lg">
+            <button type="submit" class="btn btn-success btn-lg" id="submitButton">
                 <i class="bi bi-check-circle me-2"></i> Complete Registration
             </button>
         </div>
@@ -1351,6 +1905,48 @@ function toggleGraduationCertificate() {
         <h3>Attention Required</h3>
         <p id="warningMessage"></p>
         <button onclick="closeWarningModal()" class="btn btn-primary">OK</button>
+    </div>
+</div>
+
+<!-- OTP Verification Modal -->
+<div class="modal fade" id="otpModal" tabindex="-1" aria-labelledby="otpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="otpModalLabel">
+                    <i class="fas fa-shield-alt me-2"></i> Verify your email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p class="mb-3">The verification code has been sent to your email</p>
+                <p class="fw-bold text-primary mb-4" id="otpTargetEmail">example@gmail.com</p>
+                
+                <div class="otp-input-group d-flex justify-content-center mb-3">
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                        <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                        <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                        <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                        <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                        <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                    </div>
+                </div>
+                
+                <input type="hidden" id="otp_code_modal" name="otp_code">
+                
+                <div id="otpStatusModal" class="status-message mt-3" style="display: none;"></div>
+                
+                <p class="text-muted small mt-3">
+                    Not received yet? <a href="#" onclick="resendOTPCode()" class="text-decoration-none">Resend verification code</a>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="verifyOtpBtnModal" class="btn btn-primary w-100" onclick="verifyEnrollmentOTPModal()">
+                    Continue
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1381,13 +1977,20 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProgressBar(); // Initialize progress bar
     
     // Add event listeners for changes
-    const programSelect = document.getElementById('programSelect');
-    if (programSelect) {
-        programSelect.addEventListener('change', function() {
-            updateHiddenProgramId();
-            loadBatchesForProgram();
-        });
-    }
+const programSelect = document.getElementById('programSelect');
+if (programSelect) {
+  // on dropdown change, pass the new ID into your loader
+  programSelect.addEventListener('change', () => {
+    updateHiddenProgramId();
+    loadBatchesForProgram(programSelect.value);
+  });
+  // also run it once on page‐load if a program is already selected
+  if (programSelect.value) {
+    loadBatchesForProgram(programSelect.value);
+  }
+}
+
+
     
     // Add validation event listeners for Step 3
     const firstnameField = document.getElementById('user_firstname');
@@ -1561,13 +2164,15 @@ function validateStep3() {
     const passwordHasError = passwordError && passwordError.style.display === 'block';
     const passwordMatchHasError = passwordMatchError && passwordMatchError.style.display === 'block';
     
-    // Enable next button only if all conditions are met
+    // Enable next button only if all conditions are met INCLUDING email verification
     const allFieldsFilled = isFirstnameFilled && isLastnameFilled && isEmailFilled && isPasswordFilled && isPasswordConfirmFilled;
     const allValidationsPassed = isPasswordValid && isPasswordConfirmValid && !emailHasError && !passwordHasError && !passwordMatchHasError;
+    const emailVerified = enrollmentEmailVerified; // OTP verification required
     
     console.log('Step 3 Validation:', {
         allFieldsFilled,
         allValidationsPassed,
+        emailVerified,
         isFirstnameFilled,
         isLastnameFilled,
         isEmailFilled,
@@ -1581,7 +2186,7 @@ function validateStep3() {
     });
     
     if (nextBtn) {
-        if (allFieldsFilled && allValidationsPassed) {
+        if (allFieldsFilled && allValidationsPassed && emailVerified) {
             nextBtn.disabled = false;
             nextBtn.style.opacity = '1';
             nextBtn.style.cursor = 'pointer';
@@ -1597,20 +2202,493 @@ function validateStep3() {
 
 // Handle form submission and add batch_id if selected
 function handleFormSubmission(event) {
-    const selectedBatchId = sessionStorage.getItem('selectedBatchId');
+  console.log('🚀 FORM SUBMISSION STARTED');
+  console.log('Event:', event);
+  console.log('Current step:', currentStep);
+  console.log('Form element:', event.target);
+  
+  const form = event.target;
+  
+  // Enhanced debugging
+  console.log('Form action:', form.action);
+  console.log('Form method:', form.method);
+  console.log('Form enctype:', form.enctype);
+  
+  // Debug current page state
+  console.log('📊 CURRENT PAGE STATE:');
+  console.log('  URL:', window.location.href);
+  console.log('  Document ready state:', document.readyState);
+  console.log('  Form submit button:', document.getElementById('submitButton'));
+  console.log('  jQuery available:', typeof $ !== 'undefined');
+  
+  // Check if we're on the correct step
+  if (currentStep !== 4) {
+    console.error('❌ FORM SUBMISSION BLOCKED: Not on step 4, current step is:', currentStep);
+    event.preventDefault();
+    showFormErrors(['Please complete all previous steps before submitting.']);
+    return false;
+  }
+  
+  console.log('✅ Step validation passed');
+  
+  // run your custom validation
+  console.log('🔍 Running form validation...');
+  const { isValid, errors } = validateFormBeforeSubmission(form);
+  
+  console.log('Validation result:', { isValid, errors });
+  
+  if (!isValid) {
+    console.error('❌ FORM VALIDATION FAILED:', errors);
+    // block submission and show errors
+    event.preventDefault();
+    showFormErrors(errors);
+    return false;
+  }
+  
+  console.log('✅ Form validation passed');
+
+  // inject batch_id if needed
+  const selectedBatchId = sessionStorage.getItem('selectedBatchId');
+  const learningMode = form.querySelector('[name="learning_mode"]')?.value;
+  
+  console.log('Learning mode:', learningMode);
+  console.log('Selected batch ID:', selectedBatchId);
+  
+  if (selectedBatchId) {
+    let batchInput = form.querySelector('input[name="batch_id"]');
+    if (!batchInput) {
+      console.log('Creating new batch_id input');
+      batchInput = document.createElement('input');
+      batchInput.type = 'hidden';
+      batchInput.name = 'batch_id';
+      form.appendChild(batchInput);
+    }
+    batchInput.value = selectedBatchId;
+    console.log('✅ Batch ID injected:', selectedBatchId);
+  }
+
+  // inject package_id if needed
+  const packageId = selectedPackageId || sessionStorage.getItem('selectedPackageId');
+  console.log('Package ID:', packageId);
+  
+  if (packageId) {
+    const packageInput = form.querySelector('input[name="package_id"]');
+    if (packageInput) {
+      packageInput.value = packageId;
+      console.log('✅ Package ID updated:', packageId);
+    } else {
+      console.warn('⚠️ Package input not found in form');
+    }
+  } else {
+    console.warn('⚠️ No package ID available');
+  }
+  
+  // Remove any duplicate program_id inputs
+  const allProgramInputs = form.querySelectorAll('input[name="program_id"]');
+  if (allProgramInputs.length > 1) {
+    console.log('🔧 Removing duplicate program_id inputs');
+    for (let i = 1; i < allProgramInputs.length; i++) {
+      allProgramInputs[i].remove();
+    }
+  }
+  
+  // Show loading state
+  showFormLoading(true);
+  console.log('✅ Form loading state activated');
+  
+  // Log all form data before submission
+  const formData = new FormData(form);
+  console.log('📋 FINAL FORM DATA:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
+  
+  // Add detailed form analysis
+  console.log('🔍 DETAILED FORM ANALYSIS:');
+  console.log('  Form has action:', !!form.action);
+  console.log('  Form has method:', !!form.method);
+  console.log('  Form has CSRF token:', !!form.querySelector('[name="_token"]'));
+  console.log('  Form is properly structured:', form.tagName === 'FORM');
+  console.log('  Submit button type:', document.getElementById('submitButton')?.type);
+  
+  // Check reCAPTCHA status
+  console.log('🛡️ RECAPTCHA ANALYSIS:');
+  const recaptchaDiv = document.querySelector('.g-recaptcha');
+  const recaptchaResponse = document.querySelector('[name="g-recaptcha-response"]');
+  console.log('  reCAPTCHA div found:', !!recaptchaDiv);
+  console.log('  reCAPTCHA response field found:', !!recaptchaResponse);
+  console.log('  reCAPTCHA response value:', recaptchaResponse?.value || 'NONE');
+  console.log('  grecaptcha object available:', typeof grecaptcha !== 'undefined');
+  
+  if (recaptchaDiv && !recaptchaResponse?.value) {
+    console.warn('⚠️ reCAPTCHA div present but no response - user may not have completed CAPTCHA');
+  }
+  
+  // Check session storage state
+  console.log('� SESSION STORAGE STATE:');
+  console.log('  selectedPackageId:', sessionStorage.getItem('selectedPackageId'));
+  console.log('  selectedBatchId:', sessionStorage.getItem('selectedBatchId'));
+  console.log('  selectedLearningMode:', sessionStorage.getItem('selectedLearningMode'));
+  console.log('  selectedProgramId:', sessionStorage.getItem('selectedProgramId'));
+  
+  // TEMPORARILY PREVENT SUBMISSION FOR DEBUGGING
+  console.log('🛑 DEBUGGING COMPLETE - ENABLING FORM SUBMISSION');
+  
+  // Fix the start date if it's empty
+  const startDateInput = form.querySelector('[name="Start_Date"]');
+  if (startDateInput && !startDateInput.value) {
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.value = today;
+    console.log('📅 Fixed empty start date to:', today);
+  }
+  
+  // All validation passed, allow submission
+  console.log('� ALLOWING FORM SUBMISSION TO PROCEED');
+  
+  console.log('🛑 PREVENTING FORM REFRESH - USING AJAX SUBMISSION');
+  event.preventDefault(); // Prevent default form submission
+  
+  // Submit form via AJAX to prevent page refresh
+  const finalFormData = new FormData(form);
+  
+  // Ensure CSRF token is present
+  const csrfToken = form.querySelector('[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  if (csrfToken && !finalFormData.has('_token')) {
+    finalFormData.append('_token', csrfToken);
+    console.log('�️ CSRF token added:', csrfToken.substring(0, 10) + '...');
+  }
+  
+  console.log('�🚀 SUBMITTING FORM VIA AJAX');
+  console.log('🌐 Request URL:', form.action);
+  console.log('📦 Form data entries:');
+  for (let [key, value] of finalFormData.entries()) {
+    if (key === '_token') {
+      console.log(`  ${key}: ${value.substring(0, 10)}...`);
+    } else if (value instanceof File) {
+      console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
+    } else {
+      console.log(`  ${key}: ${value}`);
+    }
+  }
+  
+  // Handle reCAPTCHA if present
+  const recaptchaResponseValue = document.querySelector('[name="g-recaptcha-response"]')?.value;
+  if (recaptchaResponseValue) {
+    finalFormData.append('g-recaptcha-response', recaptchaResponseValue);
+    console.log('🛡️ reCAPTCHA response added');
+  } else {
+    console.warn('⚠️ No reCAPTCHA response found - adding empty value to prevent server error');
+    // Add empty reCAPTCHA response to prevent server error
+    finalFormData.append('g-recaptcha-response', '');
+  }
+  
+  fetch(form.action, {
+    method: 'POST',
+    body: finalFormData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json'
+    }
+  })
+  .then(async response => {
+    console.log('📡 Server response received:', response.status, response.statusText);
+    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
     
-    // If a batch is selected, add it to the form before submission
-    if (selectedBatchId && selectedBatchId !== 'null' && selectedBatchId !== '') {
-        const form = event.target;
-        const batchInput = document.createElement('input');
-        batchInput.type = 'hidden';
-        batchInput.name = 'batch_id';
-        batchInput.value = selectedBatchId;
-        form.appendChild(batchInput);
-        console.log('Added batch_id to form submission:', selectedBatchId);
+    // Get response text first to handle both JSON and HTML responses
+    let responseText;
+    try {
+      responseText = await response.text();
+      console.log('📄 Raw response text (first 500 chars):', responseText.substring(0, 500));
+      console.log('📄 Response content type:', response.headers.get('content-type'));
+    } catch (textError) {
+      console.error('❌ Could not read response text:', textError);
+      showFormLoading(false);
+      showFormErrors(['Failed to read server response. Please try again.']);
+      return;
     }
     
-    return true; // Allow form to submit
+    if (response.ok) {
+      // Check if response is JSON or HTML
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        // Handle JSON response
+        try {
+          const data = JSON.parse(responseText);
+          console.log('✅ Registration successful (JSON):', data);
+          
+          showFormLoading(false);
+          alert('🎉 Registration completed successfully! You will be redirected to the dashboard.');
+          
+          if (data.redirect) {
+            window.location.href = data.redirect;
+          } else {
+            window.location.href = '/dashboard';
+          }
+        } catch (jsonError) {
+          console.error('❌ Could not parse JSON response:', jsonError);
+          showFormLoading(false);
+          showFormErrors(['Server returned invalid JSON. Please try again.']);
+        }
+      } else {
+        // Handle HTML response (likely a redirect page or success page)
+        console.log('✅ Registration successful (HTML response)');
+        
+        // Check if response contains success indicators
+        const responseTextLower = responseText.toLowerCase();
+        if (responseTextLower.includes('success') || responseTextLower.includes('dashboard') || responseTextLower.includes('registration complete')) {
+          showFormLoading(false);
+          alert('🎉 Registration completed successfully! You will be redirected to the dashboard.');
+          window.location.href = '/dashboard';
+        } else if (responseTextLower.includes('login') || responseTextLower.includes('signin')) {
+          showFormLoading(false);
+          alert('🎉 Registration completed successfully! Please login to continue.');
+          window.location.href = '/login';
+        } else {
+          // Show success and redirect anyway since we got a 200 response
+          showFormLoading(false);
+          alert('🎉 Registration completed successfully!');
+          
+          // Try to find redirect URL in the HTML
+          const redirectMatch = responseText.match(/window\.location\.href\s*=\s*['"]([^'"]+)['"]/);
+          if (redirectMatch) {
+            window.location.href = redirectMatch[1];
+          } else {
+            window.location.href = '/dashboard';
+          }
+        }
+      }
+    } else {
+      console.error('❌ Server returned error status:', response.status, response.statusText);
+      
+      // Try to parse as JSON first for structured error handling
+      try {
+        const errorData = JSON.parse(responseText);
+        console.error('❌ Server error data:', errorData);
+        
+        showFormLoading(false);
+        
+        if (errorData.errors) {
+          const errorMessages = Object.values(errorData.errors).flat();
+          showFormErrors(errorMessages);
+        } else {
+          showFormErrors([errorData.message || 'Registration failed. Please try again.']);
+        }
+      } catch (parseError) {
+        console.error('❌ Could not parse error response as JSON:', parseError);
+        console.log('📄 Raw error response:', responseText.substring(0, 1000));
+        
+        showFormLoading(false);
+        
+        // Extract meaningful error from HTML if possible
+        const errorText = responseText.replace(/<[^>]*>/g, '').trim();
+        const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+        
+        showFormErrors([`Server error (${response.status}): ${truncatedError || 'Unknown error'}`]);
+      }
+    }
+  })
+  .catch(error => {
+    console.error('🔥 Network/Fetch error details:', error);
+    console.error('🔥 Error name:', error.name);
+    console.error('🔥 Error message:', error.message);
+    console.error('🔥 Error stack:', error.stack);
+    
+    showFormLoading(false);
+    
+    // More specific error messages
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      showFormErrors(['Network connection failed. Please check your internet connection and try again.']);
+    } else if (error.name === 'AbortError') {
+      showFormErrors(['Request was cancelled. Please try again.']);
+    } else {
+      showFormErrors([`Network error: ${error.message}. Please try again.`]);
+    }
+  });
+  
+  return false; // Prevent any default form submission
+}
+
+
+// Comprehensive form validation function
+function validateFormBeforeSubmission(form) {
+    console.log('🔍 VALIDATING FORM BEFORE SUBMISSION');
+    const errors = [];
+
+    // Get all required fields dynamically from the form
+    const requiredInputs = form.querySelectorAll('[required]');
+    console.log(`Found ${requiredInputs.length} required fields:`, requiredInputs);
+
+    // Check each required field
+    requiredInputs.forEach((input, index) => {
+        const fieldName = input.name;
+        const fieldLabel = input.getAttribute('data-label') ||
+            input.previousElementSibling?.textContent?.replace('*', '').trim() ||
+            fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace('_', ' ');
+
+        console.log(`  [${index + 1}] ${fieldName} (${input.type}): "${input.value}" - Required: ${input.required}`);
+
+        if (!input.value || input.value.trim() === '') {
+            errors.push(`${fieldLabel} is required.`);
+            console.error(`    ❌ MISSING: ${fieldLabel}`);
+        } else {
+            console.log(`    ✅ OK: ${fieldLabel}`);
+        }
+    });
+
+    // Additional validation for specific field types
+    const emailInput = form.querySelector('[name="email"]');
+    if (emailInput && emailInput.value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailInput.value)) {
+            errors.push('Please enter a valid email address.');
+            console.error('❌ INVALID EMAIL FORMAT');
+        } else {
+            console.log('✅ Email format valid');
+        }
+    }
+
+    // Check contact number format if field exists and has value
+    const contactInput = form.querySelector('[name="contact_number"]');
+    if (contactInput && contactInput.value) {
+        const contactRegex = /^[0-9+\-\s()]+$/;
+        if (!contactRegex.test(contactInput.value)) {
+            errors.push('Please enter a valid contact number.');
+            console.error('❌ INVALID CONTACT NUMBER FORMAT');
+        } else {
+            console.log('✅ Contact number format valid');
+        }
+    }
+
+    // Check batch selection for synchronous mode - only if batches are available
+    const learningMode = form.querySelector('[name="learning_mode"]')?.value;
+    const batchId = sessionStorage.getItem('selectedBatchId') || form.querySelector('[name="batch_id"]')?.value;
+    
+    console.log('🎯 BATCH VALIDATION:');
+    console.log('  Learning mode:', learningMode);
+    console.log('  Batch ID from sessionStorage:', sessionStorage.getItem('selectedBatchId'));
+    console.log('  Batch ID from form:', form.querySelector('[name="batch_id"]')?.value);
+    
+    if (learningMode === 'synchronous') {
+        // Check if batch container is visible and has batch options
+        const batchContainer = document.getElementById('batchSelectionContainer');
+        const batchOptions = document.getElementById('batchOptions');
+        const hasBatchOptions = batchOptions && batchOptions.querySelector('.batch-option');
+        const hasNoBatchesInfo = batchOptions && batchOptions.querySelector('.no-batches-info');
+        
+        console.log('  Batch container visible:', batchContainer && batchContainer.style.display !== 'none');
+        console.log('  Has batch options:', !!hasBatchOptions);
+        console.log('  Has no-batches info:', !!hasNoBatchesInfo);
+        
+        // Only require batch selection if there are actual batch options available
+        if (batchContainer && batchContainer.style.display !== 'none' && hasBatchOptions && !hasNoBatchesInfo) {
+            if (!batchId || batchId === 'null' || batchId === '') {
+                errors.push('Please select a batch for synchronous learning mode.');
+                console.error('❌ BATCH REQUIRED but not selected');
+            } else {
+                console.log('✅ Batch selected for synchronous mode');
+            }
+        } else {
+            console.log('✅ Batch not required (auto-create mode or no batches available)');
+        }
+        // If no batches available (auto-create mode), allow registration without batch selection
+        console.log('Batch validation check:', {
+            learningMode,
+            batchContainerVisible: batchContainer && batchContainer.style.display !== 'none',
+            hasBatchOptions: !!hasBatchOptions,
+            hasNoBatchesInfo: !!hasNoBatchesInfo,
+            batchId: batchId
+        });
+    } else {
+        console.log('✅ Asynchronous mode - no batch required');
+    }
+
+    // Check terms acceptance
+    const termsCheckbox = form.querySelector('[name="terms_accepted"]') || document.getElementById('termsCheckbox');
+    console.log('🔒 TERMS VALIDATION:');
+    console.log('  Terms checkbox found:', !!termsCheckbox);
+    console.log('  Terms checkbox checked:', termsCheckbox?.checked);
+    
+    if (termsCheckbox && !termsCheckbox.checked) {
+        errors.push('Please accept the terms and conditions.');
+        console.error('❌ TERMS NOT ACCEPTED');
+    } else if (termsCheckbox) {
+        console.log('✅ Terms accepted');
+    } else {
+        console.warn('⚠️ Terms checkbox not found, but assuming accepted for compatibility');
+    }
+
+    // Check package selection
+    const packageId = selectedPackageId || sessionStorage.getItem('selectedPackageId') || form.querySelector('[name="package_id"]')?.value;
+    console.log('📦 PACKAGE VALIDATION:');
+    console.log('  Package ID:', packageId);
+    
+    if (!packageId) {
+        errors.push('Please select a package.');
+        console.error('❌ PACKAGE NOT SELECTED');
+    } else {
+        console.log('✅ Package selected');
+    }
+
+    console.log(`🔍 VALIDATION COMPLETE: ${errors.length} errors found`);
+    if (errors.length > 0) {
+        console.error('❌ VALIDATION ERRORS:', errors);
+    } else {
+        console.log('✅ ALL VALIDATIONS PASSED');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+}
+
+
+// Function to show form errors
+function showFormErrors(errors) {
+    // Remove existing error display
+    const existingErrorContainer = document.getElementById('formErrorContainer');
+    if (existingErrorContainer) {
+        existingErrorContainer.remove();
+    }
+    
+    // Create error container
+    const errorContainer = document.createElement('div');
+    errorContainer.id = 'formErrorContainer';
+    errorContainer.className = 'alert alert-danger mt-3';
+    errorContainer.innerHTML = `
+        <h6><i class="bi bi-exclamation-triangle me-2"></i>Please fix the following errors:</h6>
+        <ul class="mb-0">
+            ${errors.map(error => `<li>${error}</li>`).join('')}
+        </ul>
+    `;
+    
+    // Insert error container before the submit button
+    const submitButton = document.getElementById('submitButton');
+    if (submitButton) {
+        submitButton.parentNode.insertBefore(errorContainer, submitButton);
+        
+        // Scroll to error container
+        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Function to show/hide loading state
+function showFormLoading(loading) {
+    const submitButton = document.getElementById('submitButton');
+    if (!submitButton) return;
+    
+    if (loading) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Submitting Registration...';
+        submitButton.classList.add('btn-secondary');
+        submitButton.classList.remove('btn-success');
+    } else {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="bi bi-check-circle me-2"></i>Complete Registration';
+        submitButton.classList.remove('btn-secondary');
+        submitButton.classList.add('btn-success');
+    }
 }
 
  document.addEventListener('DOMContentLoaded', function() {
@@ -1651,6 +2729,386 @@ function closeTermsModal() {
     }, 300); // match your CSS transition-duration (0.3s)
 }
 
+// OTP Functions for Step 3 Account Registration
+let enrollmentEmailVerified = false;
+
+async function sendEnrollmentOTP() {
+    const email = document.getElementById('user_email').value;
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    
+    if (!email) {
+        alert('Please enter your email address first.');
+        return;
+    }
+
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    try {
+        const response = await fetch('{{ route("signup.send.otp") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show the modal instead of inline container
+            document.getElementById('otpTargetEmail').textContent = email;
+            var otpModal = new bootstrap.Modal(document.getElementById('otpModal'));
+            otpModal.show();
+            
+            sendOtpBtn.innerHTML = '<i class="fas fa-redo"></i> Resend OTP';
+            showEnrollmentMessage('OTP sent successfully to your email!', 'success');
+            
+            // Auto focus on first OTP input when modal is shown
+            document.getElementById('otpModal').addEventListener('shown.bs.modal', function () {
+                document.querySelector('.otp-digit').focus();
+            });
+        } else {
+            showEnrollmentMessage(data.message, 'error');
+            sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+        }
+    } catch (error) {
+        showEnrollmentMessage('Failed to send OTP. Please try again.', 'error');
+        sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+    }
+    
+    sendOtpBtn.disabled = false;
+}
+
+async function verifyEnrollmentOTP() {
+    const otp = document.getElementById('otp_code').value;
+    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+    
+    if (!otp || otp.length !== 6) {
+        alert('Please enter a valid 6-digit OTP.');
+        return;
+    }
+
+    verifyOtpBtn.disabled = true;
+    verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+    try {
+        const response = await fetch('{{ route("signup.verify.otp") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
+            body: JSON.stringify({ otp: otp })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            enrollmentEmailVerified = true;
+            document.getElementById('user_email').readOnly = true;
+            
+            verifyOtpBtn.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Verified';
+            verifyOtpBtn.classList.add('verified');
+            
+            // Update step indicator
+            const stepIndicator = document.querySelector('.step-indicator');
+            if (stepIndicator) {
+                stepIndicator.classList.add('completed');
+                stepIndicator.innerHTML = '✓';
+            }
+            
+            showEnrollmentMessage('Email verified successfully!', 'success');
+            
+            // Enable the next button if all validations pass
+            validateStep3();
+        } else {
+            showEnrollmentMessage(data.message, 'error');
+            verifyOtpBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify Code';
+        }
+    } catch (error) {
+        showEnrollmentMessage('Failed to verify OTP. Please try again.', 'error');
+        verifyOtpBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify Code';
+    }
+    
+    verifyOtpBtn.disabled = false;
+}
+
+async function verifyEnrollmentOTPModal() {
+    // Get OTP from the hidden input that combines all digits
+    const otp = document.getElementById('otp_code_modal').value;
+    const verifyOtpBtn = document.getElementById('verifyOtpBtnModal');
+    
+    if (!otp || otp.length !== 6) {
+        const statusElement = document.getElementById('otpStatusModal');
+        if (statusElement) {
+            statusElement.textContent = 'Please enter a valid 6-digit OTP.';
+            statusElement.className = 'status-message status-error';
+            statusElement.style.display = 'block';
+        }
+        return;
+    }
+
+    verifyOtpBtn.disabled = true;
+    verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+    try {
+        const response = await fetch('{{ route("signup.verify.otp") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
+            body: JSON.stringify({ otp: otp })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            enrollmentEmailVerified = true;
+            document.getElementById('user_email').readOnly = true;
+            
+            // Update button to show success
+            verifyOtpBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verified';
+            verifyOtpBtn.classList.add('verified');
+            
+            // Show success message in modal
+            const statusElement = document.getElementById('otpStatusModal');
+            if (statusElement) {
+                statusElement.textContent = 'Email verified successfully!';
+                statusElement.className = 'status-message status-success';
+                statusElement.style.display = 'block';
+            }
+            
+            // Close modal after a short delay
+            setTimeout(() => {
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('otpModal'));
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }, 1500);
+            
+            // Enable the next button if all validations pass
+            validateStep3();
+        } else {
+            const statusElement = document.getElementById('otpStatusModal');
+            if (statusElement) {
+                statusElement.textContent = data.message || 'Failed to verify OTP. Please try again.';
+                statusElement.className = 'status-message status-error';
+                statusElement.style.display = 'block';
+            }
+            verifyOtpBtn.disabled = false;
+            verifyOtpBtn.innerHTML = 'Continue';
+        }
+    } catch (error) {
+        console.error('OTP verification error:', error);
+        const statusElement = document.getElementById('otpStatusModal');
+        if (statusElement) {
+            statusElement.textContent = 'Failed to verify OTP. Please try again.';
+            statusElement.className = 'status-message status-error';
+            statusElement.style.display = 'block';
+        }
+        verifyOtpBtn.disabled = false;
+        verifyOtpBtn.innerHTML = 'Continue';
+    }
+}
+
+function resendOTPCode() {
+    // Trigger the send OTP function again
+    sendEnrollmentOTP();
+}
+
+// Handle OTP digit inputs
+function initializeOTPInputs() {
+  const otpInputs = document.querySelectorAll('.otp-digit');
+  const hiddenOtpInput = document.getElementById('otp_code_modal');
+  const continueBtn     = document.getElementById('verifyOtpBtnModal');
+
+  otpInputs.forEach((input, idx) => {
+    input.addEventListener('input', () => {
+      // only digits
+      input.value = input.value.replace(/\D/, '');
+
+      // move forward
+      if (input.value && idx < otpInputs.length - 1) {
+        otpInputs[idx+1].focus();
+      }
+
+      // combine them
+      const code = Array.from(otpInputs).map(i=>i.value).join('');
+      hiddenOtpInput.value = code;
+
+      // once we've got 6 digits, try verifying silently
+      if (code.length === 6) {
+        // show spinner on button
+        continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying…';
+
+        fetch('{{ route("signup.verify.otp") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type':'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN
+          },
+          body: JSON.stringify({ otp: code })
+        })
+        .then(r=>r.json())
+        .then(data=>{
+          if (data.success) {
+            enrollmentEmailVerified = true;
+            continueBtn.disabled = false;                 // now they can click Continue
+            continueBtn.innerHTML = 'Continue';
+            continueBtn.classList.add('verified');
+            document.getElementById('otpStatusModal').textContent = 'Code OK, click Continue →';
+            document.getElementById('otpStatusModal').className = 'status-message status-success';
+            document.getElementById('otpStatusModal').style.display='block';
+          } else {
+            enrollmentEmailVerified = false;
+            continueBtn.disabled = true;
+            continueBtn.innerHTML = 'Continue';
+            document.getElementById('otpStatusModal').textContent = data.message;
+            document.getElementById('otpStatusModal').className = 'status-message status-error';
+            document.getElementById('otpStatusModal').style.display='block';
+          }
+        })
+        .catch(()=>{
+          continueBtn.disabled = true;
+          continueBtn.innerHTML = 'Continue';
+        });
+      } else {
+        // less than 6→ reset state
+        enrollmentEmailVerified = false;
+        continueBtn.disabled = true;
+        document.getElementById('otpStatusModal').style.display='none';
+      }
+    });
+
+    // backspace moves you back
+    input.addEventListener('keydown', e=>{
+      if (e.key==='Backspace' && !input.value && idx>0) {
+        otpInputs[idx-1].focus();
+      }
+    });
+
+    // handle paste of full code
+    input.addEventListener('paste', e=>{
+      e.preventDefault();
+      const txt = (e.clipboardData||window.clipboardData).getData('text')
+                    .replace(/\D/g,'').slice(0,6);
+      txt.split('').forEach((d,i)=>otpInputs[i].value=d);
+      otpInputs[Math.min(txt.length,5)].focus();
+      input.dispatchEvent(new Event('input')); // re-run the input handler
+    });
+  });
+}
+
+
+// Initialize OTP inputs when the modal is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const otpModal = document.getElementById('otpModal');
+    if (otpModal) {
+        otpModal.addEventListener('shown.bs.modal', function() {
+            initializeOTPInputs();
+            // Clear all inputs when modal opens
+            document.querySelectorAll('.otp-digit').forEach(input => input.value = '');
+            document.getElementById('otp_code_modal').value = '';
+            document.getElementById('otpStatusModal').style.display = 'none';
+        });
+    }
+});
+
+function showEnrollmentMessage(message, type) {
+    // Try modal status first, fallback to regular status if modal doesn't exist
+    const statusDiv = document.getElementById('otpStatusModal') || document.getElementById('otpStatus');
+    
+    if (statusDiv) {
+        statusDiv.textContent = message;
+        statusDiv.className = `status-message status-${type}`;
+        statusDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+function initializeEmailValidation() {
+    const emailInput = document.getElementById('user_email');
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    
+    if (!emailInput || !sendOtpBtn) return;
+    
+    let emailCheckTimeout;
+    
+    // Disable Send OTP initially
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+    
+    emailInput.addEventListener('input', function() {
+        const email = this.value.trim();
+        
+        // Clear previous timeout
+        clearTimeout(emailCheckTimeout);
+        
+        // Reset button state
+        sendOtpBtn.disabled = true;
+        
+        // Check if email is valid format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+            sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+            return;
+        }
+        
+        // Show checking animation
+        sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+        
+        // Debounce email checking (wait 500ms after user stops typing)
+        emailCheckTimeout = setTimeout(() => {
+            checkEmailAvailability(email);
+        }, 500);
+    });
+}
+
+async function checkEmailAvailability(email) {
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    
+    try {
+        const response = await fetch('{{ route("check.email.availability") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.available) {
+            // Email is available, enable Send OTP
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+        } else {
+            // Email already exists, disable Send OTP
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.innerHTML = '<i class="fas fa-times"></i> Email Exists';
+            
+            // Show error message
+            const emailError = document.getElementById('emailError');
+            if (emailError) {
+                emailError.textContent = 'This email is already registered. Please use a different email or login.';
+                emailError.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.error('Error checking email:', error);
+        // On error, enable the button (fail gracefully)
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing registration form');
     
@@ -1661,6 +3119,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize stepper
     updateStepper(currentStep);
+    
+    // Initialize email validation for Send OTP button
+    initializeEmailValidation();
     
     // Initialize terms modal event handlers
     const termsLink = document.getElementById('showTerms');
@@ -1687,90 +3148,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to load user prefill data
 async function loadUserPrefillData() {
-    if (!isUserLoggedIn) {
-        console.log('User not logged in, skipping prefill');
-        return;
+  if (!isUserLoggedIn) {
+    console.log('User not logged in, skipping prefill');
+    return;
+  }
+  try {
+    const res = await fetch(PREFILL_URL, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': CSRF_TOKEN
+      }
+    });
+
+    if (!res.ok) {
+      console.log(`Prefill fetch failed: HTTP ${res.status}`);
+      return;
     }
-    
-    try {
-        console.log('Loading user prefill data...');
-        
-        const response = await fetch('/registration/user-prefill', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Prefill response:', result);
-        
-        if (result.success && result.data) {
-            const data = result.data;
-            console.log('User prefill data received:', data);
-            
-            // Try multiple field name variations for firstname
-            const firstNameFields = ['firstname', 'user_firstname', 'First_Name'];
-            for (const fieldName of firstNameFields) {
-                const field = document.getElementById(fieldName);
-                if (field && data.firstname) {
-                    field.value = data.firstname;
-                    console.log(`Prefilled ${fieldName} with:`, data.firstname);
-                    break;
-                }
-            }
-            
-            // Try multiple field name variations for lastname  
-            const lastNameFields = ['lastname', 'user_lastname', 'Last_Name', 'last__name'];
-            for (const fieldName of lastNameFields) {
-                const field = document.getElementById(fieldName);
-                if (field && data.lastname) {
-                    field.value = data.lastname;
-                    console.log(`Prefilled ${fieldName} with:`, data.lastname);
-                    break;
-                }
-            }
-            
-            // Prefill email if available
-            const emailFields = ['email', 'user_email'];
-            for (const fieldName of emailFields) {
-                const field = document.getElementById(fieldName);
-                if (field && data.email) {
-                    field.value = data.email;
-                    console.log(`Prefilled ${fieldName} with:`, data.email);
-                    break;
-                }
-            }
-            
-            // Prefill other dynamic fields
-            Object.keys(data).forEach(key => {
-                if (!['firstname', 'lastname', 'email'].includes(key)) {
-                    const field = document.getElementById(key);
-                    if (field && data[key]) {
-                        if (field.type === 'checkbox') {
-                            field.checked = data[key] === '1' || data[key] === 'true' || data[key] === true;
-                        } else {
-                            field.value = data[key];
-                        }
-                        console.log(`Prefilled ${key} with:`, data[key]);
-                    }
-                }
-            });
-            
-            console.log('User data prefill completed successfully');
-        } else {
-            console.warn('No prefill data available or request failed:', result);
-        }
-    } catch (error) {
-        console.error('Error loading user prefill data:', error);
+
+    const payload = await res.json();
+    if (!payload.success) {
+      console.log('Prefill response not successful:', payload.message);
+      return;
     }
+
+    // populate fields exactly as before…
+    Object.entries(payload.data).forEach(([key, value]) => {
+      const fld = document.querySelector(
+        `input[name="${key}"], select[name="${key}"], textarea[name="${key}"]`
+      );
+      if (!fld) return;
+      if (fld.type === 'checkbox') fld.checked = !!value;
+      else fld.value = value;
+    });
+
+    console.log('User data prefills complete', payload.data);
+  } catch (err) {
+    console.error('Error loading user prefill data:', err);
+  }
 }
+
 
 // Function to handle program selection change - reset batch selection
 function onProgramSelectionChange() {
@@ -1790,6 +3208,8 @@ function onProgramSelectionChange() {
     // Update hidden program_id field
     updateHiddenProgramId();
 }
+window.onProgramSelectionChange = onProgramSelectionChange;
+
 
 // Function to clear batch selection
 function clearBatchSelection() {
@@ -1822,13 +3242,13 @@ function clearBatchSelection() {
 // Terms and Conditions modal functions
 function acceptTerms() {
     // Check the terms and conditions checkbox
-    const termsCheckbox = document.getElementById('terms_conditions');
+    const termsCheckbox = document.getElementById('termsCheckbox');
     if (termsCheckbox) {
         termsCheckbox.checked = true;
     }
     
     // Enable the submit button
-    const submitButton = document.getElementById('submitRegistration');
+    const submitButton = document.getElementById('submitButton');
     if (submitButton) {
         submitButton.disabled = false;
         submitButton.classList.remove('disabled');
@@ -1836,23 +3256,20 @@ function acceptTerms() {
     }
     
     // Close the modal
-    const termsModal = document.getElementById('termsModal');
-    if (termsModal) {
-        termsModal.style.display = 'none';
-    }
+    closeTermsModal();
     
     console.log('Terms and conditions accepted');
 }
 
 function declineTerms() {
     // Uncheck the terms and conditions checkbox
-    const termsCheckbox = document.getElementById('terms_conditions');
+    const termsCheckbox = document.getElementById('termsCheckbox');
     if (termsCheckbox) {
         termsCheckbox.checked = false;
     }
     
     // Disable the submit button
-    const submitButton = document.getElementById('submitRegistration');
+    const submitButton = document.getElementById('submitButton');
     if (submitButton) {
         submitButton.disabled = true;
         submitButton.classList.add('disabled');
@@ -1860,10 +3277,7 @@ function declineTerms() {
     }
     
     // Close the modal
-    const termsModal = document.getElementById('termsModal');
-    if (termsModal) {
-        termsModal.style.display = 'none';
-    }
+    closeTermsModal();
     
     // Show a message to the user
     showWarning('You must accept the terms and conditions to proceed with registration.');

@@ -207,14 +207,12 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Universal Search Component (for authenticated users) -->
-                @if(session('user_id'))
+                <!-- Universal Search Component (accessible to all users) -->
                 <div class="navbar-nav me-auto">
                     <div class="nav-item" style="min-width: 300px;">
                         @include('components.universal-search')
                     </div>
                 </div>
-                @endif
                 
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -293,31 +291,6 @@
                         </a>
                     </li>
                     @endif
-                    
-                    <li class="nav-item dropdown">
-                        @if(session('user_id'))
-                            {{-- User is logged in - show user name with dropdown --}}
-                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarUserDropdown" role="button" 
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle"></i> {{ explode(' ', session('user_name'))[0] ?? 'User' }}
-                            </a>
-                            <ul class="dropdown-menu">
-                                @if(session('user_role') === 'student')
-                                    <li><a class="dropdown-item" href="{{ route('student.dashboard') }}">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('student.settings') }}">
-                                        <i class="bi bi-gear"></i> Settings
-                                    </a></li>
-                                @elseif(session('user_role') === 'admin')
-                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">
-                                        <i class="bi bi-speedometer2"></i> Admin Dashboard
-                                    </a></li>
-                                @endif
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form action="{{ route('student.logout') }}" method="POST" style="display: inline;">
-                                        @csrf
                                         <button type="submit" class="dropdown-item text-danger">
                                             <i class="bi bi-box-arrow-right"></i> Logout
                                         </button>
@@ -344,7 +317,6 @@
             </div>
         </div>
     </nav>
-    @endif
     
     <!-- Programs Modal -->
     <div id="programsModal" class="programs-modal" style="display: none;">

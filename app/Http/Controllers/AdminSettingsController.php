@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\FormRequirement;
 use App\Models\UiSetting;
 use App\Models\AdminSetting;
+use App\Models\PaymentMethod;
+use App\Services\DynamicFieldService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -770,8 +772,13 @@ class AdminSettingsController extends Controller
     
     public function getNavbarSettings()
     {
-        $settings = UiSetting::getSection('navbar');
-        return response()->json($settings);
+        try {
+            $settings = UiSetting::getSection('navbar');
+            return response()->json(['success' => true, 'data' => $settings]);
+        } catch (\Exception $e) {
+            Log::error('Error loading navbar settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Failed to load navbar settings'], 500);
+        }
     }
 
     public function saveFooterSettings(Request $request)
@@ -798,8 +805,13 @@ class AdminSettingsController extends Controller
     
     public function getFooterSettings()
     {
-        $settings = UiSetting::getSection('footer');
-        return response()->json($settings);
+        try {
+            $settings = UiSetting::getSection('footer');
+            return response()->json(['success' => true, 'data' => $settings]);
+        } catch (\Exception $e) {
+            Log::error('Error loading footer settings: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Failed to load footer settings'], 500);
+        }
     }
 
     public function generateEnrollmentForm($programType = 'both')
@@ -930,42 +942,7 @@ class AdminSettingsController extends Controller
         }
     }
 
-    /**
-     * Add a new column to the registrations table
-     */
-    public function addDynamicColumn(Request $request)
-    {
-        try {
-            $fieldName = $request->input('field_name');
-            $fieldType = $request->input('field_type', 'string');
-            $nullable = $request->input('nullable', true);
 
-            // Check if column already exists
-            if (Schema::hasColumn('registrations', $fieldName)) {
-                return response()->json([
-                    'success' => false,
-                    'error' => "Column '{$fieldName}' already exists in the registrations table."
-                ]);
-            }
-
-            // Add the column
-            Schema::table('registrations', function (Blueprint $table) use ($fieldName, $fieldType, $nullable) {
-                $column = $table->$fieldType($fieldName);
-                if ($nullable) {
-                    $column->nullable();
-                }
-            });
-
-            // Add to Registration model fillable array (this would need to be done manually)
-            return response()->json([
-                'success' => true,
-                'message' => "Column '{$fieldName}' added successfully. Please add it to the Registration model's fillable array."
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error adding dynamic column: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => $e->getMessage()]);
-        }
-    }
 
     /**
      * Preview form for a specific program type
@@ -1319,6 +1296,243 @@ class AdminSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Error saving plan settings: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to save plan settings'], 500);
+        }
+    }
+
+    // Payment Methods functionality
+    public function getPaymentMethods()
+    {
+        try {
+            $paymentMethods = PaymentMethod::orderBy('sort_order')->get();
+            return response()->json([
+                'success' => true,
+                'data' => $paymentMethods
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching payment methods: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch payment methods'], 500);
+        }
+    }
+
+    public function storePaymentMethod(Request $request)
+    {
+        $request->validate([
+            'method_name' => 'required|string|max:255',
+            'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
+            'description' => 'nullable|string',
+            'instructions' => 'nullable|string',
+            'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
+            'is_enabled' => 'boolean'
+        ]);
+
+        try {
+            $qrCodePath = null;
+            if ($request->hasFile('qr_code')) {
+                $qrCodePath = $request->file('qr_code')->store('payment_qr_codes', 'public');
+            }
+
+            $paymentMethod = PaymentMethod::create([
+                'method_name' => $request->method_name,
+                'method_type' => $request->method_type,
+                'description' => $request->description,
+                'instructions' => $request->instructions,
+                'qr_code_path' => $qrCodePath,
+                'is_enabled' => $request->boolean('is_enabled', true),
+                'sort_order' => PaymentMethod::max('sort_order') + 1,
+                'created_by_admin_id' => session('admin_id')
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $paymentMethod,
+                'message' => 'Payment method created successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error creating payment method: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to create payment method'], 500);
+        }
+    }
+
+    public function updatePaymentMethod(Request $request, $id)
+    {
+        $request->validate([
+            'method_name' => 'required|string|max:255',
+            'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
+            'description' => 'nullable|string',
+            'instructions' => 'nullable|string',
+            'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
+            'is_enabled' => 'boolean',
+            'remove_qr_code' => 'nullable|boolean'
+        ]);
+
+        try {
+            $paymentMethod = PaymentMethod::findOrFail($id);
+            
+            // Handle QR code removal
+            if ($request->boolean('remove_qr_code') && $paymentMethod->qr_code_path) {
+                Storage::disk('public')->delete($paymentMethod->qr_code_path);
+                $paymentMethod->qr_code_path = null;
+            }
+
+            // Handle new QR code upload
+            if ($request->hasFile('qr_code')) {
+                // Delete old QR code if exists
+                if ($paymentMethod->qr_code_path) {
+                    Storage::disk('public')->delete($paymentMethod->qr_code_path);
+                }
+                $paymentMethod->qr_code_path = $request->file('qr_code')->store('payment_qr_codes', 'public');
+            }
+
+            $paymentMethod->update([
+                'method_name' => $request->method_name,
+                'method_type' => $request->method_type,
+                'description' => $request->description,
+                'instructions' => $request->instructions,
+                'is_enabled' => $request->boolean('is_enabled', true)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $paymentMethod,
+                'message' => 'Payment method updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating payment method: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update payment method'], 500);
+        }
+    }
+
+    public function deletePaymentMethod($id)
+    {
+        try {
+            $paymentMethod = PaymentMethod::findOrFail($id);
+            
+            // Delete QR code file if exists
+            if ($paymentMethod->qr_code_path) {
+                Storage::disk('public')->delete($paymentMethod->qr_code_path);
+            }
+
+            $paymentMethod->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting payment method: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to delete payment method'], 500);
+        }
+    }
+
+    public function updatePaymentMethodOrder(Request $request)
+    {
+        $request->validate([
+            'payment_methods' => 'required|array',
+            'payment_methods.*.id' => 'required|integer|exists:payment_methods,payment_method_id',
+            'payment_methods.*.sort_order' => 'required|integer'
+        ]);
+
+        try {
+            foreach ($request->payment_methods as $method) {
+                PaymentMethod::where('payment_method_id', $method['id'])
+                    ->update(['sort_order' => $method['sort_order']]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method order updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating payment method order: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update payment method order'], 500);
+        }
+    }
+
+    // Method to get enabled payment methods for students
+    public function getEnabledPaymentMethods()
+    {
+        try {
+            $paymentMethods = PaymentMethod::enabled()->ordered()->get();
+            return response()->json([
+                'success' => true,
+                'data' => $paymentMethods
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching enabled payment methods: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch payment methods'], 500);
+        }
+    }
+
+    // Dynamic Field Synchronization Methods
+    public function syncDynamicFields()
+    {
+        try {
+            $dynamicFieldService = new DynamicFieldService();
+            $result = $dynamicFieldService->synchronizeDynamicFields();
+            
+            if ($result) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Dynamic fields synchronized successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to synchronize dynamic fields'
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error synchronizing dynamic fields: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to synchronize dynamic fields'], 500);
+        }
+    }
+
+    public function addDynamicColumn(Request $request)
+    {
+        $request->validate([
+            'field_name' => 'required|string|regex:/^[a-zA-Z][a-zA-Z0-9_]*$/|max:64',
+            'field_type' => 'required|in:text,textarea,number,date,file,select,checkbox,radio,multiple_selection',
+            'field_label' => 'nullable|string|max:255'
+        ]);
+
+        try {
+            $dynamicFieldService = new DynamicFieldService();
+            $result = $dynamicFieldService->addDynamicField(
+                $request->field_name,
+                $request->field_type,
+                $request->field_label
+            );
+            
+            if ($result) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Dynamic field added successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to add dynamic field'
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error adding dynamic field: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to add dynamic field'], 500);
+        }
+    }
+
+    public function getMissingColumns()
+    {
+        try {
+            $dynamicFieldService = new DynamicFieldService();
+            $missingColumns = $dynamicFieldService->getMissingColumnsInStudents();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $missingColumns
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting missing columns: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to get missing columns'], 500);
         }
     }
 }

@@ -204,7 +204,8 @@ class OcrService
                 'phd',
                 'ms ',
                 'ma ',
-                'md '
+                'md ',
+                'LPU'
             ]
         ];
         
@@ -360,5 +361,200 @@ class OcrService
         ];
         
         return $messages[$documentType] ?? 'Please upload a valid document for this field.';
+    }
+
+    /**
+     * Analyze certificate level from OCR text
+     */
+    public function analyzeCertificateLevel($ocrText)
+    {
+        $text = strtolower($ocrText);
+        
+        // Define certificate level keywords
+        $levels = [
+            'undergraduate' => [
+                'bachelor', 'undergraduate', 'college diploma', 'associate',
+                'bachelor of', 'bs ', 'ba ', 'ab ', 'bsed', 'bsit', 'bscs'
+            ],
+            'graduate' => [
+                'master', 'graduate', 'master of', 'ms ', 'ma ', 'mba', 'med',
+                'master\'s degree', 'graduate degree'
+            ],
+            'doctoral' => [
+                'doctor', 'doctoral', 'phd', 'doctorate', 'doctor of', 'dds',
+                'md ', 'doctoral degree', 'ph.d'
+            ],
+            'professional' => [
+                'professional', 'license', 'board exam', 'licensure',
+                'certified', 'registration', 'prc'
+            ]
+        ];
+        
+        $scores = [];
+        foreach ($levels as $level => $keywords) {
+            $score = 0;
+            foreach ($keywords as $keyword) {
+                if (strpos($text, $keyword) !== false) {
+                    $score++;
+                }
+            }
+            if ($score > 0) {
+                $scores[$level] = $score;
+            }
+        }
+        
+        if (empty($scores)) {
+            return 'unknown';
+        }
+        
+        // Return the level with highest score
+        arsort($scores);
+        return array_key_first($scores);
+    }
+
+    /**
+     * Enhanced name extraction with flexible formatting
+     */
+    public function extractName($ocrText)
+    {
+        $text = trim($ocrText);
+        $lines = explode("\n", $text);
+        
+        $namePatterns = [
+            // Pattern for "Name: John Doe"
+            '/(?:name|student|applicant):\s*([A-Za-z\s,\.]+)/i',
+            // Pattern for names in all caps
+            '/\b([A-Z][A-Z\s,\.]{10,})\b/',
+            // Pattern for formal name format
+            '/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]*\.?\s*)*[A-Z][a-z]+)\b/'
+        ];
+        
+        foreach ($lines as $line) {
+            foreach ($namePatterns as $pattern) {
+                if (preg_match($pattern, $line, $matches)) {
+                    $extractedName = trim($matches[1]);
+                    if (strlen($extractedName) > 5) { // Reasonable name length
+                        return $this->parseNameFormat($extractedName);
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Parse different name formats into first, middle, last
+     */
+    public function parseNameFormat($fullName)
+    {
+        $fullName = trim($fullName);
+        $fullName = preg_replace('/[,\.]+/', ' ', $fullName);
+        $fullName = preg_replace('/\s+/', ' ', $fullName);
+        
+        $parts = explode(' ', $fullName);
+        $parts = array_filter($parts, function($part) {
+            return strlen(trim($part)) > 0;
+        });
+        $parts = array_values($parts);
+        
+        if (count($parts) < 2) {
+            return null;
+        }
+        
+        $result = [
+            'first_name' => '',
+            'middle_name' => '',
+            'last_name' => ''
+        ];
+        
+        // Check if it's "Last, First Middle" format
+        if (strpos($fullName, ',') !== false) {
+            $commaParts = explode(',', $fullName);
+            if (count($commaParts) >= 2) {
+                $result['last_name'] = trim($commaParts[0]);
+                $remainingParts = explode(' ', trim($commaParts[1]));
+                $result['first_name'] = trim($remainingParts[0] ?? '');
+                $result['middle_name'] = trim($remainingParts[1] ?? '');
+                return $result;
+            }
+        }
+        
+        // Handle "First Middle Last" format
+        if (count($parts) == 2) {
+            $result['first_name'] = $parts[0];
+            $result['last_name'] = $parts[1];
+        } elseif (count($parts) == 3) {
+            $result['first_name'] = $parts[0];
+            $result['middle_name'] = $parts[1];
+            $result['last_name'] = $parts[2];
+        } elseif (count($parts) > 3) {
+            // Assume first is first name, last is last name, middle parts are middle name
+            $result['first_name'] = $parts[0];
+            $result['last_name'] = $parts[count($parts) - 1];
+            $result['middle_name'] = implode(' ', array_slice($parts, 1, -1));
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Enhanced document type validation with better keyword matching
+     */
+    public function validateDocumentTypeEnhanced($ocrText, $documentType)
+    {
+        $text = strtolower($ocrText);
+        
+        $documentKeywords = [
+            'PSA' => [
+                'priority' => ['philippine statistics authority', 'psa', 'birth certificate'],
+                'secondary' => ['certificate of live birth', 'republic of the philippines', 'civil registrar']
+            ],
+            'good_moral' => [
+                'priority' => ['certificate of good moral', 'good moral character'],
+                'secondary' => ['moral character', 'certificate of character', 'conduct']
+            ],
+            'Course_Cert' => [
+                'priority' => ['certificate of completion', 'course certificate'],
+                'secondary' => ['certificate of training', 'training certificate', 'completion']
+            ],
+            'TOR' => [
+                'priority' => ['transcript of records', 'tor', 'official transcript'],
+                'secondary' => ['academic transcript', 'student records', 'grades']
+            ],
+            'Cert_of_Grad' => [
+                'priority' => ['certificate of graduation', 'diploma', 'graduation'],
+                'secondary' => ['graduate', 'graduated', 'degree conferred', 'conferment']
+            ]
+        ];
+        
+        if (!isset($documentKeywords[$documentType])) {
+            return ['valid' => true, 'confidence' => 0];
+        }
+        
+        $keywords = $documentKeywords[$documentType];
+        $confidence = 0;
+        
+        // Check priority keywords (higher weight)
+        foreach ($keywords['priority'] as $keyword) {
+            if (strpos($text, $keyword) !== false) {
+                $confidence += 3;
+            }
+        }
+        
+        // Check secondary keywords (lower weight)
+        foreach ($keywords['secondary'] as $keyword) {
+            if (strpos($text, $keyword) !== false) {
+                $confidence += 1;
+            }
+        }
+        
+        $isValid = $confidence >= 2; // Require at least moderate confidence
+        
+        return [
+            'valid' => $isValid,
+            'confidence' => $confidence,
+            'type' => $documentType
+        ];
     }
 }

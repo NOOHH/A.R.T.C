@@ -91,4 +91,9 @@ class Program extends Model
         ->withPivot('video_link', 'video_description')
         ->withTimestamps();
     }
+
+    public function batches()
+    {
+        return $this->hasMany(StudentBatch::class, 'program_id', 'program_id');
+    }
 }

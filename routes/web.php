@@ -18,6 +18,7 @@ use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\FormRequirementController;
@@ -67,6 +68,7 @@ Route::prefix('admin/batches')->middleware(['admin.auth'])->group(function () {
     Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
     Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
     Route::post('/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
+    Route::post('/{id}/approve', [BatchEnrollmentController::class, 'approveBatch'])->name('admin.batches.approve');
     Route::get('/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
     
     // Additional batch management routes
@@ -82,17 +84,40 @@ Route::prefix('admin/batches')->middleware(['admin.auth'])->group(function () {
     Route::post('/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-to-batch');
 });
 
-// Registration and document validation routes
-Route::middleware(['session.auth'])->group(function () {
+// Registration and document validation routes - accessible for registration
+Route::middleware(['web'])->group(function () {
     Route::post('/registration/validate-document', [RegistrationController::class, 'validateDocument'])->name('registration.validate-document');
     Route::get('/api/batches/{programId}', [RegistrationController::class, 'getBatchesForProgram'])->name('api.batches.program');
     Route::post('/registration/batch-enrollment', [RegistrationController::class, 'saveBatchEnrollment'])->name('registration.batch-enrollment');
 });
 
-// OCR File validation routes
-Route::post('/registration/validate-file', [RegistrationController::class, 'validateFileUpload'])->name('registration.validate-file');
-Route::get('/registration/user-prefill', [RegistrationController::class, 'getUserPrefillData'])->name('registration.user-prefill');
-Route::get('/registration/user-prefill-data', [RegistrationController::class, 'getUserPrefillData'])->name('registration.user-prefill-data');
+// OCR File validation routes - accessible for registration
+Route::middleware(['web'])->group(function(){
+    Route::get('/registration/user-prefill', 
+        [\App\Http\Controllers\RegistrationController::class, 'userPrefill']
+    )->name('registration.userPrefill');
+
+    Route::get('/registration/user-prefill-data', 
+        [\App\Http\Controllers\RegistrationController::class, 'userPrefill']
+    )->name('registration.user-prefill-data');
+
+    Route::post('/registration/validate-file', 
+        [\App\Http\Controllers\RegistrationController::class, 'validateFileUpload']
+    )->name('registration.validateFile');
+});
+
+// Debug routes for testing
+Route::get('/test-registration-routes', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Registration routes are working',
+        'routes' => [
+            'user-prefill' => route('registration.userPrefill'),
+            'user-prefill-data' => route('registration.user-prefill-data'), 
+            'validate-file' => route('registration.validateFile')
+        ]
+    ]);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -198,6 +223,9 @@ Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout'
 // Signup page
 Route::get('/signup', [App\Http\Controllers\SignupController::class, 'showSignupForm'])->name('signup');
 Route::post('/signup', [App\Http\Controllers\SignupController::class, 'signup'])->name('user.signup');
+Route::post('/signup/send-otp', [App\Http\Controllers\SignupController::class, 'sendOTP'])->name('signup.send.otp');
+Route::post('/signup/verify-otp', [App\Http\Controllers\SignupController::class, 'verifyOTP'])->name('signup.verify.otp');
+Route::post('/check-email-availability', [App\Http\Controllers\SignupController::class, 'checkEmailAvailability'])->name('check.email.availability');
 
 // Legacy student authentication routes (now handled by UnifiedLoginController)
 Route::post('/student/login', [UnifiedLoginController::class, 'login'])->name('student.login');
@@ -208,9 +236,19 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
+    
+    // Password management routes
+    Route::post('/student/change-password', [StudentController::class, 'changePassword'])->name('student.change-password');
+    Route::post('/student/reset-password', [StudentController::class, 'resetPassword'])->name('student.reset-password');
+    Route::post('/student/send-otp', [StudentController::class, 'sendOTP'])->name('student.send-otp');
+    Route::post('/student/verify-email-otp', [StudentController::class, 'verifyEmailOTP'])->name('student.verify-email-otp');
+    
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
+    
+    // Paywall route
+    Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
     
     // Module completion route
     Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'completeModule'])->name('student.module.complete');
@@ -313,6 +351,19 @@ Route::get('/api/programs', function () {
     return response()->json($programs);
 })->name('api.programs');
 
+// API endpoint for modules by program
+Route::get('/api/programs/{programId}/modules', function ($programId) {
+    $modules = \App\Models\Module::where('program_id', $programId)
+                                 ->where('is_archived', false)
+                                 ->select('modules_id as module_id', 'module_name', 'module_description', 'program_id')
+                                 ->get();
+    
+    return response()->json([
+        'success' => true,
+        'modules' => $modules
+    ]);
+})->name('api.programs.modules');
+
 /*
 |--------------------------------------------------------------------------
 | Student Enrollment
@@ -335,6 +386,15 @@ Route::post('/ocr/process', [StudentRegistrationController::class, 'processOcrDo
 | Admin Dashboard & Registration
 |--------------------------------------------------------------------------
 */
+
+// Payment routes
+Route::post('/process-payment', [PaymentController::class, 'processPayment'])->name('payment.process');
+Route::get('/payment/success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
+Route::get('/payment/failure', [PaymentController::class, 'paymentFailure'])->name('payment.failure');
+Route::get('/payment/cancel', [PaymentController::class, 'paymentCancel'])->name('payment.cancel');
+Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof'])->name('payment.upload-proof');
+Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
+
 // Admin dashboard and admin routes with middleware
 Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
@@ -509,6 +569,8 @@ Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
      ->name('admin.packages.update');
 Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.destroy');
+Route::delete('/admin/packages/{id}/delete', [AdminPackageController::class, 'destroy'])
+     ->name('admin.packages.delete');
 
 // Admin AI Quiz Generator
 Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
@@ -599,6 +661,25 @@ Route::post('/admin/settings/professor-features', [AdminSettingsController::clas
 Route::get('/admin/settings/director-features', [AdminSettingsController::class, 'getDirectorFeatures']);
 Route::post('/admin/settings/director-features', [AdminSettingsController::class, 'updateDirectorFeatures']);
 
+// Payment Methods routes
+Route::prefix('admin/settings/payment-methods')->middleware(['admin.auth'])->group(function () {
+    Route::get('/', [AdminSettingsController::class, 'getPaymentMethods'])->name('admin.settings.payment-methods.index');
+    Route::post('/', [AdminSettingsController::class, 'storePaymentMethod'])->name('admin.settings.payment-methods.store');
+    Route::put('/{id}', [AdminSettingsController::class, 'updatePaymentMethod'])->name('admin.settings.payment-methods.update');
+    Route::delete('/{id}', [AdminSettingsController::class, 'deletePaymentMethod'])->name('admin.settings.payment-methods.delete');
+    Route::post('/reorder', [AdminSettingsController::class, 'updatePaymentMethodOrder'])->name('admin.settings.payment-methods.reorder');
+});
+
+// Public route for students to get enabled payment methods
+Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
+
+// Dynamic Field Synchronization routes
+Route::prefix('admin/settings/dynamic-fields')->middleware(['admin.auth'])->group(function () {
+    Route::post('/sync', [AdminSettingsController::class, 'syncDynamicFields'])->name('admin.settings.dynamic-fields.sync');
+    Route::post('/add-column', [AdminSettingsController::class, 'addDynamicColumn'])->name('admin.settings.dynamic-fields.add-column');
+    Route::get('/missing-columns', [AdminSettingsController::class, 'getMissingColumns'])->name('admin.settings.dynamic-fields.missing-columns');
+});
+
 // Chat functionality routes
 Route::middleware(['session.auth'])->group(function () {
     Route::get('/chat/search-users', [ChatController::class, 'searchUsers'])->name('chat.search-users');
@@ -640,6 +721,14 @@ Route::post('/admin/settings/form-requirements/add-column', [AdminSettingsContro
      ->name('admin.settings.form-requirements.add-column');
 Route::get('/admin/settings/form-requirements/preview/{programType}', [AdminSettingsController::class, 'previewForm'])
      ->name('admin.settings.form-requirements.preview');
+
+// Form Requirements Database Sync routes
+Route::get('/admin/settings/form-requirements-sync', [App\Http\Controllers\FormRequirementSyncController::class, 'index'])
+     ->name('admin.settings.form-requirements-sync');
+Route::post('/admin/settings/form-requirements-sync/sync', [App\Http\Controllers\FormRequirementSyncController::class, 'sync'])
+     ->name('admin.settings.form-requirements-sync.sync');
+Route::get('/admin/settings/form-requirements-sync/status', [App\Http\Controllers\FormRequirementSyncController::class, 'status'])
+     ->name('admin.settings.form-requirements-sync.status');
 
 // Plan Settings routes
 Route::get('/admin/settings/plan-settings', [AdminSettingsController::class, 'getPlanSettings']);

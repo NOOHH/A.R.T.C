@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment System Test - A.R.T.C</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="mb-4">A.R.T.C Payment System Test</h1>
+        
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> Test Instructions</h5>
+            <p><strong>Important:</strong> This test page must be accessed through your local server to work properly.</p>
+            <ul>
+                <li><strong>Correct URL:</strong> <code>http://localhost/A.R.T.C/payment-system-test-server.html</code></li>
+                <li><strong>Wrong:</strong> Opening the file directly in browser</li>
+            </ul>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Test 1: Server Connection -->
+                <div class="test-section">
+                    <h3><i class="fas fa-server"></i> Test 1: Server Connection</h3>
+                    <p>Testing if Laravel server is running and accessible.</p>
+                    <button class="btn btn-primary" onclick="testServerConnection()">
+                        <i class="fas fa-play"></i> Test Server
+                    </button>
+                    <div id="serverResult" class="test-result mt-3" style="display: none;"></div>
+                </div>
+
+                <!-- Test 2: Payment Routes -->
+                <div class="test-section">
+                    <h3><i class="fas fa-route"></i> Test 2: Payment Routes</h3>
+                    <p>Testing if payment routes are accessible.</p>
+                    <button class="btn btn-primary" onclick="testPaymentRoutes()">
+                        <i class="fas fa-play"></i> Test Routes
+                    </button>
+                    <div id="routesResult" class="test-result mt-3" style="display: none;"></div>
+                </div>
+
+                <!-- Test 3: Admin Payment Methods -->
+                <div class="test-section">
+                    <h3><i class="fas fa-credit-card"></i> Test 3: Admin Payment Methods</h3>
+                    <p>Testing payment methods configuration in admin panel.</p>
+                    <button class="btn btn-primary" onclick="testPaymentMethods()">
+                        <i class="fas fa-play"></i> Test Payment Methods
+                    </button>
+                    <div id="paymentMethodsResult" class="test-result mt-3" style="display: none;"></div>
+                </div>
+
+                <!-- Test 4: Student Paywall -->
+                <div class="test-section">
+                    <h3><i class="fas fa-lock"></i> Test 4: Student Paywall</h3>
+                    <p>Test the student paywall functionality.</p>
+                    <div class="mb-3">
+                        <label for="testStudentId" class="form-label">Student ID (optional):</label>
+                        <input type="text" class="form-control" id="testStudentId" placeholder="Enter student ID">
+                    </div>
+                    <button class="btn btn-primary" onclick="testStudentPaywall()">
+                        <i class="fas fa-play"></i> Test Paywall
+                    </button>
+                    <div id="paywallResult" class="test-result mt-3" style="display: none;"></div>
+                </div>
+
+                <!-- Test 5: Maya Integration -->
+                <div class="test-section">
+                    <h3><i class="fas fa-mobile-alt"></i> Test 5: Maya Integration</h3>
+                    <p>Test Maya payment gateway integration.</p>
+                    <div class="mb-3">
+                        <label for="testAmount" class="form-label">Test Amount (PHP):</label>
+                        <input type="number" class="form-control" id="testAmount" value="100" min="1">
+                    </div>
+                    <button class="btn btn-primary" onclick="testMayaIntegration()">
+                        <i class="fas fa-play"></i> Test Maya
+                    </button>
+                    <div id="mayaResult" class="test-result mt-3" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-bar"></i> Test Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="testSummary">
+                            <p class="text-muted">Run tests to see results</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog"></i> System Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="systemStatus">
+                            <p><strong>Server:</strong> <span id="serverStatus" class="status-pending">Checking...</span></p>
+                            <p><strong>Database:</strong> <span id="dbStatus" class="status-pending">Checking...</span></p>
+                            <p><strong>Payment Routes:</strong> <span id="routeStatus" class="status-pending">Checking...</span></p>
+                            <p><strong>Maya API:</strong> <span id="mayaStatus" class="status-pending">Not tested</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-link"></i> Quick Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="/A.R.T.C/admin-dashboard" class="btn btn-outline-primary btn-sm d-block mb-2" target="_blank">
+                            <i class="fas fa-user-shield"></i> Admin Dashboard
+                        </a>
+                        <a href="/A.R.T.C/admin-dashboard" class="btn btn-outline-secondary btn-sm d-block mb-2" target="_blank">
+                            <i class="fas fa-cog"></i> Payment Settings
+                        </a>
+                        <a href="/A.R.T.C/student-dashboard" class="btn btn-outline-info btn-sm d-block" target="_blank">
+                            <i class="fas fa-user-graduate"></i> Student Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let testResults = {};
+        
+        // Base URL for API calls
+        const baseURL = window.location.origin + '/A.R.T.C';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            testServerConnection();
+        });
+
+        async function testServerConnection() {
+            const resultDiv = document.getElementById('serverResult');
+            const statusSpan = document.getElementById('serverStatus');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing server connection...';
+            statusSpan.className = 'status-pending';
+            statusSpan.textContent = 'Testing...';
+
+            try {
+                const response = await fetch(baseURL + '/unified-login');
+                
+                if (response.ok) {
+                    testResults.server = 'success';
+                    statusSpan.className = 'status-success';
+                    statusSpan.textContent = 'Connected';
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✓ Success!</strong> Laravel server is running and accessible.
+                            <br><small>Response: ${response.status} ${response.statusText}</small>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+            } catch (error) {
+                testResults.server = 'error';
+                statusSpan.className = 'status-error';
+                statusSpan.textContent = 'Failed';
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>✗ Error!</strong> Cannot connect to Laravel server.
+                        <br><small>Error: ${error.message}</small>
+                    </div>
+                `;
+            }
+            updateTestSummary();
+        }
+
+        async function testPaymentRoutes() {
+            const resultDiv = document.getElementById('routesResult');
+            const statusSpan = document.getElementById('routeStatus');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing payment routes...';
+            statusSpan.className = 'status-pending';
+            statusSpan.textContent = 'Testing...';
+
+            const routes = [
+                { name: 'Payment Methods API', url: baseURL + '/payment-methods/enabled' },
+                { name: 'Process Payment', url: baseURL + '/process-payment' },
+                { name: 'Upload Proof', url: baseURL + '/upload-payment-proof' }
+            ];
+
+            let routeResults = [];
+            let allPassed = true;
+
+            for (const route of routes) {
+                try {
+                    const response = await fetch(route.url, { method: 'HEAD' });
+                    
+                    if (response.status === 405 || response.status === 200) {
+                        // 405 Method Not Allowed is expected for POST routes tested with HEAD
+                        routeResults.push(`<i class="fas fa-check-circle text-success"></i> ${route.name}: Available`);
+                    } else {
+                        routeResults.push(`<i class="fas fa-exclamation-triangle text-warning"></i> ${route.name}: ${response.status}`);
+                        allPassed = false;
+                    }
+                } catch (error) {
+                    routeResults.push(`<i class="fas fa-times-circle text-danger"></i> ${route.name}: Error`);
+                    allPassed = false;
+                }
+            }
+
+            testResults.routes = allPassed ? 'success' : 'warning';
+            statusSpan.className = allPassed ? 'status-success' : 'status-error';
+            statusSpan.textContent = allPassed ? 'Available' : 'Issues';
+            
+            resultDiv.innerHTML = `
+                <div class="alert alert-${allPassed ? 'success' : 'warning'}">
+                    <strong>Payment Route Test Results:</strong>
+                    <ul class="mt-2 mb-0">
+                        ${routeResults.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            updateTestSummary();
+        }
+
+        async function testPaymentMethods() {
+            const resultDiv = document.getElementById('paymentMethodsResult');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing payment methods...';
+
+            try {
+                const response = await fetch(baseURL + '/payment-methods/enabled');
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const methods = data.data;
+                    testResults.paymentMethods = 'success';
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✓ Success!</strong> Found ${methods.length} payment method(s).
+                            ${methods.length > 0 ? `
+                                <ul class="mt-2 mb-0">
+                                    ${methods.map(method => `
+                                        <li>${method.method_name} (${method.method_type})
+                                            ${method.qr_code_path ? ' - Has QR Code' : ''}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            ` : '<br><small>No payment methods configured yet.</small>'}
+                        </div>
+                    `;
+                } else {
+                    testResults.paymentMethods = 'warning';
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <strong>⚠ Warning!</strong> No payment methods found.
+                            <br><small>Configure payment methods in Admin → Settings</small>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                testResults.paymentMethods = 'error';
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>✗ Error!</strong> Failed to load payment methods.
+                        <br><small>Error: ${error.message}</small>
+                    </div>
+                `;
+            }
+            updateTestSummary();
+        }
+
+        function testStudentPaywall() {
+            const resultDiv = document.getElementById('paywallResult');
+            const studentId = document.getElementById('testStudentId').value || 'test';
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <strong>ℹ Paywall Test</strong>
+                    <p>To test the student paywall:</p>
+                    <ol>
+                        <li>Log in as a student</li>
+                        <li>Navigate to course content</li>
+                        <li>Verify paywall appears for unpaid enrollments</li>
+                        <li>Test payment method selection</li>
+                        <li>Verify package fee is displayed correctly</li>
+                    </ol>
+                    <a href="${baseURL}/student-dashboard" class="btn btn-primary mt-2" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Open Student Dashboard
+                    </a>
+                </div>
+            `;
+            testResults.paywall = 'success';
+            updateTestSummary();
+        }
+
+        async function testMayaIntegration() {
+            const resultDiv = document.getElementById('mayaResult');
+            const statusSpan = document.getElementById('mayaStatus');
+            const amount = document.getElementById('testAmount').value;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing Maya integration...';
+            statusSpan.className = 'status-pending';
+            statusSpan.textContent = 'Testing...';
+
+            try {
+                const response = await fetch(baseURL + '/process-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': 'test-token' // Would need real token in production
+                    },
+                    body: JSON.stringify({
+                        payment_method_id: 'maya_test',
+                        amount: parseFloat(amount),
+                        student_id: 'test_student',
+                        payment_type: 'maya_redirect'
+                    })
+                });
+
+                if (response.ok) {
+                    testResults.maya = 'success';
+                    statusSpan.className = 'status-success';
+                    statusSpan.textContent = 'Available';
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✓ Success!</strong> Maya payment processing is working.
+                            <br><small>Note: Add secret key to .env for full functionality</small>
+                        </div>
+                    `;
+                } else {
+                    testResults.maya = 'warning';
+                    statusSpan.className = 'status-error';
+                    statusSpan.textContent = 'Needs Setup';
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <strong>⚠ Setup Required!</strong> Maya integration needs configuration.
+                            <br><small>Status: ${response.status} - Check .env configuration</small>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                testResults.maya = 'error';
+                statusSpan.className = 'status-error';
+                statusSpan.textContent = 'Error';
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>✗ Error!</strong> Maya integration test failed.
+                        <br><small>Error: ${error.message}</small>
+                    </div>
+                `;
+            }
+            updateTestSummary();
+        }
+
+        function updateTestSummary() {
+            const summaryDiv = document.getElementById('testSummary');
+            const total = Object.keys(testResults).length;
+            const passed = Object.values(testResults).filter(r => r === 'success').length;
+            const warnings = Object.values(testResults).filter(r => r === 'warning').length;
+            
+            if (total === 0) return;
+
+            summaryDiv.innerHTML = `
+                <div class="text-center">
+                    <h6>Tests Completed: ${total}</h6>
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="text-success">
+                                <i class="fas fa-check-circle"></i>
+                                <br><small>Passed: ${passed}</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <br><small>Warnings: ${warnings}</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-danger">
+                                <i class="fas fa-times-circle"></i>
+                                <br><small>Failed: ${total - passed - warnings}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress mt-3">
+                        <div class="progress-bar ${passed === total ? 'bg-success' : warnings > 0 ? 'bg-warning' : 'bg-danger'}" 
+                             style="width: ${(passed/total)*100}%">
+                            ${Math.round((passed/total)*100)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

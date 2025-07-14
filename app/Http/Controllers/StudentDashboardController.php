@@ -10,6 +10,7 @@ use App\Models\Program;
 use App\Models\Module;
 use App\Models\Deadline;
 use App\Models\Announcement;
+use App\Models\Package;
 
 class StudentDashboardController extends Controller
 {
@@ -241,15 +242,32 @@ class StudentDashboardController extends Controller
             // Allow access with special notification
             $showAccessModal = true;
         } else {
-            // Normal access checks - if not paid or not approved, show paywall
-            if ($paymentStatus !== 'paid' || $enrollmentStatus !== 'approved') {
+            // Normal access checks - if not paid AND not approved, show paywall
+            // But allow access if payment is paid regardless of approval status
+            if ($paymentStatus !== 'paid' && $enrollmentStatus !== 'approved') {
+                // Get package information from database
+                $package = null;
+                $packageName = 'Selected Package';
+                $enrollmentFee = 5000; // Default fallback
+                
+                if ($enrollment && $enrollment->package_id) {
+                    $package = Package::find($enrollment->package_id);
+                    if ($package) {
+                        $packageName = $package->package_name;
+                        $enrollmentFee = $package->amount;
+                    }
+                }
+                
                 return view('student.paywall', compact(
                     'user', 
                     'program', 
                     'enrollment', 
                     'paymentStatus', 
                     'enrollmentStatus',
-                    'courseId'
+                    'courseId',
+                    'package',
+                    'packageName',
+                    'enrollmentFee'
                 ));
             }
             $showAccessModal = false;
@@ -262,6 +280,30 @@ class StudentDashboardController extends Controller
                         ->orderBy('order', 'asc')
                         ->orderBy('created_at', 'asc')
                         ->get();
+        
+        // Filter modules for modular enrollments based on selected modules
+        if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
+            // Get selected modules from registration
+            $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                ->where('program_id', $courseId)
+                ->where('enrollment_type', 'Modular')
+                ->first();
+                
+            if ($registration && $registration->selected_modules) {
+                $selectedModuleIds = json_decode($registration->selected_modules, true);
+                if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
+                    // Filter modules to only show selected ones
+                    $modules = $modules->filter(function($module) use ($selectedModuleIds) {
+                        return in_array($module->modules_id, $selectedModuleIds);
+                    });
+                    Log::info('Filtered modules for modular enrollment', [
+                        'original_count' => Module::where('program_id', $courseId)->count(),
+                        'filtered_count' => $modules->count(),
+                        'selected_modules' => $selectedModuleIds
+                    ]);
+                }
+            }
+        }
         
         // Get completed modules for this student
         $completedModuleIds = [];
@@ -808,6 +850,64 @@ class StudentDashboardController extends Controller
                 'message' => 'An error occurred while submitting the quiz.'
             ]);
         }
+    }
+
+    /**
+     * Display the paywall for students who haven't paid
+     */
+    public function paywall()
+    {
+        // Get user data from session
+        $user = (object) [
+            'user_id' => session('user_id'),
+            'user_firstname' => explode(' ', session('user_name'))[0] ?? '',
+            'user_lastname' => explode(' ', session('user_name'))[1] ?? '',
+            'role' => session('user_role')
+        ];
+
+        // Get the student data
+        $student = Student::where('user_id', session('user_id'))->first();
+        
+        if (!$student) {
+            return redirect()->route('student.dashboard')->with('error', 'Student profile not found.');
+        }
+
+        // Get the student's latest enrollment
+        $enrollment = $student->enrollments()->latest()->first();
+        
+        if (!$enrollment) {
+            return redirect()->route('student.dashboard')->with('error', 'No enrollment found.');
+        }
+
+        $program = Program::find($enrollment->program_id);
+        $paymentStatus = $enrollment->payment_status;
+        $enrollmentStatus = $enrollment->enrollment_status;
+        $courseId = $enrollment->program_id;
+
+        // Get package information from database
+        $package = null;
+        $packageName = 'Selected Package';
+        $enrollmentFee = 5000; // Default fallback
+        
+        if ($enrollment->package_id) {
+            $package = Package::find($enrollment->package_id);
+            if ($package) {
+                $packageName = $package->package_name;
+                $enrollmentFee = $package->amount;
+            }
+        }
+
+        return view('student.paywall', compact(
+            'user', 
+            'program', 
+            'enrollment', 
+            'paymentStatus', 
+            'enrollmentStatus',
+            'courseId',
+            'package',
+            'packageName',
+            'enrollmentFee'
+        ));
     }
     
     /**
