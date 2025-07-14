@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
@@ -65,6 +66,7 @@
                 <input type="password" id="password" name="password" placeholder="at least 8 characters" required>
                 <span class="toggle-password" onclick="togglePassword()">👁️</span>
             </div>
+            
             <a href="#" class="forgot">Forgot your password? Click here.</a>
             <button type="submit">LOG IN</button>
             <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
