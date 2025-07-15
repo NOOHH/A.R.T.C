@@ -42,9 +42,31 @@ class Module extends Model
         'admin_override' => 'array',
     ];
 
+    protected $appends = [
+        'id',
+        'name',
+        'description',
+    ];
+
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    // Accessors to provide compatibility with expected field names
+    public function getIdAttribute()
+    {
+        return $this->modules_id;
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->module_name;
+    }
+
+    public function getDescriptionAttribute()
+    {
+        return $this->module_description;
     }
 
     public function batch()

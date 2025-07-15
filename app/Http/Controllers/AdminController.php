@@ -73,7 +73,45 @@ class AdminController extends Controller
     public function showRegistrationDetails($id)
     {
         $registration = Registration::findOrFail($id);
-        return view('admin.admin-student-registration-view', compact('registration'));
+        // Redirect to main registration page with details modal or use existing view
+        return redirect()->route('admin.student.registration.pending')->with('selected_registration', $registration);
+    }
+
+    public function getRegistrationDetailsJson($id)
+    {
+        try {
+            $registration = Registration::with(['user', 'program', 'package', 'plan'])->findOrFail($id);
+            
+            return response()->json([
+                'registration_id' => $registration->registration_id,
+                'firstname' => $registration->firstname,
+                'middlename' => $registration->middlename,
+                'lastname' => $registration->lastname,
+                'email' => $registration->user->email ?? $registration->email ?? 'N/A',
+                'mobile_number' => $registration->contact_number ?? $registration->phone_number ?? 'N/A',
+                'gender' => $registration->gender,
+                'birthdate' => $registration->birthdate,
+                'age' => $registration->birthdate ? now()->diffInYears($registration->birthdate) : 'N/A',
+                'address' => $registration->address ?? $registration->street_address ?? 'N/A',
+                'city' => $registration->city,
+                'state_province' => $registration->state_province,
+                'zipcode' => $registration->zipcode,
+                'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
+                'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
+                'plan_name' => $registration->plan_name ?? ($registration->plan ? $registration->plan->plan_name : 'N/A'),
+                'learning_mode' => $registration->learning_mode,
+                'Start_Date' => $registration->Start_Date,
+                'status' => $registration->status,
+                'PSA' => $registration->PSA,
+                'TOR' => $registration->TOR,
+                'Course_Cert' => $registration->Course_Cert,
+                'good_moral' => $registration->good_moral,
+                'photo_2x2' => $registration->photo_2x2,
+                'created_at' => $registration->created_at->format('M d, Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Registration not found'], 404);
+        }
     }
 
     public function approve($id)
@@ -216,7 +254,7 @@ class AdminController extends Controller
     public function studentRegistration()
     {
         $registrations = Registration::with(['user', 'package', 'program', 'plan'])->get();
-        return view('admin.admin-student-registration', [
+        return view('admin.admin-student-registration.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => false,
         ]);
@@ -225,7 +263,7 @@ class AdminController extends Controller
     public function studentRegistrationHistory()
     {
         $registrations = Student::with(['user', 'enrollments.program', 'enrollments.package'])->get();
-        return view('admin.admin-student-registration', [
+        return view('admin.admin-student-registration.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => true,
         ]);
@@ -260,7 +298,7 @@ class AdminController extends Controller
                                     return $enrollment;
                                 });
 
-        return view('admin.admin-payment-pending', [
+        return view('admin.admin-student-registration.admin-payment-pending', [
             'enrollments' => $enrollments,
         ]);
     }
@@ -273,7 +311,7 @@ class AdminController extends Controller
                                 ->orderBy('updated_at', 'desc')
                                 ->get();
 
-        return view('admin.admin-payment-history', [
+        return view('admin.admin-student-registration.admin-payment-history', [
             'enrollments' => $enrollments,
         ]);
     }

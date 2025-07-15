@@ -175,6 +175,12 @@ class StudentController extends Controller
 
         // Get form requirements for validation
         $formRequirements = FormRequirement::active()->get();
+        
+        Log::info('Student settings update started', [
+            'user_id' => session('user_id'),
+            'form_requirements_count' => $formRequirements->count(),
+            'request_data_keys' => array_keys($request->all())
+        ]);
         $validationRules = [
             'user_firstname' => 'required|string|max:255',
             'user_lastname' => 'required|string|max:255',
@@ -230,34 +236,73 @@ class StudentController extends Controller
                 }
             }
 
-            // Update students table if record exists
+            // Prepare base student data
+            $studentData = [
+                'user_id' => session('user_id'),
+                'firstname' => $validated['user_firstname'],
+                'lastname' => $validated['user_lastname'],
+                'middlename' => $validated['middlename'] ?? '',
+                'email' => $user->email,
+                'street_address' => $validated['street_address'] ?? '',
+                'state_province' => $validated['state_province'] ?? '',
+                'city' => $validated['city'] ?? '',
+                'zipcode' => $validated['zipcode'] ?? '',
+                'contact_number' => $validated['contact_number'] ?? '',
+            ];
+
+            // Add dynamic fields and file uploads
+            foreach ($formRequirements as $requirement) {
+                if ($requirement->field_type === 'section') continue;
+                
+                $fieldName = $requirement->field_name;
+                
+                // Ensure column exists in students table, create if it doesn't
+                if (!FormRequirement::columnExists($fieldName, 'students')) {
+                    Log::warning("Column '{$fieldName}' doesn't exist in students table, creating it", [
+                        'field_name' => $fieldName,
+                        'field_type' => $requirement->field_type
+                    ]);
+                    
+                    // Try to create the column
+                    FormRequirement::createDatabaseColumn(
+                        $fieldName,
+                        $requirement->field_type
+                    );
+                }
+                
+                // Add field data regardless of column existence check
+                // Let Laravel handle any database errors during save
+                if (isset($fileUploads[$fieldName])) {
+                    $studentData[$fieldName] = $fileUploads[$fieldName];
+                    Log::info("Added file upload for field: {$fieldName}", ['filename' => $fileUploads[$fieldName]]);
+                } elseif (isset($validated[$fieldName])) {
+                    $studentData[$fieldName] = $validated[$fieldName];
+                    Log::info("Added validated data for field: {$fieldName}", ['value' => $validated[$fieldName]]);
+                }
+            }
+
+            // Debug: Log the data being prepared for student update
+            Log::info('Student data prepared for update/create', [
+                'user_id' => session('user_id'),
+                'student_data' => $studentData,
+                'form_requirements_count' => $formRequirements->count()
+            ]);
+
+            // Update or create student record
             $student = Student::where('user_id', session('user_id'))->first();
             if ($student) {
-                $studentData = [
-                    'firstname' => $validated['user_firstname'],
-                    'lastname' => $validated['user_lastname'],
-                    'middlename' => $validated['middlename'] ?? '',
-                    'street_address' => $validated['street_address'] ?? '',
-                    'state_province' => $validated['state_province'] ?? '',
-                    'city' => $validated['city'] ?? '',
-                    'zipcode' => $validated['zipcode'] ?? '',
-                    'contact_number' => $validated['contact_number'] ?? '',
-                ];
-
-                // Add dynamic fields and file uploads
-                foreach ($formRequirements as $requirement) {
-                    if ($requirement->field_type === 'section') continue;
-                    
-                    $fieldName = $requirement->field_name;
-                    if (isset($fileUploads[$fieldName])) {
-                        $studentData[$fieldName] = $fileUploads[$fieldName];
-                    } elseif (isset($validated[$fieldName])) {
-                        $studentData[$fieldName] = $validated[$fieldName];
-                    }
-                }
-
+                // Update existing student record
                 $student->update($studentData);
-                Log::info('Updated students table', ['student_id' => $student->student_id]);
+                Log::info('Updated existing student record', ['student_id' => $student->student_id]);
+            } else {
+                // Create new student record
+                // Generate a unique student_id if not provided
+                if (!isset($studentData['student_id'])) {
+                    $studentData['student_id'] = 'STU' . str_pad(Student::count() + 1, 6, '0', STR_PAD_LEFT);
+                }
+                
+                $student = Student::create($studentData);
+                Log::info('Created new student record', ['student_id' => $student->student_id]);
             }
 
             // Update registrations table ONLY if record exists
@@ -274,17 +319,27 @@ class StudentController extends Controller
                     'contact_number' => $validated['contact_number'] ?? '',
                 ];
 
-                // Add dynamic fields and file uploads only if columns exist
+                // Add dynamic fields and file uploads
                 foreach ($formRequirements as $requirement) {
                     if ($requirement->field_type === 'section') continue;
                     
                     $fieldName = $requirement->field_name;
-                    if (FormRequirement::columnExists($fieldName, 'registrations')) {
-                        if (isset($fileUploads[$fieldName])) {
-                            $registrationData[$fieldName] = $fileUploads[$fieldName];
-                        } elseif (isset($validated[$fieldName])) {
-                            $registrationData[$fieldName] = $validated[$fieldName];
-                        }
+                    
+                    // Ensure column exists in registrations table
+                    if (!FormRequirement::columnExists($fieldName, 'registrations')) {
+                        Log::warning("Column '{$fieldName}' doesn't exist in registrations table, creating it", [
+                            'field_name' => $fieldName,
+                            'field_type' => $requirement->field_type
+                        ]);
+                        
+                        FormRequirement::createDatabaseColumn($fieldName, $requirement->field_type);
+                    }
+                    
+                    // Add field data
+                    if (isset($fileUploads[$fieldName])) {
+                        $registrationData[$fieldName] = $fileUploads[$fieldName];
+                    } elseif (isset($validated[$fieldName])) {
+                        $registrationData[$fieldName] = $validated[$fieldName];
                     }
                 }
 

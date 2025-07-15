@@ -19,6 +19,10 @@ class Package extends Model
         'amount',
         'program_id',
         'created_by_admin_id',
+        'package_type',
+        'module_count',
+        'price',
+        'status',
     ];
 
     /**
@@ -42,6 +46,31 @@ class Package extends Model
             Program::class,
             'program_id',
             'program_id'
+        );
+    }
+
+    /**
+     * Get all modules associated with this package.
+     */
+    public function modules()
+    {
+        return $this->belongsToMany(
+            Module::class,
+            'package_modules',
+            'package_id',
+            'module_id'
+        );
+    }
+
+    /**
+     * Get all registrations with this package.
+     */
+    public function registrations()
+    {
+        return $this->hasMany(
+            Registration::class,
+            'package_id',
+            'package_id'
         );
     }
 }

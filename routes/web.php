@@ -15,6 +15,7 @@ use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
@@ -104,6 +105,9 @@ Route::middleware(['web'])->group(function(){
     Route::post('/registration/validate-file', 
         [\App\Http\Controllers\RegistrationController::class, 'validateFileUpload']
     )->name('registration.validateFile');
+    
+    // Education levels route for registration form
+    Route::get('/api/education-levels/{plan?}', [EducationLevelController::class, 'getForPlan'])->name('api.education-levels.plan');
 });
 
 // Debug routes for testing
@@ -174,8 +178,15 @@ Route::get('/enrollment/full', [StudentRegistrationController::class, 'showRegis
 
 // Modular enrollment form (GET)
 Route::get('/enrollment/modular', function () {
-    $allPrograms = Program::where('is_archived', false)->get();
-    $packages = Package::all();
+    $allPrograms = Program::where('is_archived', false)
+        ->whereHas('packages') // Only show programs that have packages
+        ->get();
+    
+    // Get only modular packages
+    $packages = Package::with('program')
+        ->where('package_type', 'modular')
+        ->get();
+    
     $programId = request('program_id');
     
     // Get form requirements for modular enrollment
@@ -206,13 +217,7 @@ Route::get('/enrollment/modular', function () {
         return in_array($program->program_id, $enrolledProgramIds);
     });
     
-    // Get all modules for JavaScript (will be filtered by program on frontend)
-    $allModules = \App\Models\Module::where('is_archived', false)
-                                   ->orderBy('module_order')
-                                   ->orderBy('module_name')
-                                   ->get(['modules_id', 'module_name', 'module_description', 'program_id']);
-    
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules', 'fullPlan', 'modularPlan'));
+    return view('registration.Modular_enrollment_new', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'fullPlan', 'modularPlan'));
 })->name('enrollment.modular');
 
 // Unified login page and authentication for all user types
@@ -236,6 +241,32 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
+    
+    // Test route for debugging student settings
+    Route::get('/test-student-settings', function () {
+        // Find student with ID 2025-07-00001
+        $student = \App\Models\Student::where('student_id', '2025-07-00001')->first();
+        
+        if (!$student) {
+            return response()->json([
+                'error' => 'Student with ID 2025-07-00001 not found',
+                'total_students' => \App\Models\Student::count(),
+                'recent_students' => \App\Models\Student::orderBy('created_at', 'desc')->take(5)->get()
+            ]);
+        }
+        
+        // Simulate logged in student using the actual student's user_id
+        session([
+            'logged_in' => true,
+            'user_id' => $student->user_id,
+            'user_role' => 'student'
+        ]);
+        
+        $user = \App\Models\User::find($student->user_id);
+        $formRequirements = \App\Models\FormRequirement::active()->get();
+        
+        return view('test-settings', compact('user', 'student', 'formRequirements'));
+    })->name('test.student.settings');
     
     // Password management routes
     Route::post('/student/change-password', [StudentController::class, 'changePassword'])->name('student.change-password');
@@ -364,6 +395,63 @@ Route::get('/api/programs/{programId}/modules', function ($programId) {
     ]);
 })->name('api.programs.modules');
 
+// API endpoint for modules by program
+Route::get('/get-program-modules', function (Request $request) {
+    $programId = $request->get('program_id');
+    $packageId = $request->get('package_id'); // Keep for backward compatibility
+    
+    if (!$programId && !$packageId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Program ID or Package ID is required'
+        ], 400);
+    }
+    
+    try {
+        $program = null;
+        
+        if ($programId) {
+            // Direct program query
+            $program = \App\Models\Program::find($programId);
+        } elseif ($packageId) {
+            // Get program through package (backward compatibility)
+            $package = \App\Models\Package::with('program')->find($packageId);
+            if ($package && $package->program) {
+                $program = $package->program;
+            }
+        }
+        
+        if (!$program) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Program not found'
+            ], 404);
+        }
+        
+        // Get modules for the program
+        $modules = \App\Models\Module::where('program_id', $program->program_id)
+                                     ->where('is_archived', false)
+                                     ->select('modules_id as id', 'module_name as name', 'module_description as description', 'program_id', 'content_type as level')
+                                     ->orderBy('module_order', 'asc')
+                                     ->get();
+        
+        return response()->json([
+            'success' => true,
+            'modules' => $modules,
+            'program' => [
+                'id' => $program->program_id,
+                'name' => $program->program_name
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error fetching modules: ' . $e->getMessage()
+        ], 500);
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Student Enrollment
@@ -402,6 +490,7 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
 
 // Admin approve/reject registration
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
+Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson']);
 Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
      ->name('admin.registration.approve');
 Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'])
@@ -563,6 +652,8 @@ Route::get('/admin/packages', [AdminPackageController::class, 'index'])
      ->name('admin.packages.index');
 Route::post('/admin/packages', [AdminPackageController::class, 'store'])
      ->name('admin.packages.store');
+Route::get('/admin/packages/{id}', [AdminPackageController::class, 'show'])
+     ->name('admin.packages.show');
 Route::get('/admin/packages/{id}/edit', [AdminPackageController::class, 'edit'])
      ->name('admin.packages.edit');
 Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
@@ -571,6 +662,14 @@ Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy']
      ->name('admin.packages.destroy');
 Route::delete('/admin/packages/{id}/delete', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.delete');
+
+// Additional Package Management Routes
+Route::get('/admin/packages/program/{program_id}/modules', [AdminPackageController::class, 'getModules'])
+     ->name('admin.packages.get-modules');
+Route::post('/admin/packages/{id}/archive', [AdminPackageController::class, 'archive'])
+     ->name('admin.packages.archive');
+Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'restore'])
+     ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
 Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
@@ -673,6 +772,14 @@ Route::prefix('admin/settings/payment-methods')->middleware(['admin.auth'])->gro
 // Public route for students to get enabled payment methods
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
+// Education Levels routes
+Route::prefix('admin/settings/education-levels')->middleware(['admin.auth'])->group(function () {
+    Route::get('/', [EducationLevelController::class, 'index'])->name('admin.settings.education-levels.index');
+    Route::post('/', [EducationLevelController::class, 'store'])->name('admin.settings.education-levels.store');
+    Route::put('/{id}', [EducationLevelController::class, 'update'])->name('admin.settings.education-levels.update');
+    Route::delete('/{id}', [EducationLevelController::class, 'destroy'])->name('admin.settings.education-levels.delete');
+});
+
 // Dynamic Field Synchronization routes
 Route::prefix('admin/settings/dynamic-fields')->middleware(['admin.auth'])->group(function () {
     Route::post('/sync', [AdminSettingsController::class, 'syncDynamicFields'])->name('admin.settings.dynamic-fields.sync');
@@ -739,6 +846,10 @@ Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updat
      ->name('admin.modules.updateOrder');
 Route::get('/admin/modules/ordered', [ModuleController::class, 'getOrderedModules'])
      ->name('admin.modules.ordered');
+
+// Sidebar settings route
+Route::post('/admin/settings/sidebar', [AdminSettingsController::class, 'updateSidebar'])
+     ->name('admin.settings.sidebar');
 
 /*
 |--------------------------------------------------------------------------

@@ -1316,19 +1316,32 @@ class AdminSettingsController extends Controller
 
     public function storePaymentMethod(Request $request)
     {
-        $request->validate([
-            'method_name' => 'required|string|max:255',
-            'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
-            'description' => 'nullable|string',
-            'instructions' => 'nullable|string',
-            'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
-            'is_enabled' => 'boolean'
-        ]);
-
         try {
+            $request->validate([
+                'method_name' => 'required|string|max:255',
+                'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
+                'description' => 'nullable|string',
+                'instructions' => 'nullable|string',
+                'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
+                'is_enabled' => 'boolean'
+            ]);
+
             $qrCodePath = null;
             if ($request->hasFile('qr_code')) {
-                $qrCodePath = $request->file('qr_code')->store('payment_qr_codes', 'public');
+                $file = $request->file('qr_code');
+                Log::info('Payment method QR code upload', [
+                    'original_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType()
+                ]);
+                
+                $qrCodePath = $file->store('payment_qr_codes', 'public');
+                
+                if (!$qrCodePath) {
+                    throw new \Exception('Failed to store QR code file');
+                }
+                
+                Log::info('QR code stored successfully', ['path' => $qrCodePath]);
             }
 
             $paymentMethod = PaymentMethod::create([
@@ -1339,48 +1352,83 @@ class AdminSettingsController extends Controller
                 'qr_code_path' => $qrCodePath,
                 'is_enabled' => $request->boolean('is_enabled', true),
                 'sort_order' => PaymentMethod::max('sort_order') + 1,
-                'created_by_admin_id' => session('admin_id')
+                'created_by_admin_id' => session('admin_id') ?? session('user_id') ?? 1
             ]);
+
+            Log::info('Payment method created successfully', ['payment_method_id' => $paymentMethod->payment_method_id]);
 
             return response()->json([
                 'success' => true,
                 'data' => $paymentMethod,
                 'message' => 'Payment method created successfully'
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Payment method validation failed', ['errors' => $e->errors()]);
+            return response()->json([
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error creating payment method: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to create payment method'], 500);
+            Log::error('Error creating payment method', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Failed to create payment method: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     public function updatePaymentMethod(Request $request, $id)
     {
-        $request->validate([
-            'method_name' => 'required|string|max:255',
-            'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
-            'description' => 'nullable|string',
-            'instructions' => 'nullable|string',
-            'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
-            'is_enabled' => 'boolean',
-            'remove_qr_code' => 'nullable|boolean'
-        ]);
-
         try {
+            $request->validate([
+                'method_name' => 'required|string|max:255',
+                'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
+                'description' => 'nullable|string',
+                'instructions' => 'nullable|string',
+                'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
+                'is_enabled' => 'boolean',
+                'remove_qr_code' => 'nullable|boolean'
+            ]);
+
             $paymentMethod = PaymentMethod::findOrFail($id);
             
             // Handle QR code removal
             if ($request->boolean('remove_qr_code') && $paymentMethod->qr_code_path) {
-                Storage::disk('public')->delete($paymentMethod->qr_code_path);
+                if (Storage::disk('public')->exists($paymentMethod->qr_code_path)) {
+                    Storage::disk('public')->delete($paymentMethod->qr_code_path);
+                    Log::info('Old QR code deleted', ['path' => $paymentMethod->qr_code_path]);
+                }
                 $paymentMethod->qr_code_path = null;
             }
 
             // Handle new QR code upload
             if ($request->hasFile('qr_code')) {
+                $file = $request->file('qr_code');
+                Log::info('Payment method QR code update', [
+                    'payment_method_id' => $id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType()
+                ]);
+                
                 // Delete old QR code if exists
-                if ($paymentMethod->qr_code_path) {
+                if ($paymentMethod->qr_code_path && Storage::disk('public')->exists($paymentMethod->qr_code_path)) {
                     Storage::disk('public')->delete($paymentMethod->qr_code_path);
+                    Log::info('Old QR code replaced', ['old_path' => $paymentMethod->qr_code_path]);
                 }
-                $paymentMethod->qr_code_path = $request->file('qr_code')->store('payment_qr_codes', 'public');
+                
+                $qrCodePath = $file->store('payment_qr_codes', 'public');
+                
+                if (!$qrCodePath) {
+                    throw new \Exception('Failed to store QR code file');
+                }
+                
+                $paymentMethod->qr_code_path = $qrCodePath;
+                Log::info('New QR code stored', ['path' => $qrCodePath]);
             }
 
             $paymentMethod->update([
@@ -1391,14 +1439,30 @@ class AdminSettingsController extends Controller
                 'is_enabled' => $request->boolean('is_enabled', true)
             ]);
 
+            Log::info('Payment method updated successfully', ['payment_method_id' => $id]);
+
             return response()->json([
                 'success' => true,
-                'data' => $paymentMethod,
+                'data' => $paymentMethod->fresh(),
                 'message' => 'Payment method updated successfully'
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Payment method update validation failed', ['errors' => $e->errors()]);
+            return response()->json([
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error updating payment method: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to update payment method'], 500);
+            Log::error('Error updating payment method', [
+                'payment_method_id' => $id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Failed to update payment method: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -1534,5 +1598,37 @@ class AdminSettingsController extends Controller
             Log::error('Error getting missing columns: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to get missing columns'], 500);
         }
+    }
+
+    public function updateSidebar(Request $request)
+    {
+        $request->validate([
+            'sidebar_background_color' => 'nullable|string|max:7',
+            'sidebar_gradient_color' => 'nullable|string|max:7',
+            'sidebar_text_color' => 'nullable|string|max:7',
+            'sidebar_hover_color' => 'nullable|string|max:7',
+            'sidebar_active_bg_color' => 'nullable|string|max:7',
+            'sidebar_active_text_color' => 'nullable|string|max:7',
+            'sidebar_footer_bg_color' => 'nullable|string|max:7',
+            'sidebar_footer_text_color' => 'nullable|string|max:7',
+        ]);
+
+        $settings = $this->getCurrentSettings();
+
+        // Update sidebar settings
+        $settings['sidebar'] = array_merge($settings['sidebar'] ?? [], [
+            'background_color' => $request->sidebar_background_color ?? $settings['sidebar']['background_color'] ?? '#2d1b69',
+            'gradient_color' => $request->sidebar_gradient_color ?? $settings['sidebar']['gradient_color'] ?? '#1a1340',
+            'text_color' => $request->sidebar_text_color ?? $settings['sidebar']['text_color'] ?? '#ffffff',
+            'hover_color' => $request->sidebar_hover_color ?? $settings['sidebar']['hover_color'] ?? '#a91d3a',
+            'active_bg_color' => $request->sidebar_active_bg_color ?? $settings['sidebar']['active_bg_color'] ?? '#a91d3a',
+            'active_text_color' => $request->sidebar_active_text_color ?? $settings['sidebar']['active_text_color'] ?? '#ffffff',
+            'footer_bg_color' => $request->sidebar_footer_bg_color ?? $settings['sidebar']['footer_bg_color'] ?? '#2d1b69',
+            'footer_text_color' => $request->sidebar_footer_text_color ?? $settings['sidebar']['footer_text_color'] ?? '#ffffff',
+        ]);
+
+        $this->saveSettings($settings);
+
+        return back()->with('success', 'Sidebar settings updated successfully!');
     }
 }
