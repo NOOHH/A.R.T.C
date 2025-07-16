@@ -251,6 +251,19 @@
     color: #dc3545;
 }
 
+.file-status.warning {
+    color: #ffc107;
+}
+
+.file-status.info {
+    color: #17a2b8;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
 .dynamic-form-container .form-control:focus,
 .dynamic-form-container .form-select:focus {
     border-color: var(--bs-primary);
@@ -291,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle file input changes
+    // Handle file input changes with OCR processing
     document.querySelectorAll('input[type="file"]').forEach(input => {
         input.addEventListener('change', function() {
             const fieldName = this.name;
@@ -300,11 +313,36 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (this.files.length > 0) {
                 const file = this.files[0];
+                
+                // Show file selected status
                 statusDiv.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${file.name} selected`;
                 statusDiv.className = 'file-status success';
                 button.innerHTML = `<i class="bi bi-check-circle"></i> ${file.name}`;
                 button.classList.remove('btn-outline-primary');
                 button.classList.add('btn-success');
+                
+                // Check if this is a document that should be OCR processed
+                // Use dynamic pattern matching based on field name keywords
+                const shouldProcessOCR = 
+                    fieldName.toLowerCase().includes('certificate') ||
+                    fieldName.toLowerCase().includes('diploma') ||
+                    fieldName.toLowerCase().includes('transcript') ||
+                    fieldName.toLowerCase().includes('birth_certificate') ||
+                    fieldName.toLowerCase().includes('moral') ||
+                    fieldName.toLowerCase().includes('psa') ||
+                    fieldName.toLowerCase().includes('tor') ||
+                    fieldName.toLowerCase().includes('school_id') ||
+                    fieldName.toLowerCase().includes('graduation') ||
+                    fieldName.toLowerCase().includes('course_cert') ||
+                    fieldName.toLowerCase().includes('good_moral') ||
+                    fieldName.toLowerCase().includes('photo') ||
+                    fieldName.toLowerCase().includes('identification') ||
+                    fieldName.toLowerCase().includes('document') ||
+                    fieldName.toLowerCase().includes('record');
+                
+                if (shouldProcessOCR) {
+                    processFileWithOCR(file, fieldName, statusDiv);
+                }
             } else {
                 statusDiv.innerHTML = '';
                 statusDiv.className = 'file-status';
@@ -315,42 +353,319 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-});
 
-// Handle dynamic education level selection
-window.selectEducationLevel = function(level, fieldName) {
-    const buttons = document.querySelectorAll('.education-btn');
-    const hiddenInput = document.getElementById(fieldName);
-    
-    // Remove active class from all buttons
-    buttons.forEach(btn => {
-        btn.classList.remove('btn-primary', 'btn-success');
-        if (btn.dataset.education === 'undergraduate') {
-            btn.classList.add('btn-outline-primary');
-        } else {
-            btn.classList.add('btn-outline-success');
-        }
+    // File upload modal for viewing uploaded files
+    const fileUploadModal = `
+    <div class="modal fade" id="fileViewModal" tabindex="-1" aria-labelledby="fileViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileViewModalLabel">View Uploaded File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="fileViewContent">
+                        <!-- File content will be loaded here -->
+                    </div>
+                    <div id="ocrResultsContent" class="mt-3">
+                        <!-- OCR results will be displayed here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="removeUploadedFile()">Remove File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    // Add modal to page if it doesn't exist
+    if (!document.getElementById('fileViewModal')) {
+        document.body.insertAdjacentHTML('beforeend', fileUploadModal);
+    }
+
+    // Enhanced file upload handling with view capability
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fieldName = this.name;
+            const button = document.querySelector(`[data-field="${fieldName}"]`);
+            const statusDiv = document.getElementById(`status-${fieldName}`);
+            
+            if (file) {
+                // Update button to show file selected
+                button.innerHTML = `<i class="bi bi-check-circle"></i> ${file.name}`;
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+                
+                // Add view button
+                const viewButton = document.createElement('button');
+                viewButton.type = 'button';
+                viewButton.className = 'btn btn-outline-info btn-sm ms-2';
+                viewButton.innerHTML = '<i class="bi bi-eye"></i> View';
+                viewButton.onclick = () => viewUploadedFile(fieldName, file);
+                
+                // Add view button after the main button
+                if (!button.parentNode.querySelector('.btn-outline-info')) {
+                    button.parentNode.appendChild(viewButton);
+                }
+                
+                // Check if this is a document that should be OCR processed
+                // Use dynamic pattern matching based on field name keywords
+                const shouldProcessOCR = 
+                    fieldName.toLowerCase().includes('certificate') ||
+                    fieldName.toLowerCase().includes('diploma') ||
+                    fieldName.toLowerCase().includes('transcript') ||
+                    fieldName.toLowerCase().includes('birth_certificate') ||
+                    fieldName.toLowerCase().includes('moral') ||
+                    fieldName.toLowerCase().includes('psa') ||
+                    fieldName.toLowerCase().includes('tor') ||
+                    fieldName.toLowerCase().includes('school_id') ||
+                    fieldName.toLowerCase().includes('graduation') ||
+                    fieldName.toLowerCase().includes('course_cert') ||
+                    fieldName.toLowerCase().includes('good_moral') ||
+                    fieldName.toLowerCase().includes('photo') ||
+                    fieldName.toLowerCase().includes('identification') ||
+                    fieldName.toLowerCase().includes('document') ||
+                    fieldName.toLowerCase().includes('record');
+                
+                if (shouldProcessOCR) {
+                    processFileWithOCR(file, fieldName, statusDiv);
+                }
+            } else {
+                // Reset button state
+                statusDiv.innerHTML = '';
+                statusDiv.className = 'file-status';
+                const originalLabel = button.closest('.form-group').querySelector('label').textContent.replace('*', '').trim();
+                button.innerHTML = `<i class="bi bi-cloud-upload"></i> ${originalLabel}`;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+                
+                // Remove view button
+                const viewButton = button.parentNode.querySelector('.btn-outline-info');
+                if (viewButton) {
+                    viewButton.remove();
+                }
+            }
+        });
     });
-    
-    // Add active class to selected button
-    const selectedBtn = document.querySelector(`[data-education="${level}"]`);
-    if (selectedBtn) {
-        if (level === 'undergraduate') {
-            selectedBtn.classList.remove('btn-outline-primary');
-            selectedBtn.classList.add('btn-primary');
+
+    // OCR processing function
+    function processFileWithOCR(file, fieldName, statusDiv) {
+        // Show OCR processing status
+        const processingHtml = `
+            <div class="mt-2">
+                <div class="d-flex align-items-center text-info">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    <small>Processing document with OCR...</small>
+                </div>
+            </div>
+        `;
+        statusDiv.innerHTML += processingHtml;
+
+        // Create form data for upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('field_name', fieldName);
+        formData.append('first_name', document.querySelector('[name="firstname"]')?.value || '');
+        formData.append('last_name', document.querySelector('[name="lastname"]')?.value || '');
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            formData.append('_token', csrfToken);
+        }
+
+        // Send to OCR validation endpoint
+        fetch('/admin/validate-file', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success with OCR results
+                let ocrInfo = '';
+                if (data.suggestions && data.suggestions.length > 0) {
+                    ocrInfo += '<div class="mt-1"><small class="text-muted">Suggested programs based on document:</small>';
+                    data.suggestions.forEach(suggestion => {
+                        ocrInfo += `<br><small class="text-primary">• ${suggestion.program.program_name}</small>`;
+                    });
+                    ocrInfo += '</div>';
+                }
+                
+                if (data.certificate_level) {
+                    ocrInfo += `<div class="mt-1"><small class="text-muted">Detected level: <span class="text-info">${data.certificate_level}</span></small></div>`;
+                }
+                
+                statusDiv.innerHTML = `
+                    <i class="bi bi-check-circle text-success"></i> ${file.name} uploaded and verified
+                    ${ocrInfo}
+                `;
+                statusDiv.className = 'file-status success';
+            } else {
+                // Show error
+                statusDiv.innerHTML = `
+                    <div class="text-warning">
+                        <i class="bi bi-exclamation-triangle"></i> ${file.name} uploaded with warnings
+                        <br><small>${data.message || 'Document validation failed'}</small>
+                    </div>
+                `;
+                statusDiv.className = 'file-status warning';
+            }
+        })
+        .catch(error => {
+            console.error('OCR processing failed:', error);
+            statusDiv.innerHTML = `
+                <div class="text-info">
+                    <i class="bi bi-info-circle"></i> ${file.name} uploaded (OCR processing unavailable)
+                    <br><small>File uploaded successfully, manual verification may be required</small>
+                </div>
+            `;
+            statusDiv.className = 'file-status info';
+        });
+    }
+
+    // Function to view uploaded file
+    window.viewUploadedFile = function(fieldName, file) {
+        const modal = new bootstrap.Modal(document.getElementById('fileViewModal'));
+        const modalTitle = document.getElementById('fileViewModalLabel');
+        const fileContent = document.getElementById('fileViewContent');
+        const ocrContent = document.getElementById('ocrResultsContent');
+        
+        modalTitle.textContent = `View: ${file.name}`;
+        
+        // Display file based on type
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileContent.innerHTML = `
+                    <div class="text-center">
+                        <img src="${e.target.result}" class="img-fluid" style="max-height: 400px;" alt="Uploaded file">
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            fileContent.innerHTML = `
+                <div class="text-center">
+                    <i class="bi bi-file-earmark-pdf display-1 text-danger"></i>
+                    <p class="mt-2">PDF File: ${file.name}</p>
+                    <p class="text-muted">Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+            `;
         } else {
-            selectedBtn.classList.remove('btn-outline-success');
-            selectedBtn.classList.add('btn-success');
+            fileContent.innerHTML = `
+                <div class="text-center">
+                    <i class="bi bi-file-earmark display-1 text-secondary"></i>
+                    <p class="mt-2">Document: ${file.name}</p>
+                    <p class="text-muted">Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+            `;
+        }
+        
+        // Show OCR results if available
+        const statusDiv = document.getElementById(`status-${fieldName}`);
+        if (statusDiv && statusDiv.innerHTML.includes('Document processed successfully')) {
+            ocrContent.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> Document processed successfully with OCR
+                </div>
+            `;
+        } else if (statusDiv && statusDiv.innerHTML.includes('Error processing')) {
+            ocrContent.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> OCR processing encountered issues
+                </div>
+            `;
+        } else {
+            ocrContent.innerHTML = '';
+        }
+        
+        // Store current field for removal function
+        modal._currentField = fieldName;
+        modal.show();
+    }
+
+    // Function to remove uploaded file
+    window.removeUploadedFile = function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('fileViewModal'));
+        const fieldName = modal._currentField;
+        
+        if (fieldName) {
+            const fileInput = document.querySelector(`input[name="${fieldName}"]`);
+            const button = document.querySelector(`[data-field="${fieldName}"]`);
+            const statusDiv = document.getElementById(`status-${fieldName}`);
+            
+            // Reset file input
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            // Reset button state
+            if (button) {
+                const originalLabel = button.closest('.form-group').querySelector('label').textContent.replace('*', '').trim();
+                button.innerHTML = `<i class="bi bi-cloud-upload"></i> ${originalLabel}`;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+            }
+            
+            // Clear status
+            if (statusDiv) {
+                statusDiv.innerHTML = '';
+                statusDiv.className = 'file-status';
+            }
+            
+            // Remove view button
+            const viewButton = button?.parentNode.querySelector('.btn-outline-info');
+            if (viewButton) {
+                viewButton.remove();
+            }
+            
+            modal.hide();
         }
     }
-    
-    // Set hidden input value (capitalize first letter)
-    hiddenInput.value = level.charAt(0).toUpperCase() + level.slice(1);
-    
-    console.log('Education level selected:', level);
-    
-    // Trigger change event for form validation
-    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-};
+
+    // Handle dynamic education level selection
+    window.selectEducationLevel = function(level, fieldName) {
+        const buttons = document.querySelectorAll('.education-btn');
+        const hiddenInput = document.getElementById(fieldName);
+        
+        // Remove active class from all buttons
+        buttons.forEach(btn => {
+            btn.classList.remove('btn-primary', 'btn-success');
+            if (btn.dataset.education === 'undergraduate') {
+                btn.classList.add('btn-outline-primary');
+            } else {
+                btn.classList.add('btn-outline-success');
+            }
+        });
+        
+        // Add active class to selected button
+        const selectedBtn = document.querySelector(`[data-education="${level}"]`);
+        if (selectedBtn) {
+            if (level === 'undergraduate') {
+                selectedBtn.classList.remove('btn-outline-primary');
+                selectedBtn.classList.add('btn-primary');
+            } else {
+                selectedBtn.classList.remove('btn-outline-success');
+                selectedBtn.classList.add('btn-success');
+            }
+        }
+        
+        // Set hidden input value (capitalize first letter)
+        hiddenInput.value = level.charAt(0).toUpperCase() + level.slice(1);
+        
+        console.log('Education level selected:', level);
+        
+        // Trigger change event for form validation
+        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+});
+
 </script>
 @endpush

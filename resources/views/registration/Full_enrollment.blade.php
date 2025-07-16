@@ -1460,33 +1460,104 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Toggle graduation certificate field based on education level
-function toggleGraduationCertificate() {
-    const educationLevel = document.getElementById('educationLevel').value;
-    const graduateField = document.getElementById('graduateCertificateField');
-    const graduateInput = document.querySelector('input[name="Cert_of_Grad"]');
+// Toggle education level requirements based on selection
+function toggleEducationLevelRequirements() {
+    const educationLevel = document.getElementById('educationLevel');
+    const selectedOption = educationLevel.options[educationLevel.selectedIndex];
+    const requirementsContainer = document.getElementById('educationLevelRequirements');
     
-    console.log('Education level changed to:', educationLevel); // Debug log
-    console.log('Graduate field found:', graduateField); // Debug log
+    console.log('Education level changed to:', educationLevel.value);
     
-    if (graduateField) {
-        if (educationLevel === 'Graduate') {
-            graduateField.style.display = 'block';
-            if (graduateInput) {
-                graduateInput.required = true;
-                console.log('Graduate certificate field shown and made required');
+    // Clear existing requirements
+    requirementsContainer.innerHTML = '';
+    requirementsContainer.style.display = 'none';
+    
+    if (educationLevel.value && selectedOption.dataset.fileRequirements) {
+        try {
+            const fileRequirements = JSON.parse(selectedOption.dataset.fileRequirements);
+            console.log('File requirements:', fileRequirements);
+            console.log('File requirements type:', typeof fileRequirements);
+            console.log('Is array:', Array.isArray(fileRequirements));
+            
+            if (fileRequirements && (Array.isArray(fileRequirements) ? fileRequirements.length > 0 : Object.keys(fileRequirements).length > 0)) {
+                requirementsContainer.style.display = 'block';
+                
+                // Ensure we always have an array of requirement objects
+                let requirementsArray = [];
+                
+                if (Array.isArray(fileRequirements)) {
+                    // Already an array - use it directly
+                    requirementsArray = fileRequirements;
+                } else if (typeof fileRequirements === 'object' && fileRequirements !== null) {
+                    // Check if it's an object with field names as keys
+                    const keys = Object.keys(fileRequirements);
+                    if (keys.length > 0 && typeof fileRequirements[keys[0]] === 'object') {
+                        // Convert object format: {fieldName: {config}, ...}
+                        requirementsArray = Object.entries(fileRequirements).map(([fieldName, config]) => ({
+                            field_name: fieldName.replace(/\s+/g, '_'),
+                            display_name: fieldName,
+                            is_required: config.required !== undefined ? config.required : true,
+                            type: config.type || 'file',
+                            description: config.description || ''
+                        }));
+                    } else {
+                        // Single requirement object
+                        requirementsArray = [fileRequirements];
+                    }
+                }
+                
+                console.log('Final requirements array:', requirementsArray);
+                console.log('Array length:', requirementsArray.length);
+                
+                // Use a traditional for loop to ensure proper iteration
+                for (let i = 0; i < requirementsArray.length; i++) {
+                    const requirement = requirementsArray[i];
+                    console.log('Processing requirement:', requirement);
+                    
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.className = 'form-group mb-3';
+                    
+                    // Ensure we're getting the right values
+                    const fieldName = (requirement.field_name || requirement.document_type || 'unknown_' + i).toString();
+                    const displayName = (requirement.display_name || requirement.description || requirement.field_name || requirement.document_type || 'Unknown Document').toString();
+                    const isRequired = requirement.is_required !== undefined ? requirement.is_required : true;
+                    const fileType = requirement.type || 'file';
+                    
+                    console.log('Field details:', { fieldName, displayName, isRequired, fileType });
+                    
+                    // Set appropriate file accept types
+                    let acceptTypes = '.jpg,.jpeg,.png,.pdf';
+                    if (fileType === 'image') {
+                        acceptTypes = '.jpg,.jpeg,.png';
+                    } else if (fileType === 'pdf') {
+                        acceptTypes = '.pdf';
+                    }
+                    
+                    fieldDiv.innerHTML = `
+                        <label for="${fieldName}" style="font-weight:700;">
+                            <i class="bi bi-file-earmark-arrow-up me-2"></i>${displayName}
+                            ${isRequired ? '<span class="required">*</span>' : ''}
+                        </label>
+                        <input type="file" name="${fieldName}" id="${fieldName}" 
+                               class="form-control" accept="${acceptTypes}" 
+                               onchange="handleFileUpload(this)" ${isRequired ? 'required' : ''}>
+                        <small class="form-text text-muted">
+                            Upload your ${displayName} (${fileType.toUpperCase()} only)
+                            ${requirement.description ? ' - ' + requirement.description : ''}
+                        </small>
+                    `;
+                    requirementsContainer.appendChild(fieldDiv);
+                }
             }
-        } else {
-            graduateField.style.display = 'none';
-            if (graduateInput) {
-                graduateInput.required = false;
-                graduateInput.value = '';
-                console.log('Graduate certificate field hidden and cleared');
-            }
+        } catch (error) {
+            console.error('Error parsing file requirements:', error);
         }
-    } else {
-        console.log('Graduate certificate field not found in DOM');
     }
+}
+
+// Legacy function for backward compatibility
+function toggleGraduationCertificate() {
+    toggleEducationLevelRequirements();
 }
 
 </script>
@@ -1741,20 +1812,31 @@ function toggleGraduationCertificate() {
                             
                             @if($field->field_type === 'text')
                                 <input type="text" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                       class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                                       class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
+                                       {{ $field->is_required ? 'required' : '' }}>
                             @elseif($field->field_type === 'email')
                                 <input type="email" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                       class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                                       class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
+                                       {{ $field->is_required ? 'required' : '' }}>
                             @elseif($field->field_type === 'number')
                                 <input type="number" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                       class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                                       class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
+                                       {{ $field->is_required ? 'required' : '' }}>
                             @elseif($field->field_type === 'date')
                                 <input type="date" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                       class="form-control" {{ $field->is_required ? 'required' : '' }}>
+                                       class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
+                                       {{ $field->is_required ? 'required' : '' }}>
                             @elseif($field->field_type === 'file')
                                 <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
                                        class="form-control" accept=".jpg,.jpeg,.png,.pdf" 
                                        onchange="handleFileUpload(this)" {{ $field->is_required ? 'required' : '' }}>
+                                @if(isset($student) && $student->{$field->field_name})
+                                    <div class="existing-file-info mt-2">
+                                        <small class="text-success">
+                                            <i class="bi bi-check-circle"></i> File already uploaded: {{ $student->{$field->field_name} }}
+                                        </small>
+                                    </div>
+                                @endif
                                 <small class="form-text text-muted">Upload {{ $field->field_label ?: $field->field_name }} (JPG, PNG, PDF only)</small>
                             @elseif($field->field_type === 'select')
                                 <select name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
@@ -1763,21 +1845,26 @@ function toggleGraduationCertificate() {
                                     @if($field->field_options)
                                         @php
                                             $options = is_string($field->field_options) ? json_decode($field->field_options, true) : $field->field_options;
+                                            $selectedValue = old($field->field_name, $student->{$field->field_name} ?? '');
                                         @endphp
                                         @if(is_array($options))
                                             @foreach($options as $option)
-                                                <option value="{{ $option }}">{{ $option }}</option>
+                                                <option value="{{ $option }}" {{ $selectedValue == $option ? 'selected' : '' }}>{{ $option }}</option>
                                             @endforeach
                                         @endif
                                     @endif
                                 </select>
                             @elseif($field->field_type === 'textarea')
                                 <textarea name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                          class="form-control" rows="3" {{ $field->is_required ? 'required' : '' }}></textarea>
+                                          class="form-control" rows="3" {{ $field->is_required ? 'required' : '' }}>{{ old($field->field_name, $student->{$field->field_name} ?? '') }}</textarea>
                             @elseif($field->field_type === 'checkbox')
+                                @php
+                                    $isChecked = old($field->field_name, $student->{$field->field_name} ?? false);
+                                @endphp
                                 <div class="form-check">
                                     <input type="checkbox" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                           class="form-check-input" value="1" {{ $field->is_required ? 'required' : '' }}>
+                                           class="form-check-input" value="1" {{ $isChecked ? 'checked' : '' }}
+                                           {{ $field->is_required ? 'required' : '' }}>
                                     <label class="form-check-label" for="{{ $field->field_name }}">
                                         {{ $field->field_label ?: $field->field_name }}
                                     </label>
@@ -1816,23 +1903,25 @@ function toggleGraduationCertificate() {
                 <i class="bi bi-mortarboard me-2"></i>Education Level
                 <span class="required">*</span>
             </label>
-            <select name="education_level" id="educationLevel" class="form-select" required onchange="toggleGraduationCertificate()">
+            <select name="education_level" id="educationLevel" class="form-select" required onchange="toggleEducationLevelRequirements()">
                 <option value="">Select Education Level</option>
-                <option value="Undergraduate">Undergraduate</option>
-                <option value="Graduate">Graduate</option>
+                @if(isset($educationLevels) && $educationLevels->count() > 0)
+                    @foreach($educationLevels as $level)
+                        <option value="{{ $level->level_name }}" 
+                                data-file-requirements="{{ json_encode($level->getFileRequirementsForPlan($enrollmentType ?? 'full')) }}">
+                            {{ $level->level_name }}
+                        </option>
+                    @endforeach
+                @else
+                    <!-- No education levels configured - admin needs to set them up -->
+                    <option value="" disabled>No education levels configured. Please contact administrator.</option>
+                @endif
             </select>
         </div>
 
-        <!-- Graduate Certificate Field (conditionally shown) -->
-        <div id="graduateCertificateField" style="display: none;" class="form-group">
-            <label for="Cert_of_Grad" style="font-weight:700;">
-                <i class="bi bi-award me-2"></i>Certificate of Graduation
-                <span class="required">*</span>
-            </label>
-            <input type="file" name="Cert_of_Grad" id="Cert_of_Grad" 
-                   class="form-control" accept=".jpg,.jpeg,.png,.pdf" 
-                   onchange="handleFileUpload(this)">
-            <small class="form-text text-muted">Upload your Certificate of Graduation (JPG, PNG, PDF only)</small>
+        <!-- Dynamic Education Level File Requirements -->
+        <div id="educationLevelRequirements" style="display: none;">
+            <!-- File requirements will be dynamically added here -->
         </div>
 
         <div class="form-group" style="margin-top:2.2rem;">
@@ -2292,6 +2381,25 @@ function handleFormSubmission(event) {
     }
   }
   
+  // Ensure program_id is set from the dropdown
+  const programSelect = document.getElementById('programSelect');
+  const hiddenProgramInput = document.getElementById('hidden_program_id');
+  
+  if (programSelect && hiddenProgramInput) {
+    if (programSelect.value) {
+      hiddenProgramInput.value = programSelect.value;
+      console.log('✅ Program ID updated before submission:', programSelect.value);
+    } else {
+      console.error('❌ No program selected!');
+      showFormErrors(['Please select a program before submitting.']);
+      return false;
+    }
+  } else {
+    console.error('❌ Program select or hidden input not found!');
+    showFormErrors(['Program selection error. Please refresh and try again.']);
+    return false;
+  }
+  
   // Show loading state
   showFormLoading(true);
   console.log('✅ Form loading state activated');
@@ -2418,12 +2526,12 @@ function handleFormSubmission(event) {
           console.log('✅ Registration successful (JSON):', data);
           
           showFormLoading(false);
-          alert('🎉 Registration completed successfully! You will be redirected to the dashboard.');
+          alert('🎉 Registration completed successfully! You will be redirected to the success page.');
           
           if (data.redirect) {
             window.location.href = data.redirect;
           } else {
-            window.location.href = '/dashboard';
+            window.location.href = '/registration/success';
           }
         } catch (jsonError) {
           console.error('❌ Could not parse JSON response:', jsonError);
@@ -2436,10 +2544,10 @@ function handleFormSubmission(event) {
         
         // Check if response contains success indicators
         const responseTextLower = responseText.toLowerCase();
-        if (responseTextLower.includes('success') || responseTextLower.includes('dashboard') || responseTextLower.includes('registration complete')) {
+        if (responseTextLower.includes('success') || responseTextLower.includes('registration') || responseTextLower.includes('complete')) {
           showFormLoading(false);
-          alert('🎉 Registration completed successfully! You will be redirected to the dashboard.');
-          window.location.href = '/dashboard';
+          alert('🎉 Registration completed successfully!');
+          window.location.href = '/registration/success';
         } else if (responseTextLower.includes('login') || responseTextLower.includes('signin')) {
           showFormLoading(false);
           alert('🎉 Registration completed successfully! Please login to continue.');
@@ -2454,7 +2562,7 @@ function handleFormSubmission(event) {
           if (redirectMatch) {
             window.location.href = redirectMatch[1];
           } else {
-            window.location.href = '/dashboard';
+            window.location.href = '/registration/success';
           }
         }
       }

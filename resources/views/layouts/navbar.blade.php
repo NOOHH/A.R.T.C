@@ -291,13 +291,6 @@
                         </a>
                     </li>
                     @endif
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="bi bi-box-arrow-right"></i> Logout
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        @else
                             {{-- User is not logged in - show Account dropdown --}}
                             <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdown" role="button" 
                                data-bs-toggle="dropdown" aria-expanded="false">

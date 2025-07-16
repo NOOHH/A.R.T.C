@@ -1565,33 +1565,87 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Toggle graduation certificate field based on education level
-function toggleGraduationCertificate() {
-    const educationLevel = document.getElementById('educationLevel').value;
-    const graduateField = document.getElementById('graduateCertificateField');
-    const graduateInput = document.querySelector('input[name="Cert_of_Grad"]');
+// Toggle education level requirements based on selection
+function toggleEducationLevelRequirements() {
+    const educationLevel = document.getElementById('educationLevel');
+    const selectedOption = educationLevel.options[educationLevel.selectedIndex];
+    const requirementsContainer = document.getElementById('educationLevelRequirements');
     
-    console.log('Education level changed to:', educationLevel); // Debug log
-    console.log('Graduate field found:', graduateField); // Debug log
+    console.log('Education level changed to:', educationLevel.value);
     
-    if (graduateField) {
-        if (educationLevel === 'Graduate') {
-            graduateField.style.display = 'block';
-            if (graduateInput) {
-                graduateInput.required = true;
-                console.log('Graduate certificate field shown and made required');
+    // Clear existing requirements
+    requirementsContainer.innerHTML = '';
+    requirementsContainer.style.display = 'none';
+    
+    if (educationLevel.value && selectedOption.dataset.fileRequirements) {
+        try {
+            const fileRequirements = JSON.parse(selectedOption.dataset.fileRequirements);
+            console.log('File requirements:', fileRequirements);
+            console.log('File requirements type:', typeof fileRequirements);
+            console.log('Is array:', Array.isArray(fileRequirements));
+            
+            if (fileRequirements && (Array.isArray(fileRequirements) ? fileRequirements.length > 0 : Object.keys(fileRequirements).length > 0)) {
+                requirementsContainer.style.display = 'block';
+                
+                // Handle both array and object formats
+                let requirementsArray = fileRequirements;
+                if (!Array.isArray(fileRequirements)) {
+                    // Convert object to array format
+                    requirementsArray = Object.entries(fileRequirements).map(([fieldName, config]) => ({
+                        field_name: fieldName.replace(/\s+/g, '_'),
+                        display_name: fieldName,
+                        is_required: config.required !== undefined ? config.required : true,
+                        file_type: config.file_type || config.type || 'any',
+                        description: config.description || ''
+                    }));
+                }
+                
+                console.log('Final requirements array:', requirementsArray);
+                
+                requirementsArray.forEach(requirement => {
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.className = 'form-group mb-3';
+                    
+                    const fieldName = requirement.field_name || requirement.display_name || 'Unknown';
+                    const displayName = requirement.display_name || requirement.field_name || 'Unknown';
+                    const isRequired = requirement.is_required !== undefined ? requirement.is_required : true;
+                    const fileType = requirement.file_type || 'any';
+                    
+                    // Set appropriate file accept types based on education level configuration
+                    let acceptTypes = '.jpg,.jpeg,.png,.pdf';
+                    if (fileType === 'image') {
+                        acceptTypes = '.jpg,.jpeg,.png,.gif';
+                    } else if (fileType === 'pdf') {
+                        acceptTypes = '.pdf';
+                    } else if (fileType === 'document') {
+                        acceptTypes = '.pdf,.doc,.docx';
+                    }
+                    
+                    fieldDiv.innerHTML = `
+                        <label for="${fieldName}" style="font-weight:700;">
+                            <i class="bi bi-file-earmark-arrow-up me-2"></i>${displayName}
+                            ${isRequired ? '<span class="required">*</span>' : ''}
+                        </label>
+                        <input type="file" name="${fieldName}" id="${fieldName}" 
+                               class="form-control" accept="${acceptTypes}" 
+                               onchange="handleFileUpload(this)" ${isRequired ? 'required' : ''}>
+                        <small class="form-text text-muted">
+                            Upload your ${displayName} 
+                            ${requirement.description ? ' - ' + requirement.description : ''}
+                        </small>
+                    `;
+                    requirementsContainer.appendChild(fieldDiv);
+                });
             }
-        } else {
-            graduateField.style.display = 'none';
-            if (graduateInput) {
-                graduateInput.required = false;
-                graduateInput.value = '';
-                console.log('Graduate certificate field hidden and cleared');
-            }
+        } catch (error) {
+            console.error('Error parsing file requirements:', error);
         }
-    } else {
-        console.log('Graduate certificate field not found in DOM');
     }
+}
+
+// Legacy function for backward compatibility
+function toggleGraduationCertificate() {
+    toggleEducationLevelRequirements();
 }
 
 </script>
@@ -1950,23 +2004,25 @@ function toggleGraduationCertificate() {
                 <i class="bi bi-mortarboard me-2"></i>Education Level
                 <span class="required">*</span>
             </label>
-            <select name="education_level" id="educationLevel" class="form-select" required onchange="toggleGraduationCertificate()">
+            <select name="education_level" id="educationLevel" class="form-select" required onchange="toggleEducationLevelRequirements()">
                 <option value="">Select Education Level</option>
-                <option value="Undergraduate">Undergraduate</option>
-                <option value="Graduate">Graduate</option>
+                @if(isset($educationLevels) && $educationLevels->count() > 0)
+                    @foreach($educationLevels as $level)
+                        <option value="{{ $level->level_name }}" 
+                                data-file-requirements="{{ json_encode($level->getFileRequirementsForPlan($enrollmentType ?? 'modular')) }}">
+                            {{ $level->level_name }}
+                        </option>
+                    @endforeach
+                @else
+                    <!-- No education levels configured - admin needs to set them up -->
+                    <option value="" disabled>No education levels configured. Please contact administrator.</option>
+                @endif
             </select>
         </div>
 
-        <!-- Graduate Certificate Field (conditionally shown) -->
-        <div id="graduateCertificateField" style="display: none;" class="form-group">
-            <label for="Cert_of_Grad" style="font-weight:700;">
-                <i class="bi bi-award me-2"></i>Certificate of Graduation
-                <span class="required">*</span>
-            </label>
-            <input type="file" name="Cert_of_Grad" id="Cert_of_Grad" 
-                   class="form-control" accept=".jpg,.jpeg,.png,.pdf" 
-                   onchange="handleFileUpload(this)">
-            <small class="form-text text-muted">Upload your Certificate of Graduation (JPG, PNG, PDF only)</small>
+        <!-- Dynamic Education Level File Requirements -->
+        <div id="educationLevelRequirements" style="display: none;">
+            <!-- File requirements will be dynamically added here -->
         </div>
 
         <div class="form-group" style="margin-top:2.2rem;">

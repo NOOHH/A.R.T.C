@@ -15,6 +15,7 @@ use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
@@ -104,6 +105,9 @@ Route::middleware(['web'])->group(function(){
     Route::post('/registration/validate-file', 
         [\App\Http\Controllers\RegistrationController::class, 'validateFileUpload']
     )->name('registration.validateFile');
+    
+    // Education levels route for registration form
+    Route::get('/api/education-levels/{plan?}', [EducationLevelController::class, 'getForPlan'])->name('api.education-levels.plan');
 });
 
 // Debug routes for testing
@@ -236,6 +240,32 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
+    
+    // Test route for debugging student settings
+    Route::get('/test-student-settings', function () {
+        // Find student with ID 2025-07-00001
+        $student = \App\Models\Student::where('student_id', '2025-07-00001')->first();
+        
+        if (!$student) {
+            return response()->json([
+                'error' => 'Student with ID 2025-07-00001 not found',
+                'total_students' => \App\Models\Student::count(),
+                'recent_students' => \App\Models\Student::orderBy('created_at', 'desc')->take(5)->get()
+            ]);
+        }
+        
+        // Simulate logged in student using the actual student's user_id
+        session([
+            'logged_in' => true,
+            'user_id' => $student->user_id,
+            'user_role' => 'student'
+        ]);
+        
+        $user = \App\Models\User::find($student->user_id);
+        $formRequirements = \App\Models\FormRequirement::active()->get();
+        
+        return view('test-settings', compact('user', 'student', 'formRequirements'));
+    })->name('test.student.settings');
     
     // Password management routes
     Route::post('/student/change-password', [StudentController::class, 'changePassword'])->name('student.change-password');
@@ -402,6 +432,7 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
 
 // Admin approve/reject registration
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
+Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson']);
 Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
      ->name('admin.registration.approve');
 Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'])
@@ -672,6 +703,14 @@ Route::prefix('admin/settings/payment-methods')->middleware(['admin.auth'])->gro
 
 // Public route for students to get enabled payment methods
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
+
+// Education Levels routes
+Route::prefix('admin/settings/education-levels')->middleware(['admin.auth'])->group(function () {
+    Route::get('/', [EducationLevelController::class, 'index'])->name('admin.settings.education-levels.index');
+    Route::post('/', [EducationLevelController::class, 'store'])->name('admin.settings.education-levels.store');
+    Route::put('/{id}', [EducationLevelController::class, 'update'])->name('admin.settings.education-levels.update');
+    Route::delete('/{id}', [EducationLevelController::class, 'destroy'])->name('admin.settings.education-levels.delete');
+});
 
 // Dynamic Field Synchronization routes
 Route::prefix('admin/settings/dynamic-fields')->middleware(['admin.auth'])->group(function () {

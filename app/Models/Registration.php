@@ -121,4 +121,33 @@ class Registration extends Model
     {
         return $this->belongsToMany(Module::class, 'registration_modules', 'registration_id', 'module_id');
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'registration_id', 'registration_id');
+    }
+
+    /**
+     * Get enrollments for a specific education level
+     */
+    public function enrollmentsForLevel($educationLevelId)
+    {
+        return $this->enrollments()->where('education_level_id', $educationLevelId);
+    }
+
+    /**
+     * Check if user can enroll in a specific education level
+     */
+    public function canEnrollInLevel($educationLevelId)
+    {
+        // Check if already enrolled in this level
+        $existingEnrollment = $this->enrollmentsForLevel($educationLevelId)->first();
+        
+        if ($existingEnrollment) {
+            // Allow re-enrollment if previous enrollment was completed or cancelled
+            return in_array($existingEnrollment->enrollment_status, ['completed', 'cancelled']);
+        }
+
+        return true;
+    }
 }
