@@ -11,10 +11,12 @@ use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
 use App\Http\Controllers\AdminModuleController;
+use App\Http\Controllers\AdminCourseController;
 use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
@@ -104,6 +106,9 @@ Route::middleware(['web'])->group(function(){
     Route::post('/registration/validate-file', 
         [\App\Http\Controllers\RegistrationController::class, 'validateFileUpload']
     )->name('registration.validateFile');
+    
+    // Education levels route for registration form
+    Route::get('/api/education-levels/{plan?}', [EducationLevelController::class, 'getForPlan'])->name('api.education-levels.plan');
 });
 
 // Debug routes for testing
@@ -116,7 +121,7 @@ Route::get('/test-registration-routes', function() {
             'user-prefill-data' => route('registration.user-prefill-data'), 
             'validate-file' => route('registration.validateFile')
         ]
-    ]);
+     ]);
 });
 
 /*
@@ -174,8 +179,15 @@ Route::get('/enrollment/full', [StudentRegistrationController::class, 'showRegis
 
 // Modular enrollment form (GET)
 Route::get('/enrollment/modular', function () {
-    $allPrograms = Program::where('is_archived', false)->get();
-    $packages = Package::all();
+    $allPrograms = Program::where('is_archived', false)
+        ->whereHas('packages') // Only show programs that have packages
+        ->get();
+    
+    // Get only modular packages
+    $packages = Package::with('program')
+        ->where('package_type', 'modular')
+        ->get();
+    
     $programId = request('program_id');
     
     // Get form requirements for modular enrollment
@@ -206,13 +218,7 @@ Route::get('/enrollment/modular', function () {
         return in_array($program->program_id, $enrolledProgramIds);
     });
     
-    // Get all modules for JavaScript (will be filtered by program on frontend)
-    $allModules = \App\Models\Module::where('is_archived', false)
-                                   ->orderBy('module_order')
-                                   ->orderBy('module_name')
-                                   ->get(['modules_id', 'module_name', 'module_description', 'program_id']);
-    
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'allModules', 'fullPlan', 'modularPlan'));
+    return view('registration.Modular_enrollment_new', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'fullPlan', 'modularPlan'));
 })->name('enrollment.modular');
 
 // Unified login page and authentication for all user types
@@ -236,6 +242,32 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
+    
+    // Test route for debugging student settings
+    Route::get('/test-student-settings', function () {
+        // Find student with ID 2025-07-00001
+        $student = \App\Models\Student::where('student_id', '2025-07-00001')->first();
+        
+        if (!$student) {
+            return response()->json([
+                'error' => 'Student with ID 2025-07-00001 not found',
+                'total_students' => \App\Models\Student::count(),
+                'recent_students' => \App\Models\Student::orderBy('created_at', 'desc')->take(5)->get()
+            ]);
+        }
+        
+        // Simulate logged in student using the actual student's user_id
+        session([
+            'logged_in' => true,
+            'user_id' => $student->user_id,
+            'user_role' => 'student'
+        ]);
+        
+        $user = \App\Models\User::find($student->user_id);
+        $formRequirements = \App\Models\FormRequirement::active()->get();
+        
+        return view('test-settings', compact('user', 'student', 'formRequirements'));
+    })->name('test.student.settings');
     
     // Password management routes
     Route::post('/student/change-password', [StudentController::class, 'changePassword'])->name('student.change-password');
@@ -353,16 +385,96 @@ Route::get('/api/programs', function () {
 
 // API endpoint for modules by program
 Route::get('/api/programs/{programId}/modules', function ($programId) {
-    $modules = \App\Models\Module::where('program_id', $programId)
-                                 ->where('is_archived', false)
-                                 ->select('modules_id as module_id', 'module_name', 'module_description', 'program_id')
-                                 ->get();
-    
-    return response()->json([
-        'success' => true,
-        'modules' => $modules
-    ]);
+    try {
+        // Use raw database query to bypass Model accessors
+        $modules = DB::table('modules')
+                    ->where('program_id', $programId)
+                    ->where('is_archived', false)
+                    ->orderBy('module_order', 'asc')
+                    ->select('modules_id', 'module_name', 'module_description', 'program_id')
+                    ->get();
+        
+        // Transform the data to ensure the id field is properly set
+        $transformedModules = [];
+        foreach ($modules as $module) {
+            $transformedModules[] = [
+                'id' => $module->modules_id,
+                'module_name' => $module->module_name,
+                'module_description' => $module->module_description,
+                'program_id' => $module->program_id,
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'modules' => $transformedModules
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error loading modules:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Error loading modules: ' . $e->getMessage()
+        ], 500);
+    }
 })->name('api.programs.modules');
+
+// API endpoint for modules by program
+Route::get('/get-program-modules', function (Request $request) {
+    $programId = $request->get('program_id');
+    $packageId = $request->get('package_id'); // Keep for backward compatibility
+    
+    if (!$programId && !$packageId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Program ID or Package ID is required'
+        ], 400);
+    }
+    
+    try {
+        $program = null;
+        
+        if ($programId) {
+            // Direct program query
+            $program = \App\Models\Program::find($programId);
+        } elseif ($packageId) {
+            // Get program through package (backward compatibility)
+            $package = \App\Models\Package::with('program')->find($packageId);
+            if ($package && $package->program) {
+                $program = $package->program;
+            }
+        }
+        
+        if (!$program) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Program not found'
+            ], 404);
+        }
+        
+        // Get modules for the program using raw database query
+        $modules = DB::table('modules')
+                    ->where('program_id', $program->program_id)
+                    ->where('is_archived', false)
+                    ->orderBy('module_order', 'asc')
+                    ->select('modules_id as id', 'module_name as name', 'module_description as description', 'program_id', 'content_type as level')
+                    ->get();
+        
+        return response()->json([
+            'success' => true,
+            'modules' => $modules,
+            'program' => [
+                'id' => $program->program_id,
+                'name' => $program->program_name
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error fetching modules: ' . $e->getMessage()
+        ], 500);
+    }
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -402,6 +514,7 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
 
 // Admin approve/reject registration
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
+Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson']);
 Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
      ->name('admin.registration.approve');
 Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'])
@@ -548,21 +661,56 @@ Route::post('/admin/modules/{id}/toggle-admin-override', [AdminModuleController:
 Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, 'getBatchesForProgram'])
      ->name('admin.programs.batches');
 
+// Get courses for a program (AJAX)
+Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])
+     ->name('admin.programs.courses');
+
+// Get batches by program ID (AJAX)
+Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])
+     ->name('admin.modules.batches.by-program');
+
 // Archive a module
 Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
      ->name('admin.modules.archive');
 
 // Admin override settings
-Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
-     ->name('admin.modules.update-override');
-Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
+Route::get   ('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
      ->name('admin.modules.get-override');
+Route::patch ('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
+     ->name('admin.modules.update-override');
+
+// Admin side API routes
+Route::get('admin/programs/{program}/batches',   [AdminModuleController::class, 'getBatchesForProgram']);
+Route::get('admin/programs/{program}/courses',   [AdminModuleController::class, 'getCoursesForProgram']);
+
+
+// Admin Courses Routes
+Route::middleware(['admin.auth'])->group(function () {
+    Route::get('/admin/courses', [AdminCourseController::class, 'index'])
+         ->name('admin.courses.index');
+    Route::post('/admin/courses', [AdminCourseController::class, 'store'])
+         ->name('admin.courses.store');
+    Route::get('/admin/courses/{id}', [AdminCourseController::class, 'show'])
+         ->name('admin.courses.show');
+    Route::put('/admin/courses/{id}', [AdminCourseController::class, 'update'])
+         ->name('admin.courses.update');
+    Route::delete('/admin/courses/{id}', [AdminCourseController::class, 'destroy'])
+         ->name('admin.courses.destroy');
+    Route::get('/admin/modules/{moduleId}/courses', [AdminCourseController::class, 'getModuleCourses'])
+         ->name('admin.courses.by-module');
+    Route::get('/admin/courses/{courseId}/content', [AdminCourseController::class, 'getCourseContent'])
+         ->name('admin.courses.content');
+    Route::post('/admin/courses/update-order', [AdminCourseController::class, 'updateOrder'])
+         ->name('admin.courses.update-order');
+});
 
 // Admin Packages Routes
 Route::get('/admin/packages', [AdminPackageController::class, 'index'])
      ->name('admin.packages.index');
 Route::post('/admin/packages', [AdminPackageController::class, 'store'])
      ->name('admin.packages.store');
+Route::get('/admin/packages/{id}', [AdminPackageController::class, 'show'])
+     ->name('admin.packages.show');
 Route::get('/admin/packages/{id}/edit', [AdminPackageController::class, 'edit'])
      ->name('admin.packages.edit');
 Route::put('/admin/packages/{id}', [AdminPackageController::class, 'update'])
@@ -571,6 +719,14 @@ Route::delete('/admin/packages/{id}', [AdminPackageController::class, 'destroy']
      ->name('admin.packages.destroy');
 Route::delete('/admin/packages/{id}/delete', [AdminPackageController::class, 'destroy'])
      ->name('admin.packages.delete');
+
+// Additional Package Management Routes
+Route::get('/admin/packages/program/{program_id}/modules', [AdminPackageController::class, 'getModules'])
+     ->name('admin.packages.get-modules');
+Route::post('/admin/packages/{id}/archive', [AdminPackageController::class, 'archive'])
+     ->name('admin.packages.archive');
+Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'restore'])
+     ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
 Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
@@ -673,6 +829,14 @@ Route::prefix('admin/settings/payment-methods')->middleware(['admin.auth'])->gro
 // Public route for students to get enabled payment methods
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
+// Education Levels routes
+Route::prefix('admin/settings/education-levels')->middleware(['admin.auth'])->group(function () {
+    Route::get('/', [EducationLevelController::class, 'index'])->name('admin.settings.education-levels.index');
+    Route::post('/', [EducationLevelController::class, 'store'])->name('admin.settings.education-levels.store');
+    Route::put('/{id}', [EducationLevelController::class, 'update'])->name('admin.settings.education-levels.update');
+    Route::delete('/{id}', [EducationLevelController::class, 'destroy'])->name('admin.settings.education-levels.delete');
+});
+
 // Dynamic Field Synchronization routes
 Route::prefix('admin/settings/dynamic-fields')->middleware(['admin.auth'])->group(function () {
     Route::post('/sync', [AdminSettingsController::class, 'syncDynamicFields'])->name('admin.settings.dynamic-fields.sync');
@@ -739,6 +903,10 @@ Route::post('/admin/modules/update-sort-order', [ModuleController::class, 'updat
      ->name('admin.modules.updateOrder');
 Route::get('/admin/modules/ordered', [ModuleController::class, 'getOrderedModules'])
      ->name('admin.modules.ordered');
+
+// Sidebar settings route
+Route::post('/admin/settings/sidebar', [AdminSettingsController::class, 'updateSidebar'])
+     ->name('admin.settings.sidebar');
 
 /*
 |--------------------------------------------------------------------------
@@ -1136,7 +1304,7 @@ Route::get('/test-chat-api', function() {
                 'role' => 'professor'
             ]
         ]
-    ]);
+     ]);
 });
 
 Route::post('/test-chat-send', function(Request $request) {
@@ -1417,3 +1585,49 @@ Route::get('/debug/messages-table', function () {
         ]);
     }
 });
+
+// Test route for course creation (bypasses CSRF for testing)
+Route::post('/test-course-creation', function (Request $request) {
+    try {
+        $validatedData = $request->validate([
+            'subject_name' => 'required|string|max:255',
+            'subject_description' => 'nullable|string',
+            'module_id' => 'required|exists:modules,modules_id',
+            'subject_price' => 'required|numeric|min:0',
+            'is_required' => 'nullable|boolean',
+        ]);
+        
+        $course = \App\Models\Course::create([
+            'subject_name' => $validatedData['subject_name'],
+            'subject_description' => $validatedData['subject_description'],
+            'module_id' => $validatedData['module_id'],
+            'subject_price' => $validatedData['subject_price'],
+            'is_required' => $request->has('is_required') ? true : false,
+            'is_active' => true,
+            'subject_order' => \App\Models\Course::where('module_id', $validatedData['module_id'])->max('subject_order') + 1,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Course created successfully!',
+            'course' => $course->load('module'),
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $e->errors(),
+            'debug' => [
+                'request_data' => $request->all(),
+            ]
+        ], 422);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error creating course: ' . $e->getMessage(),
+            'debug' => [
+                'request_data' => $request->all()
+            ]
+        ], 500);
+    }
+})->name('test.course.creation');

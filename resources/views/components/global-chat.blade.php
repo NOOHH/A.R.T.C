@@ -473,14 +473,6 @@ search-loading {
 
             @if($loggedIn)
                 @if($role === 'admin' || $role === 'director')
-            @php
-                $role     = session('user_role', 'guest');
-                $loggedIn = session('logged_in', false);
-                $userName = session('user_name', 'Guest');
-            @endphp
-
-            @if($loggedIn)
-                @if($role === 'admin' || $role === 'director')
                     <div class="row g-2">
                         <div class="col-4">
                             <button class="btn btn-outline-primary w-100 btn-sm user-type-btn" data-type="student">
@@ -517,13 +509,12 @@ search-loading {
                         </div>
                     </div>
                 @elseif($role === 'student')
-                @elseif($role === 'student')
                     <div class="row g-2">
                         <div class="col-4">
                             <button type="button" class="btn btn-outline-success w-100 btn-sm user-type-btn" data-type="professor">
                                 <i class="bi bi-person-badge d-block"></i>
                                 <small>Professors</small>
-                                </button>
+                            </button>
                         </div>
                         <div class="col-4">
                             <button class="btn btn-outline-info w-100 btn-sm user-type-btn" data-type="admin">

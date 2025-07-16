@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Module;
 use App\Models\Program;
+use App\Models\Course;
+use App\Models\StudentBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,17 +20,18 @@ class AdminModuleController extends Controller
     {
         $programs = Program::all();
         $modules = collect();
+        $allModules = Module::where('is_archived', false)->with(['program', 'batch'])->get();
         
         if ($request->has('program_id') && $request->program_id != '') {
             $modules = Module::where('program_id', $request->program_id)
                            ->where('is_archived', false)
-                           ->with('program')
+                           ->with(['program', 'batch'])
                            ->orderBy('module_order', 'asc')
                            ->orderBy('created_at', 'desc')
                            ->get();
         }
 
-        return view('admin.admin-modules.admin-modules', compact('programs', 'modules'));
+        return view('admin.admin-modules.admin-modules', compact('programs', 'modules', 'allModules'));
     }
 
     /**
@@ -150,7 +153,6 @@ class AdminModuleController extends Controller
             'content_data' => $contentData,
             'video_url' => $videoUrl,
             'video_path' => $videoPath,
-            'admin_override' => $request->input('admin_override', []),
             'is_archived' => false,
         ]);
 
@@ -169,6 +171,30 @@ class AdminModuleController extends Controller
     public function show(Module $module)
     {
         return view('admin.admin-modules.show', compact('module'));
+    }
+
+
+    /**
+     * Get modules for a specific program (JSON).
+     */
+    public function getModulesForProgram($programId)
+    {
+        try {
+            $modules = Module::where('program_id', $programId)
+                             ->where('is_archived', false)
+                             ->orderBy('module_order','asc')
+                             ->get(['modules_id as id','module_name']);
+
+            return response()->json([
+                'success' => true,
+                'modules' => $modules
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading modules: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -692,6 +718,28 @@ class AdminModuleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error loading batches: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get courses for a specific program
+     */
+    public function getCoursesForProgram($programId)
+    {
+        try {
+            $courses = \App\Models\Course::where('program_id', $programId)
+                ->select('subject_id', 'subject_name')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'courses' => $courses
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading courses: ' . $e->getMessage()
             ]);
         }
     }

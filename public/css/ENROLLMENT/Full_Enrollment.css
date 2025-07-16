@@ -1,5 +1,211 @@
 /* ===== PROFESSIONAL ENROLLMENT FORM DESIGN ===== */
+/* OTP Verification Styles */
+.email-input-group {
+    position: relative;
+}
 
+.email-input-group .btn-otp {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 6px 12px;
+    font-size: 12px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.email-input-group .btn-otp:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    transform: translateY(-50%) translateY(-1px);
+}
+
+.email-input-group input {
+    padding-right: 100px;
+}
+
+.otp-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.otp-container.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.otp-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.otp-icon {
+    width: 40px;
+    height: 40px;
+    background: #0d6efd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.otp-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.otp-input {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 3px;
+    padding: 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-otp {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+}
+
+.btn-otp:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+.btn-otp:disabled {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-otp.verified {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+}
+
+.status-message {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-success {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0f5132;
+}
+
+.status-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #842029;
+}
+
+.step-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.step-indicator.completed {
+    background: #198754;
+}
+
+/* OTP Modal Styles */
+#otpModal .modal-dialog {
+    max-width: 400px;
+}
+
+#otpModal .modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#otpModal .modal-title {
+    color: #495057;
+    font-weight: 600;
+}
+
+#otpModal .otp-digit {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#otpModal .otp-digit:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+#otpModal .status-message {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#otpModal .status-message.status-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+#otpModal .status-message.status-success {
+    background: #d1edff;
+    color: #084298;
+    border: 1px solid #b6d4fe;
+}
+
+#otpModal .btn-primary.verified {
+    background: #198754;
+    border-color: #198754;
+}
+
+#otpModal .modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+}
 * {
     box-sizing: border-box;
     margin: 0;
@@ -19,7 +225,7 @@ body.registration-page {
   display: flex;
   justify-content: center;
   align-items: center;    /* center vertically instead of pushing to the top */
-  height: 100vh;           /* keep a full‐screen container so centering works */
+  height: 1.5rem ;          /* keep a full‐screen container so centering works */
   width: 100%;
   padding: 0;              /* you can re-add a little padding if you want breathing room */
 }
@@ -224,7 +430,7 @@ body.registration-page {
   top: 0;
   z-index: 999;            /* sit above everything else */
   background: inherit;      /* keep the same gradient behind it */
-  padding: 16px 0;          /* tighten up the top/bottom padding if you like */
+  padding: -100px 0;          /* tighten up the top/bottom padding if you like */
 }
 
 .stepper {
@@ -240,12 +446,12 @@ body.registration-page {
 }
 
 .stepper .step {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 0;
-  min-width: 58px;
-  z-index: 1;
+  text-align: center;
+  cursor: pointer;
   
 }
 
@@ -288,6 +494,7 @@ body.registration-page {
 }
 .stepper {
   min-width: 360px;
+  margin-bottom: -10px;
 }
 
 .stepper .step.active .circle {
@@ -432,7 +639,7 @@ body.registration-page {
 /* Learning Mode Styles */
 .learning-modes {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 2rem;
     margin-bottom: 3rem;
 }
@@ -448,13 +655,19 @@ body.registration-page {
     background: #ffffff;
     border: 2px solid #e2e8f0;
     border-radius: 16px;
-    padding: 2.5rem;
+    padding: 2rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: center;
+    margin-top: -10px;
+    margin-bottom: -30px;
+    max-width: 320px;
+}
+.h2{
+    margin-bottom: -50px;
 }
 
-.learning-mode-card:hover {
+.learning-mode-card:hover { 
     border-color: #3b82f6;
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
@@ -468,12 +681,12 @@ body.registration-page {
 }
 
 .mode-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
     margin-bottom: 1rem;
 }
 
 .learning-mode-card h4 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 1rem;
@@ -910,3 +1123,10 @@ label .required {
         font-size: 1.1rem;
     }
 }
+
+/* turn the connector green whenever the previous .step has .completed */
+.step.completed + .bar {
+  background: #10b981 !important;
+}
+
+

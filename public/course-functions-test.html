@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course JavaScript Functions Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background-color: #0056b3; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.show {
+            display: block;
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Course JavaScript Functions Test</h1>
+        
+        <div class="test-section">
+            <h3>Test JavaScript Functions</h3>
+            <button class="btn" onclick="testShowModuleCourses()">Test showModuleCourses</button>
+            <button class="btn" onclick="testShowCourseContent()">Test showCourseContent</button>
+            <button class="btn" onclick="testShowAddCourseModal()">Test showAddCourseModal</button>
+            <button class="btn" onclick="testAllFunctions()">Test All Functions</button>
+            <div id="function-test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test API Endpoints</h3>
+            <button class="btn" onclick="testApiEndpoints()">Test API Endpoints</button>
+            <div id="api-test-result"></div>
+        </div>
+    </div>
+
+    <!-- Test Modals -->
+    <div id="moduleCoursesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModuleCoursesModal()">&times;</span>
+            <h2 id="moduleCoursesTitle">Module Courses</h2>
+            <div id="moduleCoursesContent">Loading...</div>
+        </div>
+    </div>
+
+    <div id="courseContentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCourseContentModal()">&times;</span>
+            <h2 id="courseContentTitle">Course Content</h2>
+            <div id="courseContentContent">Loading...</div>
+        </div>
+    </div>
+
+    <div id="addCourseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddCourseModal()">&times;</span>
+            <h2>Add New Course</h2>
+            <form id="addCourseForm">
+                <div>
+                    <label>Course Title:</label>
+                    <input type="text" id="courseTitle" required>
+                </div>
+                <div>
+                    <label>Description:</label>
+                    <textarea id="courseDescription"></textarea>
+                </div>
+                <div>
+                    <label>Price:</label>
+                    <input type="number" id="coursePrice" step="0.01" required>
+                </div>
+                <div>
+                    <label>
+                        <input type="checkbox" id="courseRequired"> Required Course
+                    </label>
+                </div>
+                <button type="button" onclick="saveCourse()">Save Course</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://127.0.0.1:8000';
+        
+        // Course JavaScript Functions
+        function showModuleCourses(moduleId, moduleName) {
+            document.getElementById('moduleCoursesTitle').textContent = `Courses in ${moduleName}`;
+            document.getElementById('moduleCoursesModal').classList.add('show');
+            
+            fetch(`${baseUrl}/admin/modules/${moduleId}/courses`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayModuleCourses(data.courses);
+                    } else {
+                        document.getElementById('moduleCoursesContent').innerHTML = '<p>Error loading courses</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('moduleCoursesContent').innerHTML = '<p>Error loading courses</p>';
+                });
+        }
+
+        function displayModuleCourses(courses) {
+            if (courses.length === 0) {
+                document.getElementById('moduleCoursesContent').innerHTML = '<p>No courses found</p>';
+                return;
+            }
+            
+            let html = '<div class="courses-grid">';
+            courses.forEach(course => {
+                html += `
+                    <div class="course-card" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0;">
+                        <h4>${course.subject_name}</h4>
+                        <p>${course.subject_description || 'No description'}</p>
+                        <p>Price: $${course.subject_price}</p>
+                        <p>Required: ${course.is_required ? 'Yes' : 'No'}</p>
+                        <button onclick="showCourseContent(${course.subject_id}, '${course.subject_name}')">View Content</button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            document.getElementById('moduleCoursesContent').innerHTML = html;
+        }
+
+        function showCourseContent(courseId, courseName) {
+            document.getElementById('courseContentTitle').textContent = `Content in ${courseName}`;
+            document.getElementById('courseContentModal').classList.add('show');
+            
+            fetch(`${baseUrl}/admin/courses/${courseId}/content`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayCourseContent(data.course);
+                    } else {
+                        document.getElementById('courseContentContent').innerHTML = '<p>Error loading content</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('courseContentContent').innerHTML = '<p>Error loading content</p>';
+                });
+        }
+
+        function displayCourseContent(course) {
+            if (!course.lessons || course.lessons.length === 0) {
+                document.getElementById('courseContentContent').innerHTML = '<p>No lessons found</p>';
+                return;
+            }
+            
+            let html = '<div class="lessons-list">';
+            course.lessons.forEach(lesson => {
+                html += `
+                    <div class="lesson-card" style="border: 1px solid #ddd; padding: 10px; margin: 5px 0;">
+                        <h5>${lesson.title}</h5>
+                        <p>${lesson.description || 'No description'}</p>
+                        <div class="content-items">
+                `;
+                
+                if (lesson.content_items && lesson.content_items.length > 0) {
+                    lesson.content_items.forEach(item => {
+                        html += `
+                            <div class="content-item" style="background: #f8f9fa; padding: 5px; margin: 2px 0;">
+                                <strong>${item.type}:</strong> ${item.title}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p>No content items</p>';
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            document.getElementById('courseContentContent').innerHTML = html;
+        }
+
+        function showAddCourseModal() {
+            document.getElementById('addCourseModal').classList.add('show');
+        }
+
+        function saveCourse() {
+            const title = document.getElementById('courseTitle').value;
+            const description = document.getElementById('courseDescription').value;
+            const price = document.getElementById('coursePrice').value;
+            const isRequired = document.getElementById('courseRequired').checked;
+            
+            if (!title || !price) {
+                alert('Please fill in required fields');
+                return;
+            }
+            
+            const courseData = {
+                subject_name: title,
+                subject_description: description,
+                subject_price: parseFloat(price),
+                is_required: isRequired,
+                module_id: 1 // Default to module 1 for testing
+            };
+            
+            fetch(`${baseUrl}/admin/courses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify(courseData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Course created successfully!');
+                    closeAddCourseModal();
+                    document.getElementById('addCourseForm').reset();
+                } else {
+                    alert('Error creating course: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating course');
+            });
+        }
+
+        function deleteCourse(courseId) {
+            if (confirm('Are you sure you want to delete this course?')) {
+                fetch(`${baseUrl}/admin/courses/${courseId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Course deleted successfully!');
+                    } else {
+                        alert('Error deleting course: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting course');
+                });
+            }
+        }
+
+        // Modal close functions
+        function closeModuleCoursesModal() {
+            document.getElementById('moduleCoursesModal').classList.remove('show');
+        }
+
+        function closeCourseContentModal() {
+            document.getElementById('courseContentModal').classList.remove('show');
+        }
+
+        function closeAddCourseModal() {
+            document.getElementById('addCourseModal').classList.remove('show');
+        }
+
+        // Test functions
+        function testShowModuleCourses() {
+            const resultDiv = document.getElementById('function-test-result');
+            resultDiv.innerHTML = '<div class="info">Testing showModuleCourses function...</div>';
+            
+            try {
+                showModuleCourses(1, 'Test Module');
+                resultDiv.innerHTML = '<div class="success">✓ showModuleCourses function works</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ showModuleCourses function failed: ${error.message}</div>`;
+            }
+        }
+
+        function testShowCourseContent() {
+            const resultDiv = document.getElementById('function-test-result');
+            resultDiv.innerHTML = '<div class="info">Testing showCourseContent function...</div>';
+            
+            try {
+                showCourseContent(1, 'Test Course');
+                resultDiv.innerHTML = '<div class="success">✓ showCourseContent function works</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ showCourseContent function failed: ${error.message}</div>`;
+            }
+        }
+
+        function testShowAddCourseModal() {
+            const resultDiv = document.getElementById('function-test-result');
+            resultDiv.innerHTML = '<div class="info">Testing showAddCourseModal function...</div>';
+            
+            try {
+                showAddCourseModal();
+                resultDiv.innerHTML = '<div class="success">✓ showAddCourseModal function works</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ showAddCourseModal function failed: ${error.message}</div>`;
+            }
+        }
+
+        function testAllFunctions() {
+            const functions = [
+                'showModuleCourses',
+                'showCourseContent',
+                'showAddCourseModal',
+                'saveCourse',
+                'deleteCourse'
+            ];
+            
+            let results = [];
+            
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    results.push(`✓ ${funcName} function exists`);
+                } else {
+                    results.push(`✗ ${funcName} function missing`);
+                }
+            });
+            
+            const allSuccess = results.every(r => r.includes('✓'));
+            document.getElementById('function-test-result').innerHTML = `
+                <div class="test-result ${allSuccess ? 'success' : 'error'}">
+                    <strong>JavaScript Functions Test:</strong><br>
+                    ${results.join('<br>')}
+                </div>
+            `;
+        }
+
+        async function testApiEndpoints() {
+            const resultDiv = document.getElementById('api-test-result');
+            resultDiv.innerHTML = '<div class="info">Testing API endpoints...</div>';
+            
+            const endpoints = [
+                { url: '/admin/courses', method: 'GET', name: 'List Courses' },
+                { url: '/admin/modules/1/courses', method: 'GET', name: 'Module Courses' },
+                { url: '/admin/courses/1/content', method: 'GET', name: 'Course Content' }
+            ];
+            
+            let results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${baseUrl}${endpoint.url}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        results.push(`✓ ${endpoint.name} - OK (${response.status})`);
+                    } else {
+                        results.push(`✗ ${endpoint.name} - ${response.status} ${response.statusText}`);
+                    }
+                } catch (error) {
+                    results.push(`✗ ${endpoint.name} - Error: ${error.message}`);
+                }
+            }
+            
+            const allSuccess = results.every(r => r.includes('✓'));
+            resultDiv.innerHTML = `
+                <div class="test-result ${allSuccess ? 'success' : 'error'}">
+                    <strong>API Endpoints Test:</strong><br>
+                    ${results.join('<br>')}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

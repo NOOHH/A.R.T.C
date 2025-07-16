@@ -92,6 +92,9 @@ class StudentRegistrationController extends Controller
                 'enrollment_type' => 'required|in:Full,Modular',
                 'program_id' => 'required|integer|exists:programs,program_id',
                 'registration_mode' => 'nullable|in:sync,async',
+                'sync_async_mode' => 'nullable|in:sync,async',
+                'education_level' => 'required|in:Undergraduate,Graduate',
+                'start_date' => 'required|date',
                 // batch_id is optional and will be stored in session, not in registrations table
                 'batch_id' => 'nullable|integer'
             ];
@@ -176,6 +179,9 @@ class StudentRegistrationController extends Controller
                 $user->email = $request->email;
                 $user->password = Hash::make($request->password);
                 $user->role = 'student';
+                // Set default values for required fields
+                $user->admin_id = 1; // Default admin_id
+                $user->directors_id = 1; // Default directors_id
                 
                 if (!$user->save()) {
                     throw new \Exception('Failed to create user account');
@@ -212,6 +218,16 @@ class StudentRegistrationController extends Controller
             $registration->enrollment_type = $request->enrollment_type;
             $registration->learning_mode = strtolower($request->learning_mode);
             
+            // Store sync/async mode (new field)
+            if ($request->sync_async_mode) {
+                $registration->sync_async_mode = $request->sync_async_mode;
+            }
+            
+            // Store education level (new field)
+            if ($request->education_level) {
+                $registration->education_level = $request->education_level;
+            }
+            
             // Store selected modules for modular enrollment
             if ($request->enrollment_type === 'Modular' && $request->selected_modules) {
                 $registration->selected_modules = $request->selected_modules;
@@ -223,7 +239,7 @@ class StudentRegistrationController extends Controller
                 $registration->start_date = now()->addDays(14)->format('Y-m-d');
             } else {
                 // For asynchronous mode, use the user-provided start date
-                $registration->start_date = $request->Start_Date;
+                $registration->start_date = $request->start_date ?? $request->Start_Date;
             }
             
             $registration->status = 'pending';
@@ -342,11 +358,17 @@ class StudentRegistrationController extends Controller
             
             // CREATE STUDENT RECORD - This was missing!
             // Create a student record with data from the registration
+            
+            // Generate unique student ID
+            $studentId = $this->generateStudentId();
+            
             $studentData = [
+                'student_id' => $studentId,
                 'user_id' => $user->user_id,
                 'firstname' => $user->user_firstname,
                 'lastname' => $user->user_lastname,
                 'email' => $user->email,
+                'education_level' => $request->education_level ?? '',
             ];
             
             // Add dynamic fields to student record if they have corresponding columns
@@ -389,12 +411,18 @@ class StudentRegistrationController extends Controller
             }
             
             // Create or update student record
-            $student = Student::updateOrCreate(
-                ['user_id' => $user->user_id],
-                $studentData
-            );
+            $existingStudent = Student::where('user_id', $user->user_id)->first();
             
-            Log::info('Student record created/updated', ['student_id' => $student->student_id ?? $student->id]);
+            if ($existingStudent) {
+                // Update existing student record
+                $existingStudent->update($studentData);
+                $student = $existingStudent;
+                Log::info('Updated existing student record', ['student_id' => $student->student_id]);
+            } else {
+                // Create new student record
+                $student = Student::create($studentData);
+                Log::info('Created new student record', ['student_id' => $student->student_id]);
+            }
             
             // Also create an immediate enrollment record with the batch_id
             // This ensures batch_id is preserved even if the session is cleared
@@ -533,7 +561,12 @@ class StudentRegistrationController extends Controller
             ->whereNotIn('program_id', $enrolledProgramIds)
             ->get();
 
-        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan'));
+        // Get education levels for the current plan type
+        // Map enrollment types to education level plan types
+        $planType = $enrollmentType === 'modular' ? 'general' : 'professional'; // Full enrollment -> professional, Modular -> general
+        $educationLevels = \App\Models\EducationLevel::forPlan($planType)->get();
+
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan', 'educationLevels'));
     }
 
 
@@ -686,6 +719,45 @@ class StudentRegistrationController extends Controller
                 'message' => 'Error checking email availability'
             ], 500);
         }
+    }
+
+    /**
+     * Generate a unique student ID in format YYYY-MM-NNNNN
+     */
+    private function generateStudentId()
+    {
+        $currentYear = date('Y');
+        $currentMonth = date('m');
+        $prefix = $currentYear . '-' . $currentMonth . '-';
+        
+        // Find the highest existing student ID for current year-month
+        $lastStudent = Student::where('student_id', 'LIKE', $prefix . '%')
+            ->orderBy('student_id', 'desc')
+            ->first();
+        
+        if ($lastStudent) {
+            // Extract the number part and increment
+            $lastNumber = (int) substr($lastStudent->student_id, -5);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            // Start from 1 if no students exist for this month
+            $nextNumber = 1;
+        }
+        
+        // Format as 5-digit number with leading zeros
+        $formattedNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        
+        $studentId = $prefix . $formattedNumber;
+        
+        // Double-check uniqueness (in case of race condition)
+        while (Student::where('student_id', $studentId)->exists()) {
+            $nextNumber++;
+            $formattedNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            $studentId = $prefix . $formattedNumber;
+        }
+        
+        Log::info('Generated student ID: ' . $studentId);
+        return $studentId;
     }
 
 }

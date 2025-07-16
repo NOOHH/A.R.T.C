@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Creation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Course Creation Test</h1>
+    
+    <form id="courseForm">
+        <div class="form-group">
+            <label for="program_id">Program:</label>
+            <select id="program_id" name="program_id" required>
+                <option value="">Select Program</option>
+                <option value="33">HTML, CSS & JavaScript</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="module_id">Module:</label>
+            <select id="module_id" name="module_id" required>
+                <option value="">Select Module</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="course_name">Course Name:</label>
+            <input type="text" id="course_name" name="course_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="course_description">Course Description:</label>
+            <textarea id="course_description" name="course_description" rows="4"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="course_order">Course Order:</label>
+            <input type="number" id="course_order" name="course_order" min="1" value="1" required>
+        </div>
+        
+        <button type="submit">Create Course</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <h2>Debug Information</h2>
+    <div id="debug"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const programSelect = document.getElementById('program_id');
+            const moduleSelect = document.getElementById('module_id');
+            const courseForm = document.getElementById('courseForm');
+            const resultDiv = document.getElementById('result');
+            const debugDiv = document.getElementById('debug');
+            
+            // Load modules when program is selected
+            programSelect.addEventListener('change', function() {
+                const programId = this.value;
+                moduleSelect.innerHTML = '<option value="">Select Module</option>';
+                
+                if (programId) {
+                    debugDiv.innerHTML = `<p>Loading modules for program ${programId}...</p>`;
+                    
+                    fetch(`/api/programs/${programId}/modules`)
+                        .then(response => {
+                            debugDiv.innerHTML += `<p>Response status: ${response.status}</p>`;
+                            return response.json();
+                        })
+                        .then(data => {
+                            debugDiv.innerHTML += `<p>Response data: ${JSON.stringify(data, null, 2)}</p>`;
+                            
+                            if (data.success && data.modules) {
+                                data.modules.forEach(module => {
+                                    const option = document.createElement('option');
+                                    option.value = module.id;
+                                    option.textContent = module.module_name;
+                                    moduleSelect.appendChild(option);
+                                });
+                                debugDiv.innerHTML += `<p>✅ Loaded ${data.modules.length} modules</p>`;
+                            } else {
+                                debugDiv.innerHTML += `<p>❌ Failed to load modules: ${data.message || 'Unknown error'}</p>`;
+                            }
+                        })
+                        .catch(error => {
+                            debugDiv.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                        });
+                }
+            });
+            
+            // Handle form submission
+            courseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                
+                debugDiv.innerHTML += `<p>Submitting course data: ${JSON.stringify(data, null, 2)}</p>`;
+                
+                fetch('/admin/courses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resultDiv.innerHTML = `<div class="result success">✅ Course created successfully!</div>`;
+                        courseForm.reset();
+                        moduleSelect.innerHTML = '<option value="">Select Module</option>';
+                    } else {
+                        resultDiv.innerHTML = `<div class="result error">❌ Error: ${data.message}</div>`;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

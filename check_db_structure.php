@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 try {
     // Check if tables exist
-    $tables = ['users', 'students', 'professors', 'directors', 'chats'];
+    $tables = ['packages', 'programs', 'modules'];
     
     foreach ($tables as $table) {
         try {
@@ -28,6 +28,15 @@ try {
                 // Count records
                 $count = DB::table($table)->count();
                 echo "  Records: {$count}" . PHP_EOL;
+                
+                // Show sample data
+                $sample = DB::table($table)->limit(3)->get();
+                if ($sample->count() > 0) {
+                    echo "  Sample data:" . PHP_EOL;
+                    foreach ($sample as $row) {
+                        echo "    " . json_encode($row) . PHP_EOL;
+                    }
+                }
                 
             } else {
                 echo "Table '{$table}' does not exist" . PHP_EOL;

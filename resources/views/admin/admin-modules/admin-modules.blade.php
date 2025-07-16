@@ -68,6 +68,12 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label for="courseFilter">Filter by Course:</label>
+                <select id="courseFilter" class="form-select">
+                    <option value="">All Courses</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label for="learningModeFilter">Filter by Learning Mode:</label>
                 <select id="learningModeFilter" class="form-select">
                     <option value="">All Learning Modes</option>
@@ -94,6 +100,9 @@
         <button type="button" class="add-module-btn" id="showAddModal">
             <i class="bi bi-plus-circle"></i> Add New Content
         </button>
+        <button type="button" class="add-course-btn" id="showAddCourseModal">
+            <i class="bi bi-journal-plus"></i> Add New Course
+        </button>
         <button type="button" class="batch-upload-btn" id="showBatchModal">
             <i class="bi bi-upload"></i> Batch Upload Multiple PDFs
         </button>
@@ -109,61 +118,66 @@
     <div id="modulesDisplayArea">
         @if(request('program_id') && isset($modules))
             @if($modules->count() > 0)
-                <div class="modules-grid sortable-modules" id="sortableModules">
-                    @foreach($modules as $module)
-                        <div class="module-card" data-module-id="{{ $module->modules_id }}" 
-                             data-batch-id="{{ $module->batch_id }}"
-                             data-learning-mode="{{ strtolower($module->learning_mode) }}"
-                             data-content-type="{{ $module->content_type }}">
-                            <div class="module-drag-handle">
-                                <i class="bi bi-grip-vertical"></i>
-                            </div>
+<div class="modules-grid sortable-modules" id="sortableModules">
+  @foreach($modules as $module)
+    <div class="module-card"
+         data-module-id="{{ $module->modules_id }}"
+         data-batch-id="{{ $module->batch_id }}"
+         data-course-id="{{ $module->course_id ?? '' }}"
+         data-learning-mode="{{ strtolower($module->learning_mode) }}"
+         data-content-type="{{ $module->content_type }}"
+         onclick="showModuleCourses({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')"
+         style="cursor: pointer;">
+
+      <div class="module-drag-handle">
+        <i class="bi bi-grip-vertical"></i>
+      </div>
                             
-                            <div class="module-header">
-                                <div>
-                                    <div class="d-flex gap-2 mb-2">
-                                        @if($module->content_type === 'ai_quiz')
-                                            <span class="module-type-badge" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
-                                                <i class="bi bi-robot"></i> AI Quiz
-                                            </span>
-                                        @else
-                                            <span class="module-type-badge">
-                                                @switch($module->content_type)
-                                                    @case('assignment')<i class="bi bi-file-earmark-text"></i> Assignment @break
-                                                    @case('quiz')<i class="bi bi-question-circle"></i> Quiz @break
-                                                    @case('test')<i class="bi bi-clipboard-check"></i> Test @break
-                                                    @case('link')<i class="bi bi-link-45deg"></i> Link @break
-                                                    @default<i class="bi bi-book"></i> Module @break
-                                                @endswitch
-                                            </span>
+      {{-- HEADER: badges + title + batch all in one flex row --}}
+      <div class="module-header">
+        <div class="d-flex align-items-center gap-3">
+          @if($module->content_type === 'ai_quiz')
+            <span class="module-type-badge"
+                  style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
+              <i class="bi bi-robot"></i> AI Quiz
+            </span>
+          @else
+            <span class="module-type-badge">
+              @switch($module->content_type)
+                @case('assignment')<i class="bi bi-file-earmark-text"></i> Assignment @break
+                @case('quiz')      <i class="bi bi-question-circle"></i> Quiz       @break
+                @case('test')      <i class="bi bi-clipboard-check"></i> Test      @break
+                @case('link')      <i class="bi bi-link-45deg"></i> Link         @break
+                @default           <i class="bi bi-book"></i> Module            @break
+              @endswitch
+            </span>
                                         @endif
-                                        <span class="learning-mode-badge {{ strtolower($module->learning_mode) === 'asynchronous' ? 'asynchronous' : '' }}">
-                                            @if(strtolower($module->learning_mode) === 'asynchronous')
-                                                <i class="bi bi-clock"></i> Async
-                                            @else
-                                                <i class="bi bi-people"></i> Sync
-                                            @endif
-                                        </span>
-                                    </div>
-                                    <h3 class="module-title">{{ $module->module_name }}</h3>
-                                    @if($module->batch)
-                                        <div class="batch-info mb-2">
-                                            <small class="text-muted">
-                                                <i class="bi bi-collection"></i> 
-                                                Batch: {{ $module->batch->batch_name }}
-                                            </small>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                            
-                            @if($module->module_description)
-                                <div class="module-description">{{ $module->module_description }}</div>
-                            @endif
+
+                              <span class="learning-mode-badge {{ strtolower($module->learning_mode)==='asynchronous'?'asynchronous':'' }}">
+            @if(strtolower($module->learning_mode)==='asynchronous')
+              <i class="bi bi-clock"></i> Async
+            @else
+              <i class="bi bi-people"></i> Sync
+            @endif
+          </span>
+
+          <h3 class="module-title mb-0">{{ $module->module_name }}</h3>
+
+          @if($module->batch)
+            <div class="batch-info text-muted">
+              <i class="bi bi-collection"></i> Batch: {{ $module->batch->batch_name }}
+            </div>
+          @endif
+        </div>
+      </div>
+
+      @if($module->module_description)
+        <div class="module-description">{{ $module->module_description }}</div>
+      @endif
 
                             @if($module->content_data)
                                 <div class="content-details">
-                                    @php $data = $module->content_data @endphp
+                                    @php $data = $module->content_data; @endphp
                                     @switch($module->content_type)
                                         @case('assignment')
                                             @if(!empty($data['assignment_title']))
@@ -237,55 +251,58 @@
                                 </div>
                             @endif
 
-                            <div class="module-meta">
-                                <div class="module-date">
-                                    <i class="bi bi-calendar-date"></i>
-                                    {{ $module->created_at->format('M d, Y') }}
-                                </div>
-                                <div class="module-status">
-                                    @if($module->attachment)
-                                        <span class="text-primary">
-                                            <i class="bi bi-paperclip"></i>
-                                        </span>
-                                    @endif
-                                    @if($module->admin_override)
-                                        <span class="text-success">
-                                            <i class="bi bi-unlock-fill"></i>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
+ <div class="module-meta d-flex justify-content-between align-items-center">
+        <div class="module-date">
+          <i class="bi bi-calendar-date"></i>
+          {{ $module->created_at->format('M d, Y') }}
+        </div>
+        <div class="module-status">
+          @if($module->attachment)
+            <span class="text-primary"><i class="bi bi-paperclip"></i></span>
+          @endif
+          @if($module->admin_override)
+            <span class="text-success"><i class="bi bi-unlock-fill"></i></span>
+          @endif
+        </div>
+      </div>
 
-                            <div class="module-actions">
-                                <button class="action-btn btn-edit" 
-                                        onclick="editModule({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}', '{{ addslashes($module->module_description) }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                                <button class="action-btn btn-override" 
-                                        onclick="showOverrideModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
-                                    <i class="bi bi-unlock-fill"></i> Override
-                                </button>
-                                <button class="action-btn btn-archive" 
-                                        onclick="showArchiveConfirmation({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
-                                    <i class="bi bi-archive"></i> Archive
-                                </button>
+      <div class="module-actions d-flex gap-2">
+        <button class="action-btn btn-edit"
+                onclick="event.stopPropagation(); showeditModule({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}', '{{ addslashes($module->module_description) }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
+          <i class="bi bi-pencil"></i> Edit
+        </button>
+        <button class="action-btn btn-override"
+               onclick="event.stopPropagation(); showOverrideModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
+          <i class="bi bi-unlock-fill"></i> Override
+        </button>
+        <button class="action-btn btn-archive"
+                onclick="event.stopPropagation();showArchiveConfirmation({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
+          <i class="bi bi-archive"></i> Archive
+        </button>
                             </div>
                         </div>
                     @endforeach
-                </div>
-            @else
-                <div class="no-modules">
-                    <p>No modules found for this program.</p>
-                    <button type="button" class="add-module-btn" id="showAddModalEmpty">
+                </div>        @else
+            <div class="select-program-msg">
+                <div class="empty-state">
+                    <i class="bi bi-journals" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                    <h4 style="color: #6c757d; margin-bottom: 1rem;">No Modules Found</h4>
+                    <p style="color: #6c757d; margin-bottom: 2rem;">No modules are available for the selected program yet.</p>
+                    <button type="button" class="add-module-btn" onclick="document.getElementById('addModalBg').classList.add('show');">
                         <i class="bi bi-plus-circle"></i> Create First Module
                     </button>
                 </div>
-            @endif
-        @else
-            <div class="select-program-msg">
-                <p>Select a program from the dropdown above to view and manage its modules</p>
             </div>
         @endif
+    @else
+        <div class="select-program-msg">
+            <div class="empty-state">
+                <i class="bi bi-arrow-up-circle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                <h4 style="color: #6c757d; margin-bottom: 1rem;">Select a Program</h4>
+                <p style="color: #6c757d;">Select a program from the dropdown above to view and manage its modules</p>
+            </div>
+        </div>
+    @endif
     </div>
 </div>
 
@@ -361,37 +378,6 @@
                     <label for="video_url">Video URL (YouTube/Vimeo)</label>
                     <input type="url" id="video_url" name="video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
                     <small class="text-muted">Enter a YouTube or Vimeo URL for video content</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Admin Override Settings</label>
-                    <div class="admin-override-checkboxes">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_completion" name="admin_override[]" value="completion">
-                            <label class="form-check-label" for="override_completion">
-                                <i class="bi bi-check-circle"></i> Override Completion Requirements
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_prerequisites" name="admin_override[]" value="prerequisites">
-                            <label class="form-check-label" for="override_prerequisites">
-                                <i class="bi bi-arrow-right-circle"></i> Override Prerequisites
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_time_limits" name="admin_override[]" value="time_limits">
-                            <label class="form-check-label" for="override_time_limits">
-                                <i class="bi bi-clock"></i> Override Time Limits
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="override_access_control" name="admin_override[]" value="access_control">
-                            <label class="form-check-label" for="override_access_control">
-                                <i class="bi bi-unlock"></i> Override Access Control
-                            </label>
-                        </div>
-                    </div>
-                    <small class="form-text text-muted">Select which admin overrides should be enabled for this module</small>
                 </div>
 
             </div>
@@ -565,6 +551,115 @@
         </form>
     </div>
 </div>
+
+<!-- Add Course Modal -->
+<div class="modal-bg" id="addCourseModalBg">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="bi bi-journal-plus"></i> Add New Course</h3>
+            <button type="button" class="modal-close" id="closeAddCourseModal">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <form id="addCourseForm">
+            <div class="modal-body">
+                @csrf
+
+                    <div class="form-group">
+        <label for="courseProgramSelect">Program <span class="text-danger">*</span></label>
+        <select id="courseProgramSelect" name="program_id" class="form-select" required>
+            <option value="">-- Select Program --</option>
+            @foreach($programs as $program)
+                <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+            @endforeach
+        </select>
+    </div>
+                
+                <div class="form-group">
+                <label for="courseModuleSelect">Module <span class="text-danger">*</span></label>
+                <select id="courseModuleSelect" name="module_id" class="form-select" required disabled>
+                    <option value="">-- Select Module --</option>
+                </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="courseName">Course Name <span class="text-danger">*</span></label>
+                    <input type="text" id="courseName" name="subject_name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="courseDescription">Course Description</label>
+                    <textarea id="courseDescription" name="subject_description" class="form-control" rows="4"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="coursePrice">Course Price <span class="text-danger">*</span></label>
+                    <input type="number" id="coursePrice" name="subject_price" class="form-control" min="0" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="courseRequired" name="is_required" value="1">
+                        <label class="form-check-label" for="courseRequired">
+                            <i class="bi bi-exclamation-circle"></i> This course is required
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="closeAddCourseModalBtn">Cancel</button>
+                <button type="submit" class="add-btn">Create Course</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Module Courses Modal -->
+<div class="modal-bg" id="moduleCoursesModalBg">
+    <div class="modal large-modal">
+        <div class="modal-header">
+            <h3><i class="bi bi-journals"></i> <span id="moduleCoursesTitle">Module Courses</span></h3>
+            <button type="button" class="modal-close" id="closeModuleCoursesModal">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="moduleCoursesContent">
+                <div class="loading-spinner">
+                    <i class="bi bi-hourglass-split"></i> Loading courses...
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="cancel-btn" id="closeModuleCoursesModalBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Course Content Modal -->
+<div class="modal-bg" id="courseContentModalBg">
+    <div class="modal large-modal">
+        <div class="modal-header">
+            <h3><i class="bi bi-book"></i> <span id="courseContentTitle">Course Content</span></h3>
+            <button type="button" class="modal-close" id="closeCourseContentModal">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="courseContentContent">
+                <div class="loading-spinner">
+                    <i class="bi bi-hourglass-split"></i> Loading content...
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="cancel-btn" id="closeCourseContentModalBtn">Close</button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -573,53 +668,132 @@
 let currentArchiveModuleId = null;
 let currentOverrideModuleId = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize all functionality
+document.addEventListener('DOMContentLoaded', function(){
+  const programSelect = document.getElementById('courseProgramSelect');
+  const moduleSelect  = document.getElementById('courseModuleSelect');
+  if (!programSelect || !moduleSelect) return;
+
+  programSelect.addEventListener('change', function(){
+    const programId = this.value;
+
+    // reset & disable module dropdown
+    moduleSelect.innerHTML = '<option>Loading modules…</option>';
+    moduleSelect.disabled = true;
+
+    if (!programId) {
+      moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+      return;
+    }
+
+    fetch(`/api/programs/${programId}/modules`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(json => {
+        if (json.success) {
+          let options = '<option value="">-- Select Module --</option>';
+          json.modules.forEach(m => {
+            options += `<option value="${m.id}">${m.module_name}</option>`;
+          });
+          moduleSelect.innerHTML = options;
+          moduleSelect.disabled = false;
+        } else {
+          throw new Error(json.message || 'Failed to load modules');
+        }
+      })
+      .catch(err => {
+        console.error('Error loading modules:', err);
+        moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
+        moduleSelect.disabled = false;
+      });
+  });
+});
+
+
+
+ document.addEventListener('DOMContentLoaded', () => {
     initializeModals();
     initializeProgramSelector();
     initializeBatchUpload();
     initializeContentTypeFields();
     initializeFiltering();
     initializeSorting();
-});
+    initializeCourseModals();
+  });
 
 // Initialize modal functionality
 function initializeModals() {
     // Show add modal
-    document.getElementById('showAddModal').addEventListener('click', function() {
-        document.getElementById('addModalBg').classList.add('show');
-    });
-
-    // Show add modal from empty state
-    const showAddModalEmpty = document.getElementById('showAddModalEmpty');
-    if (showAddModalEmpty) {
-        showAddModalEmpty.addEventListener('click', function() {
-            document.getElementById('addModalBg').classList.add('show');
+    const showAddModalBtn = document.getElementById('showAddModal');
+    if (showAddModalBtn) {
+        showAddModalBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Add modal button clicked');
+            const modal = document.getElementById('addModalBg');
+            if (modal) {
+                modal.classList.add('show');
+                console.log('Modal opened');
+            } else {
+                console.error('Modal not found');
+            }
         });
     }
 
-    // Close add modal
-    document.getElementById('closeAddModal').addEventListener('click', function() {
-        document.getElementById('addModalBg').classList.remove('show');
+    // Show add modal from empty state - for dynamically created buttons
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.matches('button[onclick*="addModalBg"]')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Empty state add modal button clicked');
+            const modal = document.getElementById('addModalBg');
+            if (modal) {
+                modal.classList.add('show');
+                console.log('Modal opened from empty state');
+            }
+        }
     });
 
-    document.getElementById('closeAddModalBtn').addEventListener('click', function() {
-        document.getElementById('addModalBg').classList.remove('show');
-    });
+    // Close add modal
+    const closeAddModal = document.getElementById('closeAddModal');
+    if (closeAddModal) {
+        closeAddModal.addEventListener('click', function() {
+            document.getElementById('addModalBg').classList.remove('show');
+        });
+    }
+
+    const closeAddModalBtn = document.getElementById('closeAddModalBtn');
+    if (closeAddModalBtn) {
+        closeAddModalBtn.addEventListener('click', function() {
+            document.getElementById('addModalBg').classList.remove('show');
+        });
+    }
 
     // Show batch modal
-    document.getElementById('showBatchModal').addEventListener('click', function() {
-        document.getElementById('batchModalBg').classList.add('show');
-    });
+    const showBatchModal = document.getElementById('showBatchModal');
+    if (showBatchModal) {
+        showBatchModal.addEventListener('click', function() {
+            document.getElementById('batchModalBg').classList.add('show');
+        });
+    }
 
     // Close batch modal
-    document.getElementById('closeBatchModal').addEventListener('click', function() {
-        document.getElementById('batchModalBg').classList.remove('show');
-    });
+    const closeBatchModal = document.getElementById('closeBatchModal');
+    if (closeBatchModal) {
+        closeBatchModal.addEventListener('click', function() {
+            document.getElementById('batchModalBg').classList.remove('show');
+        });
+    }
 
-    document.getElementById('closeBatchModalBtn').addEventListener('click', function() {
-        document.getElementById('batchModalBg').classList.remove('show');
-    });
+    const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
+    if (closeBatchModalBtn) {
+        closeBatchModalBtn.addEventListener('click', function() {
+            document.getElementById('batchModalBg').classList.remove('show');
+        });
+    }
 
     // Close edit modal
     const closeEditModal = document.getElementById('closeEditModal');
@@ -650,9 +824,28 @@ function initializeModals() {
 function initializeProgramSelector() {
     const programSelect = document.getElementById('programSelect');
     if (programSelect) {
+        // Add logging to debug
+        console.log('Program selector initialized');
+        
         programSelect.addEventListener('change', function() {
             const programId = this.value;
+            console.log('Program selected:', programId);
+            
             if (programId) {
+                // Show loading state
+                const modulesDisplayArea = document.getElementById('modulesDisplayArea');
+                if (modulesDisplayArea) {
+                    modulesDisplayArea.innerHTML = `
+                        <div class="loading-state">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Loading modules...</p>
+                        </div>
+                    `;
+                }
+                
+                // Redirect to load modules
                 window.location.href = `{{ route('admin.modules.index') }}?program_id=${programId}`;
             } else {
                 window.location.href = `{{ route('admin.modules.index') }}`;
@@ -666,12 +859,14 @@ function initializeProgramSelector() {
     
     if (modalProgramSelect) {
         modalProgramSelect.addEventListener('change', function() {
+            console.log('Modal program selected:', this.value);
             loadBatchesForProgram(this.value, 'batch_id');
         });
     }
     
     if (batchModalProgramSelect) {
         batchModalProgramSelect.addEventListener('change', function() {
+            console.log('Batch modal program selected:', this.value);
             loadBatchesForProgram(this.value, 'batch_batch_id');
         });
     }
@@ -679,6 +874,8 @@ function initializeProgramSelector() {
 
 // Function to load batches based on program selection
 function loadBatchesForProgram(programId, batchSelectId) {
+    console.log('Loading batches for program:', programId, 'Target select:', batchSelectId);
+    
     const batchSelect = document.getElementById(batchSelectId);
     if (!batchSelect) {
         console.error('Batch select element not found:', batchSelectId);
@@ -698,7 +895,10 @@ function loadBatchesForProgram(programId, batchSelectId) {
     batchSelect.innerHTML = '<option value="">Loading batches...</option>';
 
     fetch(`/admin/programs/${programId}/batches`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Batch response status:', response.status);
+            return response.json();
+        })
         .then(data => {
             console.log('Batches loaded:', data);
             if (data.success) {
@@ -925,12 +1125,14 @@ function initializeFiltering() {
         if (programSelect.value) {
             filterSection.style.display = 'block';
             loadBatchesForFilter(programSelect.value);
+            loadCoursesForFilter(programSelect.value);
         }
         
         programSelect.addEventListener('change', function() {
             if (this.value) {
                 filterSection.style.display = 'block';
                 loadBatchesForFilter(this.value);
+                loadCoursesForFilter(this.value);
             } else {
                 filterSection.style.display = 'none';
             }
@@ -939,11 +1141,15 @@ function initializeFiltering() {
 
     // Filter functionality
     const batchFilter = document.getElementById('batchFilter');
+    const courseFilter = document.getElementById('courseFilter');
     const learningModeFilter = document.getElementById('learningModeFilter');
     const contentTypeFilter = document.getElementById('contentTypeFilter');
 
     if (batchFilter) {
         batchFilter.addEventListener('change', applyFilters);
+    }
+    if (courseFilter) {
+        courseFilter.addEventListener('change', applyFilters);
     }
     if (learningModeFilter) {
         learningModeFilter.addEventListener('change', applyFilters);
@@ -975,15 +1181,40 @@ function loadBatchesForFilter(programId) {
         });
 }
 
+function loadCoursesForFilter(programId) {
+    const courseFilter = document.getElementById('courseFilter');
+    if (!courseFilter) return;
+
+    fetch(`/admin/programs/${programId}/courses`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                courseFilter.innerHTML = '<option value="">All Courses</option>';
+                data.courses.forEach(course => {
+                    const option = document.createElement('option');
+                    option.value = course.subject_id;
+                    option.textContent = course.subject_name;
+                    courseFilter.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading courses for filter:', error);
+        });
+}
+
 function applyFilters() {
     const batchFilter = document.getElementById('batchFilter').value;
+    const courseFilter = document.getElementById('courseFilter').value;
     const learningModeFilter = document.getElementById('learningModeFilter').value;
     const contentTypeFilter = document.getElementById('contentTypeFilter').value;
 
     const moduleCards = document.querySelectorAll('.module-card');
+    let visibleCount = 0;
     
     moduleCards.forEach(card => {
         const cardBatchId = card.getAttribute('data-batch-id');
+        const cardCourseId = card.getAttribute('data-course-id');
         const cardLearningMode = card.getAttribute('data-learning-mode');
         const cardContentType = card.getAttribute('data-content-type');
 
@@ -991,6 +1222,11 @@ function applyFilters() {
 
         // Apply batch filter
         if (batchFilter && cardBatchId !== batchFilter) {
+            showCard = false;
+        }
+
+        // Apply course filter
+        if (courseFilter && cardCourseId !== courseFilter) {
             showCard = false;
         }
 
@@ -1007,10 +1243,35 @@ function applyFilters() {
         // Show or hide card
         if (showCard) {
             card.style.display = 'block';
+            visibleCount++;
         } else {
             card.style.display = 'none';
         }
     });
+
+    // Show message if no modules match filters
+    const moduleGrid = document.getElementById('sortableModules');
+    if (moduleGrid) {
+        const noResultsMsg = document.getElementById('noFilterResults');
+        if (visibleCount === 0) {
+            if (!noResultsMsg) {
+                const msgDiv = document.createElement('div');
+                msgDiv.id = 'noFilterResults';
+                msgDiv.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-search" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                        <h4 style="color: #6c757d; margin-bottom: 1rem;">No Modules Found</h4>
+                        <p style="color: #6c757d;">No modules match your current filter criteria.</p>
+                    </div>
+                `;
+                moduleGrid.appendChild(msgDiv);
+            }
+        } else {
+            if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+    }
 }
 
 // Initialize sorting
@@ -1145,38 +1406,37 @@ function confirmArchive() {
 
 // Override modal functions
 function showOverrideModal(moduleId, moduleName) {
-    currentOverrideModuleId = moduleId;
-    document.getElementById('overrideModuleName').textContent = moduleName;
-    
-    // Load current override settings
-    fetch(`/admin/modules/${moduleId}/override-settings`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const overrides = data.overrides || [];
-                
-                // Clear all checkboxes first
-                document.querySelectorAll('#overrideModal input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                
-                // Set checked state based on current overrides
-                overrides.forEach(override => {
-                    const checkbox = document.getElementById(`override_${override}_modal`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-                
-                document.getElementById('overrideModal').classList.add('show');
-            } else {
-                showNotification('Error loading override settings', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading override settings:', error);
-            showNotification('Error loading override settings', 'error');
-        });
+  currentOverrideModuleId = moduleId;
+  document.getElementById('overrideModuleName').textContent = moduleName;
+
+  fetch(`/admin/modules/${moduleId}/override`, {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json'
+    }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(res.statusText);
+    return res.json();
+  })
+  .then(data => {
+    // reset all checkboxes
+    document.querySelectorAll('#overrideModal input[type="checkbox"]')
+            .forEach(cb => cb.checked = false);
+
+    // check those that are enabled
+    (data.overrides || []).forEach(name => {
+      const cb = document.getElementById(`override_${name}_modal`);
+      if (cb) cb.checked = true;
+    });
+
+    document.getElementById('overrideModal').classList.add('show');
+  })
+  .catch(err => {
+    console.error('Error loading override settings:', err);
+    showNotification('Error loading override settings', 'error');
+  });
 }
 
 function closeOverrideModal() {
@@ -1185,47 +1445,46 @@ function closeOverrideModal() {
 }
 
 function saveOverrideSettings() {
-    if (!currentOverrideModuleId) return;
-    
-    const checkedBoxes = document.querySelectorAll('#overrideModal input[type="checkbox"]:checked');
-    const overrides = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-    
-    fetch(`/admin/modules/${currentOverrideModuleId}/override`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ admin_override: overrides })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Override settings saved successfully!', 'success');
-            closeOverrideModal();
-            // Update the module status indicator
-            const moduleCard = document.querySelector(`[data-module-id="${currentOverrideModuleId}"]`);
-            if (moduleCard) {
-                const statusIcon = moduleCard.querySelector('.module-status .bi-unlock-fill');
-                if (overrides.length > 0) {
-                    if (!statusIcon) {
-                        const statusContainer = moduleCard.querySelector('.module-status');
-                        statusContainer.innerHTML += '<span class="text-success"><i class="bi bi-unlock-fill"></i></span>';
-                    }
-                } else {
-                    if (statusIcon) {
-                        statusIcon.parentElement.remove();
-                    }
-                }
-            }
-        } else {
-            showNotification('Error saving override settings: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error saving override settings:', error);
-        showNotification('Error saving override settings', 'error');
-    });
+  if (!currentOverrideModuleId) return;
+
+  const overrides = Array.from(
+    document.querySelectorAll('#overrideModal input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
+
+  fetch(`/admin/modules/${currentOverrideModuleId}/override`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ admin_override: overrides })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(res.statusText);
+    return res.json();
+  })
+  .then(data => {
+    showNotification('Override settings saved successfully!', 'success');
+    closeOverrideModal();
+
+    // update the little unlock icon on the card
+    const card = document.querySelector(`[data-module-id="${currentOverrideModuleId}"]`);
+    if (card) {
+      const status = card.querySelector('.module-status');
+      // remove any existing unlock icons
+      status.querySelectorAll('.bi-unlock-fill').forEach(el => el.parentNode.remove());
+      // if any overrides left, add it back
+      if (overrides.length) {
+        status.innerHTML += '<span class="text-success"><i class="bi bi-unlock-fill"></i></span>';
+      }
+    }
+  })
+  .catch(err => {
+    console.error('Error saving override settings:', err);
+    showNotification('Error saving override settings', 'error');
+  });
 }
 
 // Edit module function
@@ -1250,6 +1509,80 @@ function editModule(moduleId, moduleName, moduleDescription, programId, attachme
     editModalBg.classList.add('show');
 }
 
+// Initialize course modal functionality
+function initializeCourseModals() {
+    // Show add course modal
+    const showAddCourseModalBtn = document.getElementById('showAddCourseModal');
+    if (showAddCourseModalBtn) {
+        showAddCourseModalBtn.addEventListener('click', function() {
+            console.log('Add course button clicked');
+            const modal = document.getElementById('addCourseModalBg');
+            if (modal) {
+                modal.classList.add('show');
+                console.log('Course modal opened');
+            } else {
+                console.error('Course modal not found');
+            }
+        });
+    } else {
+        console.error('Add course button not found');
+    }
+
+    // Close add course modal
+    const closeAddCourseModal = document.getElementById('closeAddCourseModal');
+    if (closeAddCourseModal) {
+        closeAddCourseModal.addEventListener('click', function() {
+            document.getElementById('addCourseModalBg').classList.remove('show');
+        });
+    }
+
+    const closeAddCourseModalBtn = document.getElementById('closeAddCourseModalBtn');
+    if (closeAddCourseModalBtn) {
+        closeAddCourseModalBtn.addEventListener('click', function() {
+            document.getElementById('addCourseModalBg').classList.remove('show');
+        });
+    }
+
+    // Close module courses modal
+    const closeModuleCoursesModal = document.getElementById('closeModuleCoursesModal');
+    if (closeModuleCoursesModal) {
+        closeModuleCoursesModal.addEventListener('click', function() {
+            document.getElementById('moduleCoursesModalBg').classList.remove('show');
+        });
+    }
+
+    const closeModuleCoursesModalBtn = document.getElementById('closeModuleCoursesModalBtn');
+    if (closeModuleCoursesModalBtn) {
+        closeModuleCoursesModalBtn.addEventListener('click', function() {
+            document.getElementById('moduleCoursesModalBg').classList.remove('show');
+        });
+    }
+
+    // Close course content modal
+    const closeCourseContentModal = document.getElementById('closeCourseContentModal');
+    if (closeCourseContentModal) {
+        closeCourseContentModal.addEventListener('click', function() {
+            document.getElementById('courseContentModalBg').classList.remove('show');
+        });
+    }
+
+    const closeCourseContentModalBtn = document.getElementById('closeCourseContentModalBtn');
+    if (closeCourseContentModalBtn) {
+        closeCourseContentModalBtn.addEventListener('click', function() {
+            document.getElementById('courseContentModalBg').classList.remove('show');
+        });
+    }
+
+    // Handle add course form submission
+    const addCourseForm = document.getElementById('addCourseForm');
+    if (addCourseForm) {
+        addCourseForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitCourseForm();
+        });
+    }
+}
+
 // Notification function
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
@@ -1263,5 +1596,234 @@ function showNotification(message, type = 'success') {
         notification.remove();
     }, 5000);
 }
+
+// Course functionality functions
+function submitCourseForm() {
+    const form = document.getElementById('addCourseForm');
+    const formData = new FormData(form);
+    
+    // Debug: Log form data
+    console.log('Form data being sent:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+    
+    // Validate required fields
+    const requiredFields = ['program_id', 'module_id', 'subject_name', 'subject_price'];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+        if (!formData.get(field)) {
+            missingFields.push(field);
+        }
+    }
+    
+    if (missingFields.length > 0) {
+        showNotification(`Please fill in all required fields: ${missingFields.join(', ')}`, 'error');
+        return;
+    }
+    
+    fetch('/admin/courses', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP error! status: ${response.status}`);
+            }
+            return data;
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            showNotification('Course created successfully!', 'success');
+            document.getElementById('addCourseModalBg').classList.remove('show');
+            document.getElementById('addCourseForm').reset();
+            
+            // Reset module dropdown
+            const moduleSelect = document.getElementById('courseModuleSelect');
+            if (moduleSelect) {
+                moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+                moduleSelect.disabled = true;
+            }
+            
+            // Refresh the modules view if needed
+            if (typeof loadModules === 'function') {
+                loadModules();
+            }
+        } else {
+            console.error('Course creation failed:', data);
+            let errorMessage = data.message || 'Unknown error';
+            
+            if (data.errors) {
+                const errorList = Object.keys(data.errors).map(key => `${key}: ${data.errors[key].join(', ')}`).join('\n');
+                errorMessage += '\n\nValidation errors:\n' + errorList;
+            }
+            
+            if (data.debug) {
+                console.log('Debug info:', data.debug);
+            }
+            
+            showNotification('Error creating course: ' + errorMessage, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating course:', error);
+        showNotification('Error creating course: ' + error.message, 'error');
+    });
+}
+
+function showModuleCourses(moduleId, moduleName) {
+    document.getElementById('moduleCoursesTitle').textContent = `Courses in ${moduleName}`;
+    document.getElementById('moduleCoursesModalBg').classList.add('show');
+    
+    fetch(`/admin/modules/${moduleId}/courses`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayModuleCourses(data.courses);
+            } else {
+                document.getElementById('moduleCoursesContent').innerHTML = '<p>Error loading courses</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('moduleCoursesContent').innerHTML = '<p>Error loading courses</p>';
+        });
+}
+
+function displayModuleCourses(courses) {
+    const content = document.getElementById('moduleCoursesContent');
+    
+    if (courses.length === 0) {
+        content.innerHTML = '<p>No courses found for this module.</p>';
+        return;
+    }
+    
+    let html = '<div class="courses-grid">';
+    courses.forEach(course => {
+        html += `
+            <div class="course-card">
+                <div class="course-header">
+                    <h4>${course.subject_name}</h4>
+                    <span class="course-price">$${course.subject_price}</span>
+                </div>
+                <div class="course-description">
+                    ${course.subject_description || 'No description'}
+                </div>
+                <div class="course-meta">
+                    <span class="course-required ${course.is_required ? 'required' : 'optional'}">
+                        ${course.is_required ? 'Required' : 'Optional'}
+                    </span>
+                    <span class="course-lessons">${course.lessons ? course.lessons.length : 0} lessons</span>
+                </div>
+                <div class="course-actions">
+                    <button onclick="showCourseContent(${course.subject_id}, '${course.subject_name}')" class="view-btn">
+                        <i class="bi bi-eye"></i> View Content
+                    </button>
+                    <button onclick="editCourse(${course.subject_id})" class="edit-btn">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    content.innerHTML = html;
+}
+
+function showCourseContent(courseId, courseName) {
+    document.getElementById('courseContentTitle').textContent = `Content in ${courseName}`;
+    document.getElementById('courseContentModalBg').classList.add('show');
+    
+    fetch(`/admin/courses/${courseId}/content`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayCourseContent(data.course);
+            } else {
+                document.getElementById('courseContentContent').innerHTML = '<p>Error loading content</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('courseContentContent').innerHTML = '<p>Error loading content</p>';
+        });
+}
+
+function displayCourseContent(course) {
+    const content = document.getElementById('courseContentContent');
+    
+    if (!course.lessons || course.lessons.length === 0) {
+        content.innerHTML = '<p>No lessons found for this course.</p>';
+        return;
+    }
+    
+    let html = '<div class="lessons-list">';
+    course.lessons.forEach(lesson => {
+        html += `
+            <div class="lesson-card">
+                <div class="lesson-header">
+                    <h5>${lesson.lesson_name}</h5>
+                    <span class="lesson-price">$${lesson.lesson_price || '0.00'}</span>
+                </div>
+                <div class="lesson-description">
+                    ${lesson.lesson_description || 'No description'}
+                </div>
+                <div class="lesson-content">
+                    <h6>Content Items:</h6>
+                    <div class="content-items">
+        `;
+        
+        if (lesson.content_items && lesson.content_items.length > 0) {
+            lesson.content_items.forEach(item => {
+                html += `
+                    <div class="content-item">
+                        <span class="content-type-badge ${item.content_type}">
+                            ${getContentTypeIcon(item.content_type)} ${item.content_type}
+                        </span>
+                        <span class="content-title">${item.content_title}</span>
+                        ${item.max_points ? `<span class="content-points">${item.max_points} pts</span>` : ''}
+                    </div>
+                `;
+            });
+        } else {
+            html += '<p class="no-content">No content items</p>';
+        }
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    content.innerHTML = html;
+}
+
+function getContentTypeIcon(type) {
+    switch(type) {
+        case 'assignment': return '📝';
+        case 'quiz': return '❓';
+        case 'test': return '📋';
+        case 'link': return '🔗';
+        case 'video': return '📹';
+        case 'document': return '📄';
+        default: return '📚';
+    }
+}
+
+function editCourse(courseId) {
+    // TODO: Implement course editing functionality
+    showNotification('Course editing functionality coming soon!', 'info');
+}
+
+// ...existing code...
 </script>
 @endpush

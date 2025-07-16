@@ -55,9 +55,16 @@ Route::get('/programs/{id}', function ($id) {
 Route::get('/programs/{id}/modules', function ($id) {
     $modules = \App\Models\Module::where('program_id', $id)
         ->where('is_archived', false)
-        ->get();
-    return response()->json($modules);
+        ->orderBy('module_order', 'asc')
+        ->get(['modules_id as id', 'module_name']);
+    
+    // wrap it:
+    return response()->json([
+        'success' => true,
+        'modules' => $modules
+    ]);
 });
+
 
 // Admin search API route
 Route::post('/admin/search', function (Request $request) {

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Modules Course System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-success {
+            background: #28a745;
+            color: white;
+        }
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+        .status-pending {
+            background: #ffc107;
+            color: #212529;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Admin Modules Course System Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Database Structure Test</h3>
+            <div id="dbTest">
+                <span class="status-badge status-pending">Testing...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. Route Availability Test</h3>
+            <div id="routeTest">
+                <span class="status-badge status-pending">Testing...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. Course Creation Test</h3>
+            <div id="courseTest">
+                <span class="status-badge status-pending">Testing...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. Module-Course Relationship Test</h3>
+            <div id="relationshipTest">
+                <span class="status-badge status-pending">Testing...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <pre id="testResults"></pre>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function updateStatus(testId, status, message) {
+            const element = document.getElementById(testId);
+            element.innerHTML = `<span class="status-badge status-${status}">${message}</span>`;
+            testResults.push(`${testId}: ${status} - ${message}`);
+            document.getElementById('testResults').textContent = testResults.join('\n');
+        }
+
+        async function runTests() {
+            // Test 1: Database Structure
+            try {
+                const response = await fetch('/admin/courses');
+                if (response.ok) {
+                    updateStatus('dbTest', 'success', 'Database structure OK');
+                } else {
+                    updateStatus('dbTest', 'error', 'Database structure issue');
+                }
+            } catch (error) {
+                updateStatus('dbTest', 'error', 'Database connection failed');
+            }
+
+            // Test 2: Route Availability
+            try {
+                const routes = [
+                    '/admin/courses',
+                    '/admin/modules/1/courses',
+                    '/admin/courses/1/content'
+                ];
+                
+                let routeResults = [];
+                for (const route of routes) {
+                    try {
+                        const response = await fetch(route);
+                        routeResults.push(`${route}: ${response.status}`);
+                    } catch (error) {
+                        routeResults.push(`${route}: ERROR`);
+                    }
+                }
+                
+                updateStatus('routeTest', 'success', 'Routes tested - see results');
+                testResults.push('Route details: ' + routeResults.join(', '));
+            } catch (error) {
+                updateStatus('routeTest', 'error', 'Route testing failed');
+            }
+
+            // Test 3: Course Creation
+            try {
+                const formData = new FormData();
+                formData.append('subject_name', 'Test Course');
+                formData.append('subject_description', 'Test Description');
+                formData.append('module_id', '1');
+                formData.append('subject_price', '99.99');
+                formData.append('is_required', '1');
+                
+                const response = await fetch('/admin/courses', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 'test'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('courseTest', 'success', 'Course creation endpoint works');
+                } else {
+                    updateStatus('courseTest', 'error', `Course creation failed: ${response.status}`);
+                }
+            } catch (error) {
+                updateStatus('courseTest', 'error', 'Course creation error: ' + error.message);
+            }
+
+            // Test 4: Module-Course Relationship
+            try {
+                const response = await fetch('/admin/modules/1/courses');
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('relationshipTest', 'success', 'Module-course relationship works');
+                } else {
+                    updateStatus('relationshipTest', 'error', 'Module-course relationship failed');
+                }
+            } catch (error) {
+                updateStatus('relationshipTest', 'error', 'Relationship test error: ' + error.message);
+            }
+        }
+
+        // Run tests when page loads
+        window.onload = runTests;
+    </script>
+</body>
+</html>

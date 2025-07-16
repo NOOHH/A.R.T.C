@@ -15,32 +15,12 @@ class Student extends Model
     protected $keyType = 'string';
     public $timestamps = true;
 
-    protected $fillable = [
-        'student_id',
-        'user_id',
-        'firstname',
-        'middlename',
-        'lastname',
-        'student_school',
-        'street_address',
-        'state_province',
-        'city',
-        'zipcode',
-        'contact_number',
-        'emergency_contact_number',
-        'good_moral',
-        'PSA',
-        'Course_Cert',
-        'TOR',
-        'Cert_of_Grad',
-        'Undergraduate',
-        'Graduate',
-        'photo_2x2',
-        'Start_Date',
-        'date_approved',
-        'email',
-        'is_archived',
-    ];
+    /**
+     * Allow mass assignment for dynamic fields
+     * Using guarded instead of fillable to allow dynamic form requirement fields
+     * Only protect critical fields from mass assignment
+     */
+    protected $guarded = ['created_at', 'updated_at'];
 
     protected $casts = [
         'is_archived' => 'boolean',

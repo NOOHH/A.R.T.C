@@ -28,6 +28,11 @@
     <!-- Top Header -->
     <header class="main-header">
         <div class="header-left">
+            <!-- Hamburger Menu Button - Always visible -->
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            
             <a href="{{ route('home') }}" class="brand-link">
                 <img src="{{ App\Helpers\UIHelper::getGlobalLogo() }}" alt="Logo">
                 <div class="brand-text">Ascendo Review<br>and Training Center</div>
@@ -87,131 +92,180 @@
 
     <div class="main-wrapper">
         <div class="content-below-search">
-            <!-- Sidebar -->
-            <aside class="sidebar">
-                <nav>
-                    <ul>
-                        {{-- Dashboard --}}
-                        <li class="@if(Route::currentRouteName() === 'admin.dashboard') active @endif">
-                            <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
-                                <span class="icon">📊</span> Dashboard
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            
+            <!-- Modern Sliding Sidebar -->
+            <aside class="modern-sidebar" id="modernSidebar">
+                <div class="sidebar-content">
+                    <nav class="sidebar-nav">
+                        <!-- Dashboard -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.dashboard') }}" class="nav-link @if(Route::currentRouteName() === 'admin.dashboard') active @endif">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Dashboard</span>
                             </a>
-                        </li>
+                        </div>
 
-                        {{-- Student Registration --}}
-                        <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) active @endif">
-                            <a href="#" class="sidebar-link">
-                                <span class="icon">👥</span> Student Registration
-                                <span class="chevron">▼</span>
+                        <!-- Registration Management -->
+                        <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) active @endif">
+                            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#registrationMenu">
+                                <i class="bi bi-person-plus"></i>
+                                <span>Registration</span>
+                                <i class="bi bi-chevron-down dropdown-arrow"></i>
                             </a>
-                            <ul class="sidebar-submenu">
-                                <li class="@if(Route::currentRouteName() === 'admin.student.registration.pending') active @endif">
-                                    <a href="{{ route('admin.student.registration.pending') }}">Pending</a>
-                                </li>
-                                <li class="@if(Route::currentRouteName() === 'admin.student.registration.history') active @endif">
-                                    <a href="{{ route('admin.student.registration.history') }}">History</a>
-                                </li>
-                                <li class="@if(Route::currentRouteName() === 'admin.student.registration.payment.pending') active @endif">
-                                    <a href="{{ route('admin.student.registration.payment.pending') }}">Payment Pending</a>
-                                </li>
-                                <li class="@if(Route::currentRouteName() === 'admin.student.registration.payment.history') active @endif">
-                                    <a href="{{ route('admin.student.registration.payment.history') }}">Payment History</a>
-                                </li>
-                            </ul>
-                        </li>
+                            <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) show @endif" id="registrationMenu">
+                                <div class="submenu">
+                                    <a href="{{ route('admin.student.registration.pending') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.pending') active @endif">
+                                        <i class="bi bi-clock"></i>
+                                        <span>Pending</span>
+                                    </a>
+                                    <a href="{{ route('admin.student.registration.history') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.history') active @endif">
+                                        <i class="bi bi-archive"></i>
+                                        <span>History</span>
+                                    </a>
+                                    <a href="{{ route('admin.student.registration.payment.pending') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.pending') active @endif">
+                                        <i class="bi bi-credit-card"></i>
+                                        <span>Payment Pending</span>
+                                    </a>
+                                    <a href="{{ route('admin.student.registration.payment.history') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.history') active @endif">
+                                        <i class="bi bi-receipt"></i>
+                                        <span>Payment History</span>
+                                    </a>
+                                    <a href="{{ route('admin.batches.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
+                                        <i class="bi bi-people"></i>
+                                        <span>Batch Enroll</span>
+                                    </a>
+                                    <a href="{{ route('admin.enrollments.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
+                                        <i class="bi bi-book"></i>
+                                        <span>Assign Course to Student</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-                        {{-- Students List --}}
-                        <li class="@if(Route::currentRouteName() === 'admin.students.index') active @endif">
-                            <a href="{{ route('admin.students.index') }}" class="sidebar-link">
-                                <span class="icon">📋</span> List of Students
+                        <!-- Account Management -->
+                        <div class="nav-item dropdown-nav">
+                            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#accountsMenu">
+                                <i class="bi bi-people"></i>
+                                <span>Accounts</span>
+                                <i class="bi bi-chevron-down dropdown-arrow"></i>
                             </a>
-                        </li>
+                            <div class="collapse" id="accountsMenu">
+                                <div class="submenu">
+                                    <a href="{{ route('admin.students.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.students.index') active @endif">
+                                        <i class="bi bi-person"></i>
+                                        <span>Students</span>
+                                    </a>
+                                    <a href="{{ route('admin.directors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
+                                        <i class="bi bi-person-badge"></i>
+                                        <span>Directors</span>
+                                    </a>
+                                    <a href="{{ route('admin.professors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.professors')) active @endif">
+                                        <i class="bi bi-person-workspace"></i>
+                                        <span>Professors</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-                        {{-- Student Enroll Dropdown --}}
-                        <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'admin.batches') || Route::currentRouteName() === 'admin.enrollments.index') active @endif">
-                            <a href="#" class="sidebar-link">
-                                <span class="icon">📝</span> Student Enroll
-                                <span class="chevron">▼</span>
+                        <!-- Programs & Packages -->
+                        <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') active @endif">
+                            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#programsMenu">
+                                <i class="bi bi-mortarboard"></i>
+                                <span>Programs</span>
+                                <i class="bi bi-chevron-down dropdown-arrow"></i>
                             </a>
-                            <ul class="sidebar-submenu">
-                                <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
-                                    <a href="{{ route('admin.batches.index') }}">Batch Enroll</a>
-                                </li>
-                                <li class="@if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
-                                    <a href="{{ route('admin.enrollments.index') }}">Assign Course to Student</a>
-                                </li>
-                            </ul>
-                        </li>
+                            <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') show @endif" id="programsMenu">
+                                <div class="submenu">
+                                    <a href="{{ route('admin.programs.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.programs.index') active @endif">
+                                        <i class="bi bi-collection"></i>
+                                        <span>Manage Programs</span>
+                                    </a>
+                                    <a href="{{ route('admin.modules.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.modules')) active @endif">
+                                        <i class="bi bi-puzzle"></i>
+                                        <span>Manage Modules</span>
+                                    </a>
+                                    <a href="{{ route('admin.packages.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.packages.index') active @endif">
+                                        <i class="bi bi-box-seam"></i>
+                                        <span>Packages</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-                        {{-- Directors --}}
-                        <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
-                            <a href="{{ route('admin.directors.index') }}" class="sidebar-link">
-                                <span class="icon">👨‍💼</span> Directors
+                        <!-- Analytics -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.analytics.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
+                                <i class="bi bi-graph-up"></i>
+                                <span>Analytics</span>
                             </a>
-                        </li>
-
-                        {{-- Programs & Packages Dropdown --}}
-                        <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') active @endif">
-                            <a href="#" class="sidebar-link">
-                                <span class="icon">🎓</span> Programs
-                                <span class="chevron">▼</span>
-                            </a>
-                            <ul class="sidebar-submenu">
-                                <li class="@if(Route::currentRouteName() === 'admin.programs.index') active @endif">
-                                    <a href="{{ route('admin.programs.index') }}">Manage Programs</a>
-                                </li>
-                                <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.modules')) active @endif">
-                                    <a href="{{ route('admin.modules.index') }}">Manage Modules</a>
-                                </li>
-                                <li class="@if(Route::currentRouteName() === 'admin.packages.index') active @endif">
-                                    <a href="{{ route('admin.packages.index') }}">Packages</a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        {{-- Professors --}}
-                        <li class="@if(str_starts_with(Route::currentRouteName(), 'admin.professors')) active @endif">
-                            <a href="{{ route('admin.professors.index') }}" class="sidebar-link">
-                                <span class="icon">👨‍🏫</span> Professors
-                            </a>
-                        </li>
-
-                        {{-- Analytics --}}
-                        <li class="@if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
-                            <a href="{{ route('admin.analytics.index') }}" class="sidebar-link">
-                                <span class="icon">📈</span> Analytics
-                            </a>
-                        </li>
+                        </div>
                         
-                        {{-- Chat Management --}}
-                        <li class="@if(Route::currentRouteName() === 'admin.chat.index') active @endif">
-                            <a href="{{ route('admin.chat.index', ['default' => 'true']) }}" class="sidebar-link">
-                                <span class="icon">💬</span> Chat Logs
+                        <!-- Chat Management -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.chat.index', ['default' => 'true']) }}" class="nav-link @if(Route::currentRouteName() === 'admin.chat.index') active @endif">
+                                <i class="bi bi-chat-dots"></i>
+                                <span>Chat Logs</span>
                             </a>
-                        </li>
+                        </div>
                         
-                        {{-- FAQ Management --}}
-                        <li class="@if(Route::currentRouteName() === 'admin.faq.index') active @endif">
-                            <a href="{{ route('admin.faq.index') }}" class="sidebar-link">
-                                <span class="icon">❓</span> FAQ Management
+                        <!-- FAQ Management -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.faq.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.faq.index') active @endif">
+                                <i class="bi bi-question-circle"></i>
+                                <span>FAQ Management</span>
                             </a>
-                        </li>
-                    </ul>
-                </nav>
+                        </div>
 
-                <!-- Bottom section -->
-                <div class="sidebar-footer">
-                    <ul class="bottom-links">
-                        <li class="help-link"><span class="icon">❓</span> Help</li>
-                        <li class="settings-link">
-                            <a href="{{ route('admin.settings.index') }}" class="sidebar-link">
-                                <span class="icon">⚙️</span> Settings
+                        <!-- Settings -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.settings.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.settings.index') active @endif">
+                                <i class="bi bi-gear"></i>
+                                <span>Settings</span>
                             </a>
-                        </li>
-                        <li class="logout" onclick="handleAdminLogout();" style="cursor: pointer;">
-                            <span class="icon">🚪</span> Logout
-                        </li>
-                    </ul>
+                        </div>
+
+                        <!-- Reports Section -->
+                        <div class="nav-section">
+                            <div class="nav-section-title">
+                                <span>Reports</span>
+                            </div>
+                            <div class="nav-item dropdown-nav">
+                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
+                                    <i class="bi bi-file-earmark-bar-graph"></i>
+                                    <span>Reports</span>
+                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                                </a>
+                                <div class="collapse" id="reportsMenu">
+                                    <div class="submenu">
+                                        <a href="#" class="submenu-link">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                            <span>Student Reports</span>
+                                        </a>
+                                        <a href="#" class="submenu-link">
+                                            <i class="bi bi-file-earmark-check"></i>
+                                            <span>Enrollment Reports</span>
+                                        </a>
+                                        <a href="#" class="submenu-link">
+                                            <i class="bi bi-file-earmark-chart"></i>
+                                            <span>Financial Reports</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Sidebar Footer (Bottom Section) -->
+                    <div class="sidebar-footer">
+                        <div class="nav-item">
+                            <a href="#" class="nav-link" onclick="handleAdminLogout();">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
@@ -257,45 +311,169 @@ function handleAdminLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-open dropdowns that are marked as active
-    document.querySelectorAll('.dropdown-sidebar.active').forEach(dropdown => {
-        dropdown.classList.add('active');
-    });
+    // Sidebar Toggle Functionality
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const modernSidebar = document.getElementById('modernSidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const contentWrapper = document.querySelector('.content-wrapper');
 
-    // Toggle dropdowns
-    document.querySelectorAll('.dropdown-sidebar > a').forEach(link => {
-        link.addEventListener('click', e => {
-            e.preventDefault();
-            link.parentElement.classList.toggle('active');
-        });
-    });
-
-    // Hover/click animations
-    function addAnimatedEvents(el, hoverBg, hoverColor) {
-        if (!el) return;
-        el.addEventListener('mouseenter', () => {
-            el.style.background = hoverBg;
-            el.style.color = hoverColor;
-            el.style.transform = 'scale(1.05)';
-        });
-        el.addEventListener('mouseleave', () => {
-            el.style.background = '';
-            el.style.color = '';
-            el.style.transform = 'scale(1)';
-        });
-        el.addEventListener('mousedown', () => el.style.transform = 'scale(0.95)');
-        el.addEventListener('mouseup',   () => el.style.transform = 'scale(1.05)');
+    // Toggle sidebar function
+    function toggleSidebar() {
+        if (window.innerWidth >= 768) {
+            // Desktop: Toggle collapsed state
+            modernSidebar.classList.toggle('collapsed');
+            
+            // Update content wrapper margin
+            if (modernSidebar.classList.contains('collapsed')) {
+                if (contentWrapper) {
+                    contentWrapper.style.marginLeft = '70px';
+                }
+            } else {
+                if (contentWrapper) {
+                    contentWrapper.style.marginLeft = '280px';
+                }
+            }
+        } else {
+            // Mobile: Toggle sidebar visibility
+            if (modernSidebar) {
+                modernSidebar.classList.toggle('active');
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.toggle('active');
+            }
+            document.body.style.overflow = modernSidebar && modernSidebar.classList.contains('active') ? 'hidden' : '';
+        }
     }
-    addAnimatedEvents(document.querySelector('.help-link'),    '#f1c40f', '#fff');
-    addAnimatedEvents(document.querySelector('.settings-link'),'#8e44ad', '#fff');
-    addAnimatedEvents(document.querySelector('.logout'),       '#e74c3c', '#fff');
 
-    // Settings navigation
-    document.querySelector('.settings-link')?.addEventListener('click', () => {
-        window.location.href = '{{ route("admin.settings.index") }}';
+    // Close sidebar function (mobile only)
+    function closeSidebar() {
+        if (window.innerWidth < 768) {
+            if (modernSidebar) {
+                modernSidebar.classList.remove('active');
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.remove('active');
+            }
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Event listeners
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 768) {
+            closeSidebar();
+            // Reset content wrapper margin on resize
+            if (modernSidebar && modernSidebar.classList.contains('collapsed')) {
+                if (contentWrapper) {
+                    contentWrapper.style.marginLeft = '70px';
+                }
+            } else {
+                if (contentWrapper) {
+                    contentWrapper.style.marginLeft = '280px';
+                }
+            }
+        } else {
+            // Remove collapsed class on mobile
+            if (modernSidebar) {
+                modernSidebar.classList.remove('collapsed');
+            }
+            if (contentWrapper) {
+                contentWrapper.style.marginLeft = '0';
+            }
+        }
     });
 
-    // Logout is handled by handleAdminLogout() function, no additional handler needed here
+    // Handle dropdown animations with better Bootstrap 5 integration
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const arrow = this.querySelector('.dropdown-arrow');
+            const target = this.getAttribute('data-bs-target');
+            const collapseElement = document.querySelector(target);
+            
+            if (collapseElement) {
+                // Use Bootstrap's collapse instance
+                const bsCollapse = new bootstrap.Collapse(collapseElement, {
+                    toggle: false
+                });
+                
+                const isShown = collapseElement.classList.contains('show');
+                
+                if (isShown) {
+                    bsCollapse.hide();
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
+                } else {
+                    // Close other dropdowns first
+                    document.querySelectorAll('.dropdown-nav .collapse.show').forEach(openCollapse => {
+                        if (openCollapse !== collapseElement) {
+                            const otherBsCollapse = new bootstrap.Collapse(openCollapse, {
+                                toggle: false
+                            });
+                            otherBsCollapse.hide();
+                            const otherArrow = openCollapse.previousElementSibling.querySelector('.dropdown-arrow');
+                            if (otherArrow) {
+                                otherArrow.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    });
+                    
+                    bsCollapse.show();
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            }
+        });
+    });
+
+    // Auto-expand active dropdowns
+    document.querySelectorAll('.dropdown-nav.active .collapse').forEach(collapse => {
+        const bsCollapse = new bootstrap.Collapse(collapse, {
+            toggle: false
+        });
+        bsCollapse.show();
+        
+        const arrow = collapse.previousElementSibling.querySelector('.dropdown-arrow');
+        if (arrow) {
+            arrow.style.transform = 'rotate(180deg)';
+        }
+    });
+
+    // Handle nav link clicks
+    document.querySelectorAll('.nav-link, .submenu-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Don't prevent default for dropdown toggles
+            if (this.classList.contains('dropdown-toggle')) {
+                return;
+            }
+            
+            // Close sidebar on mobile when clicking nav links
+            if (window.innerWidth < 768) {
+                setTimeout(closeSidebar, 100);
+            }
+        });
+    });
+
+    // Initialize proper margins on page load
+    if (window.innerWidth >= 768) {
+        if (contentWrapper) {
+            contentWrapper.style.marginLeft = '280px';
+        }
+    }
 });
 </script>
 
