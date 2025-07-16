@@ -157,11 +157,23 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
-        // Create session
+        // Create session using PHP sessions (not Laravel sessions)
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['user_id'] = $professor->professor_id;
+        $_SESSION['user_type'] = 'professor';
+        $_SESSION['user_name'] = $professor->full_name;
+        $_SESSION['user_email'] = $professor->professor_email;
+        $_SESSION['logged_in'] = true;
+
+        // Also set Laravel session for middleware compatibility
         session([
             'professor_id' => $professor->professor_id,
+            'user_id' => $professor->professor_id,
             'user_name' => $professor->full_name,
             'user_email' => $professor->professor_email,
+            'user_type' => 'professor',
             'user_role' => 'professor',
             'role'      => 'professor',
             'logged_in' => true
@@ -198,6 +210,7 @@ class UnifiedLoginController extends Controller
             'user_id' => $admin->admin_id,
             'user_name' => $admin->admin_name,
             'user_email' => $admin->email,
+            'user_type' => 'admin',  // Added this for consistency
             'user_role' => 'admin',
             'role'       => 'admin',
             'logged_in' => true
@@ -239,11 +252,23 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
-        // Create session
+        // Create session using PHP sessions (not Laravel sessions)
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['user_id'] = $director->directors_id;
+        $_SESSION['user_type'] = 'director';
+        $_SESSION['user_name'] = $director->directors_name;
+        $_SESSION['user_email'] = $director->directors_email;
+        $_SESSION['logged_in'] = true;
+
+        // Also set Laravel session for middleware compatibility
         session([
             'directors_id' => $director->directors_id,
+            'user_id' => $director->directors_id,
             'user_name' => $director->directors_name,
             'user_email' => $director->directors_email,
+            'user_type' => 'director',
             'user_role' => 'director',
             'role'      => 'director',
             'logged_in' => true

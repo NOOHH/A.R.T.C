@@ -16,6 +16,12 @@ class AdminPackageController extends Controller
      */
     public function index()
     {
+        // Check if user is admin
+        if (!session('user_type') || session('user_type') !== 'admin') {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Access denied. Package management is only available for admins.');
+        }
+
         // Load packages with enrollments count
         $packages = Package::withCount('enrollments')
             ->orderBy('created_at', 'desc')

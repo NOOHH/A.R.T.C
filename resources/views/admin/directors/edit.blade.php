@@ -67,6 +67,27 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="referral_code" class="form-label">Referral Code</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control @error('referral_code') is-invalid @enderror" 
+                                               id="referral_code" name="referral_code" 
+                                               value="{{ old('referral_code', $director->referral_code) }}" 
+                                               placeholder="Auto-generated if empty">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="generateReferralCode()" title="Generate New Code">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Current: {{ $director->referral_code ?? 'Not set' }}</div>
+                                    @error('referral_code')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{{ route('admin.directors.index') }}" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">
@@ -83,4 +104,32 @@
 
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+@endpush
+
+@push('scripts')
+<script>
+function generateReferralCode() {
+    const firstName = document.getElementById('directors_first_name').value.split(' ')[0] || '';
+    const lastName = document.getElementById('directors_last_name').value.split(' ')[0] || '';
+    
+    if (!firstName.trim() && !lastName.trim()) {
+        alert('Please enter the director name first');
+        return;
+    }
+    
+    // Generate code based on name
+    const cleanFirstName = firstName.replace(/[^A-Za-z]/g, '').toUpperCase();
+    const cleanLastName = lastName.replace(/[^A-Za-z]/g, '').toUpperCase();
+    
+    // Get current director ID from URL
+    const currentId = window.location.pathname.split('/').pop();
+    const directorId = String(currentId).padStart(2, '0');
+    
+    // Generate code: DIR + ID + NAME_INITIALS
+    const nameCode = cleanFirstName.substring(0, 2) + cleanLastName.substring(0, 2);
+    const referralCode = 'DIR' + directorId + nameCode;
+    
+    document.getElementById('referral_code').value = referralCode;
+}
+</script>
 @endpush

@@ -138,7 +138,8 @@ class ChatApiController extends Controller
     {
         try {
             $request->validate([
-                'with' => 'required|integer'
+                'with' => 'required|integer',
+                'after' => 'nullable|integer' // For real-time polling
             ]);
 
             $currentUserId = session('user_id');
@@ -147,6 +148,7 @@ class ChatApiController extends Controller
             }
 
             $withUserId = $request->with;
+            $afterMessageId = $request->after;
             
             // Check if the target user exists
             $targetUser = User::find($withUserId);
@@ -154,26 +156,38 @@ class ChatApiController extends Controller
                 return response()->json(['error' => 'Target user not found'], 404);
             }
 
-            // Get messages between current user and target user
-            $messages = Chat::conversation($currentUserId, $withUserId)
+            // Build query for messages between current user and target user
+            $query = Chat::conversation($currentUserId, $withUserId)
                 ->with(['sender', 'receiver'])
-                ->orderBy('sent_at', 'asc')
-                ->limit(50)
-                ->get();
+                ->orderBy('sent_at', 'asc');
 
-            // Mark messages as read
-            Chat::where('sender_id', $withUserId)
-                ->where('receiver_id', $currentUserId)
-                ->where('is_read', false)
-                ->update(['is_read' => true, 'read_at' => now()]);
+            // If 'after' parameter is provided, only get messages after that ID
+            if ($afterMessageId) {
+                $query->where('id', '>', $afterMessageId);
+            } else {
+                // For initial load, limit to last 50 messages
+                $query->limit(50);
+            }
+
+            $messages = $query->get();
+
+            // Mark messages as read (only if not polling for new messages)
+            if (!$afterMessageId) {
+                Chat::where('sender_id', $withUserId)
+                    ->where('receiver_id', $currentUserId)
+                    ->where('is_read', false)
+                    ->update(['is_read' => true, 'read_at' => now()]);
+            }
 
             return response()->json([
+                'success' => true,
                 'data' => MessageResource::collection($messages)
             ]);
 
         } catch (\Exception $e) {
             Log::error('Chat API messages error: ' . $e->getMessage());
             return response()->json([
+                'success' => false,
                 'data' => [],
                 'error' => 'Error retrieving messages'
             ], 500);

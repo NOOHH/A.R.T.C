@@ -19,8 +19,18 @@ class AdminAnalyticsController extends Controller
 {
     public function index()
     {
+        // Check if user is admin or director
+        $userType = session('user_type');
+        if (!$userType || ($userType !== 'admin' && $userType !== 'director')) {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Access denied. Analytics is only available for admins and directors.');
+        }
+
         try {
-            return view('admin.admin-analytics.admin-analytics');
+            return view('admin.admin-analytics.admin-analytics', [
+                'isAdmin' => ($userType === 'admin'),
+                'userType' => $userType
+            ]);
         } catch (\Exception $e) {
             Log::error('Analytics index error: ' . $e->getMessage());
             return redirect()->route('admin.dashboard')
@@ -30,6 +40,12 @@ class AdminAnalyticsController extends Controller
 
     public function getData(Request $request)
     {
+        // Check if user is admin or director
+        $userType = session('user_type');
+        if (!$userType || ($userType !== 'admin' && $userType !== 'director')) {
+            return response()->json(['error' => 'Access denied. Analytics is only available for admins and directors.'], 403);
+        }
+
         try {
             $filters = $this->getFilters($request);
             
@@ -38,6 +54,20 @@ class AdminAnalyticsController extends Controller
                 'charts' => $this->getChartData($filters),
                 'tables' => $this->getTableData($filters)
             ];
+
+            // If user is director, exclude referral data
+            if ($userType === 'director') {
+                // Remove referral-related data from response
+                if (isset($data['charts']['referrals'])) {
+                    unset($data['charts']['referrals']);
+                }
+                if (isset($data['metrics']['referrals'])) {
+                    unset($data['metrics']['referrals']);
+                }
+                if (isset($data['tables']['referrals'])) {
+                    unset($data['tables']['referrals']);
+                }
+            }
 
             return response()->json($data);
         } catch (\Exception $e) {
@@ -48,8 +78,14 @@ class AdminAnalyticsController extends Controller
 
     public function getBatches()
     {
+        // Check if user is admin or director
+        $userType = session('user_type');
+        if (!$userType || ($userType !== 'admin' && $userType !== 'director')) {
+            return response()->json(['error' => 'Access denied. Analytics is only available for admins and directors.'], 403);
+        }
+
         try {
-            $batches = Batch::select('id', 'batch_name as name')
+            $batches = Batch::select('batch_id as id', 'batch_name as name')
                 ->orderBy('batch_name')
                 ->get();
 
@@ -62,6 +98,12 @@ class AdminAnalyticsController extends Controller
 
     public function getSubjects()
     {
+        // Check if user is admin or director
+        $userType = session('user_type');
+        if (!$userType || ($userType !== 'admin' && $userType !== 'director')) {
+            return response()->json(['error' => 'Access denied. Analytics is only available for admins and directors.'], 403);
+        }
+
         try {
             // Get subjects from modules table
             $subjects = Module::select('modules_id as id', 'module_name as name')

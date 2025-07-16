@@ -5,22 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Dashboard')</title>
+
+    @php
+        // Get user info for global variables
+        $user = Auth::user();
+        
+        // Check if user is actually logged in via Laravel Auth or valid session
+        $isLoggedIn = Auth::check() || session('logged_in') === true;
+        
+        // If Laravel Auth user is not available but session indicates logged in, fallback to session data
+        if (!$user && $isLoggedIn) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            // Only use session data if logged_in is explicitly true
+            if (session('logged_in') === true || $_SESSION['logged_in'] ?? false) {
+                $sessionUser = (object) [
+                    'id' => $_SESSION['user_id'] ?? session('user_id'),
+                    'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
+                    'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
+                ];
+                
+                // Only use session user if we have valid session data
+                if ($sessionUser->id) {
+                    $user = $sessionUser;
+                }
+            }
+        }
+        
+        // If not logged in, clear user data
+        if (!$isLoggedIn) {
+            $user = null;
+        }
+    @endphp
+
+    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = @json($isLoggedIn && $user ? $user->id : null);
+        window.myName = @json($isLoggedIn && $user ? $user->name : 'Guest');
+        window.isAuthenticated = @json($isLoggedIn && (bool) $user);
+        window.userRole = @json($isLoggedIn && $user ? $user->role : 'guest');
+        window.csrfToken = @json(csrf_token());
+        
+        // Global chat state
+        window.currentChatType = null;
+        window.currentChatUser = null;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        var currentChatType = window.currentChatType;
+        var currentChatUser = window.currentChatUser;
+        
+        console.log('Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+    </script>
+
+    @php
+        // Ensure we can reliably check admin status
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $isAdmin = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin')
+                 || (session('user_type') === 'admin');
+    @endphp
     
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- Custom Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Custom CSS -->
+
+    <!-- Your Admin CSS -->
     <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
 
-    {{-- Global UI Styles --}}
+    {{-- Global UI Styles (e.g. from your helper) --}}
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
-    
-    @yield('head')
+
+    {{-- Chat CSS + any overrides --}}
     @stack('styles')
 </head>
 <body>
@@ -157,10 +222,12 @@
                                         <i class="bi bi-person"></i>
                                         <span>Students</span>
                                     </a>
+                                    @if($isAdmin)
                                     <a href="{{ route('admin.directors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
                                         <i class="bi bi-person-badge"></i>
                                         <span>Directors</span>
                                     </a>
+                                    @endif
                                     <a href="{{ route('admin.professors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.professors')) active @endif">
                                         <i class="bi bi-person-workspace"></i>
                                         <span>Professors</span>
@@ -186,21 +253,25 @@
                                         <i class="bi bi-puzzle"></i>
                                         <span>Manage Modules</span>
                                     </a>
+                                    @if($isAdmin)
                                     <a href="{{ route('admin.packages.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.packages.index') active @endif">
                                         <i class="bi bi-box-seam"></i>
                                         <span>Packages</span>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
 
                         <!-- Analytics -->
+                        @if($isAdmin || session('user_type') === 'director')
                         <div class="nav-item">
                             <a href="{{ route('admin.analytics.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
                                 <i class="bi bi-graph-up"></i>
                                 <span>Analytics</span>
                             </a>
                         </div>
+                        @endif
                         
                         <!-- Chat Management -->
                         <div class="nav-item">
@@ -219,12 +290,14 @@
                         </div>
 
                         <!-- Settings -->
+                        @if($isAdmin)
                         <div class="nav-item">
                             <a href="{{ route('admin.settings.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.settings.index') active @endif">
                                 <i class="bi bi-gear"></i>
                                 <span>Settings</span>
                             </a>
                         </div>
+                        @endif
 
                         <!-- Reports Section -->
                         <div class="nav-section">
@@ -244,13 +317,23 @@
                                             <span>Student Reports</span>
                                         </a>
                                         <a href="#" class="submenu-link">
+                                            <i class="bi bi-file-earmark-person"></i>
+                                            <span>Professor Reports</span>
+                                        </a>
+                                        <a href="#" class="submenu-link">
                                             <i class="bi bi-file-earmark-check"></i>
                                             <span>Enrollment Reports</span>
                                         </a>
+                                        @if($isAdmin)
                                         <a href="#" class="submenu-link">
                                             <i class="bi bi-file-earmark-chart"></i>
                                             <span>Financial Reports</span>
                                         </a>
+                                        <a href="#" class="submenu-link">
+                                            <i class="bi bi-share"></i>
+                                            <span>Referral Reports</span>
+                                        </a>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -793,16 +876,24 @@ document.addEventListener('DOMContentLoaded', function() {
     position: relative;
 }
 </style>
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{{-- 1) Include the chat HTML offcanvas --}}
+    @include('components.global-chat')
 
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Core JS: Bootstrap bundle + jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-@stack('scripts')
+    {{-- Your Admin‐page JS (logout handler, search, sidebar toggles…) --}}
+    <script>
+    function handleAdminLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            document.getElementById('admin-logout-form').submit();
+        }
+    }
+    // … your search and sidebar toggle scripts …
+    </script>
 
-<!-- Include Global Chat Component -->
-@include('components.global-chat')
-
+    {{-- 2) Finally, dump the chat component’s JS (and any other @push('scripts')) --}}
+    @stack('scripts')
 </body>
 </html>

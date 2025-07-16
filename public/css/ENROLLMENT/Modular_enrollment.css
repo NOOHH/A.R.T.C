@@ -165,40 +165,6 @@ body {
     transform: translateY(0);
 }
 
-/* Smooth scrolling for containers */
-.step-content,
-#dynamicFormFields,
-#educationLevelRequirements {
-    scroll-behavior: smooth;
-}
-
-/* Custom scrollbar styling */
-.step-content::-webkit-scrollbar,
-#dynamicFormFields::-webkit-scrollbar,
-#educationLevelRequirements::-webkit-scrollbar {
-    width: 8px;
-}
-
-.step-content::-webkit-scrollbar-track,
-#dynamicFormFields::-webkit-scrollbar-track,
-#educationLevelRequirements::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.step-content::-webkit-scrollbar-thumb,
-#dynamicFormFields::-webkit-scrollbar-thumb,
-#educationLevelRequirements::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.step-content::-webkit-scrollbar-thumb:hover,
-#dynamicFormFields::-webkit-scrollbar-thumb:hover,
-#educationLevelRequirements::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
 /* Step Headers */
 .step-header {
     text-align: center;
@@ -733,61 +699,6 @@ body {
     font-size: 1.2rem;
 }
 
-/* Step 6 Dynamic Content Handling */
-#content-6 {
-    max-height: 85vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-#dynamicFormFields {
-    max-height: 50vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background: #f8f9fa;
-    margin-bottom: 20px;
-}
-
-#educationLevelRequirements {
-    max-height: 30vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background: #f8f9fa;
-    margin-bottom: 20px;
-}
-
-/* Ensure form elements don't break layout */
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group .form-control,
-.form-group .form-select {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* Navigation buttons container */
-.navigation-buttons {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
-    position: sticky;
-    bottom: 0;
-    background: white;
-    z-index: 10;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .packages-grid {
@@ -838,17 +749,6 @@ body {
     
     .step-content {
         padding: 20px;
-        max-height: 90vh;
-    }
-
-    #dynamicFormFields {
-        max-height: 40vh;
-        padding: 10px;
-    }
-
-    #educationLevelRequirements {
-        max-height: 25vh;
-        padding: 10px;
     }
     
     .alert-container {

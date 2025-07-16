@@ -138,6 +138,33 @@
             padding-right: 100px;
         }
         
+        .referral-input-group {
+            position: relative;
+        }
+        
+        .referral-input-group .btn-otp {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .referral-input-group input {
+            padding-right: 100px;
+        }
+        
+        input.is-valid {
+            border-color: #198754;
+            background-color: #f8fff9;
+        }
+        
+        input.is-invalid {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        
         #signupBtn:disabled {
             background-color: #6c757d !important;
             cursor: not-allowed !important;
@@ -266,6 +293,30 @@
                 <input type="password" id="password_confirmation" name="password_confirmation" placeholder="confirm password" required>
                 <span class="toggle-password" onclick="togglePassword('password_confirmation')">👁️</span>
             </div>
+
+            @if(DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1')
+            <!-- Referral Code Field -->
+            <label for="referral_code">
+                Referral Code 
+                @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1')
+                    <span style="color: red;">*</span>
+                @else
+                    <span style="color: #666; font-size: 0.9em;">(optional)</span>
+                @endif
+            </label>
+            <div class="referral-input-group">
+                <input type="text" id="referral_code" name="referral_code" 
+                       placeholder="Enter referral code (e.g., PROF01JOHN)" 
+                       value="{{ old('referral_code') }}"
+                       style="text-transform: uppercase;"
+                       @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') required @endif>
+                <button type="button" id="validateReferralBtn" class="btn-otp" onclick="validateReferralCodeSignup()" style="right: 5px;">
+                    <i class="fas fa-check"></i> Validate
+                </button>
+            </div>
+            <div id="referralCodeError" class="status-message status-error" style="display: none;"></div>
+            <div id="referralCodeSuccess" class="status-message status-success" style="display: none;"></div>
+            @endif
 
             <!-- reCAPTCHA -->
             <div class="g-recaptcha" data-sitekey="{{ env('RECAPTCHA_SITE_KEY') }}" style="margin: 20px 0;"></div>
@@ -483,6 +534,88 @@
         document.getElementById('otp').addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
         });
+        
+        // Referral code validation
+        function validateReferralCodeSignup() {
+            const referralInput = document.getElementById('referral_code');
+            const referralCode = referralInput.value.trim().toUpperCase();
+            const validateBtn = document.getElementById('validateReferralBtn');
+            const errorDiv = document.getElementById('referralCodeError');
+            const successDiv = document.getElementById('referralCodeSuccess');
+            
+            // Clear previous messages
+            if (errorDiv) errorDiv.style.display = 'none';
+            if (successDiv) successDiv.style.display = 'none';
+            
+            if (!referralCode) {
+                showReferralMessage('Please enter a referral code', 'error');
+                return;
+            }
+            
+            // Show loading state
+            validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            validateBtn.disabled = true;
+            
+            // Make AJAX request to validate referral code
+            fetch('/api/validate-referral-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    referral_code: referralCode
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    showReferralMessage(`Valid referral code from ${data.referrer_name} (${data.referrer_type})`, 'success');
+                    referralInput.classList.add('is-valid');
+                    referralInput.classList.remove('is-invalid');
+                    referralInput.value = referralCode; // Ensure uppercase
+                } else {
+                    showReferralMessage(data.message || 'Invalid referral code', 'error');
+                    referralInput.classList.add('is-invalid');
+                    referralInput.classList.remove('is-valid');
+                }
+            })
+            .catch(error => {
+                console.error('Error validating referral code:', error);
+                showReferralMessage('Error validating referral code. Please try again.', 'error');
+                referralInput.classList.add('is-invalid');
+                referralInput.classList.remove('is-valid');
+            })
+            .finally(() => {
+                // Reset button state
+                validateBtn.innerHTML = '<i class="fas fa-check"></i> Validate';
+                validateBtn.disabled = false;
+            });
+        }
+        
+        function showReferralMessage(message, type) {
+            const targetDiv = type === 'success' ? 
+                document.getElementById('referralCodeSuccess') : 
+                document.getElementById('referralCodeError');
+            
+            if (targetDiv) {
+                targetDiv.textContent = message;
+                targetDiv.style.display = 'block';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    targetDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Auto-uppercase referral code input
+        const referralCodeInput = document.getElementById('referral_code');
+        if (referralCodeInput) {
+            referralCodeInput.addEventListener('input', function(e) {
+                this.value = this.value.toUpperCase();
+            });
+        }
     </script>
 </body>
 </html>

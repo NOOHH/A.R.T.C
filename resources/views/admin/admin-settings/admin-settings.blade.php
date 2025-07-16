@@ -173,6 +173,56 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="bi bi-share me-2"></i>REFERRAL SYSTEM</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="referralSettingsForm">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="referralEnabled" name="referral_enabled" 
+                                                           {{ DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1' ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="referralEnabled">
+                                                        <strong>Enable Referral Code Field</strong>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">Show referral code field in registration forms</div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="referralRequired" name="referral_required"
+                                                           {{ DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1' ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="referralRequired">
+                                                        <strong>Make Referral Code Required</strong>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">Students must enter a valid referral code to register</div>
+                                            </div>
+                                            
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-info">
+                                                    <i class="bi bi-save me-2"></i>Save Referral Settings
+                                                </button>
+                                            </div>
+                                        </form>
+                                        
+                                        <hr class="my-3">
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="text-secondary">Referral Code Format</h6>
+                                            <p class="small text-muted mb-2">
+                                                <strong>Professor:</strong> PROF01JDOE (PROF + ID + Name Initials)<br>
+                                                <strong>Director:</strong> DIR01JSMITH (DIR + ID + Name Initials)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1443,6 +1493,15 @@ document
         });
     }
 
+    // Save referral settings
+    const referralSettingsForm = document.getElementById('referralSettingsForm');
+    if (referralSettingsForm) {
+        referralSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveReferralSettings();
+        });
+    }
+
     // ✅ Initialize Sortable for requirements container (drag & drop)
     const sortableRequirementsContainer = document.getElementById('requirementsContainer');
     if (sortableRequirementsContainer) {
@@ -2494,6 +2553,49 @@ function saveDirectorSettings() {
     .catch(error => {
         console.error('Error saving director settings:', error);
         showAlert('Error saving director settings: ' + error.message, 'danger');
+    });
+}
+
+function saveReferralSettings() {
+    const form = document.getElementById('referralSettingsForm');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Get checkbox values
+    const referralEnabled = document.getElementById('referralEnabled').checked;
+    const referralRequired = document.getElementById('referralRequired').checked;
+    
+    // Show loading state
+    const originalContent = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    // Prepare data
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('referral_enabled', referralEnabled ? '1' : '0');
+    formData.append('referral_required', referralRequired ? '1' : '0');
+
+    fetch('/admin/settings/referral', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Referral settings saved:', data);
+        if (data.success) {
+            showAlert('Referral settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving referral settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving referral settings:', error);
+        showAlert('Error saving referral settings: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalContent;
     });
 }
 

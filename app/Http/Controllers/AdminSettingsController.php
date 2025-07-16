@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\FormRequirement;
 use App\Models\UiSetting;
 use App\Models\AdminSetting;
@@ -18,6 +19,12 @@ class AdminSettingsController extends Controller
 {
     public function index()
     {
+        // Check if user is admin
+        if (!session('user_type') || session('user_type') !== 'admin') {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Access denied. Settings is only available for admins.');
+        }
+
         // Get current settings from config/storage or database
         $settings = $this->getCurrentSettings();
         
@@ -811,6 +818,40 @@ class AdminSettingsController extends Controller
         } catch (\Exception $e) {
             Log::error('Error loading footer settings: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Failed to load footer settings'], 500);
+        }
+    }
+
+    public function saveReferralSettings(Request $request)
+    {
+        try {
+            // Validate input
+            $request->validate([
+                'referral_enabled' => 'required|in:0,1',
+                'referral_required' => 'required|in:0,1'
+            ]);
+
+            // Update or create the settings
+            DB::table('admin_settings')->updateOrInsert(
+                ['setting_key' => 'referral_enabled'],
+                ['setting_value' => $request->input('referral_enabled')]
+            );
+
+            DB::table('admin_settings')->updateOrInsert(
+                ['setting_key' => 'referral_required'],
+                ['setting_value' => $request->input('referral_required')]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Referral settings updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error saving referral settings: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to save referral settings: ' . $e->getMessage()
+            ], 500);
         }
     }
 

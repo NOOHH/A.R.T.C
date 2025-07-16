@@ -160,6 +160,22 @@
                         </div>
                     </div>
                     
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="prof_referral_code" class="form-label">Referral Code</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="prof_referral_code" name="referral_code" 
+                                           placeholder="Auto-generated if empty">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="generateProfessorReferralCode()" title="Generate New Code">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Leave empty to auto-generate (e.g., PROF01NAME)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Assign to Programs</label>
                         <div class="row">
@@ -292,6 +308,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('videoModalBody').innerHTML = '<p class="text-danger">Error loading video data.</p>';
             });
     });
+});
+
+function generateProfessorReferralCode() {
+    const firstName = document.getElementById('first_name').value || '';
+    const lastName = document.getElementById('last_name').value || '';
+    
+    if (!firstName.trim() || !lastName.trim()) {
+        alert('Please enter the professor first and last name first');
+        return;
+    }
+    
+    // Generate code based on name
+    const cleanFirstName = firstName.replace(/[^A-Za-z]/g, '').toUpperCase();
+    const cleanLastName = lastName.replace(/[^A-Za-z]/g, '').toUpperCase();
+    
+    // Get next professor ID (simplified - in production should be from server)
+    const nextId = String(Math.floor(Math.random() * 99) + 1).padStart(2, '0');
+    
+    // Generate code: PROF + ID + NAME_INITIALS
+    const nameCode = cleanFirstName.substring(0, 2) + cleanLastName.substring(0, 2);
+    const referralCode = 'PROF' + nextId + nameCode;
+    
+    document.getElementById('prof_referral_code').value = referralCode;
+}
+
+// Auto-generate when name changes
+document.addEventListener('DOMContentLoaded', function() {
+    const firstNameField = document.getElementById('first_name');
+    const lastNameField = document.getElementById('last_name');
+    
+    function autoGenerateCode() {
+        const referralCodeField = document.getElementById('prof_referral_code');
+        if (!referralCodeField.value.trim()) {
+            setTimeout(generateProfessorReferralCode, 500);
+        }
+    }
+    
+    if (firstNameField) firstNameField.addEventListener('input', autoGenerateCode);
+    if (lastNameField) lastNameField.addEventListener('input', autoGenerateCode);
 });
 </script>
 @endpush

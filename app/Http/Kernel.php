@@ -68,6 +68,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'student.auth' => \App\Http\Middleware\CheckStudentAuth::class,
         'admin.auth' => \App\Http\Middleware\CheckAdminAuth::class,
+        'admin.director.auth' => \App\Http\Middleware\CheckAdminDirectorAuth::class,
         'professor.auth' => \App\Http\Middleware\CheckProfessorAuth::class,
         'session.auth' => \App\Http\Middleware\SessionAuth::class,
         'check.session' => \Illuminate\Routing\Middleware\SubstituteBindings::class,

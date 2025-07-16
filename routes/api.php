@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Support\Facades\DB;
 /*
 |-----------------------------------------------------------// Chat API routes (auth:sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -198,6 +198,24 @@ Route::middleware(['web', App\Http\Middleware\SessionAuth::class])->group(functi
             ->get();
             
         return response()->json(['programs' => $programs]);
+    });
+});
+
+// Referral API routes
+Route::middleware('web')->group(function () {
+    Route::post('/validate-referral-code', [App\Http\Controllers\Api\ReferralController::class, 'validateReferralCode']);
+    Route::get('/referral/analytics', [App\Http\Controllers\Api\ReferralController::class, 'getReferralAnalytics']);
+    Route::get('/referral/stats/{type}/{id}', [App\Http\Controllers\Api\ReferralController::class, 'getReferrerStats']);
+    
+    // Test endpoint for referral settings
+    Route::get('/test-referral-settings', function () {
+        $enabled = DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') ?? '0';
+        $required = DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') ?? '0';
+        
+        return response()->json([
+            'referral_enabled' => $enabled,
+            'referral_required' => $required
+        ]);
     });
 });
 

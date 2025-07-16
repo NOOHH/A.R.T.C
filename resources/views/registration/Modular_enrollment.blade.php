@@ -1432,4 +1432,4 @@ function addSelectedAdditionalModules() {
     console.log('Additional modules added:', additionalModules);
 }
 </script>
-@endsection
+@endpush

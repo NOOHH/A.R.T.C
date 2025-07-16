@@ -1250,6 +1250,75 @@
         if (modal) modal.style.display = 'none';
     }
 
+    // Validate referral code
+    function validateReferralCode() {
+        const referralInput = document.getElementById('referral_code');
+        const referralCode = referralInput.value.trim();
+        const validateBtn = document.getElementById('validateReferralBtn');
+        const errorDiv = document.getElementById('referralCodeError');
+        const successDiv = document.getElementById('referralCodeSuccess');
+        
+        // Clear previous messages
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+        
+        if (!referralCode) {
+            showReferralError('Please enter a referral code');
+            return;
+        }
+        
+        // Show loading state
+        validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+        validateBtn.disabled = true;
+        
+        // Make AJAX request to validate referral code
+        fetch('/api/validate-referral-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                referral_code: referralCode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                showReferralSuccess(`Valid referral code from ${data.referrer_name} (${data.referrer_type})`);
+                referralInput.classList.add('is-valid');
+                referralInput.classList.remove('is-invalid');
+            } else {
+                showReferralError(data.message || 'Invalid referral code');
+                referralInput.classList.add('is-invalid');
+                referralInput.classList.remove('is-valid');
+            }
+        })
+        .catch(error => {
+            console.error('Error validating referral code:', error);
+            showReferralError('Error validating referral code. Please try again.');
+            referralInput.classList.add('is-invalid');
+            referralInput.classList.remove('is-valid');
+        })
+        .finally(() => {
+            // Reset button state
+            validateBtn.innerHTML = '<i class="fas fa-check"></i> Validate';
+            validateBtn.disabled = false;
+        });
+    }
+    
+    function showReferralError(message) {
+        const errorDiv = document.getElementById('referralCodeError');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+    
+    function showReferralSuccess(message) {
+        const successDiv = document.getElementById('referralCodeSuccess');
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+    }
+
     // Toggle education level requirements based on selection
     function toggleEducationLevelRequirements() {
         const educationLevel = document.getElementById('educationLevel');
@@ -1351,6 +1420,93 @@
     }
 
     </script>
+    
+    <style>
+    /* Referral Code Field Styles */
+    .referral-input-group {
+        display: flex;
+        position: relative;
+    }
+    
+    .referral-input-group input {
+        flex: 1;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+    }
+    
+    .btn-validate-referral {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: 1px solid #28a745;
+        color: white;
+        padding: 0.375rem 0.75rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-top-right-radius: 0.375rem;
+        border-bottom-right-radius: 0.375rem;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+    
+    .btn-validate-referral:hover {
+        background: linear-gradient(135deg, #218838 0%, #1dd1a1 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    }
+    
+    .btn-validate-referral:disabled {
+        background: #6c757d;
+        border-color: #6c757d;
+        transform: none;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+    
+    .success-message {
+        color: #28a745;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .success-message::before {
+        content: '✓';
+        margin-right: 0.5rem;
+        font-weight: bold;
+    }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .error-message::before {
+        content: '⚠';
+        margin-right: 0.5rem;
+    }
+    
+    .form-control.is-valid {
+        border-color: #28a745;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%2328a745' d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z'/%3e%3cpath fill='%2328a745' d='M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23dc3545' d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z'/%3e%3cpath fill='%23dc3545' d='M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    </style>
     @endpush
 
     @section('content')
@@ -1548,6 +1704,23 @@
                     <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
                     <div id="passwordMatchError" class="error-message" style="display: none;"></div>
                 </div>
+                
+                @if(DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1')
+                <div class="form-group" style="grid-column: 1 / span 2;">
+                    <label for="referral_code">Referral Code @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') <span class="text-danger">*</span> @endif</label>
+                    <div class="referral-input-group">
+                        <input type="text" id="referral_code" name="referral_code" class="form-control" 
+                               placeholder="Enter referral code (e.g., PROF01JDOE or DIR01SMITH)"
+                               @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') required @endif>
+                        <button type="button" id="validateReferralBtn" class="btn-validate-referral" onclick="validateReferralCode()">
+                            <i class="fas fa-check"></i> Validate
+                        </button>
+                    </div>
+                    <div id="referralCodeError" class="error-message" style="display: none;"></div>
+                    <div id="referralCodeSuccess" class="success-message" style="display: none;"></div>
+                    <div class="form-text">@if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') Required: @endif Enter the referral code provided by your professor or director</div>
+                </div>
+                @endif
             </div>
 
             <div class="login-prompt">
@@ -1879,28 +2052,36 @@
         const passwordField = document.getElementById('password');
         const passwordConfirmField = document.getElementById('password_confirmation');
         
+        // Debounce timer for validation
+        let validationTimer = null;
+        
+        function debouncedValidateStep3() {
+            clearTimeout(validationTimer);
+            validationTimer = setTimeout(validateStep3, 500); // Wait 500ms after user stops typing
+        }
+        
         if (firstnameField) {
-            firstnameField.addEventListener('input', validateStep3);
+            firstnameField.addEventListener('input', debouncedValidateStep3);
         }
         if (lastnameField) {
-            lastnameField.addEventListener('input', validateStep3);
+            lastnameField.addEventListener('input', debouncedValidateStep3);
         }
         if (emailField) {
             emailField.addEventListener('input', function() {
                 setTimeout(validateEmail, 300);
-                setTimeout(validateStep3, 400);
+                debouncedValidateStep3();
             });
         }
         if (passwordField) {
             passwordField.addEventListener('input', function() {
                 setTimeout(validatePassword, 50);
-                setTimeout(validateStep3, 100);
+                debouncedValidateStep3();
             });
         }
         if (passwordConfirmField) {
             passwordConfirmField.addEventListener('input', function() {
                 setTimeout(validatePasswordConfirmation, 50);
-                setTimeout(validateStep3, 100);
+                debouncedValidateStep3();
             });
         }
     });

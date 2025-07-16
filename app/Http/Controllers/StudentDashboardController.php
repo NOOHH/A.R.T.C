@@ -90,7 +90,9 @@ class StudentDashboardController extends Controller
                     $buttonText = 'Continue Learning';
                     $buttonClass = 'resume-btn batch-access';
                     $buttonAction = route('student.course', ['courseId' => $enrollment->program->program_id]);
-                    $showAccessModal = true; // Show modal about special access
+                    
+                    // Only show modal if status is still pending or payment is not completed
+                    $showAccessModal = ($enrollment->enrollment_status !== 'approved' || $enrollment->payment_status !== 'paid');
                 } else {
                     // Normal status checks
                     if ($enrollment->enrollment_status === 'pending') {
@@ -237,10 +239,10 @@ class StudentDashboardController extends Controller
         $enrollmentStatus = $enrollment ? $enrollment->enrollment_status : 'pending';
         $batchAccessGranted = $enrollment ? $enrollment->batch_access_granted : false;
         
-        // If batch access is granted, allow access but show modal
+        // If batch access is granted, allow access but show modal only if status is pending
         if ($batchAccessGranted) {
-            // Allow access with special notification
-            $showAccessModal = true;
+            // Only show modal if status is still pending or payment is not completed
+            $showAccessModal = ($enrollmentStatus !== 'approved' || $paymentStatus !== 'paid');
         } else {
             // Normal access checks - if not paid AND not approved, show paywall
             // But allow access if payment is paid regardless of approval status

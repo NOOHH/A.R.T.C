@@ -6,6 +6,55 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Professor Dashboard')</title>
     
+    @php
+        // Get user info for global variables
+        $user = Auth::user();
+        
+        // If Laravel Auth user is not available, fallback to session data
+        if (!$user) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            // Create a fake user object from session data for consistency
+            $sessionUser = (object) [
+                'id' => $_SESSION['user_id'] ?? session('user_id'),
+                'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
+                'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
+            ];
+            
+            // Only use session user if we have valid session data
+            if ($sessionUser->id) {
+                $user = $sessionUser;
+            }
+        }
+    @endphp
+
+    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = @json(optional($user)->id);
+        window.myName = @json(optional($user)->name ?? 'Guest');
+        window.isAuthenticated = @json((bool) $user);
+        window.userRole = @json(optional($user)->role ?? 'guest');
+        window.csrfToken = @json(csrf_token());
+        
+        // Global chat state
+        window.currentChatType = null;
+        window.currentChatUser = null;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        var currentChatType = window.currentChatType;
+        var currentChatUser = window.currentChatUser;
+        
+        console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+    </script>
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">

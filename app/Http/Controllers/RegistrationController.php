@@ -231,39 +231,104 @@ class RegistrationController extends Controller
 
     public function submit(Request $request)
     {
-        // Save all registration info in session
-        session(['enrollment' => array_merge((array)session('enrollment', []), $request->all())]);
-        $data = session('enrollment');
+        try {
+            DB::beginTransaction();
 
-        // Save user
-        $user = new \App\Models\User();
-        $user->email = $data['email'];
-        $user->password = $data['password'];
-        $user->user_firstname = $data['firstname'];
-        $user->user_lastname = $data['lastname'];
-        $user->role = 'student';
-        $user->save();
+            Log::info('Registration submission started', $request->except(['password', 'password_confirmation']));
 
-        // Save enrollment
-        $enrollment = new \App\Models\Enrollment();
-        if ($data['enrollment_type'] === 'Modular') {
-            $enrollment->Modular_enrollment = $data['course'];
-            $enrollment->Full_Program = '';
-        } else {
-            $enrollment->Modular_enrollment = '';
-            $enrollment->Full_Program = $data['course'];
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'user_firstname' => 'required|string|max:255',
+                'user_lastname' => 'required|string|max:255',
+                'user_email' => 'required|email|unique:users,email',
+                'password' => 'required|min:8|confirmed',
+                'program_id' => 'required|exists:programs,program_id',
+                'package_id' => 'required|exists:packages,package_id',
+                'learning_mode' => 'required|in:synchronous,asynchronous',
+                'enrollment_type' => 'required|in:Full,Modular',
+                'batch_id' => 'nullable|exists:student_batches,batch_id'
+            ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
+            // Create user account
+            $user = User::create([
+                'user_firstname' => $validated['user_firstname'],
+                'user_lastname' => $validated['user_lastname'],
+                'name' => $validated['user_firstname'] . ' ' . $validated['user_lastname'],
+                'email' => $validated['user_email'],
+                'password' => bcrypt($validated['password']),
+                'role' => 'student',
+                'enrollment_id' => 0 // Will be updated after enrollment creation
+            ]);
+
+            // Create student record
+            $student = Student::create([
+                'student_firstname' => $validated['user_firstname'],
+                'student_lastname' => $validated['user_lastname'],
+                'student_email' => $validated['user_email'],
+                'user_id' => $user->user_id
+            ]);
+
+            // Handle batch assignment
+            $batchId = null;
+            if ($validated['learning_mode'] === 'synchronous' && isset($validated['batch_id'])) {
+                $batch = \App\Models\StudentBatch::find($validated['batch_id']);
+                if ($batch && $batch->current_capacity < $batch->max_capacity) {
+                    $batchId = $batch->batch_id;
+                    $batch->increment('current_capacity');
+                }
+            }
+
+            // Create enrollment record
+            $enrollment = \App\Models\Enrollment::create([
+                'user_id' => $user->user_id,
+                'student_id' => $student->student_id,
+                'program_id' => $validated['program_id'],
+                'package_id' => $validated['package_id'],
+                'learning_mode' => $validated['learning_mode'],
+                'enrollment_type' => $validated['enrollment_type'],
+                'batch_id' => $batchId,
+                'enrollment_status' => 'pending',
+                'payment_status' => 'pending'
+            ]);
+
+            // Update user with enrollment ID
+            $user->update(['enrollment_id' => $enrollment->enrollment_id]);
+
+            DB::commit();
+
+            // Clear session data
+            session()->forget('enrollment');
+
+            Log::info('Registration completed successfully', [
+                'user_id' => $user->user_id,
+                'enrollment_id' => $enrollment->enrollment_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration completed successfully!',
+                'redirect' => route('login')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Registration failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed: ' . $e->getMessage()
+            ], 500);
         }
-        $enrollment->package_id = $data['package_id'];
-        $enrollment->save();
-
-        // Link user and enrollment
-        $user->enrollment_id = $enrollment->enrollment_id;
-        $user->save();
-
-        // Clear session
-        session()->forget('enrollment');
-
-        return redirect()->route('home')->with('success', 'Registration and enrollment successful!');
     }
 
     public function validateStep3(Request $request)

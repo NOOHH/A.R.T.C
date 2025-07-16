@@ -193,6 +193,9 @@ class AdminController extends Controller
                 }
                 
                 $enrollment->save();
+                
+                // Process referral if both enrollment and payment are approved/paid
+                \App\Helpers\ReferralCodeGenerator::processPendingReferral($enrollment->enrollment_id);
             } else {
                 // Fallback: Create enrollment record if it doesn't exist
                 $enrollmentData = [
@@ -370,6 +373,9 @@ class AdminController extends Controller
                 'payment_status' => 'paid',
                 'updated_at' => now()
             ]);
+            
+            // Process referral if both enrollment and payment are approved/paid
+            \App\Helpers\ReferralCodeGenerator::processPendingReferral($enrollment->enrollment_id);
 
             DB::commit();
             

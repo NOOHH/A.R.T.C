@@ -6,6 +6,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', App\Helpers\UIHelper::getSiteTitle())</title>
     
+    @php
+        // Get user info for global variables
+        $user = Auth::user();
+        
+        // Check if user is actually logged in via Laravel Auth or valid session
+        $isLoggedIn = Auth::check() || session('logged_in') === true;
+        
+        // If Laravel Auth user is not available but session indicates logged in, fallback to session data
+        if (!$user && $isLoggedIn) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            // Only use session data if logged_in is explicitly true
+            if (session('logged_in') === true || $_SESSION['logged_in'] ?? false) {
+                $sessionUser = (object) [
+                    'id' => $_SESSION['user_id'] ?? session('user_id'),
+                    'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
+                    'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
+                ];
+                
+                // Only use session user if we have valid session data
+                if ($sessionUser->id) {
+                    $user = $sessionUser;
+                }
+            }
+        }
+        
+        // If not logged in, clear user data
+        if (!$isLoggedIn) {
+            $user = null;
+        }
+    @endphp
+
+    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = @json($isLoggedIn && $user ? $user->id : null);
+        window.myName = @json($isLoggedIn && $user ? $user->name : 'Guest');
+        window.isAuthenticated = @json($isLoggedIn && (bool) $user);
+        window.userRole = @json($isLoggedIn && $user ? $user->role : 'guest');
+        window.csrfToken = @json(csrf_token());
+        
+        // Global chat state
+        window.currentChatType = null;
+        window.currentChatUser = null;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        var currentChatType = window.currentChatType;
+        var currentChatUser = window.currentChatUser;
+        
+        console.log('Navbar Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+    </script>
+    
     {{-- Global UI Meta Tags and Styles --}}
     {!! App\Helpers\UIHelper::getPageHead() !!}
     

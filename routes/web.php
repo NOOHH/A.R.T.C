@@ -17,6 +17,7 @@ use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\Admin\EducationLevelController;
+use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
@@ -33,6 +34,16 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\DirectorController;
+// routes/web.php
+
+use App\Http\Controllers\Api\ReferralController;
+
+Route::middleware(['web','check.session','role.dashboard']) // whatever guards you need
+     ->prefix('api')
+     ->group(function(){
+         Route::get('referral/analytics', [ReferralController::class,'getReferralAnalytics']);
+         Route::post('validate-referral-code', [ReferralController::class,'validateReferralCode']);
+     });
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +58,7 @@ Route::get('/test-db', function () {
         return "❌ DB connection failed: " . $e->getMessage();
     }
 });
+
 
 // Chat debug route
 Route::get('/chat-debug', function () {
@@ -64,7 +76,7 @@ Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection
 | Batch Enrollment Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin/batches')->middleware(['admin.auth'])->group(function () {
+Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(function () {
     Route::get('/', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
     Route::post('/', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
     Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
@@ -476,6 +488,63 @@ Route::get('/get-program-modules', function (Request $request) {
     }
 });
 
+// API endpoint for modules by program
+Route::get('/get-program-modules', function (Request $request) {
+    $programId = $request->get('program_id');
+    $packageId = $request->get('package_id'); // Keep for backward compatibility
+    
+    if (!$programId && !$packageId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Program ID or Package ID is required'
+        ], 400);
+    }
+    
+    try {
+        $program = null;
+        
+        if ($programId) {
+            // Direct program query
+            $program = \App\Models\Program::find($programId);
+        } elseif ($packageId) {
+            // Get program through package (backward compatibility)
+            $package = \App\Models\Package::with('program')->find($packageId);
+            if ($package && $package->program) {
+                $program = $package->program;
+            }
+        }
+        
+        if (!$program) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Program not found'
+            ], 404);
+        }
+        
+        // Get modules for the program
+        $modules = \App\Models\Module::where('program_id', $program->program_id)
+                                     ->where('is_archived', false)
+                                     ->select('modules_id as id', 'module_name as name', 'module_description as description', 'program_id', 'content_type as level')
+                                     ->orderBy('module_order', 'asc')
+                                     ->get();
+        
+        return response()->json([
+            'success' => true,
+            'modules' => $modules,
+            'program' => [
+                'id' => $program->program_id,
+                'name' => $program->program_name
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error fetching modules: ' . $e->getMessage()
+        ], 500);
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Student Enrollment
@@ -794,6 +863,10 @@ Route::post('/admin/settings/remove-login-illustration', [AdminSettingsControlle
 // Remove background image or logo
 Route::post('/admin/settings/remove-image', [AdminSettingsController::class, 'removeImage'])
      ->name('admin.settings.remove.image');
+
+// Referral system settings
+Route::post('/admin/settings/referral', [AdminSettingsController::class, 'saveReferralSettings'])
+     ->name('admin.settings.referral');
 
 // Plan Management Routes (Learning Mode Configuration)
 Route::prefix('admin/plans')->middleware(['admin.auth'])->group(function () {
@@ -1585,7 +1658,6 @@ Route::get('/debug/messages-table', function () {
         ]);
     }
 });
-
 // Test route for course creation (bypasses CSRF for testing)
 Route::post('/test-course-creation', function (Request $request) {
     try {

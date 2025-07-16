@@ -1,5 +1,6 @@
 @extends('admin.admin-dashboard-layout')
-@section('title', 'Admin Dashboard')
+@section('title','Admin Dashboard')
+
 
 @section('content')
 @if(isset($dbError) && $dbError)

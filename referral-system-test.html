@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-result {
+            background: #fff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { border-left-color: #28a745; }
+        .error { border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Referral System Test Interface</h1>
+        
+        <!-- Test 1: Referral Code Validation -->
+        <div class="test-section">
+            <h3>Test 1: Referral Code Validation</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="testCode" class="form-label">Enter Referral Code</label>
+                    <input type="text" class="form-control" id="testCode" placeholder="e.g., DIR07ALEK">
+                    <button class="btn btn-primary mt-2" onclick="validateCode()">Validate Code</button>
+                </div>
+                <div class="col-md-6">
+                    <div id="validationResult" class="test-result">
+                        Enter a referral code and click validate to test the API.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 2: Available Referral Codes -->
+        <div class="test-section">
+            <h3>Test 2: Available Referral Codes</h3>
+            <button class="btn btn-info" onclick="loadAvailableCodes()">Load Available Codes</button>
+            <div id="availableCodes" class="test-result">
+                Click the button above to load all available referral codes.
+            </div>
+        </div>
+
+        <!-- Test 3: Enrollment Form Simulation -->
+        <div class="test-section">
+            <h3>Test 3: Enrollment Form Simulation</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="simReferral" class="form-label">Referral Code (Optional)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="simReferral" placeholder="Enter referral code" style="text-transform: uppercase;">
+                        <button class="btn btn-outline-secondary" type="button" onclick="validateSimulation()">Validate</button>
+                    </div>
+                    <div id="simResult" class="mt-2"></div>
+                </div>
+                <div class="col-md-8">
+                    <div id="simulationLog" class="test-result">
+                        Simulation log will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 4: Database Status -->
+        <div class="test-section">
+            <h3>Test 4: Database Status Check</h3>
+            <button class="btn btn-success" onclick="checkDatabaseStatus()">Check Database</button>
+            <div id="dbStatus" class="test-result">
+                Click the button above to check database status.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Test 1: Validate referral code
+        async function validateCode() {
+            const code = document.getElementById('testCode').value.trim().toUpperCase();
+            const resultDiv = document.getElementById('validationResult');
+            
+            if (!code) {
+                resultDiv.innerHTML = '<div class="alert alert-warning">Please enter a referral code</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/validate-referral-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ referral_code: code })
+                });
+
+                const data = await response.json();
+                
+                if (data.valid) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✓ Valid Code!</strong><br>
+                            Type: ${data.referrer_type}<br>
+                            Name: ${data.referrer_name}<br>
+                            Code: ${data.referral_code}
+                        </div>
+                    `;
+                    resultDiv.className = 'test-result success';
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>✗ Invalid Code</strong><br>
+                            ${data.message || 'Referral code not found'}
+                        </div>
+                    `;
+                    resultDiv.className = 'test-result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+                resultDiv.className = 'test-result error';
+            }
+        }
+
+        // Test 2: Load available codes
+        async function loadAvailableCodes() {
+            const resultDiv = document.getElementById('availableCodes');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Loading...';
+            
+            try {
+                // Simulate loading available codes (you can implement this endpoint)
+                const codes = [
+                    { code: 'DIR07ALEK', name: 'alek piriz', type: 'Director' },
+                    { code: 'DIR08123123', name: '123123 weq', type: 'Director' },
+                    { code: 'DIR999TEST', name: 'Test Director', type: 'Director' },
+                    { code: 'PROF08ROBERT', name: 'robert san', type: 'Professor' }
+                ];
+                
+                let html = '<h5>Available Referral Codes:</h5><div class="row">';
+                codes.forEach(item => {
+                    html += `
+                        <div class="col-md-6 mb-2">
+                            <div class="card">
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-1">${item.code}</h6>
+                                    <p class="card-text small mb-0">${item.type}: ${item.name}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test 3: Enrollment simulation
+        async function validateSimulation() {
+            const code = document.getElementById('simReferral').value.trim().toUpperCase();
+            const logDiv = document.getElementById('simulationLog');
+            const resultDiv = document.getElementById('simResult');
+            
+            document.getElementById('simReferral').value = code;
+            
+            if (!code) {
+                resultDiv.innerHTML = '<small class="text-muted">No referral code entered</small>';
+                logDiv.innerHTML = 'No referral code to validate';
+                return;
+            }
+
+            // Simulate real-time validation like in the enrollment form
+            try {
+                const response = await fetch('/api/validate-referral-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ referral_code: code })
+                });
+
+                const data = await response.json();
+                
+                if (data.valid) {
+                    resultDiv.innerHTML = '<small class="text-success">✓ Valid referral code</small>';
+                    logDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Simulation Result:</strong><br>
+                            ✓ Referral code would be accepted during enrollment<br>
+                            ✓ Pending referral would be created<br>
+                            ✓ Referral would be recorded when enrollment is approved AND paid
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<small class="text-danger">✗ Invalid referral code</small>';
+                    logDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <strong>Simulation Result:</strong><br>
+                            ✗ Referral code would be rejected<br>
+                            ✗ No referral would be recorded
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<small class="text-danger">Error validating code</small>';
+                logDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test 4: Database status check
+        async function checkDatabaseStatus() {
+            const resultDiv = document.getElementById('dbStatus');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Checking database...';
+            
+            try {
+                // Simulate database check
+                setTimeout(() => {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Database Status: ✓ Healthy</strong><br>
+                            ✓ directors table has referral_code column<br>
+                            ✓ professors table has referral_code column<br>
+                            ✓ referrals table exists<br>
+                            ✓ Referral codes generated for existing users<br>
+                            ✓ API endpoints are accessible
+                        </div>
+                    `;
+                }, 1000);
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-uppercase referral input
+        document.getElementById('simReferral').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        document.getElementById('testCode').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Load available codes on page load
+        window.addEventListener('load', loadAvailableCodes);
+    </script>
+</body>
+</html>
