@@ -106,8 +106,18 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sidebar-tab" data-bs-toggle="tab" data-bs-target="#sidebar" type="button" role="tab">
+                        <i class="fas fa-bars me-2"></i>Sidebar
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans" type="button" role="tab">
                         <i class="fas fa-graduation-cap me-2"></i>Plans
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="education-levels-tab" data-bs-toggle="tab" data-bs-target="#education-levels" type="button" role="tab">
+                        <i class="fas fa-user-graduate me-2"></i>Education Levels
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -163,6 +173,56 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="bi bi-share me-2"></i>REFERRAL SYSTEM</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="referralSettingsForm">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="referralEnabled" name="referral_enabled" 
+                                                           {{ DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1' ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="referralEnabled">
+                                                        <strong>Enable Referral Code Field</strong>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">Show referral code field in registration forms</div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="referralRequired" name="referral_required"
+                                                           {{ DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1' ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="referralRequired">
+                                                        <strong>Make Referral Code Required</strong>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">Students must enter a valid referral code to register</div>
+                                            </div>
+                                            
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-info">
+                                                    <i class="bi bi-save me-2"></i>Save Referral Settings
+                                                </button>
+                                            </div>
+                                        </form>
+                                        
+                                        <hr class="my-3">
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="text-secondary">Referral Code Format</h6>
+                                            <p class="small text-muted mb-2">
+                                                <strong>Professor:</strong> PROF01JDOE (PROF + ID + Name Initials)<br>
+                                                <strong>Director:</strong> DIR01JSMITH (DIR + ID + Name Initials)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -185,7 +245,13 @@
 
                                         <form id="studentRequirementsForm">
                                             @csrf
-                                            <div id="requirementsContainer"></div>
+                                            <div id="requirementsContainer">
+                                                <div class="text-center py-4">
+                                                    <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+                                                    <p class="text-muted">Loading form requirements...</p>
+                                                    <small class="text-muted">If this persists, please check your login status and try refreshing the page.</small>
+                                                </div>
+                                            </div>
                                             <button type="button" class="btn btn-outline-primary mb-3" id="addRequirement">
                                                 <i class="fas fa-plus"></i> Add Field/Section
                                             </button>
@@ -858,6 +924,83 @@
                 </div>
             </div>
 
+            {{-- Sidebar Tab --}}
+            <div class="tab-pane fade" id="sidebar" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-bars me-2"></i>Sidebar Customization
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="sidebarCustomizationForm" method="POST" action="{{ route('admin.settings.sidebar') }}">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label">Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_background_color" value="{{ $settings['sidebar']['background_color'] ?? '#2d1b69' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Gradient Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_gradient_color" value="{{ $settings['sidebar']['gradient_color'] ?? '#1a1340' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_text_color" value="{{ $settings['sidebar']['text_color'] ?? '#ffffff' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Hover Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_hover_color" value="{{ $settings['sidebar']['hover_color'] ?? '#a91d3a' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Active Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_active_bg_color" value="{{ $settings['sidebar']['active_bg_color'] ?? '#a91d3a' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Active Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_active_text_color" value="{{ $settings['sidebar']['active_text_color'] ?? '#ffffff' }}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Save Sidebar Settings
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-align-left me-2"></i>Sidebar Footer
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="sidebarFooterCustomizationForm" method="POST" action="{{ route('admin.settings.sidebar') }}">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label">Footer Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_footer_bg_color" value="{{ $settings['sidebar']['footer_bg_color'] ?? '#2d1b69' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Footer Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_footer_text_color" value="{{ $settings['sidebar']['footer_text_color'] ?? '#ffffff' }}">
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Note:</strong> The sidebar footer will automatically sync with the main sidebar colors when you save the settings.
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary">
+                                        <i class="fas fa-save me-2"></i>Save Footer Settings
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Plans Tab --}}
             <div class="tab-pane fade" id="plans" role="tabpanel">
                 <div class="row g-4">
@@ -872,7 +1015,11 @@
                                 <p class="text-muted mb-4">Configure which learning modes are available for each plan type.</p>
                                 
                                 <div class="row" id="planSettingsContainer">
-                                    <!-- Plans will be loaded here -->
+                                    <div class="col-12 text-center py-4">
+                                        <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+                                        <p class="text-muted">Loading plan settings...</p>
+                                        <small class="text-muted">If this persists, please check your login status and try refreshing the page.</small>
+                                    </div>
                                 </div>
                                 
                                 <div class="mt-4 pt-3 border-top">
@@ -881,6 +1028,46 @@
                                             <i class="fas fa-sync-alt me-2"></i>Refresh
                                         </button>
                                         <button type="button" class="btn btn-success" onclick="savePlanSettings()">
+                                            <i class="fas fa-save me-2"></i>Save All Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Education Levels Tab --}}
+            <div class="tab-pane fade" id="education-levels" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-user-graduate me-2"></i>Education Level Configuration
+                                </h5>
+                                <button type="button" class="btn btn-light btn-sm" onclick="addEducationLevel()">
+                                    <i class="fas fa-plus me-1"></i>Add Education Level
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-4">Configure education levels and their associated file requirements. Each education level can have different file upload requirements that can be enabled/disabled for full plan or modular plan.</p>
+                                
+                                <div id="educationLevelsContainer">
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+                                        <p class="text-muted">Loading education levels...</p>
+                                        <small class="text-muted">If this persists, please check your login status and try refreshing the page.</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="refreshEducationLevels()">
+                                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="saveEducationLevels()">
                                             <i class="fas fa-save me-2"></i>Save All Changes
                                         </button>
                                     </div>
@@ -1037,13 +1224,122 @@
             </div>
         </div>
     </div>
+
+    <!-- Education Level Modal -->
+    <div class="modal fade" id="educationLevelModal" tabindex="-1" aria-labelledby="educationLevelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="educationLevelModalTitle">Add Education Level</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="educationLevelForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="level_name" class="form-label">Education Level Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="level_name" name="level_name" required placeholder="e.g., Undergraduate, Graduate, High School">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="level_order" class="form-label">Display Order</label>
+                                    <input type="number" class="form-control" id="level_order" name="level_order" min="1" placeholder="1">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="level_description" class="form-label">Description</label>
+                            <textarea class="form-control" id="level_description" name="level_description" rows="2" placeholder="Brief description of this education level"></textarea>
+                        </div>
+                        
+                        <!-- Plan Availability -->
+                        <div class="mb-4">
+                            <h6 class="mb-3"><i class="fas fa-graduation-cap me-2"></i>Plan Availability</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="available_full_plan" name="available_full_plan" checked>
+                                        <label class="form-check-label" for="available_full_plan">
+                                            Available for Full Plan
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="available_modular_plan" name="available_modular_plan" checked>
+                                        <label class="form-check-label" for="available_modular_plan">
+                                            Available for Modular Plan
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- File Requirements -->
+                        <div class="mb-4">
+                            <h6 class="mb-3"><i class="fas fa-file-upload me-2"></i>Document Requirements</h6>
+                            <p class="text-muted small mb-3">Configure which documents are required for this education level. Each document can accept different file types.</p>
+                            
+                            <div id="fileRequirementsContainer">
+                                <!-- Document requirements will be populated here -->
+                            </div>
+                            
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDocumentRequirement()">
+                                <i class="fas fa-plus me-1"></i>Add Document Requirement
+                            </button>
+                            
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <strong>Available Document Types:</strong> School ID, Diploma, TOR, PSA Birth Certificate, Good Moral Certificate, Course Certificate, Photo 2x2
+                                    <br><strong>File Types:</strong> Images (JPG, PNG, GIF), PDF, Documents (DOC, DOCX)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        Active (visible to students)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveEducationLevelBtn" onclick="saveEducationLevel()">
+                        <i class="fas fa-save"></i> Save Education Level
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 @push('scripts')
 <script>
 // Global variables
 let hasUnsavedChanges = false;
+let educationLevels = [];
+let editingEducationLevelId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin Settings page loaded');
+    
+    // Test if key elements exist
+    const requirementsContainer = document.getElementById('requirementsContainer');
+    const educationLevelsContainer = document.getElementById('educationLevelsContainer');
+    const paymentMethodsContainer = document.getElementById('paymentMethodsTableBody');
+    
+    console.log('Requirements container found:', !!requirementsContainer);
+    console.log('Education levels container found:', !!educationLevelsContainer);
+    console.log('Payment methods container found:', !!paymentMethodsContainer);
+    
     // Initialize main tabs
     var triggerTabList = [].slice.call(document.querySelectorAll('#settingsTabs button[data-bs-toggle="tab"]'));
     triggerTabList.forEach(function (triggerEl) {
@@ -1075,6 +1371,10 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHomepageSettings();
     loadProfessorSettings();
     loadDirectorSettings();
+    
+    // Load tab-specific content immediately
+    loadEducationLevels();
+    loadPaymentMethods();
     
     // Add event listener for plans tab
     const plansTab = document.getElementById('plans-tab');
@@ -1193,10 +1493,19 @@ document
         });
     }
 
+    // Save referral settings
+    const referralSettingsForm = document.getElementById('referralSettingsForm');
+    if (referralSettingsForm) {
+        referralSettingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveReferralSettings();
+        });
+    }
+
     // ✅ Initialize Sortable for requirements container (drag & drop)
-    const requirementsContainer = document.getElementById('requirementsContainer');
-    if (requirementsContainer) {
-        new Sortable(requirementsContainer, {
+    const sortableRequirementsContainer = document.getElementById('requirementsContainer');
+    if (sortableRequirementsContainer) {
+        new Sortable(sortableRequirementsContainer, {
             animation: 150,
             ghostClass: 'dragging-placeholder',
             handle: '.requirement-handle',
@@ -1255,21 +1564,28 @@ function resetSaveButtonState() {
 function loadFormRequirements() {
     console.log('Loading form requirements...');
     
+    const container = document.getElementById('requirementsContainer');
+    if (!container) {
+        console.error('Requirements container not found');
+        return;
+    }
+    
+    // Show loading state
+    container.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>Loading form requirements...</div>';
+    
     fetch('/admin/settings/form-requirements')
         .then(response => {
             console.log('Load response status:', response.status);
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Authentication required. Please log in.');
+                }
                 throw new Error(`HTTP ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
             console.log('Loaded requirements:', data);
-            const container = document.getElementById('requirementsContainer');
-            if (!container) {
-                console.error('Requirements container not found');
-                return;
-            }
             
             container.innerHTML = '';
             
@@ -1286,7 +1602,20 @@ function loadFormRequirements() {
         })
         .catch(error => {
             console.error('Error loading requirements:', error);
-            showAlert('Error loading form requirements: ' + error.message, 'danger');
+            container.innerHTML = `<div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Unable to load form requirements: ${error.message}
+                <button class="btn btn-sm btn-outline-warning ms-2" onclick="loadFormRequirements()">
+                    <i class="fas fa-redo me-1"></i>Retry
+                </button>
+            </div>`;
+            
+            // Still show system fields even if API fails
+            try {
+                addSystemFields();
+            } catch (e) {
+                console.error('Error adding system fields:', e);
+            }
         });
 }
 function addRequirementField(data = {}) {
@@ -1459,8 +1788,8 @@ function handleFieldTypeChange(selectElement) {
 }
 
 function updateSortOrder() {
-    const requirementsContainer = document.getElementById('requirementsContainer');
-    const items = requirementsContainer.querySelectorAll('.requirement-item');
+    const updateRequirementsContainer = document.getElementById('requirementsContainer');
+    const items = updateRequirementsContainer.querySelectorAll('.requirement-item');
     
     items.forEach((item, index) => {
         // Find the sort_order hidden input and update it
@@ -2227,6 +2556,49 @@ function saveDirectorSettings() {
     });
 }
 
+function saveReferralSettings() {
+    const form = document.getElementById('referralSettingsForm');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Get checkbox values
+    const referralEnabled = document.getElementById('referralEnabled').checked;
+    const referralRequired = document.getElementById('referralRequired').checked;
+    
+    // Show loading state
+    const originalContent = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    // Prepare data
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('referral_enabled', referralEnabled ? '1' : '0');
+    formData.append('referral_required', referralRequired ? '1' : '0');
+
+    fetch('/admin/settings/referral', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Referral settings saved:', data);
+        if (data.success) {
+            showAlert('Referral settings saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving referral settings', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving referral settings:', error);
+        showAlert('Error saving referral settings: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalContent;
+    });
+}
+
 function addSystemFields() {
     const container = document.getElementById('requirementsContainer');
     
@@ -2509,17 +2881,48 @@ let paymentMethods = [];
 let editingPaymentMethodId = null;
 
 function loadPaymentMethods() {
+    console.log('Loading payment methods...');
+    
+    const tableBody = document.getElementById('paymentMethodsTableBody');
+    if (!tableBody) {
+        console.error('Payment methods table body not found');
+        return;
+    }
+    
+    // Show loading state
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Loading payment methods...</td></tr>';
+    
     fetch('/admin/settings/payment-methods/')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Payment methods response status:', response.status);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Authentication required. Please log in.');
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Payment methods loaded:', data);
             if (data.success) {
                 paymentMethods = data.data;
                 renderPaymentMethodsTable();
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Failed to load payment methods</td></tr>';
             }
         })
         .catch(error => {
             console.error('Error loading payment methods:', error);
-            showAlert('Failed to load payment methods', 'danger');
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center">
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Unable to load payment methods: ${error.message}
+                    <button class="btn btn-sm btn-outline-warning ms-2" onclick="loadPaymentMethods()">
+                        <i class="fas fa-redo me-1"></i>Retry
+                    </button>
+                </div>
+            </td></tr>`;
         });
 }
 
@@ -2766,6 +3169,494 @@ function updatePaymentMethodOrder() {
     });
 }
 
+// Education Level Management Functions
+function addEducationLevel() {
+    document.getElementById('educationLevelModalTitle').textContent = 'Add Education Level';
+    document.getElementById('educationLevelForm').reset();
+    editingEducationLevelId = null;
+    
+    // Clear and add default document requirements for new education level
+    document.getElementById('fileRequirementsContainer').innerHTML = '';
+    
+    // Add default document requirements based on common education level needs
+    addDocumentRequirement({
+        document_type: 'school_id',
+        file_type: 'image',
+        is_required: true,
+        available_full_plan: true,
+        available_modular_plan: true
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('educationLevelModal'));
+    modal.show();
+}
+
+function addDocumentRequirement(data = {}) {
+    const container = document.getElementById('fileRequirementsContainer');
+    const newRequirement = document.createElement('div');
+    newRequirement.className = 'document-requirement-item mb-3 p-3 border rounded bg-light';
+    
+    const documentTypes = [
+        { value: 'school_id', label: 'School ID' },
+        { value: 'diploma', label: 'Diploma' },
+        { value: 'Cert_of_Grad', label: 'Certificate of Graduation' },
+        { value: 'TOR', label: 'Transcript of Records (TOR)' },
+        { value: 'PSA', label: 'PSA Birth Certificate' },
+        { value: 'good_moral', label: 'Good Moral Certificate' },
+        { value: 'Course_Cert', label: 'Course Certificate' },
+        { value: 'photo_2x2', label: 'Photo 2x2' },
+        { value: 'custom', label: 'Custom Document' }
+    ];
+    
+    const fileTypes = [
+        { value: 'image', label: 'Image Only (JPG, PNG, GIF)' },
+        { value: 'pdf', label: 'PDF Only' },
+        { value: 'document', label: 'Document (PDF, DOC, DOCX)' },
+        { value: 'any', label: 'Any File Type' }
+    ];
+    
+    let documentTypeOptions = '';
+    documentTypes.forEach(type => {
+        const selected = data.document_type === type.value ? 'selected' : '';
+        documentTypeOptions += `<option value="${type.value}" ${selected}>${type.label}</option>`;
+    });
+    
+    let fileTypeOptions = '';
+    fileTypes.forEach(type => {
+        const selected = data.file_type === type.value || (!data.file_type && type.value === 'any') ? 'selected' : '';
+        fileTypeOptions += `<option value="${type.value}" ${selected}>${type.label}</option>`;
+    });
+    
+    newRequirement.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small">Document Type</label>
+                <select class="form-control file-req-document-type" onchange="handleDocumentTypeChange(this)">
+                    ${documentTypeOptions}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Custom Name</label>
+                <input type="text" class="form-control file-req-custom-name" placeholder="Custom name" value="${data.custom_name || ''}" ${data.document_type !== 'custom' ? 'disabled' : ''}>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">File Type</label>
+                <select class="form-control file-req-file-type">
+                    ${fileTypeOptions}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small">Required</label>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input file-req-required" ${data.is_required !== false ? 'checked' : ''}>
+                    <label class="form-check-label">Yes</label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small">Full Plan</label>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input file-req-full-plan" ${data.available_full_plan !== false ? 'checked' : ''}>
+                    <label class="form-check-label">Yes</label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small">Modular</label>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input file-req-modular-plan" ${data.available_modular_plan !== false ? 'checked' : ''}>
+                    <label class="form-check-label">Yes</label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small">Actions</label>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeDocumentRequirement(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRequirement);
+}
+
+function handleDocumentTypeChange(selectElement) {
+    const customNameInput = selectElement.closest('.row').querySelector('.file-req-custom-name');
+    if (selectElement.value === 'custom') {
+        customNameInput.disabled = false;
+        customNameInput.focus();
+    } else {
+        customNameInput.disabled = true;
+        customNameInput.value = '';
+    }
+}
+
+function removeDocumentRequirement(button) {
+    button.closest('.document-requirement-item').remove();
+}
+
+// Legacy function for backward compatibility
+function addFileRequirement(data = {}) {
+    return addDocumentRequirement(data);
+}
+
+function removeFileRequirement(button) {
+    return removeDocumentRequirement(button);
+}
+
+function loadEducationLevels() {
+    console.log('Loading education levels...');
+    
+    const container = document.getElementById('educationLevelsContainer');
+    if (!container) {
+        console.error('Education levels container not found');
+        return;
+    }
+    
+    // Show loading state
+    container.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>Loading education levels...</div>';
+    
+    fetch('/admin/settings/education-levels')
+        .then(response => {
+            console.log('Education levels response status:', response.status);
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Authentication required. Please log in.');
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Education levels loaded:', data);
+            if (data.success) {
+                renderEducationLevels(data.data || []);
+            } else {
+                showAlert('Failed to load education levels', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading education levels:', error);
+            container.innerHTML = `<div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Unable to load education levels: ${error.message}
+                <button class="btn btn-sm btn-outline-warning ms-2" onclick="loadEducationLevels()">
+                    <i class="fas fa-redo me-1"></i>Retry
+                </button>
+            </div>`;
+        });
+}
+
+function renderEducationLevels(levels) {
+    // Store in global variable for edit/delete functions
+    educationLevels = levels || [];
+    
+    const container = document.getElementById('educationLevelsContainer');
+    
+    if (!levels || levels.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No education levels configured. Click "Add Education Level" to get started.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    levels.forEach((level, index) => {
+        const fileRequirements = level.file_requirements || [];
+        let fileReqsHtml = '';
+        
+        if (Array.isArray(fileRequirements) && fileRequirements.length > 0) {
+            fileReqsHtml = fileRequirements.map(req => {
+                const displayName = req.custom_name || req.field_name || req.document_type;
+                const fileTypeIcon = req.file_type === 'image' ? 'fa-image' : 
+                                   req.file_type === 'pdf' ? 'fa-file-pdf' : 
+                                   req.file_type === 'document' ? 'fa-file-word' : 'fa-file';
+                const badgeClass = req.is_required ? 'primary' : 'secondary';
+                const planInfo = [];
+                if (req.available_full_plan) planInfo.push('Full');
+                if (req.available_modular_plan) planInfo.push('Modular');
+                
+                return `
+                    <span class="badge bg-${badgeClass} me-1 mb-1" title="${displayName} - ${req.file_type} files - Available for: ${planInfo.join(', ')}">
+                        <i class="fas ${fileTypeIcon} me-1"></i>${displayName}
+                        ${req.is_required ? '<i class="fas fa-asterisk ms-1" style="font-size: 8px;"></i>' : ''}
+                    </span>
+                `;
+            }).join('');
+        } else if (typeof fileRequirements === 'object' && Object.keys(fileRequirements).length > 0) {
+            // Handle legacy format
+            fileReqsHtml = Object.entries(fileRequirements).map(([fieldName, config]) => `
+                <span class="badge bg-${config.required ? 'primary' : 'secondary'} me-1 mb-1">
+                    ${fieldName}
+                    <small class="ms-1">(${config.type || 'file'})</small>
+                </span>
+            `).join('');
+        }
+        
+        html += `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h6 class="mb-1">${level.level_name}</h6>
+                            <small class="text-muted">Order: ${level.level_order || 'N/A'}</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-1">
+                                <span class="badge bg-${level.available_full_plan ? 'success' : 'light text-dark'} me-1">
+                                    Full Plan: ${level.available_full_plan ? 'Enabled' : 'Disabled'}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="badge bg-${level.available_modular_plan ? 'success' : 'light text-dark'}">
+                                    Modular Plan: ${level.available_modular_plan ? 'Enabled' : 'Disabled'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-1">
+                                <small class="text-muted d-block">Document Requirements:</small>
+                                ${fileReqsHtml || '<span class="text-muted">No document requirements</span>'}
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editEducationLevel(${level.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteEducationLevel(${level.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function saveEducationLevel() {
+    const form = document.getElementById('educationLevelForm');
+    const formData = new FormData(form);
+
+    // Collect document requirements
+    const documentRequirements = [];
+    document.querySelectorAll('.document-requirement-item').forEach(item => {
+        const documentType = item.querySelector('.file-req-document-type').value;
+        const customName = item.querySelector('.file-req-custom-name').value.trim();
+        const fileType = item.querySelector('.file-req-file-type').value;
+        
+        // Use custom name for custom document type, otherwise use document type
+        const fieldName = documentType === 'custom' && customName ? customName : documentType;
+        
+        if (fieldName) {
+            documentRequirements.push({
+                field_name: fieldName,
+                document_type: documentType,
+                file_type: fileType,
+                custom_name: documentType === 'custom' ? customName : null,
+                is_required: item.querySelector('.file-req-required').checked,
+                available_full_plan: item.querySelector('.file-req-full-plan').checked,
+                available_modular_plan: item.querySelector('.file-req-modular-plan').checked
+            });
+        }
+    });
+
+    // Also collect legacy file requirements for backward compatibility
+    document.querySelectorAll('.file-requirement-item').forEach(item => {
+        const name = item.querySelector('.file-req-name')?.value.trim();
+        if (name) {
+            documentRequirements.push({
+                field_name: name,
+                field_type: item.querySelector('.file-req-type')?.value || 'file',
+                file_type: 'any', // Default for legacy requirements
+                is_required: item.querySelector('.file-req-required')?.checked || false,
+                available_full_plan: item.querySelector('.file-req-full-plan')?.checked || true,
+                available_modular_plan: item.querySelector('.file-req-modular-plan')?.checked || true
+            });
+        }
+    });
+
+    // Prepare data as JSON object
+    const data = {
+        level_name: formData.get('level_name'),
+        description: formData.get('description'),
+        is_active: formData.get('is_active') === '1',
+        file_requirements: documentRequirements
+    };
+
+    // Add ID for updates
+    if (editingEducationLevelId) {
+        data.id = editingEducationLevelId;
+    }
+    
+    const saveButton = document.getElementById('saveEducationLevelBtn');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveButton.disabled = true;
+
+    // Determine method and URL
+    const method = editingEducationLevelId ? 'PUT' : 'POST';
+    const url = editingEducationLevelId ? 
+        `/admin/settings/education-levels/${editingEducationLevelId}` : 
+        '/admin/settings/education-levels';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message || 'Education level saved successfully', 'success');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('educationLevelModal'));
+            modal.hide();
+            loadEducationLevels();
+        } else {
+            showAlert(data.error || 'Failed to save education level', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving education level:', error);
+        showAlert('Failed to save education level', 'danger');
+    })
+    .finally(() => {
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+function refreshEducationLevels() {
+    loadEducationLevels();
+}
+
+function editEducationLevel(id) {
+    console.log('Editing education level:', id);
+    
+    // Find the education level data
+    const educationLevel = educationLevels.find(level => level.id == id);
+    if (!educationLevel) {
+        console.error('Education level not found with ID:', id);
+        console.log('Available education levels:', educationLevels);
+        showAlert('Education level not found', 'danger');
+        return;
+    }
+    
+    // Set modal title
+    document.getElementById('educationLevelModalTitle').textContent = 'Edit Education Level';
+    
+    // Populate form fields
+    document.getElementById('level_name').value = educationLevel.level_name || '';
+    document.getElementById('description').value = educationLevel.level_description || educationLevel.description || '';
+    document.getElementById('is_active').checked = educationLevel.is_active;
+    
+    // Populate document requirements
+    const container = document.getElementById('fileRequirementsContainer');
+    container.innerHTML = '';
+    
+    // Handle file_requirements - it might be a string (JSON) or an array
+    let fileRequirements = educationLevel.file_requirements;
+    if (typeof fileRequirements === 'string') {
+        try {
+            fileRequirements = JSON.parse(fileRequirements);
+        } catch (e) {
+            console.warn('Failed to parse file_requirements JSON:', e);
+            fileRequirements = [];
+        }
+    }
+    
+    if (Array.isArray(fileRequirements) && fileRequirements.length > 0) {
+        fileRequirements.forEach(req => {
+            // Convert legacy format to new format if needed
+            const documentData = {
+                document_type: req.document_type || 'custom',
+                custom_name: req.custom_name || (req.document_type ? null : req.field_name),
+                file_type: req.file_type || 'any',
+                is_required: req.is_required !== undefined ? req.is_required : req.required,
+                available_full_plan: req.available_full_plan !== undefined ? req.available_full_plan : true,
+                available_modular_plan: req.available_modular_plan !== undefined ? req.available_modular_plan : true
+            };
+            addDocumentRequirement(documentData);
+        });
+    } else {
+        // Add default document requirement for new education levels
+        addDocumentRequirement({
+            document_type: 'school_id',
+            file_type: 'image',
+            is_required: true,
+            available_full_plan: true,
+            available_modular_plan: true
+        });
+    }
+    
+    // Set editing mode
+    editingEducationLevelId = id;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('educationLevelModal'));
+    modal.show();
+}
+
+function deleteEducationLevel(id) {
+    console.log('Deleting education level:', id);
+    
+    // Find the education level name for confirmation
+    const educationLevel = educationLevels.find(level => level.id == id);
+    const levelName = educationLevel ? educationLevel.level_name : 'this education level';
+    
+    if (!confirm(`Are you sure you want to delete "${levelName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    // Make delete request
+    fetch(`/admin/settings/education-levels/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Education level deleted successfully', 'success');
+            loadEducationLevels();
+        } else {
+            showAlert(data.error || 'Failed to delete education level', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting education level:', error);
+        showAlert('Failed to delete education level', 'danger');
+    });
+}
+
+function saveEducationLevels() {
+    // This would save any pending changes
+    showAlert('Education levels configuration saved!', 'success');
+}
+
+// Load education levels when the tab is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const educationLevelsTab = document.getElementById('education-levels-tab');
+    if (educationLevelsTab) {
+        educationLevelsTab.addEventListener('shown.bs.tab', function() {
+            loadEducationLevels();
+        });
+        
+        if (educationLevelsTab.classList.contains('active')) {
+            loadEducationLevels();
+        }
+    }
+});
+
 // Load payment methods when the payment methods tab is shown
 document.addEventListener('DOMContentLoaded', function() {
     // Load payment methods if we're on the payment methods tab
@@ -2780,6 +3671,43 @@ document.addEventListener('DOMContentLoaded', function() {
             loadPaymentMethods();
         }
     }
+});
+
+// Sidebar Customization Functions
+function applySidebarColors() {
+    const sidebarBg = document.querySelector('input[name="sidebar_background_color"]').value;
+    const sidebarGradient = document.querySelector('input[name="sidebar_gradient_color"]').value;
+    const sidebarText = document.querySelector('input[name="sidebar_text_color"]').value;
+    const sidebarHover = document.querySelector('input[name="sidebar_hover_color"]').value;
+    const sidebarActiveBg = document.querySelector('input[name="sidebar_active_bg_color"]').value;
+    const sidebarActiveText = document.querySelector('input[name="sidebar_active_text_color"]').value;
+    const sidebarFooterBg = document.querySelector('input[name="sidebar_footer_bg_color"]').value;
+    const sidebarFooterText = document.querySelector('input[name="sidebar_footer_text_color"]').value;
+    
+    // Apply CSS variables
+    document.documentElement.style.setProperty('--sidebar-bg', `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`);
+    document.documentElement.style.setProperty('--sidebar-text', sidebarText);
+    document.documentElement.style.setProperty('--sidebar-hover', sidebarHover);
+    document.documentElement.style.setProperty('--sidebar-active-bg', `linear-gradient(135deg, ${sidebarActiveBg}, ${sidebarActiveBg})`);
+    document.documentElement.style.setProperty('--sidebar-active-text', sidebarActiveText);
+    document.documentElement.style.setProperty('--sidebar-footer-bg', `linear-gradient(180deg, ${sidebarFooterBg} 0%, ${sidebarFooterBg} 100%)`);
+    document.documentElement.style.setProperty('--sidebar-footer-text', sidebarFooterText);
+}
+
+// Add event listeners for sidebar color changes
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply colors when sidebar tab is shown
+    const sidebarTab = document.getElementById('sidebar-tab');
+    if (sidebarTab) {
+        sidebarTab.addEventListener('shown.bs.tab', function() {
+            applySidebarColors();
+        });
+    }
+    
+    // Apply colors when color inputs change
+    document.querySelectorAll('#sidebarCustomizationForm input[type="color"], #sidebarFooterCustomizationForm input[type="color"]').forEach(input => {
+        input.addEventListener('change', applySidebarColors);
+    });
 });
 </script>
 @endpush

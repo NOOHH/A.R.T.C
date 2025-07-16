@@ -66,6 +66,7 @@
                                     @enderror
                                 </div>
                             </div>
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="password" class="form-label">Password</label>
@@ -73,6 +74,25 @@
                                            id="password" name="password">
                                     <div class="form-text">Leave empty to keep current password</div>
                                     @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="referral_code" class="form-label">Referral Code</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control @error('referral_code') is-invalid @enderror" 
+                                               id="referral_code" name="referral_code" 
+                                               value="{{ old('referral_code', $professor->referral_code) }}" 
+                                               data-professor-id="{{ $professor->professor_id }}"
+                                               placeholder="Auto-generated if empty">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="generateReferralCodeProf()" title="Generate New Code">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Referral code for student registration (e.g., PROF01NAME)</div>
+                                    @error('referral_code')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -316,5 +336,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Referral code generation function
+function generateReferralCodeProf() {
+    const firstName = document.getElementById('first_name').value || '';
+    const lastName = document.getElementById('last_name').value || '';
+    
+    if (!firstName.trim() || !lastName.trim()) {
+        alert('Please enter the professor first and last name');
+        return;
+    }
+    
+    // Generate code based on name
+    const cleanFirstName = firstName.replace(/[^A-Za-z]/g, '').toUpperCase();
+    const cleanLastName = lastName.replace(/[^A-Za-z]/g, '').toUpperCase();
+    
+    // Get professor ID from data attribute
+    const referralField = document.getElementById('referral_code');
+    const professorId = referralField.getAttribute('data-professor-id') || Math.floor(Math.random() * 99) + 1;
+    const paddedId = String(professorId).padStart(2, '0');
+    
+    // Generate code: PROF + ID + NAME_INITIALS
+    const nameCode = cleanFirstName.substring(0, 1) + cleanLastName.substring(0, 3);
+    const referralCode = 'PROF' + paddedId + nameCode;
+    
+    referralField.value = referralCode;
+}
 </script>
 @endpush

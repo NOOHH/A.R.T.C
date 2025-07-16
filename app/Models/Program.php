@@ -36,6 +36,14 @@ class Program extends Model
     }
 
     /**
+     * A program has many packages.
+     */
+    public function packages(): HasMany
+    {
+        return $this->hasMany(Package::class, 'program_id', 'program_id');
+    }
+
+    /**
      * A program’s enrolled students via the enrollments pivot.
      */
     public function students(): BelongsToMany

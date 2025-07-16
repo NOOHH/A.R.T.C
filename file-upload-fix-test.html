@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Display Fix - Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .success { border-left: 4px solid #198754; }
+        .warning { border-left: 4px solid #ffc107; }
+        .info { border-left: 4px solid #0dcaf0; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="test-container">
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="bi bi-bug-fill text-danger"></i>
+                    File Upload Display Fix
+                </h1>
+                <p class="lead">Testing file upload field names and education level updates</p>
+            </div>
+
+            <!-- Issue Summary -->
+            <div class="test-section success">
+                <h3><i class="bi bi-check-circle-fill text-success"></i> Issues Fixed</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>1. File Upload Names Showing Numbers</h5>
+                        <p><strong>Problem:</strong> File upload fields showing "0", "1", "2", "3" instead of document names</p>
+                        <p><strong>Solution:</strong> Fixed JavaScript iteration and data processing in <code>toggleEducationLevelRequirements()</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>2. Education Level 500 Error</h5>
+                        <p><strong>Problem:</strong> <code>PUT /admin/settings/education-levels/2 500</code></p>
+                        <p><strong>Solution:</strong> Added missing fields to EducationLevel model fillable array</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Details -->
+            <div class="test-section info">
+                <h3><i class="bi bi-gear-fill text-info"></i> Technical Changes Made</h3>
+                
+                <h5>1. EducationLevel Model Enhancement</h5>
+                <div class="code-block">
+// Added missing fields to fillable array
+protected $fillable = [
+    'level_name',
+    'level_description',
+    'level_order', 
+    'file_requirements',
+    'available_for_general',
+    'available_for_professional', 
+    'available_for_review',
+    'available_full_plan',    // ← Added
+    'available_modular_plan', // ← Added
+    'is_active'              // ← Added
+];
+
+// Enhanced getFileRequirementsForPlan() method
+public function getFileRequirementsForPlan($planType = null) {
+    // Now properly handles both array and object formats
+    // Returns correct display names instead of field indices
+}
+                </div>
+
+                <h5>2. JavaScript Function Fix</h5>
+                <div class="code-block">
+// Fixed toggleEducationLevelRequirements() function
+function toggleEducationLevelRequirements() {
+    // Enhanced array processing
+    // Better iteration with traditional for loop
+    // Improved field name extraction
+    // Added comprehensive debugging
+}
+                </div>
+            </div>
+
+            <!-- Expected Behavior -->
+            <div class="test-section warning">
+                <h3><i class="bi bi-exclamation-triangle-fill text-warning"></i> Expected Behavior After Fix</h3>
+                
+                <h5>File Upload Fields Should Now Show:</h5>
+                <ul>
+                    <li><i class="bi bi-file-earmark-arrow-up"></i> <strong>Valid school identification</strong> instead of "0"</li>
+                    <li><i class="bi bi-file-earmark-arrow-up"></i> <strong>Transcript of Records</strong> instead of "1"</li>
+                    <li><i class="bi bi-file-earmark-arrow-up"></i> <strong>PSA Birth Certificate</strong> instead of "2"</li>
+                    <li><i class="bi bi-file-earmark-arrow-up"></i> <strong>Certificate of Good Moral Character</strong> instead of "3"</li>
+                </ul>
+
+                <h5>Education Level Updates Should:</h5>
+                <ul>
+                    <li><i class="bi bi-check-circle"></i> Save successfully without 500 errors</li>
+                    <li><i class="bi bi-check-circle"></i> Update all fields including descriptions and settings</li>
+                    <li><i class="bi bi-check-circle"></i> Properly handle file requirements JSON data</li>
+                </ul>
+            </div>
+
+            <!-- Testing Instructions -->
+            <div class="test-section">
+                <h3><i class="bi bi-clipboard-check-fill"></i> Testing Instructions</h3>
+                
+                <h5>Test 1: File Upload Display</h5>
+                <ol>
+                    <li>Go to the Full Enrollment page</li>
+                    <li>Select an Education Level (Undergraduate or Graduate)</li>
+                    <li>Verify file upload fields show proper document names, not numbers</li>
+                    <li>Check browser console for debugging information</li>
+                </ol>
+
+                <h5>Test 2: Education Level Updates</h5>
+                <ol>
+                    <li>Go to Admin → Settings → Education Levels</li>
+                    <li>Try to edit an education level</li>
+                    <li>Make changes and save</li>
+                    <li>Should save successfully without 500 error</li>
+                </ol>
+            </div>
+
+            <!-- Debug Information -->
+            <div class="test-section">
+                <h3><i class="bi bi-terminal-fill"></i> Debug Information</h3>
+                
+                <h5>Console Debugging Added:</h5>
+                <div class="code-block">
+// Check browser console for these debug messages:
+'Education level changed to: [level_name]'
+'File requirements: [raw_data]'
+'Final requirements array: [processed_data]'
+'Processing requirement: [individual_requirement]'
+'Field details: {fieldName, displayName, isRequired, fileType}'
+                </div>
+
+                <h5>Laravel Log Monitoring:</h5>
+                <div class="code-block">
+# Monitor Laravel logs for education level operations:
+Get-Content storage/logs/laravel.log | Select-Object -Last 10
+
+# Look for successful log entries like:
+'Education level updated' with education_level_id
+                </div>
+            </div>
+
+            <!-- Files Modified -->
+            <div class="test-section">
+                <h3><i class="bi bi-file-earmark-code-fill"></i> Files Modified</h3>
+                <ul>
+                    <li><code>app/Models/EducationLevel.php</code>
+                        <ul>
+                            <li>Enhanced fillable array with missing fields</li>
+                            <li>Fixed getFileRequirementsForPlan() method</li>
+                            <li>Added proper casting for new boolean fields</li>
+                        </ul>
+                    </li>
+                    <li><code>resources/views/registration/Full_enrollment.blade.php</code>
+                        <ul>
+                            <li>Fixed toggleEducationLevelRequirements() JavaScript function</li>
+                            <li>Improved array iteration and data processing</li>
+                            <li>Added comprehensive debugging</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="text-center mt-4">
+                <a href="/registration/Full_enrollment" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-arrow-right-circle"></i> Test Full Enrollment
+                </a>
+                <a href="/admin/settings/education-levels" class="btn btn-success btn-lg">
+                    <i class="bi bi-gear-fill"></i> Test Education Level Updates
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

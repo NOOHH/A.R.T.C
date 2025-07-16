@@ -12,6 +12,12 @@ class AdminDirectorController extends Controller
 {
     public function index()
     {
+        // Check if user is admin
+        if (!session('user_type') || session('user_type') !== 'admin') {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Access denied. Director management is only available for admins.');
+        }
+
         $directors = Director::with(['programs', 'assignedPrograms', 'admin'])
             ->where('directors_archived', false)
             ->orderBy('directors_last_name')

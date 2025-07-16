@@ -374,7 +374,7 @@ class AdminProgramController extends Controller
                 ->where('enrollments.status', 'completed')
                 ->count();
 
-            return view('admin.admin-enrollments', compact(
+            return view('admin.admin-student-enrollments.admin-enrollments', compact(
                 'totalEnrollments',
                 'activeEnrollments',
                 'pendingEnrollments',
@@ -383,7 +383,7 @@ class AdminProgramController extends Controller
         } catch (\Exception $e) {
             Log::error('Enrollment management error: ' . $e->getMessage());
 
-            return view('admin.admin-enrollments', [
+            return view('admin.admin-student-enrollments.admin-enrollments', [
                 'dbError' => 'Unable to load enrollment data.',
                 'totalEnrollments' => 0,
                 'activeEnrollments' => 0,

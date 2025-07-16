@@ -40,6 +40,7 @@ class Professor extends Authenticatable
         'admin_id',
         'professor_archived',
         'dynamic_data',
+        'referral_code',
     ];
 
     /**
@@ -260,5 +261,33 @@ class Professor extends Authenticatable
             'video_description' => $videoDescription,
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * Referral relationship - get all referrals made by this professor
+     */
+    public function referrals()
+    {
+        return $this->hasMany(Referral::class, 'referrer_id', 'professor_id')
+                    ->where('referrer_type', 'professor');
+    }
+
+    /**
+     * Get referral analytics for this professor
+     */
+    public function getReferralAnalytics()
+    {
+        return [
+            'total_referrals' => $this->referrals()->count(),
+            'monthly_referrals' => $this->referrals()
+                                       ->whereMonth('used_at', now()->month)
+                                       ->whereYear('used_at', now()->year)
+                                       ->count(),
+            'recent_referrals' => $this->referrals()
+                                      ->with(['student', 'registration'])
+                                      ->orderBy('used_at', 'desc')
+                                      ->limit(10)
+                                      ->get()
+        ];
     }
 }

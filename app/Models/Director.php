@@ -22,6 +22,7 @@ class Director extends Model
         'directors_password',
         'directors_archived',
         'has_all_program_access',
+        'referral_code',
     ];
 
     protected $casts = [
@@ -68,6 +69,30 @@ class Director extends Model
         }
         
         return $allPrograms->unique('program_id')->where('is_archived', false);
+    }
+
+    // Referral relationship
+    public function referrals()
+    {
+        return $this->hasMany(Referral::class, 'referrer_id', 'directors_id')
+                    ->where('referrer_type', 'director');
+    }
+
+    // Get referral analytics for this director
+    public function getReferralAnalytics()
+    {
+        return [
+            'total_referrals' => $this->referrals()->count(),
+            'monthly_referrals' => $this->referrals()
+                                       ->whereMonth('used_at', now()->month)
+                                       ->whereYear('used_at', now()->year)
+                                       ->count(),
+            'recent_referrals' => $this->referrals()
+                                      ->with(['student', 'registration'])
+                                      ->orderBy('used_at', 'desc')
+                                      ->limit(10)
+                                      ->get()
+        ];
     }
 
     // Scopes

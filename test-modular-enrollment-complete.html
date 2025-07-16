@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .flow-step {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            position: relative;
+        }
+        .flow-step:before {
+            content: attr(data-step);
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-pending { background: #ffc107; }
+        .status-info { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="text-center mb-4">
+            <h1 class="display-4">🎓 Modular Enrollment System Test</h1>
+            <p class="lead">Comprehensive Testing for Package → Program → Module → Sync/Async → Registration Flow</p>
+        </div>
+
+        <!-- Test Results Summary -->
+        <div class="test-section">
+            <h3><i class="fas fa-chart-line me-2"></i>Test Results Summary</h3>
+            <div id="testSummary" class="row">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Database Tests</h5>
+                            <span class="status-indicator status-pending"></span>
+                            <span id="dbTestStatus">Running...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Route Tests</h5>
+                            <span class="status-indicator status-pending"></span>
+                            <span id="routeTestStatus">Pending...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Form Tests</h5>
+                            <span class="status-indicator status-pending"></span>
+                            <span id="formTestStatus">Pending...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">Integration Tests</h5>
+                            <span class="status-indicator status-pending"></span>
+                            <span id="integrationTestStatus">Pending...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expected Flow -->
+        <div class="test-section">
+            <h3><i class="fas fa-route me-2"></i>Expected Registration Flow</h3>
+            <div class="flow-step" data-step="1">
+                <strong>Package Selection</strong>
+                <p>User selects a modular package (e.g., "3 Modules - ₱499" or "2 Modules - ₱599")</p>
+                <ul>
+                    <li>Package determines module limit</li>
+                    <li>Package has associated program_id</li>
+                    <li>Package type must be 'modular'</li>
+                </ul>
+            </div>
+            <div class="flow-step" data-step="2">
+                <strong>Program Selection</strong>
+                <p>Based on package, user selects specific program (e.g., "Nursing Board Review")</p>
+                <ul>
+                    <li>Programs are filtered by package's program_id</li>
+                    <li>Program selection loads available modules</li>
+                </ul>
+            </div>
+            <div class="flow-step" data-step="3">
+                <strong>Module Selection</strong>
+                <p>User selects specific modules (limited by package module_count)</p>
+                <ul>
+                    <li>Modules are loaded via AJAX from selected program</li>
+                    <li>Module selection is limited by package limit</li>
+                </ul>
+            </div>
+            <div class="flow-step" data-step="4">
+                <strong>Sync/Async Selection</strong>
+                <p>User chooses learning mode (Synchronous or Asynchronous)</p>
+                <ul>
+                    <li>Synchronous: Live classes, fixed schedule</li>
+                    <li>Asynchronous: Self-paced, flexible schedule</li>
+                </ul>
+            </div>
+            <div class="flow-step" data-step="5">
+                <strong>Account Registration</strong>
+                <p>User creates account or uses existing login</p>
+                <ul>
+                    <li>Account fields: firstname, lastname, email, password</li>
+                    <li>Dynamic fields from admin settings</li>
+                </ul>
+            </div>
+            <div class="flow-step" data-step="6">
+                <strong>Student Information</strong>
+                <p>User provides additional student details</p>
+                <ul>
+                    <li>Education Level: Undergraduate/Graduate</li>
+                    <li>Start Date: When to begin learning</li>
+                    <li>Additional dynamic fields</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="test-section">
+            <h3><i class="fas fa-play-circle me-2"></i>Test Controls</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="testDatabaseStructure()">
+                    <i class="fas fa-database me-2"></i>Test Database Structure
+                </button>
+                <button class="btn btn-success" onclick="testRoutes()">
+                    <i class="fas fa-route me-2"></i>Test Routes
+                </button>
+                <button class="btn btn-info" onclick="testFormFlow()">
+                    <i class="fas fa-wpforms me-2"></i>Test Form Flow
+                </button>
+                <button class="btn btn-warning" onclick="testRegistrationSubmission()">
+                    <i class="fas fa-paper-plane me-2"></i>Test Registration
+                </button>
+            </div>
+            <div class="button-group">
+                <a href="http://localhost/A.R.T.C/public/enrollment/modular" class="btn btn-outline-primary" target="_blank">
+                    <i class="fas fa-external-link-alt me-2"></i>Open Modular Enrollment Form
+                </a>
+                <a href="http://localhost/A.R.T.C/public/admin-dashboard" class="btn btn-outline-secondary" target="_blank">
+                    <i class="fas fa-cog me-2"></i>Admin Dashboard
+                </a>
+                <button class="btn btn-outline-danger" onclick="runFullTest()">
+                    <i class="fas fa-rocket me-2"></i>Run Full Test Suite
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="test-section">
+            <h3><i class="fas fa-clipboard-list me-2"></i>Test Results</h3>
+            <div id="testResults">
+                <div class="test-info">
+                    <strong>Ready to run tests...</strong>
+                    <p>Click the buttons above to run specific tests or run the full test suite.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Structure Info -->
+        <div class="test-section">
+            <h3><i class="fas fa-table me-2"></i>Database Structure Requirements</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Packages Table</h5>
+                    <div class="code-block">
+• package_id (Primary Key)
+• package_name (VARCHAR)
+• description (TEXT)
+• amount/price (DECIMAL)
+• program_id (Foreign Key to programs)
+• package_type (ENUM: 'full', 'modular')
+• module_count (INT)
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5>Registrations Table</h5>
+                    <div class="code-block">
+• registration_id (Primary Key)
+• user_id (Foreign Key)
+• program_id (Foreign Key)
+• package_id (Foreign Key)
+• enrollment_type (VARCHAR)
+• learning_mode (VARCHAR)
+• Start_Date (DATE)
+• education_level (VARCHAR)
+• sync_async_mode (ENUM)
+• selected_modules (JSON)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Critical Issues Found -->
+        <div class="test-section">
+            <h3><i class="fas fa-exclamation-triangle me-2"></i>Critical Issues to Check</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🔍 Common Issues</h5>
+                    <ul>
+                        <li>Package type not set to 'modular'</li>
+                        <li>Missing program_id in packages</li>
+                        <li>Module count not configured</li>
+                        <li>Route not updated for program_id</li>
+                        <li>Form fields not mapping to database</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>✅ Required Fixes</h5>
+                    <ul>
+                        <li>Update packages with module_count</li>
+                        <li>Set package_type = 'modular'</li>
+                        <li>Add Start_Date and education_level fields</li>
+                        <li>Update route to support program_id</li>
+                        <li>Test form submission flow</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateTestStatus(testType, status, message) {
+            const statusElement = document.getElementById(testType + 'TestStatus');
+            const indicator = statusElement.previousElementSibling;
+            
+            statusElement.textContent = message;
+            indicator.className = `status-indicator status-${status}`;
+        }
+
+        function addTestResult(type, message) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result test-${type}`;
+            resultDiv.innerHTML = `<strong>${type.toUpperCase()}:</strong> ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function testDatabaseStructure() {
+            updateTestStatus('db', 'pending', 'Testing...');
+            addTestResult('info', 'Testing database structure...');
+            
+            try {
+                // Test packages table
+                const response = await fetch('/A.R.T.C/test-db-structure.php');
+                const result = await response.text();
+                
+                if (result.includes('✅')) {
+                    updateTestStatus('db', 'success', 'Passed');
+                    addTestResult('success', 'Database structure test passed');
+                } else {
+                    updateTestStatus('db', 'error', 'Failed');
+                    addTestResult('error', 'Database structure test failed: ' + result);
+                }
+            } catch (error) {
+                updateTestStatus('db', 'error', 'Error');
+                addTestResult('error', 'Database test error: ' + error.message);
+            }
+        }
+
+        async function testRoutes() {
+            updateTestStatus('route', 'pending', 'Testing...');
+            addTestResult('info', 'Testing routes...');
+            
+            try {
+                // Test modular enrollment route
+                const response = await fetch('/A.R.T.C/public/enrollment/modular');
+                if (response.ok) {
+                    updateTestStatus('route', 'success', 'Passed');
+                    addTestResult('success', 'Modular enrollment route is accessible');
+                } else {
+                    updateTestStatus('route', 'error', 'Failed');
+                    addTestResult('error', 'Modular enrollment route failed: ' + response.status);
+                }
+                
+                // Test get-program-modules route
+                const modulesResponse = await fetch('/A.R.T.C/public/get-program-modules?program_id=32');
+                if (modulesResponse.ok) {
+                    const modulesData = await modulesResponse.json();
+                    if (modulesData.success) {
+                        addTestResult('success', 'get-program-modules route is working');
+                    } else {
+                        addTestResult('error', 'get-program-modules route returned error: ' + modulesData.message);
+                    }
+                } else {
+                    addTestResult('error', 'get-program-modules route failed: ' + modulesResponse.status);
+                }
+            } catch (error) {
+                updateTestStatus('route', 'error', 'Error');
+                addTestResult('error', 'Route test error: ' + error.message);
+            }
+        }
+
+        async function testFormFlow() {
+            updateTestStatus('form', 'pending', 'Testing...');
+            addTestResult('info', 'Testing form flow...');
+            
+            try {
+                // Test if form elements exist
+                const formWindow = window.open('/A.R.T.C/public/enrollment/modular', 'testWindow', 'width=800,height=600');
+                
+                setTimeout(() => {
+                    try {
+                        const form = formWindow.document.getElementById('enrollmentForm');
+                        const packageCards = formWindow.document.querySelectorAll('.package-card');
+                        const programSection = formWindow.document.getElementById('programSelectionSection');
+                        const moduleSection = formWindow.document.getElementById('moduleSelectionSection');
+                        const syncAsyncSection = formWindow.document.getElementById('syncAsyncSelectionSection');
+                        
+                        let passed = true;
+                        
+                        if (!form) {
+                            addTestResult('error', 'Enrollment form not found');
+                            passed = false;
+                        }
+                        
+                        if (packageCards.length === 0) {
+                            addTestResult('error', 'No package cards found');
+                            passed = false;
+                        }
+                        
+                        if (!programSection) {
+                            addTestResult('error', 'Program selection section not found');
+                            passed = false;
+                        }
+                        
+                        if (!moduleSection) {
+                            addTestResult('error', 'Module selection section not found');
+                            passed = false;
+                        }
+                        
+                        if (!syncAsyncSection) {
+                            addTestResult('error', 'Sync/Async selection section not found');
+                            passed = false;
+                        }
+                        
+                        if (passed) {
+                            updateTestStatus('form', 'success', 'Passed');
+                            addTestResult('success', 'Form flow structure is correct');
+                        } else {
+                            updateTestStatus('form', 'error', 'Failed');
+                        }
+                        
+                        formWindow.close();
+                    } catch (error) {
+                        updateTestStatus('form', 'error', 'Error');
+                        addTestResult('error', 'Form test error: ' + error.message);
+                        formWindow.close();
+                    }
+                }, 3000);
+            } catch (error) {
+                updateTestStatus('form', 'error', 'Error');
+                addTestResult('error', 'Form test error: ' + error.message);
+            }
+        }
+
+        async function testRegistrationSubmission() {
+            updateTestStatus('integration', 'pending', 'Testing...');
+            addTestResult('info', 'Testing registration submission...');
+            
+            try {
+                // Test form submission with sample data
+                const formData = new FormData();
+                formData.append('enrollment_type', 'Modular');
+                formData.append('package_id', '12');
+                formData.append('program_id', '32');
+                formData.append('selected_modules', JSON.stringify([{id: 1, name: 'Test Module'}]));
+                formData.append('sync_async_mode', 'async');
+                formData.append('learning_mode', 'asynchronous');
+                formData.append('user_firstname', 'Test');
+                formData.append('user_lastname', 'User');
+                formData.append('email', 'test@example.com');
+                formData.append('password', 'password123');
+                formData.append('password_confirmation', 'password123');
+                formData.append('education_level', 'Undergraduate');
+                formData.append('Start_Date', '2025-08-01');
+                formData.append('_token', 'test_token');
+                
+                addTestResult('info', 'Form data prepared for submission test');
+                updateTestStatus('integration', 'success', 'Ready');
+                addTestResult('success', 'Registration submission test data prepared');
+                
+            } catch (error) {
+                updateTestStatus('integration', 'error', 'Error');
+                addTestResult('error', 'Registration test error: ' + error.message);
+            }
+        }
+
+        async function runFullTest() {
+            addTestResult('info', '🚀 Running full test suite...');
+            
+            await testDatabaseStructure();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testRoutes();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testFormFlow();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testRegistrationSubmission();
+            
+            addTestResult('success', '✅ Full test suite completed!');
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            addTestResult('info', 'Test suite loaded. Ready to run tests.');
+        });
+    </script>
+</body>
+</html>

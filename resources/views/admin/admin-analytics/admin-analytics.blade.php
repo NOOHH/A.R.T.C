@@ -416,6 +416,92 @@
         </div>
     </div>
 
+    <!-- Referral Analytics Section (Admin Only) -->
+    @if(isset($isAdmin) && $isAdmin)
+    <div class="referral-analytics-section">
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="upload-card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-share-alt me-2"></i>Referral Analytics
+                            </h5>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary" onclick="refreshReferralData()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="exportReferralData()">
+                                    <i class="fas fa-download me-2"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-mini">
+                                    <div class="stat-mini-icon bg-info">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div>
+                                        <h6>Total Referrers</h6>
+                                        <h4 id="totalReferrers">--</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-mini">
+                                    <div class="stat-mini-icon bg-success">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div>
+                                        <h6>Total Referrals</h6>
+                                        <h4 id="totalReferrals">--</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-mini">
+                                    <div class="stat-mini-icon bg-info">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div>
+                                        <h6>Active Referrers</h6>
+                                        <h4 id="activeReferrers">--</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Referral Performance Table -->
+                        <div class="mt-4">
+                            <h6 class="mb-3">Top Referrers</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="referralTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Referrer</th>
+                                            <th>Type</th>
+                                            <th>Referral Code</th>
+                                            <th>Total Referrals</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="referralTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Loading referral data...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Board Passer Data Management -->
     <div class="board-passer-section">
         <div class="row g-4 mb-4">
@@ -1587,6 +1673,73 @@ function initializeStudentSelect() {
 // Initialize when manual entry modal is shown
 $('#manualEntryModal').on('show.bs.modal', function() {
     initializeStudentSelect();
+});
+
+// Referral Analytics Functions
+function refreshReferralData() {
+    loadReferralAnalytics();
+    showNotification('Referral data refreshed!', 'info');
+}
+
+function loadReferralAnalytics() {
+  fetch('/api/referral/analytics')
+    .then(res => res.json())
+    .then(json => {
+      const d = json.data;
+      // If you want “totalReferrers” to be the number of keys in top_referrers:
+      // Update stats
+      document.getElementById('totalReferrers').textContent = d.top_referrers ? d.top_referrers.length : 0;
+      document.getElementById('totalReferrals').textContent = d.total_referrals || 0;
+      document.getElementById('activeReferrers').textContent = d.active_referrers || 0;
+
+      // Populate referral table
+      const body = document.getElementById('referralTableBody');
+      if (d.top_referrers && Array.isArray(d.top_referrers) && d.top_referrers.length > 0) {
+        body.innerHTML = d.top_referrers.map(r => `
+          <tr>
+            <td>${r.name || 'Unknown'}</td>
+            <td><span class="badge bg-${r.type === 'director' ? 'primary' : 'success'}">
+                 ${r.type ? r.type.charAt(0).toUpperCase() + r.type.slice(1) : 'Unknown'}</span></td>
+            <td><code>${r.referral_code || 'N/A'}</code></td>
+            <td>${r.total_referrals || 0}</td>
+          </tr>
+        `).join('');
+      } else {
+        body.innerHTML = '<tr><td colspan="4" class="text-center">No referral data available</td></tr>';
+      }
+    })
+    .catch(err => {
+      console.error('Error loading referral analytics:', err);
+      showNotification('Failed to load referral data', 'error');
+    });
+}
+
+
+function exportReferralData() {
+    fetch('/api/referral/export')
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'referral_analytics.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showNotification('Referral data exported successfully!', 'success');
+    })
+    .catch(error => {
+        console.error('Error exporting referral data:', error);
+        showNotification('Failed to export referral data', 'error');
+    });
+}
+
+// Load referral analytics on page load if admin
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.querySelector('.referral-analytics-section')) {
+        loadReferralAnalytics();
+    }
 });
 </script>
 @endpush

@@ -7,6 +7,9 @@ use Carbon\Carbon;
 
 class Batch extends Model
 {
+    protected $table = 'student_batches';
+    protected $primaryKey = 'batch_id';
+    
     protected $fillable = [
         'program_id',
         'batch_name',
