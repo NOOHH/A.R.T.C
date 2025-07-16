@@ -74,22 +74,6 @@ class Module extends Model
         return $this->module_description;
     }
 
-    // Accessors to provide compatibility with expected field names
-    public function getIdAttribute()
-    {
-        return $this->modules_id;
-    }
-
-    public function getNameAttribute()
-    {
-        return $this->module_name;
-    }
-
-    public function getDescriptionAttribute()
-    {
-        return $this->module_description;
-    }
-
     public function batch()
     {
         return $this->belongsTo(StudentBatch::class, 'batch_id', 'batch_id');
