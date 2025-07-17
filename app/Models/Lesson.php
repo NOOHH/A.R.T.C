@@ -21,6 +21,8 @@ class Lesson extends Model
         'lesson_description',
         'course_id',
         'lesson_price',
+        'lesson_duration',
+        'lesson_video_url',
         'lesson_order',
         'is_required',
         'is_active',

@@ -56,7 +56,7 @@ Route::get('/programs/{id}/modules', function ($id) {
     $modules = \App\Models\Module::where('program_id', $id)
         ->where('is_archived', false)
         ->orderBy('module_order', 'asc')
-        ->get(['modules_id as id', 'module_name']);
+        ->get(['modules_id', 'module_name']);
     
     // wrap it:
     return response()->json([
