@@ -23,6 +23,8 @@ class Package extends Model
         'module_count',
         'price',
         'status',
+        'allowed_modules',
+        'extra_module_price',
     ];
 
     /**

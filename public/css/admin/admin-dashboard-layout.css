@@ -32,8 +32,8 @@ body, html {
 .admin-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Main Header */
@@ -191,21 +191,21 @@ body, html {
 .main-content {
   flex: 1;
   display: flex;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .main-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .content-below-search {
   flex: 1;
   display: flex;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Sidebar Overlay */
@@ -507,6 +507,69 @@ body, html {
   transition: margin-left 0.3s ease;
   overflow-y: auto;
   position: relative;
+  flex-direction: column;
+}
+
+/* Fix for admin content scrolling */
+.content-wrapper {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 80px); /* Subtract header height */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 27, 105, 0.3) transparent;
+}
+
+.content-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(45, 27, 105, 0.3);
+  border-radius: 10px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 27, 105, 0.5);
+}
+
+/* Ensure proper spacing for content */
+.content-wrapper > * {
+  margin-bottom: 20px;
+}
+
+.content-wrapper > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Fix for tables and large content */
+.content-wrapper .table-responsive {
+  overflow-x: auto;
+}
+
+.content-wrapper .card {
+  margin-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 15px;
+    height: calc(100vh - 70px);
+  }
+}
+
+@media (max-width: 480px) {
+  .content-wrapper {
+    padding: 10px;
+    height: calc(100vh - 60px);
+  }
 }
 
 /* Sidebar Icon Mode */

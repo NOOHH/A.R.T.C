@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Package Selection Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            margin: 30px auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .package-selection-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .package-selection-header h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .package-selection-header p {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+
+        .package-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .package-card:hover {
+            border-color: #3498db;
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(52, 152, 219, 0.15);
+        }
+
+        .package-card.selected {
+            border-color: #3498db;
+            background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+            box-shadow: 0 12px 40px rgba(52, 152, 219, 0.2);
+            transform: translateY(-8px);
+        }
+
+        .package-card.selected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .package-card.selected::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #3498db;
+            font-size: 1.5rem;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .package-header {
+            text-align: left;
+            margin-bottom: 25px;
+        }
+
+        .package-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .package-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #3498db;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .package-description {
+            color: #6c757d;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .package-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .package-features li {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            color: #495057;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .package-features li .check-icon {
+            color: #27ae60;
+            font-weight: 900;
+            margin-right: 12px;
+            font-size: 1rem;
+            min-width: 16px;
+        }
+
+        .package-footer {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .extra-modules-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .selected-package-indicator {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .selected-package-indicator .check-icon {
+            color: #27ae60;
+            margin-right: 8px;
+        }
+
+        .selected-package-indicator span {
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .btn-wizard {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 16px;
+            border: none;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .btn-wizard-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-wizard-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+            color: white;
+        }
+
+        .btn-wizard-primary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="package-selection-header">
+            <h3>Select a learning package that suits your needs</h3>
+            <p>Choose from our carefully curated packages designed for different learning goals</p>
+        </div>
+        
+        <div class="row justify-content-center" id="packagesContainer">
+            <!-- Packages will be loaded here -->
+        </div>
+        
+        <div id="selectedPackageIndicator" class="selected-package-indicator" style="display: none;">
+            <i class="fas fa-check check-icon"></i>
+            <span>Selected Package: <span id="selectedPackageName">None</span></span>
+        </div>
+        
+        <div class="text-center mt-4">
+            <button id="nextBtn" class="btn btn-wizard btn-wizard-primary" disabled>
+                Next: Package Summary <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Test data matching the actual packages
+        const testPackages = [
+            {
+                package_id: 1,
+                package_name: 'level 1',
+                description: 'E',
+                price: 499,
+                allowed_modules: 2,
+                extra_module_price: 1500
+            },
+            {
+                package_id: 2,
+                package_name: 'Legendary',
+                description: 'yes',
+                price: 599,
+                allowed_modules: 2,
+                extra_module_price: 1500
+            }
+        ];
+
+        let selectedPackageId = null;
+
+        function getPackageFeatures(package) {
+            let features = [
+                `${package.allowed_modules || 2} modules included`,
+                'Self-paced learning',
+                'Certificate upon completion',
+                'Flexible scheduling'
+            ];
+            
+            if (package.package_name.toLowerCase().includes('legendary') || 
+                package.package_name.toLowerCase().includes('premium') ||
+                (package.price && package.price > 500)) {
+                features.push('Priority support');
+                features.push('Advanced resources');
+                features.push('1-on-1 mentorship sessions');
+                features.push('Career guidance');
+            }
+            
+            if (package.extra_module_price) {
+                features.push(`Extra modules: ₱${parseInt(package.extra_module_price).toLocaleString()} each`);
+            }
+            
+            features.push('Download materials');
+            
+            return features;
+        }
+
+        function selectPackage(packageId, packageName = '') {
+            console.log('Package selected:', packageId, packageName);
+            
+            // Remove previous selection
+            const allCards = document.querySelectorAll('.package-card');
+            allCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            const selectedCard = document.querySelector(`[data-package-id="${packageId}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+            }
+            
+            // Store selected package
+            selectedPackageId = packageId;
+            
+            // Show selected package indicator
+            const indicator = document.getElementById('selectedPackageIndicator');
+            const packageNameSpan = document.getElementById('selectedPackageName');
+            if (indicator && packageNameSpan) {
+                packageNameSpan.textContent = packageName || `Package ${packageId}`;
+                indicator.style.display = 'block';
+                
+                // Smooth scroll to indicator
+                indicator.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+            }
+            
+            // Enable next button
+            const nextBtn = document.getElementById('nextBtn');
+            if (nextBtn) {
+                nextBtn.disabled = false;
+            }
+        }
+
+        function renderPackages(packages) {
+            const container = document.getElementById('packagesContainer');
+            container.innerHTML = '';
+            
+            const enhancedPackages = packages.map(package => {
+                return {
+                    ...package,
+                    features: getPackageFeatures(package)
+                };
+            });
+            
+            enhancedPackages.forEach(package => {
+                const col = document.createElement('div');
+                col.className = 'col-lg-6 col-xl-6 mb-4 d-flex';
+                
+                col.innerHTML = `
+                    <div class="package-card" data-package-id="${package.package_id}">
+                        <div class="package-header">
+                            <h4 class="package-name">${package.package_name}</h4>
+                            <span class="package-price">₱${parseInt(package.price || package.amount).toLocaleString()}</span>
+                            <p class="package-description">${package.description}</p>
+                        </div>
+                        
+                        <ul class="package-features">
+                            ${package.features.map(feature => `
+                                <li>
+                                    <i class="fas fa-check check-icon"></i>
+                                    ${feature}
+                                </li>
+                            `).join('')}
+                        </ul>
+                        
+                        <div class="package-footer">
+                            <div class="extra-modules-info">
+                                ${package.extra_module_price ? `Extra modules: ₱${parseInt(package.extra_module_price).toLocaleString()} each` : 'All-inclusive pricing'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const packageCard = col.querySelector('.package-card');
+                packageCard.addEventListener('click', function() {
+                    selectPackage(package.package_id, package.package_name);
+                });
+                
+                container.appendChild(col);
+            });
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPackages(testPackages);
+        });
+
+        // Next button handler
+        document.getElementById('nextBtn').addEventListener('click', function() {
+            alert(`Moving to next step with package: ${selectedPackageId}`);
+        });
+    </script>
+</body>
+</html>

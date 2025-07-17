@@ -268,7 +268,7 @@
 
       <div class="module-actions d-flex gap-2">
         <button class="action-btn btn-edit"
-                onclick="event.stopPropagation(); showeditModule({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}', '{{ addslashes($module->module_description) }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
+                onclick="event.stopPropagation(); editModule({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}', '{{ addslashes($module->module_description) }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
           <i class="bi bi-pencil"></i> Edit
         </button>
         <button class="action-btn btn-override"
@@ -341,8 +341,6 @@
                     <select id="content_type" name="content_type" class="form-select" required>
                         <option value="module">Module/Lesson</option>
                         <option value="assignment">Assignment</option>
-                        <option value="quiz">Quiz</option>
-                        <option value="test">Test</option>
                         <option value="link">External Link</option>
                     </select>
                 </div>
@@ -432,8 +430,6 @@
                     <select id="contentTypeSelect" name="content_type" class="form-select" required>
                         <option value="">-- Select Content Type --</option>
                         <option value="lesson">Lesson</option>
-                        <option value="quiz">Quiz</option>
-                        <option value="test">Test</option>
                         <option value="assignment">Assignment</option>
                     </select>
                 </div>
