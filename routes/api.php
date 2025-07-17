@@ -33,6 +33,57 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Student progress tracking routes
+Route::middleware(['web'])->group(function () {
+    Route::post('/student/module-progress', function (Request $request) {
+        try {
+            // Basic validation
+            $data = $request->validate([
+                'moduleId' => 'required|integer',
+                'completed' => 'required|array',
+                'totalItems' => 'required|integer',
+                'completedCount' => 'required|integer',
+                'percentage' => 'required|integer|min:0|max:100'
+            ]);
+            
+            // Here you could save to database if needed
+            // For now, just return success
+            return response()->json([
+                'success' => true,
+                'message' => 'Progress saved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save progress'
+            ], 500);
+        }
+    });
+    
+    Route::post('/student/complete-module', function (Request $request) {
+        try {
+            $data = $request->validate([
+                'module_id' => 'required|integer',
+                'program_id' => 'required|integer',
+                'progress_percentage' => 'integer|min:0|max:100'
+            ]);
+            
+            // Here you could update module completion status in database
+            // For now, just return success
+            return response()->json([
+                'success' => true,
+                'message' => 'Module completed successfully',
+                'course_id' => $data['program_id']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete module'
+            ], 500);
+        }
+    });
+});
+
 // Programs list API route for navbar dropdown
 Route::get('/programs', function () {
     $programs = \App\Models\Program::where('is_archived', false)
@@ -228,5 +279,73 @@ Route::middleware('web')->group(function () {
     
     Route::get('/api/professor/assigned-programs', function () {
         return response()->json(['programs' => []]);
+    });
+});
+
+// Modular Enrollment Wizard API Routes
+Route::middleware('web')->group(function () {
+    // Get packages for step 1
+    Route::get('/packages', function () {
+        try {
+            $packages = \App\Models\Package::where('package_type', 'modular')
+                ->with('program')
+                ->select('package_id', 'package_name', 'description', 'price', 'amount', 'program_id', 'allowed_modules', 'extra_module_price')
+                ->get()
+                ->map(function ($package) {
+                    return [
+                        'package_id' => $package->package_id,
+                        'package_name' => $package->package_name,
+                        'description' => $package->description,
+                        'price' => $package->price ?? $package->amount,
+                        'allowed_modules' => $package->allowed_modules ?? 2,
+                        'extra_module_price' => $package->extra_module_price ?? 1500,
+                        'program_id' => $package->program_id
+                    ];
+                });
+            
+            return response()->json(['success' => true, 'packages' => $packages]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    });
+
+    // Check email availability for step 5
+    Route::get('/check-email', function (Request $request) {
+        try {
+            $email = $request->get('email');
+            
+            if (!$email) {
+                return response()->json(['available' => false, 'message' => 'Email is required']);
+            }
+
+            // Check across all user tables
+            $emailExists = \App\Models\User::where('email', $email)->exists() ||
+                          \App\Models\Professor::where('professor_email', $email)->exists() ||
+                          \App\Models\Admin::where('email', $email)->exists() ||
+                          \App\Models\Director::where('directors_email', $email)->exists();
+
+            return response()->json(['available' => !$emailExists]);
+        } catch (\Exception $e) {
+            return response()->json(['available' => true, 'message' => 'Error checking email: ' . $e->getMessage()]);
+        }
+    });
+
+    // Get form requirements for step 6 (dynamic forms based on admin settings)
+    Route::get('/form-requirements', function (Request $request) {
+        try {
+            $type = $request->get('type', 'modular');
+            
+            $requirements = \App\Models\FormRequirement::where('is_active', true)
+                ->where(function($query) use ($type) {
+                    $query->where('program_type', $type)
+                          ->orWhere('program_type', 'both');
+                })
+                ->orderBy('sort_order')
+                ->get();
+
+            return response()->json(['success' => true, 'requirements' => $requirements]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     });
 });

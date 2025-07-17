@@ -68,6 +68,26 @@ CREATE TABLE `announcements` (
   PRIMARY KEY (`announcement_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `assignment_submissions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `assignment_submissions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` bigint(20) unsigned NOT NULL,
+  `module_id` bigint(20) unsigned NOT NULL,
+  `program_id` bigint(20) unsigned NOT NULL,
+  `files` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`files`)),
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `status` enum('submitted','graded','returned') NOT NULL DEFAULT 'submitted',
+  `grade` decimal(5,2) DEFAULT NULL,
+  `feedback` text DEFAULT NULL,
+  `graded_at` timestamp NULL DEFAULT NULL,
+  `graded_by` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `assignments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -102,6 +122,74 @@ CREATE TABLE `attendance` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_attendance` (`student_id`,`program_id`,`attendance_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `chats`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chats` (
+  `chat_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `sender_id` bigint(20) unsigned NOT NULL,
+  `receiver_id` bigint(20) unsigned NOT NULL,
+  `body_cipher` text NOT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `is_encrypted` tinyint(1) NOT NULL DEFAULT 1,
+  `sent_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`chat_id`),
+  KEY `chats_sender_id_receiver_id_index` (`sender_id`,`receiver_id`),
+  KEY `chats_sent_at_index` (`sent_at`),
+  KEY `chats_sender_id_receiver_id_sent_at_index` (`sender_id`,`receiver_id`,`sent_at`),
+  KEY `chats_receiver_id_read_at_index` (`receiver_id`,`read_at`),
+  KEY `chats_conversation_index` (`sender_id`,`receiver_id`,`sent_at`),
+  KEY `chats_unread_index` (`receiver_id`,`is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `content_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `content_items` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `content_title` varchar(255) NOT NULL,
+  `content_description` text DEFAULT NULL,
+  `lesson_id` bigint(20) unsigned NOT NULL,
+  `course_id` bigint(20) unsigned DEFAULT NULL,
+  `content_type` enum('assignment','quiz','test','link','video','document','lesson') DEFAULT NULL,
+  `content_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`content_data`)),
+  `attachment_path` varchar(255) DEFAULT NULL,
+  `max_points` decimal(8,2) DEFAULT NULL,
+  `due_date` datetime DEFAULT NULL,
+  `time_limit` int(11) DEFAULT NULL,
+  `content_order` int(11) NOT NULL DEFAULT 0,
+  `order` int(11) NOT NULL DEFAULT 0,
+  `is_required` tinyint(1) NOT NULL DEFAULT 1,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `content_items_lesson_id_foreign` (`lesson_id`),
+  KEY `content_items_course_id_foreign` (`course_id`),
+  CONSTRAINT `content_items_course_id_foreign` FOREIGN KEY (`course_id`) REFERENCES `courses` (`subject_id`) ON DELETE CASCADE,
+  CONSTRAINT `content_items_lesson_id_foreign` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`lesson_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `courses`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `courses` (
+  `subject_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `subject_name` varchar(255) NOT NULL,
+  `subject_description` text DEFAULT NULL,
+  `module_id` bigint(20) unsigned NOT NULL,
+  `subject_price` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `subject_order` int(11) NOT NULL DEFAULT 0,
+  `is_required` tinyint(1) NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`subject_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `deadlines`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -148,15 +236,35 @@ CREATE TABLE `directors` (
   `directors_last_name` varchar(100) NOT NULL,
   `directors_email` varchar(100) NOT NULL,
   `directors_password` varchar(255) NOT NULL,
+  `referral_code` varchar(20) DEFAULT NULL,
   `directors_archived` tinyint(1) DEFAULT 0,
   `has_all_program_access` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`directors_id`),
   UNIQUE KEY `directors_email` (`directors_email`),
+  UNIQUE KEY `referral_code` (`referral_code`),
   KEY `admin_id` (`admin_id`),
   CONSTRAINT `directors_ibfk_1` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`admin_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `education_levels`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `education_levels` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `level_name` varchar(255) NOT NULL,
+  `file_requirements` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`file_requirements`)),
+  `available_for_general` tinyint(1) NOT NULL DEFAULT 1,
+  `available_for_professional` tinyint(1) NOT NULL DEFAULT 1,
+  `available_for_review` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `level_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `education_levels_level_name_unique` (`level_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `enrollments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -165,12 +273,17 @@ CREATE TABLE `enrollments` (
   `enrollment_id` int(11) NOT NULL AUTO_INCREMENT,
   `registration_id` int(11) unsigned DEFAULT NULL,
   `student_id` varchar(30) DEFAULT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
   `program_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `enrollment_type` enum('Modular','Full') NOT NULL DEFAULT 'Modular',
   `learning_mode` enum('Synchronous','Asynchronous') NOT NULL DEFAULT 'Synchronous',
+  `batch_id` bigint(20) unsigned DEFAULT NULL,
+  `individual_start_date` datetime DEFAULT NULL,
+  `individual_end_date` datetime DEFAULT NULL,
   `enrollment_status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
-  `payment_status` enum('pending','completed','failed','cancelled') NOT NULL DEFAULT 'pending',
+  `payment_status` enum('pending','paid','failed','cancelled') DEFAULT 'pending',
+  `batch_access_granted` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Grants dashboard access for batch students regardless of enrollment/payment status',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`enrollment_id`),
@@ -178,7 +291,9 @@ CREATE TABLE `enrollments` (
   KEY `package_id` (`package_id`),
   KEY `idx_enrollments_student` (`student_id`),
   KEY `idx_enroll_registration` (`registration_id`),
-  KEY `idx_enroll_status` (`enrollment_status`)
+  KEY `idx_enroll_status` (`enrollment_status`),
+  KEY `enrollments_batch_id_foreign` (`batch_id`),
+  CONSTRAINT `enrollments_batch_id_foreign` FOREIGN KEY (`batch_id`) REFERENCES `student_batches` (`batch_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `failed_jobs`;
@@ -205,7 +320,7 @@ CREATE TABLE `form_requirements` (
   `field_label` varchar(255) NOT NULL,
   `field_type` enum('text','email','tel','date','file','select','textarea','checkbox','radio','number','section','module_selection') DEFAULT NULL,
   `entity_type` enum('student','professor','admin') NOT NULL DEFAULT 'student',
-  `program_type` enum('full','modular','both') NOT NULL DEFAULT 'both',
+  `program_type` enum('full','modular','both','all') NOT NULL DEFAULT 'both',
   `is_required` tinyint(1) NOT NULL DEFAULT 1,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `is_bold` tinyint(1) NOT NULL DEFAULT 0,
@@ -217,6 +332,45 @@ CREATE TABLE `form_requirements` (
   `section_name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `lessons`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `lessons` (
+  `lesson_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `lesson_name` varchar(255) NOT NULL,
+  `lesson_description` text DEFAULT NULL,
+  `course_id` int(11) NOT NULL,
+  `lesson_price` decimal(10,2) DEFAULT NULL,
+  `lesson_duration` int(11) DEFAULT NULL,
+  `lesson_video_url` varchar(255) DEFAULT NULL,
+  `lesson_order` int(11) NOT NULL DEFAULT 0,
+  `is_required` tinyint(1) NOT NULL DEFAULT 1,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `learning_mode` enum('Synchronous','Asynchronous','Both') NOT NULL DEFAULT 'Both',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`lesson_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `messages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `sender_id` bigint(20) unsigned NOT NULL,
+  `sender_type` varchar(50) NOT NULL,
+  `receiver_id` bigint(20) unsigned NOT NULL,
+  `receiver_type` varchar(50) NOT NULL,
+  `message` text NOT NULL,
+  `sent_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `content` text NOT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -253,13 +407,19 @@ CREATE TABLE `modules` (
   `module_name` varchar(255) NOT NULL,
   `module_description` text DEFAULT NULL,
   `program_id` int(11) NOT NULL,
+  `batch_id` bigint(20) unsigned DEFAULT NULL,
+  `learning_mode` enum('Synchronous','Asynchronous') NOT NULL DEFAULT 'Synchronous',
   `content_type` varchar(50) NOT NULL DEFAULT '',
   `content_data` text DEFAULT NULL,
   `plan_id` int(11) DEFAULT NULL,
   `attachment` varchar(255) DEFAULT NULL,
+  `video_path` varchar(255) DEFAULT NULL,
+  `additional_content` longtext DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_archived` tinyint(1) DEFAULT 0,
+  `order` int(11) NOT NULL DEFAULT 0,
+  `admin_override` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'overrides set by admins (stored as JSON)' CHECK (json_valid(`admin_override`)),
   `module_order` int(10) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`modules_id`),
   KEY `idx_modules_program` (`program_id`),
@@ -274,9 +434,15 @@ CREATE TABLE `packages` (
   `package_name` varchar(100) NOT NULL,
   `description` text DEFAULT NULL,
   `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `program_id` int(10) unsigned DEFAULT NULL,
   `created_by_admin_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `package_type` enum('full','modular') NOT NULL DEFAULT 'full',
+  `module_count` int(11) DEFAULT 0,
+  `allowed_modules` int(11) NOT NULL DEFAULT 2,
+  `extra_module_price` decimal(10,2) DEFAULT NULL,
+  `price` decimal(10,2) DEFAULT 0.00,
   PRIMARY KEY (`package_id`),
   KEY `created_by_admin_id` (`created_by_admin_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -289,6 +455,80 @@ CREATE TABLE `password_resets` (
   `token` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   KEY `password_resets_email_index` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `payment_history`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payment_history` (
+  `payment_history_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `enrollment_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `student_id` varchar(255) DEFAULT NULL,
+  `program_id` int(10) unsigned NOT NULL,
+  `package_id` int(10) unsigned NOT NULL,
+  `amount` decimal(10,2) DEFAULT NULL,
+  `payment_status` enum('pending','paid','failed','refunded','cancelled','processing') DEFAULT NULL,
+  `payment_method` enum('cash','card','bank_transfer','gcash','manual','other') DEFAULT NULL,
+  `payment_notes` text DEFAULT NULL,
+  `payment_date` timestamp NULL DEFAULT NULL,
+  `processed_by_admin_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`payment_history_id`),
+  KEY `idx_payment_history_enrollment` (`enrollment_id`,`payment_status`),
+  KEY `idx_payment_history_user` (`user_id`),
+  KEY `idx_payment_history_student` (`student_id`),
+  KEY `idx_payment_history_date` (`payment_date`),
+  KEY `processed_by_admin_id` (`processed_by_admin_id`),
+  CONSTRAINT `payment_history_ibfk_1` FOREIGN KEY (`enrollment_id`) REFERENCES `enrollments` (`enrollment_id`) ON DELETE CASCADE,
+  CONSTRAINT `payment_history_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `payment_history_ibfk_3` FOREIGN KEY (`processed_by_admin_id`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `payment_methods`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payment_methods` (
+  `payment_method_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `method_name` varchar(255) NOT NULL,
+  `method_type` enum('credit_card','gcash','maya','bank_transfer','cash','other') NOT NULL,
+  `description` text DEFAULT NULL,
+  `qr_code_path` varchar(255) DEFAULT NULL,
+  `instructions` text DEFAULT NULL,
+  `is_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_by_admin_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`payment_method_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payments` (
+  `payment_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `enrollment_id` bigint(20) unsigned NOT NULL,
+  `student_id` varchar(30) NOT NULL,
+  `program_id` bigint(20) unsigned NOT NULL,
+  `package_id` bigint(20) unsigned NOT NULL,
+  `payment_method` enum('credit_card','gcash','bank_transfer','cash','admin_marked') NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_status` enum('pending','paid','failed','cancelled') NOT NULL DEFAULT 'pending',
+  `payment_details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_details`)),
+  `verified_by` bigint(20) unsigned DEFAULT NULL,
+  `verified_at` timestamp NULL DEFAULT NULL,
+  `receipt_number` varchar(255) DEFAULT NULL,
+  `reference_number` varchar(255) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`payment_id`),
+  KEY `payments_student_id_index` (`student_id`),
+  KEY `payments_enrollment_id_index` (`enrollment_id`),
+  KEY `payments_payment_status_index` (`payment_status`),
+  KEY `payments_created_at_index` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `personal_access_tokens`;
@@ -316,6 +556,9 @@ CREATE TABLE `plan` (
   `plan_id` int(11) NOT NULL AUTO_INCREMENT,
   `plan_name` varchar(50) NOT NULL,
   `description` text DEFAULT NULL,
+  `enable_synchronous` tinyint(1) NOT NULL DEFAULT 1,
+  `enable_asynchronous` tinyint(1) NOT NULL DEFAULT 1,
+  `learning_mode_config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`learning_mode_config`)),
   PRIMARY KEY (`plan_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -344,11 +587,13 @@ CREATE TABLE `professors` (
   `professor_last_name` varchar(100) NOT NULL,
   `professor_email` varchar(100) NOT NULL,
   `professor_password` varchar(255) NOT NULL,
+  `referral_code` varchar(20) DEFAULT NULL,
   `professor_archived` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`professor_id`),
   UNIQUE KEY `professor_email` (`professor_email`),
+  UNIQUE KEY `referral_code` (`referral_code`),
   KEY `admin_id` (`admin_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -368,6 +613,19 @@ CREATE TABLE `programs` (
   KEY `created_by_admin_id` (`created_by_admin_id`),
   KEY `programs_director_id_index` (`director_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `quiz_options`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `quiz_options` (
+  `option_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `question_id` bigint(20) unsigned NOT NULL,
+  `option_text` text NOT NULL,
+  `is_correct` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`option_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `quiz_questions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -411,6 +669,26 @@ CREATE TABLE `quizzes` (
   PRIMARY KEY (`quiz_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `referrals`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `referrals` (
+  `referral_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `referral_code` varchar(20) NOT NULL,
+  `referrer_type` enum('director','professor') NOT NULL,
+  `referrer_id` int(11) NOT NULL,
+  `student_id` varchar(30) NOT NULL,
+  `registration_id` int(11) unsigned NOT NULL,
+  `used_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`referral_id`),
+  UNIQUE KEY `unique_student_referral` (`student_id`),
+  KEY `idx_referral_code` (`referral_code`),
+  KEY `idx_referrer` (`referrer_type`,`referrer_id`),
+  KEY `idx_student_registration` (`student_id`,`registration_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `registrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -440,8 +718,6 @@ CREATE TABLE `registrations` (
   `Course_Cert` varchar(255) DEFAULT NULL,
   `TOR` varchar(255) DEFAULT NULL,
   `Cert_of_Grad` varchar(255) DEFAULT NULL,
-  `Undergraduate` varchar(255) DEFAULT NULL,
-  `Graduate` varchar(255) DEFAULT NULL,
   `dynamic_fields` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`dynamic_fields`)),
   `photo_2x2` varchar(255) DEFAULT NULL,
   `Start_Date` date DEFAULT NULL,
@@ -477,9 +753,47 @@ CREATE TABLE `registrations` (
   `school_name` varchar(255) DEFAULT NULL,
   `selected_modules` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`selected_modules`)),
   `test_field_auto` varchar(255) DEFAULT NULL,
+  `testering` varchar(255) DEFAULT NULL,
+  `master` varchar(255) DEFAULT NULL,
+  `bagit` varchar(255) DEFAULT NULL,
+  `real` varchar(255) DEFAULT NULL,
+  `test_auto_column_1752439854` varchar(255) DEFAULT NULL,
+  `nyan` varchar(255) DEFAULT NULL,
+  `education_level` varchar(50) DEFAULT NULL,
+  `sync_async_mode` enum('sync','async') DEFAULT 'sync',
+  `Test` varchar(255) DEFAULT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
+  `referral_code` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`registration_id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `student_batches`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `student_batches` (
+  `batch_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `batch_name` varchar(255) NOT NULL,
+  `program_id` int(11) NOT NULL,
+  `professor_id` int(11) DEFAULT NULL,
+  `max_capacity` int(11) NOT NULL,
+  `current_capacity` int(11) NOT NULL DEFAULT 0,
+  `batch_status` enum('pending','available','ongoing','closed','completed') DEFAULT 'pending',
+  `registration_deadline` date NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`batch_id`),
+  KEY `student_batches_program_id_foreign` (`program_id`),
+  KEY `student_batches_professor_id_foreign` (`professor_id`),
+  KEY `student_batches_created_by_foreign` (`created_by`),
+  CONSTRAINT `student_batches_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL,
+  CONSTRAINT `student_batches_professor_id_foreign` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`professor_id`) ON DELETE SET NULL,
+  CONSTRAINT `student_batches_program_id_foreign` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `student_grades`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -507,27 +821,75 @@ CREATE TABLE `students` (
   `firstname` varchar(50) NOT NULL,
   `middlename` varchar(50) DEFAULT NULL,
   `lastname` varchar(50) NOT NULL,
-  `student_school` varchar(50) NOT NULL,
-  `street_address` varchar(50) NOT NULL,
-  `state_province` varchar(50) NOT NULL,
-  `city` varchar(50) NOT NULL,
-  `zipcode` varchar(20) NOT NULL,
-  `contact_number` varchar(15) NOT NULL,
+  `student_school` varchar(50) DEFAULT NULL,
+  `street_address` varchar(50) DEFAULT NULL,
+  `state_province` varchar(50) DEFAULT NULL,
+  `city` varchar(50) DEFAULT NULL,
+  `zipcode` varchar(20) DEFAULT NULL,
+  `contact_number` varchar(15) DEFAULT NULL,
   `emergency_contact_number` varchar(20) DEFAULT NULL,
   `good_moral` varchar(255) DEFAULT NULL,
   `PSA` varchar(255) DEFAULT NULL,
   `Course_Cert` varchar(255) DEFAULT NULL,
   `TOR` varchar(255) DEFAULT NULL,
   `Cert_of_Grad` varchar(255) DEFAULT NULL,
-  `Undergraduate` varchar(255) DEFAULT NULL,
-  `Graduate` varchar(255) DEFAULT NULL,
   `photo_2x2` varchar(255) DEFAULT NULL,
-  `Start_Date` date NOT NULL,
+  `Start_Date` date DEFAULT NULL,
   `date_approved` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `email` varchar(100) NOT NULL,
   `is_archived` tinyint(1) NOT NULL DEFAULT 0,
+  `package_id` int(11) unsigned DEFAULT NULL,
+  `package_name` varchar(255) DEFAULT NULL,
+  `plan_id` int(11) unsigned DEFAULT NULL,
+  `plan_name` varchar(255) DEFAULT NULL,
+  `program_id` int(11) unsigned DEFAULT NULL,
+  `education_level` varchar(255) NOT NULL DEFAULT '',
+  `program_name` varchar(255) DEFAULT NULL,
+  `enrollment_type` varchar(20) DEFAULT NULL,
+  `learning_mode` varchar(50) DEFAULT NULL,
+  `Undergraduate` tinyint(1) DEFAULT 0,
+  `Graduate` tinyint(1) DEFAULT 0,
+  `dynamic_fields` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`dynamic_fields`)),
+  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `phone_number` varchar(20) DEFAULT NULL,
+  `telephone_number` varchar(20) DEFAULT NULL,
+  `religion` varchar(100) DEFAULT NULL,
+  `citizenship` varchar(100) DEFAULT NULL,
+  `civil_status` varchar(50) DEFAULT NULL,
+  `birthdate` date DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
+  `work_experience` text DEFAULT NULL,
+  `preferred_schedule` varchar(50) DEFAULT NULL,
+  `emergency_contact_relationship` varchar(100) DEFAULT NULL,
+  `health_conditions` text DEFAULT NULL,
+  `disability_support` tinyint(1) DEFAULT 0,
+  `valid_id` varchar(255) DEFAULT NULL,
+  `birth_certificate` varchar(255) DEFAULT NULL,
+  `diploma_certificate` varchar(255) DEFAULT NULL,
+  `medical_certificate` varchar(255) DEFAULT NULL,
+  `passport_photo` varchar(255) DEFAULT NULL,
+  `parent_guardian_name` varchar(255) DEFAULT NULL,
+  `parent_guardian_contact` varchar(20) DEFAULT NULL,
+  `previous_school` varchar(255) DEFAULT NULL,
+  `graduation_year` year(4) DEFAULT NULL,
+  `course_taken` varchar(255) DEFAULT NULL,
+  `special_needs` text DEFAULT NULL,
+  `scholarship_program` varchar(255) DEFAULT NULL,
+  `employment_status` varchar(100) DEFAULT NULL,
+  `monthly_income` decimal(10,2) DEFAULT NULL,
+  `school_name` varchar(255) DEFAULT NULL,
+  `selected_modules` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`selected_modules`)),
+  `test_field_auto` varchar(255) DEFAULT NULL,
+  `testering` varchar(255) DEFAULT NULL,
+  `master` varchar(255) DEFAULT NULL,
+  `bagit` varchar(255) DEFAULT NULL,
+  `real` varchar(255) DEFAULT NULL,
+  `test_auto_column_1752439854` varchar(255) DEFAULT NULL,
+  `nyan` varchar(255) DEFAULT NULL,
+  `Test` varchar(255) DEFAULT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`student_id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -552,6 +914,10 @@ DROP TABLE IF EXISTS `users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `admin_id` int(11) NOT NULL,
+  `directors_id` int(11) NOT NULL,
+  `is_online` tinyint(1) NOT NULL DEFAULT 0,
+  `last_seen` timestamp NULL DEFAULT NULL,
   `email` varchar(100) NOT NULL,
   `user_firstname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL,
@@ -593,3 +959,21 @@ INSERT INTO `migrations` VALUES (18,'2025_07_06_175157_make_registration_fields_
 INSERT INTO `migrations` VALUES (19,'2025_07_07_144922_update_enrollment_type_complete_to_full',16);
 INSERT INTO `migrations` VALUES (21,'2025_07_08_130803_add_entity_type_to_form_requirements_table',17);
 INSERT INTO `migrations` VALUES (22,'2025_07_08_132024_fix_quizzes_table_foreign_keys',18);
+INSERT INTO `migrations` VALUES (23,'2025_07_08_144500_add_batch_id_to_enrollments_table',19);
+INSERT INTO `migrations` VALUES (24,'2025_07_09_000003_create_student_batches_table',20);
+INSERT INTO `migrations` VALUES (26,'2025_07_09_000015_fix_payment_status_in_enrollments_table',21);
+INSERT INTO `migrations` VALUES (27,'2025_07_09_000016_fix_program_type_in_form_requirements_table',22);
+INSERT INTO `migrations` VALUES (28,'2025_07_09_184647_add_batch_access_to_enrollments_table',23);
+INSERT INTO `migrations` VALUES (29,'2025_07_11_000001_add_pending_status_to_student_batches',24);
+INSERT INTO `migrations` VALUES (30,'2025_07_11_000001_add_end_date_to_batches_table',25);
+INSERT INTO `migrations` VALUES (34,'2025_07_11_135110_seed_plan_learning_mode_settings',27);
+INSERT INTO `migrations` VALUES (35,'2025_07_11_100003_add_learning_mode_config_to_plan',28);
+INSERT INTO `migrations` VALUES (36,'2025_07_12_000000_remove_undergraduate_graduate_columns',29);
+INSERT INTO `migrations` VALUES (37,'2025_07_12_142000_enhance_messages_table',30);
+INSERT INTO `migrations` VALUES (38,'2025_07_12_180254_create_chats_table',31);
+INSERT INTO `migrations` VALUES (39,'2025_07_12_204857_add_sender_role_to_messages_table',32);
+INSERT INTO `migrations` VALUES (41,'2025_07_16_181521_create_content_items_table',33);
+INSERT INTO `migrations` VALUES (42,'2025_07_17_105200_add_course_id_to_content_items_table',34);
+INSERT INTO `migrations` VALUES (43,'2025_07_17_125010_add_lesson_fields_to_lessons_table',35);
+INSERT INTO `migrations` VALUES (44,'2025_07_17_125751_update_content_type_enum_in_content_items_table',36);
+INSERT INTO `migrations` VALUES (45,'2025_07_17_200906_add_wizard_fields_to_packages_table',37);

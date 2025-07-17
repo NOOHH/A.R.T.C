@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Loading Test</title>
+</head>
+<body>
+    <h1>Module Loading Test</h1>
+    <p>Testing if module view loads correctly...</p>
+    
+    <script>
+        // Test module loading
+        fetch('/A.R.T.C/student/module/1', {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/html'
+            }
+        }).then(response => {
+            if (response.ok) {
+                console.log('Module view loaded successfully');
+                document.body.innerHTML += '<p style="color: green;">✅ Module view loads successfully</p>';
+            } else {
+                console.log('Module view failed to load:', response.status);
+                document.body.innerHTML += '<p style="color: red;">❌ Module view failed to load</p>';
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            document.body.innerHTML += '<p style="color: red;">❌ Error testing module view</p>';
+        });
+    </script>
+</body>
+</html>

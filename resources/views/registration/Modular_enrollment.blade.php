@@ -20,41 +20,48 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        .container-fluid {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             min-height: 100vh;
-            overflow-x: hidden;
+        }
+        
+        .container-fluid {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px 12px;
+            min-height: calc(100vh - 64px);
         }
 
         .stepper-container {
             background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .stepper {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
             position: relative;
         }
 
         .stepper::before {
             content: '';
             position: absolute;
-            top: 25px;
-            left: 50px;
-            right: 50px;
+            top: 20px;
+            left: 40px;
+            right: 40px;
             height: 3px;
-            background: #e0e0e0;
+            background: linear-gradient(90deg, #e0e0e0 0%, #d6d6d6 100%);
             z-index: 1;
+            border-radius: 2px;
         }
 
         .step {
@@ -64,13 +71,13 @@
             position: relative;
             z-index: 2;
             background: white;
-            padding: 0 15px;
-            min-width: 120px;
+            padding: 0 12px;
+            min-width: 96px;
         }
 
         .step-circle {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: #e0e0e0;
             color: #888;
@@ -78,10 +85,10 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 16px;
-            margin-bottom: 10px;
+            font-size: 14px;
+            margin-bottom: 8px;
             transition: all 0.3s ease;
-            border: 3px solid #e0e0e0;
+            border: 2px solid #e0e0e0;
         }
 
         .step.active .step-circle {
@@ -97,7 +104,7 @@
         }
 
         .step-label {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
             color: #666;
             text-align: center;
@@ -116,17 +123,30 @@
         .step-content {
             display: none;
             background: white;
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            max-height: 80vh;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+            max-height: 64vh;
             overflow-y: auto;
             overflow-x: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .step-content.active {
             display: block;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Step 6 specific styling for dynamic content */
@@ -160,19 +180,19 @@
 
         .step-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
         }
 
         .step-header h2 {
             color: #333;
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .step-header p {
             color: #666;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
             margin-bottom: 0;
         }
 
@@ -341,11 +361,14 @@
         .btn-nav {
             padding: 12px 30px;
             border-radius: 25px;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 1rem;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
+            min-width: 160px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn-nav:hover {
@@ -356,11 +379,25 @@
         .btn-primary {
             background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
         }
 
         .btn-secondary {
-            background: #6c757d;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(108,117,125,0.3);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108,117,125,0.4);
         }
 
         .btn-nav:disabled {
@@ -520,6 +557,35 @@
             .navigation-buttons .btn-secondary {
                 order: 2;
             }
+        }
+
+        /* Loading spinner */
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .btn-loading .spinner-border {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Form validation styles */
+        .was-validated .form-control:valid {
+            border-color: #28a745;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.94-.94 2.94 2.94L8.5 6.4l-.94-.94L4.5 8.53z'/%3e%3c/svg%3e");
+        }
+
+        .was-validated .form-control:invalid {
+            border-color: #dc3545;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 5.8 2.4 2.4m0-2.4-2.4 2.4'/%3e%3c/svg%3e");
         }
     </style>
 
@@ -910,8 +976,13 @@
                 <button type="button" class="btn-nav btn-secondary" onclick="prevStep()">
                     <i class="fas fa-arrow-left"></i> Previous
                 </button>
-                <button type="submit" class="btn-nav btn-primary" id="submitBtn">
-                    <i class="fas fa-paper-plane"></i> Submit Registration
+                <button type="submit" class="btn-nav btn-primary" id="submitBtn" onclick="handleFormSubmission(event)">
+                    <span class="btn-text">
+                        <i class="fas fa-paper-plane"></i> Submit Registration
+                    </span>
+                    <div class="spinner-border spinner-border-sm text-light d-none" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
                 </button>
             </div>
         </div>
@@ -1011,6 +1082,12 @@ function updateStepDisplay() {
             }
         }
     }
+    
+    // Update progress bar
+    updateProgressBar();
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function validateCurrentStep() {
@@ -1056,8 +1133,13 @@ function validateCurrentStep() {
 }
 
 function loadStepContent() {
+    console.log('Loading content for step:', currentStep);
     switch (currentStep) {
         case 2:
+            // Reset program selection when entering step 2
+            selectedProgramId = null;
+            document.getElementById('program_id').value = '';
+            document.getElementById('step2-next').disabled = true;
             loadPrograms();
             break;
         case 3:
@@ -1086,12 +1168,14 @@ function selectPackage(packageId, programId, moduleCount) {
     
     // Store selection
     selectedPackageId = packageId;
-    selectedProgramId = programId;
+    // Don't auto-select program - let user choose in step 2
+    // selectedProgramId = programId;
     packageModuleLimit = moduleCount;
     
     // Update hidden inputs
     document.getElementById('package_id').value = packageId;
-    document.getElementById('program_id').value = programId;
+    // Don't pre-fill program
+    // document.getElementById('program_id').value = programId;
     
     // Enable next button
     document.getElementById('step1-next').disabled = false;
@@ -1124,14 +1208,37 @@ function loadPrograms() {
     const grid = document.getElementById('programsGrid');
     grid.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading programs...</div>';
     
-    // For now, we'll use the selected program from package
-    // In a real scenario, you might want to load all programs
-    const programs = @json($programs);
+    // Fetch programs from the database via AJAX
+    fetch('/get-programs', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': CSRF_TOKEN
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.programs && data.programs.length > 0) {
+            displayPrograms(data.programs);
+        } else {
+            grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching programs:', error);
+        grid.innerHTML = '<div class="alert alert-danger">Error loading programs. Please try again.</div>';
+    });
+}
+
+// Display programs in the grid
+function displayPrograms(programs) {
+    const grid = document.getElementById('programsGrid');
     
     let programsHtml = '';
     programs.forEach(program => {
+        const isSelected = program.program_id == selectedProgramId;
         programsHtml += `
-            <div class="selection-card ${program.program_id == selectedProgramId ? 'selected' : ''}" 
+            <div class="selection-card ${isSelected ? 'selected' : ''}" 
                  onclick="selectProgram(${program.program_id})">
                 <div class="card-header">
                     <h3 class="card-title">${program.program_name}</h3>
@@ -1151,7 +1258,7 @@ function loadPrograms() {
     
     grid.innerHTML = programsHtml;
     
-    // If program is pre-selected, enable next button
+    // If program is pre-selected from package, enable next button
     if (selectedProgramId) {
         document.getElementById('step2-next').disabled = false;
     }
@@ -1431,5 +1538,480 @@ function addSelectedAdditionalModules() {
     
     console.log('Additional modules added:', additionalModules);
 }
+
+// Learning mode selection
+function selectLearningMode(mode) {
+    console.log('Learning mode selected:', mode);
+    
+    // Remove selection from all cards
+    document.querySelectorAll('.mode-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selection to clicked card
+    event.target.closest('.mode-card').classList.add('selected');
+    
+    // Store selection
+    selectedLearningMode = mode;
+    
+    // Update hidden input
+    document.getElementById('learning_mode').value = mode;
+    document.getElementById('sync_async_mode').value = mode;
+    
+    // Show/hide start date container for asynchronous mode
+    const startDateContainer = document.getElementById('startDateContainer');
+    if (mode === 'asynchronous') {
+        startDateContainer.style.display = 'block';
+        document.getElementById('startDate').required = true;
+    } else {
+        startDateContainer.style.display = 'none';
+        document.getElementById('startDate').required = false;
+        document.getElementById('Start_Date').value = '';
+    }
+    
+    // Enable next button
+    document.getElementById('step4-next').disabled = false;
+}
+
+// Account form setup
+function setupAccountForm() {
+    const loginNotice = document.getElementById('loginNotice');
+    const accountForm = document.getElementById('accountCreationForm');
+    const loggedInUserName = document.getElementById('loggedInUserName');
+    
+    if (isUserLoggedIn) {
+        // Show logged in notice
+        loginNotice.style.display = 'block';
+        loggedInUserName.textContent = `${loggedInUserFirstname} ${loggedInUserLastname}`;
+        
+        // Hide account creation form
+        accountForm.style.display = 'none';
+        
+        // Pre-fill hidden data
+        if (loggedInUserFirstname) document.getElementById('user_firstname').value = loggedInUserFirstname;
+        if (loggedInUserLastname) document.getElementById('user_lastname').value = loggedInUserLastname;
+        if (loggedInUserEmail) document.getElementById('email').value = loggedInUserEmail;
+    } else {
+        // Show account creation form
+        loginNotice.style.display = 'none';
+        accountForm.style.display = 'block';
+    }
+}
+
+// Validate account information
+function validateAccountInfo() {
+    if (isUserLoggedIn) {
+        return true; // Skip validation for logged in users
+    }
+    
+    const firstname = document.getElementById('user_firstname').value.trim();
+    const lastname = document.getElementById('user_lastname').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('password_confirmation').value;
+    
+    if (!firstname || !lastname || !email || !password || !confirmPassword) {
+        showAlert('Please fill in all required fields.', 'warning');
+        return false;
+    }
+    
+    if (password !== confirmPassword) {
+        showAlert('Password confirmation does not match.', 'warning');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        showAlert('Password must be at least 6 characters long.', 'warning');
+        return false;
+    }
+    
+    return true;
+}
+
+// Load dynamic form fields
+function loadDynamicFormFields() {
+    const container = document.getElementById('dynamicFormFields');
+    container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading form fields...</div>';
+    
+    if (!formRequirements || formRequirements.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">No additional information required.</div>';
+        return;
+    }
+    
+    let fieldsHtml = '<div class="row">';
+    
+    formRequirements.forEach(requirement => {
+        const fieldName = requirement.field_name || requirement.name;
+        const fieldLabel = requirement.field_label || requirement.label || fieldName;
+        const fieldType = requirement.field_type || requirement.type || 'text';
+        const isRequired = requirement.is_required || requirement.required || false;
+        const options = requirement.field_options || requirement.options || [];
+        
+        fieldsHtml += `<div class="col-md-6 mb-3">`;
+        fieldsHtml += `<label for="${fieldName}" class="form-label">`;
+        fieldsHtml += `${fieldLabel} ${isRequired ? '<span class="text-danger">*</span>' : ''}`;
+        fieldsHtml += `</label>`;
+        
+        switch (fieldType) {
+            case 'select':
+            case 'dropdown':
+                fieldsHtml += `<select class="form-select" name="${fieldName}" id="${fieldName}" ${isRequired ? 'required' : ''}>`;
+                fieldsHtml += `<option value="">Select ${fieldLabel}</option>`;
+                if (Array.isArray(options)) {
+                    options.forEach(option => {
+                        fieldsHtml += `<option value="${option}">${option}</option>`;
+                    });
+                }
+                fieldsHtml += `</select>`;
+                break;
+            case 'textarea':
+                fieldsHtml += `<textarea class="form-control" name="${fieldName}" id="${fieldName}" rows="3" ${isRequired ? 'required' : ''}></textarea>`;
+                break;
+            case 'file':
+                fieldsHtml += `<input type="file" class="form-control" name="${fieldName}" id="${fieldName}" ${isRequired ? 'required' : ''}>`;
+                break;
+            case 'date':
+                fieldsHtml += `<input type="date" class="form-control" name="${fieldName}" id="${fieldName}" ${isRequired ? 'required' : ''}>`;
+                break;
+            case 'email':
+                fieldsHtml += `<input type="email" class="form-control" name="${fieldName}" id="${fieldName}" ${isRequired ? 'required' : ''}>`;
+                break;
+            case 'tel':
+            case 'phone':
+                fieldsHtml += `<input type="tel" class="form-control" name="${fieldName}" id="${fieldName}" ${isRequired ? 'required' : ''}>`;
+                break;
+            default:
+                fieldsHtml += `<input type="text" class="form-control" name="${fieldName}" id="${fieldName}" ${isRequired ? 'required' : ''}>`;
+                break;
+        }
+        
+        fieldsHtml += `</div>`;
+    });
+    
+    fieldsHtml += '</div>';
+    container.innerHTML = fieldsHtml;
+}
+
+// Handle education level change
+function handleEducationLevelChange() {
+    const select = document.getElementById('educationLevelSelect');
+    const selectedOption = select.options[select.selectedIndex];
+    const requirements = document.getElementById('educationLevelRequirements');
+    
+    // Update hidden input
+    document.getElementById('education_level').value = select.value;
+    
+    if (selectedOption && selectedOption.dataset.fileRequirements) {
+        try {
+            const fileRequirements = JSON.parse(selectedOption.dataset.fileRequirements);
+            displayEducationLevelRequirements(fileRequirements);
+            requirements.style.display = 'block';
+        } catch (error) {
+            console.error('Error parsing file requirements:', error);
+            requirements.style.display = 'none';
+        }
+    } else {
+        requirements.style.display = 'none';
+    }
+}
+
+// Display education level requirements
+function displayEducationLevelRequirements(fileRequirements) {
+    const container = document.getElementById('educationLevelRequirements');
+    
+    if (!fileRequirements || fileRequirements.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">No additional requirements for this education level.</div>';
+        return;
+    }
+    
+    let requirementsHtml = '<h5><i class="fas fa-file-upload"></i> Required Documents</h5>';
+    requirementsHtml += '<div class="row">';
+    
+    fileRequirements.forEach(requirement => {
+        const fileName = requirement.file_name || requirement.name;
+        const fileLabel = requirement.file_label || requirement.label || fileName;
+        const isRequired = requirement.is_required || requirement.required || false;
+        
+        requirementsHtml += `<div class="col-md-6 mb-3">`;
+        requirementsHtml += `<label for="${fileName}" class="form-label">`;
+        requirementsHtml += `${fileLabel} ${isRequired ? '<span class="text-danger">*</span>' : ''}`;
+        requirementsHtml += `</label>`;
+        requirementsHtml += `<input type="file" class="form-control" name="${fileName}" id="${fileName}" accept=".pdf,.jpg,.jpeg,.png" ${isRequired ? 'required' : ''}>`;
+        requirementsHtml += `<small class="form-text text-muted">Accepted formats: PDF, JPG, PNG</small>`;
+        requirementsHtml += `</div>`;
+    });
+    
+    requirementsHtml += '</div>';
+    container.innerHTML = requirementsHtml;
+}
+
+// Validate form information
+function validateFormInfo() {
+    const educationLevel = document.getElementById('educationLevelSelect').value;
+    
+    if (!educationLevel) {
+        showAlert('Please select your education level.', 'warning');
+        return false;
+    }
+    
+    // Check required form fields
+    const requiredFields = document.querySelectorAll('#dynamicFormFields [required], #educationLevelRequirements [required]');
+    for (let field of requiredFields) {
+        if (!field.value.trim()) {
+            showAlert(`Please fill in the required field: ${field.previousElementSibling.textContent.replace('*', '').trim()}`, 'warning');
+            field.focus();
+            return false;
+        }
+    }
+    
+    // Update start date if selected
+    const startDate = document.getElementById('startDate');
+    if (startDate && startDate.value) {
+        document.getElementById('Start_Date').value = startDate.value;
+    }
+    
+    return true;
+}
+
+// Show course lessons
+function showCourseLessons(courseId, courseName) {
+    // This would typically make an AJAX call to get course lessons
+    console.log('Showing lessons for course:', courseId, courseName);
+    showAlert(`Lesson details for "${courseName}" would be displayed here.`, 'info');
+}
+
+// Alert function
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertClass = type === 'danger' ? 'alert-danger' : 
+                      type === 'warning' ? 'alert-warning' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 
+                               type === 'warning' ? 'exclamation-circle' : 
+                               type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    alertContainer.innerHTML = alertHtml;
+    
+    // Auto-hide after 5 seconds for success/info messages
+    if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+}
+
+// Form submission handler
+function handleFormSubmission(event) {
+    event.preventDefault();
+    
+    // Final validation
+    if (!validateFormInfo()) {
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    
+    submitBtn.disabled = true;
+    submitBtn.classList.add('btn-loading');
+    btnText.style.visibility = 'hidden';
+    spinner.classList.remove('d-none');
+    
+    // Get form data
+    const form = document.getElementById('enrollmentForm');
+    const formData = new FormData(form);
+    
+    // Add selected modules to form data
+    formData.set('selected_modules', JSON.stringify(selectedModules));
+    
+    // Add additional modules if any
+    if (additionalModules.length > 0) {
+        formData.set('additional_modules', JSON.stringify(additionalModules));
+    }
+    
+    // Submit form
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('Network response was not ok');
+    })
+    .then(data => {
+        if (data.success) {
+            showAlert('Registration submitted successfully! You will be redirected shortly.', 'success');
+            
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            }, 2000);
+        } else {
+            showAlert(data.message || 'An error occurred during registration.', 'danger');
+            resetSubmitButton();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred while submitting the form. Please try again.', 'danger');
+        resetSubmitButton();
+    });
+    
+    return false;
+}
+
+// Reset submit button to normal state
+function resetSubmitButton() {
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('btn-loading');
+    btnText.style.visibility = 'visible';
+    spinner.classList.add('d-none');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Modular enrollment form initialized');
+    
+    // Add form validation classes
+    const form = document.getElementById('enrollmentForm');
+    if (form) {
+        form.classList.add('needs-validation');
+        form.noValidate = true;
+    }
+    
+    // Set up event listeners
+    const startDateInput = document.getElementById('startDate');
+    if (startDateInput) {
+        startDateInput.addEventListener('change', function() {
+            document.getElementById('Start_Date').value = this.value;
+            
+            // Enable next button if learning mode is selected
+            if (selectedLearningMode) {
+                document.getElementById('step4-next').disabled = false;
+            }
+        });
+    }
+    
+    // Add real-time validation for account fields
+    setupFormValidation();
+    
+    // Initialize Bootstrap components
+    if (typeof bootstrap !== 'undefined') {
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Initialize popovers
+        const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl);
+        });
+    }
+});
+
+// Setup form validation
+function setupFormValidation() {
+    const form = document.getElementById('enrollmentForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                validateField(this);
+            }
+        });
+    });
+    
+    // Password confirmation validation
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('password_confirmation');
+    
+    if (password && confirmPassword) {
+        confirmPassword.addEventListener('input', function() {
+            if (this.value !== password.value) {
+                this.setCustomValidity('Passwords do not match');
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.setCustomValidity('');
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+}
+
+// Validate individual field
+function validateField(field) {
+    const isValid = field.checkValidity();
+    
+    if (isValid) {
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+    } else {
+        field.classList.remove('is-valid');
+        field.classList.add('is-invalid');
+    }
+    
+    return isValid;
+}
+
+// Progress tracking
+function updateProgressBar() {
+    const totalSteps = 6;
+    const progress = (currentStep / totalSteps) * 100;
+    
+    // Create progress bar if it doesn't exist
+    let progressBar = document.querySelector('.progress-bar');
+    if (!progressBar) {
+        const stepperContainer = document.querySelector('.stepper-container');
+        const progressContainer = document.createElement('div');
+        progressContainer.className = 'progress mb-3';
+        progressContainer.style.height = '4px';
+        
+        progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar bg-primary';
+        progressBar.setAttribute('role', 'progressbar');
+        
+        progressContainer.appendChild(progressBar);
+        stepperContainer.appendChild(progressContainer);
+    }
+    
+    progressBar.style.width = progress + '%';
+    progressBar.setAttribute('aria-valuenow', progress);
+}
 </script>
-@endpush
+

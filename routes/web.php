@@ -33,9 +33,15 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\DirectorController;
+use App\Http\Controllers\StudentModuleController;
 // routes/web.php
 
 use App\Http\Controllers\Api\ReferralController;
+
+Route::get(
+    '/student/module/{module}/course/{course}/content-items',
+    [StudentModuleController::class, 'getCourseContent']
+)->name('student.module.course.content-items');
 
 Route::middleware(['web','check.session','role.dashboard']) // whatever guards you need
      ->prefix('api')
@@ -55,6 +61,35 @@ Route::get('/test-db', function () {
         return "✅ Connected to DB successfully!";
     } catch (\Exception $e) {
         return "❌ DB connection failed: " . $e->getMessage();
+    }
+});
+
+// Test authentication debug route
+Route::get('/test-auth-debug', function () {
+    try {
+        // Check users table
+        $users = DB::table('users')->select('user_id', 'user_firstname', 'user_lastname', 'email', 'role')->take(5)->get();
+        
+        // Check admins table
+        $admins = DB::table('admins')->select('admin_id', 'admin_name', 'email')->take(5)->get();
+        
+        // Check students table
+        $students = DB::table('students')->select('student_id', 'user_id', 'firstname', 'lastname', 'email')->take(5)->get();
+        
+        return response()->json([
+            'users' => $users,
+            'admins' => $admins,
+            'students' => $students,
+            'session_data' => [
+                'user_id' => session('user_id'),
+                'user_name' => session('user_name'),
+                'user_role' => session('user_role'),
+                'logged_in' => session('logged_in')
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()]);
     }
 });
 
@@ -229,8 +264,17 @@ Route::get('/enrollment/modular', function () {
         return in_array($program->program_id, $enrolledProgramIds);
     });
     
-    return view('registration.Modular_enrollment_new', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'fullPlan', 'modularPlan'));
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'fullPlan', 'modularPlan'));
 })->name('enrollment.modular');
+
+// Modular enrollment submission
+Route::post('/enrollment/modular/submit', [StudentRegistrationController::class, 'submitModularEnrollment'])->name('enrollment.modular.submit');
+Route::post('/enrollment/modular/store', [StudentRegistrationController::class, 'storeModular'])->name('enrollment.modular.store');
+
+// API endpoints for modular enrollment
+Route::get('/get-program-modules', [StudentRegistrationController::class, 'getProgramModules'])->name('get.program.modules');
+Route::get('/get-module-courses', [StudentRegistrationController::class, 'getModuleCourses'])->name('get.module.courses');
+Route::get('/get-program-batches', [StudentRegistrationController::class, 'getProgramBatches'])->name('get.program.batches');
 
 // Unified login page and authentication for all user types
 Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
@@ -295,6 +339,9 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     
     // Module completion route
     Route::post('/student/module/{moduleId}/complete', [StudentDashboardController::class, 'completeModule'])->name('student.module.complete');
+    
+    // Get module courses with lessons and content
+    Route::get('/student/module/{moduleId}/courses', [StudentDashboardController::class, 'getModuleCourses'])->name('student.module.courses');
     
     // Assignment submission routes
     Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
@@ -1504,7 +1551,7 @@ Route::get('/debug/professors', function () {
                     'email' => $prof->professor_email,
                     'full_name' => ($prof->professor_first_name ?? '') . ' ' . ($prof->professor_last_name ?? ''),
                 ];
-            }),
+            })
         ]);
     } catch (\Exception $e) {
         return response()->json([
@@ -1665,6 +1712,7 @@ Route::get('/debug/messages-table', function () {
         ]);
     }
 });
+
 // Test route for course creation (bypasses CSRF for testing)
 Route::post('/test-course-creation', function (Request $request) {
     try {
@@ -1710,3 +1758,129 @@ Route::post('/test-course-creation', function (Request $request) {
         ], 500);
     }
 })->name('test.course.creation');
+
+// Test module content flow
+Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
+    try {
+        echo "<h2>Testing Data Flow for Module ID: {$moduleId}</h2>";
+        
+        // 1. Check if module exists
+        $module = \App\Models\Module::find($moduleId);
+        if (!$module) {
+            echo "<p style='color: red;'>❌ Module {$moduleId} not found!</p>";
+            return;
+        }
+        echo "<p style='color: green;'>✅ Module found: {$module->module_name}</p>";
+        
+        // 2. Check courses linked to this module
+        $courses = \App\Models\Course::where('module_id', $moduleId)->get();
+        echo "<h3>Courses for this module:</h3>";
+        if ($courses->isEmpty()) {
+            echo "<p style='color: red;'>❌ No courses found for module {$moduleId}</p>";
+        } else {
+            echo "<p style='color: green;'>✅ Found " . $courses->count() . " courses:</p>";
+            foreach ($courses as $course) {
+                echo "<ul>";
+                echo "<li>Course ID: {$course->subject_id} - {$course->subject_name}</li>";
+                
+                // 3. Check lessons for this course
+                $lessons = \App\Models\Lesson::where('course_id', $course->subject_id)->get();
+                echo "<li>Lessons (" . $lessons->count() . "):</li>";
+                if ($lessons->isEmpty()) {
+                    echo "<ul><li style='color: orange;'>⚠️ No lessons found</li></ul>";
+                } else {
+                    echo "<ul>";
+                    foreach ($lessons as $lesson) {
+                        echo "<li>Lesson ID: {$lesson->lesson_id} - {$lesson->lesson_name}</li>";
+                        
+                        // 4. Check content items for this lesson
+                        $contentItems = \App\Models\ContentItem::where('lesson_id', $lesson->lesson_id)->get();
+                        echo "<ul>";
+                        echo "<li>Content Items (" . $contentItems->count() . "):</li>";
+                        if ($contentItems->isEmpty()) {
+                            echo "<ul><li style='color: orange;'>⚠️ No content items found</li></ul>";
+                        } else {
+                            echo "<ul>";
+                            foreach ($contentItems as $item) {
+                                echo "<li>Content: {$item->content_title} (Type: {$item->content_type})</li>";
+                                if ($item->attachment_path) {
+                                    echo "<li>Attachment: {$item->attachment_path}</li>";
+                                }
+                            }
+                            echo "</ul>";
+                        }
+                        echo "</ul>";
+                    }
+                    echo "</ul>";
+                }
+                echo "</ul>";
+            }
+        }
+        
+        // 5. Also check direct content items linked to courses (bypass lessons)
+        echo "<h3>Direct Course Content Items:</h3>";
+        foreach ($courses as $course) {
+            $directContentItems = \App\Models\ContentItem::where('course_id', $course->subject_id)->whereNull('lesson_id')->get();
+            if (!$directContentItems->isEmpty()) {
+                echo "<p>Course {$course->subject_name} has " . $directContentItems->count() . " direct content items:</p>";
+                echo "<ul>";
+                foreach ($directContentItems as $item) {
+                    echo "<li>{$item->content_title} (Type: {$item->content_type})</li>";
+                }
+                echo "</ul>";
+            }
+        }
+        
+        // 6. Show all content items for this course regardless of lesson
+        echo "<h3>All Content Items for Module Courses:</h3>";
+        foreach ($courses as $course) {
+            $allContentItems = \App\Models\ContentItem::where('course_id', $course->subject_id)->get();
+            if (!$allContentItems->isEmpty()) {
+                echo "<p>Course {$course->subject_name} has " . $allContentItems->count() . " total content items:</p>";
+                echo "<ul>";
+                foreach ($allContentItems as $item) {
+                    echo "<li>{$item->content_title} (Type: {$item->content_type}) - Lesson ID: " . ($item->lesson_id ?? 'None') . "</li>";
+                }
+                echo "</ul>";
+            }
+        }
+        
+        // 7. Test the controller method directly
+        echo "<h3>Testing Controller Method:</h3>";
+        $controller = new \App\Http\Controllers\StudentDashboardController();
+        $result = $controller->getModuleCourses($moduleId);
+        echo "<pre>" . json_encode($result->getData(), JSON_PRETTY_PRINT) . "</pre>";
+        
+    } catch (\Exception $e) {
+        echo "<p style='color: red;'>❌ Error: " . $e->getMessage() . "</p>";
+        echo "<pre>" . $e->getTraceAsString() . "</pre>";
+    }
+})->name('test.module.content');
+
+// Test student module view without authentication
+Route::get('/test-student-module/{moduleId}', function($moduleId) {
+    // Simulate being logged in as a student
+    session([
+        'logged_in' => true,
+        'user_id' => 112, // Use a student user ID from the database
+        'user_role' => 'student',
+        'user_name' => 'Test Student'
+    ]);
+    
+    $controller = new \App\Http\Controllers\StudentDashboardController();
+    return $controller->module($moduleId);
+})->name('test.student.module');
+
+// Test API endpoint for module courses without authentication
+Route::get('/test-api/module/{moduleId}/courses', function($moduleId) {
+    // Simulate being logged in as a student
+    session([
+        'logged_in' => true,
+        'user_id' => 112,
+        'user_role' => 'student',
+        'user_name' => 'Test Student'
+    ]);
+    
+    $controller = new \App\Http\Controllers\StudentDashboardController();
+    return $controller->getModuleCourses($moduleId);
+})->name('test.api.module.courses');

@@ -8,6 +8,9 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Program;
 use App\Models\Module;
+use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\ContentItem;
 use App\Models\Deadline;
 use App\Models\Announcement;
 use App\Models\Package;
@@ -567,7 +570,64 @@ class StudentDashboardController extends Controller
             $isCompleted = (bool) $completion;
         }
         
-        // Parse content data properly
+        // Get courses associated with this module from the database
+        $courses = Course::where('module_id', $moduleId)
+            ->where('is_active', true)
+            ->ordered()
+            ->get();
+        
+        // Format courses with their content (lessons, PDFs, etc.)
+        $formattedCourses = [];
+        foreach ($courses as $course) {
+            // Get lessons for this course
+            $lessons = Lesson::where('course_id', $course->subject_id)
+                ->where('is_active', true)
+                ->orderBy('lesson_order', 'asc')
+                ->get();
+            
+            // Get content items for this course
+            $contentItems = ContentItem::where('course_id', $course->subject_id)
+                ->where('is_active', true)
+                ->orderBy('content_order', 'asc')
+                ->get();
+            
+            $formattedCourses[] = [
+                'id' => $course->subject_id,
+                'name' => $course->subject_name,
+                'description' => $course->subject_description,
+                'price' => $course->subject_price,
+                'order' => $course->subject_order,
+                'is_required' => $course->is_required,
+                'lessons' => $lessons->map(function($lesson) {
+                    return [
+                        'id' => $lesson->lesson_id,
+                        'name' => $lesson->lesson_name,
+                        'description' => $lesson->lesson_description,
+                        'duration' => $lesson->lesson_duration,
+                        'video_url' => $lesson->lesson_video_url,
+                        'order' => $lesson->lesson_order,
+                        'learning_mode' => $lesson->learning_mode,
+                    ];
+                }),
+                'content_items' => $contentItems->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->content_title,
+                        'description' => $item->content_description,
+                        'type' => $item->content_type,
+                        'data' => $item->content_data,
+                        'attachment_path' => $item->attachment_path,
+                        'attachment_url' => $item->attachment_path ? asset('storage/' . $item->attachment_path) : null,
+                        'max_points' => $item->max_points,
+                        'due_date' => $item->due_date,
+                        'time_limit' => $item->time_limit,
+                        'order' => $item->content_order,
+                    ];
+                })
+            ];
+        }
+        
+        // Parse content data properly (for module-level content)
         $contentData = [];
         
         // First check the content_data field (new format)
@@ -593,19 +653,6 @@ class StudentDashboardController extends Controller
         // Determine module type based on content
         $moduleType = $module->content_type ?? 'module';
         
-        // Override based on content data if not explicitly set
-        if (!empty($contentData['external_url'])) {
-            $moduleType = 'link';
-        } elseif (!empty($contentData['assignment_title'])) {
-            $moduleType = 'assignment';
-        } elseif (!empty($contentData['quiz_title'])) {
-            $moduleType = 'quiz';
-        } elseif (!empty($contentData['ai_quiz_title'])) {
-            $moduleType = 'ai_quiz';
-        } elseif (!empty($contentData['test_title'])) {
-            $moduleType = 'test';
-        }
-        
         // Format module data for the view
         $moduleData = [
             'id' => $module->modules_id,
@@ -616,7 +663,8 @@ class StudentDashboardController extends Controller
             'attachment_url' => $module->attachment ? asset('storage/' . $module->attachment) : null,
             'program_id' => $module->program_id,
             'is_completed' => $isCompleted,
-            'content_data' => $contentData
+            'content_data' => $contentData,
+            'courses' => $formattedCourses
         ];
         
         // Check for video content
@@ -624,7 +672,7 @@ class StudentDashboardController extends Controller
             $moduleData['content_data']['video_url'] = asset('storage/' . $module->video_path);
         }
         
-        return view('student.student-courses.student-module', compact('user', 'module', 'program', 'moduleData'));
+        return view('student.student-courses.student-module', compact('user', 'module', 'program', 'moduleData', 'courses', 'formattedCourses'));
     }
     
     /**
@@ -697,7 +745,10 @@ class StudentDashboardController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Module completed successfully!',
-                'progress_percentage' => $progressPercentage
+                'progress_percentage' => $progressPercentage,
+                'completed_modules' => $completedModules,
+                'total_modules' => $totalModules,
+                'course_id' => $module->program_id
             ]);
             
         } catch (\Exception $e) {
@@ -1027,11 +1078,130 @@ class StudentDashboardController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('Quiz submission error: ' . $e->getMessage());
+            Log::error('Quiz submission error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while submitting the quiz.'
             ]);
+        }
+    }
+    
+    /**
+     * Get module courses with lessons and content items
+     */
+    public function getModuleCourses($moduleId)
+    {
+        try {
+            // Get the module
+            $module = Module::find($moduleId);
+            
+            if (!$module) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module not found.'
+                ], 404);
+            }
+            
+            // Get the student
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            if ($student) {
+                // Check if student is enrolled in the program
+                $enrollment = $student->enrollments()->where('program_id', $module->program_id)->first();
+                
+                if (!$enrollment) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You are not enrolled in this course.'
+                    ], 403);
+                }
+            }
+            
+            // Get courses associated with this module
+            $courses = \App\Models\Course::where('module_id', $moduleId)
+                ->with(['lessons' => function($query) {
+                    $query->with(['contentItems' => function($contentQuery) {
+                        $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
+                    }])->orderBy('lesson_order');
+                }])
+                ->select('subject_id', 'subject_name', 'subject_description', 'subject_price', 'is_required', 'module_id')
+                ->orderBy('subject_order')
+                ->get();
+
+            // Also get direct content items (not linked to lessons)
+            $directContentItems = \App\Models\ContentItem::whereIn('course_id', $courses->pluck('subject_id'))
+                ->whereNull('lesson_id')
+                ->select('id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required')
+                ->orderBy('content_order')
+                ->get();
+            
+            // Format the response
+            $formattedCourses = $courses->map(function($course) use ($directContentItems) {
+                $courseDirectItems = $directContentItems->where('course_id', $course->subject_id);
+                
+                return [
+                    'course_id' => $course->subject_id,
+                    'course_name' => $course->subject_name,
+                    'course_description' => $course->subject_description,
+                    'price' => $course->subject_price,
+                    'duration' => null, // Not available in this table structure
+                    'required' => (bool) $course->is_required,
+                    'lessons' => $course->lessons->map(function($lesson) {
+                        return [
+                            'id' => $lesson->lesson_id,
+                            'lesson_name' => $lesson->lesson_name,
+                            'lesson_description' => $lesson->lesson_description,
+                            'duration' => $lesson->lesson_duration ?? null,
+                            'content_items' => $lesson->contentItems->map(function($item) {
+                                return [
+                                    'id' => $item->id,
+                                    'content_type' => $item->content_type,
+                                    'content_title' => $item->content_title,
+                                    'content_description' => $item->content_description,
+                                    'content_url' => $item->attachment_path,
+                                    'attachment_path' => $item->attachment_path,
+                                    'content_data' => $item->content_data,
+                                    'max_points' => $item->max_points,
+                                    'due_date' => $item->due_date,
+                                    'is_required' => (bool) $item->is_required
+                                ];
+                            })
+                        ];
+                    }),
+                    'direct_content_items' => $courseDirectItems->map(function($item) {
+                        return [
+                            'id' => $item->id,
+                            'content_type' => $item->content_type,
+                            'content_title' => $item->content_title,
+                            'content_description' => $item->content_description,
+                            'content_url' => $item->attachment_path,
+                            'attachment_path' => $item->attachment_path,
+                            'content_data' => $item->content_data,
+                            'max_points' => $item->max_points,
+                            'due_date' => $item->due_date,
+                            'is_required' => (bool) $item->is_required
+                        ];
+                    })
+                ];
+            });
+            
+            return response()->json([
+                'success' => true,
+                'courses' => $formattedCourses,
+                'module' => [
+                    'id' => $module->modules_id,
+                    'name' => $module->module_name,
+                    'description' => $module->module_description
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Get module courses error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while loading course content.'
+            ], 500);
         }
     }
 }

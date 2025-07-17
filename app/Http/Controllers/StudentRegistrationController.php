@@ -760,4 +760,480 @@ class StudentRegistrationController extends Controller
         return $studentId;
     }
 
+    /**
+     * Submit modular enrollment
+     */
+    public function submitModularEnrollment(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            Log::info('Modular enrollment submission started', $request->except(['password', 'password_confirmation']));
+
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'user_firstname' => 'required|string|max:255',
+                'user_lastname' => 'required|string|max:255',
+                'user_email' => 'required|email|unique:users,email',
+                'password' => 'required|min:8|confirmed',
+                'program_id' => 'required|exists:programs,program_id',
+                'package_id' => 'required|exists:packages,package_id',
+                'learning_mode' => 'required|in:synchronous,asynchronous',
+                'batch_id' => 'nullable|exists:student_batches,batch_id',
+                'selected_modules' => 'required|json',
+                'additional_modules' => 'nullable|json',
+                'selected_courses' => 'nullable|json',
+                'education_level' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+                Log::error('Modular enrollment validation failed', $validator->errors()->toArray());
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
+            // Create user account
+            $user = User::create([
+                'user_firstname' => $validated['user_firstname'],
+                'user_lastname' => $validated['user_lastname'],
+                'name' => $validated['user_firstname'] . ' ' . $validated['user_lastname'],
+                'email' => $validated['user_email'],
+                'password' => bcrypt($validated['password']),
+                'role' => 'student',
+                'enrollment_id' => 0 // Will be updated after enrollment creation
+            ]);
+
+            Log::info('User created successfully', ['user_id' => $user->user_id]);
+
+            // Create student record
+            $student = Student::create([
+                'student_firstname' => $validated['user_firstname'],
+                'student_lastname' => $validated['user_lastname'],
+                'student_email' => $validated['user_email'],
+                'user_id' => $user->user_id,
+                'student_id' => $this->generateStudentId()
+            ]);
+
+            Log::info('Student created successfully', ['student_id' => $student->student_id]);
+
+            // Get package and program details
+            $package = \App\Models\Package::find($validated['package_id']);
+            $program = \App\Models\Program::find($validated['program_id']);
+
+            // Create registration record (this is the main table for registrations)
+            $registration = \App\Models\Registration::create([
+                'user_id' => $user->user_id,
+                'firstname' => $validated['user_firstname'],
+                'lastname' => $validated['user_lastname'],
+                'program_id' => $validated['program_id'],
+                'package_id' => $validated['package_id'],
+                'program_name' => $program->program_name ?? '',
+                'package_name' => $package->package_name ?? '',
+                'learning_mode' => $validated['learning_mode'],
+                'enrollment_type' => 'Modular',
+                'education_level' => $validated['education_level'],
+                'selected_modules' => $validated['selected_modules'],
+                'status' => 'pending',
+                'dynamic_fields' => [
+                    'additional_modules' => $validated['additional_modules'] ?? '[]',
+                    'selected_courses' => $validated['selected_courses'] ?? '[]',
+                    'registration_mode' => $validated['learning_mode']
+                ]
+            ]);
+
+            Log::info('Registration created successfully', ['registration_id' => $registration->registration_id]);
+
+            // Handle batch assignment
+            $batchId = null;
+            if ($validated['learning_mode'] === 'synchronous' && isset($validated['batch_id'])) {
+                $batch = \App\Models\StudentBatch::find($validated['batch_id']);
+                if ($batch && $batch->current_capacity < $batch->max_capacity) {
+                    $batchId = $batch->batch_id;
+                    $batch->increment('current_capacity');
+                    Log::info('Batch assigned', ['batch_id' => $batchId]);
+                }
+            }
+
+            // Create enrollment record
+            $enrollment = \App\Models\Enrollment::create([
+                'user_id' => $user->user_id,
+                'student_id' => $student->student_id,
+                'program_id' => $validated['program_id'],
+                'package_id' => $validated['package_id'],
+                'learning_mode' => $validated['learning_mode'],
+                'enrollment_type' => 'Modular',
+                'batch_id' => $batchId,
+                'enrollment_status' => 'pending',
+                'payment_status' => 'pending',
+                'education_level' => $validated['education_level'],
+                'Modular_enrollment' => $validated['selected_modules']
+            ]);
+
+            Log::info('Enrollment created successfully', ['enrollment_id' => $enrollment->enrollment_id]);
+
+            // Update user with enrollment_id
+            $user->update(['enrollment_id' => $enrollment->enrollment_id]);
+
+            // Create module registrations in registration_modules table
+            $selectedModules = json_decode($validated['selected_modules'], true) ?? [];
+            $additionalModules = json_decode($validated['additional_modules'] ?? '[]', true) ?? [];
+            $allModules = array_merge($selectedModules, $additionalModules);
+
+            foreach ($allModules as $moduleData) {
+                \App\Models\RegistrationModule::create([
+                    'registration_id' => $registration->registration_id,
+                    'module_id' => $moduleData['id']
+                ]);
+                Log::info('Module registered', ['module_id' => $moduleData['id'], 'registration_id' => $registration->registration_id]);
+            }
+
+            DB::commit();
+
+            Log::info('Modular enrollment completed successfully', [
+                'user_id' => $user->user_id,
+                'student_id' => $student->student_id,
+                'enrollment_id' => $enrollment->enrollment_id,
+                'registration_id' => $registration->registration_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration and enrollment successful!',
+                'data' => [
+                    'user_id' => $user->user_id,
+                    'student_id' => $student->student_id,
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'registration_id' => $registration->registration_id
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Modular enrollment failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->except(['password', 'password_confirmation'])
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed: ' . $e->getMessage(),
+                'errors' => ['general' => [$e->getMessage()]]
+            ], 500);
+        }
+    }
+
+    /**
+     * Store modular enrollment from 6-step wizard
+     */
+    public function storeModular(Request $request)
+    {
+        Log::info('ModEnroll payload', $request->all());
+        
+        try {
+            DB::beginTransaction();
+
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'package_id' => 'required|exists:packages,package_id',
+                'module_ids' => 'required|array',
+                'module_ids.*' => 'exists:modules,modules_id',
+                'learning_mode' => 'required|in:Face-to-Face,Online,Hybrid',
+                'account_data' => 'required|array',
+                'account_data.firstName' => 'required|string|max:255',
+                'account_data.lastName' => 'required|string|max:255',
+                'account_data.email' => 'required|email|unique:users,email',
+                'account_data.password' => 'required|min:8',
+                'profile_data' => 'required|array',
+            ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+                Log::error('Modular enrollment validation failed', $validator->errors()->toArray());
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+            $accountData = $validated['account_data'];
+            $profileData = $validated['profile_data'];
+
+            // Get package and determine program
+            $package = Package::find($validated['package_id']);
+            if (!$package) {
+                throw new \Exception('Package not found');
+            }
+
+            // Create user account
+            $user = User::create([
+                'user_firstname' => $accountData['firstName'],
+                'user_lastname' => $accountData['lastName'],
+                'name' => $accountData['firstName'] . ' ' . $accountData['lastName'],
+                'email' => $accountData['email'],
+                'password' => Hash::make($accountData['password']),
+                'role' => 'student',
+                'enrollment_id' => 0 // Will be updated after enrollment creation
+            ]);
+
+            Log::info('User created successfully', ['user_id' => $user->user_id]);
+
+            // Create student record
+            $student = Student::create([
+                'firstname' => $accountData['firstName'],
+                'lastname' => $accountData['lastName'],
+                'email' => $accountData['email'],
+                'user_id' => $user->user_id,
+                'student_id' => $this->generateStudentId(),
+                'education_level' => 'Undergraduate' // Default value
+            ]);
+
+            Log::info('Student created successfully', ['student_id' => $student->student_id]);
+
+            // Create registration record with dynamic fields from admin settings
+            $registrationData = [
+                'user_id' => $user->user_id,
+                'firstname' => $accountData['firstName'],
+                'lastname' => $accountData['lastName'],
+                'program_id' => $package->program_id,
+                'package_id' => $validated['package_id'],
+                'program_name' => $package->program->program_name ?? '',
+                'package_name' => $package->package_name ?? '',
+                'learning_mode' => $validated['learning_mode'],
+                'enrollment_type' => 'Modular',
+                'selected_modules' => json_encode($validated['module_ids']),
+                'status' => 'pending',
+                'dynamic_fields' => $profileData
+            ];
+
+            $registration = Registration::create($registrationData);
+            
+            if (!$registration) {
+                Log::error('Failed registration save', ['data' => $registrationData]);
+                throw new \Exception('Failed to create registration record');
+            }
+
+            Log::info('Registration created successfully', ['registration_id' => $registration->registration_id]);
+
+            // Map learning mode values for enrollment table
+            $enrollmentLearningMode = 'Asynchronous'; // Default to Asynchronous for modular
+            if ($validated['learning_mode'] === 'Face-to-Face') {
+                $enrollmentLearningMode = 'Synchronous';
+            }
+
+            // Create enrollment record
+            $enrollment = Enrollment::create([
+                'user_id' => $user->user_id,
+                'student_id' => $student->student_id,
+                'program_id' => $package->program_id,
+                'package_id' => $validated['package_id'],
+                'learning_mode' => $enrollmentLearningMode, // Use mapped value
+                'enrollment_type' => 'Modular',
+                'enrollment_status' => 'pending',
+                'payment_status' => 'pending',
+                'Modular_enrollment' => json_encode($validated['module_ids'])
+            ]);
+
+            Log::info('Enrollment created successfully', ['enrollment_id' => $enrollment->enrollment_id]);
+
+            // Update user with enrollment_id
+            $user->enrollment_id = $enrollment->enrollment_id;
+            $user->save();
+
+            // Create module registrations
+            foreach ($validated['module_ids'] as $moduleId) {
+                \App\Models\RegistrationModule::create([
+                    'registration_id' => $registration->registration_id,
+                    'module_id' => $moduleId
+                ]);
+                Log::info('Module registered', ['module_id' => $moduleId, 'registration_id' => $registration->registration_id]);
+            }
+
+            DB::commit();
+
+            Log::info('Modular enrollment completed successfully', [
+                'user_id' => $user->user_id,
+                'student_id' => $student->student_id,
+                'enrollment_id' => $enrollment->enrollment_id,
+                'registration_id' => $registration->registration_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration completed successfully!',
+                'redirect' => '/student/dashboard'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Modular enrollment failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->except(['account_data.password'])
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get modules for a program
+     */
+    public function getProgramModules(Request $request)
+    {
+        try {
+            $programId = $request->get('program_id');
+            $includeAll = $request->get('all', false);
+
+            if (!$programId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Program ID is required'
+                ], 400);
+            }
+
+            $query = \App\Models\Module::where('program_id', $programId)
+                ->where('is_archived', false)
+                ->orderBy('module_order');
+
+            // Get courses count for each module
+            $modules = $query->withCount('courses')->get();
+
+            // Add pricing information if available
+            $modules = $modules->map(function ($module) {
+                return [
+                    'id' => $module->modules_id,
+                    'name' => $module->module_name,
+                    'description' => $module->module_description,
+                    'price' => $module->price ?? 0,
+                    'duration' => $module->duration ?? 'Flexible',
+                    'level' => $module->level ?? 'All Levels',
+                    'courses_count' => $module->courses_count,
+                    'course_count' => $module->courses_count // Alternative naming
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'modules' => $modules
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading program modules', [
+                'error' => $e->getMessage(),
+                'program_id' => $request->get('program_id')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load modules'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get courses for a module
+     */
+    public function getModuleCourses(Request $request)
+    {
+        try {
+            $moduleId = $request->get('module_id');
+
+            if (!$moduleId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Module ID is required'
+                ], 400);
+            }
+
+            $courses = \App\Models\Course::where('module_id', $moduleId)
+                ->where('is_active', true)
+                ->orderBy('subject_order')
+                ->get();
+
+            // Format courses for response
+            $formattedCourses = $courses->map(function ($course) {
+                return [
+                    'course_id' => $course->subject_id,
+                    'subject_id' => $course->subject_id, // Alternative naming
+                    'course_name' => $course->subject_name,
+                    'subject_name' => $course->subject_name, // Alternative naming
+                    'course_description' => $course->subject_description,
+                    'subject_description' => $course->subject_description, // Alternative naming
+                    'course_price' => $course->subject_price,
+                    'subject_price' => $course->subject_price, // Alternative naming
+                    'course_order' => $course->subject_order,
+                    'subject_order' => $course->subject_order, // Alternative naming
+                    'is_required' => $course->is_required,
+                    'duration' => $course->duration ?? 'Flexible',
+                    'level' => $course->level ?? 'All Levels'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'courses' => $formattedCourses
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading module courses', [
+                'error' => $e->getMessage(),
+                'module_id' => $request->get('module_id')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load courses'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get batches for a program
+     */
+    public function getProgramBatches(Request $request)
+    {
+        try {
+            $programId = $request->get('program_id');
+
+            if (!$programId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Program ID is required'
+                ], 400);
+            }
+
+            $batches = \App\Models\StudentBatch::where('program_id', $programId)
+                ->where('is_active', true)
+                ->where('start_date', '>', now())
+                ->orderBy('start_date')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'batches' => $batches
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading program batches', [
+                'error' => $e->getMessage(),
+                'program_id' => $request->get('program_id')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load batches'
+            ], 500);
+        }
+    }
+
 }

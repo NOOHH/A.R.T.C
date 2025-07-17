@@ -367,7 +367,7 @@
             
             @if($totalModules > 0)
                 @foreach($course['modules'] as $index => $module)
-                    <div class="module-card" data-type="{{ $module['type'] }}">
+                    <div class="module-card" data-type="{{ $module['type'] }}" data-module-id="{{ $module['id'] ?? $index }}">>
                         <div class="module-header">
                             <h3 class="module-title">
                                 @switch($module['type'])
@@ -475,6 +475,9 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize course progress tracking
+        updateCourseProgress();
+        
         // Scroll to modules function
         window.scrollToModules = function() {
             document.getElementById('course-modules').scrollIntoView({ behavior: 'smooth' });
@@ -502,6 +505,65 @@
                     });
                 });
             });
+        }
+    });
+
+    // Update course progress based on completed modules
+    function updateCourseProgress() {
+        const programId = {{ $program->program_id }};
+        const modules = @json($course['modules']);
+        let completedModules = 0;
+        let totalModules = modules.length;
+        
+        // Check localStorage for completed modules
+        modules.forEach(module => {
+            const isCompleted = localStorage.getItem(`module_${module.id}_completed`) === 'true';
+            if (isCompleted || module.is_completed) {
+                completedModules++;
+                
+                // Update module status display
+                const moduleCard = document.querySelector(`[data-module-id="${module.id}"]`);
+                if (moduleCard) {
+                    const statusElement = moduleCard.querySelector('.module-status');
+                    if (statusElement) {
+                        statusElement.textContent = 'Completed';
+                        statusElement.className = 'module-status status-completed';
+                    }
+                    
+                    const actionButton = moduleCard.querySelector('.start-module-btn, .locked-module-btn');
+                    if (actionButton) {
+                        actionButton.textContent = '✓ Completed';
+                        actionButton.className = 'completed-module-btn';
+                    }
+                }
+            }
+        });
+        
+        // Calculate and update progress
+        const progressPercentage = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+        
+        // Update progress bar
+        const progressBar = document.querySelector('.progress-bar-fill');
+        if (progressBar) {
+            progressBar.style.width = progressPercentage + '%';
+        }
+        
+        // Update progress text
+        const progressStats = document.querySelector('.progress-stats');
+        if (progressStats) {
+            progressStats.innerHTML = `
+                <span>${completedModules}/${totalModules} modules completed</span>
+                <span>${progressPercentage}% complete</span>
+            `;
+        }
+        
+        console.log(`Course Progress: ${completedModules}/${totalModules} (${progressPercentage}%)`);
+    }
+
+    // Listen for storage events (when modules are completed in other tabs)
+    window.addEventListener('storage', function(e) {
+        if (e.key && e.key.includes('_completed')) {
+            updateCourseProgress();
         }
     });
 </script>

@@ -99,12 +99,12 @@ class UnifiedLoginController extends Controller
             'user_firstname' => $user->user_firstname,
             'user_lastname' => $user->user_lastname,
             'user_email' => $user->email,
-            'user_role' => $user->role,
-            'role'      => $user->role,
+            'user_role' => 'student', // Force role to student for users table
+            'role'      => 'student', // Force role to student for users table
             'logged_in' => true
         ]);
 
-        Log::info('Student logged in successfully', ['user_id' => $user->user_id]);
+        Log::info('Student logged in successfully', ['user_id' => $user->user_id, 'role' => 'student']);
 
         // Check if user is coming from enrollment process (preserve exact original functionality)
         if ($request->has('from_enrollment') && $request->from_enrollment === 'true') {
