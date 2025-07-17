@@ -697,6 +697,10 @@ Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'a
 Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
      ->name('admin.modules.batch-store');
 
+// Store course content
+Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
+     ->name('admin.modules.course-content-store');
+
 // Toggle archive status
 Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
      ->name('admin.modules.toggle-archive');
@@ -732,6 +736,10 @@ Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, '
 // Get courses for a program (AJAX)
 Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])
      ->name('admin.programs.courses');
+
+// Get courses by module ID (AJAX)
+Route::get('/admin/modules/{module}/courses', [AdminModuleController::class, 'getCoursesByModule'])
+     ->name('admin.modules.courses');
 
 // Get batches by program ID (AJAX)
 Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])

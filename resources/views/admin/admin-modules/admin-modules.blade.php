@@ -104,7 +104,7 @@
             <i class="bi bi-journal-plus"></i> Add New Course
         </button>
         <button type="button" class="batch-upload-btn" id="showBatchModal">
-            <i class="bi bi-upload"></i> Batch Upload Multiple PDFs
+            <i class="bi bi-upload"></i> Add Course Content
         </button>
         <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
             <i class="bi bi-archive"></i> View Archived
@@ -390,22 +390,22 @@
     </div>
 </div>
 
-<!-- Batch Upload Modal -->
+<!-- Add Course Content Modal -->
 <div class="modal-bg" id="batchModalBg">
     <div class="modal">
         <div class="modal-header">
-            <h3><i class="bi bi-upload"></i> Batch Upload Modules</h3>
+            <h3><i class="bi bi-upload"></i> Add Course Content</h3>
             <button type="button" class="modal-close" id="closeBatchModal">
                 <i class="bi bi-x"></i>
             </button>
         </div>
-        <form action="{{ route('admin.modules.batch-store') }}" method="POST" enctype="multipart/form-data" id="batchModuleForm">
+        <form action="{{ route('admin.modules.course-content-store') }}" method="POST" enctype="multipart/form-data" id="courseContentForm">
             <div class="modal-body">
                 @csrf
                 
                 <div class="form-group">
-                    <label for="batchModalProgramSelect">Program <span class="text-danger">*</span></label>
-                    <select id="batchModalProgramSelect" name="program_id" class="form-select" required>
+                    <label for="contentProgramSelect">Program <span class="text-danger">*</span></label>
+                    <select id="contentProgramSelect" name="program_id" class="form-select" required>
                         <option value="">-- Select Program --</option>
                         @foreach($programs as $program)
                             <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
@@ -414,29 +414,54 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="batch_batch_id">Batch <span class="text-danger">*</span></label>
-                    <select id="batch_batch_id" name="batch_id" class="form-select" required disabled>
-                        <option value="">-- Select Batch --</option>
+                    <label for="contentModuleSelect">Module <span class="text-danger">*</span></label>
+                    <select id="contentModuleSelect" name="module_id" class="form-select" required disabled>
+                        <option value="">-- Select Module --</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="batchPdfFiles">PDF Files</label>
-                    <div class="dropzone" id="batchDropzone">
-                        <input type="file" id="batchPdfFiles" name="pdf_files[]" multiple accept=".pdf" required>
-                        <p>Drop PDF files here or click to select</p>
-                        <small class="text-muted">Each PDF will be converted to a module automatically</small>
-                    </div>
-                    <div id="selectedFiles" style="display: none;">
-                        <strong>Selected Files:</strong>
-                        <ul id="fileList"></ul>
-                    </div>
+                    <label for="contentCourseSelect">Course <span class="text-danger">*</span></label>
+                    <select id="contentCourseSelect" name="course_id" class="form-select" required disabled>
+                        <option value="">-- Select Course --</option>
+                    </select>
                 </div>
+
+                <div class="form-group">
+                    <label for="contentTypeSelect">Content Type <span class="text-danger">*</span></label>
+                    <select id="contentTypeSelect" name="content_type" class="form-select" required>
+                        <option value="">-- Select Content Type --</option>
+                        <option value="lesson">Lesson</option>
+                        <option value="quiz">Quiz</option>
+                        <option value="test">Test</option>
+                        <option value="assignment">Assignment</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="contentTitle">Content Title <span class="text-danger">*</span></label>
+                    <input type="text" id="contentTitle" name="content_title" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="contentDescription">Content Description</label>
+                    <textarea id="contentDescription" name="content_description" class="form-control" rows="4"></textarea>
+                </div>
+
+                <!-- Dynamic content fields will be added here -->
+                <div id="dynamicContentFields"></div>
+
+                <div class="form-group">
+                    <label for="contentAttachment">Attachment</label>
+                    <input type="file" id="contentAttachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
+                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
+                </div>
+
             </div>
             
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="closeBatchModalBtn">Cancel</button>
-                <button type="submit" class="add-btn" id="uploadPdfBtn" disabled>Upload PDF Files</button>
+                <button type="submit" class="add-btn" id="submitContentBtn">Add Content</button>
             </div>
         </form>
     </div>
@@ -675,9 +700,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
   programSelect.addEventListener('change', function(){
     const programId = this.value;
+    
+    console.log('Program selected for course:', programId);
 
     // reset & disable module dropdown
-    moduleSelect.innerHTML = '<option>Loading modules…</option>';
+    moduleSelect.innerHTML = '<option value="">Loading modules…</option>';
     moduleSelect.disabled = true;
 
     if (!programId) {
@@ -687,19 +714,39 @@ document.addEventListener('DOMContentLoaded', function(){
 
     fetch(`/api/programs/${programId}/modules`)
       .then(res => {
+        console.log('Modules API response status:', res.status);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
       .then(json => {
+        console.log('Modules API response data:', json);
         if (json.success) {
           let options = '<option value="">-- Select Module --</option>';
           json.modules.forEach(m => {
-            options += `<option value="${m.id}">${m.module_name}</option>`;
+            console.log('Module found:', m);
+            const moduleId = m.modules_id || m.id;
+            const moduleName = m.module_name || m.name;
+            
+            console.log('Processing module - ID:', moduleId, 'Name:', moduleName);
+            
+            // Skip modules with null or undefined IDs
+            if (moduleId && moduleId !== 'null' && moduleId !== null) {
+              options += `<option value="${moduleId}">${moduleName}</option>`;
+              console.log('Added module option:', moduleId, moduleName);
+            } else {
+              console.warn('Skipping module with null/undefined ID:', m);
+            }
           });
           moduleSelect.innerHTML = options;
           moduleSelect.disabled = false;
+          console.log('Module dropdown populated with', json.modules.length, 'modules');
+          
+          // If no valid modules were found, show a message
+          if (options === '<option value="">-- Select Module --</option>') {
+            moduleSelect.innerHTML = '<option value="">No modules available</option>';
+          }
         } else {
           throw new Error(json.message || 'Failed to load modules');
         }
@@ -722,6 +769,7 @@ document.addEventListener('DOMContentLoaded', function(){
     initializeFiltering();
     initializeSorting();
     initializeCourseModals();
+    initializeCourseContentModal();
   });
 
 // Initialize modal functionality
@@ -1583,6 +1631,274 @@ function initializeCourseModals() {
     }
 }
 
+// Initialize course content modal functionality
+function initializeCourseContentModal() {
+    const programSelect = document.getElementById('contentProgramSelect');
+    const moduleSelect = document.getElementById('contentModuleSelect');
+    const courseSelect = document.getElementById('contentCourseSelect');
+    const contentTypeSelect = document.getElementById('contentTypeSelect');
+
+    if (programSelect) {
+        programSelect.addEventListener('change', function() {
+            const programId = this.value;
+            loadModulesForContent(programId);
+            resetCourseSelect();
+        });
+    }
+
+    if (moduleSelect) {
+        moduleSelect.addEventListener('change', function() {
+            const moduleId = this.value;
+            loadCoursesForContent(moduleId);
+        });
+    }
+
+    if (contentTypeSelect) {
+        contentTypeSelect.addEventListener('change', function() {
+            updateDynamicContentFields(this.value);
+        });
+    }
+
+    // Handle form submission
+    const courseContentForm = document.getElementById('courseContentForm');
+    if (courseContentForm) {
+        courseContentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitCourseContentForm();
+        });
+    }
+}
+
+function loadModulesForContent(programId) {
+    const moduleSelect = document.getElementById('contentModuleSelect');
+    
+    moduleSelect.innerHTML = '<option value="">Loading modules...</option>';
+    moduleSelect.disabled = true;
+    resetCourseSelect();
+
+    if (!programId) {
+        moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+        return;
+    }
+
+    fetch(`/api/programs/${programId}/modules`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+                data.modules.forEach(module => {
+                    const option = document.createElement('option');
+                    option.value = module.modules_id || module.id;
+                    option.textContent = module.module_name || module.name;
+                    moduleSelect.appendChild(option);
+                });
+                moduleSelect.disabled = false;
+            } else {
+                moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading modules:', error);
+            moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
+        });
+}
+
+function loadCoursesForContent(moduleId) {
+    const courseSelect = document.getElementById('contentCourseSelect');
+    
+    courseSelect.innerHTML = '<option value="">Loading courses...</option>';
+    courseSelect.disabled = true;
+
+    if (!moduleId) {
+        courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+        return;
+    }
+
+    fetch(`/admin/modules/${moduleId}/courses`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+                data.courses.forEach(course => {
+                    const option = document.createElement('option');
+                    option.value = course.subject_id;
+                    option.textContent = course.subject_name;
+                    courseSelect.appendChild(option);
+                });
+                courseSelect.disabled = false;
+            } else {
+                courseSelect.innerHTML = '<option value="">No courses available</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading courses:', error);
+            courseSelect.innerHTML = '<option value="">Error loading courses</option>';
+        });
+}
+
+function resetCourseSelect() {
+    const courseSelect = document.getElementById('contentCourseSelect');
+    courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+    courseSelect.disabled = true;
+}
+
+function updateDynamicContentFields(contentType) {
+    const fieldsContainer = document.getElementById('dynamicContentFields');
+    fieldsContainer.innerHTML = '';
+
+    switch(contentType) {
+        case 'lesson':
+            fieldsContainer.innerHTML = `
+                <div class="content-specific-fields">
+                    <h5>Lesson Details</h5>
+                    <div class="form-group">
+                        <label for="lesson_video_url">Video URL (YouTube/Vimeo)</label>
+                        <input type="url" id="lesson_video_url" name="lesson_video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                </div>
+            `;
+            break;
+        case 'assignment':
+            fieldsContainer.innerHTML = `
+                <div class="content-specific-fields">
+                    <h5>Assignment Details</h5>
+                    <div class="form-group">
+                        <label for="assignment_instructions">Instructions</label>
+                        <textarea id="assignment_instructions" name="assignment_instructions" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="due_date">Due Date</label>
+                        <input type="datetime-local" id="due_date" name="due_date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="max_points">Maximum Points</label>
+                        <input type="number" id="max_points" name="max_points" class="form-control" min="0">
+                    </div>
+                </div>
+            `;
+            break;
+        case 'quiz':
+            fieldsContainer.innerHTML = `
+                <div class="content-specific-fields">
+                    <h5>Quiz Details</h5>
+                    <div class="form-group">
+                        <label for="quiz_instructions">Quiz Instructions</label>
+                        <textarea id="quiz_instructions" name="quiz_instructions" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="time_limit">Time Limit (minutes)</label>
+                                <input type="number" id="time_limit" name="time_limit" class="form-control" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="max_points">Maximum Points</label>
+                                <input type="number" id="max_points" name="max_points" class="form-control" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'test':
+            fieldsContainer.innerHTML = `
+                <div class="content-specific-fields">
+                    <h5>Test Details</h5>
+                    <div class="form-group">
+                        <label for="test_instructions">Test Instructions</label>
+                        <textarea id="test_instructions" name="test_instructions" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="test_date">Test Date</label>
+                        <input type="datetime-local" id="test_date" name="test_date" class="form-control">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="test_duration">Duration (minutes)</label>
+                                <input type="number" id="test_duration" name="test_duration" class="form-control" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="total_marks">Total Marks</label>
+                                <input type="number" id="total_marks" name="total_marks" class="form-control" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+    }
+}
+
+function submitCourseContentForm() {
+    const form = document.getElementById('courseContentForm');
+    const formData = new FormData(form);
+    
+    // Validate required fields
+    const requiredFields = ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+        const value = formData.get(field);
+        if (!value || value === 'null' || value === '') {
+            missingFields.push(field);
+        }
+    }
+    
+    if (missingFields.length > 0) {
+        showNotification(`Please fill in all required fields: ${missingFields.join(', ')}`, 'error');
+        return;
+    }
+    
+    fetch('/admin/modules/course-content-store', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP error! status: ${response.status}`);
+            }
+            return data;
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            showNotification('Course content created successfully!', 'success');
+            document.getElementById('batchModalBg').classList.remove('show');
+            form.reset();
+            
+            // Reset dropdowns to initial state
+            document.getElementById('contentModuleSelect').innerHTML = '<option value="">-- Select Module --</option>';
+            document.getElementById('contentModuleSelect').disabled = true;
+            document.getElementById('contentCourseSelect').innerHTML = '<option value="">-- Select Course --</option>';
+            document.getElementById('contentCourseSelect').disabled = true;
+            document.getElementById('dynamicContentFields').innerHTML = '';
+        } else {
+            console.error('Course content creation failed:', data);
+            let errorMessage = data.message || 'Unknown error';
+            
+            if (data.errors) {
+                const errorList = Object.keys(data.errors).map(key => `${key}: ${data.errors[key].join(', ')}`).join('\n');
+                errorMessage += '\n\nValidation errors:\n' + errorList;
+            }
+            
+            showNotification('Error creating course content: ' + errorMessage, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating course content:', error);
+        showNotification('Error creating course content: ' + error.message, 'error');
+    });
+}
+
 // Notification function
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
@@ -1608,12 +1924,26 @@ function submitCourseForm() {
         console.log(key, value);
     }
     
+    // Additional validation for module selection
+    const moduleSelect = document.getElementById('courseModuleSelect');
+    const moduleId = moduleSelect.value;
+    
+    console.log('Module select element:', moduleSelect);
+    console.log('Module select value:', moduleId);
+    console.log('Module select disabled:', moduleSelect.disabled);
+    
+    if (!moduleId || moduleId === 'null' || moduleId === '') {
+        showNotification('Please select a module for this course.', 'error');
+        return;
+    }
+    
     // Validate required fields
     const requiredFields = ['program_id', 'module_id', 'subject_name', 'subject_price'];
     const missingFields = [];
     
     for (const field of requiredFields) {
-        if (!formData.get(field)) {
+        const value = formData.get(field);
+        if (!value || value === 'null' || value === '') {
             missingFields.push(field);
         }
     }
@@ -1644,12 +1974,10 @@ function submitCourseForm() {
             document.getElementById('addCourseModalBg').classList.remove('show');
             document.getElementById('addCourseForm').reset();
             
-            // Reset module dropdown
+            // Reset the module dropdown to disabled state
             const moduleSelect = document.getElementById('courseModuleSelect');
-            if (moduleSelect) {
-                moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
-                moduleSelect.disabled = true;
-            }
+            moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+            moduleSelect.disabled = true;
             
             // Refresh the modules view if needed
             if (typeof loadModules === 'function') {
@@ -1807,23 +2135,20 @@ function displayCourseContent(course) {
     content.innerHTML = html;
 }
 
-function getContentTypeIcon(type) {
-    switch(type) {
-        case 'assignment': return '📝';
-        case 'quiz': return '❓';
-        case 'test': return '📋';
-        case 'link': return '🔗';
-        case 'video': return '📹';
-        case 'document': return '📄';
-        default: return '📚';
+function getContentTypeIcon(contentType) {
+    switch(contentType) {
+        case 'lesson': return '<i class="bi bi-book"></i>';
+        case 'assignment': return '<i class="bi bi-file-earmark-text"></i>';
+        case 'quiz': return '<i class="bi bi-question-circle"></i>';
+        case 'test': return '<i class="bi bi-clipboard-check"></i>';
+        default: return '<i class="bi bi-file"></i>';
     }
 }
 
 function editCourse(courseId) {
-    // TODO: Implement course editing functionality
-    showNotification('Course editing functionality coming soon!', 'info');
+    // Placeholder for edit course functionality
+    console.log('Edit course:', courseId);
+    showNotification('Edit course functionality coming soon!', 'info');
 }
-
-// ...existing code...
 </script>
 @endpush

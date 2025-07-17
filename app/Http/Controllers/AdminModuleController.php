@@ -958,4 +958,138 @@ class AdminModuleController extends Controller
             $deadline->save();
         }
     }
+
+    /**
+     * Store course content (lessons, quizzes, tests, assignments)
+     */
+    public function courseContentStore(Request $request)
+    {
+        $request->validate([
+            'program_id' => 'required|exists:programs,program_id',
+            'module_id' => 'required|exists:modules,modules_id',
+            'course_id' => 'required|exists:courses,subject_id',
+            'content_type' => 'required|in:lesson,quiz,test,assignment',
+            'content_title' => 'required|string|max:255',
+            'content_description' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg|max:10240',
+        ]);
+
+        try {
+            $attachmentPath = null;
+            
+            // Handle file upload if present
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $attachmentPath = $file->storeAs('content', $filename, 'public');
+            }
+
+            // Get the course to find the lesson
+            $course = Course::findOrFail($request->course_id);
+            
+            // Find or create lesson for this course
+            $lesson = \App\Models\Lesson::firstOrCreate([
+                'course_id' => $course->subject_id,
+                'lesson_name' => $course->subject_name . ' - Main Lesson'
+            ], [
+                'lesson_description' => 'Auto-generated lesson for ' . $course->subject_name,
+                'lesson_price' => 0, // Default price
+                'lesson_duration' => 60, // Default 60 minutes
+                'lesson_video_url' => $request->input('lesson_video_url'),
+                'is_active' => true
+            ]);
+
+            // Prepare content-specific data
+            $contentData = [];
+            $contentType = $request->content_type;
+            
+            switch ($contentType) {
+                case 'lesson':
+                    $contentData = [
+                        'lesson_video_url' => $request->input('lesson_video_url'),
+                    ];
+                    break;
+                case 'assignment':
+                    $contentData = [
+                        'assignment_instructions' => $request->input('assignment_instructions'),
+                        'due_date' => $request->input('due_date'),
+                        'max_points' => $request->input('max_points', 0),
+                    ];
+                    break;
+                case 'quiz':
+                    $contentData = [
+                        'quiz_instructions' => $request->input('quiz_instructions'),
+                        'time_limit' => $request->input('time_limit', 30),
+                        'max_points' => $request->input('max_points', 0),
+                    ];
+                    break;
+                case 'test':
+                    $contentData = [
+                        'test_instructions' => $request->input('test_instructions'),
+                        'test_date' => $request->input('test_date'),
+                        'test_duration' => $request->input('test_duration', 60),
+                        'total_marks' => $request->input('total_marks', 100),
+                    ];
+                    break;
+            }
+
+            // Create content item
+            $contentItem = \App\Models\ContentItem::create([
+                'content_title' => $request->content_title,
+                'content_description' => $request->content_description,
+                'lesson_id' => $lesson->lesson_id,
+                'course_id' => $course->subject_id,
+                'content_type' => $contentType,
+                'content_data' => $contentData,
+                'attachment_path' => $attachmentPath,
+                'max_points' => $request->input('max_points', 0),
+                'due_date' => $request->input('due_date'),
+                'time_limit' => $request->input('time_limit'),
+                'is_required' => true,
+                'is_active' => true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Course content created successfully!',
+                'content_item' => $contentItem
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error creating course content: ' . $e->getMessage(), [
+                'request' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating course content: ' . $e->getMessage(),
+                'errors' => [$e->getMessage()]
+            ], 500);
+        }
+    }
+
+    /**
+     * Get courses by module
+     */
+    public function getCoursesByModule($moduleId)
+    {
+        try {
+            $courses = Course::where('module_id', $moduleId)
+                ->where('is_active', true)
+                ->orderBy('subject_name')
+                ->get(['subject_id', 'subject_name', 'subject_description', 'subject_price']);
+
+            return response()->json([
+                'success' => true,
+                'courses' => $courses
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading courses by module: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading courses: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
