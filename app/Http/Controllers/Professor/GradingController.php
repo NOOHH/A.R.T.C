@@ -39,6 +39,43 @@ class GradingController extends Controller
         return view('professor.grading.index', compact('assignedPrograms', 'students', 'selectedProgramId'));
     }
 
+    public function store(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:students,student_id',
+            'program_id' => 'required|exists:programs,program_id',
+            'assignment_name' => 'required|string|max:255',
+            'grade' => 'required|numeric|min:0|max:100',
+            'feedback' => 'nullable|string|max:1000'
+        ]);
+
+        $professor = Professor::find(session('professor_id'));
+        
+        // Verify professor has access to this program
+        if (!$professor->programs()->where('program_id', $request->program_id)->exists()) {
+            return back()->with('error', 'You are not authorized to grade this program.');
+        }
+
+        try {
+            // Create or update grade
+            StudentGrade::updateOrCreate([
+                'student_id' => $request->student_id,
+                'program_id' => $request->program_id,
+                'grade_type' => 'assignment',
+                'reference_name' => $request->assignment_name
+            ], [
+                'grade' => $request->grade,
+                'feedback' => $request->feedback,
+                'professor_id' => $professor->professor_id,
+                'graded_at' => now()
+            ]);
+
+            return back()->with('success', 'Grade added successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to add grade: ' . $e->getMessage());
+        }
+    }
+
     public function studentDetails($studentId, Request $request)
     {
         $professor = Professor::find(session('professor_id'));

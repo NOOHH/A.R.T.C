@@ -1112,38 +1112,45 @@ class AdminSettingsController extends Controller
     public function updateProfessorFeatures(Request $request)
     {
         $request->validate([
-            'ai_quiz_enabled' => 'nullable|boolean',
-            'grading_enabled' => 'nullable|boolean', 
-            'upload_videos_enabled' => 'nullable|boolean',
-            'attendance_enabled' => 'nullable|boolean',
-            'view_programs_enabled' => 'nullable|boolean',
+            'ai_quiz_enabled' => 'nullable',
+            'grading_enabled' => 'nullable', 
+            'upload_videos_enabled' => 'nullable',
+            'attendance_enabled' => 'nullable',
+            'view_programs_enabled' => 'nullable',
         ]);
 
         try {
+            // Convert to boolean values
+            $aiQuizEnabled = filter_var($request->input('ai_quiz_enabled', false), FILTER_VALIDATE_BOOLEAN);
+            $gradingEnabled = filter_var($request->input('grading_enabled', true), FILTER_VALIDATE_BOOLEAN);
+            $uploadVideosEnabled = filter_var($request->input('upload_videos_enabled', true), FILTER_VALIDATE_BOOLEAN);
+            $attendanceEnabled = filter_var($request->input('attendance_enabled', true), FILTER_VALIDATE_BOOLEAN);
+            $viewProgramsEnabled = filter_var($request->input('view_programs_enabled', true), FILTER_VALIDATE_BOOLEAN);
+
             // Use AdminSetting model to store professor feature settings
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'ai_quiz_enabled'],
-                ['setting_value' => $request->input('ai_quiz_enabled', false) ? 'true' : 'false']
+                ['setting_value' => $aiQuizEnabled ? 'true' : 'false']
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'grading_enabled'],
-                ['setting_value' => $request->input('grading_enabled', true) ? 'true' : 'false']
+                ['setting_value' => $gradingEnabled ? 'true' : 'false']
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'upload_videos_enabled'],
-                ['setting_value' => $request->input('upload_videos_enabled', true) ? 'true' : 'false']
+                ['setting_value' => $uploadVideosEnabled ? 'true' : 'false']
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'attendance_enabled'],
-                ['setting_value' => $request->input('attendance_enabled', true) ? 'true' : 'false']
+                ['setting_value' => $attendanceEnabled ? 'true' : 'false']
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'view_programs_enabled'],
-                ['setting_value' => $request->input('view_programs_enabled', true) ? 'true' : 'false']
+                ['setting_value' => $viewProgramsEnabled ? 'true' : 'false']
             );
 
             return response()->json(['success' => true, 'message' => 'Professor feature settings updated successfully!']);
@@ -1671,5 +1678,34 @@ class AdminSettingsController extends Controller
         $this->saveSettings($settings);
 
         return back()->with('success', 'Sidebar settings updated successfully!');
+    }
+
+    /**
+     * Update meeting whitelist settings
+     */
+    public function updateMeetingWhitelist(Request $request)
+    {
+        try {
+            $whitelistedProfessors = $request->input('whitelist_professors', []);
+            $whitelistString = implode(',', $whitelistedProfessors);
+            
+            // Save to database using AdminSetting model
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'meeting_whitelist_professors'],
+                ['setting_value' => $whitelistString]
+            );
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Meeting whitelist updated successfully',
+                'count' => count($whitelistedProfessors)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating meeting whitelist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update meeting whitelist: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

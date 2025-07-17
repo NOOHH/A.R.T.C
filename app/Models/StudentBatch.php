@@ -55,7 +55,7 @@ class StudentBatch extends Model
     // New relationship for multiple professors
     public function professors()
     {
-        return $this->belongsToMany(Professor::class, 'batch_professors', 'batch_id', 'professor_id')
+        return $this->belongsToMany(Professor::class, 'professor_batch', 'batch_id', 'professor_id')
                     ->withPivot('assigned_at', 'assigned_by')
                     ->withTimestamps();
     }
@@ -183,5 +183,21 @@ class StudentBatch extends Model
     {
         $today = now()->toDateString();
         return $this->registration_deadline && $today <= $this->registration_deadline;
+    }
+
+    /**
+     * Get class meetings for this batch
+     */
+    public function classMeetings()
+    {
+        return $this->hasMany(ClassMeeting::class, 'batch_id', 'batch_id');
+    }
+
+    /**
+     * Get upcoming meetings for this batch
+     */
+    public function upcomingMeetings()
+    {
+        return $this->classMeetings()->upcoming()->orderBy('meeting_date', 'asc');
     }
 }

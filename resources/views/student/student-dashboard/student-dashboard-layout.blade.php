@@ -116,6 +116,13 @@
                             </a>
                         </li>
 
+                        {{-- Meetings --}}
+                        <li class="@if(Route::currentRouteName() === 'student.meetings') active @endif">
+                            <a href="{{ route('student.meetings') }}" class="sidebar-link">
+                                <span class="icon">🎥</span> Meetings
+                            </a>
+                        </li>
+
                         {{-- My Programs --}}
                         <li class="dropdown-sidebar @if(str_starts_with(Route::currentRouteName(), 'student.course')) active @endif">
                             <a href="#" class="sidebar-link">

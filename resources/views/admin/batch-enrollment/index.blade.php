@@ -23,6 +23,7 @@
                                     <th>Start Date</th>
                                     <th>Schedule</th>
                                     <th>Capacity</th>
+                                    <th>Assigned Professor</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -35,6 +36,15 @@
                                     <td>{{ $batch->start_date->format('M d, Y') }}</td>
                                     <td>{{ $batch->schedule }}</td>
                                     <td>{{ $batch->current_capacity }}/{{ $batch->max_capacity }}</td>
+                                    <td>
+                                        @if($batch->professors && $batch->professors->count() > 0)
+                                            @foreach($batch->professors as $professor)
+                                                <span class="badge bg-info me-1">{{ $professor->professor_name }}</span>
+                                            @endforeach
+                                        @else
+                                            <span class="text-muted">No professor assigned</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <span class="badge badge-{{ $batch->status === 'active' ? 'success' : 'warning' }}">
                                             {{ ucfirst($batch->status) }}

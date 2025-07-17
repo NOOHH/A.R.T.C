@@ -121,10 +121,10 @@
                             @enderror
                         </div>
 
-                        <!-- Program Video Links -->
+                        <!-- Program Meeting Links -->
                         @if($professor->programs->count() > 0)
                             <div class="mb-4">
-                                <label class="form-label">Program Video Links</label>
+                                <label class="form-label">Program Meeting Links</label>
                                 <div class="accordion" id="videoAccordion">
                                     @foreach($professor->programs as $index => $program)
                                         <div class="accordion-item">

@@ -41,8 +41,6 @@
                                     <tr>
                                         <th>Name</th>
                                         <th>Email</th>
-                                        <th>Phone</th>
-                                        <th>Department</th>
                                         <th>Assigned Programs</th>
                                         <th>Created Date</th>
                                         <th class="text-center">Actions</th>
@@ -55,8 +53,6 @@
                                                 <strong>{{ $director->full_name }}</strong>
                                             </td>
                                             <td>{{ $director->directors_email }}</td>
-                                            <td>N/A</td>
-                                            <td>N/A</td>
                                             <td>
                                                 @if($director->has_all_program_access)
                                                     <span class="badge bg-primary">All Programs</span>
@@ -292,8 +288,16 @@ document.getElementById('addDirectorModal').addEventListener('hidden.bs.modal', 
     });
     
     // Reset program access to "All Programs"
-    const programSelect = document.getElementById('program_access');
-    programSelect.selectedIndex = 0;
+    const allProgramsCheckbox = document.getElementById('program_all');
+    if (allProgramsCheckbox) {
+        allProgramsCheckbox.checked = true;
+    }
+    
+    // Uncheck all individual program checkboxes
+    const programCheckboxes = document.querySelectorAll('.program-checkbox');
+    programCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
 });
 
 // Handle program access selection logic

@@ -322,14 +322,40 @@
         </div>
     </div>
 
-    <!-- My Progress Section -->
-    <div class="dashboard-card progress-card">
+    <!-- My Meetings Section -->
+    <div class="dashboard-card meetings-card">
         <div class="card-header">
-            <h2>My Progress</h2>
+            <h2>My Meetings</h2>
         </div>
-        <div class="progress-content" style="padding: 30px 20px; text-align: center;">
-            <p style="color: #7f8c8d;">Progress chart will be displayed here</p>
-            <p style="font-size: 0.9rem; color: #95a5a6;">Welcome back, {{ explode(' ', session('user_name'))[0] ?? 'student' }}!</p>
+        <div class="meetings-content" style="padding: 20px;">
+            <div id="current-meetings-section" style="display: none;">
+                <div style="background: #ffe6e6; border: 1px solid #ffcccc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h6 style="color: #d63384; margin: 0 0 10px 0; font-weight: 600;">
+                        <i class="bi bi-broadcast" style="margin-right: 8px;"></i>Live Now
+                    </h6>
+                    <div id="current-meetings-list"></div>
+                </div>
+            </div>
+            
+            <div id="upcoming-meetings-section">
+                <h6 style="color: #6c757d; margin: 0 0 10px 0; font-weight: 600;">
+                    <i class="bi bi-calendar-week" style="margin-right: 8px;"></i>Upcoming Meetings
+                </h6>
+                <div id="upcoming-meetings-list" style="min-height: 60px;">
+                    <div class="loading-spinner" style="text-align: center; padding: 20px;">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span style="margin-left: 10px; color: #6c757d;">Loading meetings...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="{{ route('student.meetings') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-eye me-1"></i>See All Meetings
+                </a>
+            </div>
         </div>
     </div>
 
@@ -382,6 +408,116 @@
 </div>
 
 <script>
+// Load meetings data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadMeetingsData();
+});
+
+function loadMeetingsData() {
+    fetch('{{ route("student.meetings.upcoming") }}')
+        .then(response => response.json())
+        .then(data => {
+            displayMeetings(data);
+        })
+        .catch(error => {
+            console.error('Error loading meetings:', error);
+            document.getElementById('upcoming-meetings-list').innerHTML = 
+                '<p style="text-align: center; color: #6c757d; padding: 20px;">Unable to load meetings</p>';
+        });
+}
+
+function displayMeetings(meetings) {
+    const currentMeetingsSection = document.getElementById('current-meetings-section');
+    const currentMeetingsList = document.getElementById('current-meetings-list');
+    const upcomingMeetingsList = document.getElementById('upcoming-meetings-list');
+    
+    let currentMeetings = [];
+    let upcomingMeetings = [];
+    
+    // Separate current and upcoming meetings
+    meetings.forEach(meeting => {
+        const meetingDate = new Date(meeting.meeting_date);
+        const now = new Date();
+        const diffMinutes = (now - meetingDate) / (1000 * 60);
+        const duration = meeting.duration_minutes || 60;
+        
+        if (diffMinutes >= 0 && diffMinutes <= duration) {
+            currentMeetings.push(meeting);
+        } else if (meetingDate > now) {
+            upcomingMeetings.push(meeting);
+        }
+    });
+    
+    // Display current meetings
+    if (currentMeetings.length > 0) {
+        currentMeetingsSection.style.display = 'block';
+        currentMeetingsList.innerHTML = currentMeetings.map(meeting => `
+            <div style="background: white; border: 1px solid #ffdddd; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                <div style="font-weight: 600; color: #d63384; margin-bottom: 4px;">
+                    ${meeting.title}
+                </div>
+                <div style="font-size: 0.9rem; color: #6c757d; margin-bottom: 8px;">
+                    ${meeting.program_name} • ${meeting.batch_name}
+                </div>
+                <a href="${meeting.meeting_url || '#'}" target="_blank" 
+                   class="btn btn-danger btn-sm" style="font-size: 0.8rem;">
+                    <i class="bi bi-camera-video me-1"></i>Join Now
+                </a>
+            </div>
+        `).join('');
+    } else {
+        currentMeetingsSection.style.display = 'none';
+    }
+    
+    // Display upcoming meetings
+    if (upcomingMeetings.length > 0) {
+        upcomingMeetingsList.innerHTML = upcomingMeetings.slice(0, 3).map(meeting => {
+            const meetingDate = new Date(meeting.meeting_date);
+            const isToday = isDateToday(meetingDate);
+            const isTomorrow = isDateTomorrow(meetingDate);
+            
+            let badge = '';
+            if (isToday) {
+                badge = '<span style="background: #198754; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">Today</span>';
+            } else if (isTomorrow) {
+                badge = '<span style="background: #ffc107; color: black; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">Tomorrow</span>';
+            } else {
+                badge = `<span style="background: #0d6efd; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">${meetingDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}</span>`;
+            }
+            
+            return `
+                <div style="background: #f8f9fa; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                        <div style="font-weight: 600; color: #212529; flex: 1;">
+                            ${meeting.title}
+                        </div>
+                        ${badge}
+                    </div>
+                    <div style="font-size: 0.9rem; color: #6c757d; margin-bottom: 4px;">
+                        ${meeting.program_name} • ${meeting.batch_name}
+                    </div>
+                    <div style="font-size: 0.8rem; color: #6c757d;">
+                        <i class="bi bi-clock me-1"></i>${meetingDate.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true})}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        upcomingMeetingsList.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">No upcoming meetings</p>';
+    }
+}
+
+function isDateToday(date) {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+}
+
+function isDateTomorrow(date) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return date.toDateString() === tomorrow.toDateString();
+}
+
 function showStatusModal(status, courseName) {
     const modal = new bootstrap.Modal(document.getElementById('statusModal'));
     const title = document.getElementById('statusModalTitle');

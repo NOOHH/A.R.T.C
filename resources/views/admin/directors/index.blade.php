@@ -41,8 +41,6 @@
                                     <tr>
                                         <th>Name</th>
                                         <th>Email</th>
-                                        <th>Phone</th>
-                                        <th>Department</th>
                                         <th>Assigned Programs</th>
                                         <th>Hire Date</th>
                                         <th class="text-center">Actions</th>
@@ -55,8 +53,6 @@
                                                 <strong>{{ $director->full_name }}</strong>
                                             </td>
                                             <td>{{ $director->email }}</td>
-                                            <td>{{ $director->phone ?? 'N/A' }}</td>
-                                            <td>{{ $director->department ?? 'N/A' }}</td>
                                             <td>
                                                 @if($director->programs->count() > 0)
                                                     <span class="badge bg-info">{{ $director->programs->count() }} program(s)</span>

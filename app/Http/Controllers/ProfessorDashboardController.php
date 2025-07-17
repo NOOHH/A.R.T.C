@@ -113,12 +113,12 @@ class ProfessorDashboardController extends Controller
 
     public function profile()
     {
-        $professor = Professor::find(session('professor_id'));
+        $professor = Professor::with(['programs', 'batches'])->find(session('professor_id'));
         
         // Get dynamic form fields for professors (if any exist)
         $dynamicFields = FormRequirement::where('entity_type', 'professor')
             ->where('is_active', true)
-            ->orderBy('field_order')
+            ->orderBy('sort_order')
             ->get();
         
         return view('professor.profile', compact('professor', 'dynamicFields'));
@@ -137,7 +137,14 @@ class ProfessorDashboardController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:professors,professor_email,' . $professor->professor_id . ',professor_id',
-            'password' => 'nullable|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'title' => 'nullable|string|max:255',
+            'specialization' => 'nullable|string|max:255',
+            'experience_years' => 'nullable|integer|min:0|max:50',
+            'education' => 'nullable|in:bachelor,master,doctorate,other',
+            'linkedin' => 'nullable|url',
+            'website' => 'nullable|url',
+            'bio' => 'nullable|string|max:1000',
         ];
         
         // Add dynamic field validation rules
@@ -159,48 +166,55 @@ class ProfessorDashboardController extends Controller
                 case 'date':
                     $rule[] = 'date';
                     break;
-                case 'select':
-                    if ($field->field_options) {
-                        $options = json_decode($field->field_options, true);
-                        $rule[] = 'in:' . implode(',', $options);
-                    }
+                case 'number':
+                    $rule[] = 'numeric';
                     break;
+                case 'text':
+                case 'textarea':
                 default:
                     $rule[] = 'string|max:500';
                     break;
             }
             
-            $validationRules['dynamic.' . $field->field_name] = implode('|', $rule);
+            $validationRules[$field->field_name] = implode('|', $rule);
         }
         
-        $request->validate($validationRules);
-
-        $professor->first_name = $request->first_name;
-        $professor->last_name = $request->last_name;
-        $professor->email = $request->email;
+        $validatedData = $request->validate($validationRules);
         
-        if ($request->filled('password')) {
-            $professor->password = Hash::make($request->password);
-        }
+        // Update basic professor fields
+        $professor->professor_first_name = $validatedData['first_name'];
+        $professor->professor_last_name = $validatedData['last_name'];
+        $professor->professor_name = $validatedData['first_name'] . ' ' . $validatedData['last_name'];
+        // Email is kept readonly for security, but validate just in case
         
-        // Handle dynamic fields
-        if ($request->has('dynamic')) {
-            $dynamicData = $professor->dynamic_data ?? [];
-            foreach ($request->dynamic as $fieldName => $value) {
-                $dynamicData[$fieldName] = $value;
+        // Prepare dynamic data
+        $dynamicData = $professor->dynamic_data ?: [];
+        
+        // Standard profile fields
+        $profileFields = ['phone', 'title', 'specialization', 'experience_years', 'education', 'linkedin', 'website', 'bio'];
+        foreach ($profileFields as $field) {
+            if (isset($validatedData[$field])) {
+                $dynamicData[$field] = $validatedData[$field];
             }
-            $professor->dynamic_data = $dynamicData;
         }
         
+        // Add dynamic form fields
+        foreach ($dynamicFields as $field) {
+            if (isset($validatedData[$field->field_name])) {
+                $dynamicData[$field->field_name] = $validatedData[$field->field_name];
+            }
+        }
+        
+        $professor->dynamic_data = $dynamicData;
         $professor->save();
-
+        
         // Update session data
         session([
-            'professor_name' => $professor->full_name,
+            'professor_name' => $professor->professor_name,
             'professor_email' => $professor->professor_email,
         ]);
-
-        return redirect()->back()->with('success', 'Profile updated successfully!');
+        
+        return redirect()->route('professor.profile')->with('success', 'Profile updated successfully!');
     }
 
     public function studentList()
@@ -237,5 +251,83 @@ class ProfessorDashboardController extends Controller
         // Here you can implement grading logic
         // For now, we'll just return success
         return redirect()->back()->with('success', 'Grade assigned successfully!');
+    }
+
+    public function calendar()
+    {
+        $professor = Professor::find(session('professor_id'));
+        
+        if (!$professor) {
+            return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
+        }
+
+        // Get professor's upcoming meetings
+        $upcomingMeetings = $professor->upcomingMeetings()->with('batch.program')->get();
+        
+        // Get today's meetings
+        $todaysMeetings = $professor->todaysMeetings()->with('batch.program')->get();
+        
+        // Get all meetings for calendar display (next 3 months)
+        $allMeetings = $professor->classMeetings()
+            ->with('batch.program')
+            ->where('meeting_date', '>=', now())
+            ->where('meeting_date', '<=', now()->addMonths(3))
+            ->orderBy('meeting_date', 'asc')
+            ->get();
+
+        return view('professor.calendar', compact('professor', 'upcomingMeetings', 'todaysMeetings', 'allMeetings'));
+    }
+
+    public function studentBatches()
+    {
+        $professor = Professor::find(session('professor_id'));
+
+        if (!$professor) {
+            return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
+        }
+
+        // Get batches assigned to this professor
+        $batches = $professor->batches()->with(['students', 'program'])->get();
+
+        return view('professor.students.batches', compact('professor', 'batches'));
+    }
+
+    public function settings()
+    {
+        $professor = Professor::find(session('professor_id'));
+        
+        if (!$professor) {
+            return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
+        }
+
+        return view('professor.settings', compact('professor'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $professor = Professor::find(session('professor_id'));
+        
+        $request->validate([
+            'notification_preferences' => 'nullable|array',
+            'timezone' => 'nullable|string',
+            'language' => 'nullable|string',
+            'email_notifications' => 'boolean',
+            'sms_notifications' => 'boolean',
+        ]);
+
+        // Get current dynamic data
+        $dynamicData = $professor->dynamic_data ?: [];
+        
+        // Update settings
+        $dynamicData['notification_preferences'] = $request->notification_preferences ?: [];
+        $dynamicData['timezone'] = $request->timezone;
+        $dynamicData['language'] = $request->language;
+        $dynamicData['email_notifications'] = $request->has('email_notifications');
+        $dynamicData['sms_notifications'] = $request->has('sms_notifications');
+        
+        $professor->dynamic_data = $dynamicData;
+        $professor->save();
+
+        return redirect()->route('professor.settings')->with('success', 'Settings updated successfully!');
     }
 }

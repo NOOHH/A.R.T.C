@@ -22,6 +22,7 @@ use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessorDashboardController;
+use App\Http\Controllers\ProfessorMeetingController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\FormRequirementController;
 use App\Models\Program;
@@ -33,6 +34,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\DirectorController;
+use App\Http\Controllers\ReportsController;
 // routes/web.php
 
 use App\Http\Controllers\Api\ReferralController;
@@ -95,7 +97,23 @@ Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(funct
     
     // Student movement routes - removed move-to-pending and move-to-current as drag-and-drop is now purely visual
     Route::post('/{batchId}/enrollments/{enrollmentId}/add-to-batch', [BatchEnrollmentController::class, 'addStudentToBatch'])->name('admin.batches.add-to-batch');
+    Route::post('/{batchId}/enrollments/{enrollmentId}/move-to-current', [BatchEnrollmentController::class, 'moveStudentToCurrent'])->name('admin.batches.move-to-current');
+    Route::post('/{batchId}/enrollments/{enrollmentId}/move-to-pending', [BatchEnrollmentController::class, 'moveStudentToPending'])->name('admin.batches.move-to-pending');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Professor Management Routes  
+|--------------------------------------------------------------------------
+*/
+// Admin can create meetings for professors
+Route::post('/admin/professors/{id}/meetings', [\App\Http\Controllers\AdminProfessorController::class, 'createMeeting'])
+    ->middleware(['admin.director.auth'])
+    ->name('admin.professors.create-meeting');
+
+Route::get('/admin/professors/{id}/batches', [\App\Http\Controllers\AdminProfessorController::class, 'getProfessorBatches'])
+    ->middleware(['admin.director.auth'])
+    ->name('admin.professors.batches');
 
 // Registration and document validation routes - accessible for registration
 Route::middleware(['web'])->group(function () {
@@ -287,6 +305,9 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::post('/student/verify-email-otp', [StudentController::class, 'verifyEmailOTP'])->name('student.verify-email-otp');
     
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
+    Route::get('/student/meetings', [\App\Http\Controllers\ClassMeetingController::class, 'studentMeetings'])->name('student.meetings');
+    Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])->name('student.meetings.upcoming');
+    Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
     
@@ -875,6 +896,10 @@ Route::post('/admin/settings/remove-image', [AdminSettingsController::class, 're
 Route::post('/admin/settings/referral', [AdminSettingsController::class, 'saveReferralSettings'])
      ->name('admin.settings.referral');
 
+// Meeting whitelist settings
+Route::post('/admin/settings/meeting-whitelist', [AdminSettingsController::class, 'updateMeetingWhitelist'])
+     ->name('admin.settings.meeting.whitelist');
+
 // Plan Management Routes (Learning Mode Configuration)
 Route::prefix('admin/plans')->middleware(['admin.auth'])->group(function () {
     Route::get('/', [AdminSettingsController::class, 'planSettings'])->name('admin.plans.index');
@@ -1139,6 +1164,9 @@ Route::post('/admin/professors', [AdminProfessorController::class, 'store'])
 Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
      ->name('admin.professors.edit');
 
+Route::get('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'viewMeetings'])
+     ->name('admin.professors.meetings');
+
 Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
      ->name('admin.professors.update');
 
@@ -1160,6 +1188,10 @@ Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorControl
 
 Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
      ->name('admin.professors.unassign-batch');
+
+// Professor programs API route for meeting creation
+Route::get('/admin/professors/{professor}/programs', [AdminProfessorController::class, 'getProfessorPrograms'])
+     ->name('admin.professors.programs');
 
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
 Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);
@@ -1213,6 +1245,9 @@ Route::middleware(['professor.auth'])
 
     Route::get('/dashboard', [ProfessorDashboardController::class, 'index'])
          ->name('dashboard');
+    
+    Route::get('chat', [\App\Http\Controllers\Professor\ChatController::class,'index'])
+        ->name('chat');
 
     Route::get('/programs', [ProfessorDashboardController::class, 'programs'])
          ->name('programs');
@@ -1222,6 +1257,12 @@ Route::middleware(['professor.auth'])
 
     Route::post('/programs/{program}/video', [ProfessorDashboardController::class, 'updateVideo'])
          ->name('program.update-video');
+
+    Route::get('reports/attendance', [ReportsController::class, 'attendance'])
+        ->name('reports.attendance');
+
+    Route::get('reports/grades', [ReportsController::class, 'grades'])
+        ->name('reports.grades');
     
     // Profile Management
     Route::get('/profile', [ProfessorDashboardController::class, 'profile'])
@@ -1230,22 +1271,54 @@ Route::middleware(['professor.auth'])
          ->name('profile.update');
     
     // Student Management
+    // My batches (only those this prof owns)
+    Route::get(
+        '/students/batches',
+        [ProfessorDashboardController::class, 'studentBatches']
+    )->name('students.batches');
+
     Route::get('/students', [ProfessorDashboardController::class, 'studentList'])
-         ->name('students');
+         ->name('students.index');
     Route::post('/students/{student}/grade', [ProfessorDashboardController::class, 'gradeStudent'])
          ->name('students.grade');
     
-    // Attendance Management
-    Route::get('/attendance', [\App\Http\Controllers\ProfessorAttendanceController::class, 'index'])
-         ->name('attendance');
-    Route::post('/attendance', [\App\Http\Controllers\ProfessorAttendanceController::class, 'store'])
-         ->name('attendance.store');
-    Route::get('/attendance/reports', [\App\Http\Controllers\ProfessorAttendanceController::class, 'reports'])
-         ->name('attendance.reports');
+    // Meeting Management (replacing Attendance)
+    Route::get('/attendance', [\App\Http\Controllers\ProfessorMeetingController::class, 'index'])
+         ->name('attendance'); // Legacy route for backward compatibility
+    Route::get('/meetings', [\App\Http\Controllers\ProfessorMeetingController::class, 'index'])
+         ->name('meetings');
+    Route::post('/meetings', [\App\Http\Controllers\ProfessorMeetingController::class, 'store'])
+         ->name('meetings.store');
+    Route::get('/meetings/{meeting}', [\App\Http\Controllers\ProfessorMeetingController::class, 'show'])
+         ->name('meetings.show');
+    Route::put('/meetings/{meeting}', [\App\Http\Controllers\ProfessorMeetingController::class, 'update'])
+         ->name('meetings.update');
+    Route::delete('/meetings/{meeting}', [\App\Http\Controllers\ProfessorMeetingController::class, 'destroy'])
+         ->name('meetings.destroy');
+    Route::post('/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
+         ->name('meetings.start');
+    Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
+         ->name('meetings.finish');
+    Route::get('/meetings/{meeting}/stats', [\App\Http\Controllers\ProfessorMeetingController::class, 'stats'])
+         ->name('meetings.stats');
+    Route::get('/meetings/reports', [\App\Http\Controllers\ProfessorMeetingController::class, 'reports'])
+         ->name('meetings.reports');
+    Route::post('/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
+         ->name('meetings.start');
+    Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
+         ->name('meetings.finish');
+    
+    // Additional professor routes for meetings/settings
+    Route::get('/settings', [ProfessorDashboardController::class, 'settings'])
+         ->name('settings');
+    Route::put('/settings', [ProfessorDashboardController::class, 'updateSettings'])
+         ->name('settings.update');
     
     // Enhanced Grading Management
     Route::get('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'index'])
          ->name('grading');
+    Route::post('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'store'])
+         ->name('grading.store');
     Route::get('/grading/student/{student}', [\App\Http\Controllers\Professor\GradingController::class, 'studentDetails'])
          ->name('grading.student-details');
     Route::post('/grading/assignment/{student}/{assignment}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeAssignment'])

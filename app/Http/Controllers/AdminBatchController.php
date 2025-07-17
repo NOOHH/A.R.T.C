@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Batch;
+use App\Models\StudentBatch;
 use App\Models\Program;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class AdminBatchController extends Controller
      */
     public function index()
     {
-        $batches = Batch::with(['program', 'creator'])
+        $batches = StudentBatch::with(['program', 'creator', 'assignedProfessor'])
             ->withCount('enrollments')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -30,7 +31,8 @@ class AdminBatchController extends Controller
     public function create()
     {
         $programs = Program::where('is_archived', false)->get();
-        return view('admin.admin-student-enrollment.create-batch', compact('programs'));
+        $professors = \App\Models\Professor::where('is_active', true)->get();
+        return view('admin.admin-student-enrollment.create-batch', compact('programs', 'professors'));
     }
 
     /**
@@ -41,17 +43,18 @@ class AdminBatchController extends Controller
         $validated = $request->validate([
             'program_id' => 'required|exists:programs,program_id',
             'batch_name' => 'required|string|max:255',
-            'batch_description' => 'nullable|string',
-            'batch_capacity' => 'required|integer|min:1|max:100',
-            'batch_status' => 'required|in:available,ongoing,closed,completed',
-            'start_date' => 'nullable|date',
+            'description' => 'nullable|string',
+            'max_capacity' => 'required|integer|min:1|max:500',
+            'batch_status' => 'required|in:available,ongoing,closed',
+            'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
-            'enrollment_deadline' => 'nullable|date'
+            'registration_deadline' => 'required|date',
+            'professor_id' => 'nullable|exists:professors,professor_id'
         ]);
 
-        $validated['created_by_admin_id'] = session('user_id');
+        $validated['created_by'] = session('admin_id') ?? session('user_id');
 
-        Batch::create($validated);
+        StudentBatch::create($validated);
 
         return redirect()->route('admin.batches.index')
             ->with('success', 'Batch created successfully!');
@@ -60,9 +63,9 @@ class AdminBatchController extends Controller
     /**
      * Display the specified batch
      */
-    public function show(Batch $batch)
+    public function show(StudentBatch $batch)
     {
-        $batch->load(['program', 'enrollments.student', 'creator']);
+        $batch->load(['program', 'enrollments.student', 'creator', 'assignedProfessor']);
         
         return view('admin.admin-student-enrollment.show-batch', compact('batch'));
     }
@@ -70,7 +73,7 @@ class AdminBatchController extends Controller
     /**
      * Show the form for editing the specified batch
      */
-    public function edit(Batch $batch)
+    public function edit(StudentBatch $batch)
     {
         $programs = Program::where('is_archived', false)->get();
         return view('admin.admin-student-enrollment.edit-batch', compact('batch', 'programs'));
@@ -79,24 +82,24 @@ class AdminBatchController extends Controller
     /**
      * Update the specified batch
      */
-    public function update(Request $request, Batch $batch)
+    public function update(Request $request, StudentBatch $batch)
     {
         $validated = $request->validate([
             'program_id' => 'required|exists:programs,program_id',
             'batch_name' => 'required|string|max:255',
-            'batch_description' => 'nullable|string',
-            'batch_capacity' => 'required|integer|min:1|max:100',
-            'batch_status' => 'required|in:available,ongoing,closed,completed',
-            'start_date' => 'nullable|date',
+            'description' => 'nullable|string',
+            'max_capacity' => 'required|integer|min:1|max:500',
+            'batch_status' => 'required|in:available,ongoing,closed',
+            'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
-            'enrollment_deadline' => 'nullable|date'
+            'registration_deadline' => 'required|date'
         ]);
 
         // Don't allow reducing capacity below current enrollment count
-        $currentEnrollmentCount = $batch->getCurrentEnrollmentCount();
-        if ($validated['batch_capacity'] < $currentEnrollmentCount) {
+        $currentEnrollmentCount = $batch->current_capacity ?? 0;
+        if ($validated['max_capacity'] < $currentEnrollmentCount) {
             return back()->withErrors([
-                'batch_capacity' => "Cannot reduce capacity below current enrollment count ({$currentEnrollmentCount} students)"
+                'max_capacity' => "Cannot reduce capacity below current enrollment count ({$currentEnrollmentCount} students)"
             ]);
         }
 
@@ -109,7 +112,7 @@ class AdminBatchController extends Controller
     /**
      * Remove the specified batch
      */
-    public function destroy(Batch $batch)
+    public function destroy(StudentBatch $batch)
     {
         // Check if there are any enrollments
         if ($batch->enrollments()->count() > 0) {
@@ -129,20 +132,20 @@ class AdminBatchController extends Controller
      */
     public function getBatchesForProgram(Request $request, $programId)
     {
-        $batches = Batch::where('program_id', $programId)
-            ->where('batch_status', '!=', 'completed')
+        $batches = StudentBatch::where('program_id', $programId)
+            ->where('batch_status', '!=', 'closed')
             ->withCount('enrollments')
             ->get()
             ->map(function ($batch) {
                 return [
-                    'id' => $batch->id,
+                    'batch_id' => $batch->batch_id,
                     'batch_name' => $batch->batch_name,
                     'batch_status' => $batch->batch_status,
                     'current_enrollment' => $batch->enrollments_count,
-                    'batch_capacity' => $batch->batch_capacity,
-                    'status_display' => $batch->status_display,
-                    'is_available' => $batch->isAvailableForEnrollment(),
-                    'enrollment_deadline' => $batch->enrollment_deadline ? $batch->enrollment_deadline->format('M d, Y') : null
+                    'max_capacity' => $batch->max_capacity,
+                    'status_display' => ucfirst($batch->batch_status),
+                    'is_available' => $batch->batch_status === 'available',
+                    'registration_deadline' => $batch->registration_deadline ? $batch->registration_deadline->format('M d, Y') : null
                 ];
             });
 
@@ -156,19 +159,19 @@ class AdminBatchController extends Controller
     {
         $validated = $request->validate([
             'enrollment_id' => 'required|exists:enrollments,enrollment_id',
-            'new_batch_id' => 'required|exists:batches,id'
+            'new_batch_id' => 'required|exists:student_batches,batch_id'
         ]);
 
         $enrollment = Enrollment::findOrFail($validated['enrollment_id']);
-        $newBatch = Batch::findOrFail($validated['new_batch_id']);
+        $newBatch = StudentBatch::findOrFail($validated['new_batch_id']);
 
         // Check if new batch has capacity
-        if ($newBatch->isFull()) {
+        if ($newBatch->enrollments()->count() >= $newBatch->max_capacity) {
             return back()->withErrors(['error' => 'Target batch is full.']);
         }
 
         // Check if new batch is available
-        if (!$newBatch->isAvailableForEnrollment()) {
+        if ($newBatch->batch_status !== 'available') {
             return back()->withErrors(['error' => 'Target batch is not available for enrollment.']);
         }
 
@@ -180,7 +183,7 @@ class AdminBatchController extends Controller
     /**
      * Toggle batch status
      */
-    public function toggleStatus(Batch $batch)
+    public function toggleStatus(StudentBatch $batch)
     {
         $statusCycle = [
             'available' => 'ongoing',
@@ -201,10 +204,10 @@ class AdminBatchController extends Controller
     public function getStatistics()
     {
         $stats = [
-            'total_batches' => Batch::count(),
-            'available_batches' => Batch::where('batch_status', 'available')->count(),
-            'ongoing_batches' => Batch::where('batch_status', 'ongoing')->count(),
-            'completed_batches' => Batch::where('batch_status', 'completed')->count(),
+            'total_batches' => StudentBatch::count(),
+            'available_batches' => StudentBatch::where('batch_status', 'available')->count(),
+            'ongoing_batches' => StudentBatch::where('batch_status', 'ongoing')->count(),
+            'completed_batches' => StudentBatch::where('batch_status', 'completed')->count(),
             'total_enrolled_students' => DB::table('enrollments')
                 ->whereNotNull('batch_id')
                 ->count(),

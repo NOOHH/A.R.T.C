@@ -40,6 +40,7 @@ class AdminDirectorController extends Controller
             'directors_last_name' => 'required|string|max:100',
             'directors_email' => 'required|email',
             'directors_password' => 'required|string|min:6',
+            'referral_code' => 'nullable|string|max:20|unique:directors,referral_code|unique:professors,referral_code',
             'program_access' => 'required',
         ]);
 
@@ -64,12 +65,26 @@ class AdminDirectorController extends Controller
 
         $director = Director::create($validated);
 
+        // Generate and save referral code after director is created (to get the ID)
+        if ($request->referral_code) {
+            $director->referral_code = strtoupper($request->referral_code);
+        } else {
+            $director->referral_code = \App\Helpers\ReferralCodeGenerator::generateCode(
+                $validated['directors_first_name'], 
+                $validated['directors_last_name'], 
+                'director', 
+                $director->directors_id
+            );
+        }
+        $director->save();
+
         // Sync to users table for email uniqueness tracking
         UnifiedLoginController::syncToUsersTable(
             $validated['directors_email'], 
             $validated['directors_name'], 
             'director',
-            $plainPassword
+            $plainPassword,
+            $director->directors_id
         );
 
         // Handle program assignment
@@ -120,6 +135,7 @@ class AdminDirectorController extends Controller
             'directors_last_name' => 'required|string|max:100',
             'directors_email' => ['required', 'email', Rule::unique('directors', 'directors_email')->ignore($director->directors_id, 'directors_id')],
             'directors_password' => 'nullable|string|min:6',
+            'referral_code' => 'nullable|string|max:20|unique:directors,referral_code,' . $director->directors_id . ',directors_id|unique:professors,referral_code',
             'program_access' => 'sometimes|required',
         ]);
 
@@ -130,6 +146,19 @@ class AdminDirectorController extends Controller
         }
 
         $validated['directors_name'] = $validated['directors_first_name'] . ' ' . $validated['directors_last_name'];
+        
+        // Handle referral code update
+        if ($request->referral_code) {
+            $validated['referral_code'] = strtoupper($request->referral_code);
+        } elseif (!$director->referral_code) {
+            // Generate if not exists
+            $validated['referral_code'] = \App\Helpers\ReferralCodeGenerator::generateCode(
+                $validated['directors_first_name'], 
+                $validated['directors_last_name'], 
+                'director', 
+                $director->directors_id
+            );
+        }
         
         // Handle program access if provided
         if ($request->has('program_access')) {

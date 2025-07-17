@@ -328,25 +328,35 @@ class UnifiedLoginController extends Controller
     /**
      * Sync user to users table when creating professor/director accounts
      */
-    public static function syncToUsersTable($email, $name, $role, $password = null)
+    public static function syncToUsersTable($email, $name, $role, $password = null, $recordId = null)
     {
         // Check if user already exists in users table
         $existingUser = User::where('email', $email)->first();
         
         if (!$existingUser) {
-            // Create user record
-            $user = User::create([
+            $userData = [
                 'email' => $email,
                 'user_firstname' => $name,
                 'user_lastname' => '',
                 'password' => $password ? Hash::make($password) : Hash::make('default123'),
-                'role' => $role
-            ]);
+                'role' => $role,
+                'admin_id' => session('admin_id') ?? 1,
+                'directors_id' => null // Set default null value
+            ];
+
+            // Add the appropriate ID based on role
+            if ($role === 'director' && $recordId) {
+                $userData['directors_id'] = $recordId;
+            }
+
+            // Create user record
+            $user = User::create($userData);
             
             Log::info("User synced to users table", [
                 'email' => $email,
                 'role' => $role,
-                'user_id' => $user->user_id
+                'user_id' => $user->user_id,
+                'record_id' => $recordId
             ]);
             
             return $user;

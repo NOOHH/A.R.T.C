@@ -50,16 +50,16 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="batch_description" class="form-label">Description</label>
-                            <textarea class="form-control" id="batch_description" name="batch_description" 
-                                      rows="3">{{ old('batch_description') }}</textarea>
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3">{{ old('description') }}</textarea>
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label for="batch_capacity" class="form-label">Capacity *</label>
-                                <input type="number" class="form-control" id="batch_capacity" name="batch_capacity" 
-                                       value="{{ old('batch_capacity', 10) }}" min="1" max="100" required>
+                                <label for="max_capacity" class="form-label">Capacity *</label>
+                                <input type="number" class="form-control" id="max_capacity" name="max_capacity" 
+                                       value="{{ old('max_capacity', 10) }}" min="1" max="100" required>
                                 <div class="form-text">Maximum number of students</div>
                             </div>
 
@@ -74,64 +74,57 @@
                             </div>
 
                             <div class="col-md-4 mb-3">
-                                <label for="enrollment_deadline" class="form-label">Enrollment Deadline</label>
-                                <input type="datetime-local" class="form-control" id="enrollment_deadline" 
-                                       name="enrollment_deadline" value="{{ old('enrollment_deadline') }}">
+                                <label for="registration_deadline" class="form-label">Registration Deadline</label>
+                                <input type="datetime-local" class="form-control" id="registration_deadline" 
+                                       name="registration_deadline" value="{{ old('registration_deadline') }}">
                                 <div class="form-text">When enrollment closes</div>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="start_date" class="form-label">Start Date</label>
                                 <input type="datetime-local" class="form-control" id="start_date" 
                                        name="start_date" value="{{ old('start_date') }}">
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label for="duration_weeks" class="form-label">Duration (Weeks)</label>
+                                <input type="number" class="form-control" id="duration_weeks" 
+                                       name="duration_weeks" value="{{ old('duration_weeks', 12) }}" 
+                                       min="1" max="52" step="1">
+                                <div class="form-text">Automatically calculates end date</div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
                                 <label for="end_date" class="form-label">End Date</label>
                                 <input type="datetime-local" class="form-control" id="end_date" 
-                                       name="end_date" value="{{ old('end_date') }}">
+                                       name="end_date" value="{{ old('end_date') }}" readonly>
+                                <div class="form-text">Auto-calculated from start date + duration</div>
                             </div>
                         </div>
 
                         <!-- Professor Assignment Section -->
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label class="form-label fw-bold">Assign Professors</label>
-                                <div class="card border-light">
-                                    <div class="card-body p-3">
-                                        @if(isset($professors) && $professors->count() > 0)
-                                            <div class="row">
-                                                @foreach($professors as $professor)
-                                                    <div class="col-md-4 col-sm-6 mb-2">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" 
-                                                                   id="professor_{{ $professor->professor_id }}" 
-                                                                   name="professor_ids[]" 
-                                                                   value="{{ $professor->professor_id }}"
-                                                                   {{ in_array($professor->professor_id, old('professor_ids', [])) ? 'checked' : '' }}>
-                                                            <label class="form-check-label" for="professor_{{ $professor->professor_id }}">
-                                                                <strong>{{ $professor->professor_first_name }} {{ $professor->professor_last_name }}</strong>
-                                                                @if($professor->professor_specialization)
-                                                                    <br><small class="text-muted">{{ $professor->professor_specialization }}</small>
-                                                                @endif
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                            <div class="form-text mt-2">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                Select one or more professors to assign to this batch. Multiple professors can collaborate on the same batch.
-                                            </div>
-                                        @else
-                                            <div class="alert alert-warning mb-0">
-                                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                                No active professors found. Please add professors before creating batches.
-                                            </div>
-                                        @endif
-                                    </div>
+                                <label for="professor_id" class="form-label">Assign Professor (Optional)</label>
+                                <select class="form-select" id="professor_id" name="professor_id">
+                                    <option value="">Select a professor</option>
+                                    @if(isset($professors) && $professors->count() > 0)
+                                        @foreach($professors as $professor)
+                                            <option value="{{ $professor->professor_id }}" 
+                                                    {{ old('professor_id') == $professor->professor_id ? 'selected' : '' }}>
+                                                {{ $professor->professor_first_name }} {{ $professor->professor_last_name }}
+                                                @if($professor->professor_specialization)
+                                                    - {{ $professor->professor_specialization }}
+                                                @endif
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Assign a professor to this batch. You can change this later if needed.
                                 </div>
                             </div>
                         </div>
@@ -260,6 +253,26 @@
             batchNameInput.value = `${programText} - Batch ${batchNumber}`;
         }
     });
+
+    // Duration Calculator
+    function calculateEndDate() {
+        const startDate = document.getElementById('start_date').value;
+        const durationWeeks = parseInt(document.getElementById('duration_weeks').value);
+        
+        if (startDate && durationWeeks && durationWeeks > 0) {
+            const start = new Date(startDate);
+            const end = new Date(start);
+            end.setDate(start.getDate() + (durationWeeks * 7));
+            
+            // Format to datetime-local input format
+            const endDateString = end.toISOString().slice(0, 16);
+            document.getElementById('end_date').value = endDateString;
+        }
+    }
+
+    // Event listeners for duration calculation
+    document.getElementById('start_date').addEventListener('change', calculateEndDate);
+    document.getElementById('duration_weeks').addEventListener('input', calculateEndDate);
 
     // Validate end date is after start date
     document.getElementById('start_date').addEventListener('change', validateDates);

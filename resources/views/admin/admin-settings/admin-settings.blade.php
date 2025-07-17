@@ -584,6 +584,31 @@
                                                 </label>
                                             </div>
                                         </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="meetingCreationEnabled" name="meeting_creation_enabled" checked>
+                                                <label class="form-check-label" for="meetingCreationEnabled">
+                                                    <strong>Meeting Creation</strong><br>
+                                                    <small class="text-muted">Allow professors to create and schedule meetings</small>
+                                                </label>
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#meetingWhitelistModal">
+                                                        <i class="fas fa-users me-1"></i>View Whitelist
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="attendanceLogsEnabled" name="attendance_logs_enabled" checked>
+                                                <label class="form-check-label" for="attendanceLogsEnabled">
+                                                    <strong>Advanced Attendance Logs</strong><br>
+                                                    <small class="text-muted">Track meeting link clicks and drag-drop attendance</small>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <div class="mt-4">
@@ -624,6 +649,95 @@
                                     <small><strong>Note:</strong> Disabling features will hide them from professor dashboards but won't delete existing data.</small>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meeting Whitelist Modal -->
+            <div class="modal fade" id="meetingWhitelistModal" tabindex="-1" aria-labelledby="meetingWhitelistModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="meetingWhitelistModalLabel">
+                                <i class="fas fa-users me-2"></i>Meeting Creation Whitelist
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>About Whitelist:</strong> Select specific professors who can create meetings. If no professors are selected, the global "Meeting Creation" setting applies to all professors.
+                            </div>
+                            
+                            <form id="meetingWhitelistForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Whitelisted Professors</label>
+                                    <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                        @php
+                                            $professors = \App\Models\Professor::where('professor_archived', 0)->get();
+                                            $whitelistedProfessors = explode(',', \App\Models\AdminSetting::getValue('meeting_whitelist_professors', ''));
+                                        @endphp
+                                        @forelse($professors as $professor)
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="professor_{{ $professor->professor_id }}" 
+                                                       name="whitelist_professors[]" 
+                                                       value="{{ $professor->professor_id }}"
+                                                       {{ in_array($professor->professor_id, $whitelistedProfessors) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="professor_{{ $professor->professor_id }}">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3">
+                                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                                {{ substr($professor->first_name ?? 'P', 0, 1) }}{{ substr($professor->last_name ?? 'P', 0, 1) }}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{{ $professor->first_name ?? 'Unknown' }} {{ $professor->last_name ?? 'Professor' }}</strong>
+                                                            <br>
+                                                            <small class="text-muted">{{ $professor->email ?? 'No email' }}</small>
+                                                            @if($professor->programs && $professor->programs->count() > 0)
+                                                                <br>
+                                                                <small class="text-success">
+                                                                    <i class="fas fa-graduation-cap me-1"></i>
+                                                                    {{ $professor->programs->pluck('program_name')->join(', ') }}
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        @empty
+                                            <div class="text-center py-3">
+                                                <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No active professors found.</p>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    <small class="text-muted">Select professors who should be allowed to create meetings, regardless of the global setting.</small>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllProfessors()">
+                                            <i class="fas fa-check-double me-1"></i>Select All
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllProfessors()">
+                                            <i class="fas fa-times me-1"></i>Clear All
+                                        </button>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <span id="selectedCount">{{ count(array_filter($whitelistedProfessors)) }}</span> professors selected
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="saveMeetingWhitelist()">
+                                <i class="fas fa-save me-2"></i>Save Whitelist
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2455,22 +2569,21 @@ function loadProfessorSettings() {
 
 function saveProfessorSettings() {
     const form = document.getElementById('professorFeaturesForm');
-    const formData = new FormData(form);
     
-    // Add unchecked checkboxes as false
-    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
-        if (!checkbox.checked) {
-            formData.set(checkbox.name, 'false');
-        } else {
-            formData.set(checkbox.name, 'true');
-        }
-    });
+    // Collect checkbox values as boolean
+    const data = {
+        ai_quiz_enabled: form.querySelector('input[name="ai_quiz_enabled"]')?.checked || false,
+        grading_enabled: form.querySelector('input[name="grading_enabled"]')?.checked || false,
+        upload_videos_enabled: form.querySelector('input[name="upload_videos_enabled"]')?.checked || false,
+        attendance_enabled: form.querySelector('input[name="attendance_enabled"]')?.checked || false,
+        view_programs_enabled: form.querySelector('input[name="view_programs_enabled"]')?.checked || false,
+    };
 
     fetch('/admin/settings/professor-features', {
         method: 'POST',
-        body: formData,
+        body: JSON.stringify(data),
         headers: {
+            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
@@ -2488,6 +2601,66 @@ function saveProfessorSettings() {
         showAlert('Error saving professor settings: ' + error.message, 'danger');
     });
 }
+
+// Meeting Whitelist Functions
+function selectAllProfessors() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_professors[]"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectedCount();
+}
+
+function clearAllProfessors() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_professors[]"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_professors[]"]:checked');
+    const count = checkboxes.length;
+    document.getElementById('selectedCount').textContent = count;
+}
+
+function saveMeetingWhitelist() {
+    const form = document.getElementById('meetingWhitelistForm');
+    const formData = new FormData(form);
+    
+    fetch('/admin/settings/meeting-whitelist', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Meeting whitelist saved successfully!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('meetingWhitelistModal'));
+            modal.hide();
+        } else {
+            showAlert(data.error || 'Error saving whitelist', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving whitelist:', error);
+        showAlert('Error saving whitelist: ' + error.message, 'danger');
+    });
+}
+
+// Add event listeners for checkbox changes
+document.addEventListener('DOMContentLoaded', function() {
+    // Update count when checkboxes change
+    const checkboxes = document.querySelectorAll('input[name="whitelist_professors[]"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+});
 
 // Director Settings Functions
 function loadDirectorSettings() {

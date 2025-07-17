@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Professor;
 use App\Models\Program;
+use App\Models\StudentBatch;
+use App\Models\ClassMeeting;
 use App\Http\Controllers\UnifiedLoginController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -34,6 +36,7 @@ class AdminProfessorController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email',
             'password' => 'required|string|min:8',
+            'referral_code' => 'nullable|string|max:20|unique:professors,referral_code|unique:directors,referral_code',
             'programs' => 'nullable|array',
             'programs.*' => 'exists:programs,program_id'
         ]);
@@ -63,6 +66,19 @@ class AdminProfessorController extends Controller
 
         $professor->save();
 
+        // Generate and save referral code after professor is saved (to get the ID)
+        if ($request->referral_code) {
+            $professor->referral_code = strtoupper($request->referral_code);
+        } else {
+            $professor->referral_code = \App\Helpers\ReferralCodeGenerator::generateCode(
+                $request->first_name, 
+                $request->last_name, 
+                'professor', 
+                $professor->professor_id
+            );
+        }
+        $professor->save();
+
         // Sync to users table for email uniqueness tracking
         UnifiedLoginController::syncToUsersTable(
             $request->email, 
@@ -81,21 +97,17 @@ class AdminProfessorController extends Controller
 
     public function edit($professor_id)
     {
-        $professor = Professor::with('programs')->findOrFail($professor_id);
+        $professor = Professor::with(['programs', 'batches'])->findOrFail($professor_id);
         $programs = Program::all();
         
-        // Get available batches for assignment (batches without assigned professors)
+        // Get available batches for assignment (all active batches)
         $batches = \App\Models\StudentBatch::with('program')
             ->where('batch_status', '!=', 'closed')
-            ->whereNull('professor_id')
             ->orderBy('start_date', 'asc')
             ->get();
         
-        // Get current batch assignments for this professor
-        $assignedBatches = \App\Models\StudentBatch::with('program')
-            ->where('professor_id', $professor_id)
-            ->orderBy('start_date', 'asc')
-            ->get();
+        // Get current batch assignments for this professor (using many-to-many)
+        $assignedBatches = $professor->batches()->with('program')->orderBy('start_date', 'asc')->get();
         
         return view('admin.professors.edit', compact('professor', 'programs', 'batches', 'assignedBatches'));
     }
@@ -109,6 +121,7 @@ class AdminProfessorController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('professors', 'professor_email')->ignore($professor->professor_id, 'professor_id')],
             'password' => 'nullable|string|min:8',
+            'referral_code' => 'nullable|string|max:20|unique:professors,referral_code,' . $professor->professor_id . ',professor_id|unique:directors,referral_code',
             'programs' => 'nullable|array',
             'programs.*' => 'exists:programs,program_id'
         ]);
@@ -131,13 +144,45 @@ class AdminProfessorController extends Controller
             $professor->professor_password = $request->password; // Store plain text - will be hashed on next login
         }
 
+        // Handle referral code update
+        if ($request->referral_code) {
+            $professor->referral_code = strtoupper($request->referral_code);
+        } elseif (!$professor->referral_code) {
+            // Generate if not exists
+            $professor->referral_code = \App\Helpers\ReferralCodeGenerator::generateCode(
+                $request->first_name, 
+                $request->last_name, 
+                'professor', 
+                $professor->professor_id
+            );
+        }
+
         $professor->save();
 
-        // Update program assignments
+        // Handle program assignments and batch auto-unassignment
+        $oldPrograms = $professor
+            ->programs()
+            ->pluck('programs.program_id')
+            ->toArray();
+        
         if ($request->programs) {
             $professor->programs()->sync($request->programs);
+            $newPrograms = $request->programs;
         } else {
             $professor->programs()->detach();
+            $newPrograms = [];
+        }
+
+        // Auto-unassign from batches when unassigned from programs
+        $removedPrograms = array_diff($oldPrograms, $newPrograms);
+        if (!empty($removedPrograms)) {
+            // Get batches associated with removed programs
+            $batchesToRemove = \App\Models\StudentBatch::whereIn('program_id', $removedPrograms)->pluck('batch_id')->toArray();
+            
+            if (!empty($batchesToRemove)) {
+                // Remove professor from these batches
+                $professor->batches()->detach($batchesToRemove);
+            }
         }
 
         return redirect()->route('admin.professors.index')->with('success', 'Professor updated successfully!');
@@ -198,38 +243,163 @@ class AdminProfessorController extends Controller
         $professor = Professor::findOrFail($professor_id);
         $batch = \App\Models\StudentBatch::findOrFail($request->batch_id);
 
-        // Check if batch is already assigned to a professor
-        if ($batch->professor_id) {
-            return back()->with('error', 'This batch is already assigned to another professor.');
+        // Check if professor is already assigned to this batch
+        if ($professor->batches()->where('student_batches.batch_id', $request->batch_id)->exists()) {
+            return back()->with('error', 'This professor is already assigned to this batch.');
         }
 
-        $batch->update([
-            'professor_id' => $professor_id,
-            'professor_assigned_at' => now(),
-            'professor_assigned_by' => session('admin_id')
+        // Assign professor to batch using the pivot table
+        $professor->batches()->attach($request->batch_id, [
+            'assigned_at' => now(),
+            'assigned_by' => session('admin_id') ?? session('user_id')
         ]);
 
-        return back()->with('success', "Batch '{$batch->batch_name}' assigned to {$professor->professor_name} successfully.");
+        return back()->with('success', "Professor {$professor->professor_name} assigned to batch '{$batch->batch_name}' successfully.");
     }
 
     public function unassignBatch($professor_id, $batch_id)
     {
-        $batch = \App\Models\StudentBatch::where('batch_id', $batch_id)
-            ->where('professor_id', $professor_id)
-            ->first();
+        $professor = Professor::findOrFail($professor_id);
+        $batch = \App\Models\StudentBatch::findOrFail($batch_id);
 
-        if (!$batch) {
-            return back()->with('error', 'Assignment not found.');
+        // Check if professor is assigned to this batch
+        if (!$professor->batches()->where('batch_id', $batch_id)->exists()) {
+            return back()->with('error', 'Professor is not assigned to this batch.');
         }
 
-        $professor = Professor::findOrFail($professor_id);
+        // Unassign professor from batch
+        $professor->batches()->detach($batch_id);
+
+        return back()->with('success', "Professor {$professor->professor_name} unassigned from batch '{$batch->batch_name}' successfully.");
+    }
+
+    public function getProfessorPrograms($professor_id)
+    {
+        $professor = Professor::with(['programs' => function($query) {
+            $query->withPivot(['video_link', 'video_description']);
+        }])->findOrFail($professor_id);
+
+        return response()->json([
+            'programs' => $professor->programs
+        ]);
+    }
+
+    /**
+     * Get professor's batches for meeting creation
+     */
+    public function getProfessorBatches($professor_id)
+    {
+        $professor = Professor::with(['programs', 'batches.program'])->findOrFail($professor_id);
         
-        $batch->update([
-            'professor_id' => null,
-            'professor_assigned_at' => null,
-            'professor_assigned_by' => null
+        // Get professor's programs
+        $programs = $professor->programs()->get()->map(function ($program) {
+            return [
+                'program_id' => $program->program_id,
+                'program_name' => $program->program_name,
+                'description' => $program->description
+            ];
+        });
+        
+        // Get professor's batches grouped by program
+        $batches = $professor->batches()->with('program')->get()->map(function ($batch) {
+            return [
+                'batch_id' => $batch->batch_id,
+                'batch_name' => $batch->batch_name,
+                'program_id' => $batch->program_id,
+                'program_name' => $batch->program->program_name,
+                'start_date' => $batch->start_date,
+                'end_date' => $batch->end_date,
+                'batch_status' => $batch->batch_status
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'programs' => $programs,
+            'batches' => $batches
+        ]);
+    }
+
+    /**
+     * Create a meeting for a professor (admin functionality)
+     */
+    public function createMeeting(Request $request, $professor_id)
+    {
+        $request->validate([
+            'program_ids' => 'required|array|min:1',
+            'program_ids.*' => 'exists:programs,program_id',
+            'batch_ids' => 'required|array|min:1',
+            'batch_ids.*' => 'exists:student_batches,batch_id',
+            'meeting_title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'meeting_date' => 'required|date|after:now',
+            'meeting_link' => 'nullable|url'
         ]);
 
-        return back()->with('success', "Batch '{$batch->batch_name}' unassigned from {$professor->professor_name} successfully.");
+        $professor = Professor::findOrFail($professor_id);
+
+        // Verify professor has access to the selected batches
+        $professorBatchIds = $professor->batches()->pluck('batch_id')->toArray();
+        $invalidBatches = array_diff($request->batch_ids, $professorBatchIds);
+        
+        if (!empty($invalidBatches)) {
+            return back()->withErrors(['batch_ids' => 'Some selected batches are not assigned to this professor.']);
+        }
+
+        // Create meetings for each selected batch
+        $createdMeetings = [];
+        foreach ($request->batch_ids as $batchId) {
+            $meeting = ClassMeeting::create([
+                'batch_id' => $batchId,
+                'professor_id' => $professor_id,
+                'title' => $request->meeting_title,
+                'description' => $request->description,
+                'meeting_date' => $request->meeting_date,
+                'meeting_url' => $request->meeting_link,
+                'status' => 'scheduled',
+                'created_by' => session('admin_id') ?? session('user_id')
+            ]);
+            $createdMeetings[] = $meeting;
+        }
+
+        $batchCount = count($request->batch_ids);
+        $message = $batchCount === 1 
+            ? "Meeting created successfully for {$professor->professor_name}!" 
+            : "Meeting created successfully for {$professor->professor_name} across {$batchCount} batches!";
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * View professor meetings (admin functionality)
+     */
+    public function viewMeetings($professor_id)
+    {
+        $professor = Professor::with([
+            'classMeetings' => function($query) {
+                $query->with(['batch.program'])->orderBy('meeting_date', 'desc');
+            },
+            'programs',
+            'batches.program'
+        ])->findOrFail($professor_id);
+
+        $meetings = $professor->classMeetings;
+        
+        // Categorize meetings
+        $currentMeetings = $meetings->where('status', 'ongoing');
+        $todayMeetings = $meetings->filter(function($meeting) {
+            return \Carbon\Carbon::parse($meeting->meeting_date)->isToday();
+        });
+        $upcomingMeetings = $meetings->where('meeting_date', '>', now())->where('status', '!=', 'completed');
+        $finishedMeetings = $meetings->where('status', 'completed');
+
+        return view('admin.professors.meetings', compact(
+            'professor', 
+            'meetings', 
+            'currentMeetings', 
+            'todayMeetings', 
+            'upcomingMeetings', 
+            'finishedMeetings'
+        ));
     }
 }

@@ -290,4 +290,42 @@ class Professor extends Authenticatable
                                       ->get()
         ];
     }
+
+    /**
+     * Many-to-many relationship with batches
+     */
+    public function batches()
+    {
+        return $this->belongsToMany(
+            StudentBatch::class,
+            'professor_batch',
+            'professor_id',
+            'batch_id'
+        )->withPivot(['assigned_at', 'assigned_by'])
+         ->withTimestamps();
+    }
+
+    /**
+     * Get class meetings for this professor
+     */
+    public function classMeetings()
+    {
+        return $this->hasMany(ClassMeeting::class, 'professor_id', 'professor_id');
+    }
+
+    /**
+     * Get upcoming meetings for this professor
+     */
+    public function upcomingMeetings()
+    {
+        return $this->classMeetings()->upcoming()->orderBy('meeting_date', 'asc');
+    }
+
+    /**
+     * Get today's meetings for this professor
+     */
+    public function todaysMeetings()
+    {
+        return $this->classMeetings()->today()->orderBy('meeting_date', 'asc');
+    }
 }

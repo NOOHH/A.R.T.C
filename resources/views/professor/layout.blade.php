@@ -55,168 +55,302 @@
         console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
     </script>
     
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- Custom Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Admin CSS (reused for consistency) -->
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
+
+    {{-- Global UI Styles --}}
+    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
+
+    {{-- Chat CSS + any overrides --}}
+    @stack('styles')
     
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-        }
-        .navbar-brand {
-            font-weight: 700;
-        }
-        .sidebar {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            transition: all 0.3s ease;
-        }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            color: white;
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 8px;
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .stat-card .display-4 {
-            font-size: 3rem;
-        }
-    </style>
+    .logout-btn {
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1.5rem;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
     
-    @stack('styles')
+    .logout-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+    
+    .logout-btn i {
+        margin-right: 0.75rem;
+        width: 1.2rem;
+        text-align: center;
+    }
+    </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <div class="text-center mb-4">
-                        <h4 class="text-white">Professor Portal</h4>
-                        <small class="text-light">{{ session('professor_name', 'Professor') }}</small>
-                    </div>
-                    
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.dashboard') ? 'active' : '' }}" 
-                               href="{{ route('professor.dashboard') }}">
-                                <i class="bi bi-speedometer2 me-2"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.programs*') ? 'active' : '' }}" 
-                               href="{{ route('professor.programs') }}">
-                                <i class="bi bi-collection me-2"></i>
-                                My Programs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.students*') ? 'active' : '' }}" 
-                               href="{{ route('professor.students') }}">
-                                <i class="bi bi-people me-2"></i>
-                                Student Management
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.attendance*') ? 'active' : '' }}" 
-                               href="{{ route('professor.attendance') }}">
-                                <i class="bi bi-check2-square me-2"></i>
-                                Attendance
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.grading*') ? 'active' : '' }}" 
-                               href="{{ route('professor.grading') }}">
-                                <i class="bi bi-award me-2"></i>
-                                Grading
-                            </a>
-                        </li>
-                        @if(isset($aiQuizEnabled) && $aiQuizEnabled)
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.quiz-generator*') ? 'active' : '' }}" 
-                               href="{{ route('professor.quiz-generator') }}">
-                                <i class="bi bi-robot me-2"></i>
-                                AI Quiz Generator
-                            </a>
-                        </li>
-                        @endif
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('professor.profile*') ? 'active' : '' }}" 
-                               href="{{ route('professor.profile') }}">
-                                <i class="bi bi-person-circle me-2"></i>
-                                Profile
-                            </a>
-                        </li>
-                        <li class="nav-item mt-3">
-                            <form method="POST" action="{{ route('professor.logout') }}">
-                                @csrf
-                                <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start">
-                                    <i class="bi bi-box-arrow-right me-2"></i>
-                                    Logout
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+<div class="admin-container">
+    <!-- Top Header -->
+    <header class="main-header">
+        <div class="header-left">
+            <!-- Hamburger Menu Button -->
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            
+            <!-- Brand Logo and Text -->
+            <div class="brand-container">
+                <img src="{{ asset('images/logo.png') }}" alt="A.R.T.C" class="brand-logo">
+                <span class="brand-text">Professor Dashboard</span>
+            </div>
+        </div>
 
-            <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <!-- Header with Chat -->
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">@yield('title', 'Dashboard')</h1>
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="notification-icon chat-trigger" data-bs-toggle="offcanvas" data-bs-target="#chatOffcanvas" aria-label="Open chat" style="cursor: pointer; font-size: 1.2rem;">
-                            <i class="bi bi-chat-dots text-primary"></i>
-                        </span>
-                        <span class="text-muted">{{ session('professor_name', 'Professor') }}</span>
+        <div class="header-center">
+            <!-- Global Search -->
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search students, meetings, programs...">
+                    <div class="search-results-dropdown" id="searchResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Notifications -->
+            <div class="header-item notification-dropdown">
+                <button class="btn notification-btn" data-bs-toggle="dropdown">
+                    <i class="bi bi-bell"></i>
+                    <span class="notification-badge" id="notificationCount">0</span>
+                </button>
+                <div class="dropdown-menu notification-menu">
+                    <div class="notification-header">
+                        <h6>Notifications</h6>
+                        <button class="btn btn-link mark-all-read">Mark all as read</button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="notification-item">
+                            <i class="bi bi-info-circle text-primary"></i>
+                            <div class="notification-content">
+                                <p>Welcome to the Professor Dashboard!</p>
+                                <small class="text-muted">Just now</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <!-- Profile Dropdown -->
+            <div class="header-item profile-dropdown">
+                <button class="btn profile-btn" data-bs-toggle="dropdown">
+                    <span class="profile-name">{{ session('user_name', 'Professor') }}</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="dropdown-menu profile-menu">
+                    <a class="dropdown-item" href="{{ route('professor.profile') }}">
+                        <i class="bi bi-person me-2"></i>My Profile
+                    </a>
+                    <a class="dropdown-item" href="{{ route('professor.settings') }}">
+                        <i class="bi bi-gear me-2"></i>Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ route('logout') }}">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Profile Icon -->
+        <div class="profile-icon">👤</div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="main-wrapper">
+            <div class="content-below-search">
+                <!-- Sidebar Overlay -->
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
+                
+                <!-- Modern Sliding Sidebar -->
+                <aside class="modern-sidebar" id="modernSidebar">
+                    <div class="sidebar-content">
+                        <nav class="sidebar-nav">
+                            <!-- Dashboard -->
+                            <div class="nav-item">
+                                <a href="{{ route('professor.dashboard') }}" class="nav-link @if(Route::currentRouteName() === 'professor.dashboard') active @endif">
+                                    <i class="bi bi-speedometer2"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                            </div>
+
+                            <!-- Meetings -->
+                            <div class="nav-item">
+                                <a href="{{ route('professor.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.meetings') active @endif">
+                                    <i class="bi bi-calendar-event"></i>
+                                    <span>Meetings</span>
+                                </a>
+                            </div>
+
+                            <!-- Students -->
+                            <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.students')) active @endif">
+                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#studentsMenu">
+                                    <i class="bi bi-people"></i>
+                                    <span>Students</span>
+                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                                </a>
+                                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.students')) show @endif" id="studentsMenu">
+                                    <div class="submenu">
+                                        <a href="{{ route('professor.students.index') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.students.index') active @endif">
+                                            <i class="bi bi-person-lines-fill"></i>
+                                            <span>All Students</span>
+                                        </a>
+                                        <a href="{{ route('professor.students.batches') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.students.batches') active @endif">
+                                            <i class="bi bi-collection"></i>
+                                            <span>My Batches</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Programs -->
+                            <div class="nav-item">
+                                <a href="{{ route('professor.programs') }}" class="nav-link @if(Route::currentRouteName() === 'professor.programs') active @endif">
+                                    <i class="bi bi-book"></i>
+                                    <span>My Programs</span>
+                                </a>
+                            </div>
+
+                            <!-- Assignments -->
+                            <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.assignments')) active @endif">
+                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#assignmentsMenu">
+                                    <i class="bi bi-clipboard-check"></i>
+                                    <span>Assignments</span>
+                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                                </a>
+                                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.assignments')) show @endif" id="assignmentsMenu">
+                                    <div class="submenu">
+                                        <a href="{{ route('professor.grading') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.index') active @endif">
+                                            <i class="bi bi-list-task"></i>
+                                            <span>View All</span>
+                                        </a>
+                                        <a href="{{ route('professor.assignments.create') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.create') active @endif">
+                                            <i class="bi bi-plus-circle"></i>
+                                            <span>Create New</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reports -->
+                            <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.reports')) active @endif">
+                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
+                                    <i class="bi bi-graph-up"></i>
+                                    <span>Reports</span>
+                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                                </a>
+                                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.reports')) show @endif" id="reportsMenu">
+                                    <div class="submenu">
+                                        <a href="{{ route('professor.reports.attendance') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.reports.attendance') active @endif">
+                                            <i class="bi bi-calendar-check"></i>
+                                            <span>Attendance</span>
+                                        </a>
+                                        <a href="{{ route('professor.reports.grades') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.reports.grades') active @endif">
+                                            <i class="bi bi-award"></i>
+                                            <span>Grades</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chat -->
+                            <div class="nav-item">
+                                <a href="{{ route('professor.chat') }}" class="nav-link @if(Route::currentRouteName() === 'professor.chat') active @endif">
+                                    <i class="bi bi-chat-dots"></i>
+                                    <span>Messages</span>
+                                </a>
+                            </div>
+
+                            <!-- Settings -->
+                            <div class="nav-item">
+                                <a href="{{ route('professor.settings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.settings') active @endif">
+                                    <i class="bi bi-gear"></i>
+                                    <span>Settings</span>
+                                </a>
+                            </div>
+
+                            <!-- Logout -->
+                            <div class="nav-item">
+                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="nav-link logout-btn" onclick="return confirm('Are you sure you want to logout?')">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        <span>Logout</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </nav>
                     </div>
-                @endif
+                </aside>
 
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-
-                @yield('content')
-            </main>
+                <!-- Page Content -->
+                <main class="page-content">
+                    @yield('content')
+                </main>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    @stack('scripts')
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Admin Layout JavaScript (reused) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar functionality
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('modernSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
     
-    <!-- Include Global Chat Component -->
-    @include('components.global-chat')
+    if (sidebarToggle && sidebar && overlay) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+        
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    }
+
+    // Dropdown functionality
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.getAttribute('data-bs-target');
+            const dropdown = document.querySelector(target);
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+                this.classList.toggle('active');
+            }
+        });
+    });
+});
+</script>
+
+@stack('scripts')
+
+<!-- Include Global Chat Component -->
+@include('components.global-chat')
 </body>
 </html>

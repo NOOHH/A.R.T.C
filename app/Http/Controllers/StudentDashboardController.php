@@ -192,7 +192,46 @@ class StudentDashboardController extends Controller
             'role' => session('user_role')
         ];
 
-        return view('student.student-calendar.student-calendar', compact('user'));
+        // Get student's enrollment info
+        $student = Student::where('user_id', session('user_id'))->first();
+        
+        $upcomingMeetings = collect();
+        $todaysMeetings = collect();
+        $allMeetings = collect();
+        
+        if ($student) {
+            // Get student's enrolled batches
+            $enrolledBatches = $student->enrollments()
+                ->with('batch')
+                ->whereNotNull('batch_id')
+                ->pluck('batch_id')
+                ->unique();
+            
+            if ($enrolledBatches->isNotEmpty()) {
+                // Get meetings for enrolled batches
+                $upcomingMeetings = \App\Models\ClassMeeting::with(['batch.program', 'professor'])
+                    ->whereIn('batch_id', $enrolledBatches)
+                    ->upcoming()
+                    ->orderBy('meeting_date', 'asc')
+                    ->get();
+                
+                $todaysMeetings = \App\Models\ClassMeeting::with(['batch.program', 'professor'])
+                    ->whereIn('batch_id', $enrolledBatches)
+                    ->today()
+                    ->orderBy('meeting_date', 'asc')
+                    ->get();
+                
+                // Get all meetings for calendar display (next 3 months)
+                $allMeetings = \App\Models\ClassMeeting::with(['batch.program', 'professor'])
+                    ->whereIn('batch_id', $enrolledBatches)
+                    ->where('meeting_date', '>=', now())
+                    ->where('meeting_date', '<=', now()->addMonths(3))
+                    ->orderBy('meeting_date', 'asc')
+                    ->get();
+            }
+        }
+
+        return view('student.student-calendar.student-calendar', compact('user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings'));
     }
 
     public function course($courseId)

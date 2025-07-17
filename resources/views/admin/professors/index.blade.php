@@ -35,7 +35,6 @@
                                     <tr>
                                         <th>Professor</th>
                                         <th>Email</th>
-                                        <th>Department</th>
                                         <th>Assigned Programs</th>
                                         <th>Actions</th>
                                     </tr>
@@ -56,7 +55,6 @@
                                             </div>
                                         </td>
                                         <td>{{ $professor->email }}</td>
-                                        <td>N/A</td>
                                         <td>
                                             @if($professor->programs->count() > 0)
                                                 <div class="d-flex flex-wrap gap-1">
@@ -73,6 +71,17 @@
                                                 <a href="{{ route('admin.professors.edit', $professor->professor_id) }}" 
                                                    class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-success"
+                                                        data-bs-toggle="modal" data-bs-target="#createMeetingModal"
+                                                        data-professor-id="{{ $professor->professor_id }}"
+                                                        data-professor-name="{{ $professor->full_name }}">
+                                                    <i class="bi bi-calendar-plus"></i>
+                                                </button>
+                                                <a href="{{ route('admin.professors.meetings', $professor->professor_id) }}" 
+                                                   class="btn btn-sm btn-outline-secondary"
+                                                   title="View Meetings">
+                                                    <i class="bi bi-calendar2-week"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-info"
                                                         data-bs-toggle="modal" data-bs-target="#videosModal"
@@ -266,6 +275,8 @@
     </div>
 </div>
 @endsection
+
+@include('admin.professors.partials.create-meeting-modal')
 
 @push('scripts')
 <script>

@@ -120,7 +120,7 @@
                     <i class="bi bi-people text-dark" style="font-size: 3rem;"></i>
                     <h5 class="card-title mt-3">Students</h5>
                     <p class="card-text">View and manage your students.</p>
-                    <a href="{{ route('professor.students') }}" class="btn btn-dark">View Students</a>
+                    <a href="{{ route('professor.students.index') }}" class="btn btn-dark">View Students</a>
                 </div>
             </div>
         </div>

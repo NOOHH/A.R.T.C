@@ -17,7 +17,7 @@ class BatchEnrollmentController extends Controller
     {
         // Authentication is handled by middleware
 
-        $batches = StudentBatch::with(['program', 'assignedProfessor'])->orderBy('created_at', 'desc')->get();
+        $batches = StudentBatch::with(['program', 'professors'])->orderBy('created_at', 'desc')->get();
         $programs = Program::where('is_archived', 0)->get();
         $professors = Professor::where('professor_archived', 0)->get();
 

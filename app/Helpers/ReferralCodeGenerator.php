@@ -45,30 +45,30 @@ class ReferralCodeGenerator
         // Get user type prefix
         $prefix = $type === 'director' ? 'DIR' : 'PROF';
         
-        // Get user ID for identification
+        // Get user ID for identification (padded to 2 digits)
         $userIdStr = $userId ? str_pad($userId, 2, '0', STR_PAD_LEFT) : '01';
         
         if ($attempt === 0) {
-            // First attempt: PREFIX + USER_ID + FIRST_INITIAL + LASTNAME_FIRST_3 (e.g., PROF01NVEG for Professor 1 Neon Vega)
-            $nameCode = substr($firstName, 0, 1) . substr($lastName, 0, 3);
-            $code = $prefix . $userIdStr . $nameCode;
+            // First attempt: PREFIX + FIRST_NAME + USER_ID (e.g., PROFNEON01, DIRJOHN01)
+            $nameCode = substr($firstName, 0, 4) . $userIdStr;
+            $code = $prefix . $nameCode;
         } elseif ($attempt === 1) {
-            // Second attempt: PREFIX + USER_ID + First 2 chars of each name (e.g., PROF01NEVE)
-            $nameCode = substr($firstName, 0, 2) . substr($lastName, 0, 2);
-            $code = $prefix . $userIdStr . $nameCode;
+            // Second attempt: PREFIX + FIRST_INITIAL + LASTNAME + USER_ID (e.g., PROFNVEGA01)
+            $nameCode = substr($firstName, 0, 1) . substr($lastName, 0, 4) . $userIdStr;
+            $code = $prefix . $nameCode;
         } elseif ($attempt === 2) {
-            // Third attempt: PREFIX + USER_ID + First 3 chars of first + first char of last (e.g., PROF01NEOV)
-            $nameCode = substr($firstName, 0, 3) . substr($lastName, 0, 1);
-            $code = $prefix . $userIdStr . $nameCode;
+            // Third attempt: PREFIX + FIRST_2 + LAST_2 + USER_ID (e.g., PROFNEVE01)
+            $nameCode = substr($firstName, 0, 2) . substr($lastName, 0, 2) . $userIdStr;
+            $code = $prefix . $nameCode;
         } elseif ($attempt === 3) {
-            // Fourth attempt: PREFIX + USER_ID + consonants
+            // Fourth attempt: PREFIX + consonants + USER_ID
             $consonants = self::extractConsonants($firstName . $lastName);
-            $nameCode = substr($consonants, 0, 4);
-            $code = $prefix . $userIdStr . $nameCode;
+            $nameCode = substr($consonants, 0, 3) . $userIdStr;
+            $code = $prefix . $nameCode;
         } else {
             // Additional attempts: Add numbers
-            $nameCode = substr($firstName, 0, 2) . substr($lastName, 0, 1);
-            $code = $prefix . $userIdStr . $nameCode . ($attempt - 3);
+            $nameCode = substr($firstName, 0, 2) . substr($lastName, 0, 1) . $userIdStr . ($attempt - 3);
+            $code = $prefix . $nameCode;
         }
         
         // Ensure code is reasonable length (max 12 characters)

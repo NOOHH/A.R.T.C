@@ -8,9 +8,14 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Attendance Management</h2>
-                <a href="{{ route('professor.attendance.reports') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-graph-up"></i> View Reports
-                </a>
+                <div class="btn-group">
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createMeetingModal">
+                        <i class="bi bi-plus-circle"></i> Create Meeting
+                    </button>
+                    <a href="{{ route('professor.attendance.reports') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-graph-up"></i> View Reports
+                    </a>
+                </div>
             </div>
 
             @if(session('success'))
@@ -187,4 +192,115 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Create Meeting Modal -->
+<div class="modal fade" id="createMeetingModal" tabindex="-1" aria-labelledby="createMeetingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="createMeetingForm" action="{{ route('admin.meetings.store') }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createMeetingModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Meeting
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="meetingTitle" class="form-label">Meeting Title *</label>
+                            <input type="text" class="form-control" id="meetingTitle" name="title" required 
+                                   placeholder="e.g., Weekly Progress Review">
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="meetingDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="meetingDescription" name="description" rows="3" 
+                                      placeholder="Brief description of the meeting agenda..."></textarea>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="meetingDate" class="form-label">Meeting Date *</label>
+                            <input type="date" class="form-control" id="meetingDate" name="meeting_date" required 
+                                   min="{{ date('Y-m-d') }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="meetingTime" class="form-label">Meeting Time *</label>
+                            <input type="time" class="form-control" id="meetingTime" name="meeting_time" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="programSelect" class="form-label">Program *</label>
+                            <select class="form-select" id="programSelect" name="program_id" required>
+                                <option value="">Select Program</option>
+                                @foreach($assignedPrograms as $program)
+                                    <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="batchSelect" class="form-label">Batch *</label>
+                            <select class="form-select" id="batchSelect" name="batch_id" required disabled>
+                                <option value="">Select Program First</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="meetingLink" class="form-label">Meeting Link (Optional)</label>
+                            <input type="url" class="form-control" id="meetingLink" name="meeting_link" 
+                                   placeholder="https://zoom.us/j/... or Google Meet link">
+                            <div class="form-text">Students will see this link when they view the meeting</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-calendar-plus me-2"></i>Create Meeting
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Meeting creation modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const programSelect = document.getElementById('programSelect');
+    const batchSelect = document.getElementById('batchSelect');
+    
+    if (programSelect) {
+        programSelect.addEventListener('change', function() {
+            const programId = this.value;
+            
+            if (programId) {
+                batchSelect.disabled = true;
+                batchSelect.innerHTML = '<option value="">Loading...</option>';
+                
+                fetch(`/admin/programs/${programId}/batches`)
+                    .then(response => response.json())
+                    .then(data => {
+                        let options = '<option value="">Select Batch</option>';
+                        data.batches.forEach(batch => {
+                            options += `<option value="${batch.id}">${batch.batch_name}</option>`;
+                        });
+                        batchSelect.innerHTML = options;
+                        batchSelect.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading batches:', error);
+                        batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+                    });
+            } else {
+                batchSelect.disabled = true;
+                batchSelect.innerHTML = '<option value="">Select Program First</option>';
+            }
+        });
+    }
+});
+</script>
+
 @endsection

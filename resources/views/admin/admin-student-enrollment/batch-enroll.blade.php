@@ -154,8 +154,8 @@
                                     <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
                                     <td>
                                         @if($batch->assignedProfessor)
-                                            <span class="badge bg-success">
-                                                {{ $batch->assignedProfessor->professor_name }}
+                                            <span class="badge bg-success me-1">
+                                                {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
                                             </span>
                                         @else
                                             <span class="badge bg-secondary">Unassigned</span>
