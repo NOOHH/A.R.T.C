@@ -547,7 +547,7 @@
                                         
                                         <div class="col-md-6">
                                             <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="videoUploadEnabled" name="video_upload_enabled" checked>
+                                                <input class="form-check-input" type="checkbox" id="videoUploadEnabled" name="upload_videos_enabled" checked>
                                                 <label class="form-check-label" for="videoUploadEnabled">
                                                     <strong>Video Upload</strong><br>
                                                     <small class="text-muted">Allow professors to upload video links</small>
@@ -565,29 +565,11 @@
                                             </div>
                                         </div>
                                         
-                                        <div class="col-md-6">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="viewProgramsEnabled" name="view_programs_enabled" checked>
-                                                <label class="form-check-label" for="viewProgramsEnabled">
-                                                    <strong>View Programs</strong><br>
-                                                    <small class="text-muted">Allow professors to view assigned programs</small>
-                                                </label>
-                                            </div>
-                                        </div>
                                         
                                         <div class="col-md-6">
                                             <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="studentListEnabled" name="student_list_enabled" checked>
-                                                <label class="form-check-label" for="studentListEnabled">
-                                                    <strong>Student Lists</strong><br>
-                                                    <small class="text-muted">Allow professors to view student lists and details</small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="meetingCreationEnabled" name="meeting_creation_enabled" checked>
+                                                <input class="form-check-input" type="checkbox" id="meetingCreationEnabled" name="meeting_creation_enabled"
+                                                       {{ DB::table('admin_settings')->where('setting_key', 'meeting_creation_enabled')->value('setting_value') === '1' ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="meetingCreationEnabled">
                                                     <strong>Meeting Creation</strong><br>
                                                     <small class="text-muted">Allow professors to create and schedule meetings</small>
@@ -1764,22 +1746,19 @@ function addRequirementField(data = {}) {
                            value="${data.section_name || ''}" 
                            placeholder="e.g., Personal Information">
                 </div>
-                <!-- Field Name (2 cols) -->
-                <div class="col-md-2">
-                    <label class="form-label">Field Name</label>
-                    <input type="text" class="form-control" 
-                           name="requirements[${index}][field_name]"
-                           value="${data.field_name || ''}" 
-                           placeholder="e.g., phone_number">
-                </div>
-                <!-- Display Label (2 cols) -->
-                <div class="col-md-2">
+                <!-- Display Label (3 cols) -->
+                <div class="col-md-3">
                     <label class="form-label">Display Label</label>
-                    <input type="text" class="form-control" 
+                    <input type="text" class="form-control display-label-input" 
                            name="requirements[${index}][field_label]"
-                           value="${data.field_label || ''}" 
+                           value="${data.field_label || ''}"
+                           data-index="${index}"
                            placeholder="e.g., Phone Number"
                            style="${data.is_bold ? 'font-weight:bold;' : ''}">
+                    <input type="hidden" class="field-name-input" 
+                           name="requirements[${index}][field_name]"
+                           value="${data.field_name || ''}">
+                    <small class="text-muted">Field name will be auto-generated</small>
                 </div>
                 <!-- Field Type (2 cols) -->
                 <div class="col-md-2">
@@ -1855,6 +1834,26 @@ function addRequirementField(data = {}) {
         </div>
     `;
     container.appendChild(requirementDiv);
+
+    // Auto-generate field_name from display label
+    const displayLabelInput = requirementDiv.querySelector('.display-label-input');
+    const fieldNameInput = requirementDiv.querySelector('.field-name-input');
+    if (displayLabelInput && fieldNameInput) {
+        displayLabelInput.addEventListener('input', function() {
+            const label = this.value.trim();
+            // Convert to snake_case
+            let snake = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            if (!snake.match(/^[a-z]/)) snake = 'field_' + snake;
+            fieldNameInput.value = snake;
+        });
+        // Trigger on load
+        if (!fieldNameInput.value && displayLabelInput.value) {
+            const label = displayLabelInput.value.trim();
+            let snake = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            if (!snake.match(/^[a-z]/)) snake = 'field_' + snake;
+            fieldNameInput.value = snake;
+        }
+    }
 }
 
 
@@ -2570,13 +2569,14 @@ function loadProfessorSettings() {
 function saveProfessorSettings() {
     const form = document.getElementById('professorFeaturesForm');
     
-    // Collect checkbox values as boolean
+    // Collect checkbox values as string 'true'/'false' to match backend expectation
     const data = {
-        ai_quiz_enabled: form.querySelector('input[name="ai_quiz_enabled"]')?.checked || false,
-        grading_enabled: form.querySelector('input[name="grading_enabled"]')?.checked || false,
-        upload_videos_enabled: form.querySelector('input[name="upload_videos_enabled"]')?.checked || false,
-        attendance_enabled: form.querySelector('input[name="attendance_enabled"]')?.checked || false,
-        view_programs_enabled: form.querySelector('input[name="view_programs_enabled"]')?.checked || false,
+        ai_quiz_enabled: form.querySelector('input[name="ai_quiz_enabled"]')?.checked ? 'true' : 'false',
+        grading_enabled: form.querySelector('input[name="grading_enabled"]')?.checked ? 'true' : 'false',
+        upload_videos_enabled: form.querySelector('input[name="upload_videos_enabled"]')?.checked ? 'true' : 'false',
+        attendance_enabled: form.querySelector('input[name="attendance_enabled"]')?.checked ? 'true' : 'false',
+        view_programs_enabled: form.querySelector('input[name="view_programs_enabled"]')?.checked ? 'true' : 'false',
+        meeting_creation_enabled: form.querySelector('input[name="meeting_creation_enabled"]')?.checked ? 'true' : 'false',
     };
 
     fetch('/admin/settings/professor-features', {

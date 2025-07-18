@@ -475,53 +475,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle dropdown animations with better Bootstrap 5 integration
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    dropdownToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const arrow = this.querySelector('.dropdown-arrow');
-            const target = this.getAttribute('data-bs-target');
-            const collapseElement = document.querySelector(target);
-            
-            if (collapseElement) {
-                // Use Bootstrap's collapse instance
-                const bsCollapse = new bootstrap.Collapse(collapseElement, {
-                    toggle: false
-                });
-                
-                const isShown = collapseElement.classList.contains('show');
-                
-                if (isShown) {
-                    bsCollapse.hide();
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(0deg)';
-                    }
-                } else {
-                    // Close other dropdowns first
-                    document.querySelectorAll('.dropdown-nav .collapse.show').forEach(openCollapse => {
-                        if (openCollapse !== collapseElement) {
-                            const otherBsCollapse = new bootstrap.Collapse(openCollapse, {
-                                toggle: false
-                            });
-                            otherBsCollapse.hide();
-                            const otherArrow = openCollapse.previousElementSibling.querySelector('.dropdown-arrow');
-                            if (otherArrow) {
-                                otherArrow.style.transform = 'rotate(0deg)';
-                            }
-                        }
-                    });
-                    
-                    bsCollapse.show();
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(180deg)';
-                    }
-                }
-            }
-        });
-    });
+    // Sidebar dropdowns now use Bootstrap's native collapse behavior; no custom toggle logic needed
+    // const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    // Bootstrap collapse via data-bs-toggle handles opening and closing
 
     // Auto-expand active dropdowns
     document.querySelectorAll('.dropdown-nav.active .collapse').forEach(collapse => {

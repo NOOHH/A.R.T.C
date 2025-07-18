@@ -39,26 +39,26 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                        <div class="col-md-3">
                     <div class="card text-white bg-warning">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-clock fs-1 me-3"></i>
                                 <div>
-                                    <h5 class="card-title">Current</h5>
+                                    <h5 class="card-title">Live</h5>
                                     <h2 class="mb-0">{{ $currentMeetings->count() }}</h2>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                        <div class="col-md-3">
                     <div class="card text-white bg-info">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-calendar-day fs-1 me-3"></i>
                                 <div>
-                                    <h5 class="card-title">Today</h5>
+                                    <h5 class="card-title">Current</h5>
                                     <h2 class="mb-0">{{ $todayMeetings->count() }}</h2>
                                 </div>
                             </div>
@@ -85,13 +85,13 @@
                 <div class="card-header bg-white border-bottom">
                     <ul class="nav nav-pills card-header-pills" id="meeting-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="current-tab" data-bs-toggle="pill" data-bs-target="#current" type="button" role="tab">
-                                <i class="bi bi-broadcast me-2"></i>Current Meetings <span class="badge bg-warning ms-2">{{ $currentMeetings->count() }}</span>
+                        <button class="nav-link active" id="current-tab" data-bs-toggle="pill" data-bs-target="#current" type="button" role="tab">
+                                <i class="bi bi-broadcast me-2"></i>Live Meetings <span class="badge bg-warning ms-2">{{ $currentMeetings->count() }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="today-tab" data-bs-toggle="pill" data-bs-target="#today" type="button" role="tab">
-                                <i class="bi bi-calendar-day me-2"></i>Today's Meetings <span class="badge bg-info ms-2">{{ $todayMeetings->count() }}</span>
+                        <button class="nav-link" id="today-tab" data-bs-toggle="pill" data-bs-target="#today" type="button" role="tab">
+                                <i class="bi bi-calendar-day me-2"></i>Current Meetings <span class="badge bg-info ms-2">{{ $todayMeetings->count() }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -111,26 +111,31 @@
                         <!-- Current Meetings -->
                         <div class="tab-pane fade show active" id="current" role="tabpanel">
                             @if($currentMeetings->count() > 0)
-                                <div class="row">
+                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
                                     @foreach($currentMeetings as $meeting)
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card border-warning">
-                                                <div class="card-header bg-warning text-dark">
-                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p class="card-text">
-                                                        <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                        <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
-                                                        <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
-                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
-                                                    </p>
-                                                    @if($meeting->meeting_url)
-                                                        <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-warning">
-                                                            <i class="bi bi-camera-video me-1"></i>Join Meeting
-                                                        </a>
-                                                    @endif
-                                                </div>
+                                        <div class="meeting-card card border-warning flex-shrink-0" style="min-width:320px;max-width:340px;">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="card-text">
+                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
+                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
+                                                </p>
+                                                @if($meeting->meeting_url)
+                                                    <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-warning">
+                                                        <i class="bi bi-camera-video me-1"></i>Join Meeting
+                                                    </a>
+                                                @endif
+                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     @endforeach
@@ -147,30 +152,35 @@
                         <!-- Today's Meetings -->
                         <div class="tab-pane fade" id="today" role="tabpanel">
                             @if($todayMeetings->count() > 0)
-                                <div class="row">
+                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
                                     @foreach($todayMeetings as $meeting)
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card border-info">
-                                                <div class="card-header bg-info text-white">
-                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p class="card-text">
-                                                        <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                        <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
-                                                        <strong>Time:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('h:i A') }}<br>
-                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes<br>
-                                                        <strong>Status:</strong> <span class="badge bg-{{ $meeting->status === 'ongoing' ? 'warning' : ($meeting->status === 'completed' ? 'success' : 'secondary') }}">{{ ucfirst($meeting->status) }}</span>
-                                                    </p>
-                                                    @if($meeting->description)
-                                                        <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
-                                                    @endif
-                                                    @if($meeting->meeting_url)
-                                                        <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-info">
-                                                            <i class="bi bi-camera-video me-1"></i>Meeting Link
-                                                        </a>
-                                                    @endif
-                                                </div>
+                                        <div class="meeting-card card border-info flex-shrink-0" style="min-width:320px;max-width:340px;">
+                                            <div class="card-header bg-info text-white">
+                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="card-text">
+                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Time:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('h:i A') }}<br>
+                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes<br>
+                                                    <strong>Status:</strong> <span class="badge bg-{{ $meeting->status === 'ongoing' ? 'warning' : ($meeting->status === 'completed' ? 'success' : 'secondary') }}">{{ ucfirst($meeting->status) }}</span>
+                                                </p>
+                                                @if($meeting->description)
+                                                    <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
+                                                @endif
+                                                @if($meeting->meeting_url)
+                                                    <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-info">
+                                                        <i class="bi bi-camera-video me-1"></i>Meeting Link
+                                                    </a>
+                                                @endif
+                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     @endforeach
@@ -187,29 +197,34 @@
                         <!-- Upcoming Meetings -->
                         <div class="tab-pane fade" id="upcoming" role="tabpanel">
                             @if($upcomingMeetings->count() > 0)
-                                <div class="row">
+                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
                                     @foreach($upcomingMeetings as $meeting)
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card border-primary">
-                                                <div class="card-header bg-primary text-white">
-                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p class="card-text">
-                                                        <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                        <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
-                                                        <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
-                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
-                                                    </p>
-                                                    @if($meeting->description)
-                                                        <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
-                                                    @endif
-                                                    @if($meeting->meeting_url)
-                                                        <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-primary">
-                                                            <i class="bi bi-camera-video me-1"></i>Meeting Link
-                                                        </a>
-                                                    @endif
-                                                </div>
+                                        <div class="meeting-card card border-primary flex-shrink-0" style="min-width:320px;max-width:340px;">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="card-text">
+                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
+                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
+                                                </p>
+                                                @if($meeting->description)
+                                                    <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
+                                                @endif
+                                                @if($meeting->meeting_url)
+                                                    <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-camera-video me-1"></i>Meeting Link
+                                                    </a>
+                                                @endif
+                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     @endforeach
@@ -226,32 +241,37 @@
                         <!-- Finished Meetings -->
                         <div class="tab-pane fade" id="finished" role="tabpanel">
                             @if($finishedMeetings->count() > 0)
-                                <div class="row">
+                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
                                     @foreach($finishedMeetings as $meeting)
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card border-success">
-                                                <div class="card-header bg-success text-white">
-                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                                </div>
-                                                <div class="card-body">
+                                        <div class="meeting-card card border-success flex-shrink-0" style="min-width:320px;max-width:340px;">
+                                            <div class="card-header bg-success text-white">
+                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="card-text">
+                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
+                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
+                                                </p>
+                                                @if($meeting->description)
+                                                    <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
+                                                @endif
+                                                @if($meeting->actual_start_time && $meeting->actual_end_time)
                                                     <p class="card-text">
-                                                        <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                        <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
-                                                        <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
-                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
+                                                        <small class="text-success">
+                                                            <i class="bi bi-clock me-1"></i>
+                                                            Actual duration: {{ \Carbon\Carbon::parse($meeting->actual_start_time)->diffInMinutes(\Carbon\Carbon::parse($meeting->actual_end_time)) }} minutes
+                                                        </small>
                                                     </p>
-                                                    @if($meeting->description)
-                                                        <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
-                                                    @endif
-                                                    @if($meeting->actual_start_time && $meeting->actual_end_time)
-                                                        <p class="card-text">
-                                                            <small class="text-success">
-                                                                <i class="bi bi-clock me-1"></i>
-                                                                Actual duration: {{ \Carbon\Carbon::parse($meeting->actual_start_time)->diffInMinutes(\Carbon\Carbon::parse($meeting->actual_end_time)) }} minutes
-                                                            </small>
-                                                        </p>
-                                                    @endif
-                                                </div>
+                                                @endif
+                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     @endforeach
@@ -263,6 +283,32 @@
                                     <p class="text-muted">There are no completed meetings yet.</p>
                                 </div>
                             @endif
+@push('styles')
+<style>
+.meeting-carousel {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+}
+.meeting-card {
+    min-width: 300px;
+    max-width: 350px;
+    flex: 0 0 auto;
+    margin-bottom: 1rem;
+}
+.meeting-card .card {
+    height: 100%;
+    border: 1px solid #ddd;
+}
+.meeting-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+@endpush
+
+@include('admin.professors.partials.create-meeting-modal')
                         </div>
                     </div>
                 </div>
@@ -272,124 +318,7 @@
 </div>
 
 <!-- Create Meeting Modal -->
-<div class="modal fade" id="createMeetingModal" tabindex="-1" aria-labelledby="createMeetingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createMeetingModalLabel">
-                    <i class="bi bi-calendar-plus me-2"></i>Create Meeting for {{ $professor->professor_name }}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ route('admin.professors.create-meeting', $professor->professor_id) }}" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="meeting_title" class="form-label">Meeting Title *</label>
-                            <input type="text" class="form-control" id="meeting_title" name="meeting_title" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="meeting_date" class="form-label">Date & Time *</label>
-                            <input type="datetime-local" class="form-control" id="meeting_date" name="meeting_date" required>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Programs *</label>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="programDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span id="programSelectionText">Select Programs</span>
-                                </button>
-                                <ul class="dropdown-menu w-100" aria-labelledby="programDropdown">
-                                    <li>
-                                        <div class="form-check px-3 py-2">
-                                            <input class="form-check-input" type="checkbox" id="selectAllPrograms">
-                                            <label class="form-check-label fw-bold" for="selectAllPrograms">
-                                                Select All Programs
-                                            </label>
-                                        </div>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    @foreach($professor->programs as $program)
-                                        <li>
-                                            <div class="form-check px-3 py-2">
-                                                <input class="form-check-input program-checkbox" type="checkbox" 
-                                                       name="program_ids[]" value="{{ $program->program_id }}" 
-                                                       id="program_{{ $program->program_id }}">
-                                                <label class="form-check-label" for="program_{{ $program->program_id }}">
-                                                    {{ $program->program_name }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Batches *</label>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="batchDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span id="batchSelectionText">Select Programs First</span>
-                                </button>
-                                <ul class="dropdown-menu w-100" aria-labelledby="batchDropdown">
-                                    <li>
-                                        <div class="form-check px-3 py-2">
-                                            <input class="form-check-input" type="checkbox" id="selectAllBatches">
-                                            <label class="form-check-label fw-bold" for="selectAllBatches">
-                                                Select All Batches
-                                            </label>
-                                        </div>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    @foreach($professor->batches as $batch)
-                                        <li class="batch-option" data-program-id="{{ $batch->program_id }}" style="display: none;">
-                                            <div class="form-check px-3 py-2">
-                                                <input class="form-check-input batch-checkbox" type="checkbox" 
-                                                       name="batch_ids[]" value="{{ $batch->batch_id }}" 
-                                                       id="batch_{{ $batch->batch_id }}">
-                                                <label class="form-check-label" for="batch_{{ $batch->batch_id }}">
-                                                    <span class="badge bg-primary me-2">{{ $batch->program->program_name }}</span>
-                                                    {{ $batch->batch_name }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                            <div class="form-text">Batches are grouped by program. Select programs first to see available batches.</div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="meeting_link" class="form-label">Meeting Link</label>
-                        <input type="url" class="form-control" id="meeting_link" name="meeting_link">
-                        <div class="form-text">Meeting URL for the video conference</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="meeting_description" class="form-label">Description</label>
-                        <textarea class="form-control" id="meeting_description" name="description" rows="3"></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="meeting_duration" class="form-label">Duration (minutes) *</label>
-                            <input type="number" class="form-control" id="meeting_duration" name="duration" min="15" max="480" value="60" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-calendar-plus me-2"></i>Create Meeting
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+@include('admin.professors.partials.create-meeting-modal')
 
 <script>
 // Simple dropdown checkbox functionality for meetings page

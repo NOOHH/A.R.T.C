@@ -166,7 +166,7 @@
                 <h5 class="modal-title">Add Grade</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ route('professor.grading.store') }}">
+            <form method="POST" action="{{ route('professor.grading') }}">
                 @csrf
                 <div class="modal-body">
                     <input type="hidden" name="program_id" value="{{ $selectedProgramId }}">

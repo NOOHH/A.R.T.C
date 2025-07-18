@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+// Admin: Delete a meeting for a professor
+Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UnifiedLoginController;
@@ -326,8 +328,9 @@ Route::post('/check-email-availability', [App\Http\Controllers\SignupController:
 Route::post('/student/login', [UnifiedLoginController::class, 'login'])->name('student.login');
 Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name('student.logout');
 
-// Student dashboard and related routes  
-Route::middleware(['check.session', 'role.dashboard'])->group(function () {
+    // Student dashboard and related routes  
+    
+    Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
@@ -366,7 +369,8 @@ Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     Route::get('/student/meetings', [\App\Http\Controllers\ClassMeetingController::class, 'studentMeetings'])->name('student.meetings');
-    Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])->name('student.meetings.upcoming');
+    Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])
+        ->name('student.meetings.upcoming');
     Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
@@ -1509,31 +1513,6 @@ Route::get('/test/chat/search/users', function (Request $request) {
     }
 });
 
-// Debug routes to understand the search issue
-Route::get('/debug/professors', function () {
-    try {
-        $professors = \App\Models\Professor::all();
-        return response()->json([
-            'success' => true,
-            'total_professors' => $professors->count(),
-            'professors' => $professors->take(10)->map(function($prof) {
-                return [
-                    'id' => $prof->professor_id,
-                    'name' => $prof->professor_name,
-                    'first_name' => $prof->professor_first_name,
-                    'last_name' => $prof->professor_last_name,
-                    'email' => $prof->professor_email,
-                    'full_name' => ($prof->professor_first_name ?? '') . ' ' . ($prof->professor_last_name ?? ''),
-                ];
-            })
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ]);
-    }
-});
 
 Route::get('/debug/tables', function () {
     try {
@@ -1733,51 +1712,6 @@ Route::get('/debug/messages-table', function () {
     }
 });
 
-// Test route for course creation (bypasses CSRF for testing)
-Route::post('/test-course-creation', function (Request $request) {
-    try {
-        $validatedData = $request->validate([
-            'subject_name' => 'required|string|max:255',
-            'subject_description' => 'nullable|string',
-            'module_id' => 'required|exists:modules,modules_id',
-            'subject_price' => 'required|numeric|min:0',
-            'is_required' => 'nullable|boolean',
-        ]);
-        
-        $course = \App\Models\Course::create([
-            'subject_name' => $validatedData['subject_name'],
-            'subject_description' => $validatedData['subject_description'],
-            'module_id' => $validatedData['module_id'],
-            'subject_price' => $validatedData['subject_price'],
-            'is_required' => $request->has('is_required') ? true : false,
-            'is_active' => true,
-            'subject_order' => \App\Models\Course::where('module_id', $validatedData['module_id'])->max('subject_order') + 1,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Course created successfully!',
-            'course' => $course->load('module'),
-        ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $e->errors(),
-            'debug' => [
-                'request_data' => $request->all(),
-            ]
-        ], 422);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error creating course: ' . $e->getMessage(),
-            'debug' => [
-                'request_data' => $request->all()
-            ]
-        ], 500);
-    }
-})->name('test.course.creation');
 
 // Test module content flow
 Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {

@@ -59,6 +59,9 @@
     </div>
 
     <!-- Quick Actions -->
+    @php
+        $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
+    @endphp
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
             <div class="card text-center">
@@ -74,12 +77,13 @@
             <div class="card text-center">
                 <div class="card-body">
                     <i class="bi bi-check2-square text-success" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Attendance</h5>
-                    <p class="card-text">Track and manage student attendance.</p>
-                    <a href="{{ route('professor.attendance') }}" class="btn btn-success">Manage Attendance</a>
+                    <h5 class="card-title mt-3">Meetings</h5>
+                    <p class="card-text">Track and Manage Class Meetings.</p>
+                    <a href="{{ route('professor.meetings') }}" class="btn btn-success">Manage Meetings</a>
                 </div>
             </div>
         </div>
+        @if($gradingEnabled)
         <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">
@@ -90,6 +94,7 @@
                 </div>
             </div>
         </div>
+        @endif
         <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">

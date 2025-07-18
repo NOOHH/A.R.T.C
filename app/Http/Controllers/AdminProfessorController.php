@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Professor;
@@ -289,10 +288,11 @@ class AdminProfessorController extends Controller
      */
     public function getProfessorBatches($professor_id)
     {
-        $professor = Professor::with(['programs', 'batches.program'])->findOrFail($professor_id);
+        // Load professor and programs
+        $professor = Professor::with('programs')->findOrFail($professor_id);
         
         // Get professor's programs
-        $programs = $professor->programs()->get()->map(function ($program) {
+        $programs = $professor->programs->map(function ($program) {
             return [
                 'program_id' => $program->program_id,
                 'program_name' => $program->program_name,
@@ -300,8 +300,11 @@ class AdminProfessorController extends Controller
             ];
         });
         
-        // Get professor's batches grouped by program
-        $batches = $professor->batches()->with('program')->get()->map(function ($batch) {
+        // Get professor's assigned batches
+        $batches = StudentBatch::with('program')
+            ->where('professor_id', $professor_id)
+            ->get()
+            ->map(function ($batch) {
             return [
                 'batch_id' => $batch->batch_id,
                 'batch_name' => $batch->batch_name,
@@ -339,7 +342,8 @@ class AdminProfessorController extends Controller
         $professor = Professor::findOrFail($professor_id);
 
         // Verify professor has access to the selected batches
-        $professorBatchIds = $professor->batches()->pluck('batch_id')->toArray();
+        // Get assigned batch IDs, specifying table to avoid ambiguous column
+        $professorBatchIds = $professor->batches()->pluck('student_batches.batch_id')->toArray();
         $invalidBatches = array_diff($request->batch_ids, $professorBatchIds);
         
         if (!empty($invalidBatches)) {
@@ -401,5 +405,20 @@ class AdminProfessorController extends Controller
             'upcomingMeetings', 
             'finishedMeetings'
         ));
+    }
+
+    /**
+     * Delete a meeting for a professor (admin functionality)
+     */
+    public function deleteMeeting($professor_id, $meeting_id)
+    {
+        // Ensure the meeting belongs to the given professor
+        $meeting = ClassMeeting::where('professor_id', $professor_id)
+            ->where('meeting_id', $meeting_id)
+            ->firstOrFail();
+
+        $meeting->delete();
+
+        return back()->with('success', 'Meeting deleted successfully!');
     }
 }
