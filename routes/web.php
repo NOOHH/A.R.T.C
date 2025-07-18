@@ -753,6 +753,22 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.courses.update-order');
 });
 
+// Admin Content Routes
+Route::middleware(['admin.auth'])->group(function () {
+    Route::get('/admin/modules/{id}', [AdminModuleController::class, 'getModule'])
+         ->name('admin.modules.get');
+    Route::get('/admin/content/{id}', [AdminModuleController::class, 'getContent'])
+         ->name('admin.content.get');
+    Route::delete('/admin/content/{id}', [AdminModuleController::class, 'deleteContent'])
+         ->name('admin.content.delete');
+    Route::put('/admin/content/{id}', [AdminModuleController::class, 'updateContent'])
+         ->name('admin.content.update');
+    Route::post('/admin/content/update-order', [AdminModuleController::class, 'updateContentOrder'])
+         ->name('admin.content.update-order');
+    Route::post('/admin/content/move', [AdminModuleController::class, 'moveContent'])
+         ->name('admin.content.move');
+});
+
 // Admin Packages Routes
 Route::get('/admin/packages', [AdminPackageController::class, 'index'])
      ->name('admin.packages.index');

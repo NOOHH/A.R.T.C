@@ -154,16 +154,25 @@ class AdminCourseController extends Controller
 
     public function getCourseContent($courseId)
     {
-        $course = Course::with(['lessons' => function($query) {
-            $query->ordered()->with(['contentItems' => function($query) {
+        try {
+            $course = Course::with(['contentItems' => function($query) {
                 $query->ordered();
-            }]);
-        }])->findOrFail($courseId);
+            }])->findOrFail($courseId);
 
-        return response()->json([
-            'success' => true,
-            'course' => $course,
-        ]);
+            // Get content items directly from the course
+            $contentItems = $course->contentItems;
+
+            return response()->json([
+                'success' => true,
+                'course' => $course,
+                'content' => $contentItems,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading course content: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function updateOrder(Request $request)

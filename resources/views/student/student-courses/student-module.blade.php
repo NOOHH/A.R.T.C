@@ -28,7 +28,7 @@
     </div>
 
     <!-- Module Content Wrapper -->
-    <div class="module-wrapper">
+    <div class="module-wrapper" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
         @php
             // Get the first content title from available content items
         @endphp
@@ -69,69 +69,76 @@
 
         <!-- Courses/Lessons Accordion -->
         @if(count($formattedCourses) > 0)
-            @foreach($formattedCourses as $course)
-                <!-- Lessons -->
-                @if(count($course['lessons']) > 0)
-                    @foreach($course['lessons'] as $lessonIndex => $lesson)
-                        <details class="lesson-accordion">
-                            <summary class="lesson-header">
-                                <div class="lesson-icon">
-                                    <i class="bi bi-file-earmark-text"></i>
-                                </div>
-                                <div class="lesson-title">
-                                    LESSON {{ $lessonIndex + 1 }}: {{ strtoupper($lesson['name'] ?? $lesson['lesson_name'] ?? 'UNTITLED LESSON') }}
-                                </div>
-                                <div class="toggle-icon">
-                                    <i class="bi bi-chevron-down"></i>
-                                </div>
-                            </summary>
-                            <div class="lesson-content">
-                                <!-- Assignment Content Item - Check for assignment data in the lesson -->
-                                @if((isset($lesson['assignment_url']) && $lesson['assignment_url']) || 
-                                    (isset($lesson['attachment_url']) && $lesson['attachment_url']) ||
-                                    (isset($lesson['attachment_path']) && $lesson['attachment_path']))
-                                    <div class="content-item">
-                                        <div class="content-left">
-                                            <div class="content-icon assignment">
-                                                <i class="bi bi-file-earmark-text"></i>
+            @foreach($formattedCourses as $courseIndex => $course)
+                <details class="lesson-accordion mb-3">
+                    <summary class="lesson-header d-flex align-items-center justify-content-between" style="background: #f8f9fa; color: #333; padding: 15px 20px; border-radius: 12px; font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid #dee2e6;">
+                        <div class="d-flex align-items-center">
+                            <div class="lesson-icon me-3">
+                                <i class="bi bi-folder" style="color: #6c757d;"></i>
+                            </div>
+                            <div class="lesson-title">
+                                LESSON {{ $courseIndex + 1 }}: {{ strtoupper($course['name'] ?? $course['title'] ?? 'UNTITLED LESSON') }}
+                            </div>
+                        </div>
+                        <div class="toggle-icon">
+                            <i class="bi bi-chevron-down" style="color: #6c757d;"></i>
+                        </div>
+                    </summary>
+                    <div class="lesson-content" style="padding: 15px 20px; background: #fff; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 12px 12px;">
+                        <!-- Lessons inside this course -->
+                        @if(count($course['lessons']) > 0)
+                            @foreach($course['lessons'] as $lessonIndex => $lesson)
+                                <details class="lesson-accordion mb-2">
+                                    <summary class="lesson-header d-flex align-items-center justify-content-between" style="background: #fff; color: #e74c3c; padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 500; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid #e74c3c;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="lesson-icon me-2">
+                                                <i class="bi bi-file-earmark-text" style="color: #e74c3c;"></i>
                                             </div>
-                                            <div class="content-text">
-                                                LESSON {{ $lessonIndex + 1 }}: {{ strtoupper($lesson['name'] ?? $lesson['lesson_name'] ?? 'BRIEF HISTORY APPLICATION') }}
+                                            <div class="lesson-title">
+                                                LESSON {{ $lessonIndex + 1 }}: {{ strtoupper($lesson['name'] ?? $lesson['lesson_name'] ?? 'KANGKONG CHIPS - MAIN LESSON') }}
                                             </div>
                                         </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            @php
-                                                $attachmentUrl = $lesson['attachment_url'] ?? 
-                                                               ($lesson['attachment_path'] ?? null ? asset('storage/' . $lesson['attachment_path']) : null) ??
-                                                               ($lesson['assignment_url'] ?? null);
-                                            @endphp
-                                            @if($attachmentUrl)
-                                                <button class="content-btn view" onclick="openPdfModal('{{ $attachmentUrl }}', 'Lesson {{ $lessonIndex + 1 }}: {{ $lesson['name'] ?? $lesson['lesson_name'] ?? 'Brief History Application' }}')">
-                                                    <i class="bi bi-eye"></i> View
-                                                </button>
-                                                <a href="{{ $attachmentUrl }}" download class="content-btn" style="background: #ff8a80;">
-                                                    <i class="bi bi-download"></i> Download
-                                                </a>
-                                            @endif
-                                            <input type="checkbox" class="form-check-input lesson-checkbox" 
-                                                   data-lesson-id="{{ $lesson['id'] ?? $lessonIndex }}" 
-                                                   data-content-type="lesson"
-                                                   onchange="updateProgress()" />
+                                        <div class="toggle-icon">
+                                            <i class="bi bi-chevron-down" style="color: #e74c3c;"></i>
+                                        </div>
+                                    </summary>
+                                    <div class="lesson-content" style="padding: 10px 16px; background: #fff;">
+                                        <div class="d-flex align-items-center justify-content-between" style="padding: 8px 0;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="lesson-icon me-2">
+                                                    <i class="bi bi-file-earmark-text" style="color: #6c757d;"></i>
+                                                </div>
+                                                <span style="font-size: 0.9rem; color: #333;">LESSONS {{ $lessonIndex + 1 }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                @php
+                                                    $attachmentUrl = $lesson['attachment_url'] ?? 
+                                                                   ($lesson['attachment_path'] ?? null ? asset('storage/' . $lesson['attachment_path']) : null) ??
+                                                                   ($lesson['assignment_url'] ?? null);
+                                                @endphp
+                                                @if($attachmentUrl)
+                                                    <button class="btn btn-sm" onclick="openPdfModal('{{ $attachmentUrl }}', 'Lesson {{ $lessonIndex + 1 }}: {{ $lesson['name'] ?? $lesson['lesson_name'] ?? 'Brief History Application' }}')" style="background: #ff8a80; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                                        View
+                                                    </button>
+                                                @endif
+                                                <input type="checkbox" class="form-check-input lesson-checkbox" 
+                                                       data-lesson-id="{{ $lesson['id'] ?? $lessonIndex }}" 
+                                                       data-content-type="lesson"
+                                                       onchange="updateProgress()" 
+                                                       style="margin-left: 8px;" />
+                                            </div>
                                         </div>
                                     </div>
-                                @endif
-
+                                </details>
                                 <!-- Assignment Item -->
                                 @if((isset($lesson['assignment_url']) && $lesson['assignment_url']) || 
                                     (isset($lesson['assignment_attachment']) && $lesson['assignment_attachment']))
-                                    <div class="content-item">
-                                        <div class="content-left">
-                                            <div class="content-icon assignment">
-                                                <i class="bi bi-clipboard-check"></i>
+                                    <div class="d-flex align-items-center justify-content-between" style="padding: 8px 0; border-top: 1px solid #f1f1f1;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="lesson-icon me-2">
+                                                <i class="bi bi-clipboard-check" style="color: #6c757d;"></i>
                                             </div>
-                                            <div class="content-text">
-                                                ASSIGNMENT {{ $lessonIndex + 1 }}
-                                            </div>
+                                            <span style="font-size: 0.9rem; color: #333;">ASSIGNMENT {{ $lessonIndex + 1 }}</span>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
                                             @php
@@ -139,147 +146,117 @@
                                                                ($lesson['assignment_attachment'] ?? null ? asset('storage/' . $lesson['assignment_attachment']) : null);
                                             @endphp
                                             @if($assignmentUrl)
-                                                <button class="content-btn view" onclick="openPdfModal('{{ $assignmentUrl }}', 'Assignment {{ $lessonIndex + 1 }}')">
-                                                    <i class="bi bi-eye"></i> View
+                                                <button class="btn btn-sm" onclick="openPdfModal('{{ $assignmentUrl }}', 'Assignment {{ $lessonIndex + 1 }}')" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                                    View
                                                 </button>
                                             @endif
                                             <input type="checkbox" class="form-check-input lesson-checkbox" 
                                                    data-lesson-id="{{ $lesson['id'] ?? $lessonIndex }}" 
                                                    data-content-type="assignment"
-                                                   onchange="updateProgress()" />
+                                                   onchange="updateProgress()" 
+                                                   style="margin-left: 8px;" />
                                         </div>
                                     </div>
                                 @endif
-
                                 <!-- Zoom Meeting Item -->
                                 @if((isset($lesson['zoom_url']) && $lesson['zoom_url']) || 
                                     (isset($lesson['meeting_url']) && $lesson['meeting_url']))
-                                    <div class="content-item">
-                                        <div class="content-left">
-                                            <div class="content-icon video">
-                                                <i class="bi bi-camera-video"></i>
+                                    <div class="d-flex align-items-center justify-content-between" style="padding: 8px 0; border-top: 1px solid #f1f1f1;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="lesson-icon me-2">
+                                                <i class="bi bi-camera-video" style="color: #6c757d;"></i>
                                             </div>
-                                            <div class="content-text">
-                                                ZOOM MEETING: LESSON {{ $lessonIndex + 2 }}
-                                            </div>
+                                            <span style="font-size: 0.9rem; color: #333;">ZOOM MEETING: LESSON {{ $lessonIndex + 2 }}</span>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <a href="{{ $lesson['zoom_url'] ?? $lesson['meeting_url'] }}" target="_blank" class="content-btn join">
-                                                <i class="bi bi-camera-video"></i> Join
+                                            <a href="{{ $lesson['zoom_url'] ?? $lesson['meeting_url'] }}" target="_blank" class="btn btn-sm" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                                Join
                                             </a>
                                             <input type="checkbox" class="form-check-input lesson-checkbox" 
                                                    data-lesson-id="{{ $lesson['id'] ?? $lessonIndex }}" 
                                                    data-content-type="zoom"
-                                                   onchange="updateProgress()" />
+                                                   onchange="updateProgress()" 
+                                                   style="margin-left: 8px;" />
                                         </div>
                                     </div>
                                 @endif
-
                                 <!-- Video Content Item -->
                                 @if((isset($lesson['video_url']) && $lesson['video_url']) ||
                                     (isset($lesson['lesson_video_url']) && $lesson['lesson_video_url']))
-                                    <div class="content-item">
-                                        <div class="content-left">
-                                            <div class="content-icon video">
-                                                <i class="bi bi-play-circle"></i>
+                                    <div class="d-flex align-items-center justify-content-between" style="padding: 8px 0; border-top: 1px solid #f1f1f1;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="lesson-icon me-2">
+                                                <i class="bi bi-play-circle" style="color: #6c757d;"></i>
                                             </div>
-                                            <div class="content-text">
-                                                VIDEO: LESSON {{ $lessonIndex + 2 }} CONCEPT OF FUNCTIONS
-                                            </div>
+                                            <span style="font-size: 0.9rem; color: #333;">VIDEO: LESSON {{ $lessonIndex + 2 }} CONCEPT OF FUNCTIONS</span>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <a href="{{ $lesson['video_url'] ?? $lesson['lesson_video_url'] }}" target="_blank" class="content-btn view">
-                                                <i class="bi bi-play"></i> Visit
+                                            <a href="{{ $lesson['video_url'] ?? $lesson['lesson_video_url'] }}" target="_blank" class="btn btn-sm" style="background: #6f42c1; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                                Visit
                                             </a>
                                             <input type="checkbox" class="form-check-input lesson-checkbox" 
                                                    data-lesson-id="{{ $lesson['id'] ?? $lessonIndex }}" 
                                                    data-content-type="video"
-                                                   onchange="updateProgress()" />
+                                                   onchange="updateProgress()" 
+                                                   style="margin-left: 8px;" />
                                         </div>
                                     </div>
                                 @endif
-                            </div>
-                        </details>
-                    @endforeach
-                @endif
-
-                <!-- Content Items from Course -->
-                @if(count($course['content_items']) > 0)
-                    @foreach($course['content_items'] as $itemIndex => $item)
-                        <details class="lesson-accordion">
-                            <summary class="lesson-header">
-                                <div class="lesson-icon">
-                                    @switch($item['type'] ?? 'file')
-                                        @case('pdf')
-                                        @case('file')
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            @break
-                                        @case('video')
-                                            <i class="bi bi-play-circle"></i>
-                                            @break
-                                        @case('assignment')
-                                            <i class="bi bi-clipboard-check"></i>
-                                            @break
-                                        @case('quiz')
-                                            <i class="bi bi-question-circle"></i>
-                                            @break
-                                        @default
-                                            <i class="bi bi-file-earmark-text"></i>
-                                    @endswitch
-                                </div>
-                                <div class="lesson-title">
-                                    {{ strtoupper($item['title'] ?? $item['content_title'] ?? 'CONTENT ITEM') }}
-                                </div>
-                                <div class="toggle-icon">
-                                    <i class="bi bi-chevron-down"></i>
-                                </div>
-                            </summary>
-                            <div class="lesson-content">
-                                <div class="content-item">
-                                    <div class="content-left">
-                                        <div class="content-icon {{ $item['type'] ?? 'file' }}">
+                            @endforeach
+                        @endif
+                        <!-- Content Items from Course -->
+                        @if(count($course['content_items']) > 0)
+                            @foreach($course['content_items'] as $itemIndex => $item)
+                                <div class="d-flex align-items-center justify-content-between" style="padding: 8px 0; border-top: 1px solid #f1f1f1;">
+                                    <div class="d-flex align-items-center">
+                                        <div class="lesson-icon me-2">
                                             @switch($item['type'] ?? 'file')
                                                 @case('pdf')
                                                 @case('file')
-                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                    <i class="bi bi-file-earmark-pdf" style="color: #6c757d;"></i>
                                                     @break
                                                 @case('video')
-                                                    <i class="bi bi-play-circle"></i>
+                                                    <i class="bi bi-play-circle" style="color: #6c757d;"></i>
                                                     @break
                                                 @case('assignment')
-                                                    <i class="bi bi-clipboard-check"></i>
+                                                    <i class="bi bi-clipboard-check" style="color: #6c757d;"></i>
                                                     @break
                                                 @case('quiz')
-                                                    <i class="bi bi-question-circle"></i>
+                                                    <i class="bi bi-question-circle" style="color: #6c757d;"></i>
                                                     @break
                                                 @default
-                                                    <i class="bi bi-file-earmark-text"></i>
+                                                    <i class="bi bi-file-earmark-text" style="color: #6c757d;"></i>
                                             @endswitch
                                         </div>
-                                        <div class="content-text">
-                                            {{ strtoupper($item['title'] ?? $item['content_title'] ?? 'CONTENT ITEM') }}
-                                        </div>
+                                        <span style="font-size: 0.9rem; color: #333;">{{ strtoupper($item['title'] ?? $item['content_title'] ?? 'CONTENT ITEM') }}</span>
                                     </div>
-                                    @php
-                                        $attachmentUrl = $item['attachment_url'] ?? 
-                                                       ($item['attachment_path'] ?? null ? asset('storage/' . $item['attachment_path']) : null);
-                                    @endphp
-                                    @if($attachmentUrl)
-                                        @if(in_array($item['type'] ?? 'file', ['pdf', 'file']))
-                                            <button class="content-btn view" onclick="openPdfModal('{{ $attachmentUrl }}', '{{ $item['title'] ?? $item['content_title'] ?? 'Document' }}')">
-                                                View
-                                            </button>
-                                        @else
-                                            <a href="{{ $attachmentUrl }}" target="_blank" class="content-btn view">
-                                                View
-                                            </a>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @php
+                                            $attachmentUrl = $item['attachment_url'] ?? 
+                                                           ($item['attachment_path'] ?? null ? asset('storage/' . $item['attachment_path']) : null);
+                                        @endphp
+                                        @if($attachmentUrl)
+                                            @if(in_array($item['type'] ?? 'file', ['pdf', 'file']))
+                                                <button class="btn btn-sm" onclick="openPdfModal('{{ $attachmentUrl }}', '{{ $item['title'] ?? $item['content_title'] ?? 'Document' }}')" style="background: #ff8a80; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                                    View
+                                                </button>
+                                            @else
+                                                <a href="{{ $attachmentUrl }}" target="_blank" class="btn btn-sm" style="background: #ff8a80; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                                                    View
+                                                </a>
+                                            @endif
                                         @endif
-                                    @endif
+                                        <input type="checkbox" class="form-check-input lesson-checkbox" 
+                                               data-lesson-id="{{ $item['id'] ?? $itemIndex }}" 
+                                               data-content-type="{{ $item['type'] ?? 'content' }}"
+                                               onchange="updateProgress()" 
+                                               style="margin-left: 8px;" />
+                                    </div>
                                 </div>
-                            </div>
-                        </details>
-                    @endforeach
-                @endif
+                            @endforeach
+                        @endif
+                    </div>
+                </details>
             @endforeach
         @else
             <div class="no-lessons">
@@ -501,8 +478,13 @@ function completeModule() {
             // Update localStorage to mark module as completed
             localStorage.setItem(`module_${moduleId}_completed`, 'true');
             
-            // Show success message
-            alert('Module completed successfully!');
+            // Show success message and redirect back to course
+            alert('Module completed successfully! Redirecting to course page...');
+            
+            // Redirect back to the course page to update progress
+            setTimeout(() => {
+                window.location.href = "{{ route('student.course', ['courseId' => $program->program_id]) }}";
+            }, 1500);
             
         } else {
             throw new Error(data.message || 'Failed to complete module');
@@ -513,6 +495,11 @@ function completeModule() {
         completeBtn.disabled = false;
         completeBtn.innerHTML = originalContent;
         alert('Module marked as complete! ' + (error.message || 'Please refresh the page to see the update.'));
+        
+        // Even on error, redirect to refresh the course page
+        setTimeout(() => {
+            window.location.href = "{{ route('student.course', ['courseId' => $program->program_id]) }}";
+        }, 2000);
     });
 }
 

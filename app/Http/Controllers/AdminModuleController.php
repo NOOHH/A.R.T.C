@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Module;
 use App\Models\Program;
 use App\Models\Course;
+use App\Models\ContentItem;
 use App\Models\StudentBatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -173,6 +174,34 @@ class AdminModuleController extends Controller
         return view('admin.admin-modules.show', compact('module'));
     }
 
+    /**
+     * Get module data for editing (JSON).
+     */
+    public function getModule($id)
+    {
+        try {
+            $module = Module::findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'module' => [
+                    'modules_id' => $module->modules_id,
+                    'module_name' => $module->module_name,
+                    'module_description' => $module->module_description,
+                    'program_id' => $module->program_id,
+                    'batch_id' => $module->batch_id,
+                    'attachment_path' => $module->attachment_path,
+                    'created_at' => $module->created_at,
+                    'updated_at' => $module->updated_at
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Module not found'
+            ], 404);
+        }
+    }
 
     /**
      * Get modules for a specific program (JSON).
@@ -204,6 +233,15 @@ class AdminModuleController extends Controller
     {
         $module = Module::findOrFail($id);
         $programs = Program::where('is_archived', false)->get();
+        
+        // Check if this is an AJAX request
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'module' => $module,
+                'programs' => $programs
+            ]);
+        }
         
         return view('admin.admin-modules.edit', compact('module', 'programs'));
     }
@@ -723,6 +761,61 @@ class AdminModuleController extends Controller
     }
 
     /**
+     * Get batches by program ID (alias for route compatibility)
+     */
+    public function getBatchesByProgram($programId)
+    {
+        return $this->getBatchesForProgram($programId);
+    }
+
+    /**
+     * Get modules by program
+     */
+    public function getModulesByProgram(Request $request)
+    {
+        try {
+            $programId = $request->get('program_id');
+            $moduleId = $request->get('module_id');
+            
+            if ($moduleId) {
+                // Get program info for a specific module
+                $module = Module::findOrFail($moduleId);
+                return response()->json([
+                    'success' => true,
+                    'program_id' => $module->program_id,
+                    'module' => $module
+                ]);
+            }
+            
+            if ($programId) {
+                // Get all modules for a program
+                $modules = Module::where('program_id', $programId)
+                    ->where('is_archived', false)
+                    ->select('modules_id', 'module_name', 'program_id')
+                    ->orderBy('module_order', 'asc')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+                
+                return response()->json([
+                    'success' => true,
+                    'modules' => $modules
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Program ID or Module ID required'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading modules: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Get courses for a specific program
      */
     public function getCoursesForProgram($programId)
@@ -1089,6 +1182,178 @@ class AdminModuleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error loading courses: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get content item for editing
+     */
+    public function getContent($id)
+    {
+        try {
+            $content = ContentItem::findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'content' => [
+                    'id' => $content->id,
+                    'title' => $content->title,
+                    'description' => $content->description,
+                    'type' => $content->type,
+                    'file_path' => $content->file_path,
+                    'link' => $content->link,
+                    'sort_order' => $content->sort_order,
+                    'course_id' => $content->course_id
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content not found'
+            ], 404);
+        }
+    }
+
+    /**
+     * Delete content item
+     */
+    public function deleteContent($id)
+    {
+        try {
+            $content = \App\Models\ContentItem::findOrFail($id);
+            
+            // Delete associated files if any
+            if ($content->attachment_path) {
+                Storage::delete('public/' . $content->attachment_path);
+            }
+            
+            $content->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Content deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update content item
+     */
+    public function updateContent(Request $request, $id)
+    {
+        try {
+            $content = \App\Models\ContentItem::findOrFail($id);
+            
+            $request->validate([
+                'content_title' => 'required|string|max:255',
+                'content_description' => 'nullable|string',
+                'content_type' => 'required|string|in:lesson,assignment,pdf,link',
+                'attachment' => 'nullable|file|max:50240' // 50MB max
+            ]);
+            
+            $content->update($request->only([
+                'content_title',
+                'content_description', 
+                'content_type'
+            ]));
+            
+            // Handle file upload if provided
+            if ($request->hasFile('attachment')) {
+                // Delete old file
+                if ($content->attachment_path) {
+                    Storage::delete('public/' . $content->attachment_path);
+                }
+                
+                $file = $request->file('attachment');
+                $path = $file->store('content', 'public');
+                $content->update(['attachment_path' => $path]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Content updated successfully',
+                'content' => $content
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update content order (drag and drop)
+     */
+    public function updateContentOrder(Request $request)
+    {
+        try {
+            $contentIds = $request->input('content_ids', []);
+            
+            foreach ($contentIds as $index => $contentId) {
+                \App\Models\ContentItem::where('id', $contentId)
+                    ->update(['content_order' => $index + 1]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Content order updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating content order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating content order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Move content item to different course/module
+     */
+    public function moveContent(Request $request)
+    {
+        try {
+            $request->validate([
+                'content_id' => 'required|integer|exists:content_items,id',
+                'new_course_id' => 'required|integer|exists:course,subject_id',
+                'new_module_id' => 'required|integer|exists:modules,modules_id'
+            ]);
+
+            $contentId = $request->input('content_id');
+            $newCourseId = $request->input('new_course_id');
+            $newModuleId = $request->input('new_module_id');
+
+            // Find the content item
+            $content = ContentItem::findOrFail($contentId);
+            
+            // Get the highest sort order in the new course
+            $maxSortOrder = ContentItem::where('course_id', $newCourseId)
+                                     ->max('content_order') ?? 0;
+
+            // Update the content item
+            $content->update([
+                'course_id' => $newCourseId,
+                'content_order' => $maxSortOrder + 1
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content moved successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error moving content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to move content: ' . $e->getMessage()
             ], 500);
         }
     }

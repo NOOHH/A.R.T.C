@@ -318,10 +318,10 @@ class StudentDashboardController extends Controller
         }
         
         // Continue with normal course view if paid and approved
-        // Get all modules for this program, ordered by order column first, then creation date
+        // Get all modules for this program, ordered by module_order column first, then creation date
         $modules = Module::where('program_id', $courseId)
                         ->where('is_archived', false)
-                        ->orderBy('order', 'asc')
+                        ->orderBy('module_order', 'asc')
                         ->orderBy('created_at', 'asc')
                         ->get();
         

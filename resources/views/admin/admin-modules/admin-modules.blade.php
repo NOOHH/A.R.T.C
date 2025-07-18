@@ -118,193 +118,1987 @@
     <div id="modulesDisplayArea">
         @if(request('program_id') && isset($modules))
             @if($modules->count() > 0)
-<div class="modules-grid sortable-modules" id="sortableModules">
+<style>
+  /* Hierarchical Module Structure */
+  .modules-hierarchy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .module-container {
+    border: 2px solid #e1e5e9;
+    border-radius: 15px;
+    background: white;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .module-container:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .module-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+  
+  .module-header:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6b4190 100%);
+  }
+  
+  .module-title-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  
+  .module-title-section h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .module-title-section small {
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+  
+  .module-toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 1.2rem;
+  }
+  
+  .module-toggle-icon.expanded {
+    transform: rotate(90deg);
+  }
+  
+  .module-content {
+    display: none;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+  }
+  
+  .module-content.expanded {
+    display: block;
+  }
+  
+  .courses-list {
+    padding: 1.5rem;
+  }
+  
+  .course-container {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .course-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+  
+  .course-header:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  }
+  
+  .course-header h5 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .course-content {
+    display: none;
+    padding: 1.5rem;
+    background: #ffffff;
+  }
+  
+  .course-content.expanded {
+    display: block;
+  }
+  
+  .content-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+  
+  .content-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateX(5px);
+  }
+  
+  .content-item-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .content-item-type {
+    background: #007bff;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .content-item-type.assignment {
+    background: #dc3545;
+  }
+  
+  .content-item-type.pdf {
+    background: #fd7e14;
+  }
+  
+  .content-item-type.lesson {
+    background: #17a2b8;
+  }
+  
+  .content-item-type.quiz {
+    background: #6f42c1;
+  }
+  
+  .content-item-type.test {
+    background: #e83e8c;
+  }
+  
+  .content-item-type.link {
+    background: #20c997;
+  }
+  
+  .content-item-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .content-item-actions .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    border: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .content-item-actions .btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .module-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .module-actions .btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  .add-course-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  .add-course-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-2px);
+  }
+  
+  .btn-outline-light {
+    background: rgba(255, 255, 255, 0.15);
+    color: white !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-2px);
+  }
+  
+  /* Module action buttons */
+  .module-actions .btn-outline-light {
+    background: rgba(255, 255, 255, 0.2);
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.875rem;
+  }
+  
+  .module-actions .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    transform: translateY(-1px);
+  }
+  
+  /* Ensure edit and delete buttons are visible */
+  .module-actions .btn-outline-light i {
+    color: white !important;
+  }
+  
+  .module-actions .btn-outline-light:hover i {
+    color: white !important;
+  }
+  
+  .no-courses-message {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+    font-style: italic;
+  }
+  
+  .drag-handle {
+    cursor: move;
+    color: rgba(108, 117, 125, 0.7);
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: color 0.2s ease;
+  }
+  
+  .drag-handle:hover {
+    color: rgba(108, 117, 125, 1);
+  }
+  
+  .module-header .drag-handle {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .module-header .drag-handle:hover {
+    color: rgba(255, 255, 255, 1);
+  }
+  
+  .sortable-ghost {
+    opacity: 0.5;
+    background: #f1f3f4;
+  }
+  
+  .sortable-chosen {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .action-buttons .btn {
+    padding: 0.8rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    border: none;
+  }
+  
+  .add-module-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+  }
+  
+  .add-module-btn:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    transform: translateY(-2px);
+    color: white;
+  }
+  
+  .add-course-btn {
+    background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+    color: white;
+  }
+  
+  .add-course-btn:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+    transform: translateY(-2px);
+    color: white;
+  }
+  
+  .batch-upload-btn {
+    background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+    color: white;
+  }
+  
+  .batch-upload-btn:hover {
+    background: linear-gradient(135deg, #e55a00 0%, #d91a72 100%);
+    transform: translateY(-2px);
+    color: white;
+  }
+  
+  .view-archived-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+  }
+  
+  .view-archived-btn:hover {
+    background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
+    transform: translateY(-2px);
+    color: white;
+  }
+  
+  .quiz-generator-btn {
+    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+    color: white;
+  }
+  
+  .quiz-generator-btn:hover {
+    background: linear-gradient(135deg, #5a2d91 0%, #d91a72 100%);
+    transform: translateY(-2px);
+    color: white;
+  }
+  
+  /* Cross-module drag and drop styles */
+  .drag-over {
+    border: 2px dashed #007bff !important;
+    background: rgba(0, 123, 255, 0.1) !important;
+    transform: scale(1.02);
+  }
+  
+  .sortable-drag {
+    opacity: 0.8;
+    transform: rotate(5deg);
+  }
+  
+  .course-selection-item {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .course-selection-item:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+    transform: translateX(5px);
+  }
+  
+  .course-selection-item i {
+    color: #007bff;
+    margin-right: 0.5rem;
+  }
+  
+  .course-selection-item p {
+    margin: 0.5rem 0 0 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  /* Notification animations */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+</style>
+
+<div class="modules-hierarchy" id="modulesHierarchy">
   @foreach($modules as $module)
-    <div class="module-card"
-         data-module-id="{{ $module->modules_id }}"
-         data-batch-id="{{ $module->batch_id }}"
-         data-course-id="{{ $module->course_id ?? '' }}"
-         data-learning-mode="{{ strtolower($module->learning_mode) }}"
-         data-content-type="{{ $module->content_type }}"
-         onclick="showModuleCourses({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')"
-         style="cursor: pointer;">
-
-      <div class="module-drag-handle">
-        <i class="bi bi-grip-vertical"></i>
-      </div>
-                            
-      {{-- HEADER: badges + title + batch all in one flex row --}}
-      <div class="module-header">
-        <div class="d-flex align-items-center gap-3">
-          @if($module->content_type === 'ai_quiz')
-            <span class="module-type-badge"
-                  style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
-              <i class="bi bi-robot"></i> AI Quiz
-            </span>
-          @else
-            <span class="module-type-badge">
-              @switch($module->content_type)
-                @case('assignment')<i class="bi bi-file-earmark-text"></i> Assignment @break
-                @case('quiz')      <i class="bi bi-question-circle"></i> Quiz       @break
-                @case('test')      <i class="bi bi-clipboard-check"></i> Test      @break
-                @case('link')      <i class="bi bi-link-45deg"></i> Link         @break
-                @default           <i class="bi bi-book"></i> Module            @break
-              @endswitch
-            </span>
-                                        @endif
-
-                              <span class="learning-mode-badge {{ strtolower($module->learning_mode)==='asynchronous'?'asynchronous':'' }}">
-            @if(strtolower($module->learning_mode)==='asynchronous')
-              <i class="bi bi-clock"></i> Async
-            @else
-              <i class="bi bi-people"></i> Sync
+    <div class="module-container" data-module-id="{{ $module->modules_id }}">
+      <div class="module-header" onclick="toggleModule({{ $module->modules_id }})">
+        <div class="module-title-section">
+          <i class="drag-handle bi bi-grip-vertical"></i>
+          <i class="module-toggle-icon bi bi-chevron-right"></i>
+          <div>
+            <h4 class="mb-0">{{ $module->module_name }}</h4>
+            @if($module->module_description)
+              <small class="opacity-75">{{ $module->module_description }}</small>
             @endif
-          </span>
-
-          <h3 class="module-title mb-0">{{ $module->module_name }}</h3>
-
-          @if($module->batch)
-            <div class="batch-info text-muted">
-              <i class="bi bi-collection"></i> Batch: {{ $module->batch->batch_name }}
-            </div>
-          @endif
+          </div>
+        </div>
+        
+        <div class="module-actions" onclick="event.stopPropagation();">
+          <button class="btn add-course-btn" onclick="showAddCourseModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
+            <i class="bi bi-plus-circle"></i> Add Course
+          </button>
+          <button class="btn btn-sm btn-outline-light" onclick="editModule({{ $module->modules_id }})">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-light" onclick="deleteModule({{ $module->modules_id }})">
+            <i class="bi bi-trash"></i>
+          </button>
         </div>
       </div>
-
-      @if($module->module_description)
-        <div class="module-description">{{ $module->module_description }}</div>
-      @endif
-
-                            @if($module->content_data)
-                                <div class="content-details">
-                                    @php $data = $module->content_data; @endphp
-                                    @switch($module->content_type)
-                                        @case('assignment')
-                                            @if(!empty($data['assignment_title']))
-                                                <div class="detail-item">
-                                                    <strong>Title:</strong> {{ $data['assignment_title'] }}
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['due_date']))
-                                                <div class="detail-item">
-                                                    <strong>Due:</strong> {{ \Carbon\Carbon::parse($data['due_date'])->format('M d, Y g:i A') }}
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['max_points']))
-                                                <div class="detail-item">
-                                                    <strong>Points:</strong> {{ $data['max_points'] }}
-                                                </div>
-                                            @endif
-                                            @break
-                                        @case('quiz')
-                                        @case('ai_quiz')
-                                            @if(!empty($data['quiz_title']) || !empty($data['ai_quiz_title']))
-                                                <div class="detail-item">
-                                                    <strong>Title:</strong> {{ $data['quiz_title'] ?? $data['ai_quiz_title'] }}
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['time_limit']) || !empty($data['ai_time_limit']))
-                                                <div class="detail-item">
-                                                    <strong>Time:</strong> {{ $data['time_limit'] ?? $data['ai_time_limit'] }} minutes
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['question_count']) || !empty($data['ai_num_questions']))
-                                                <div class="detail-item">
-                                                    <strong>Questions:</strong> {{ $data['question_count'] ?? $data['ai_num_questions'] }}
-                                                </div>
-                                            @endif
-                                            @break
-                                        @case('test')
-                                            @if(!empty($data['test_title']))
-                                                <div class="detail-item">
-                                                    <strong>Title:</strong> {{ $data['test_title'] }}
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['test_date']))
-                                                <div class="detail-item">
-                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($data['test_date'])->format('M d, Y g:i A') }}
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['total_marks']))
-                                                <div class="detail-item">
-                                                    <strong>Total Marks:</strong> {{ $data['total_marks'] }}
-                                                </div>
-                                            @endif
-                                            @break
-                                        @case('link')
-                                            @if(!empty($data['link_title']))
-                                                <div class="detail-item">
-                                                    <strong>Link:</strong> {{ $data['link_title'] }}
-                                                </div>
-                                            @endif
-                                            @if(!empty($data['external_url']))
-                                                <div class="detail-item">
-                                                    <strong>URL:</strong> 
-                                                    <a href="{{ $data['external_url'] }}" target="_blank" class="text-decoration-none">
-                                                        {{ Str::limit($data['external_url'], 40) }}
-                                                        <i class="bi bi-box-arrow-up-right"></i>
-                                                    </a>
-                                                </div>
-                                            @endif
-                                            @break
-                                    @endswitch
-                                </div>
-                            @endif
-
- <div class="module-meta d-flex justify-content-between align-items-center">
-        <div class="module-date">
-          <i class="bi bi-calendar-date"></i>
-          {{ $module->created_at->format('M d, Y') }}
-        </div>
-        <div class="module-status">
-          @if($module->attachment)
-            <span class="text-primary"><i class="bi bi-paperclip"></i></span>
-          @endif
-          @if($module->admin_override)
-            <span class="text-success"><i class="bi bi-unlock-fill"></i></span>
-          @endif
+      
+      <div class="module-content" id="module-content-{{ $module->modules_id }}">
+        <div class="courses-list">
+          <div id="courses-container-{{ $module->modules_id }}">
+            <!-- Courses will be loaded dynamically -->
+          </div>
         </div>
       </div>
-
-      <div class="module-actions d-flex gap-2">
-        <button class="action-btn btn-edit"
-                onclick="event.stopPropagation(); editModule({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}', '{{ addslashes($module->module_description) }}', {{ $module->program_id }}, '{{ $module->attachment }}')">
-          <i class="bi bi-pencil"></i> Edit
-        </button>
-        <button class="action-btn btn-override"
-               onclick="event.stopPropagation(); showOverrideModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
-          <i class="bi bi-unlock-fill"></i> Override
-        </button>
-        <button class="action-btn btn-archive"
-                onclick="event.stopPropagation();showArchiveConfirmation({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
-          <i class="bi bi-archive"></i> Archive
-        </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>        @else
+    </div>
+  @endforeach
+</div>
+            @else
+                <div class="select-program-msg">
+                    <div class="empty-state">
+                        <i class="bi bi-journals" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                        <h4 style="color: #6c757d; margin-bottom: 1rem;">No Modules Found</h4>
+                        <p style="color: #6c757d; margin-bottom: 2rem;">No modules are available for the selected program yet.</p>
+                        <button type="button" class="add-module-btn" onclick="document.getElementById('addModalBg').classList.add('show');">
+                            <i class="bi bi-plus-circle"></i> Create First Module
+                        </button>
+                    </div>
+                </div>
+            @endif
+        @else
             <div class="select-program-msg">
                 <div class="empty-state">
-                    <i class="bi bi-journals" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                    <h4 style="color: #6c757d; margin-bottom: 1rem;">No Modules Found</h4>
-                    <p style="color: #6c757d; margin-bottom: 2rem;">No modules are available for the selected program yet.</p>
-                    <button type="button" class="add-module-btn" onclick="document.getElementById('addModalBg').classList.add('show');">
-                        <i class="bi bi-plus-circle"></i> Create First Module
-                    </button>
+                    <i class="bi bi-arrow-up-circle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                    <h4 style="color: #6c757d; margin-bottom: 1rem;">Select a Program</h4>
+                    <p style="color: #6c757d;">Select a program from the dropdown above to view and manage its modules</p>
                 </div>
             </div>
         @endif
-    @else
-        <div class="select-program-msg">
-            <div class="empty-state">
-                <i class="bi bi-arrow-up-circle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                <h4 style="color: #6c757d; margin-bottom: 1rem;">Select a Program</h4>
-                <p style="color: #6c757d;">Select a program from the dropdown above to view and manage its modules</p>
-            </div>
-        </div>
-    @endif
     </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+// Global variables
+let currentArchiveModuleId = null;
+let currentOverrideModuleId = null;
+
+// Module toggle functionality
+function toggleModule(moduleId) {
+    const content = document.getElementById(`module-content-${moduleId}`);
+    const icon = content.previousElementSibling.querySelector('.module-toggle-icon');
+    
+    if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        icon.classList.remove('expanded');
+    } else {
+        content.classList.add('expanded');
+        icon.classList.add('expanded');
+        loadModuleCourses(moduleId);
+    }
+}
+
+// Course toggle functionality
+function toggleCourse(moduleId, courseId) {
+    const content = document.getElementById(`course-content-${moduleId}-${courseId}`);
+    const icon = content.previousElementSibling.querySelector('.course-toggle-icon');
+    
+    if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        icon.classList.remove('expanded');
+    } else {
+        content.classList.add('expanded');
+        icon.classList.add('expanded');
+        loadCourseContent(moduleId, courseId);
+    }
+}
+
+// Load courses for a module
+function loadModuleCourses(moduleId) {
+    const container = document.getElementById(`courses-container-${moduleId}`);
+    if (container.dataset.loaded === 'true') return;
+    
+    container.innerHTML = '<div class="text-center p-3"><i class="bi bi-arrow-clockwise fa-spin"></i> Loading courses...</div>';
+    
+    fetch(`/admin/modules/${moduleId}/courses`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.courses) {
+                displayCourses(moduleId, data.courses);
+                container.dataset.loaded = 'true';
+            } else {
+                container.innerHTML = `
+                    <div class="no-courses-message">
+                        <i class="bi bi-journal-x" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>No courses found for this module.</p>
+                        <button class="btn btn-primary" onclick="showAddCourseModal(${moduleId})">
+                            <i class="bi bi-plus-circle"></i> Add First Course
+                        </button>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading courses:', error);
+            container.innerHTML = '<div class="alert alert-danger">Error loading courses</div>';
+        });
+}
+
+// Display courses in the module
+function displayCourses(moduleId, courses) {
+    const container = document.getElementById(`courses-container-${moduleId}`);
+    
+    if (courses.length === 0) {
+        container.innerHTML = `
+            <div class="no-courses-message">
+                <i class="bi bi-journal-x" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <p>No courses found for this module.</p>
+                <button class="btn btn-primary" onclick="showAddCourseModal(${moduleId})">
+                    <i class="bi bi-plus-circle"></i> Add First Course
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    courses.forEach(course => {
+        html += `
+            <div class="course-container" data-course-id="${course.subject_id}">
+                <div class="course-header" onclick="toggleCourse(${moduleId}, ${course.subject_id})">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="course-toggle-icon bi bi-chevron-right"></i>
+                        <div>
+                            <h5 class="mb-0">${course.subject_name}</h5>
+                            ${course.subject_description ? `<small class="opacity-75">${course.subject_description}</small>` : ''}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">
+                        <button class="btn btn-sm btn-outline-light" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')">
+                            <i class="bi bi-plus"></i> Add Content
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" onclick="editCourse(${course.subject_id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" onclick="deleteCourse(${course.subject_id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="course-content" id="course-content-${moduleId}-${course.subject_id}">
+                    <div id="content-container-${moduleId}-${course.subject_id}">
+                        <!-- Content items will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Load content items for a course
+function loadCourseContent(moduleId, courseId) {
+    const container = document.getElementById(`content-container-${moduleId}-${courseId}`);
+    if (container.dataset.loaded === 'true') return;
+    
+    container.innerHTML = '<div class="text-center p-3"><i class="bi bi-arrow-clockwise fa-spin"></i> Loading content...</div>';
+    
+    fetch(`/admin/courses/${courseId}/content`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.content) {
+                displayCourseContent(moduleId, courseId, data.content);
+                container.dataset.loaded = 'true';
+            } else {
+                container.innerHTML = `
+                    <div class="text-center p-3">
+                        <p class="text-muted">No content items found.</p>
+                        <button class="btn btn-sm btn-primary" onclick="showAddContentModal(${moduleId}, ${courseId})">
+                            <i class="bi bi-plus-circle"></i> Add Content
+                        </button>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+            container.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+        });
+}
+
+// Display course content items
+function displayCourseContent(moduleId, courseId, contentItems) {
+    const container = document.getElementById(`content-container-${moduleId}-${courseId}`);
+    
+    if (contentItems.length === 0) {
+        container.innerHTML = `
+            <div class="text-center p-3">
+                <p class="text-muted">No content items found.</p>
+                <button class="btn btn-sm btn-primary" onclick="showAddContentModal(${moduleId}, ${courseId})">
+                    <i class="bi bi-plus-circle"></i> Add Content
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    contentItems.forEach(item => {
+        const typeClass = getContentTypeClass(item.content_type);
+        const typeIcon = getContentTypeIcon(item.content_type);
+        
+        html += `
+            <div class="content-item" data-content-id="${item.id}">
+                <div class="content-item-info">
+                    <i class="drag-handle bi bi-grip-vertical"></i>
+                    <span class="content-item-type ${typeClass}">
+                        <i class="bi ${typeIcon}"></i> ${item.content_type}
+                    </span>
+                    <div>
+                        <strong>${item.content_title}</strong>
+                        ${item.content_description ? `<br><small class="text-muted">${item.content_description}</small>` : ''}
+                    </div>
+                </div>
+                <div class="content-item-actions">
+                    ${item.content_type === 'assignment' ? 
+                        `<button class="btn btn-sm btn-info" onclick="viewSubmissions(${item.id})">
+                            <i class="bi bi-file-earmark-text"></i> Submissions
+                        </button>` : ''
+                    }
+                    <button class="btn btn-sm btn-warning" onclick="editContent(${item.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteContent(${item.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Initialize sortable for content items
+    if (typeof Sortable !== 'undefined') {
+        new Sortable(container, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: function(evt) {
+                const contentIds = Array.from(container.children).map(el => 
+                    el.getAttribute('data-content-id')
+                );
+                updateContentOrder(contentIds);
+            }
+        });
+    }
+}
+
+// Helper functions for content types
+function getContentTypeClass(type) {
+    const classes = {
+        'assignment': 'assignment',
+        'pdf': 'pdf',
+        'lesson': 'lesson',
+        'quiz': 'quiz',
+        'test': 'test',
+        'link': 'link'
+    };
+    return classes[type] || 'lesson';
+}
+
+function getContentTypeIcon(type) {
+    const icons = {
+        'assignment': 'bi-file-earmark-text',
+        'pdf': 'bi-file-pdf',
+        'lesson': 'bi-journal-text',
+        'quiz': 'bi-question-circle',
+        'test': 'bi-clipboard-check',
+        'link': 'bi-link-45deg'
+    };
+    return icons[type] || 'bi-file-text';
+}
+
+// Modal functions
+function showAddCourseModal(moduleId, moduleName = '') {
+    const modal = document.getElementById('addCourseModalBg');
+    const form = document.getElementById('addCourseForm');
+    
+    if (modal && form) {
+        // Pre-fill the module selection if moduleId is provided
+        if (moduleId) {
+            // Set the program first by finding which program this module belongs to
+            fetch(`/admin/modules/by-program?module_id=${moduleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.program_id) {
+                        const programSelect = document.getElementById('courseProgramSelect');
+                        const moduleSelect = document.getElementById('courseModuleSelect');
+                        
+                        if (programSelect) {
+                            programSelect.value = data.program_id;
+                            // Load modules for this program
+                            loadModulesForProgram(data.program_id, 'courseModuleSelect');
+                            
+                            // Set the module after loading
+                            setTimeout(() => {
+                                if (moduleSelect) {
+                                    moduleSelect.value = moduleId;
+                                }
+                            }, 500);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading module info:', error);
+                });
+        }
+        
+        modal.classList.add('show');
+    } else {
+        console.error('Add course modal or form not found');
+    }
+}
+
+function showAddContentModal(moduleId, courseId, courseName = '') {
+    const modal = document.getElementById('batchModalBg');
+    const form = document.getElementById('courseContentForm');
+    
+    if (modal && form) {
+        // Pre-fill the selections if provided
+        if (moduleId && courseId) {
+            // Get program info and pre-fill the form
+            fetch(`/admin/modules/by-program?module_id=${moduleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.program_id) {
+                        const programSelect = document.getElementById('contentProgramSelect');
+                        const moduleSelect = document.getElementById('contentModuleSelect');
+                        const courseSelect = document.getElementById('contentCourseSelect');
+                        
+                        if (programSelect) {
+                            programSelect.value = data.program_id;
+                            // Load modules for this program
+                            loadModulesForProgram(data.program_id, 'contentModuleSelect');
+                            
+                            // Set the module and then load courses
+                            setTimeout(() => {
+                                if (moduleSelect) {
+                                    moduleSelect.value = moduleId;
+                                    loadCoursesForModule(moduleId, 'contentCourseSelect');
+                                    
+                                    // Set the course after loading
+                                    setTimeout(() => {
+                                        if (courseSelect) {
+                                            courseSelect.value = courseId;
+                                        }
+                                    }, 500);
+                                }
+                            }, 500);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading module info:', error);
+                });
+        }
+        
+        modal.classList.add('show');
+    } else {
+        console.error('Add content modal or form not found');
+    }
+}
+
+function editModule(moduleId) {
+    // Implementation for editing module
+    fetch(`/admin/modules/${moduleId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success || data.module) {
+                // Extract module data - handle both response formats
+                const moduleData = data.module || data;
+                
+                // Open edit modal with pre-filled data
+                const modal = document.getElementById('editModalBg');
+                if (modal) {
+                    // Fill form with module data
+                    document.getElementById('editModuleName').value = moduleData.module_name || '';
+                    document.getElementById('editModuleDescription').value = moduleData.module_description || '';
+                    document.getElementById('editModalProgramSelect').value = moduleData.program_id || '';
+                    
+                    // Set form action
+                    const form = document.getElementById('editModuleForm');
+                    if (form) {
+                        form.action = `/admin/modules/${moduleId}`;
+                    }
+                    
+                    modal.classList.add('show');
+                } else {
+                    // Fallback: use prompt for editing
+                    const newName = prompt('Enter new module name:', moduleData.module_name || '');
+                    const newDescription = prompt('Enter new module description:', moduleData.module_description || '');
+                    
+                    if (newName && newName !== moduleData.module_name) {
+                        updateModuleDetails(moduleId, newName, newDescription);
+                    }
+                }
+            } else {
+                alert('Error loading module data: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading module:', error);
+            alert('Error loading module data: ' + error.message);
+        });
+}
+
+function deleteModule(moduleId) {
+    if (confirm('Are you sure you want to delete this module? This action cannot be undone.')) {
+        fetch(`/admin/modules/${moduleId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to delete module'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the module');
+        });
+    }
+}
+
+// Helper function to update module details
+function updateModuleDetails(moduleId, newName, newDescription) {
+    fetch(`/admin/modules/${moduleId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            module_name: newName,
+            module_description: newDescription || ''
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Module updated successfully!', 'success');
+            // Reload the page to reflect changes
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('Error updating module: ' + (data.message || 'Unknown error'), 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating module:', error);
+        showAlert('Error updating module: ' + error.message, 'danger');
+    });
+}
+
+function editCourse(courseId) {
+    // Implementation for editing course
+    fetch(`/admin/courses/${courseId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success || data.course) {
+                // Extract course data - handle both response formats
+                const courseData = data.course || data;
+                
+                // Open edit modal with pre-filled data
+                const modal = document.getElementById('editCourseModalBg');
+                if (modal) {
+                    // Fill form with course data
+                    document.getElementById('editCourseName').value = courseData.subject_name || '';
+                    document.getElementById('editCourseDescription').value = courseData.subject_description || '';
+                    document.getElementById('editCourseModuleSelect').value = courseData.module_id || '';
+                    
+                    // Set form action
+                    const form = document.getElementById('editCourseForm');
+                    if (form) {
+                        form.action = `/admin/courses/${courseId}`;
+                    }
+                    
+                    modal.classList.add('show');
+                } else {
+                    // Fallback to simple editing if modal is not available
+                    const newName = prompt('Enter new course name:', courseData.subject_name || '');
+                    if (newName && newName.trim() !== '' && newName.trim() !== courseData.subject_name) {
+                        updateCourseDetails(courseId, { subject_name: newName.trim() });
+                    }
+                }
+            } else {
+                alert('Error loading course data: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading course:', error);
+            alert('Error loading course data: ' + error.message);
+        });
+}
+
+// Helper function to update course details
+function updateCourseDetails(courseId, courseData) {
+    fetch(`/admin/courses/${courseId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(courseData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error updating course: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error updating course:', error);
+        alert('Error updating course');
+    });
+}
+
+function deleteCourse(courseId) {
+    if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+        fetch(`/admin/courses/${courseId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to delete course'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the course');
+        });
+    }
+}
+
+function editContent(contentId) {
+    // Fetch content data
+    fetch(`/admin/content/${contentId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Open edit modal with pre-filled data
+                const modal = document.getElementById('editContentModalBg');
+                const form = document.getElementById('editContentForm');
+                
+                if (modal && form) {
+                    // Fill form with content data
+                    document.getElementById('edit_content_id').value = contentId;
+                    document.getElementById('edit_content_title').value = data.content.title || '';
+                    document.getElementById('edit_content_description').value = data.content.description || '';
+                    document.getElementById('edit_content_type').value = data.content.type || '';
+                    document.getElementById('edit_content_order').value = data.content.sort_order || '';
+                    
+                    // Handle link field visibility
+                    const linkSection = document.getElementById('edit_link_section');
+                    const fileSection = document.getElementById('edit_file_section');
+                    
+                    if (data.content.type === 'link') {
+                        linkSection.style.display = 'block';
+                        fileSection.style.display = 'none';
+                        document.getElementById('edit_content_link').value = data.content.link || '';
+                    } else {
+                        linkSection.style.display = 'none';
+                        fileSection.style.display = 'block';
+                    }
+                    
+                    // Set form action
+                    form.action = `/admin/content/${contentId}`;
+                    
+                    modal.classList.add('show');
+                }
+            } else {
+                alert('Error loading content data: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+            alert('Error loading content data');
+        });
+}
+
+function deleteContent(contentId) {
+    if (confirm('Are you sure you want to delete this content? This action cannot be undone.')) {
+        fetch(`/admin/content/${contentId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to delete content'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the content');
+        });
+    }
+}
+
+function viewSubmissions(assignmentId) {
+    // Implementation for viewing submissions
+    window.open(`/admin/assignments/${assignmentId}/submissions`, '_blank');
+}
+
+// Initialize sortable functionality for modules
+document.addEventListener('DOMContentLoaded', function() {
+    const modulesContainer = document.getElementById('modulesHierarchy');
+    if (modulesContainer && typeof Sortable !== 'undefined') {
+        // Module-level sorting
+        new Sortable(modulesContainer, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: function(evt) {
+                const moduleIds = Array.from(modulesContainer.children).map(el => 
+                    el.getAttribute('data-module-id')
+                );
+                updateModuleOrder(moduleIds);
+            }
+        });
+        
+        // Initialize content-level sorting for each course
+        initializeContentSorting();
+        
+        // Initialize cross-module content drag and drop
+        initializeCrossModuleDragDrop();
+    }
+    
+    // Auto-select program if specified in URL
+    const programSelect = document.getElementById('programSelect');
+    if (programSelect && programSelect.value) {
+        // Load filter options for the selected program
+        loadFiltersForProgram(programSelect.value);
+    }
+
+    // Setup modal event listeners
+    setupModalEventListeners();
+});
+
+// Initialize content sorting within courses
+function initializeContentSorting() {
+    // Find all content containers and make them sortable
+    const contentContainers = document.querySelectorAll('[id^="content-container-"]');
+    
+    contentContainers.forEach(container => {
+        if (typeof Sortable !== 'undefined') {
+            new Sortable(container, {
+                group: {
+                    name: 'content-items',
+                    pull: true,
+                    put: true
+                },
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                handle: '.drag-handle',
+                onEnd: function(evt) {
+                    // Get the content IDs in their new order
+                    const contentIds = Array.from(evt.to.children).map(el => {
+                        const contentId = el.getAttribute('data-content-id');
+                        return contentId ? parseInt(contentId) : null;
+                    }).filter(id => id !== null);
+                    
+                    // Check if it's a cross-container move
+                    if (evt.from !== evt.to) {
+                        handleCrossContainerContentMove(evt);
+                    } else {
+                        // Same container reorder
+                        updateContentOrder(contentIds);
+                    }
+                },
+                onMove: function(evt) {
+                    // Allow dropping on any content container
+                    return evt.related.classList.contains('content-item') || 
+                           evt.related.id.startsWith('content-container-');
+                }
+            });
+        }
+    });
+}
+
+// Initialize cross-module drag and drop functionality
+function initializeCrossModuleDragDrop() {
+    // Make modules accept dropped content items
+    const moduleContainers = document.querySelectorAll('.module-container');
+    
+    moduleContainers.forEach(moduleContainer => {
+        const moduleId = moduleContainer.getAttribute('data-module-id');
+        
+        // Add drop zone styling
+        moduleContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        
+        moduleContainer.addEventListener('dragleave', function(e) {
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        });
+        
+        moduleContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            // Handle the drop if it's a content item being moved to a different module
+            const draggedElement = document.querySelector('.sortable-chosen');
+            if (draggedElement && draggedElement.classList.contains('content-item')) {
+                handleContentDropOnModule(draggedElement, moduleId);
+            }
+        });
+    });
+}
+
+// Handle content being moved between different courses/modules
+function handleCrossContainerContentMove(evt) {
+    const movedElement = evt.item;
+    const contentId = movedElement.getAttribute('data-content-id');
+    const fromContainer = evt.from;
+    const toContainer = evt.to;
+    
+    // Extract course/module IDs from container IDs
+    const fromIds = extractModuleCourseIds(fromContainer.id);
+    const toIds = extractModuleCourseIds(toContainer.id);
+    
+    if (contentId && fromIds && toIds) {
+        // Check if moving within the same module (just different courses)
+        const sameModule = fromIds.moduleId === toIds.moduleId;
+        
+        if (sameModule) {
+            // Moving within same module - simple reorder/move, no confirmation needed
+            moveContentToNewLocation(contentId, toIds.courseId, toIds.moduleId)
+                .then(success => {
+                    if (success) {
+                        // Update the new order in the destination
+                        const newOrder = Array.from(toContainer.children).map((el, index) => {
+                            const id = el.getAttribute('data-content-id');
+                            return id ? parseInt(id) : null;
+                        }).filter(id => id !== null);
+                        
+                        updateContentOrder(newOrder);
+                        
+                        // Show success message
+                        showNotification('Content moved within module successfully!', 'success');
+                    } else {
+                        // Revert the move
+                        fromContainer.appendChild(movedElement);
+                        showNotification('Failed to move content. Please try again.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error moving content:', error);
+                    fromContainer.appendChild(movedElement);
+                    showNotification('Error moving content. Please try again.', 'error');
+                });
+        } else {
+            // Moving between different modules - require confirmation
+            const confirmMove = confirm(
+                `Are you sure you want to move this content item to a different module?\n\n` +
+                `From: ${fromIds.moduleName || 'Module'} → ${fromIds.courseName || 'Course'}\n` +
+                `To: ${toIds.moduleName || 'Module'} → ${toIds.courseName || 'Course'}`
+            );
+            
+            if (confirmMove) {
+                // Make API call to move content
+                moveContentToNewLocation(contentId, toIds.courseId, toIds.moduleId)
+                    .then(success => {
+                        if (success) {
+                            // Update the new order in the destination
+                            const newOrder = Array.from(toContainer.children).map((el, index) => {
+                                const id = el.getAttribute('data-content-id');
+                                return id ? parseInt(id) : null;
+                            }).filter(id => id !== null);
+                            
+                            updateContentOrder(newOrder);
+                            
+                            // Show success message
+                            showNotification('Content moved to different module successfully!', 'success');
+                        } else {
+                            // Revert the move
+                            fromContainer.appendChild(movedElement);
+                            showNotification('Failed to move content. Please try again.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error moving content:', error);
+                        fromContainer.appendChild(movedElement);
+                        showNotification('Error moving content. Please try again.', 'error');
+                    });
+            } else {
+                // User cancelled - revert the move
+                fromContainer.appendChild(movedElement);
+            }
+        }
+    }
+}
+
+// Extract module and course IDs from container ID
+function extractModuleCourseIds(containerId) {
+    // Container ID format: "content-container-{moduleId}-{courseId}"
+    const match = containerId.match(/content-container-(\d+)-(\d+)/);
+    if (match) {
+        const moduleId = parseInt(match[1]);
+        const courseId = parseInt(match[2]);
+        
+        // Try to get names from DOM
+        const moduleElement = document.querySelector(`[data-module-id="${moduleId}"]`);
+        const moduleName = moduleElement ? moduleElement.querySelector('.module-title-section h4').textContent : null;
+        
+        const courseElement = document.querySelector(`#course-content-${moduleId}-${courseId}`);
+        const courseName = courseElement ? courseElement.previousElementSibling.querySelector('h5').textContent : null;
+        
+        return {
+            moduleId,
+            courseId,
+            moduleName,
+            courseName
+        };
+    }
+    return null;
+}
+
+// Move content to a new location via API
+function moveContentToNewLocation(contentId, newCourseId, newModuleId) {
+    return fetch('/admin/content/move', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            content_id: contentId,
+            new_course_id: newCourseId,
+            new_module_id: newModuleId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        return data.success;
+    })
+    .catch(error => {
+        console.error('Error in moveContentToNewLocation:', error);
+        return false;
+    });
+}
+
+// Handle content being dropped directly on a module (not in a specific course)
+function handleContentDropOnModule(contentElement, targetModuleId) {
+    const contentId = contentElement.getAttribute('data-content-id');
+    
+    if (contentId) {
+        // Show modal to select which course in the module to add to
+        showCourseSelectionModal(contentId, targetModuleId);
+    }
+}
+
+// Show modal to select target course when dropping on module
+function showCourseSelectionModal(contentId, moduleId) {
+    // Create modal dynamically
+    const modal = document.createElement('div');
+    modal.className = 'modal-bg';
+    modal.innerHTML = `
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="bi bi-arrow-right-circle"></i> Select Target Course</h3>
+                <button type="button" class="modal-close" onclick="this.closest('.modal-bg').remove()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Select which course to move this content to:</p>
+                <div id="courseSelectionList">
+                    <div class="text-center">
+                        <i class="bi bi-arrow-clockwise fa-spin"></i> Loading courses...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.classList.add('show');
+    
+    // Load courses for the module
+    loadCoursesForSelection(moduleId, contentId);
+}
+
+// Load courses for selection modal
+function loadCoursesForSelection(moduleId, contentId) {
+    fetch(`/admin/modules/${moduleId}/courses`)
+        .then(response => response.json())
+        .then(data => {
+            const listContainer = document.getElementById('courseSelectionList');
+            
+            if (data.success && data.courses && data.courses.length > 0) {
+                let html = '';
+                data.courses.forEach(course => {
+                    html += `
+                        <div class="course-selection-item" onclick="selectTargetCourse(${contentId}, ${course.subject_id}, ${moduleId}, '${course.subject_name}')">
+                            <i class="bi bi-book"></i>
+                            <strong>${course.subject_name}</strong>
+                            <p>${course.subject_description || 'No description'}</p>
+                        </div>
+                    `;
+                });
+                listContainer.innerHTML = html;
+            } else {
+                listContainer.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <p>No courses available in this module.</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading courses:', error);
+            document.getElementById('courseSelectionList').innerHTML = `
+                <div class="text-center text-danger">
+                    <i class="bi bi-x-circle"></i>
+                    <p>Error loading courses. Please try again.</p>
+                </div>
+            `;
+        });
+}
+
+// Select target course and move content
+function selectTargetCourse(contentId, courseId, moduleId, courseName) {
+    const modal = document.querySelector('.modal-bg');
+    
+    if (confirm(`Move content to "${courseName}"?`)) {
+        moveContentToNewLocation(contentId, courseId, moduleId)
+            .then(success => {
+                modal.remove();
+                if (success) {
+                    location.reload(); // Refresh to show updated structure
+                } else {
+                    showNotification('Failed to move content. Please try again.', 'error');
+                }
+            });
+    }
+}
+
+// Show notification messages
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+    notification.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        animation: slideInRight 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'error' ? 'x-circle' : 'check-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 4000);
+}
+
+// Setup modal event listeners
+function setupModalEventListeners() {
+    // Add Module Modal
+    const showAddModal = document.getElementById('showAddModal');
+    const addModalBg = document.getElementById('addModalBg');
+    const closeAddModal = document.getElementById('closeAddModal');
+    const closeAddModalBtn = document.getElementById('closeAddModalBtn');
+
+    if (showAddModal) {
+        showAddModal.addEventListener('click', function() {
+            addModalBg.classList.add('show');
+        });
+    }
+
+    if (closeAddModal) {
+        closeAddModal.addEventListener('click', function() {
+            addModalBg.classList.remove('show');
+        });
+    }
+
+    if (closeAddModalBtn) {
+        closeAddModalBtn.addEventListener('click', function() {
+            addModalBg.classList.remove('show');
+        });
+    }
+
+    // Add Course Modal
+    const showAddCourseModal = document.getElementById('showAddCourseModal');
+    const addCourseModalBg = document.getElementById('addCourseModalBg');
+    const closeAddCourseModal = document.getElementById('closeAddCourseModal');
+    const closeAddCourseModalBtn = document.getElementById('closeAddCourseModalBtn');
+
+    if (showAddCourseModal) {
+        showAddCourseModal.addEventListener('click', function() {
+            addCourseModalBg.classList.add('show');
+        });
+    }
+
+    if (closeAddCourseModal) {
+        closeAddCourseModal.addEventListener('click', function() {
+            addCourseModalBg.classList.remove('show');
+        });
+    }
+
+    if (closeAddCourseModalBtn) {
+        closeAddCourseModalBtn.addEventListener('click', function() {
+            addCourseModalBg.classList.remove('show');
+        });
+    }
+
+    // Batch Modal
+    const showBatchModal = document.getElementById('showBatchModal');
+    const batchModalBg = document.getElementById('batchModalBg');
+    const closeBatchModal = document.getElementById('closeBatchModal');
+    const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
+
+    if (showBatchModal) {
+        showBatchModal.addEventListener('click', function() {
+            batchModalBg.classList.add('show');
+        });
+    }
+
+    if (closeBatchModal) {
+        closeBatchModal.addEventListener('click', function() {
+            batchModalBg.classList.remove('show');
+        });
+    }
+
+    if (closeBatchModalBtn) {
+        closeBatchModalBtn.addEventListener('click', function() {
+            batchModalBg.classList.remove('show');
+        });
+    }
+
+    // Edit Content Modal
+    const editContentModalBg = document.getElementById('editContentModalBg');
+    const closeEditContentModal = document.getElementById('closeEditContentModal');
+    const closeEditContentModalBtn = document.getElementById('closeEditContentModalBtn');
+
+    if (closeEditContentModal) {
+        closeEditContentModal.addEventListener('click', function() {
+            editContentModalBg.classList.remove('show');
+        });
+    }
+
+    if (closeEditContentModalBtn) {
+        closeEditContentModalBtn.addEventListener('click', function() {
+            editContentModalBg.classList.remove('show');
+        });
+    }
+
+    // Form submission handlers
+    setupFormHandlers();
+    setupProgramChangeHandlers();
+}
+
+// Program selector event listener
+document.getElementById('programSelect').addEventListener('change', function() {
+    const programId = this.value;
+    if (programId) {
+        window.location.href = `{{ route('admin.modules.index') }}?program_id=${programId}`;
+    } else {
+        document.getElementById('modulesDisplayArea').innerHTML = `
+            <div class="select-program-msg">
+                <div class="empty-state">
+                    <i class="bi bi-arrow-up-circle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                    <h4 style="color: #6c757d; margin-bottom: 1rem;">Select a Program</h4>
+                    <p style="color: #6c757d;">Select a program from the dropdown above to view and manage its modules</p>
+                </div>
+            </div>
+        `;
+    }
+});
+
+function loadFiltersForProgram(programId) {
+    // Load batches for filtering
+    fetch(`/admin/modules/batches/${programId}`)
+        .then(response => response.json())
+        .then(data => {
+            const batchFilter = document.getElementById('batchFilter');
+            batchFilter.innerHTML = '<option value="">All Batches</option>';
+            
+            if (data.success && data.batches) {
+                data.batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.batch_id;
+                    option.textContent = batch.batch_name;
+                    batchFilter.appendChild(option);
+                });
+            }
+        });
+    
+    // Show filter section
+    document.getElementById('filterSection').style.display = 'block';
+}
+
+// Update module order
+function updateModuleOrder(moduleIds) {
+    fetch('/admin/modules/update-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ module_ids: moduleIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Module order updated successfully');
+        } else {
+            console.error('Failed to update module order');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating module order:', error);
+    });
+}
+
+// Update content order
+function updateContentOrder(contentIds) {
+    fetch('/admin/content/update-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ content_ids: contentIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Content order updated successfully');
+        } else {
+            console.error('Failed to update content order');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating content order:', error);
+    });
+}
+
+// Setup form submission handlers
+function setupFormHandlers() {
+    // Add Module Form
+    const addModuleForm = document.getElementById('addModuleForm');
+    if (addModuleForm) {
+        addModuleForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitModuleForm(this);
+        });
+    }
+
+    // Add Course Form
+    const addCourseForm = document.getElementById('addCourseForm');
+    if (addCourseForm) {
+        addCourseForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitCourseForm(this);
+        });
+    }
+
+    // Course Content Form
+    const courseContentForm = document.getElementById('courseContentForm');
+    if (courseContentForm) {
+        courseContentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitCourseContentForm(this);
+        });
+    }
+
+    // Edit Content Form
+    const editContentForm = document.getElementById('editContentForm');
+    if (editContentForm) {
+        editContentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitEditContentForm(this);
+        });
+    }
+
+    // Content type change handler for edit modal
+    const editContentType = document.getElementById('edit_content_type');
+    if (editContentType) {
+        editContentType.addEventListener('change', function() {
+            const linkSection = document.getElementById('edit_link_section');
+            const fileSection = document.getElementById('edit_file_section');
+            
+            if (this.value === 'link') {
+                linkSection.style.display = 'block';
+                fileSection.style.display = 'none';
+            } else {
+                linkSection.style.display = 'none';
+                fileSection.style.display = 'block';
+            }
+        });
+    }
+}
+
+// Setup program change handlers
+function setupProgramChangeHandlers() {
+    // Modal program selectors
+    const modalProgramSelect = document.getElementById('modalProgramSelect');
+    if (modalProgramSelect) {
+        modalProgramSelect.addEventListener('change', function() {
+            loadBatchesForProgram(this.value, 'batch_id');
+        });
+    }
+
+    const courseProgramSelect = document.getElementById('courseProgramSelect');
+    if (courseProgramSelect) {
+        courseProgramSelect.addEventListener('change', function() {
+            loadModulesForProgram(this.value, 'courseModuleSelect');
+        });
+    }
+
+    const contentProgramSelect = document.getElementById('contentProgramSelect');
+    if (contentProgramSelect) {
+        contentProgramSelect.addEventListener('change', function() {
+            loadModulesForProgram(this.value, 'contentModuleSelect');
+        });
+    }
+
+    // Module change handlers
+    const courseModuleSelect = document.getElementById('courseModuleSelect');
+    if (courseModuleSelect) {
+        courseModuleSelect.addEventListener('change', function() {
+            // Course creation doesn't need course selection, only module
+        });
+    }
+
+    const contentModuleSelect = document.getElementById('contentModuleSelect');
+    if (contentModuleSelect) {
+        contentModuleSelect.addEventListener('change', function() {
+            loadCoursesForModule(this.value, 'contentCourseSelect');
+        });
+    }
+}
+
+// Load batches for a program
+function loadBatchesForProgram(programId, targetSelectId) {
+    const batchSelect = document.getElementById(targetSelectId);
+    if (!batchSelect || !programId) return;
+
+    batchSelect.innerHTML = '<option value="">Loading...</option>';
+    batchSelect.disabled = true;
+
+    fetch(`/admin/modules/batches/${programId}`)
+        .then(response => response.json())
+        .then(data => {
+            batchSelect.innerHTML = '<option value="">-- Select Batch --</option>';
+            
+            if (data.success && data.batches && data.batches.length > 0) {
+                data.batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.id;
+                    option.textContent = batch.batch_name;
+                    batchSelect.appendChild(option);
+                });
+                batchSelect.disabled = false;
+            } else {
+                batchSelect.innerHTML = '<option value="">No batches available</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading batches:', error);
+            batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+        });
+}
+
+// Load modules for a program
+function loadModulesForProgram(programId, targetSelectId) {
+    const moduleSelect = document.getElementById(targetSelectId);
+    if (!moduleSelect || !programId) return;
+
+    moduleSelect.innerHTML = '<option value="">Loading...</option>';
+    moduleSelect.disabled = true;
+
+    fetch(`/admin/modules/by-program?program_id=${programId}`)
+        .then(response => response.json())
+        .then(data => {
+            moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+            
+            if (data.success && data.modules && data.modules.length > 0) {
+                data.modules.forEach(module => {
+                    const option = document.createElement('option');
+                    option.value = module.modules_id;
+                    option.textContent = module.module_name;
+                    moduleSelect.appendChild(option);
+                });
+                moduleSelect.disabled = false;
+            } else {
+                moduleSelect.innerHTML = '<option value="">No modules available</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading modules:', error);
+            moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
+        });
+}
+
+// Load courses for a module
+function loadCoursesForModule(moduleId, targetSelectId) {
+    const courseSelect = document.getElementById(targetSelectId);
+    if (!courseSelect || !moduleId) return;
+
+    courseSelect.innerHTML = '<option value="">Loading...</option>';
+    courseSelect.disabled = true;
+
+    fetch(`/admin/modules/${moduleId}/courses`)
+        .then(response => response.json())
+        .then(data => {
+            courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+            
+            if (data.success && data.courses && data.courses.length > 0) {
+                data.courses.forEach(course => {
+                    const option = document.createElement('option');
+                    option.value = course.subject_id;
+                    option.textContent = course.subject_name;
+                    courseSelect.appendChild(option);
+                });
+                courseSelect.disabled = false;
+            } else {
+                courseSelect.innerHTML = '<option value="">No courses available</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading courses:', error);
+            courseSelect.innerHTML = '<option value="">Error loading courses</option>';
+        });
+}
+
+// Form submission functions
+function submitModuleForm(form) {
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and refresh page
+            document.getElementById('addModalBg').classList.remove('show');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to create module'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+function submitCourseForm(form) {
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
+    fetch('/admin/courses', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and refresh page
+            document.getElementById('addCourseModalBg').classList.remove('show');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to create course'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+function submitCourseContentForm(form) {
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and refresh page
+            document.getElementById('batchModalBg').classList.remove('show');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to add content'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+function submitEditContentForm(form) {
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Updating...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and refresh page
+            document.getElementById('editContentModalBg').classList.remove('show');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to update content'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+
+// Legacy function for compatibility
+function showModuleCourses(moduleId, moduleName) {
+    toggleModule(moduleId);
+}
+
+</script>
+@endpush
 
 <!-- Add Module Modal -->
 <div class="modal-bg" id="addModalBg">
@@ -586,21 +2380,21 @@
             <div class="modal-body">
                 @csrf
 
-                    <div class="form-group">
-        <label for="courseProgramSelect">Program <span class="text-danger">*</span></label>
-        <select id="courseProgramSelect" name="program_id" class="form-select" required>
-            <option value="">-- Select Program --</option>
-            @foreach($programs as $program)
-                <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-            @endforeach
-        </select>
-    </div>
+                <div class="form-group">
+                    <label for="courseProgramSelect">Program <span class="text-danger">*</span></label>
+                    <select id="courseProgramSelect" name="program_id" class="form-select" required>
+                        <option value="">-- Select Program --</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 
                 <div class="form-group">
-                <label for="courseModuleSelect">Module <span class="text-danger">*</span></label>
-                <select id="courseModuleSelect" name="module_id" class="form-select" required disabled>
-                    <option value="">-- Select Module --</option>
-                </select>
+                    <label for="courseModuleSelect">Module <span class="text-danger">*</span></label>
+                    <select id="courseModuleSelect" name="module_id" class="form-select" required disabled>
+                        <option value="">-- Select Module --</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -681,1470 +2475,67 @@
     </div>
 </div>
 
-@endsection
-
-@push('scripts')
-<script>
-// Global variables
-let currentArchiveModuleId = null;
-let currentOverrideModuleId = null;
-
-document.addEventListener('DOMContentLoaded', function(){
-  const programSelect = document.getElementById('courseProgramSelect');
-  const moduleSelect  = document.getElementById('courseModuleSelect');
-  if (!programSelect || !moduleSelect) return;
-
-  programSelect.addEventListener('change', function(){
-    const programId = this.value;
-    
-    console.log('Program selected for course:', programId);
-
-    // reset & disable module dropdown
-    moduleSelect.innerHTML = '<option value="">Loading modules…</option>';
-    moduleSelect.disabled = true;
-
-    if (!programId) {
-      moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
-      return;
-    }
-
-    fetch(`/api/programs/${programId}/modules`)
-      .then(res => {
-        console.log('Modules API response status:', res.status);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(json => {
-        console.log('Modules API response data:', json);
-        if (json.success) {
-          let options = '<option value="">-- Select Module --</option>';
-          json.modules.forEach(m => {
-            console.log('Module found:', m);
-            const moduleId = m.modules_id || m.id;
-            const moduleName = m.module_name || m.name;
-            
-            console.log('Processing module - ID:', moduleId, 'Name:', moduleName);
-            
-            // Skip modules with null or undefined IDs
-            if (moduleId && moduleId !== 'null' && moduleId !== null) {
-              options += `<option value="${moduleId}">${moduleName}</option>`;
-              console.log('Added module option:', moduleId, moduleName);
-            } else {
-              console.warn('Skipping module with null/undefined ID:', m);
-            }
-          });
-          moduleSelect.innerHTML = options;
-          moduleSelect.disabled = false;
-          console.log('Module dropdown populated with', json.modules.length, 'modules');
-          
-          // If no valid modules were found, show a message
-          if (options === '<option value="">-- Select Module --</option>') {
-            moduleSelect.innerHTML = '<option value="">No modules available</option>';
-          }
-        } else {
-          throw new Error(json.message || 'Failed to load modules');
-        }
-      })
-      .catch(err => {
-        console.error('Error loading modules:', err);
-        moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
-        moduleSelect.disabled = false;
-      });
-  });
-});
-
-
-
- document.addEventListener('DOMContentLoaded', () => {
-    initializeModals();
-    initializeProgramSelector();
-    initializeBatchUpload();
-    initializeContentTypeFields();
-    initializeFiltering();
-    initializeSorting();
-    initializeCourseModals();
-    initializeCourseContentModal();
-  });
-
-// Initialize modal functionality
-function initializeModals() {
-    // Show add modal
-    const showAddModalBtn = document.getElementById('showAddModal');
-    if (showAddModalBtn) {
-        showAddModalBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Add modal button clicked');
-            const modal = document.getElementById('addModalBg');
-            if (modal) {
-                modal.classList.add('show');
-                console.log('Modal opened');
-            } else {
-                console.error('Modal not found');
-            }
-        });
-    }
-
-    // Show add modal from empty state - for dynamically created buttons
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.matches('button[onclick*="addModalBg"]')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Empty state add modal button clicked');
-            const modal = document.getElementById('addModalBg');
-            if (modal) {
-                modal.classList.add('show');
-                console.log('Modal opened from empty state');
-            }
-        }
-    });
-
-    // Close add modal
-    const closeAddModal = document.getElementById('closeAddModal');
-    if (closeAddModal) {
-        closeAddModal.addEventListener('click', function() {
-            document.getElementById('addModalBg').classList.remove('show');
-        });
-    }
-
-    const closeAddModalBtn = document.getElementById('closeAddModalBtn');
-    if (closeAddModalBtn) {
-        closeAddModalBtn.addEventListener('click', function() {
-            document.getElementById('addModalBg').classList.remove('show');
-        });
-    }
-
-    // Show batch modal
-    const showBatchModal = document.getElementById('showBatchModal');
-    if (showBatchModal) {
-        showBatchModal.addEventListener('click', function() {
-            document.getElementById('batchModalBg').classList.add('show');
-        });
-    }
-
-    // Close batch modal
-    const closeBatchModal = document.getElementById('closeBatchModal');
-    if (closeBatchModal) {
-        closeBatchModal.addEventListener('click', function() {
-            document.getElementById('batchModalBg').classList.remove('show');
-        });
-    }
-
-    const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
-    if (closeBatchModalBtn) {
-        closeBatchModalBtn.addEventListener('click', function() {
-            document.getElementById('batchModalBg').classList.remove('show');
-        });
-    }
-
-    // Close edit modal
-    const closeEditModal = document.getElementById('closeEditModal');
-    if (closeEditModal) {
-        closeEditModal.addEventListener('click', function() {
-            document.getElementById('editModalBg').classList.remove('show');
-        });
-    }
-
-    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
-    if (closeEditModalBtn) {
-        closeEditModalBtn.addEventListener('click', function() {
-            document.getElementById('editModalBg').classList.remove('show');
-        });
-    }
-
-    // Close modals when clicking outside
-    document.querySelectorAll('.modal-bg').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.remove('show');
-            }
-        });
-    });
-}
-
-// Initialize program selector
-function initializeProgramSelector() {
-    const programSelect = document.getElementById('programSelect');
-    if (programSelect) {
-        // Add logging to debug
-        console.log('Program selector initialized');
-        
-        programSelect.addEventListener('change', function() {
-            const programId = this.value;
-            console.log('Program selected:', programId);
-            
-            if (programId) {
-                // Show loading state
-                const modulesDisplayArea = document.getElementById('modulesDisplayArea');
-                if (modulesDisplayArea) {
-                    modulesDisplayArea.innerHTML = `
-                        <div class="loading-state">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p>Loading modules...</p>
-                        </div>
-                    `;
-                }
+<!-- Edit Content Modal -->
+<div class="modal-bg" id="editContentModalBg">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="bi bi-pencil"></i> Edit Content Item</h3>
+            <button type="button" class="modal-close" id="closeEditContentModal">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <form id="editContentForm" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+            <div class="modal-body">
+                <input type="hidden" id="edit_content_id" name="content_id">
                 
-                // Redirect to load modules
-                window.location.href = `{{ route('admin.modules.index') }}?program_id=${programId}`;
-            } else {
-                window.location.href = `{{ route('admin.modules.index') }}`;
-            }
-        });
-    }
-
-    // Initialize batch loading for modal program selects
-    const modalProgramSelect = document.getElementById('modalProgramSelect');
-    const batchModalProgramSelect = document.getElementById('batchModalProgramSelect');
-    
-    if (modalProgramSelect) {
-        modalProgramSelect.addEventListener('change', function() {
-            console.log('Modal program selected:', this.value);
-            loadBatchesForProgram(this.value, 'batch_id');
-        });
-    }
-    
-    if (batchModalProgramSelect) {
-        batchModalProgramSelect.addEventListener('change', function() {
-            console.log('Batch modal program selected:', this.value);
-            loadBatchesForProgram(this.value, 'batch_batch_id');
-        });
-    }
-}
-
-// Function to load batches based on program selection
-function loadBatchesForProgram(programId, batchSelectId) {
-    console.log('Loading batches for program:', programId, 'Target select:', batchSelectId);
-    
-    const batchSelect = document.getElementById(batchSelectId);
-    if (!batchSelect) {
-        console.error('Batch select element not found:', batchSelectId);
-        return;
-    }
-
-    // Clear existing options
-    batchSelect.innerHTML = '<option value="">-- Select Batch --</option>';
-
-    if (!programId) {
-        batchSelect.disabled = true;
-        return;
-    }
-
-    // Show loading state
-    batchSelect.disabled = true;
-    batchSelect.innerHTML = '<option value="">Loading batches...</option>';
-
-    fetch(`/admin/programs/${programId}/batches`)
-        .then(response => {
-            console.log('Batch response status:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Batches loaded:', data);
-            if (data.success) {
-                batchSelect.innerHTML = '<option value="">-- Select Batch --</option>';
-                data.batches.forEach(batch => {
-                    const option = document.createElement('option');
-                    option.value = batch.id;
-                    option.textContent = batch.batch_name;
-                    batchSelect.appendChild(option);
-                });
-                batchSelect.disabled = false;
-            } else {
-                batchSelect.innerHTML = '<option value="">Error loading batches</option>';
-                console.error('Error loading batches:', data.message);
-                showNotification('Error loading batches: ' + data.message, 'error');
-            }
-        })
-        .catch(error => {
-            batchSelect.innerHTML = '<option value="">Error loading batches</option>';
-            console.error('Error loading batches:', error);
-            showNotification('Error loading batches', 'error');
-        });
-}
-
-// Initialize batch upload functionality
-function initializeBatchUpload() {
-    const batchPdfFiles = document.getElementById('batchPdfFiles');
-    const batchDropzone = document.getElementById('batchDropzone');
-    const selectedFiles = document.getElementById('selectedFiles');
-    const fileList = document.getElementById('fileList');
-    const uploadPdfBtn = document.getElementById('uploadPdfBtn');
-
-    if (batchPdfFiles && batchDropzone) {
-        // Handle file selection
-        batchPdfFiles.addEventListener('change', function(e) {
-            handleFileSelection(e.target.files);
-        });
-
-        // Handle drag and drop
-        batchDropzone.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.classList.add('dragover');
-        });
-
-        batchDropzone.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-        });
-
-        batchDropzone.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            handleFileSelection(files);
-            batchPdfFiles.files = files;
-        });
-    }
-
-    function handleFileSelection(files) {
-        if (!files || files.length === 0) {
-            selectedFiles.style.display = 'none';
-            uploadPdfBtn.disabled = true;
-            return;
-        }
-
-        // Filter only PDF files
-        const pdfFiles = Array.from(files).filter(file => 
-            file.name.toLowerCase().endsWith('.pdf')
-        );
-
-        if (pdfFiles.length === 0) {
-            showNotification('Please select PDF files only', 'error');
-            selectedFiles.style.display = 'none';
-            uploadPdfBtn.disabled = true;
-            return;
-        }
-
-        // Display selected files
-        fileList.innerHTML = '';
-        pdfFiles.forEach(file => {
-            const li = document.createElement('li');
-            li.textContent = file.name;
-            fileList.appendChild(li);
-        });
-
-        selectedFiles.style.display = 'block';
-        uploadPdfBtn.disabled = false;
-    }
-}
-
-// Initialize content type specific fields
-function initializeContentTypeFields() {
-    const contentTypeSelect = document.getElementById('content_type');
-    if (contentTypeSelect) {
-        contentTypeSelect.addEventListener('change', function() {
-            updateContentFields(this.value);
-        });
-    }
-}
-
-function updateContentFields(contentType) {
-    const fieldsContainer = document.getElementById('contentSpecificFields');
-    fieldsContainer.innerHTML = '';
-
-    switch(contentType) {
-        case 'assignment':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Assignment Details</h5>
-                    <div class="form-group">
-                        <label for="assignment_title">Assignment Title</label>
-                        <input type="text" id="assignment_title" name="assignment_title" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="assignment_instructions">Instructions</label>
-                        <textarea id="assignment_instructions" name="assignment_instructions" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="due_date">Due Date</label>
-                        <input type="datetime-local" id="due_date" name="due_date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_points">Maximum Points</label>
-                        <input type="number" id="max_points" name="max_points" class="form-control" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="allow_late_submission" name="allow_late_submission" value="1">
-                            Allow late submissions
-                        </label>
-                    </div>
+                <div class="form-group">
+                    <label for="edit_content_title">Title <span class="text-danger">*</span></label>
+                    <input type="text" id="edit_content_title" name="title" class="form-control" required>
                 </div>
-            `;
-            break;
-        case 'quiz':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Quiz Details</h5>
-                    <div class="form-group">
-                        <label for="quiz_title">Quiz Title</label>
-                        <input type="text" id="quiz_title" name="quiz_title" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="quiz_description">Quiz Description</label>
-                        <textarea id="quiz_description" name="quiz_description" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="time_limit">Time Limit (minutes)</label>
-                                <input type="number" id="time_limit" name="time_limit" class="form-control" min="1" value="30">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="question_count">Number of Questions</label>
-                                <input type="number" id="question_count" name="question_count" class="form-control" min="1" value="10">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="quiz_instructions">Quiz Instructions</label>
-                        <textarea id="quiz_instructions" name="quiz_instructions" class="form-control" rows="3"></textarea>
-                    </div>
+                
+                <div class="form-group">
+                    <label for="edit_content_description">Description</label>
+                    <textarea id="edit_content_description" name="description" class="form-control" rows="3"></textarea>
                 </div>
-            `;
-            break;
-        case 'test':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Test Details</h5>
-                    <div class="form-group">
-                        <label for="test_title">Test Title</label>
-                        <input type="text" id="test_title" name="test_title" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="test_description">Test Description</label>
-                        <textarea id="test_description" name="test_description" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="test_date">Test Date</label>
-                        <input type="datetime-local" id="test_date" name="test_date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="duration">Duration (minutes)</label>
-                        <input type="number" id="duration" name="duration" class="form-control" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="total_marks">Total Marks</label>
-                        <input type="number" id="total_marks" name="total_marks" class="form-control" min="0">
-                    </div>
+                
+                <div class="form-group">
+                    <label for="edit_content_type">Content Type <span class="text-danger">*</span></label>
+                    <select id="edit_content_type" name="type" class="form-select" required>
+                        <option value="">Select type...</option>
+                        <option value="lesson">Lesson</option>
+                        <option value="assignment">Assignment</option>
+                        <option value="quiz">Quiz</option>
+                        <option value="test">Test</option>
+                        <option value="pdf">PDF Document</option>
+                        <option value="link">External Link</option>
+                    </select>
                 </div>
-            `;
-            break;
-        case 'link':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>External Link Details</h5>
-                    <div class="form-group">
-                        <label for="link_title">Link Title</label>
-                        <input type="text" id="link_title" name="link_title" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="link_description">Link Description</label>
-                        <textarea id="link_description" name="link_description" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="external_url">External URL</label>
-                        <input type="url" id="external_url" name="external_url" class="form-control" placeholder="https://example.com">
-                    </div>
+                
+                <div class="form-group" id="edit_file_section">
+                    <label for="edit_content_file">Replace File (optional)</label>
+                    <input type="file" id="edit_content_file" name="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
+                    <small class="text-muted">Current file will be kept if no new file is selected.</small>
                 </div>
-            `;
-            break;
-    }
-}
-
-// Initialize filtering
-function initializeFiltering() {
-    const programSelect = document.getElementById('programSelect');
-    const filterSection = document.getElementById('filterSection');
-    
-    if (programSelect && filterSection) {
-        // Show filter section when program is selected
-        if (programSelect.value) {
-            filterSection.style.display = 'block';
-            loadBatchesForFilter(programSelect.value);
-            loadCoursesForFilter(programSelect.value);
-        }
-        
-        programSelect.addEventListener('change', function() {
-            if (this.value) {
-                filterSection.style.display = 'block';
-                loadBatchesForFilter(this.value);
-                loadCoursesForFilter(this.value);
-            } else {
-                filterSection.style.display = 'none';
-            }
-        });
-    }
-
-    // Filter functionality
-    const batchFilter = document.getElementById('batchFilter');
-    const courseFilter = document.getElementById('courseFilter');
-    const learningModeFilter = document.getElementById('learningModeFilter');
-    const contentTypeFilter = document.getElementById('contentTypeFilter');
-
-    if (batchFilter) {
-        batchFilter.addEventListener('change', applyFilters);
-    }
-    if (courseFilter) {
-        courseFilter.addEventListener('change', applyFilters);
-    }
-    if (learningModeFilter) {
-        learningModeFilter.addEventListener('change', applyFilters);
-    }
-    if (contentTypeFilter) {
-        contentTypeFilter.addEventListener('change', applyFilters);
-    }
-}
-
-function loadBatchesForFilter(programId) {
-    const batchFilter = document.getElementById('batchFilter');
-    if (!batchFilter) return;
-
-    fetch(`/admin/programs/${programId}/batches`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                batchFilter.innerHTML = '<option value="">All Batches</option>';
-                data.batches.forEach(batch => {
-                    const option = document.createElement('option');
-                    option.value = batch.id;
-                    option.textContent = batch.batch_name;
-                    batchFilter.appendChild(option);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading batches for filter:', error);
-        });
-}
-
-function loadCoursesForFilter(programId) {
-    const courseFilter = document.getElementById('courseFilter');
-    if (!courseFilter) return;
-
-    fetch(`/admin/programs/${programId}/courses`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                courseFilter.innerHTML = '<option value="">All Courses</option>';
-                data.courses.forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course.subject_id;
-                    option.textContent = course.subject_name;
-                    courseFilter.appendChild(option);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading courses for filter:', error);
-        });
-}
-
-function applyFilters() {
-    const batchFilter = document.getElementById('batchFilter').value;
-    const courseFilter = document.getElementById('courseFilter').value;
-    const learningModeFilter = document.getElementById('learningModeFilter').value;
-    const contentTypeFilter = document.getElementById('contentTypeFilter').value;
-
-    const moduleCards = document.querySelectorAll('.module-card');
-    let visibleCount = 0;
-    
-    moduleCards.forEach(card => {
-        const cardBatchId = card.getAttribute('data-batch-id');
-        const cardCourseId = card.getAttribute('data-course-id');
-        const cardLearningMode = card.getAttribute('data-learning-mode');
-        const cardContentType = card.getAttribute('data-content-type');
-
-        let showCard = true;
-
-        // Apply batch filter
-        if (batchFilter && cardBatchId !== batchFilter) {
-            showCard = false;
-        }
-
-        // Apply course filter
-        if (courseFilter && cardCourseId !== courseFilter) {
-            showCard = false;
-        }
-
-        // Apply learning mode filter
-        if (learningModeFilter && cardLearningMode !== learningModeFilter) {
-            showCard = false;
-        }
-
-        // Apply content type filter
-        if (contentTypeFilter && cardContentType !== contentTypeFilter) {
-            showCard = false;
-        }
-
-        // Show or hide card
-        if (showCard) {
-            card.style.display = 'block';
-            visibleCount++;
-        } else {
-            card.style.display = 'none';
-        }
-    });
-
-    // Show message if no modules match filters
-    const moduleGrid = document.getElementById('sortableModules');
-    if (moduleGrid) {
-        const noResultsMsg = document.getElementById('noFilterResults');
-        if (visibleCount === 0) {
-            if (!noResultsMsg) {
-                const msgDiv = document.createElement('div');
-                msgDiv.id = 'noFilterResults';
-                msgDiv.innerHTML = `
-                    <div class="empty-state">
-                        <i class="bi bi-search" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                        <h4 style="color: #6c757d; margin-bottom: 1rem;">No Modules Found</h4>
-                        <p style="color: #6c757d;">No modules match your current filter criteria.</p>
-                    </div>
-                `;
-                moduleGrid.appendChild(msgDiv);
-            }
-        } else {
-            if (noResultsMsg) {
-                noResultsMsg.remove();
-            }
-        }
-    }
-}
-
-// Initialize sorting
-function initializeSorting() {
-    const sortableModules = document.getElementById('sortableModules');
-    if (sortableModules) {
-        // Make modules sortable
-        sortableModules.addEventListener('dragstart', function(e) {
-            if (e.target.classList.contains('module-card')) {
-                e.target.classList.add('dragging');
-                e.dataTransfer.setData('text/plain', e.target.dataset.moduleId);
-            }
-        });
-
-        sortableModules.addEventListener('dragend', function(e) {
-            if (e.target.classList.contains('module-card')) {
-                e.target.classList.remove('dragging');
-            }
-        });
-
-        sortableModules.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            const draggingElement = document.querySelector('.dragging');
-            const afterElement = getDragAfterElement(sortableModules, e.clientY);
-            
-            if (afterElement == null) {
-                sortableModules.appendChild(draggingElement);
-            } else {
-                sortableModules.insertBefore(draggingElement, afterElement);
-            }
-        });
-
-        sortableModules.addEventListener('drop', function(e) {
-            e.preventDefault();
-            updateModuleOrder();
-        });
-
-        // Make module cards draggable
-        document.querySelectorAll('.module-card').forEach(card => {
-            card.setAttribute('draggable', true);
-        });
-    }
-}
-
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.module-card:not(.dragging)')];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-function updateModuleOrder() {
-    const moduleCards = document.querySelectorAll('.module-card');
-    const moduleIds = [];
-    
-    moduleCards.forEach((card, index) => {
-        moduleIds.push(card.getAttribute('data-module-id'));
-    });
-
-    // Send updated order to server
-    fetch('/admin/modules/update-order', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ module_ids: moduleIds })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Module order updated successfully!', 'success');
-        } else {
-            showNotification('Error updating module order: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating module order:', error);
-        showNotification('Error updating module order', 'error');
-    });
-}
-
-// Archive confirmation functions
-function showArchiveConfirmation(moduleId, moduleName) {
-    currentArchiveModuleId = moduleId;
-    document.getElementById('archiveModuleName').textContent = moduleName;
-    document.getElementById('archiveConfirmationModal').classList.add('show');
-}
-
-function closeArchiveModal() {
-    document.getElementById('archiveConfirmationModal').classList.remove('show');
-    currentArchiveModuleId = null;
-}
-
-function confirmArchive() {
-    if (!currentArchiveModuleId) return;
-
-    fetch(`/admin/modules/${currentArchiveModuleId}/archive`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Module archived successfully!', 'success');
-            // Remove the module card from the display
-            const moduleCard = document.querySelector(`[data-module-id="${currentArchiveModuleId}"]`);
-            if (moduleCard) {
-                moduleCard.remove();
-            }
-            closeArchiveModal();
-        } else {
-            showNotification('Error archiving module: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error archiving module', 'error');
-    });
-}
-
-// Override modal functions
-function showOverrideModal(moduleId, moduleName) {
-  currentOverrideModuleId = moduleId;
-  document.getElementById('overrideModuleName').textContent = moduleName;
-
-  fetch(`/admin/modules/${moduleId}/override`, {
-    method: 'GET',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-      'Accept': 'application/json'
-    }
-  })
-  .then(res => {
-    if (!res.ok) throw new Error(res.statusText);
-    return res.json();
-  })
-  .then(data => {
-    // reset all checkboxes
-    document.querySelectorAll('#overrideModal input[type="checkbox"]')
-            .forEach(cb => cb.checked = false);
-
-    // check those that are enabled
-    (data.overrides || []).forEach(name => {
-      const cb = document.getElementById(`override_${name}_modal`);
-      if (cb) cb.checked = true;
-    });
-
-    document.getElementById('overrideModal').classList.add('show');
-  })
-  .catch(err => {
-    console.error('Error loading override settings:', err);
-    showNotification('Error loading override settings', 'error');
-  });
-}
-
-function closeOverrideModal() {
-    document.getElementById('overrideModal').classList.remove('show');
-    currentOverrideModuleId = null;
-}
-
-function saveOverrideSettings() {
-  if (!currentOverrideModuleId) return;
-
-  const overrides = Array.from(
-    document.querySelectorAll('#overrideModal input[type="checkbox"]:checked')
-  ).map(cb => cb.value);
-
-  fetch(`/admin/modules/${currentOverrideModuleId}/override`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: JSON.stringify({ admin_override: overrides })
-  })
-  .then(res => {
-    if (!res.ok) throw new Error(res.statusText);
-    return res.json();
-  })
-  .then(data => {
-    showNotification('Override settings saved successfully!', 'success');
-    closeOverrideModal();
-
-    // update the little unlock icon on the card
-    const card = document.querySelector(`[data-module-id="${currentOverrideModuleId}"]`);
-    if (card) {
-      const status = card.querySelector('.module-status');
-      // remove any existing unlock icons
-      status.querySelectorAll('.bi-unlock-fill').forEach(el => el.parentNode.remove());
-      // if any overrides left, add it back
-      if (overrides.length) {
-        status.innerHTML += '<span class="text-success"><i class="bi bi-unlock-fill"></i></span>';
-      }
-    }
-  })
-  .catch(err => {
-    console.error('Error saving override settings:', err);
-    showNotification('Error saving override settings', 'error');
-  });
-}
-
-// Edit module function
-function editModule(moduleId, moduleName, moduleDescription, programId, attachment) {
-    console.log('Editing module:', moduleId, moduleName, moduleDescription, programId);
-    
-    const editModalBg = document.getElementById('editModalBg');
-    const editForm = document.getElementById('editModuleForm');
-    const editProgramSelect = document.getElementById('editModalProgramSelect');
-    const editModuleName = document.getElementById('editModuleName');
-    const editModuleDescription = document.getElementById('editModuleDescription');
-    
-    // Set form action
-    editForm.action = `/admin/modules/${moduleId}`;
-    
-    // Set form values
-    editProgramSelect.value = programId;
-    editModuleName.value = moduleName;
-    editModuleDescription.value = moduleDescription;
-    
-    // Show modal
-    editModalBg.classList.add('show');
-}
-
-// Initialize course modal functionality
-function initializeCourseModals() {
-    // Show add course modal
-    const showAddCourseModalBtn = document.getElementById('showAddCourseModal');
-    if (showAddCourseModalBtn) {
-        showAddCourseModalBtn.addEventListener('click', function() {
-            console.log('Add course button clicked');
-            const modal = document.getElementById('addCourseModalBg');
-            if (modal) {
-                modal.classList.add('show');
-                console.log('Course modal opened');
-            } else {
-                console.error('Course modal not found');
-            }
-        });
-    } else {
-        console.error('Add course button not found');
-    }
-
-    // Close add course modal
-    const closeAddCourseModal = document.getElementById('closeAddCourseModal');
-    if (closeAddCourseModal) {
-        closeAddCourseModal.addEventListener('click', function() {
-            document.getElementById('addCourseModalBg').classList.remove('show');
-        });
-    }
-
-    const closeAddCourseModalBtn = document.getElementById('closeAddCourseModalBtn');
-    if (closeAddCourseModalBtn) {
-        closeAddCourseModalBtn.addEventListener('click', function() {
-            document.getElementById('addCourseModalBg').classList.remove('show');
-        });
-    }
-
-    // Close module courses modal
-    const closeModuleCoursesModal = document.getElementById('closeModuleCoursesModal');
-    if (closeModuleCoursesModal) {
-        closeModuleCoursesModal.addEventListener('click', function() {
-            document.getElementById('moduleCoursesModalBg').classList.remove('show');
-        });
-    }
-
-    const closeModuleCoursesModalBtn = document.getElementById('closeModuleCoursesModalBtn');
-    if (closeModuleCoursesModalBtn) {
-        closeModuleCoursesModalBtn.addEventListener('click', function() {
-            document.getElementById('moduleCoursesModalBg').classList.remove('show');
-        });
-    }
-
-    // Close course content modal
-    const closeCourseContentModal = document.getElementById('closeCourseContentModal');
-    if (closeCourseContentModal) {
-        closeCourseContentModal.addEventListener('click', function() {
-            document.getElementById('courseContentModalBg').classList.remove('show');
-        });
-    }
-
-    const closeCourseContentModalBtn = document.getElementById('closeCourseContentModalBtn');
-    if (closeCourseContentModalBtn) {
-        closeCourseContentModalBtn.addEventListener('click', function() {
-            document.getElementById('courseContentModalBg').classList.remove('show');
-        });
-    }
-
-    // Handle add course form submission
-    const addCourseForm = document.getElementById('addCourseForm');
-    if (addCourseForm) {
-        addCourseForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitCourseForm();
-        });
-    }
-}
-
-// Initialize course content modal functionality
-function initializeCourseContentModal() {
-    const programSelect = document.getElementById('contentProgramSelect');
-    const moduleSelect = document.getElementById('contentModuleSelect');
-    const courseSelect = document.getElementById('contentCourseSelect');
-    const contentTypeSelect = document.getElementById('contentTypeSelect');
-
-    if (programSelect) {
-        programSelect.addEventListener('change', function() {
-            const programId = this.value;
-            loadModulesForContent(programId);
-            resetCourseSelect();
-        });
-    }
-
-    if (moduleSelect) {
-        moduleSelect.addEventListener('change', function() {
-            const moduleId = this.value;
-            loadCoursesForContent(moduleId);
-        });
-    }
-
-    if (contentTypeSelect) {
-        contentTypeSelect.addEventListener('change', function() {
-            updateDynamicContentFields(this.value);
-        });
-    }
-
-    // Handle form submission
-    const courseContentForm = document.getElementById('courseContentForm');
-    if (courseContentForm) {
-        courseContentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitCourseContentForm();
-        });
-    }
-}
-
-function loadModulesForContent(programId) {
-    const moduleSelect = document.getElementById('contentModuleSelect');
-    
-    moduleSelect.innerHTML = '<option value="">Loading modules...</option>';
-    moduleSelect.disabled = true;
-    resetCourseSelect();
-
-    if (!programId) {
-        moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
-        return;
-    }
-
-    fetch(`/api/programs/${programId}/modules`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
-                data.modules.forEach(module => {
-                    const option = document.createElement('option');
-                    option.value = module.modules_id || module.id;
-                    option.textContent = module.module_name || module.name;
-                    moduleSelect.appendChild(option);
-                });
-                moduleSelect.disabled = false;
-            } else {
-                moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading modules:', error);
-            moduleSelect.innerHTML = '<option value="">Error loading modules</option>';
-        });
-}
-
-function loadCoursesForContent(moduleId) {
-    const courseSelect = document.getElementById('contentCourseSelect');
-    
-    courseSelect.innerHTML = '<option value="">Loading courses...</option>';
-    courseSelect.disabled = true;
-
-    if (!moduleId) {
-        courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
-        return;
-    }
-
-    fetch(`/admin/modules/${moduleId}/courses`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
-                data.courses.forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course.subject_id;
-                    option.textContent = course.subject_name;
-                    courseSelect.appendChild(option);
-                });
-                courseSelect.disabled = false;
-            } else {
-                courseSelect.innerHTML = '<option value="">No courses available</option>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading courses:', error);
-            courseSelect.innerHTML = '<option value="">Error loading courses</option>';
-        });
-}
-
-function resetCourseSelect() {
-    const courseSelect = document.getElementById('contentCourseSelect');
-    courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
-    courseSelect.disabled = true;
-}
-
-function updateDynamicContentFields(contentType) {
-    const fieldsContainer = document.getElementById('dynamicContentFields');
-    fieldsContainer.innerHTML = '';
-
-    switch(contentType) {
-        case 'lesson':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Lesson Details</h5>
-                    <div class="form-group">
-                        <label for="lesson_video_url">Video URL (YouTube/Vimeo)</label>
-                        <input type="url" id="lesson_video_url" name="lesson_video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
-                    </div>
+                
+                <div class="form-group" id="edit_link_section" style="display: none;">
+                    <label for="edit_content_link">External Link URL</label>
+                    <input type="url" id="edit_content_link" name="link" class="form-control" placeholder="https://...">
                 </div>
-            `;
-            break;
-        case 'assignment':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Assignment Details</h5>
-                    <div class="form-group">
-                        <label for="assignment_instructions">Instructions</label>
-                        <textarea id="assignment_instructions" name="assignment_instructions" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="due_date">Due Date</label>
-                        <input type="datetime-local" id="due_date" name="due_date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="max_points">Maximum Points</label>
-                        <input type="number" id="max_points" name="max_points" class="form-control" min="0">
-                    </div>
-                </div>
-            `;
-            break;
-        case 'quiz':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Quiz Details</h5>
-                    <div class="form-group">
-                        <label for="quiz_instructions">Quiz Instructions</label>
-                        <textarea id="quiz_instructions" name="quiz_instructions" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="time_limit">Time Limit (minutes)</label>
-                                <input type="number" id="time_limit" name="time_limit" class="form-control" min="1">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="max_points">Maximum Points</label>
-                                <input type="number" id="max_points" name="max_points" class="form-control" min="0">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            break;
-        case 'test':
-            fieldsContainer.innerHTML = `
-                <div class="content-specific-fields">
-                    <h5>Test Details</h5>
-                    <div class="form-group">
-                        <label for="test_instructions">Test Instructions</label>
-                        <textarea id="test_instructions" name="test_instructions" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="test_date">Test Date</label>
-                        <input type="datetime-local" id="test_date" name="test_date" class="form-control">
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="test_duration">Duration (minutes)</label>
-                                <input type="number" id="test_duration" name="test_duration" class="form-control" min="1">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="total_marks">Total Marks</label>
-                                <input type="number" id="total_marks" name="total_marks" class="form-control" min="0">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            break;
-    }
-}
-
-function submitCourseContentForm() {
-    const form = document.getElementById('courseContentForm');
-    const formData = new FormData(form);
-    
-    // Validate required fields
-    const requiredFields = ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'];
-    const missingFields = [];
-    
-    for (const field of requiredFields) {
-        const value = formData.get(field);
-        if (!value || value === 'null' || value === '') {
-            missingFields.push(field);
-        }
-    }
-    
-    if (missingFields.length > 0) {
-        showNotification(`Please fill in all required fields: ${missingFields.join(', ')}`, 'error');
-        return;
-    }
-    
-    fetch('/admin/modules/course-content-store', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => {
-        return response.json().then(data => {
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP error! status: ${response.status}`);
-            }
-            return data;
-        });
-    })
-    .then(data => {
-        if (data.success) {
-            showNotification('Course content created successfully!', 'success');
-            document.getElementById('batchModalBg').classList.remove('show');
-            form.reset();
-            
-            // Reset dropdowns to initial state
-            document.getElementById('contentModuleSelect').innerHTML = '<option value="">-- Select Module --</option>';
-            document.getElementById('contentModuleSelect').disabled = true;
-            document.getElementById('contentCourseSelect').innerHTML = '<option value="">-- Select Course --</option>';
-            document.getElementById('contentCourseSelect').disabled = true;
-            document.getElementById('dynamicContentFields').innerHTML = '';
-        } else {
-            console.error('Course content creation failed:', data);
-            let errorMessage = data.message || 'Unknown error';
-            
-            if (data.errors) {
-                const errorList = Object.keys(data.errors).map(key => `${key}: ${data.errors[key].join(', ')}`).join('\n');
-                errorMessage += '\n\nValidation errors:\n' + errorList;
-            }
-            
-            showNotification('Error creating course content: ' + errorMessage, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error creating course content:', error);
-        showNotification('Error creating course content: ' + error.message, 'error');
-    });
-}
-
-// Notification function
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // Remove notification after 5 seconds
-    setTimeout(() => {
-        notification.remove();
-    }, 5000);
-}
-
-// Course functionality functions
-function submitCourseForm() {
-    const form = document.getElementById('addCourseForm');
-    const formData = new FormData(form);
-    
-    // Debug: Log form data
-    console.log('Form data being sent:');
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-    }
-    
-    // Additional validation for module selection
-    const moduleSelect = document.getElementById('courseModuleSelect');
-    const moduleId = moduleSelect.value;
-    
-    console.log('Module select element:', moduleSelect);
-    console.log('Module select value:', moduleId);
-    console.log('Module select disabled:', moduleSelect.disabled);
-    
-    if (!moduleId || moduleId === 'null' || moduleId === '') {
-        showNotification('Please select a module for this course.', 'error');
-        return;
-    }
-    
-    // Validate required fields
-    const requiredFields = ['program_id', 'module_id', 'subject_name', 'subject_price'];
-    const missingFields = [];
-    
-    for (const field of requiredFields) {
-        const value = formData.get(field);
-        if (!value || value === 'null' || value === '') {
-            missingFields.push(field);
-        }
-    }
-    
-    if (missingFields.length > 0) {
-        showNotification(`Please fill in all required fields: ${missingFields.join(', ')}`, 'error');
-        return;
-    }
-    
-    fetch('/admin/courses', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => {
-        return response.json().then(data => {
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP error! status: ${response.status}`);
-            }
-            return data;
-        });
-    })
-    .then(data => {
-        if (data.success) {
-            showNotification('Course created successfully!', 'success');
-            document.getElementById('addCourseModalBg').classList.remove('show');
-            document.getElementById('addCourseForm').reset();
-            
-            // Reset the module dropdown to disabled state
-            const moduleSelect = document.getElementById('courseModuleSelect');
-            moduleSelect.innerHTML = '<option value="">-- Select Module --</option>';
-            moduleSelect.disabled = true;
-            
-            // Refresh the modules view if needed
-            if (typeof loadModules === 'function') {
-                loadModules();
-            }
-        } else {
-            console.error('Course creation failed:', data);
-            let errorMessage = data.message || 'Unknown error';
-            
-            if (data.errors) {
-                const errorList = Object.keys(data.errors).map(key => `${key}: ${data.errors[key].join(', ')}`).join('\n');
-                errorMessage += '\n\nValidation errors:\n' + errorList;
-            }
-            
-            if (data.debug) {
-                console.log('Debug info:', data.debug);
-            }
-            
-            showNotification('Error creating course: ' + errorMessage, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error creating course:', error);
-        showNotification('Error creating course: ' + error.message, 'error');
-    });
-}
-
-function showModuleCourses(moduleId, moduleName) {
-    document.getElementById('moduleCoursesTitle').textContent = `Courses in ${moduleName}`;
-    document.getElementById('moduleCoursesModalBg').classList.add('show');
-    
-    fetch(`/admin/modules/${moduleId}/courses`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayModuleCourses(data.courses);
-            } else {
-                document.getElementById('moduleCoursesContent').innerHTML = '<p>Error loading courses</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('moduleCoursesContent').innerHTML = '<p>Error loading courses</p>';
-        });
-}
-
-function displayModuleCourses(courses) {
-    const content = document.getElementById('moduleCoursesContent');
-    
-    if (courses.length === 0) {
-        content.innerHTML = '<p>No courses found for this module.</p>';
-        return;
-    }
-    
-    let html = '<div class="courses-grid">';
-    courses.forEach(course => {
-        html += `
-            <div class="course-card">
-                <div class="course-header">
-                    <h4>${course.subject_name}</h4>
-                    <span class="course-price">$${course.subject_price}</span>
-                </div>
-                <div class="course-description">
-                    ${course.subject_description || 'No description'}
-                </div>
-                <div class="course-meta">
-                    <span class="course-required ${course.is_required ? 'required' : 'optional'}">
-                        ${course.is_required ? 'Required' : 'Optional'}
-                    </span>
-                    <span class="course-lessons">${course.lessons ? course.lessons.length : 0} lessons</span>
-                </div>
-                <div class="course-actions">
-                    <button onclick="showCourseContent(${course.subject_id}, '${course.subject_name}')" class="view-btn">
-                        <i class="bi bi-eye"></i> View Content
-                    </button>
-                    <button onclick="editCourse(${course.subject_id})" class="edit-btn">
-                        <i class="bi bi-pencil"></i> Edit
-                    </button>
+                
+                <div class="form-group">
+                    <label for="edit_content_order">Display Order</label>
+                    <input type="number" id="edit_content_order" name="sort_order" class="form-control" min="1">
                 </div>
             </div>
-        `;
-    });
-    html += '</div>';
-    
-    content.innerHTML = html;
-}
-
-function showCourseContent(courseId, courseName) {
-    document.getElementById('courseContentTitle').textContent = `Content in ${courseName}`;
-    document.getElementById('courseContentModalBg').classList.add('show');
-    
-    fetch(`/admin/courses/${courseId}/content`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayCourseContent(data.course);
-            } else {
-                document.getElementById('courseContentContent').innerHTML = '<p>Error loading content</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('courseContentContent').innerHTML = '<p>Error loading content</p>';
-        });
-}
-
-function displayCourseContent(course) {
-    const content = document.getElementById('courseContentContent');
-    
-    if (!course.lessons || course.lessons.length === 0) {
-        content.innerHTML = '<p>No lessons found for this course.</p>';
-        return;
-    }
-    
-    let html = '<div class="lessons-list">';
-    course.lessons.forEach(lesson => {
-        html += `
-            <div class="lesson-card">
-                <div class="lesson-header">
-                    <h5>${lesson.lesson_name}</h5>
-                    <span class="lesson-price">$${lesson.lesson_price || '0.00'}</span>
-                </div>
-                <div class="lesson-description">
-                    ${lesson.lesson_description || 'No description'}
-                </div>
-                <div class="lesson-content">
-                    <h6>Content Items:</h6>
-                    <div class="content-items">
-        `;
-        
-        if (lesson.content_items && lesson.content_items.length > 0) {
-            lesson.content_items.forEach(item => {
-                html += `
-                    <div class="content-item">
-                        <span class="content-type-badge ${item.content_type}">
-                            ${getContentTypeIcon(item.content_type)} ${item.content_type}
-                        </span>
-                        <span class="content-title">${item.content_title}</span>
-                        ${item.max_points ? `<span class="content-points">${item.max_points} pts</span>` : ''}
-                    </div>
-                `;
-            });
-        } else {
-            html += '<p class="no-content">No content items</p>';
-        }
-        
-        html += `
-                    </div>
-                </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="closeEditContentModalBtn">Cancel</button>
+                <button type="submit" class="update-btn">Update Content</button>
             </div>
-        `;
-    });
-    html += '</div>';
-    
-    content.innerHTML = html;
-}
+        </form>
+    </div>
+</div>
 
-function getContentTypeIcon(contentType) {
-    switch(contentType) {
-        case 'lesson': return '<i class="bi bi-book"></i>';
-        case 'assignment': return '<i class="bi bi-file-earmark-text"></i>';
-        case 'quiz': return '<i class="bi bi-question-circle"></i>';
-        case 'test': return '<i class="bi bi-clipboard-check"></i>';
-        default: return '<i class="bi bi-file"></i>';
-    }
-}
-
-function editCourse(courseId) {
-    // Placeholder for edit course functionality
-    console.log('Edit course:', courseId);
-    showNotification('Edit course functionality coming soon!', 'info');
-}
-</script>
-@endpush
+@endsection
