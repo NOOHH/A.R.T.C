@@ -20,6 +20,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <!-- reCAPTCHA -->
     @if(env('RECAPTCHA_SITE_KEY'))
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -418,13 +423,9 @@
 
     // Helper function to update hidden start date field
     function updateHiddenStartDate() {
-        const dateInput = document.getElementById('start_date_input');
-        const hiddenDateInput = document.getElementById('hidden_start_date');
-        
-        if (dateInput && hiddenDateInput) {
-            hiddenDateInput.value = dateInput.value;
-            console.log('Updated hidden start date:', dateInput.value);
-        }
+        // No longer needed since we removed the duplicate hidden field
+        // The visible date input field will be used directly
+        console.log('Hidden start date field removed - using visible date input');
     }
 
     // Helper function to update hidden program_id field  
@@ -1547,7 +1548,7 @@
                 <input type="hidden" name="program_id" value="" id="hidden_program_id">
                 <input type="hidden" name="plan_id" value="1">
                 <input type="hidden" name="learning_mode" id="learning_mode" value="">
-                <input type="hidden" name="Start_Date" id="hidden_start_date" value="">
+                <!-- Removed duplicate hidden Start_Date field - using the visible date input instead -->
 
             </div>
         </div>         
@@ -2420,6 +2421,9 @@
         const today = new Date().toISOString().split('T')[0];
         startDateInput.value = today;
         console.log('📅 Fixed empty start date to:', today);
+        
+        // Hidden field has been removed - only the visible date input is used
+        console.log('📅 Start date set in visible field only');
     }
     
     // All validation passed, allow submission
@@ -2449,6 +2453,13 @@
         } else {
         console.log(`  ${key}: ${value}`);
         }
+    }
+    
+    // Double-check that Start_Date is not empty in FormData
+    if (!finalFormData.get('Start_Date') || finalFormData.get('Start_Date') === '') {
+        const today = new Date().toISOString().split('T')[0];
+        finalFormData.set('Start_Date', today);
+        console.log('📅 Force-set Start_Date in FormData to:', today);
     }
     
     // Handle reCAPTCHA if present
@@ -3373,226 +3384,4 @@
     }
 
     </script>
-    @endsection
-const sendOtpBtn = document.getElementById('sendOtpBtn');
-        
-        try {
-            const response = await fetch('{{ route("check.email.availability") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': CSRF_TOKEN
-                },
-                body: JSON.stringify({ email: email })
-            });
-            
-            const data = await response.json();
-            
-            if (data.available) {
-                // Email is available, enable Send OTP
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
-            } else {
-                // Email already exists, disable Send OTP
-                sendOtpBtn.disabled = true;
-                sendOtpBtn.innerHTML = '<i class="fas fa-times"></i> Email Exists';
-                
-                // Show error message
-                const emailError = document.getElementById('emailError');
-                if (emailError) {
-                    emailError.textContent = 'This email is already registered. Please use a different email or login.';
-                    emailError.style.display = 'block';
-                }
-            }
-        } catch (error) {
-            console.error('Error checking email:', error);
-            // On error, enable the button (fail gracefully)
-            sendOtpBtn.disabled = false;
-            sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, initializing registration form');
-        
-        // Initialize form with user data if logged in
-        if (isUserLoggedIn) {
-            loadUserPrefillData();
-        }
-        
-        // Initialize stepper
-        updateStepper(currentStep);
-        
-        // Initialize email validation for Send OTP button
-        initializeEmailValidation();
-        
-        // Initialize terms modal event handlers
-        const termsLink = document.getElementById('showTerms');
-        if (termsLink) {
-            termsLink.addEventListener('click', e => {
-                e.preventDefault();
-                showTermsModal();
-            });
-        }
-
-        // Modal click outside to close
-        const termsModal = document.getElementById('termsModal');
-        if (termsModal) {
-            termsModal.addEventListener('click', e => {
-                if (e.target.id === 'termsModal') closeTermsModal();
-            });
-        }
-
-        // Escape key to close modal
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeTermsModal();
-        });
-    });
-
-    // Function to load user prefill data
-    async function loadUserPrefillData() {
-    if (!isUserLoggedIn) {
-        console.log('User not logged in, skipping prefill');
-        return;
-    }
-    try {
-        const res = await fetch(PREFILL_URL, {
-        method: 'GET',
-        credentials: 'same-origin',
-        headers: {
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': CSRF_TOKEN
-        }
-        });
-
-        if (!res.ok) {
-        console.log(`Prefill fetch failed: HTTP ${res.status}`);
-        return;
-        }
-
-        const payload = await res.json();
-        if (!payload.success) {
-        console.log('Prefill response not successful:', payload.message);
-        return;
-        }
-
-        // populate fields exactly as before…
-        Object.entries(payload.data).forEach(([key, value]) => {
-        const fld = document.querySelector(
-            `input[name="${key}"], select[name="${key}"], textarea[name="${key}"]`
-        );
-        if (!fld) return;
-        if (fld.type === 'checkbox') fld.checked = !!value;
-        else fld.value = value;
-        });
-
-        console.log('User data prefills complete', payload.data);
-    } catch (err) {
-        console.error('Error loading user prefill data:', err);
-    }
-    }
-
-
-    // Function to handle program selection change - reset batch selection
-    function onProgramSelectionChange() {
-        const programSelect = document.getElementById('programSelect');
-        if (!programSelect) return;
-        
-        const selectedProgramId = programSelect.value;
-        
-        // Reset batch selection when program changes
-        clearBatchSelection();
-        
-        // Load new batches for selected program
-        if (selectedProgramId) {
-            loadBatchesForProgram(selectedProgramId);
-        }
-        
-        // Update hidden program_id field
-        updateHiddenProgramId();
-    }
-    window.onProgramSelectionChange = onProgramSelectionChange;
-
-
-    // Function to clear batch selection
-    function clearBatchSelection() {
-        console.log('Clearing batch selection');
-        
-        // Clear session storage
-        sessionStorage.removeItem('selectedBatchId');
-        sessionStorage.removeItem('selectedBatchName');
-        
-        // Clear UI selection
-        document.querySelectorAll('.batch-option').forEach(option => {
-            option.classList.remove('selected');
-        });
-        
-        // Hide selected batch display
-        const selectedBatchDisplay = document.getElementById('selectedBatchDisplay');
-        if (selectedBatchDisplay) {
-            selectedBatchDisplay.style.display = 'none';
-        }
-        
-        // Clear selected batch text
-        const selectedBatchName = document.getElementById('selectedBatchName');
-        if (selectedBatchName) {
-            selectedBatchName.textContent = '';
-        }
-        
-        console.log('Batch selection cleared');
-    }
-
-    // Terms and Conditions modal functions
-    function acceptTerms() {
-        // Check the terms and conditions checkbox
-        const termsCheckbox = document.getElementById('termsCheckbox');
-        if (termsCheckbox) {
-            termsCheckbox.checked = true;
-        }
-        
-        // Enable the submit button
-        const submitButton = document.getElementById('submitButton');
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.classList.remove('disabled');
-            submitButton.style.opacity = '1';
-        }
-        
-        // Close the modal
-        closeTermsModal();
-        
-        console.log('Terms and conditions accepted');
-    }
-
-    function declineTerms() {
-        // Uncheck the terms and conditions checkbox
-        const termsCheckbox = document.getElementById('termsCheckbox');
-        if (termsCheckbox) {
-            termsCheckbox.checked = false;
-        }
-        
-        // Disable the submit button
-        const submitButton = document.getElementById('submitButton');
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.classList.add('disabled');
-            submitButton.style.opacity = '0.5';
-        }
-        
-        // Close the modal
-        closeTermsModal();
-        
-        // Show a message to the user
-        showWarning('You must accept the terms and conditions to proceed with registration.');
-        
-        console.log('Terms and conditions declined');
-    }
-
-    function closeTermsModal() {
-        const termsModal = document.getElementById('termsModal');
-        if (termsModal) {
-            termsModal.style.display = 'none';
-        }
-    }
-
-    </script>
+@endsection

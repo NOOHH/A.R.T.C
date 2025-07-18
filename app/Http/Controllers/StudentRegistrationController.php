@@ -94,7 +94,7 @@ class StudentRegistrationController extends Controller
                 'registration_mode' => 'nullable|in:sync,async',
                 'sync_async_mode' => 'nullable|in:sync,async',
                 'education_level' => 'required|in:Undergraduate,Graduate',
-                'start_date' => 'required|date',
+                'Start_Date' => 'required|date',
                 // batch_id is optional and will be stored in session, not in registrations table
                 'batch_id' => 'nullable|integer'
             ];
@@ -770,21 +770,30 @@ class StudentRegistrationController extends Controller
 
             Log::info('Modular enrollment submission started', $request->except(['password', 'password_confirmation']));
 
-            // Validate the request data
-            $validator = Validator::make($request->all(), [
-                'user_firstname' => 'required|string|max:255',
-                'user_lastname' => 'required|string|max:255',
-                'user_email' => 'required|email|unique:users,email',
-                'password' => 'required|min:8|confirmed',
+            // Base validation rules
+            $rules = [
                 'program_id' => 'required|exists:programs,program_id',
                 'package_id' => 'required|exists:packages,package_id',
                 'learning_mode' => 'required|in:synchronous,asynchronous',
                 'batch_id' => 'nullable|exists:student_batches,batch_id',
-                'selected_modules' => 'required|json',
-                'additional_modules' => 'nullable|json',
-                'selected_courses' => 'nullable|json',
-                'education_level' => 'required|string'
-            ]);
+                'selected_modules' => 'required|string', // Can be JSON string
+                'education_level' => 'required|string',
+                'Start_Date' => 'required|date',
+                'enrollment_type' => 'required|in:Modular',
+                'plan_id' => 'nullable|integer',
+                'referral_code' => 'nullable|string'
+            ];
+
+            // Add account validation rules only for new users (not logged in)
+            if (!session('user_id') && !auth()->check()) {
+                $rules['user_firstname'] = 'required|string|max:255';
+                $rules['user_lastname'] = 'required|string|max:255';
+                $rules['email'] = 'required|email|unique:users,email';
+                $rules['password'] = 'required|min:8|confirmed';
+            }
+
+            // Validate the request data
+            $validator = Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
                 DB::rollBack();
@@ -797,53 +806,118 @@ class StudentRegistrationController extends Controller
 
             $validated = $validator->validated();
 
-            // Create user account
-            $user = User::create([
-                'user_firstname' => $validated['user_firstname'],
-                'user_lastname' => $validated['user_lastname'],
-                'name' => $validated['user_firstname'] . ' ' . $validated['user_lastname'],
-                'email' => $validated['user_email'],
-                'password' => bcrypt($validated['password']),
-                'role' => 'student',
-                'enrollment_id' => 0 // Will be updated after enrollment creation
-            ]);
+            // Process dynamic form fields
+            $dynamicFields = [];
+            $formRequirements = \App\Models\FormRequirement::active()
+                ->forProgram('modular')
+                ->get();
+                
+            foreach ($formRequirements as $requirement) {
+                $fieldName = $requirement->field_name;
+                if ($request->has($fieldName)) {
+                    $dynamicFields[$fieldName] = $request->input($fieldName);
+                }
+            }
 
-            Log::info('User created successfully', ['user_id' => $user->user_id]);
+            // Handle referral code to set directors_id
+            $directorsId = null;
+            if (!empty($validated['referral_code'])) {
+                // Check if referral code is from a director
+                $director = \App\Models\Director::where('referral_code', $validated['referral_code'])
+                    ->where('is_active', true)
+                    ->first();
+                
+                if ($director) {
+                    $directorsId = $director->director_id;
+                    Log::info('Referral from director', ['director_id' => $directorsId, 'referral_code' => $validated['referral_code']]);
+                } else {
+                    // Check if referral code is from a professor
+                    $professor = \App\Models\Professor::where('referral_code', $validated['referral_code'])
+                        ->where('is_active', true)
+                        ->first();
+                    
+                    if ($professor) {
+                        // If referral is from professor, you might want to handle this differently
+                        // For now, we'll set directors_id to null since it's from a professor
+                        Log::info('Referral from professor', ['professor_id' => $professor->professor_id, 'referral_code' => $validated['referral_code']]);
+                    }
+                }
+            }
 
-            // Create student record
-            $student = Student::create([
-                'student_firstname' => $validated['user_firstname'],
-                'student_lastname' => $validated['user_lastname'],
-                'student_email' => $validated['user_email'],
-                'user_id' => $user->user_id,
-                'student_id' => $this->generateStudentId()
-            ]);
+            // Create or get user
+            $user = null;
+            
+            if (auth()->check()) {
+                $user = auth()->user();
+                Log::info('Using authenticated user for modular enrollment', ['user_id' => $user->user_id]);
+            } elseif (session('user_id')) {
+                $user = User::find(session('user_id'));
+                if ($user) {
+                    Log::info('Using session user for modular enrollment', ['user_id' => $user->user_id]);
+                }
+            }
+            
+            // Create new user if no existing user found
+            if (!$user) {
+                // Validate that we have user creation data
+                if (!isset($validated['user_firstname']) || !isset($validated['user_lastname']) || 
+                    !isset($validated['email']) || !isset($validated['password'])) {
+                    throw new \Exception('User creation data missing for modular enrollment.');
+                }
+                
+                $user = User::create([
+                    'user_firstname' => $validated['user_firstname'],
+                    'user_lastname' => $validated['user_lastname'],
+                    'email' => $validated['email'],
+                    'password' => bcrypt($validated['password']),
+                    'role' => 'student',
+                    'admin_id' => 1, // Default admin ID for student registrations
+                    'directors_id' => $directorsId, // Set based on referral code or null
+                    'enrollment_id' => 0 // Will be updated after enrollment creation
+                ]);
+                
+                Log::info('User created successfully for modular enrollment', ['user_id' => $user->user_id]);
+            }
 
-            Log::info('Student created successfully', ['student_id' => $student->student_id]);
+            if (!$user || !$user->user_id) {
+                throw new \Exception('Unable to create or find valid user for modular enrollment');
+            }
 
+            // NOTE: Student record will be created later by admin after approval
+            // This is different from full enrollment which creates student immediately
+            
             // Get package and program details
             $package = \App\Models\Package::find($validated['package_id']);
             $program = \App\Models\Program::find($validated['program_id']);
+
+            // Parse selected modules (could be JSON string or array)
+            $selectedModulesData = $validated['selected_modules'];
+            if (is_string($selectedModulesData)) {
+                $selectedModules = json_decode($selectedModulesData, true) ?? [];
+            } else {
+                $selectedModules = $selectedModulesData;
+            }
 
             // Create registration record (this is the main table for registrations)
             $registration = \App\Models\Registration::create([
                 'user_id' => $user->user_id,
                 'firstname' => $validated['user_firstname'],
                 'lastname' => $validated['user_lastname'],
+                // Note: 'email' column doesn't exist in registrations table - email is stored in users table
                 'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
                 'program_name' => $program->program_name ?? '',
                 'package_name' => $package->package_name ?? '',
                 'learning_mode' => $validated['learning_mode'],
-                'enrollment_type' => 'Modular',
+                'enrollment_type' => $validated['enrollment_type'],
                 'education_level' => $validated['education_level'],
                 'selected_modules' => $validated['selected_modules'],
+                'Start_Date' => $validated['Start_Date'], // Match the actual column name in database
                 'status' => 'pending',
-                'dynamic_fields' => [
-                    'additional_modules' => $validated['additional_modules'] ?? '[]',
-                    'selected_courses' => $validated['selected_courses'] ?? '[]',
+                'dynamic_fields' => json_encode(array_merge([
+                    'referral_code' => $validated['referral_code'] ?? '',
                     'registration_mode' => $validated['learning_mode']
-                ]
+                ], $dynamicFields))
             ]);
 
             Log::info('Registration created successfully', ['registration_id' => $registration->registration_id]);
@@ -859,18 +933,19 @@ class StudentRegistrationController extends Controller
                 }
             }
 
-            // Create enrollment record
+            // Create enrollment record (without student_id as student hasn't been created yet)
             $enrollment = \App\Models\Enrollment::create([
                 'user_id' => $user->user_id,
-                'student_id' => $student->student_id,
+                'student_id' => null, // Will be set when admin approves and creates student record
                 'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
                 'learning_mode' => $validated['learning_mode'],
-                'enrollment_type' => 'Modular',
+                'enrollment_type' => $validated['enrollment_type'],
                 'batch_id' => $batchId,
                 'enrollment_status' => 'pending',
                 'payment_status' => 'pending',
                 'education_level' => $validated['education_level'],
+                'Start_Date' => $validated['Start_Date'],
                 'Modular_enrollment' => $validated['selected_modules']
             ]);
 
@@ -879,24 +954,33 @@ class StudentRegistrationController extends Controller
             // Update user with enrollment_id
             $user->update(['enrollment_id' => $enrollment->enrollment_id]);
 
-            // Create module registrations in registration_modules table
-            $selectedModules = json_decode($validated['selected_modules'], true) ?? [];
-            $additionalModules = json_decode($validated['additional_modules'] ?? '[]', true) ?? [];
-            $allModules = array_merge($selectedModules, $additionalModules);
-
-            foreach ($allModules as $moduleData) {
-                \App\Models\RegistrationModule::create([
-                    'registration_id' => $registration->registration_id,
-                    'module_id' => $moduleData['id']
-                ]);
-                Log::info('Module registered', ['module_id' => $moduleData['id'], 'registration_id' => $registration->registration_id]);
+            // Create module registrations if registration_modules table exists
+            if (is_array($selectedModules) && count($selectedModules) > 0) {
+                foreach ($selectedModules as $moduleData) {
+                    $moduleId = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+                    
+                    if ($moduleId) {
+                        try {
+                            \App\Models\RegistrationModule::create([
+                                'registration_id' => $registration->registration_id,
+                                'module_id' => $moduleId
+                            ]);
+                            Log::info('Module registered', ['module_id' => $moduleId, 'registration_id' => $registration->registration_id]);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to create module registration', [
+                                'module_id' => $moduleId,
+                                'registration_id' => $registration->registration_id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
             }
 
             DB::commit();
 
             Log::info('Modular enrollment completed successfully', [
                 'user_id' => $user->user_id,
-                'student_id' => $student->student_id,
                 'enrollment_id' => $enrollment->enrollment_id,
                 'registration_id' => $registration->registration_id
             ]);
@@ -906,7 +990,6 @@ class StudentRegistrationController extends Controller
                 'message' => 'Registration and enrollment successful!',
                 'data' => [
                     'user_id' => $user->user_id,
-                    'student_id' => $student->student_id,
                     'enrollment_id' => $enrollment->enrollment_id,
                     'registration_id' => $registration->registration_id
                 ]
@@ -975,26 +1058,18 @@ class StudentRegistrationController extends Controller
             $user = User::create([
                 'user_firstname' => $accountData['firstName'],
                 'user_lastname' => $accountData['lastName'],
-                'name' => $accountData['firstName'] . ' ' . $accountData['lastName'],
                 'email' => $accountData['email'],
                 'password' => Hash::make($accountData['password']),
                 'role' => 'student',
+                'admin_id' => 1, // Default admin ID for student registrations
+                'directors_id' => null, // Default to null since no referral handling in this method
                 'enrollment_id' => 0 // Will be updated after enrollment creation
             ]);
 
             Log::info('User created successfully', ['user_id' => $user->user_id]);
 
-            // Create student record
-            $student = Student::create([
-                'firstname' => $accountData['firstName'],
-                'lastname' => $accountData['lastName'],
-                'email' => $accountData['email'],
-                'user_id' => $user->user_id,
-                'student_id' => $this->generateStudentId(),
-                'education_level' => 'Undergraduate' // Default value
-            ]);
-
-            Log::info('Student created successfully', ['student_id' => $student->student_id]);
+            // NOTE: For modular enrollment, student record will be created by admin after approval
+            // This follows the correct flow: users table → registrations table → admin approval → students table
 
             // Create registration record with dynamic fields from admin settings
             $registrationData = [
@@ -1027,10 +1102,10 @@ class StudentRegistrationController extends Controller
                 $enrollmentLearningMode = 'Synchronous';
             }
 
-            // Create enrollment record
+            // Create enrollment record (without student_id since student record will be created later by admin)
             $enrollment = Enrollment::create([
                 'user_id' => $user->user_id,
-                'student_id' => $student->student_id,
+                'student_id' => null, // Will be set when admin creates student record after approval
                 'program_id' => $package->program_id,
                 'package_id' => $validated['package_id'],
                 'learning_mode' => $enrollmentLearningMode, // Use mapped value
@@ -1059,7 +1134,6 @@ class StudentRegistrationController extends Controller
 
             Log::info('Modular enrollment completed successfully', [
                 'user_id' => $user->user_id,
-                'student_id' => $student->student_id,
                 'enrollment_id' => $enrollment->enrollment_id,
                 'registration_id' => $registration->registration_id
             ]);
@@ -1232,6 +1306,274 @@ class StudentRegistrationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load batches'
+            ], 500);
+        }
+    }
+
+    /**
+     * Check email availability for registration
+     */
+    public function checkEmailAvailability(Request $request)
+    {
+        try {
+            $email = $request->input('email');
+
+            if (!$email) {
+                return response()->json([
+                    'available' => false,
+                    'message' => 'Email is required'
+                ], 400);
+            }
+
+            // Check if email exists in users table
+            $userExists = User::where('email', $email)->exists();
+
+            return response()->json([
+                'available' => !$userExists,
+                'message' => $userExists ? 'Email is already registered' : 'Email is available'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error checking email availability', [
+                'error' => $e->getMessage(),
+                'email' => $request->input('email')
+            ]);
+
+            return response()->json([
+                'available' => false,
+                'message' => 'Failed to check email availability'
+            ], 500);
+        }
+    }
+
+    /**
+     * Send OTP for enrollment
+     */
+    public function sendEnrollmentOTP(Request $request)
+    {
+        try {
+            $email = $request->input('email');
+
+            if (!$email) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email is required'
+                ], 400);
+            }
+
+            // Generate 6-digit OTP
+            $otpCode = sprintf('%06d', mt_rand(0, 999999));
+
+            // Store OTP in session (you might want to use cache or database for production)
+            session(['enrollment_otp_' . $email => [
+                'code' => $otpCode,
+                'expires_at' => now()->addMinutes(10),
+                'email' => $email
+            ]]);
+
+            // Send OTP via email (implement your email sending logic here)
+            // For now, just log it for testing
+            Log::info('OTP sent for enrollment', [
+                'email' => $email,
+                'otp' => $otpCode,
+                'expires_at' => now()->addMinutes(10)
+            ]);
+
+            // In a real application, send email here
+            // Mail::to($email)->send(new EnrollmentOTPMail($otpCode));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP sent successfully',
+                'debug_otp' => $otpCode // Remove this in production
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error sending enrollment OTP', [
+                'error' => $e->getMessage(),
+                'email' => $request->input('email')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP'
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify OTP for enrollment
+     */
+    public function verifyEnrollmentOTP(Request $request)
+    {
+        try {
+            $email = $request->input('email');
+            $otpCode = $request->input('otp_code');
+
+            if (!$email || !$otpCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email and OTP code are required'
+                ], 400);
+            }
+
+            // Get OTP from session
+            $sessionKey = 'enrollment_otp_' . $email;
+            $otpData = session($sessionKey);
+
+            if (!$otpData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OTP not found or expired'
+                ], 400);
+            }
+
+            // Check if OTP has expired
+            if (now()->gt($otpData['expires_at'])) {
+                session()->forget($sessionKey);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OTP has expired'
+                ], 400);
+            }
+
+            // Verify OTP code
+            if ($otpData['code'] !== $otpCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid OTP code'
+                ], 400);
+            }
+
+            // OTP verified successfully
+            session()->forget($sessionKey);
+            session(['enrollment_email_verified_' . $email => true]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email verified successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error verifying enrollment OTP', [
+                'error' => $e->getMessage(),
+                'email' => $request->input('email'),
+                'otp_code' => $request->input('otp_code')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to verify OTP'
+            ], 500);
+        }
+    }
+
+    /**
+     * Validate referral code for enrollment
+     */
+    public function validateEnrollmentReferral(Request $request)
+    {
+        try {
+            $referralCode = $request->input('referral_code');
+
+            if (!$referralCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Referral code is required'
+                ], 400);
+            }
+
+            // Check if referral code exists in professors table
+            $professor = \App\Models\Professor::where('referral_code', $referralCode)
+                ->where('is_active', true)
+                ->first();
+
+            if ($professor) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Valid referral code',
+                    'referrer_name' => $professor->professor_firstname . ' ' . $professor->professor_lastname,
+                    'referrer_type' => 'professor'
+                ]);
+            }
+
+            // Check if referral code exists in directors table
+            $director = \App\Models\Director::where('referral_code', $referralCode)
+                ->where('is_active', true)
+                ->first();
+
+            if ($director) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Valid referral code',
+                    'referrer_name' => $director->director_firstname . ' ' . $director->director_lastname,
+                    'referrer_type' => 'director'
+                ]);
+            }
+
+            // No valid referral code found
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid referral code'
+            ], 400);
+
+        } catch (\Exception $e) {
+            Log::error('Error validating enrollment referral', [
+                'error' => $e->getMessage(),
+                'referral_code' => $request->input('referral_code')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to validate referral code'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get package details for course selection
+     */
+    public function getPackageDetails(Request $request)
+    {
+        try {
+            $packageId = $request->get('package_id');
+
+            if (!$packageId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Package ID is required'
+                ], 400);
+            }
+
+            $package = \App\Models\Package::find($packageId);
+
+            if (!$package) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Package not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'package' => [
+                    'package_id' => $package->package_id,
+                    'package_name' => $package->package_name,
+                    'allowed_modules' => $package->allowed_modules ?? 2,
+                    'extra_module_price' => $package->extra_module_price ?? 0,
+                    'amount' => $package->amount
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading package details', [
+                'error' => $e->getMessage(),
+                'package_id' => $request->get('package_id')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load package details'
             ], 500);
         }
     }

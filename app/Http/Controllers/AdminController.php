@@ -256,7 +256,10 @@ class AdminController extends Controller
 
     public function studentRegistration()
     {
-        $registrations = Registration::with(['user', 'package', 'program', 'plan'])->get();
+        $registrations = Registration::with(['user', 'package', 'program', 'plan'])
+                                   ->where('status', 'pending')
+                                   ->orderBy('created_at', 'desc')
+                                   ->get();
         return view('admin.admin-student-registration.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => false,

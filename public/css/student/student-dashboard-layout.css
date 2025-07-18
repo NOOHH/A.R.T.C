@@ -435,6 +435,16 @@ html, body {
   padding: 2rem;
   width: 100%;
   min-height: 0;
+  
+}
+
+.course-card {
+  background-color: #fff1f5; /* 🔴 light pink/red to match your branding */
+  border-left: 4px solid #a91d3a; /* optional accent */
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
 }
 
 /* Responsive Design */

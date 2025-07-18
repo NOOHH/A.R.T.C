@@ -120,9 +120,6 @@
                         <i class="bi bi-mortarboard"></i>
                         <span class="brand-title">Student Portal</span>
                     </div>
-                    <button class="sidebar-close" id="sidebarClose">
-                        <i class="bi bi-x"></i>
-                    </button>
                 </div>
                 
                 <!-- Sidebar Content -->
@@ -147,7 +144,7 @@
                         {{-- Meetings --}}
                         <li class="@if(Route::currentRouteName() === 'student.meetings') active @endif">
                             <a href="{{ route('student.meetings') }}" class="sidebar-link">
-                                <span class="icon">🎥</span> Meetings
+                                <span class="icon">🎥Meetings
                             </a>
                         </li>
 

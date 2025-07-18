@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .step { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .step h3 { margin-top: 0; color: #333; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; overflow-x: auto; }
+        .form-group { margin: 10px 0; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Modular Enrollment Complete Flow Test</h1>
+        
+        <!-- Step 1: Test Data Loading -->
+        <div class="step">
+            <h3>Step 1: Load Test Data</h3>
+            <button onclick="loadTestData()">Load Packages & Programs</button>
+            <div id="data-result" class="result loading">Click to load data</div>
+        </div>
+
+        <!-- Step 2: Test Package Selection -->
+        <div class="step hidden" id="step2">
+            <h3>Step 2: Select Package</h3>
+            <div id="packages-container"></div>
+            <div id="package-result" class="result"></div>
+        </div>
+
+        <!-- Step 3: Test Program Selection -->
+        <div class="step hidden" id="step3">
+            <h3>Step 3: Select Program</h3>
+            <div id="programs-container"></div>
+            <div id="program-result" class="result"></div>
+        </div>
+
+        <!-- Step 4: Test Module Selection -->
+        <div class="step hidden" id="step4">
+            <h3>Step 4: Select Modules</h3>
+            <div id="modules-container"></div>
+            <div id="module-result" class="result"></div>
+        </div>
+
+        <!-- Step 5: Test Registration -->
+        <div class="step hidden" id="step5">
+            <h3>Step 5: Test Registration</h3>
+            <div class="form-group">
+                <label>First Name:</label>
+                <input type="text" id="firstname" value="Test">
+            </div>
+            <div class="form-group">
+                <label>Last Name:</label>
+                <input type="text" id="lastname" value="User">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="password" value="testpassword123">
+            </div>
+            <div class="form-group">
+                <label>Learning Mode:</label>
+                <select id="learning_mode">
+                    <option value="synchronous">Synchronous</option>
+                    <option value="asynchronous">Asynchronous</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Education Level:</label>
+                <select id="education_level">
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Graduate">Graduate</option>
+                </select>
+            </div>
+            <button onclick="testRegistration()">Test Registration</button>
+            <div id="registration-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let testData = {
+            packages: [],
+            programs: [],
+            modules: [],
+            selectedPackageId: null,
+            selectedProgramId: null,
+            selectedModules: []
+        };
+
+        async function loadTestData() {
+            const resultDiv = document.getElementById('data-result');
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = 'Loading...';
+
+            try {
+                // Load packages
+                console.log('Loading packages...');
+                resultDiv.innerHTML = 'Loading packages...';
+                
+                // For packages, we need to get them from the modular enrollment page
+                // Let's test the programs first
+                const programsResponse = await fetch('/get-programs', {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!programsResponse.ok) {
+                    throw new Error(`Programs API failed: ${programsResponse.status}`);
+                }
+                
+                const programsData = await programsResponse.json();
+                if (!programsData.success || !programsData.programs) {
+                    throw new Error('Programs API returned no data');
+                }
+                
+                testData.programs = programsData.programs;
+                console.log('Programs loaded:', testData.programs.length);
+
+                // Mock packages for testing (since we know they exist from our earlier test)
+                testData.packages = [
+                    { package_id: 12, package_name: "level 1", program_id: 32, module_count: 3, price: 499 },
+                    { package_id: 13, package_name: "Legendary", program_id: 33, module_count: 2, price: 599 }
+                ];
+
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ Data loaded successfully!<br>
+                    - Packages: ${testData.packages.length}<br>
+                    - Programs: ${testData.programs.length}
+                `;
+
+                showStep2();
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                console.error('Data loading error:', error);
+            }
+        }
+
+        function showStep2() {
+            document.getElementById('step2').classList.remove('hidden');
+            const container = document.getElementById('packages-container');
+            
+            let html = '<h4>Available Packages:</h4>';
+            testData.packages.forEach(pkg => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 10px; margin: 5px; cursor: pointer;" 
+                         onclick="selectPackage(${pkg.package_id}, ${pkg.program_id}, ${pkg.module_count})">
+                        <strong>${pkg.package_name}</strong> - ₱${pkg.price}<br>
+                        Program ID: ${pkg.program_id}, Modules: ${pkg.module_count}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function selectPackage(packageId, programId, moduleCount) {
+            testData.selectedPackageId = packageId;
+            // Don't auto-select program - user should choose
+            
+            const resultDiv = document.getElementById('package-result');
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ Package ${packageId} selected (${moduleCount} modules allowed)`;
+            
+            showStep3();
+        }
+
+        function showStep3() {
+            document.getElementById('step3').classList.remove('hidden');
+            const container = document.getElementById('programs-container');
+            
+            let html = '<h4>Available Programs:</h4>';
+            testData.programs.forEach(program => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 10px; margin: 5px; cursor: pointer;" 
+                         onclick="selectProgram(${program.program_id})">
+                        <strong>${program.program_name}</strong> (ID: ${program.program_id})
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        async function selectProgram(programId) {
+            testData.selectedProgramId = programId;
+            
+            const resultDiv = document.getElementById('program-result');
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ Program ${programId} selected`;
+            
+            // Load modules for this program
+            await loadModules(programId);
+            showStep4();
+        }
+
+        async function loadModules(programId) {
+            try {
+                const response = await fetch(`/get-program-modules?program_id=${programId}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Modules API failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.success || !data.modules) {
+                    throw new Error('Modules API returned no data');
+                }
+                
+                testData.modules = data.modules;
+                console.log('Modules loaded:', testData.modules.length);
+                
+            } catch (error) {
+                console.error('Error loading modules:', error);
+                testData.modules = [];
+            }
+        }
+
+        function showStep4() {
+            document.getElementById('step4').classList.remove('hidden');
+            const container = document.getElementById('modules-container');
+            
+            if (testData.modules.length === 0) {
+                container.innerHTML = '<div class="error">❌ No modules found for this program</div>';
+                return;
+            }
+            
+            let html = '<h4>Available Modules:</h4>';
+            testData.modules.forEach(module => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 10px; margin: 5px;">
+                        <label>
+                            <input type="checkbox" onchange="toggleModule(${module.id}, '${module.name}', this.checked)">
+                            <strong>${module.name}</strong> - ${module.description || 'No description'}
+                        </label>
+                    </div>
+                `;
+            });
+            
+            html += '<br><button onclick="finishModuleSelection()">Finish Module Selection</button>';
+            container.innerHTML = html;
+        }
+
+        function toggleModule(moduleId, moduleName, selected) {
+            if (selected) {
+                testData.selectedModules.push({ id: moduleId, name: moduleName });
+            } else {
+                testData.selectedModules = testData.selectedModules.filter(m => m.id !== moduleId);
+            }
+            
+            console.log('Selected modules:', testData.selectedModules);
+        }
+
+        function finishModuleSelection() {
+            const resultDiv = document.getElementById('module-result');
+            
+            if (testData.selectedModules.length === 0) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Please select at least one module';
+                return;
+            }
+            
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ Selected ${testData.selectedModules.length} modules`;
+            
+            // Generate unique email for testing
+            document.getElementById('email').value = `test${Date.now()}@example.com`;
+            
+            showStep5();
+        }
+
+        function showStep5() {
+            document.getElementById('step5').classList.remove('hidden');
+        }
+
+        async function testRegistration() {
+            const resultDiv = document.getElementById('registration-result');
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = 'Testing registration...';
+
+            try {
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('enrollment_type', 'Modular');
+                formData.append('package_id', testData.selectedPackageId);
+                formData.append('program_id', testData.selectedProgramId);
+                formData.append('selected_modules', JSON.stringify(testData.selectedModules));
+                formData.append('learning_mode', document.getElementById('learning_mode').value);
+                formData.append('education_level', document.getElementById('education_level').value);
+                formData.append('user_firstname', document.getElementById('firstname').value);
+                formData.append('user_lastname', document.getElementById('lastname').value);
+                formData.append('user_email', document.getElementById('email').value);
+                formData.append('email', document.getElementById('email').value);
+                formData.append('password', document.getElementById('password').value);
+                formData.append('password_confirmation', document.getElementById('password').value);
+
+                console.log('Submitting registration with data:', {
+                    package_id: testData.selectedPackageId,
+                    program_id: testData.selectedProgramId,
+                    modules: testData.selectedModules.length,
+                    email: document.getElementById('email').value
+                });
+
+                const response = await fetch('/enrollment/modular/submit', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const responseText = await response.text();
+                console.log('Registration response:', responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error(`Invalid JSON response: ${responseText}`);
+                }
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Registration successful!<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Registration failed<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                console.error('Registration error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -39,5 +39,16 @@ class ProgramApiController extends Controller
             ->get();
 
         return BatchResource::collection($batches);
+        
     }
+    public function getPrograms()
+{
+    $programs = \App\Models\Program::all();
+
+    return response()->json([
+        'success' => true,
+        'programs' => $programs
+    ]);
+}
+
 }

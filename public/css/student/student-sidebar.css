@@ -5,10 +5,10 @@
 
 /* Sidebar CSS Variables */
 :root {
-  --sidebar-bg: linear-gradient(180deg, #2d1b69 0%, #1a1340 100%);
+  --sidebar-bg: linear-gradient(180deg, #5d87aa 0%, #95b4c9 100%);
   --sidebar-text: rgba(255, 255, 255, 0.8);
   --sidebar-hover: rgba(255, 255, 255, 0.1);
-  --sidebar-active-bg: linear-gradient(135deg, #a91d3a, #d4336b);
+  --sidebar-active-bg: linear-gradient(135deg, #417d91, #5b8a9c);
   --sidebar-active-text: #ffffff;
   --sidebar-width: 280px;
   --sidebar-collapsed-width: 70px;
@@ -27,7 +27,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--navbar-bg, #2d1b69);
+  background: var(--navbar-bg, #634ab6);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -80,7 +80,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* Bootstrap grid compatibility for larger screens */
@@ -150,9 +150,9 @@
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0;
+  padding: 1rem 1.25rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-color: rgba(255, 44, 44, 0.3) transparent;
   min-height: 0;
 }
 
@@ -307,10 +307,10 @@
 
 /* User Profile Section */
 .user-profile {
-  padding: 1rem 1rem 1.5rem 1rem;
+  padding: 1rem 0.5rem 5.5rem 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.05);
-  margin-top: auto;
+  margin-top: 50px;
   flex-shrink: 0;
 }
 

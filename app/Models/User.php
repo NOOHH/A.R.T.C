@@ -25,6 +25,7 @@ class User extends Authenticatable
         'directors_id',
         'is_online',
         'last_seen',
+        'enrollment_id',
     ];
 
     protected $casts = [

@@ -16,6 +16,7 @@ class Registration extends Model
         'lastname',
         'firstname',
         'middlename',
+        'email', // Add email field
         'user_id',
         'package_id',
         'program_id',
@@ -36,6 +37,7 @@ class Registration extends Model
         'Telephone_Number', // New dynamic field
         'selected_modules', // New dynamic field
         'Start_Date',
+        'start_date', // Alternative field name
         'status',
         'good_moral',
         'PSA',

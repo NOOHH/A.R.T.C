@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modular Enrollment - API Endpoints</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .loading { background-color: #fff3cd; color: #856404; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Modular Enrollment API Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Get Programs</h2>
+        <button onclick="testGetPrograms()">Test Get Programs</button>
+        <div id="programs-result" class="loading">Click the button to test</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Get Program Modules</h2>
+        <button onclick="testGetModules()">Test Get Modules (Program ID: 32)</button>
+        <div id="modules-result" class="loading">Click the button to test</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Test Modular Enrollment Page</h2>
+        <button onclick="testModularPage()">Open Modular Enrollment Page</button>
+        <div id="page-result" class="loading">Click the button to test</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <div id="debug-info"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            console.log(message);
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.innerHTML += `<div class="${type}">[${new Date().toLocaleTimeString()}] ${message}</div>`;
+        }
+
+        async function testGetPrograms() {
+            const resultDiv = document.getElementById('programs-result');
+            resultDiv.className = 'loading';
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                log('Testing /get-programs endpoint...');
+                const response = await fetch('/get-programs', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('Get programs response received', 'success');
+                
+                if (data.success && data.programs && data.programs.length > 0) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Success!</strong> Found ${data.programs.length} programs<br>
+                        <pre>${JSON.stringify(data.programs, null, 2)}</pre>
+                    `;
+                    log(`Found ${data.programs.length} programs`, 'success');
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `<strong>❌ Failed:</strong> No programs returned<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    log('No programs returned', 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+                log(`Get programs error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetModules() {
+            const resultDiv = document.getElementById('modules-result');
+            resultDiv.className = 'loading';
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                log('Testing /get-program-modules endpoint...');
+                const response = await fetch('/get-program-modules?program_id=32', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('Get modules response received', 'success');
+                
+                if (data.success && data.modules) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Success!</strong> Found ${data.modules.length} modules<br>
+                        <pre>${JSON.stringify(data.modules, null, 2)}</pre>
+                    `;
+                    log(`Found ${data.modules.length} modules`, 'success');
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `<strong>❌ Failed:</strong> ${data.message || 'Unknown error'}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    log(`Get modules failed: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+                log(`Get modules error: ${error.message}`, 'error');
+            }
+        }
+
+        function testModularPage() {
+            log('Opening modular enrollment page...');
+            window.open('/enrollment/modular', '_blank');
+            document.getElementById('page-result').innerHTML = '<strong>✅ Page opened in new tab</strong>';
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Page loaded, ready for testing', 'success');
+        });
+    </script>
+</body>
+</html>

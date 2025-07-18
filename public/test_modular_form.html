@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment Form Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="bi bi-clipboard-check"></i> Modular Enrollment Form Test</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="testModularForm" action="/enrollment/modular/submit" method="POST">
+                            <input type="hidden" name="_token" value="">
+                            
+                            <!-- Account Information -->
+                            <h5 class="text-primary mb-3">Account Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="user_firstname" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="user_firstname" name="user_firstname" value="Test" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="user_lastname" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="user_lastname" name="user_lastname" value="Student" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" value="test.student@example.com" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password" value="password123" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password_confirmation" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" value="password123" required>
+                            </div>
+                            
+                            <!-- Enrollment Information -->
+                            <h5 class="text-primary mb-3 mt-4">Enrollment Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="package_id" class="form-label">Package ID</label>
+                                        <input type="number" class="form-control" id="package_id" name="package_id" value="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="program_id" class="form-label">Program ID</label>
+                                        <input type="number" class="form-control" id="program_id" name="program_id" value="1" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="learning_mode" class="form-label">Learning Mode</label>
+                                        <select class="form-control" id="learning_mode" name="learning_mode" required>
+                                            <option value="synchronous">Synchronous</option>
+                                            <option value="asynchronous">Asynchronous</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="education_level" class="form-label">Education Level</label>
+                                        <select class="form-control" id="education_level" name="education_level" required>
+                                            <option value="Undergraduate">Undergraduate</option>
+                                            <option value="Graduate">Graduate</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="Start_Date" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="Start_Date" name="Start_Date" value="2025-02-01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="enrollment_type" class="form-label">Enrollment Type</label>
+                                        <input type="text" class="form-control" id="enrollment_type" name="enrollment_type" value="Modular" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="selected_modules" class="form-label">Selected Modules (JSON)</label>
+                                <textarea class="form-control" id="selected_modules" name="selected_modules" rows="3" required>[{"id": 1, "name": "Module 1"}, {"id": 2, "name": "Module 2"}]</textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="referral_code" class="form-label">Referral Code (Optional)</label>
+                                <input type="text" class="form-control" id="referral_code" name="referral_code" value="PROF01TEST">
+                            </div>
+                            
+                            <!-- Hidden Fields -->
+                            <input type="hidden" name="plan_id" value="2">
+                            
+                            <!-- Test Buttons -->
+                            <div class="mt-4">
+                                <button type="button" class="btn btn-info" onclick="testEmailAvailability()">
+                                    <i class="bi bi-envelope-check"></i> Test Email Availability
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="testSendOTP()">
+                                    <i class="bi bi-shield-check"></i> Test Send OTP
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="testReferralValidation()">
+                                    <i class="bi bi-person-check"></i> Test Referral Validation
+                                </button>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-check-circle"></i> Submit Test Registration
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div id="testResults" class="mt-4" style="display: none;">
+                            <h5>Test Results:</h5>
+                            <div id="testOutput" class="alert alert-info"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set CSRF token
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        if (CSRF_TOKEN) {
+            document.querySelector('input[name="_token"]').value = CSRF_TOKEN;
+        }
+
+        // Test Email Availability
+        async function testEmailAvailability() {
+            const email = document.getElementById('email').value;
+            showTestResult('Testing email availability...');
+            
+            try {
+                const response = await fetch('/check-email-availability', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const data = await response.json();
+                showTestResult(`Email Availability Test: ${data.available ? 'Available' : 'Not Available'} - ${data.message}`);
+            } catch (error) {
+                showTestResult(`Email Availability Test Failed: ${error.message}`);
+            }
+        }
+
+        // Test Send OTP
+        async function testSendOTP() {
+            const email = document.getElementById('email').value;
+            showTestResult('Testing OTP sending...');
+            
+            try {
+                const response = await fetch('/enrollment/send-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const data = await response.json();
+                showTestResult(`Send OTP Test: ${data.success ? 'Success' : 'Failed'} - ${data.message}${data.debug_otp ? ' (OTP: ' + data.debug_otp + ')' : ''}`);
+            } catch (error) {
+                showTestResult(`Send OTP Test Failed: ${error.message}`);
+            }
+        }
+
+        // Test Referral Validation
+        async function testReferralValidation() {
+            const referralCode = document.getElementById('referral_code').value;
+            showTestResult('Testing referral validation...');
+            
+            try {
+                const response = await fetch('/enrollment/validate-referral', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ referral_code: referralCode })
+                });
+                
+                const data = await response.json();
+                showTestResult(`Referral Validation Test: ${data.success ? 'Valid' : 'Invalid'} - ${data.message}${data.referrer_name ? ' (Referrer: ' + data.referrer_name + ')' : ''}`);
+            } catch (error) {
+                showTestResult(`Referral Validation Test Failed: ${error.message}`);
+            }
+        }
+
+        // Show test result
+        function showTestResult(message) {
+            const resultsDiv = document.getElementById('testResults');
+            const outputDiv = document.getElementById('testOutput');
+            outputDiv.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+            resultsDiv.style.display = 'block';
+        }
+
+        // Handle form submission
+        document.getElementById('testModularForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            showTestResult('Submitting form...');
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': CSRF_TOKEN
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showTestResult(`✅ Form Submission Success: ${data.message}`);
+                    showTestResult(`✅ User ID: ${data.data.user_id}, Student ID: ${data.data.student_id}, Enrollment ID: ${data.data.enrollment_id}, Registration ID: ${data.data.registration_id}`);
+                } else {
+                    showTestResult(`❌ Form Submission Failed: ${data.message}`);
+                    if (data.errors) {
+                        Object.keys(data.errors).forEach(field => {
+                            showTestResult(`❌ ${field}: ${data.errors[field].join(', ')}`);
+                        });
+                    }
+                }
+            } catch (error) {
+                showTestResult(`❌ Form Submission Error: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

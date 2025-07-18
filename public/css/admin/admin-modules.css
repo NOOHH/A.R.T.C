@@ -213,7 +213,7 @@
     color: white;
     border: none;
     padding: 12px 20px;
-    border-radius: 10px;
+    border-radius: 25px;
     font-weight: 600;
     text-decoration: none;
     display: inline-flex;
@@ -1535,11 +1535,11 @@
 
 /* Course functionality styles */
 .add-course-btn {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: rgb(33, 152, 182);
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: 25px;
     font-weight: 600;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -1547,6 +1547,7 @@
     align-items: center;
     gap: 8px;
     box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+    
 }
 
 .add-course-btn:hover {

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Modular Enrollment Test</h1>
+        
+        <!-- Test Results -->
+        <div id="testResults" class="mb-4"></div>
+        
+        <!-- Test Buttons -->
+        <div class="mb-4">
+            <button onclick="testAPI()" class="btn btn-primary me-2">Test API Endpoints</button>
+            <button onclick="testFormRequirements()" class="btn btn-success me-2">Test Form Requirements</button>
+            <button onclick="testCompleteEnrollment()" class="btn btn-warning me-2">Test Complete Enrollment</button>
+            <button onclick="openEnrollmentPage()" class="btn btn-info">Open Enrollment Page</button>
+        </div>
+        
+        <!-- Debug Information -->
+        <div id="debugInfo"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showResult(title, content, type = 'info') {
+            const alertClass = type === 'success' ? 'alert-success' : 
+                             type === 'error' ? 'alert-danger' : 
+                             type === 'warning' ? 'alert-warning' : 'alert-info';
+            
+            const html = `
+                <div class="alert ${alertClass} alert-dismissible fade show">
+                    <h5>${title}</h5>
+                    <pre>${JSON.stringify(content, null, 2)}</pre>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            document.getElementById('testResults').innerHTML = html;
+        }
+
+        async function testAPI() {
+            try {
+                // Test programs endpoint
+                const programsResponse = await fetch('/get-programs');
+                const programsData = await programsResponse.json();
+                
+                // Test form requirements endpoint
+                const formReqResponse = await fetch('/test-form-requirements');
+                const formReqData = await formReqResponse.json();
+                
+                // Test program modules endpoint (using first program)
+                let modulesData = null;
+                if (programsData.programs && programsData.programs.length > 0) {
+                    const firstProgramId = programsData.programs[0].program_id;
+                    const modulesResponse = await fetch(`/get-program-modules?program_id=${firstProgramId}`);
+                    modulesData = await modulesResponse.json();
+                }
+                
+                const results = {
+                    programs: {
+                        status: programsResponse.status,
+                        count: programsData.programs ? programsData.programs.length : 0,
+                        success: programsData.success
+                    },
+                    formRequirements: {
+                        status: formReqResponse.status,
+                        total_count: formReqData.total_count,
+                        active_count: formReqData.active_count,
+                        modular_count: formReqData.modular_requirements ? formReqData.modular_requirements.length : 0
+                    },
+                    modules: {
+                        status: modulesData ? 200 : 'Not tested',
+                        success: modulesData ? modulesData.success : 'Not tested',
+                        count: modulesData && modulesData.modules ? modulesData.modules.length : 0
+                    }
+                };
+                
+                showResult('API Test Results', results, 'success');
+                
+            } catch (error) {
+                showResult('API Test Error', error.message, 'error');
+            }
+        }
+
+        async function testFormRequirements() {
+            try {
+                const response = await fetch('/test-form-requirements');
+                const data = await response.json();
+                
+                showResult('Form Requirements Test', data, 'success');
+                
+            } catch (error) {
+                showResult('Form Requirements Test Error', error.message, 'error');
+            }
+        }
+
+        async function testCompleteEnrollment() {
+            try {
+                // First get the CSRF token
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                // Test data for enrollment
+                const testData = {
+                    user_firstname: 'Test',
+                    user_lastname: 'User',
+                    email: 'test' + Date.now() + '@example.com',
+                    password: 'password123',
+                    password_confirmation: 'password123',
+                    program_id: 32, // Using the first program from our earlier test
+                    package_id: 1,  // Using the first package
+                    learning_mode: 'asynchronous',
+                    selected_modules: JSON.stringify([{id: 1, name: 'Test Module'}]),
+                    education_level: 'Undergraduate',
+                    enrollment_type: 'Modular',
+                    start_date: '2025-08-01',
+                    // Add dynamic form fields
+                    first_name: 'Test',
+                    last_name: 'User',
+                    test: 'test value'
+                };
+                
+                const formData = new FormData();
+                Object.keys(testData).forEach(key => {
+                    formData.append(key, testData[key]);
+                });
+                
+                const response = await fetch('/enrollment/modular/submit', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': token,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                showResult('Complete Enrollment Test', {
+                    status: response.status,
+                    response: result
+                }, response.ok ? 'success' : 'error');
+                
+            } catch (error) {
+                showResult('Complete Enrollment Test Error', error.message, 'error');
+            }
+        }
+
+        function openEnrollmentPage() {
+            window.open('/enrollment/modular', '_blank');
+        }
+    </script>
+</body>
+</html>

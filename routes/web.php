@@ -36,6 +36,8 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\DirectorController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\StudentModuleController;
+use App\Http\Controllers\ProgramController;
+
 // routes/web.php
 
 use App\Http\Controllers\Api\ReferralController;
@@ -260,6 +262,9 @@ Route::get('/enrollment/modular', function () {
         ->ordered()
         ->get();
     
+    // Get education levels
+    $educationLevels = \App\Models\EducationLevel::all();
+    
     // Get plan data with learning mode settings
     $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
     $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
@@ -282,7 +287,7 @@ Route::get('/enrollment/modular', function () {
         return in_array($program->program_id, $enrolledProgramIds);
     });
     
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'student', 'fullPlan', 'modularPlan'));
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'educationLevels', 'student', 'fullPlan', 'modularPlan'));
 })->name('enrollment.modular');
 
 // Modular enrollment submission
@@ -293,6 +298,17 @@ Route::post('/enrollment/modular/store', [StudentRegistrationController::class, 
 Route::get('/get-program-modules', [StudentRegistrationController::class, 'getProgramModules'])->name('get.program.modules');
 Route::get('/get-module-courses', [StudentRegistrationController::class, 'getModuleCourses'])->name('get.module.courses');
 Route::get('/get-program-batches', [StudentRegistrationController::class, 'getProgramBatches'])->name('get.program.batches');
+
+// Enrollment-specific OTP and validation routes
+Route::post('/enrollment/send-otp', [StudentRegistrationController::class, 'sendEnrollmentOTP'])->name('enrollment.send-otp');
+Route::post('/enrollment/verify-otp', [StudentRegistrationController::class, 'verifyEnrollmentOTP'])->name('enrollment.verify-otp');
+Route::post('/enrollment/validate-referral', [StudentRegistrationController::class, 'validateEnrollmentReferral'])->name('enrollment.validate-referral');
+Route::post('/check-email-availability', [StudentRegistrationController::class, 'checkEmailAvailability'])->name('check.email.availability');
+
+// Test route for enrollment testing
+Route::get('/test-enrollment', function() {
+    return view('test-enrollment');
+})->name('test.enrollment');
 
 // Unified login page and authentication for all user types
 Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
@@ -496,121 +512,6 @@ Route::get('/api/programs/{programId}/modules', function ($programId) {
         ], 500);
     }
 })->name('api.programs.modules');
-
-// API endpoint for modules by program
-Route::get('/get-program-modules', function (Request $request) {
-    $programId = $request->get('program_id');
-    $packageId = $request->get('package_id'); // Keep for backward compatibility
-    
-    if (!$programId && !$packageId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Program ID or Package ID is required'
-        ], 400);
-    }
-    
-    try {
-        $program = null;
-        
-        if ($programId) {
-            // Direct program query
-            $program = \App\Models\Program::find($programId);
-        } elseif ($packageId) {
-            // Get program through package (backward compatibility)
-            $package = \App\Models\Package::with('program')->find($packageId);
-            if ($package && $package->program) {
-                $program = $package->program;
-            }
-        }
-        
-        if (!$program) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Program not found'
-            ], 404);
-        }
-        
-        // Get modules for the program using raw database query
-        $modules = DB::table('modules')
-                    ->where('program_id', $program->program_id)
-                    ->where('is_archived', false)
-                    ->orderBy('module_order', 'asc')
-                    ->select('modules_id as id', 'module_name as name', 'module_description as description', 'program_id', 'content_type as level')
-                    ->get();
-        
-        return response()->json([
-            'success' => true,
-            'modules' => $modules,
-            'program' => [
-                'id' => $program->program_id,
-                'name' => $program->program_name
-            ]
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error fetching modules: ' . $e->getMessage()
-        ], 500);
-    }
-});
-
-// API endpoint for modules by program
-Route::get('/get-program-modules', function (Request $request) {
-    $programId = $request->get('program_id');
-    $packageId = $request->get('package_id'); // Keep for backward compatibility
-    
-    if (!$programId && !$packageId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Program ID or Package ID is required'
-        ], 400);
-    }
-    
-    try {
-        $program = null;
-        
-        if ($programId) {
-            // Direct program query
-            $program = \App\Models\Program::find($programId);
-        } elseif ($packageId) {
-            // Get program through package (backward compatibility)
-            $package = \App\Models\Package::with('program')->find($packageId);
-            if ($package && $package->program) {
-                $program = $package->program;
-            }
-        }
-        
-        if (!$program) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Program not found'
-            ], 404);
-        }
-        
-        // Get modules for the program
-        $modules = \App\Models\Module::where('program_id', $program->program_id)
-                                     ->where('is_archived', false)
-                                     ->select('modules_id as id', 'module_name as name', 'module_description as description', 'program_id', 'content_type as level')
-                                     ->orderBy('module_order', 'asc')
-                                     ->get();
-        
-        return response()->json([
-            'success' => true,
-            'modules' => $modules,
-            'program' => [
-                'id' => $program->program_id,
-                'name' => $program->program_name
-            ]
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error fetching modules: ' . $e->getMessage()
-        ], 500);
-    }
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -1722,6 +1623,52 @@ Route::get('/debug/chat-tables', function () {
         ], 500);
     }
 });
+Route::get('/get-programs', [ProgramController::class, 'getPrograms'])->name('get.programs');
+
+// Test route for form requirements
+Route::get('/test-form-requirements', function () {
+    try {
+        $requirements = \App\Models\FormRequirement::all();
+        
+        $result = [
+            'total_count' => $requirements->count(),
+            'active_count' => $requirements->where('is_active', true)->count(),
+            'modular_requirements' => \App\Models\FormRequirement::active()
+                ->forProgram('modular')
+                ->ordered()
+                ->get()
+                ->map(function($req) {
+                    return [
+                        'id' => $req->id,
+                        'field_name' => $req->field_name,
+                        'field_label' => $req->field_label,
+                        'field_type' => $req->field_type,
+                        'program_type' => $req->program_type,
+                        'is_required' => $req->is_required,
+                        'is_active' => $req->is_active,
+                        'sort_order' => $req->sort_order,
+                        'field_options' => $req->field_options
+                    ];
+                }),
+            'all_requirements' => $requirements->take(10)->map(function($req) {
+                return [
+                    'id' => $req->id,
+                    'field_name' => $req->field_name,
+                    'field_label' => $req->field_label,
+                    'field_type' => $req->field_type,
+                    'program_type' => $req->program_type,
+                    'is_required' => $req->is_required,
+                    'is_active' => $req->is_active,
+                    'sort_order' => $req->sort_order
+                ];
+            })
+        ];
+        
+        return response()->json($result, 200, [], JSON_PRETTY_PRINT);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
 
 // Working chat test page
 Route::get('/chat-test-working', function () {
@@ -1957,3 +1904,7 @@ Route::get('/test-api/module/{moduleId}/courses', function($moduleId) {
     $controller = new \App\Http\Controllers\StudentDashboardController();
     return $controller->getModuleCourses($moduleId);
 })->name('test.api.module.courses');
+
+// Package details for course selection
+Route::get('/get-package-details', [StudentRegistrationController::class, 'getPackageDetails'])
+    ->name('get.package.details');

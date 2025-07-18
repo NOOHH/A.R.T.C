@@ -776,7 +776,7 @@
         @endif
 
         <!-- Step 6: Final Registration Form (for non-logged-in users) OR Step 5: Final Registration Form (for logged-in users) -->
-        <div class="step-content" id="content-{{ $isUserLoggedIn ? '5' : '6' }}">
+        <div class="step-content" id="content-@if($isUserLoggedIn)5@else6@endif">
             <div class="step-header">
                 <h2>Complete Your Registration</h2>
                 @if($isUserLoggedIn)
@@ -978,12 +978,12 @@
 </div>
 
 <!-- Courses Modal -->
-<div class="modal fade" id="coursesModal" tabindex="-1" aria-labelledby="coursesModalLabel" aria-hidden="false">
+<div class="modal fade" id="coursesModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="coursesModalLabel">Select Courses in <span id="moduleNameDisplay"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Select Courses in <span id="moduleNameDisplay"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info" id="courseSelectionInfo">
@@ -1052,7 +1052,7 @@
 </div>
 
 <!-- Terms and Conditions Modal -->
-<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="false">
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -1092,7 +1092,7 @@
 <script>
     // Global variables
     let currentStep = 1;
-    let totalSteps = {{ $isUserLoggedIn ? 5 : 6 }}; // Dynamic total steps based on login status
+    let totalSteps = @if($isUserLoggedIn) 5 @else 6 @endif; // Dynamic total steps based on login status
     let isUserLoggedIn = @json($isUserLoggedIn);
     let selectedPackageId = null;
     let selectedProgramId = null;
@@ -1233,8 +1233,7 @@
         // Enable next button
         document.getElementById('step1-next').disabled = false;
     }
-    window.selectPackage = selectPackage;
-
+    
     // Program selection
     function selectProgram(programId) {
         console.log('Program selected:', programId);
@@ -1256,7 +1255,6 @@
         // Enable next button
         document.getElementById('step2-next').disabled = false;
     }
-    window.selectProgram = selectProgram;
     
     // Load programs
     function loadPrograms() {
@@ -1425,7 +1423,6 @@
         
         console.log('Selected modules:', selectedModules);
     }
-    window.handleModuleSelection = handleModuleSelection;
     
     // Learning mode selection
     function selectLearningMode(mode) {
@@ -1445,7 +1442,6 @@
         // Enable next button
         document.getElementById('step4-next').disabled = false;
     }
-    window.selectLearningMode = selectLearningMode;
     
     // Account type selection
     function selectAccountType(type) {
@@ -1462,7 +1458,6 @@
         // Enable next button
         document.getElementById('step5-next').disabled = false;
     }
-    window.selectAccountType = selectAccountType;
     
     // Setup account form
     function setupAccountForm() {
@@ -1970,7 +1965,6 @@
         const modal = new bootstrap.Modal(document.getElementById('coursesModal'));
         modal.show();
     }
-    window.showCoursesModal = showCoursesModal;
     
     // Update course limit display based on selected package
     function updateCourseLimitDisplay() {
@@ -2068,7 +2062,6 @@
         
         console.log('Course selection updated:', selectedCourses);
     }
-    window.handleCourseSelection = handleCourseSelection;
     
     // Update extra charges display
     function updateExtraChargesDisplay() {
@@ -2124,7 +2117,6 @@
         
         console.log('Course selection saved for module', moduleId, ':', selectedCourses[moduleId]);
     }
-    window.saveCourseSelection = saveCourseSelection;
     
     // Update selected modules data to include course selections
     function updateSelectedModulesWithCourses() {
@@ -2176,7 +2168,7 @@
                 default: accept = '*'; break;
             }
             html += `<div class="form-group">
-                <label>${label} ${req.is_required ? '<span class="text-danger">*</span>' : ''}</label>
+                <label>${label} ${req.is_required ? '<span class="required">*</span>' : ''}</label>
                 <input type="file" name="${label.replace(/\s+/g, '_').toLowerCase()}" class="form-control" accept="${accept}" ${required}>
                 <small class="form-text text-muted">Upload ${label} (${accept.replace(/\./g, '').toUpperCase()} only)</small>
             </div>`;
@@ -2233,14 +2225,6 @@ function copyStepperDataToFinalForm() {
     setOrCreateHidden(form, 'program_id', programId);
     setOrCreateHidden(form, 'selected_modules', selectedModules);
     setOrCreateHidden(form, 'learning_mode', learningMode);
-    
-    // Handle start date - set to today if empty
-    const startDateInput = form.querySelector('input[name="Start_Date"]');
-    if (startDateInput && (!startDateInput.value || startDateInput.value.trim() === '')) {
-        const today = new Date().toISOString().split('T')[0];
-        startDateInput.value = today;
-        console.log('📅 Set Start_Date to today:', today);
-    }
 }
 
 function setOrCreateHidden(form, name, value) {
@@ -2308,13 +2292,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Submit via AJAX to handle the response properly
             const formData = new FormData(form);
-            
-            // Double-check that Start_Date is not empty in FormData
-            if (!formData.get('Start_Date') || formData.get('Start_Date') === '') {
-                const today = new Date().toISOString().split('T')[0];
-                formData.set('Start_Date', today);
-                console.log('📅 Force-set Start_Date in FormData to:', today);
-            }
             
             // Log form data for debugging
             console.log('Submitting form data:', Object.fromEntries(formData));
@@ -2399,7 +2376,6 @@ function showTermsModal() {
     const modal = new bootstrap.Modal(document.getElementById('termsModal'));
     modal.show();
 }
-window.showTermsModal = showTermsModal;
 
 // Function to accept terms and conditions
 function acceptTerms() {
@@ -2409,7 +2385,6 @@ function acceptTerms() {
         console.log('Terms and conditions accepted');
     }
 }
-window.acceptTerms = acceptTerms;
 
 // Function to toggle education level requirements (similar to Full_enrollment)
 function toggleEducationLevelRequirements() {
@@ -2496,33 +2471,5 @@ function toggleEducationLevelRequirements() {
     }
 }
 
-// Fix accessibility issues with modal
-document.addEventListener('DOMContentLoaded', function() {
-    const coursesModal = document.getElementById('coursesModal');
-    if (coursesModal) {
-        coursesModal.addEventListener('show.bs.modal', function () {
-            // Remove aria-hidden when modal is opening
-            coursesModal.removeAttribute('aria-hidden');
-        });
-        
-        coursesModal.addEventListener('hidden.bs.modal', function () {
-            // Add aria-hidden when modal is completely closed
-            coursesModal.setAttribute('aria-hidden', 'true');
-        });
-    }
-    
-    const termsModal = document.getElementById('termsModal');
-    if (termsModal) {
-        termsModal.addEventListener('show.bs.modal', function () {
-            // Remove aria-hidden when modal is opening
-            termsModal.removeAttribute('aria-hidden');
-        });
-        
-        termsModal.addEventListener('hidden.bs.modal', function () {
-            // Add aria-hidden when modal is completely closed
-            termsModal.setAttribute('aria-hidden', 'true');
-        });
-    }
-});
 </script>
-@endpush
+@endpush 
