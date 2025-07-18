@@ -772,6 +772,12 @@ Route::delete('/admin/packages/{id}/delete', [AdminPackageController::class, 'de
 // Additional Package Management Routes
 Route::get('/admin/packages/program/{program_id}/modules', [AdminPackageController::class, 'getModules'])
      ->name('admin.packages.get-modules');
+Route::get('/get-program-modules', [AdminPackageController::class, 'getProgramModules'])
+     ->name('get-program-modules');
+Route::get('/get-module-courses', [AdminPackageController::class, 'getModuleCourses'])
+     ->name('get-module-courses');
+Route::get('/get-package-details', [AdminPackageController::class, 'getPackageDetails'])
+     ->name('get-package-details');
 Route::post('/admin/packages/{id}/archive', [AdminPackageController::class, 'archive'])
      ->name('admin.packages.archive');
 Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'restore'])
@@ -1842,3 +1848,28 @@ Route::get('/test-api/module/{moduleId}/courses', function($moduleId) {
 // Package details for course selection
 Route::get('/get-package-details', [StudentRegistrationController::class, 'getPackageDetails'])
     ->name('get.package.details');
+
+// Test routes for course functionality
+Route::prefix('test-api/test')->group(function () {
+    Route::get('/database', function () {
+        try {
+            $chatCount = \App\Models\Chat::count();
+            $userCount = \App\Models\User::count();
+            
+            return response()->json([
+                'success' => true,
+                'chat_count' => $chatCount,
+                'user_count' => $userCount,
+                'message' => 'Database connection successful'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    });
+
+    Route::get('/course-access', [\App\Http\Controllers\CourseTestController::class, 'testCourseAccess']);
+    Route::get('/course-enrollment', [\App\Http\Controllers\CourseTestController::class, 'testCreateCourseEnrollment']);
+});

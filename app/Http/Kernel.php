@@ -73,5 +73,6 @@ class Kernel extends HttpKernel
         'session.auth' => \App\Http\Middleware\SessionAuth::class,
         'check.session' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'role.dashboard' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'course.access' => \App\Http\Middleware\CheckCourseAccess::class,
     ];
 }

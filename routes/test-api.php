@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Chat;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
+use App\Http\Controllers\CourseTestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -87,4 +88,8 @@ Route::group(['prefix' => 'test'], function () {
             ]);
         }
     });
+
+    // Course-level testing routes
+    Route::get('/course-access', [CourseTestController::class, 'testCourseAccess']);
+    Route::post('/course-enrollment', [CourseTestController::class, 'testCreateCourseEnrollment']);
 });

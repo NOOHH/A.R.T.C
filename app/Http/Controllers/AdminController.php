@@ -278,10 +278,28 @@ class AdminController extends Controller
     public function paymentPending()
     {
         // Get enrollments with pending payments - include both user and student relationships
-        $enrollments = Enrollment::with(['user', 'student', 'program', 'package'])
+        // Filter out enrollments without proper user/student data to prevent ghost records
+        $enrollments = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'enrollmentCourses.course'])
                                 ->where('payment_status', 'pending')
+                                ->where(function($query) {
+                                    // Only include enrollments that have either user_id or student_id
+                                    $query->whereNotNull('user_id')
+                                          ->orWhereNotNull('student_id');
+                                })
+                                ->whereHas('program') // Must have a valid program
+                                ->whereHas('package') // Must have a valid package
                                 ->orderBy('created_at', 'desc')
                                 ->get()
+                                ->unique('enrollment_id') // Remove duplicate enrollments
+                                ->filter(function ($enrollment) {
+                                    // Additional filtering to ensure we have valid data
+                                    $hasValidUser = $enrollment->user && 
+                                                   ($enrollment->user->user_firstname || $enrollment->user->user_lastname);
+                                    $hasValidStudent = $enrollment->student && 
+                                                      ($enrollment->student->firstname || $enrollment->student->lastname);
+                                    
+                                    return $hasValidUser || $hasValidStudent;
+                                })
                                 ->map(function ($enrollment) {
                                     // Determine student name from either user or student relationship
                                     $studentName = 'N/A';
@@ -301,6 +319,84 @@ class AdminController extends Controller
                                     
                                     $enrollment->student_name = $studentName;
                                     $enrollment->student_email = $studentEmail;
+                                    
+                                    // Get enrolled courses/modules details and plan information
+                                    $enrolledItems = [];
+                                    $planDetails = [];
+                                    
+                                    // Check for specific course enrollments
+                                    if ($enrollment->enrollmentCourses && $enrollment->enrollmentCourses->count() > 0) {
+                                        foreach ($enrollment->enrollmentCourses as $courseEnrollment) {
+                                            if ($courseEnrollment->course) {
+                                                $enrolledItems[] = [
+                                                    'type' => 'Course',
+                                                    'name' => $courseEnrollment->course->subject_name ?? 'Unknown Course',
+                                                    'id' => $courseEnrollment->course->subject_id ?? 'N/A'
+                                                ];
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Check for modular enrollment based on registration
+                                    if ($enrollment->registration && $enrollment->registration->selected_modules) {
+                                        $selectedModules = is_string($enrollment->registration->selected_modules) 
+                                            ? json_decode($enrollment->registration->selected_modules, true) 
+                                            : $enrollment->registration->selected_modules;
+                                            
+                                        if (is_array($selectedModules) && !empty($selectedModules)) {
+                                            $modules = \App\Models\Module::whereIn('modules_id', $selectedModules)->get();
+                                            foreach ($modules as $module) {
+                                                $enrolledItems[] = [
+                                                    'type' => 'Module',
+                                                    'name' => $module->module_name ?? 'Unknown Module',
+                                                    'id' => $module->modules_id ?? 'N/A'
+                                                ];
+                                            }
+                                        }
+                                    }
+                                    
+                                    // If no specific courses/modules, show program-level enrollment
+                                    if (empty($enrolledItems) && $enrollment->program) {
+                                        $enrolledItems[] = [
+                                            'type' => 'Full Program',
+                                            'name' => $enrollment->program->program_name ?? 'Unknown Program',
+                                            'id' => $enrollment->program->program_id ?? 'N/A'
+                                        ];
+                                    }
+                                    
+                                    // Add plan details
+                                    if ($enrollment->package) {
+                                        $planDetails[] = [
+                                            'type' => 'Package',
+                                            'name' => $enrollment->package->package_name ?? 'Unknown Package',
+                                            'type_label' => $enrollment->package->package_type ?? 'Unknown',
+                                            'amount' => $enrollment->package->amount ?? 0
+                                        ];
+                                    }
+                                    
+                                    if ($enrollment->registration) {
+                                        $planDetails[] = [
+                                            'type' => 'Learning Mode',
+                                            'name' => ucfirst($enrollment->registration->learning_mode ?? $enrollment->learning_mode ?? 'Not specified'),
+                                            'enrollment_type' => ucfirst($enrollment->enrollment_type ?? 'Not specified')
+                                        ];
+                                    }
+                                    
+                                    $enrollment->enrolled_items = $enrolledItems;
+                                    $enrollment->plan_details = $planDetails;
+                                    $enrollment->enrollment_details = count($enrolledItems) > 0 
+                                        ? implode(', ', array_map(function($item) { return $item['type'] . ': ' . $item['name']; }, $enrolledItems))
+                                        : 'No specific enrollment details available';
+                                    
+                                    $enrollment->plan_summary = count($planDetails) > 0
+                                        ? implode(' | ', array_map(function($plan) { 
+                                            if ($plan['type'] === 'Package') {
+                                                return $plan['name'] . ' (' . ucfirst($plan['type_label']) . ')';
+                                            }
+                                            return $plan['name'];
+                                        }, $planDetails))
+                                        : 'No plan details available';
+                                    
                                     return $enrollment;
                                 });
 
@@ -312,10 +408,127 @@ class AdminController extends Controller
     public function paymentHistory()
     {
         // Get all enrollments with completed payments (paid status)
-        $enrollments = Enrollment::with(['student.user', 'program', 'package'])
+        // Include detailed enrollment information and prevent duplicates
+        $enrollments = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'enrollmentCourses.course'])
                                 ->where('payment_status', 'paid')
+                                ->where(function($query) {
+                                    // Only include enrollments that have either user_id or student_id
+                                    $query->whereNotNull('user_id')
+                                          ->orWhereNotNull('student_id');
+                                })
+                                ->whereHas('program') // Must have a valid program
+                                ->whereHas('package') // Must have a valid package
                                 ->orderBy('updated_at', 'desc')
-                                ->get();
+                                ->get()
+                                ->unique('enrollment_id') // Remove duplicate enrollments
+                                ->filter(function ($enrollment) {
+                                    // Additional filtering to ensure we have valid data
+                                    $hasValidUser = $enrollment->user && 
+                                                   ($enrollment->user->user_firstname || $enrollment->user->user_lastname);
+                                    $hasValidStudent = $enrollment->student && 
+                                                      ($enrollment->student->firstname || $enrollment->student->lastname);
+                                    
+                                    return $hasValidUser || $hasValidStudent;
+                                })
+                                ->map(function ($enrollment) {
+                                    // Determine student name from either user or student relationship
+                                    $studentName = 'N/A';
+                                    $studentEmail = 'N/A';
+                                    
+                                    if ($enrollment->user) {
+                                        $firstName = $enrollment->user->user_firstname ?? '';
+                                        $lastName = $enrollment->user->user_lastname ?? '';
+                                        $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
+                                        $studentEmail = $enrollment->user->email ?? 'N/A';
+                                    } elseif ($enrollment->student) {
+                                        $firstName = $enrollment->student->firstname ?? '';
+                                        $lastName = $enrollment->student->lastname ?? '';
+                                        $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
+                                        $studentEmail = $enrollment->student->email ?? 'N/A';
+                                    }
+                                    
+                                    $enrollment->student_name = $studentName;
+                                    $enrollment->student_email = $studentEmail;
+                                    
+                                    // Get enrolled courses/modules details and plan information
+                                    $enrolledItems = [];
+                                    $planDetails = [];
+                                    
+                                    // Check for specific course enrollments
+                                    if ($enrollment->enrollmentCourses && $enrollment->enrollmentCourses->count() > 0) {
+                                        foreach ($enrollment->enrollmentCourses as $courseEnrollment) {
+                                            if ($courseEnrollment->course) {
+                                                $enrolledItems[] = [
+                                                    'type' => 'Course',
+                                                    'name' => $courseEnrollment->course->subject_name ?? 'Unknown Course',
+                                                    'id' => $courseEnrollment->course->subject_id ?? 'N/A'
+                                                ];
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Check for modular enrollment based on registration
+                                    if ($enrollment->registration && $enrollment->registration->selected_modules) {
+                                        $selectedModules = is_string($enrollment->registration->selected_modules) 
+                                            ? json_decode($enrollment->registration->selected_modules, true) 
+                                            : $enrollment->registration->selected_modules;
+                                            
+                                        if (is_array($selectedModules) && !empty($selectedModules)) {
+                                            $modules = \App\Models\Module::whereIn('modules_id', $selectedModules)->get();
+                                            foreach ($modules as $module) {
+                                                $enrolledItems[] = [
+                                                    'type' => 'Module',
+                                                    'name' => $module->module_name ?? 'Unknown Module',
+                                                    'id' => $module->modules_id ?? 'N/A'
+                                                ];
+                                            }
+                                        }
+                                    }
+                                    
+                                    // If no specific courses/modules, show program-level enrollment
+                                    if (empty($enrolledItems) && $enrollment->program) {
+                                        $enrolledItems[] = [
+                                            'type' => 'Full Program',
+                                            'name' => $enrollment->program->program_name ?? 'Unknown Program',
+                                            'id' => $enrollment->program->program_id ?? 'N/A'
+                                        ];
+                                    }
+                                    
+                                    // Add plan details
+                                    if ($enrollment->package) {
+                                        $planDetails[] = [
+                                            'type' => 'Package',
+                                            'name' => $enrollment->package->package_name ?? 'Unknown Package',
+                                            'type_label' => $enrollment->package->package_type ?? 'Unknown',
+                                            'amount' => $enrollment->package->amount ?? 0
+                                        ];
+                                    }
+                                    
+                                    if ($enrollment->registration) {
+                                        $planDetails[] = [
+                                            'type' => 'Learning Mode',
+                                            'name' => ucfirst($enrollment->registration->learning_mode ?? $enrollment->learning_mode ?? 'Not specified'),
+                                            'enrollment_type' => ucfirst($enrollment->enrollment_type ?? 'Not specified')
+                                        ];
+                                    }
+                                    
+                                    $enrollment->enrolled_items = $enrolledItems;
+                                    $enrollment->plan_details = $planDetails;
+                                    $enrollment->enrollment_details = count($enrolledItems) > 0 
+                                        ? implode(', ', array_map(function($item) { return $item['type'] . ': ' . $item['name']; }, $enrolledItems))
+                                        : 'No specific enrollment details available';
+                                    
+                                    $enrollment->plan_summary = count($planDetails) > 0
+                                        ? implode(' | ', array_map(function($plan) { 
+                                            if ($plan['type'] === 'Package') {
+                                                return $plan['name'] . ' (' . ucfirst($plan['type_label']) . ')';
+                                            }
+                                            return $plan['name'];
+                                        }, $planDetails))
+                                        : 'No plan details available';
+                                    
+                                    return $enrollment;
+                                });
 
         return view('admin.admin-student-registration.admin-payment-history', [
             'enrollments' => $enrollments,

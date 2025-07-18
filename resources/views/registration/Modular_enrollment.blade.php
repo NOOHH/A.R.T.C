@@ -592,14 +592,18 @@
             <div class="d-flex justify-content-center gap-4 flex-wrap mb-5">
                 @foreach($packages as $package)
                     <div class="package-card-pro card p-4 mb-3"
-                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->modules_count ?? 3 }})"
+                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->module_count ?? $package->modules_count ?? 3 }}, '{{ $package->selection_mode ?? 'modules' }}', {{ $package->course_count ?? 0 }})"
                          data-package-id="{{ $package->package_id }}">
                         <div class="card-body text-center">
                             <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
                             <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
                             <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
                             <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
-                                <li><i class="bi bi-check2 text-success"></i> {{ $package->modules_count ?? 3 }} modules included</li>
+                                @if($package->selection_mode === 'courses')
+                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->course_count ?? 'All' }} courses included</li>
+                                @else
+                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->module_count ?? $package->modules_count ?? 3 }} modules included</li>
+                                @endif
                                 <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
                                 <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
                                 <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
@@ -608,6 +612,55 @@
                     </div>
                 @endforeach
             </div>
+            
+            <!-- Immediate Script for Package Selection -->
+            <script>
+                // Global variables for package selection
+                let selectedPackageId = null;
+                let packageSelectionMode = 'modules';
+                let packageModuleLimit = null;
+                let packageCourseLimit = null;
+                
+                // Package selection function
+                function selectPackage(packageId, programId, moduleCount, selectionMode = 'modules', courseCount = 0) {
+                    console.log('Package selected:', { packageId, programId, moduleCount, selectionMode, courseCount });
+                    
+                    // Remove selection from all cards
+                    document.querySelectorAll('.package-card-pro').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+                    
+                    // Add selection to clicked card
+                    event.target.closest('.package-card-pro').classList.add('selected');
+                    
+                    // Store selection
+                    selectedPackageId = packageId;
+                    packageSelectionMode = selectionMode;
+                    
+                    if (selectionMode === 'courses') {
+                        packageCourseLimit = courseCount;
+                        packageModuleLimit = null; // No module limit for course-based packages
+                    } else {
+                        packageModuleLimit = moduleCount;
+                        packageCourseLimit = null; // No course limit for module-based packages
+                    }
+                    
+                    // Update hidden inputs
+                    if (document.getElementById('package_id')) {
+                        document.getElementById('package_id').value = packageId;
+                    }
+                    
+                    // Enable next button
+                    const nextBtn = document.getElementById('step1-next');
+                    if (nextBtn) {
+                        nextBtn.disabled = false;
+                    }
+                }
+                
+                // Make function globally available
+                window.selectPackage = selectPackage;
+            </script>
+            
             <div class="d-flex justify-content-center mt-4">
                 <button type="button" class="btn btn-lg btn-primary next-btn-pro" onclick="nextStep()" disabled id="step1-next">
                     NEXT: SELECT PROGRAM <i class="bi bi-arrow-right ms-2"></i>
@@ -1094,12 +1147,11 @@
     let currentStep = 1;
     let totalSteps = {{ $isUserLoggedIn ? 5 : 6 }}; // Dynamic total steps based on login status
     let isUserLoggedIn = @json($isUserLoggedIn);
-    let selectedPackageId = null;
+    // selectedPackageId, packageSelectionMode, packageModuleLimit, packageCourseLimit are declared above
     let selectedProgramId = null;
     let selectedModules = [];
     let selectedLearningMode = null;
     let selectedAccountType = null;
-    let packageModuleLimit = 3;
     
     // CSRF token
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1207,34 +1259,6 @@
         }
     }
     
-    // Package selection
-    function selectPackage(packageId, programId, moduleCount) {
-        console.log('Package selected:', { packageId, programId, moduleCount });
-        
-        // Remove selection from all cards
-        document.querySelectorAll('.package-card-pro').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        // Add selection to clicked card
-        event.target.closest('.package-card-pro').classList.add('selected');
-        
-        // Store selection
-        selectedPackageId = packageId;
-        // Don't auto-select program - let user choose in step 2
-        // selectedProgramId = programId;
-        packageModuleLimit = moduleCount;
-        
-        // Update hidden inputs
-        document.getElementById('package_id').value = packageId;
-        // Don't pre-fill program
-        // document.getElementById('program_id').value = programId;
-        
-        // Enable next button
-        document.getElementById('step1-next').disabled = false;
-    }
-    window.selectPackage = selectPackage;
-
     // Program selection
     function selectProgram(programId) {
         console.log('Program selected:', programId);
@@ -1398,32 +1422,57 @@
         const moduleTitle = moduleCard.querySelector('.module-title').textContent;
         
         if (checkbox.checked) {
-            // Check limit
-            if (selectedModules.length >= packageModuleLimit) {
+            // Check limits based on selection mode
+            if (packageSelectionMode === 'modules' && packageModuleLimit && selectedModules.length >= packageModuleLimit) {
                 alert(`You can only select up to ${packageModuleLimit} modules.`);
                 checkbox.checked = false;
                 return;
+            } else if (packageSelectionMode === 'courses' && packageCourseLimit) {
+                // For course-based packages, we need to check total course count, not module count
+                // This will be handled when courses are selected, so allow module selection
             }
             
-            // Add to selection
-            selectedModules.push({
+            // Add to selection with course information if available
+            const moduleData = {
                 id: moduleId,
                 name: moduleTitle
-            });
+            };
+            
+            // Check if this module has course selections
+            if (selectedCourses[moduleId] && selectedCourses[moduleId].length > 0) {
+                moduleData.selected_courses = selectedCourses[moduleId];
+            }
+            
+            selectedModules.push(moduleData);
             moduleCard.classList.add('selected');
         } else {
             // Remove from selection
             selectedModules = selectedModules.filter(m => m.id !== moduleId);
             moduleCard.classList.remove('selected');
+            
+            // Also remove any course selections for this module
+            if (selectedCourses[moduleId]) {
+                delete selectedCourses[moduleId];
+            }
         }
         
-        // Update hidden input
-        document.getElementById('selected_modules').value = JSON.stringify(selectedModules);
+        // Update modules with current course selections
+        updateSelectedModulesWithCourses();
         
-        // Enable/disable next button
-        document.getElementById('step3-next').disabled = selectedModules.length === 0;
+        // Enable/disable next button based on selection mode
+        if (packageSelectionMode === 'courses') {
+            // For course-based packages, check total course count across all modules
+            let totalSelectedCourses = 0;
+            Object.values(selectedCourses).forEach(courses => {
+                totalSelectedCourses += courses.length;
+            });
+            document.getElementById('step3-next').disabled = totalSelectedCourses === 0 || (packageCourseLimit && totalSelectedCourses < packageCourseLimit);
+        } else {
+            // For module-based packages, check module count
+            document.getElementById('step3-next').disabled = selectedModules.length === 0;
+        }
         
-        console.log('Selected modules:', selectedModules);
+        console.log('Selected modules with courses:', selectedModules);
     }
     window.handleModuleSelection = handleModuleSelection;
     
@@ -1937,7 +1986,7 @@
     // Global variables for course selection
     let currentModuleId = null;
     let selectedCourses = {};
-    let packageCourseLimit = 2; // Default limit, will be updated from package data
+    // packageCourseLimit is already declared above - removing duplicate
     let extraModulePrice = 0; // Price per extra course from package data
     
     // Show courses modal with course selection capability
@@ -2056,6 +2105,20 @@
         }
         
         if (checkbox.checked) {
+            // Check course limit for course-based packages
+            if (packageSelectionMode === 'courses' && packageCourseLimit) {
+                let totalSelectedCourses = 0;
+                Object.values(selectedCourses).forEach(courses => {
+                    totalSelectedCourses += courses.length;
+                });
+                
+                if (totalSelectedCourses >= packageCourseLimit) {
+                    alert(`You can only select up to ${packageCourseLimit} courses.`);
+                    checkbox.checked = false;
+                    return;
+                }
+            }
+            
             // Add course to selection
             selectedCourses[moduleId].push(courseId);
         } else {
@@ -2066,9 +2129,27 @@
         // Update visual feedback
         updateExtraChargesDisplay();
         
+        // Update next button state
+        updateStep3NextButton();
+        
         console.log('Course selection updated:', selectedCourses);
     }
     window.handleCourseSelection = handleCourseSelection;
+    
+    // Update step 3 next button based on selection mode
+    function updateStep3NextButton() {
+        if (packageSelectionMode === 'courses') {
+            // For course-based packages, check total course count across all modules
+            let totalSelectedCourses = 0;
+            Object.values(selectedCourses).forEach(courses => {
+                totalSelectedCourses += courses.length;
+            });
+            document.getElementById('step3-next').disabled = totalSelectedCourses === 0 || (packageCourseLimit && totalSelectedCourses < packageCourseLimit);
+        } else {
+            // For module-based packages, check module count
+            document.getElementById('step3-next').disabled = selectedModules.length === 0;
+        }
+    }
     
     // Update extra charges display
     function updateExtraChargesDisplay() {
@@ -2118,11 +2199,18 @@
         // Update the selected_modules data to include course selections
         updateSelectedModulesWithCourses();
         
+        // Also update the selected modules array to include course data for the current module
+        const moduleIndex = selectedModules.findIndex(m => m.id == moduleId);
+        if (moduleIndex !== -1) {
+            selectedModules[moduleIndex].selected_courses = selectedCourses[moduleId];
+        }
+        
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('coursesModal'));
         modal.hide();
         
         console.log('Course selection saved for module', moduleId, ':', selectedCourses[moduleId]);
+        console.log('Updated selected modules:', selectedModules);
     }
     window.saveCourseSelection = saveCourseSelection;
     
@@ -2136,8 +2224,11 @@
             };
         });
         
+        // Update the hidden input field
         document.getElementById('selected_modules').value = JSON.stringify(modulesWithCourses);
         console.log('Updated modules with course selections:', modulesWithCourses);
+        
+        return modulesWithCourses;
     }
     
     // Legacy display courses function (for backward compatibility)
@@ -2524,5 +2615,503 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Enhanced file upload with OCR validation (similar to Full_enrollment)
+function handleFileUpload(inputElement) {
+    const fieldName = inputElement.name;
+    const file = inputElement.files[0];
+    
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = ['pdf', 'jpg', 'jpeg', 'png'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension)) {
+        showErrorModal('Invalid file type. Only PDF, JPG, JPEG, and PNG files are allowed.');
+        inputElement.value = '';
+        return;
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10485760) {
+        showErrorModal('File size exceeds 10MB limit. Please choose a smaller file.');
+        inputElement.value = '';
+        return;
+    }
+    
+    // Get user's name for validation - check all possible field names
+    const firstNameSelectors = [
+        'input[name="firstname"]',
+        'input[name="user_firstname"]',
+        'input[name="first_name"]',
+        'input[name="First_Name"]',
+        'input[name="FirstName"]',
+        'input[id="firstname"]',
+        'input[id="user_firstname"]',
+        'input[id="first_name"]',
+        'input[id="First_Name"]'
+    ];
+    
+    const lastNameSelectors = [
+        'input[name="lastname"]',
+        'input[name="user_lastname"]', 
+        'input[name="last_name"]',
+        'input[name="Last_Name"]',
+        'input[name="LastName"]',
+        'input[id="lastname"]',
+        'input[id="user_lastname"]',
+        'input[id="last_name"]',
+        'input[id="Last_Name"]'
+    ];
+    
+    let firstName = '';
+    let lastName = '';
+    
+    // Try to find first name
+    for (const selector of firstNameSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.value.trim()) {
+            firstName = element.value.trim();
+            break;
+        }
+    }
+    
+    // Try to find last name
+    for (const selector of lastNameSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.value.trim()) {
+            lastName = element.value.trim();
+            break;
+        }
+    }
+    
+    console.log('Found names for OCR validation:', firstName, lastName);
+    
+    if (!firstName || !lastName) {
+        showErrorModal('Please enter your first name and last name in the form before uploading documents.');
+        inputElement.value = '';
+        return;
+    }
+    
+    // Show loading indicator
+    showLoadingModal('Processing document with OCR...');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('field_name', fieldName);
+    formData.append('first_name', firstName);
+    formData.append('last_name', lastName);
+    
+    fetch('/ocr/process', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(async response => {
+        closeLoadingModal();
+        
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            const rawText = await response.text();
+            console.error('JSON parse error:', jsonError);
+            console.error('Raw response:', rawText);
+            showErrorModal('Server returned invalid response. Check console for details.');
+            inputElement.value = '';
+            return;
+        }
+        
+        console.log('OCR processing response:', data);
+        
+        if (data.success) {
+            showSuccessModal('Document processed successfully!');
+            
+            // Handle education level detection
+            if (data.data && data.data.education_level_detected) {
+                handleEducationLevelDetection(data.data.education_level_detected);
+            }
+            
+            if (data.data && data.data.program_suggestions && data.data.program_suggestions.length > 0) {
+                showProgramSuggestions(data.data.program_suggestions);
+            }
+            
+            if (data.data && data.data.extracted_text) {
+                console.log('Extracted text:', data.data.extracted_text);
+            }
+        } else {
+            console.error('OCR processing failed:', data);
+            showErrorModal(data.message || 'Document processing failed');
+            inputElement.value = '';
+        }
+    })
+    .catch(error => {
+        closeLoadingModal();
+        console.error('OCR processing error:', error);
+        showErrorModal('Network error occurred. Please check your connection and try again.');
+        inputElement.value = '';
+    });
+}
+
+// Show program suggestions in dropdown
+function showProgramSuggestions(suggestions) {
+    const programSelect = document.getElementById('programSelect');
+    if (!programSelect) return;
+    
+    // Clear existing suggestions
+    const existingSuggestions = programSelect.querySelectorAll('.suggestion-option');
+    existingSuggestions.forEach(option => option.remove());
+    
+    // Add suggestion header
+    if (suggestions.length > 0) {
+        const headerOption = document.createElement('option');
+        headerOption.disabled = true;
+        headerOption.textContent = '--- Suggested Programs ---';
+        headerOption.className = 'suggestion-header';
+        programSelect.insertBefore(headerOption, programSelect.children[1]);
+        
+        // Add suggestions
+        suggestions.forEach(suggestion => {
+            const option = document.createElement('option');
+            option.value = suggestion.program.program_id;
+            option.textContent = `⭐ ${suggestion.program.program_name} (Match: ${suggestion.score})`;
+            option.className = 'suggestion-option';
+            option.style.backgroundColor = '#e3f2fd';
+            programSelect.insertBefore(option, programSelect.children[programSelect.children.length]);
+        });
+        
+        // Show notification
+        showInfoModal(`We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs at the top of the dropdown.`);
+    }
+}
+
+// Modal functions for OCR feedback
+function showLoadingModal(message) {
+    let modal = document.getElementById('loadingModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'loadingModal';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        modal.innerHTML = `
+            <div class="modal-content" style="
+                background: white;
+                padding: 2rem;
+                border-radius: 8px;
+                text-align: center;
+                min-width: 300px;
+            ">
+                <div class="loading-spinner" style="
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #3498db;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    animation: spin 2s linear infinite;
+                    margin: 0 auto 1rem;
+                "></div>
+                <p id="loadingMessage">${message}</p>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Add CSS animation for spinner
+        if (!document.getElementById('spinner-style')) {
+            const style = document.createElement('style');
+            style.id = 'spinner-style';
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    document.getElementById('loadingMessage').textContent = message;
+    modal.style.display = 'flex';
+}
+
+function closeLoadingModal() {
+    const modal = document.getElementById('loadingModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function showErrorModal(message) {
+    showModal('Error', message, 'error');
+}
+
+function showSuccessModal(message) {
+    showModal('Success', message, 'success');
+}
+
+function showInfoModal(message) {
+    showModal('Information', message, 'info');
+}
+
+function showModal(title, message, type) {
+    let modal = document.getElementById('customModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'customModal';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        modal.innerHTML = `
+            <div class="modal-content" style="
+                background: white;
+                padding: 0;
+                border-radius: 8px;
+                min-width: 400px;
+                max-width: 500px;
+            ">
+                <div class="modal-header" style="
+                    padding: 1rem 1.5rem;
+                    border-bottom: 1px solid #dee2e6;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h5 id="modalTitle" style="margin: 0;">${title}</h5>
+                    <button type="button" onclick="closeModal()" class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                    ">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <p id="modalMessage">${message}</p>
+                </div>
+                <div class="modal-footer" style="
+                    padding: 1rem 1.5rem;
+                    border-top: 1px solid #dee2e6;
+                    text-align: right;
+                ">
+                    <button type="button" onclick="closeModal()" class="btn btn-primary" style="
+                        background: #007bff;
+                        border: 1px solid #007bff;
+                        color: white;
+                        padding: 0.375rem 0.75rem;
+                        border-radius: 0.25rem;
+                        cursor: pointer;
+                    ">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    
+    const modalContent = modal.querySelector('.modal-content');
+    // Add type-specific styling
+    if (type === 'error') {
+        modalContent.style.borderLeft = '4px solid #dc3545';
+    } else if (type === 'success') {
+        modalContent.style.borderLeft = '4px solid #28a745';
+    } else if (type === 'info') {
+        modalContent.style.borderLeft = '4px solid #17a2b8';
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    const modal = document.getElementById('customModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Handle education level detection from OCR (similar to Full_enrollment)
+function handleEducationLevelDetection(detectedLevel) {
+    console.log('Education level detected:', detectedLevel);
+    
+    // Find the education level dropdown
+    const educationSelect = document.getElementById('educationLevel');
+    if (!educationSelect) {
+        console.warn('Education level dropdown not found');
+        return;
+    }
+    
+    // Try to find and select the detected education level
+    let matchFound = false;
+    const options = educationSelect.options;
+    
+    for (let i = 0; i < options.length; i++) {
+        const optionText = options[i].textContent.toLowerCase();
+        const detectedLower = detectedLevel.toLowerCase();
+        
+        // Check for exact match or partial match
+        if (optionText.includes(detectedLower) || detectedLower.includes(optionText)) {
+            educationSelect.selectedIndex = i;
+            matchFound = true;
+            break;
+        }
+    }
+    
+    if (matchFound) {
+        // Trigger the change event to update form requirements
+        educationSelect.dispatchEvent(new Event('change'));
+        
+        // Show confirmation modal
+        showEducationLevelModal(detectedLevel, true);
+    } else {
+        // Show options modal if no match found
+        showEducationLevelModal(detectedLevel, false);
+    }
+}
+
+// Show education level detection modal
+function showEducationLevelModal(detectedLevel, matchFound) {
+    let modal = document.getElementById('educationLevelModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'educationLevelModal';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    if (matchFound) {
+        modal.innerHTML = `
+            <div class="modal-content" style="
+                background: white;
+                padding: 0;
+                border-radius: 8px;
+                min-width: 400px;
+                max-width: 500px;
+                border-left: 4px solid #28a745;
+            ">
+                <div class="modal-header" style="
+                    padding: 1rem 1.5rem;
+                    border-bottom: 1px solid #dee2e6;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h5 style="margin: 0; color: #28a745;">
+                        <i class="bi bi-check-circle-fill me-2"></i>Education Level Detected
+                    </h5>
+                    <button type="button" onclick="closeEducationLevelModal()" class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                    ">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <p>We detected "<strong>${detectedLevel}</strong>" from your document and have automatically selected it in the education level field.</p>
+                    <p>If this is incorrect, you can change it manually in the form.</p>
+                </div>
+                <div class="modal-footer" style="
+                    padding: 1rem 1.5rem;
+                    border-top: 1px solid #dee2e6;
+                    text-align: right;
+                ">
+                    <button type="button" onclick="closeEducationLevelModal()" class="btn btn-success" style="
+                        background: #28a745;
+                        border: 1px solid #28a745;
+                        color: white;
+                        padding: 0.375rem 0.75rem;
+                        border-radius: 0.25rem;
+                        cursor: pointer;
+                    ">Understood</button>
+                </div>
+            </div>
+        `;
+    } else {
+        modal.innerHTML = `
+            <div class="modal-content" style="
+                background: white;
+                padding: 0;
+                border-radius: 8px;
+                min-width: 400px;
+                max-width: 500px;
+                border-left: 4px solid #ffc107;
+            ">
+                <div class="modal-header" style="
+                    padding: 1rem 1.5rem;
+                    border-bottom: 1px solid #dee2e6;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h5 style="margin: 0; color: #856404;">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Education Level Detected
+                    </h5>
+                    <button type="button" onclick="closeEducationLevelModal()" class="close-btn" style="
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                    ">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <p>We detected "<strong>${detectedLevel}</strong>" from your document, but couldn't automatically match it to our available options.</p>
+                    <p>Please manually select your education level from the dropdown in the form.</p>
+                </div>
+                <div class="modal-footer" style="
+                    padding: 1rem 1.5rem;
+                    border-top: 1px solid #dee2e6;
+                    text-align: right;
+                ">
+                    <button type="button" onclick="closeEducationLevelModal()" class="btn btn-warning" style="
+                        background: #ffc107;
+                        border: 1px solid #ffc107;
+                        color: #212529;
+                        padding: 0.375rem 0.75rem;
+                        border-radius: 0.25rem;
+                        cursor: pointer;
+                    ">OK</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeEducationLevelModal() {
+    const modal = document.getElementById('educationLevelModal');
+    if (modal) modal.style.display = 'none';
+}
 </script>
 @endpush

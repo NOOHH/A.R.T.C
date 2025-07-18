@@ -349,3 +349,24 @@ Route::middleware('web')->group(function () {
         }
     });
 });
+
+// Admin Package Management API Routes
+Route::middleware(['web'])->prefix('admin')->group(function () {
+    Route::get('/packages', [App\Http\Controllers\AdminPackageController::class, 'getPackages']);
+    Route::post('/packages', [App\Http\Controllers\AdminPackageController::class, 'store']);
+    Route::get('/packages/{id}', [App\Http\Controllers\AdminPackageController::class, 'show']);
+    Route::put('/packages/{id}', [App\Http\Controllers\AdminPackageController::class, 'update']);
+    Route::delete('/packages/{id}', [App\Http\Controllers\AdminPackageController::class, 'destroy']);
+    
+    Route::get('/programs', [App\Http\Controllers\AdminPackageController::class, 'getPrograms']);
+    Route::get('/courses', [App\Http\Controllers\AdminPackageController::class, 'getCourses']);
+    Route::get('/modules', [App\Http\Controllers\AdminPackageController::class, 'getModules']);
+    
+    // Package-specific relationships
+    Route::post('/packages/{id}/courses', [App\Http\Controllers\AdminPackageController::class, 'attachCourses']);
+    Route::post('/packages/{id}/modules', [App\Http\Controllers\AdminPackageController::class, 'attachModules']);
+    
+    // Testing endpoints
+    Route::post('/packages/test-relationships', [App\Http\Controllers\AdminPackageController::class, 'testRelationships']);
+    Route::post('/packages/test-pivot-tables', [App\Http\Controllers\AdminPackageController::class, 'testPivotTables']);
+});

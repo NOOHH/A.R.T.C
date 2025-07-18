@@ -45,18 +45,53 @@ class StudentController extends Controller
             'photo'              => 'nullable|file|mimes:jpg,jpeg,png|max:1024',
         ]);
 
-        // Handle file uploads
+        // Handle file uploads with enhanced validation
         $uploadedFiles = [];
         $ocrText = null;
         $ocrSuggestions = [];
-        if ($request->hasFile('course_cert')) {
-            $path = $request->file('course_cert')->store('documents/course_cert', 'public');
-            $uploadedFiles['course_cert'] = $path;
-            // OCR processing
-            $ocrService = new OcrService();
-            $fullPath = storage_path('app/public/' . $path);
-            $ocrText = $ocrService->extractText($fullPath);
-            $ocrSuggestions = $ocrService->suggestPrograms($ocrText);
+        
+        // Define allowed file types for each field
+        $fileFields = [
+            'good_moral' => ['pdf', 'jpg', 'jpeg', 'png'],
+            'birth_cert' => ['pdf', 'jpg', 'jpeg', 'png'], 
+            'course_cert' => ['pdf', 'jpg', 'jpeg', 'png'],
+            'tor' => ['pdf', 'jpg', 'jpeg', 'png'],
+            'grad_cert' => ['pdf', 'jpg', 'jpeg', 'png'],
+            'photo' => ['jpg', 'jpeg', 'png']
+        ];
+        
+        foreach ($fileFields as $fieldName => $allowedTypes) {
+            if ($request->hasFile($fieldName)) {
+                $file = $request->file($fieldName);
+                $fileExtension = strtolower($file->getClientOriginalExtension());
+                
+                // Validate file type
+                if (!in_array($fileExtension, $allowedTypes)) {
+                    return back()->withErrors([
+                        $fieldName => "Invalid file type for {$fieldName}. Only " . implode(', ', $allowedTypes) . " files are allowed."
+                    ])->withInput();
+                }
+                
+                // Validate file size (max 10MB)
+                if ($file->getSize() > 10485760) {
+                    return back()->withErrors([
+                        $fieldName => "File size for {$fieldName} exceeds 10MB limit."
+                    ])->withInput();
+                }
+                
+                // Store file with unique name
+                $fileName = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('documents/' . $fieldName, $fileName, 'public');
+                $uploadedFiles[$fieldName] = $path;
+                
+                // Special handling for course certificate with OCR
+                if ($fieldName === 'course_cert') {
+                    $ocrService = new OcrService();
+                    $fullPath = storage_path('app/public/' . $path);
+                    $ocrText = $ocrService->extractText($fullPath);
+                    $ocrSuggestions = $ocrService->suggestPrograms($ocrText);
+                }
+            }
         }
 
         // Example: Save to database (uncomment after creating a Student model and migration)

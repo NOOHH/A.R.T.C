@@ -318,33 +318,114 @@ class StudentDashboardController extends Controller
         }
         
         // Continue with normal course view if paid and approved
-        // Get all modules for this program, ordered by order column first, then creation date
-        $modules = Module::where('program_id', $courseId)
-                        ->where('is_archived', false)
-                        ->orderBy('order', 'asc')
-                        ->orderBy('created_at', 'asc')
-                        ->get();
+        // ENHANCED ACCESS CONTROL: Only show modules for courses the student is actually enrolled in
         
-        // Filter modules for modular enrollments based on selected modules
-        if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
-            // Get selected modules from registration
-            $registration = \App\Models\Registration::where('user_id', session('user_id'))
-                ->where('program_id', $courseId)
-                ->where('enrollment_type', 'Modular')
-                ->first();
+        // First, verify the student has access to this specific course/program
+        $hasValidEnrollment = false;
+        $enrollmentCourseIds = [];
+        
+        if ($enrollment) {
+            // Check if this is a course-specific enrollment through enrollment_courses table
+            $enrollmentCourses = \App\Models\EnrollmentCourse::where('enrollment_id', $enrollment->enrollment_id)
+                ->where('is_active', true)
+                ->pluck('course_id')
+                ->toArray();
                 
-            if ($registration && $registration->selected_modules) {
-                $selectedModuleIds = json_decode($registration->selected_modules, true);
-                if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
-                    // Filter modules to only show selected ones
-                    $modules = $modules->filter(function($module) use ($selectedModuleIds) {
-                        return in_array($module->modules_id, $selectedModuleIds);
-                    });
-                    Log::info('Filtered modules for modular enrollment', [
-                        'original_count' => Module::where('program_id', $courseId)->count(),
-                        'filtered_count' => $modules->count(),
-                        'selected_modules' => $selectedModuleIds
+            if (!empty($enrollmentCourses)) {
+                // Student has course-specific enrollments
+                $enrollmentCourseIds = $enrollmentCourses;
+                
+                // Check if the requested course is in their enrolled courses
+                $course = \App\Models\Course::where('subject_id', $courseId)
+                    ->orWhere('program_id', $courseId)
+                    ->first();
+                    
+                if ($course && in_array($course->subject_id, $enrollmentCourseIds)) {
+                    $hasValidEnrollment = true;
+                    Log::info('Student has valid course-specific enrollment', [
+                        'course_id' => $courseId,
+                        'enrolled_courses' => $enrollmentCourseIds
                     ]);
+                }
+            } else {
+                // No course-specific enrollments, check program-level enrollment
+                if ($enrollment->program_id == $courseId) {
+                    $hasValidEnrollment = true;
+                    Log::info('Student has valid program-level enrollment', [
+                        'program_id' => $courseId
+                    ]);
+                }
+            }
+        }
+        
+        // If student doesn't have valid enrollment, redirect with error
+        if (!$hasValidEnrollment) {
+            Log::warning('Student attempted to access unauthorized course', [
+                'user_id' => session('user_id'),
+                'requested_course_id' => $courseId,
+                'enrollment_id' => $enrollment ? $enrollment->enrollment_id : null,
+                'enrolled_courses' => $enrollmentCourseIds
+            ]);
+            
+            return redirect()->route('student.dashboard')
+                ->with('error', 'You do not have access to this course. Please contact your administrator if you believe this is an error.');
+        }
+        
+        // Get modules based on enrollment type and access control
+        $modules = collect();
+        
+        if (!empty($enrollmentCourseIds)) {
+            // Course-specific enrollment: Only show modules for enrolled courses
+            $courses = \App\Models\Course::whereIn('subject_id', $enrollmentCourseIds)->get();
+            
+            foreach ($courses as $course) {
+                $courseModules = Module::where('program_id', $course->program_id)
+                    ->orWhere('course_id', $course->subject_id)
+                    ->where('is_archived', false)
+                    ->orderBy('order', 'asc')
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                    
+                $modules = $modules->merge($courseModules);
+            }
+            
+            // Remove duplicates
+            $modules = $modules->unique('modules_id');
+            
+            Log::info('Loaded course-specific modules', [
+                'enrolled_courses' => $enrollmentCourseIds,
+                'module_count' => $modules->count()
+            ]);
+            
+        } else {
+            // Program-level enrollment: Apply existing modular filtering logic
+            $modules = Module::where('program_id', $courseId)
+                            ->where('is_archived', false)
+                            ->orderBy('order', 'asc')
+                            ->orderBy('created_at', 'asc')
+                            ->get();
+            
+            // Filter modules for modular enrollments based on selected modules
+            if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
+                // Get selected modules from registration
+                $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                    ->where('program_id', $courseId)
+                    ->where('enrollment_type', 'Modular')
+                    ->first();
+                    
+                if ($registration && $registration->selected_modules) {
+                    $selectedModuleIds = json_decode($registration->selected_modules, true);
+                    if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
+                        // Filter modules to only show selected ones
+                        $modules = $modules->filter(function($module) use ($selectedModuleIds) {
+                            return in_array($module->modules_id, $selectedModuleIds);
+                        });
+                        Log::info('Filtered modules for modular enrollment', [
+                            'original_count' => Module::where('program_id', $courseId)->count(),
+                            'filtered_count' => $modules->count(),
+                            'selected_modules' => $selectedModuleIds
+                        ]);
+                    }
                 }
             }
         }
@@ -357,6 +438,9 @@ class StudentDashboardController extends Controller
                 ->pluck('module_id')
                 ->toArray();
         }
+        
+        // Convert collection to array to prevent duplicates and maintain ordering
+        $modules = $modules->values()->unique('modules_id')->sortBy(['order', 'created_at']);
         
         // Format modules for the view
         $formattedModules = [];

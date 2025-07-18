@@ -96,7 +96,7 @@ class SettingsHelper
         }
         
         // Default logo
-        return asset('images/logo.png');
+        return asset('images/ARTC_Logo.png');
     }
 
     public static function getBrandName()

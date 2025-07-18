@@ -49,6 +49,23 @@ class Course extends Model
         return $this->hasMany(ContentItem::class, 'course_id', 'subject_id');
     }
 
+    public function enrollmentCourses()
+    {
+        return $this->hasMany(EnrollmentCourse::class, 'course_id', 'subject_id');
+    }
+
+    public function enrollments()
+    {
+        return $this->belongsToMany(Enrollment::class, 'enrollment_courses', 'course_id', 'enrollment_id')
+            ->withPivot(['module_id', 'enrollment_type', 'course_price', 'is_active'])
+            ->wherePivot('is_active', true);
+    }
+
+    public function packages()
+    {
+        return $this->belongsToMany(Package::class, 'package_courses', 'course_id', 'package_id');
+    }
+
     // Accessors
     public function getIdAttribute()
     {

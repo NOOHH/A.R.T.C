@@ -5,207 +5,104 @@
 @section('head')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-packages.css') }}">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection
 
 @push('styles')
 <style>
-  /* Bootstrap 5 Admin Dashboard Styling */
-  .border-left-primary {
-    border-left: 0.25rem solid #4e73df !important;
-  }
-  
-  .border-left-success {
-    border-left: 0.25rem solid #1cc88a !important;
-  }
-  
-  .border-left-info {
-    border-left: 0.25rem solid #36b9cc !important;
-  }
-  
-  .border-left-warning {
-    border-left: 0.25rem solid #f6c23e !important;
-  }
-  
-  .text-xs {
-    font-size: 0.7rem;
-  }
-  
-  .text-gray-300 {
-    color: #dddfeb !important;
-  }
-  
-  .text-gray-500 {
-    color: #858796 !important;
-  }
-  
-  .text-gray-600 {
-    color: #6e707e !important;
-  }
-  
-  .text-gray-800 {
-    color: #5a5c69 !important;
-  }
-  
-  .font-weight-bold {
-    font-weight: 700 !important;
-  }
-  
-  .shadow {
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-  }
-  
-  .card {
-    transition: all 0.3s;
-  }
-  
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2) !important;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .container-fluid {
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
-    }
+  /* Main container styling */
+  .main-content-wrapper {
+    align-items: flex-start !important;
+    padding: 20px;
   }
 
-  /* Modal styling */
-  .modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-  }
-
-  .modal.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-content {
-    background: white;
+  .packages-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 30px;
+    margin: 0 auto;
     border-radius: 20px;
-    padding: 40px;
-    max-width: 700px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    max-width: 1400px;
+    width: 100%;
   }
 
-  .modal-header {
-    text-align: center;
+  /* Header styling */
+  .packages-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
     padding-bottom: 20px;
-    border-bottom: 2px solid #f8f9fa;
+    border-bottom: 3px solid rgba(102, 126, 234, 0.2);
   }
 
-  .modal-header h2 {
+  .packages-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
     color: #2c3e50;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     margin: 0;
-    font-weight: 700;
-    font-size: 1.8rem;
   }
 
-  /* Form styling */
-  .form-group {
-    margin-bottom: 25px;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
+  .add-package-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 15px;
     font-weight: 600;
-    color: #333;
-    font-size: 1rem;
-  }
-
-  .form-group label.required::after {
-    content: " *";
-    color: #dc3545;
-    font-weight: bold;
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
     transition: all 0.3s ease;
-    background: #f8f9fa;
+    cursor: pointer;
   }
 
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  .add-package-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
   }
 
-  .form-row {
+  /* Analytics section */
+  .analytics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+    margin-bottom: 40px;
   }
 
-  /* Modal actions */
-  .modal-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 2px solid #f8f9fa;
-  }
-
-  .btn-primary, .btn-secondary {
-    padding: 15px 30px;
-    border: none;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 120px;
-  }
-
-  .btn-primary {
+  .analytics-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
   }
 
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  .analytics-card:hover {
+    transform: translateY(-5px);
   }
 
-  .btn-secondary {
-    background: #6c757d;
-    color: white;
-    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+  .analytics-card h3 {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 700;
   }
 
-  .btn-secondary:hover {
-    background: #5a6268;
-    transform: translateY(-2px);
+  .analytics-card p {
+    margin: 10px 0 0;
+    opacity: 0.9;
+    font-size: 1rem;
   }
-  
+
+  /* Package list grid */
+  .package-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 25px;
+  }
+
   /* Package item styling */
   .package-item {
     background: white;
@@ -715,222 +612,117 @@
       grid-template-columns: 1fr;
     }
   }
-
-  
-</style>
-
-
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid px-4">
-    <div class="row">
-        <div class="col-12">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0 text-gray-800">
-                    <i class="fas fa-box-open me-2"></i>Package Management
-                </h1>
-                <button class="btn btn-primary" onclick="showAddModal()">
-                    <i class="fas fa-plus me-2"></i>Add New Package
-                </button>
+<div class="main-content-wrapper">
+    <div class="packages-container">
+        <!-- Header -->
+        <div class="packages-header">
+            <h1><i class="fas fa-box-open me-3"></i>Package Management</h1>
+            <button class="add-package-btn" onclick="showAddModal()">
+                <i class="fas fa-plus me-2"></i>Add New Package
+            </button>
+        </div>
+
+        <!-- Alerts -->
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-
-            <!-- Alerts -->
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show">
-                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show">
-                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            <!-- Analytics Cards -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Total Packages
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ count($packages) }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-box fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-success shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Active Enrollments
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ $packages->sum('enrollments_count') ?? 0 }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-users fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Total Value
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        ₱{{ number_format($packages->sum('amount') ?? 0, 2) }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-peso-sign fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-warning shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                        Modular Packages
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ $packages->where('package_type', 'modular')->count() }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-layer-group fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+        @endif
 
-            <!-- Package List -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Package List</h6>
-                </div>
-                <div class="card-body">
-                    @if(count($packages) > 0)
-                        <div class="row">
-                            @foreach($packages as $package)
-                                <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
-                                    <div class="card border-left-primary shadow h-100">
-                                        <div class="card-header d-flex justify-content-between align-items-center">
-                                            <h5 class="card-title mb-0">{{ $package->package_name }}</h5>
-                                            <span class="badge bg-{{ $package->package_type === 'modular' ? 'warning' : 'primary' }}">
-                                                {{ ucfirst($package->package_type ?? 'Standard') }}
-                                            </span>
-                                        </div>
-                                        <div class="card-body">
-                                            <p class="card-text text-muted small mb-3">
-                                                {{ Str::limit($package->description ?? 'No description available', 100) }}
-                                            </p>
-                                            
-                                            <div class="row text-center mb-3">
-                                                <div class="col-6">
-                                                    <div class="border-end">
-                                                        <div class="text-xs text-muted">TYPE</div>
-                                                        <div class="small fw-bold">{{ ucfirst($package->package_type ?? 'Standard') }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="text-xs text-muted">SELECTION</div>
-                                                    <div class="small fw-bold">{{ ucfirst($package->selection_type ?? 'Module') }}</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="row text-center mb-3">
-                                                <div class="col-6">
-                                                    <div class="border-end">
-                                                        <div class="text-xs text-muted">COUNT MODE</div>
-                                                        <div class="small fw-bold">
-                                                            @if($package->selection_mode === 'courses')
-                                                                <i class="fas fa-book me-1"></i>Course Based
-                                                            @else
-                                                                <i class="fas fa-layer-group me-1"></i>Module Based
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="text-xs text-muted">
-                                                        @if($package->selection_mode === 'courses')
-                                                            COURSE COUNT
-                                                        @else
-                                                            MODULE COUNT
-                                                        @endif
-                                                    </div>
-                                                    <div class="small fw-bold">
-                                                        @if($package->selection_mode === 'courses')
-                                                            {{ $package->course_count ?? 'All' }}
-                                                        @else
-                                                            {{ $package->module_count ?? 'All' }}
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="text-center mb-3">
-                                                <h4 class="text-success fw-bold">₱{{ number_format($package->amount ?? 0, 2) }}</h4>
-                                            </div>
-                                            
-                                            <div class="d-grid gap-2">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-success btn-sm" onclick="editPackage({{ $package->package_id }})">
-                                                        <i class="fas fa-edit me-1"></i>Edit
-                                                    </button>
-                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deletePackage({{ $package->package_id }})">
-                                                        <i class="fas fa-trash me-1"></i>Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+        <!-- Analytics Section -->
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3>{{ count($packages) }}</h3>
+                <p><i class="fas fa-box me-2"></i>Total Packages</p>
+            </div>
+            <div class="analytics-card">
+                <h3>{{ $packages->sum('enrollments_count') ?? 0 }}</h3>
+                <p><i class="fas fa-users me-2"></i>Active Enrollments</p>
+            </div>
+            <div class="analytics-card">
+                <h3>₱{{ number_format($packages->sum('amount') ?? 0, 2) }}</h3>
+                <p><i class="fas fa-chart-line me-2"></i>Total Value</p>
+            </div>
+            <div class="analytics-card">
+                <h3>{{ $packages->where('package_type', 'modular')->count() }}</h3>
+                <p><i class="fas fa-layer-group me-2"></i>Modular Packages</p>
+            </div>
+        </div>
+
+        <!-- Package List -->
+        <div class="package-list">
+            @forelse($packages as $package)
+                <div class="package-item" data-package-id="{{ $package->package_id }}">
+                    <div class="package-header">
+                        <div class="package-badge">{{ ucfirst($package->package_type ?? 'Standard') }}</div>
+                        <h3 class="package-name">{{ $package->package_name }}</h3>
+                    </div>
+                    <div class="package-content">
+                        <p class="package-description">{{ $package->description ?? 'No description available' }}</p>
+                        
+                        <div class="package-details">
+                            <div class="package-detail">
+                                <div class="package-detail-label">Type</div>
+                                <div class="package-detail-value">{{ ucfirst($package->package_type ?? 'Standard') }}</div>
+                            </div>
+                            <div class="package-detail">
+                                <div class="package-detail-label">Selection</div>
+                                <div class="package-detail-value">{{ ucfirst($package->selection_type ?? 'Module') }}</div>
+                            </div>
+                            <div class="package-detail">
+                                <div class="package-detail-label">Count Mode</div>
+                                <div class="package-detail-value">
+                                    @if($package->selection_mode === 'courses')
+                                        <i class="fas fa-book me-1"></i>Course Based
+                                    @else
+                                        <i class="fas fa-layer-group me-1"></i>Module Based
+                                    @endif
                                 </div>
-                            @endforeach
+                            </div>
+                            @if($package->selection_mode === 'courses')
+                            <div class="package-detail">
+                                <div class="package-detail-label">Course Count</div>
+                                <div class="package-detail-value">{{ $package->course_count ?? 'All' }}</div>
+                            </div>
+                            @else
+                            <div class="package-detail">
+                                <div class="package-detail-label">Module Count</div>
+                                <div class="package-detail-value">{{ $package->module_count ?? 'All' }}</div>
+                            </div>
+                            @endif
+                            </div>
                         </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="fas fa-box-open fa-3x text-gray-300 mb-3"></i>
-                            <h5 class="text-gray-600">No packages found</h5>
-                            <p class="text-gray-500">Create your first package to get started!</p>
-                            <button class="btn btn-primary" onclick="showAddModal()">
-                                <i class="fas fa-plus me-2"></i>Add New Package
+                        
+                        <div class="package-price">₱{{ number_format($package->amount ?? 0, 2) }}</div>
+                        
+                        <div class="package-actions">
+                            <button class="btn-edit" onclick="editPackage({{ $package->package_id }})">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn-delete" onclick="deletePackage({{ $package->package_id }})">
+                                <i class="fas fa-trash me-1"></i>Delete
                             </button>
                         </div>
-                    @endif
+                    </div>
                 </div>
-            </div>
+            @empty
+                <div class="no-packages">
+                    <i class="fas fa-box-open"></i>
+                    <h3>No packages found</h3>
+                    <p>Create your first package to get started!</p>
+                </div>
+            @endforelse
         </div>
     </div>
 </div>
@@ -1698,32 +1490,21 @@ function deletePackage(packageId) {
             }
         })
         .then(response => {
-            console.log('Delete response status:', response.status);
-            
-            // Handle different status codes
-            if (response.status === 400) {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Bad Request: Cannot delete package');
-                });
-            }
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
             return response.json();
         })
         .then(data => {
             if (data.success) {
-                alert('Package deleted successfully!');
                 location.reload();
             } else {
                 alert('Error deleting package: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
-            console.error('Delete error:', error);
-            alert('Error deleting package: ' + error.message);
+            console.error('Error:', error);
+            alert('Error deleting package. Please try again.');
         });
     }
 }

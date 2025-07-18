@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS `admin_settings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `admin_settings` (
-  `setting_id` bigint(20) unsigned NOT NULL,
+  `setting_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `setting_key` varchar(255) NOT NULL,
   `setting_value` text NOT NULL,
   `setting_description` text DEFAULT NULL,
@@ -144,6 +144,36 @@ CREATE TABLE `chats` (
   KEY `chats_receiver_id_read_at_index` (`receiver_id`,`read_at`),
   KEY `chats_conversation_index` (`sender_id`,`receiver_id`,`sent_at`),
   KEY `chats_unread_index` (`receiver_id`,`is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `class_meetings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `class_meetings` (
+  `meeting_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `batch_id` bigint(20) unsigned NOT NULL,
+  `professor_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `meeting_date` datetime NOT NULL,
+  `duration_minutes` int(11) NOT NULL DEFAULT 60,
+  `meeting_url` varchar(255) DEFAULT NULL,
+  `attached_files` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`attached_files`)),
+  `status` enum('scheduled','ongoing','completed','cancelled') NOT NULL DEFAULT 'scheduled',
+  `created_by` int(11) NOT NULL,
+  `url_visible_before_meeting` tinyint(1) NOT NULL DEFAULT 0,
+  `url_visibility_minutes_before` int(11) NOT NULL DEFAULT 0,
+  `actual_start_time` datetime DEFAULT NULL,
+  `actual_end_time` datetime DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`meeting_id`),
+  KEY `class_meetings_batch_id_meeting_date_index` (`batch_id`,`meeting_date`),
+  KEY `class_meetings_professor_id_meeting_date_index` (`professor_id`,`meeting_date`),
+  KEY `class_meetings_created_by_foreign` (`created_by`),
+  CONSTRAINT `class_meetings_batch_id_foreign` FOREIGN KEY (`batch_id`) REFERENCES `student_batches` (`batch_id`) ON DELETE CASCADE,
+  CONSTRAINT `class_meetings_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `admins` (`admin_id`) ON DELETE CASCADE,
+  CONSTRAINT `class_meetings_professor_id_foreign` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`professor_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `content_items`;
@@ -351,6 +381,26 @@ CREATE TABLE `lessons` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`lesson_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `meeting_attendance_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `meeting_attendance_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `meeting_id` bigint(20) unsigned NOT NULL,
+  `student_id` bigint(20) unsigned NOT NULL,
+  `status` enum('present','absent','late') NOT NULL,
+  `joined_at` timestamp NULL DEFAULT NULL,
+  `left_at` timestamp NULL DEFAULT NULL,
+  `duration_minutes` int(11) DEFAULT NULL,
+  `ip_address` varchar(255) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `meeting_attendance_logs_meeting_id_index` (`meeting_id`),
+  KEY `meeting_attendance_logs_student_id_index` (`student_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `messages`;
@@ -562,6 +612,26 @@ CREATE TABLE `plan` (
   PRIMARY KEY (`plan_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `professor_batch`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `professor_batch` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `batch_id` bigint(20) unsigned NOT NULL,
+  `professor_id` int(11) NOT NULL,
+  `assigned_at` timestamp NULL DEFAULT NULL,
+  `assigned_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `professor_batch_batch_id_professor_id_unique` (`batch_id`,`professor_id`),
+  KEY `professor_batch_professor_id_foreign` (`professor_id`),
+  KEY `professor_batch_assigned_by_foreign` (`assigned_by`),
+  CONSTRAINT `professor_batch_assigned_by_foreign` FOREIGN KEY (`assigned_by`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL,
+  CONSTRAINT `professor_batch_batch_id_foreign` FOREIGN KEY (`batch_id`) REFERENCES `student_batches` (`batch_id`) ON DELETE CASCADE,
+  CONSTRAINT `professor_batch_professor_id_foreign` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`professor_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `professor_program`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -689,6 +759,28 @@ CREATE TABLE `referrals` (
   KEY `idx_student_registration` (`student_id`,`registration_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `registration_modules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `registration_modules` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `registration_id` int(10) unsigned NOT NULL,
+  `module_id` int(11) NOT NULL,
+  `subject_id` bigint(20) unsigned DEFAULT NULL,
+  `package_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `registration_modules_registration_id_module_id_unique` (`registration_id`,`module_id`),
+  KEY `registration_modules_module_id_foreign` (`module_id`),
+  KEY `registration_modules_subject_id_foreign` (`subject_id`),
+  KEY `registration_modules_package_id_foreign` (`package_id`),
+  CONSTRAINT `registration_modules_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `modules` (`modules_id`) ON DELETE CASCADE,
+  CONSTRAINT `registration_modules_package_id_foreign` FOREIGN KEY (`package_id`) REFERENCES `packages` (`package_id`) ON DELETE CASCADE,
+  CONSTRAINT `registration_modules_registration_id_foreign` FOREIGN KEY (`registration_id`) REFERENCES `registrations` (`registration_id`) ON DELETE CASCADE,
+  CONSTRAINT `registration_modules_subject_id_foreign` FOREIGN KEY (`subject_id`) REFERENCES `courses` (`subject_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `registrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -764,6 +856,7 @@ CREATE TABLE `registrations` (
   `Test` varchar(255) DEFAULT NULL,
   `last_name` varchar(255) DEFAULT NULL,
   `referral_code` varchar(20) DEFAULT NULL,
+  `ama_namin` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`registration_id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -872,6 +965,8 @@ CREATE TABLE `students` (
   `passport_photo` varchar(255) DEFAULT NULL,
   `parent_guardian_name` varchar(255) DEFAULT NULL,
   `parent_guardian_contact` varchar(20) DEFAULT NULL,
+  `referral_code` varchar(20) DEFAULT NULL,
+  `ama_namin` varchar(255) DEFAULT NULL,
   `previous_school` varchar(255) DEFAULT NULL,
   `graduation_year` year(4) DEFAULT NULL,
   `course_taken` varchar(255) DEFAULT NULL,
@@ -915,7 +1010,7 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `user_id` int(11) NOT NULL AUTO_INCREMENT,
   `admin_id` int(11) NOT NULL,
-  `directors_id` int(11) NOT NULL,
+  `directors_id` bigint(20) unsigned NOT NULL,
   `is_online` tinyint(1) NOT NULL DEFAULT 0,
   `last_seen` timestamp NULL DEFAULT NULL,
   `email` varchar(100) NOT NULL,
@@ -977,3 +1072,4 @@ INSERT INTO `migrations` VALUES (42,'2025_07_17_105200_add_course_id_to_content_
 INSERT INTO `migrations` VALUES (43,'2025_07_17_125010_add_lesson_fields_to_lessons_table',35);
 INSERT INTO `migrations` VALUES (44,'2025_07_17_125751_update_content_type_enum_in_content_items_table',36);
 INSERT INTO `migrations` VALUES (45,'2025_07_17_200906_add_wizard_fields_to_packages_table',37);
+INSERT INTO `migrations` VALUES (46,'2025_07_18_144157_create_registration_modules_table',38);
