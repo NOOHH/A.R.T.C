@@ -76,6 +76,35 @@ class Enrollment extends Model
     }
 
     /**
+     * Get the courses enrolled through this enrollment
+     */
+    public function enrollmentCourses()
+    {
+        return $this->hasMany(EnrollmentCourse::class, 'enrollment_id', 'enrollment_id');
+    }
+
+    /**
+     * Get the courses that this enrollment has access to
+     */
+    public function accessibleCourses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollment_courses', 'enrollment_id', 'course_id')
+            ->withPivot(['module_id', 'enrollment_type', 'course_price', 'is_active'])
+            ->wherePivot('is_active', true);
+    }
+
+    /**
+     * Check if this enrollment has access to a specific course
+     */
+    public function hasAccessToCourse($courseId)
+    {
+        return $this->enrollmentCourses()
+            ->where('course_id', $courseId)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    /**
      * Inherit data from the associated registration
      */
     public function inheritFromRegistration()

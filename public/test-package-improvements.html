@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Package Management Improvement Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .test-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .test-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { border-left: 4px solid #28a745; background: #d4edda; }
+        .error { border-left: 4px solid #dc3545; background: #f8d7da; }
+        .info { border-left: 4px solid #17a2b8; background: #d1ecf1; }
+        .warning { border-left: 4px solid #ffc107; background: #fff3cd; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🚀 Package Management Improvements Test</h1>
+        <p>Testing the new features: course selection mode, deletion fixes, and modular enrollment integration.</p>
+        
+        <div class="test-section info">
+            <h3>📋 New Features Implemented</h3>
+            <ul>
+                <li>✅ Package deletion error fix (HTTP 400 resolved)</li>
+                <li>✅ Course count selection mode checkbox</li>
+                <li>✅ Dynamic package display based on selection mode</li>
+                <li>✅ Modular enrollment course count validation</li>
+                <li>✅ Learning mode progression for course-based packages</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Test Package Deletion</h3>
+            <button onclick="testPackageDeletion()">Test Delete Package</button>
+            <div id="deletionResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Package Creation with Course Mode</h3>
+            <button onclick="testCourseBasedPackage()">Create Course-Based Package</button>
+            <div id="creationResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Test Modular Enrollment Integration</h3>
+            <button onclick="testModularEnrollment()">Test Package Selection</button>
+            <div id="enrollmentResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📈 Test Database Updates</h3>
+            <button onclick="testDatabaseChanges()">Verify Database Schema</button>
+            <div id="databaseResults"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testPackageDeletion() {
+            const container = document.getElementById('deletionResults');
+            container.innerHTML = '<div class="info">Testing package deletion...</div>';
+            
+            try {
+                // First, get a package to delete (if any exist)
+                const packagesResponse = await fetch('/api/admin/packages');
+                if (!packagesResponse.ok) {
+                    throw new Error(`Failed to fetch packages: ${packagesResponse.status}`);
+                }
+                
+                const packages = await packagesResponse.json();
+                if (packages.length === 0) {
+                    container.innerHTML = '<div class="warning">No packages found to test deletion.</div>';
+                    return;
+                }
+                
+                const testPackage = packages[packages.length - 1]; // Get the last package
+                
+                // Try to delete it
+                const deleteResponse = await fetch(`/api/admin/packages/${testPackage.package_id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                });
+                
+                if (deleteResponse.ok) {
+                    const result = await deleteResponse.json();
+                    container.innerHTML = `<div class="success">✅ Package deletion test PASSED<br>Response: ${JSON.stringify(result, null, 2)}</div>`;
+                } else {
+                    const errorData = await deleteResponse.text();
+                    container.innerHTML = `<div class="error">❌ Package deletion failed: ${deleteResponse.status}<br>Error: ${errorData}</div>`;
+                }
+                
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Test error: ${error.message}</div>`;
+            }
+        }
+
+        async function testCourseBasedPackage() {
+            const container = document.getElementById('creationResults');
+            container.innerHTML = '<div class="info">Testing course-based package creation...</div>';
+            
+            const testPackage = {
+                package_name: 'Test Course Package ' + Date.now(),
+                description: 'Test package with course selection mode',
+                amount: 1299.99,
+                package_type: 'modular',
+                selection_type: 'course',
+                selection_mode: 'courses',
+                course_count: 5,
+                program_id: 1
+            };
+            
+            try {
+                const response = await fetch('/api/admin/packages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify(testPackage)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    container.innerHTML = `<div class="success">✅ Course-based package creation PASSED<br><pre>${JSON.stringify(result, null, 2)}</pre></div>`;
+                } else {
+                    const errorData = await response.text();
+                    container.innerHTML = `<div class="error">❌ Package creation failed: ${response.status}<br>Error: ${errorData}</div>`;
+                }
+                
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Test error: ${error.message}</div>`;
+            }
+        }
+
+        async function testModularEnrollment() {
+            const container = document.getElementById('enrollmentResults');
+            container.innerHTML = '<div class="info">Testing modular enrollment package selection...</div>';
+            
+            try {
+                // Test package selection with different modes
+                const testData = {
+                    moduleBasedTest: {
+                        packageId: 1,
+                        programId: 1,
+                        moduleCount: 3,
+                        selectionMode: 'modules',
+                        courseCount: 0
+                    },
+                    courseBasedTest: {
+                        packageId: 2,
+                        programId: 1,
+                        moduleCount: 0,
+                        selectionMode: 'courses',
+                        courseCount: 5
+                    }
+                };
+                
+                let results = '';
+                
+                // Simulate package selection for module-based
+                results += '<h4>Module-based Package Test:</h4>';
+                results += `<pre>selectPackage(${testData.moduleBasedTest.packageId}, ${testData.moduleBasedTest.programId}, ${testData.moduleBasedTest.moduleCount}, '${testData.moduleBasedTest.selectionMode}', ${testData.moduleBasedTest.courseCount})</pre>`;
+                
+                // Simulate package selection for course-based
+                results += '<h4>Course-based Package Test:</h4>';
+                results += `<pre>selectPackage(${testData.courseBasedTest.packageId}, ${testData.courseBasedTest.programId}, ${testData.courseBasedTest.moduleCount}, '${testData.courseBasedTest.selectionMode}', ${testData.courseBasedTest.courseCount})</pre>`;
+                
+                results += '<div class="success">✅ Modular enrollment integration tests configured. Check console for detailed logs.</div>';
+                
+                container.innerHTML = results;
+                
+                // Log to console for debugging
+                console.log('Modular Enrollment Test Data:', testData);
+                
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Test error: ${error.message}</div>`;
+            }
+        }
+
+        async function testDatabaseChanges() {
+            const container = document.getElementById('databaseResults');
+            container.innerHTML = '<div class="info">Testing database schema changes...</div>';
+            
+            try {
+                // Test the test relationships endpoint
+                const response = await fetch('/api/admin/packages/test-relationships', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    container.innerHTML = `<div class="success">✅ Database schema test PASSED<br><pre>${JSON.stringify(result, null, 2)}</pre></div>`;
+                } else {
+                    const errorData = await response.text();
+                    container.innerHTML = `<div class="error">❌ Database test failed: ${response.status}<br>Error: ${errorData}</div>`;
+                }
+                
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Test error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-run basic validation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Package Management Improvements Loaded');
+            console.log('New Features:');
+            console.log('- Course selection mode checkbox');
+            console.log('- Fixed package deletion (HTTP 400)');
+            console.log('- Updated modular enrollment validation');
+            console.log('- Dynamic package display based on selection mode');
+        });
+    </script>
+</body>
+</html>

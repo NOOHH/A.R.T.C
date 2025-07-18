@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Registration;
 use App\Models\Enrollment;
+use App\Models\EnrollmentCourse;
 use App\Models\Program;
 use App\Models\Package;
 use App\Models\FormRequirement;
@@ -271,9 +272,36 @@ class StudentRegistrationController extends Controller
                 try {
                     if (FormRequirement::columnExists($fieldName) && $request->has($fieldName)) {
                         if ($field->field_type === 'file' && $request->hasFile($fieldName)) {
-                            // Handle file uploads
-                            $path = $request->file($fieldName)->store('uploads/registrations', 'public');
+                            // Enhanced file upload handling with validation
+                            $uploadedFile = $request->file($fieldName);
+                            
+                            // Validate file type (only allow pdf, png, jpeg, jpg, images)
+                            $allowedMimes = ['pdf', 'png', 'jpeg', 'jpg'];
+                            $fileExtension = strtolower($uploadedFile->getClientOriginalExtension());
+                            
+                            if (!in_array($fileExtension, $allowedMimes)) {
+                                throw new \Exception("Invalid file type for {$fieldName}. Only PDF, PNG, JPEG files are allowed.");
+                            }
+                            
+                            // Validate file size (max 10MB)
+                            if ($uploadedFile->getSize() > 10485760) { // 10MB in bytes
+                                throw new \Exception("File size for {$fieldName} exceeds 10MB limit.");
+                            }
+                            
+                            // Store the file with a unique name to prevent conflicts
+                            $fileName = time() . '_' . uniqid() . '_' . $uploadedFile->getClientOriginalName();
+                            $path = $uploadedFile->storeAs('uploads/registrations', $fileName, 'public');
+                            
+                            // Save the file path to the database
                             $registration->{$fieldName} = $path;
+                            
+                            Log::info("File uploaded successfully for field {$fieldName}", [
+                                'field_name' => $fieldName,
+                                'file_path' => $path,
+                                'file_size' => $uploadedFile->getSize(),
+                                'file_type' => $fileExtension
+                            ]);
+                            
                         } elseif ($field->field_type === 'module_selection' && $request->has($fieldName)) {
                             // Handle module selection (array of module IDs)
                             $selectedModules = $request->input($fieldName, []);
@@ -966,6 +994,67 @@ class StudentRegistrationController extends Controller
                                 'module_id' => $moduleId
                             ]);
                             Log::info('Module registered', ['module_id' => $moduleId, 'registration_id' => $registration->registration_id]);
+                            
+                            // Handle course-level enrollments if specified
+                            if (is_array($moduleData) && isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                                foreach ($moduleData['selected_courses'] as $courseData) {
+                                    $courseId = is_array($courseData) ? ($courseData['id'] ?? $courseData['course_id'] ?? null) : $courseData;
+                                    
+                                    if ($courseId) {
+                                        try {
+                                            EnrollmentCourse::create([
+                                                'enrollment_id' => $enrollment->enrollment_id,
+                                                'course_id' => $courseId,
+                                                'module_id' => $moduleId,
+                                                'enrollment_type' => 'course',
+                                                'course_price' => 0, // Price will be calculated based on package
+                                                'is_active' => true
+                                            ]);
+                                            Log::info('Course enrolled', [
+                                                'course_id' => $courseId, 
+                                                'module_id' => $moduleId,
+                                                'enrollment_id' => $enrollment->enrollment_id
+                                            ]);
+                                        } catch (\Exception $e) {
+                                            Log::warning('Failed to create course enrollment', [
+                                                'course_id' => $courseId,
+                                                'module_id' => $moduleId,
+                                                'enrollment_id' => $enrollment->enrollment_id,
+                                                'error' => $e->getMessage()
+                                            ]);
+                                        }
+                                    }
+                                }
+                            } else {
+                                // If no specific courses selected, enroll in all courses of the module
+                                $module = \App\Models\Module::with('courses')->find($moduleId);
+                                if ($module && $module->courses) {
+                                    foreach ($module->courses as $course) {
+                                        try {
+                                            EnrollmentCourse::create([
+                                                'enrollment_id' => $enrollment->enrollment_id,
+                                                'course_id' => $course->subject_id,
+                                                'module_id' => $moduleId,
+                                                'enrollment_type' => 'module',
+                                                'course_price' => 0,
+                                                'is_active' => true
+                                            ]);
+                                            Log::info('Full module course enrolled', [
+                                                'course_id' => $course->subject_id, 
+                                                'module_id' => $moduleId,
+                                                'enrollment_id' => $enrollment->enrollment_id
+                                            ]);
+                                        } catch (\Exception $e) {
+                                            Log::warning('Failed to create full module course enrollment', [
+                                                'course_id' => $course->subject_id,
+                                                'module_id' => $moduleId,
+                                                'enrollment_id' => $enrollment->enrollment_id,
+                                                'error' => $e->getMessage()
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
                         } catch (\Exception $e) {
                             Log::warning('Failed to create module registration', [
                                 'module_id' => $moduleId,
@@ -1526,6 +1615,75 @@ class StudentRegistrationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to validate referral code'
+            ], 500);
+        }
+    }
+
+    /**
+     * Process OCR document for Tesseract text extraction
+     */
+    public function processOcrDocument(Request $request)
+    {
+        try {
+            // Validate the uploaded file
+            $request->validate([
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', // 10MB max
+            ]);
+
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file uploaded'
+                ], 400);
+            }
+
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $fileType = strtolower($file->getClientOriginalExtension());
+
+            // Store the file temporarily
+            $tempPath = $file->storeAs('temp/ocr', uniqid() . '.' . $fileType, 'public');
+            $fullPath = storage_path('app/public/' . $tempPath);
+
+            // Process with OCR
+            $ocrService = new \App\Services\OcrService();
+            $extractedText = $ocrService->extractText($fullPath, $fileType);
+            
+            // Get program suggestions based on extracted text
+            $suggestions = $ocrService->suggestPrograms($extractedText);
+
+            // Clean up temporary file
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            Log::info('OCR processing completed', [
+                'file_name' => $originalName,
+                'file_type' => $fileType,
+                'text_length' => strlen($extractedText),
+                'suggestions_count' => count($suggestions)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document processed successfully',
+                'data' => [
+                    'extracted_text' => $extractedText,
+                    'program_suggestions' => $suggestions,
+                    'file_name' => $originalName
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('OCR processing error', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process document: ' . $e->getMessage()
             ], 500);
         }
     }
