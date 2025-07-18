@@ -533,56 +533,48 @@ class ClassMeetingController extends Controller
             ->where('enrollments.enrollment_status', 'approved')
             ->pluck('student_batches.batch_id');
 
-        // Get upcoming meetings for student's batches (including current meetings)
-        $upcomingMeetings = ClassMeeting::with(['batch.program', 'professor', 'attendanceLogs'])
+        // Get all meetings for student's batches
+        $allMeetings = ClassMeeting::with(['batch.program', 'professor', 'attendanceLogs'])
             ->whereIn('batch_id', $studentBatches)
-            ->where('meeting_date', '>=', now()->subHours(2)) // Include meetings that started up to 2 hours ago
             ->orderBy('meeting_date', 'asc')
             ->get();
 
-        // Separate current/live meetings from upcoming
-        $currentMeetings = $upcomingMeetings->filter(function($meeting) {
+        // Categorize meetings
+        $currentMeetings = $allMeetings->filter(function($meeting) {
             $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-            $now = \Carbon\Carbon::now();
-            $duration = $meeting->duration_minutes ?? 60;
-            
-            // Meeting is current if it started and hasn't ended yet
-            return $meetingDate->isPast() && $meetingDate->diffInMinutes($now) <= $duration;
+            return $meetingDate->isToday() && $meeting->actual_start_time && !$meeting->actual_end_time && $meeting->status !== 'completed';
         });
 
-        // Remove current meetings from upcoming
-        $upcomingMeetings = $upcomingMeetings->filter(function($meeting) {
-            $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-            return $meetingDate->isFuture();
+        $nonCurrentMeetings = $allMeetings->reject(function($meeting) use ($currentMeetings) {
+            return $currentMeetings->contains('meeting_id', $meeting->meeting_id);
         });
 
-        // Get today's meetings
-        $todaysMeetings = ClassMeeting::with(['batch.program', 'professor'])
-            ->whereIn('batch_id', $studentBatches)
-            ->whereDate('meeting_date', today())
-            ->orderBy('meeting_date', 'asc')
-            ->get();
+        $todaysMeetings = $nonCurrentMeetings->filter(function($meeting) {
+            $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
+            return $meetingDate->isToday() && !$meeting->actual_start_time && $meeting->status !== 'completed';
+        });
 
-        // Get past meetings (last 30 days)
-        $pastMeetings = ClassMeeting::with(['batch.program', 'professor', 'attendanceLogs'])
-            ->whereIn('batch_id', $studentBatches)
-            ->where('meeting_date', '<', now())
-            ->where('meeting_date', '>=', now()->subDays(30))
-            ->orderBy('meeting_date', 'desc')
-            ->get();
+        $upcomingMeetings = $nonCurrentMeetings->filter(function($meeting) {
+            $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
+            return $meetingDate->isAfter(\Carbon\Carbon::today()) && !$meeting->actual_start_time && $meeting->status !== 'completed';
+        });
+
+        $finishedMeetings = $allMeetings->filter(function($meeting) {
+            return $meeting->status === 'completed' || ($meeting->actual_end_time && \Carbon\Carbon::parse($meeting->actual_end_time)->isPast());
+        });
+
+        // Optionally, keep pastMeetings for attendance stats if needed
+        $pastMeetings = collect();
 
         return view('student.meetings', compact(
-            'upcomingMeetings', 
+            'upcomingMeetings',
             'currentMeetings',
-            'todaysMeetings', 
-            'pastMeetings', 
+            'todaysMeetings',
+            'finishedMeetings',
+            'pastMeetings',
             'studentId'
         ));
     }
-
-    /**
-     * Log student meeting access
-     */
     public function logStudentAccess(Request $request, $meetingId)
     {
         $studentId = null;
@@ -613,5 +605,35 @@ class ClassMeetingController extends Controller
         );
 
         return response()->json(['success' => true, 'message' => 'Meeting access logged']);
+    }
+
+    /**
+     * Get meeting stats for professor modal
+     */
+    public function getMeetingStats($meetingId)
+    {
+        $meeting = ClassMeeting::with(['batch', 'attendanceLogs.student'])->findOrFail($meetingId);
+        
+        // Count total students in the batch
+        $totalStudents = DB::table('enrollments')
+            ->where('batch_id', $meeting->batch_id)
+            ->where('enrollment_status', 'approved')
+            ->count();
+        
+        // Count students who have joined/accessed the meeting
+        $joinedStudents = $meeting->attendanceLogs()
+            ->whereNotNull('accessed_at')
+            ->count();
+        
+        return response()->json([
+            'success' => true,
+            'total_students' => $totalStudents,
+            'joined_students' => $joinedStudents,
+            'meeting' => [
+                'status' => $meeting->status,
+                'actual_start_time' => $meeting->actual_start_time,
+                'actual_end_time' => $meeting->actual_end_time
+            ]
+        ]);
     }
 }

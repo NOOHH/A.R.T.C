@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Models\FormRequirement;
 use App\Models\UiSetting;
+use Illuminate\Support\Str;
 use App\Models\AdminSetting;
 use App\Models\PaymentMethod;
 use App\Services\DynamicFieldService;
@@ -672,13 +673,16 @@ class AdminSettingsController extends Controller
                         'section_name' => $reqData['section_name']
                     ];
                 } else {
-                    // For regular fields, field_name and field_label are required
-                    if (empty($reqData['field_name']) || empty($reqData['field_label'])) {
+                    // For regular fields, use label to derive field_name if missing or contains spaces
+                    if (empty($reqData['field_label'])) {
                         continue;
                     }
-                    
+                    $fieldName = $reqData['field_name'] ?? '';
+                    if (Str::contains($fieldName, ' ') || empty($fieldName)) {
+                        $fieldName = Str::snake($reqData['field_label']);
+                    }
                     $data = [
-                        'field_name' => $reqData['field_name'],
+                        'field_name' => $fieldName,
                         'field_label' => $reqData['field_label'],
                         'field_type' => $reqData['field_type'],
                         'program_type' => $reqData['program_type'],
@@ -1117,6 +1121,7 @@ class AdminSettingsController extends Controller
             'upload_videos_enabled' => 'nullable',
             'attendance_enabled' => 'nullable',
             'view_programs_enabled' => 'nullable',
+            'meeting_creation_enabled' => 'nullable',
         ]);
 
         try {
@@ -1126,38 +1131,75 @@ class AdminSettingsController extends Controller
             $uploadVideosEnabled = filter_var($request->input('upload_videos_enabled', true), FILTER_VALIDATE_BOOLEAN);
             $attendanceEnabled = filter_var($request->input('attendance_enabled', true), FILTER_VALIDATE_BOOLEAN);
             $viewProgramsEnabled = filter_var($request->input('view_programs_enabled', true), FILTER_VALIDATE_BOOLEAN);
+        // Determine meeting creation toggle (default false if unchecked)
+        $meetingCreationEnabled = filter_var($request->input('meeting_creation_enabled', false), FILTER_VALIDATE_BOOLEAN);
 
-            // Use AdminSetting model to store professor feature settings
+
+            // Save AI Quiz Enabled setting
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'ai_quiz_enabled'],
-                ['setting_value' => $aiQuizEnabled ? 'true' : 'false']
+                [
+                    'setting_value' => $aiQuizEnabled ? 'true' : 'false',
+                    'is_active' => 1
+                ]
             );
 
+            // Save Meeting Creation Enabled setting
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'meeting_creation_enabled'],
+                [
+                    'setting_value' => $meetingCreationEnabled ? '1' : '0',
+                    'is_active' => 1
+                ]
+            );
+
+            // The rest can use the same keys as before (or add if missing)
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'grading_enabled'],
-                ['setting_value' => $gradingEnabled ? 'true' : 'false']
+                [
+                    'setting_value' => $gradingEnabled ? 'true' : 'false',
+                    'is_active' => 1
+                ]
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'upload_videos_enabled'],
-                ['setting_value' => $uploadVideosEnabled ? 'true' : 'false']
+                [
+                    'setting_value' => $uploadVideosEnabled ? 'true' : 'false',
+                    'is_active' => 1
+                ]
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'attendance_enabled'],
-                ['setting_value' => $attendanceEnabled ? 'true' : 'false']
+                [
+                    'setting_value' => $attendanceEnabled ? 'true' : 'false',
+                    'is_active' => 1
+                ]
             );
 
             AdminSetting::updateOrCreate(
                 ['setting_key' => 'view_programs_enabled'],
-                ['setting_value' => $viewProgramsEnabled ? 'true' : 'false']
+                [
+                    'setting_value' => $viewProgramsEnabled ? 'true' : 'false',
+                    'is_active' => 1
+                ]
             );
+
+            // No further Meeting Creation updates needed
 
             return response()->json(['success' => true, 'message' => 'Professor feature settings updated successfully!']);
 
         } catch (\Exception $e) {
-            Log::error('Error updating professor feature settings: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => 'Failed to update settings. Please try again.'], 500);
+            Log::error('Error updating professor feature settings: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update settings. ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
         }
     }
 
@@ -1172,7 +1214,10 @@ class AdminSettingsController extends Controller
                 'view_programs_enabled' => AdminSetting::where('setting_key', 'view_programs_enabled')->value('setting_value') !== 'false',
             ];
 
-            return response()->json($features);
+            return response()->json([
+                'success' => true,
+                'settings' => $features
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Error getting professor features: ' . $e->getMessage());

@@ -7,6 +7,7 @@ use App\Models\Professor;
 use App\Models\Program;
 use App\Models\StudentBatch;
 use App\Models\AdminSetting;
+use App\Models\MeetingAttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,23 +18,14 @@ class ProfessorMeetingController extends Controller
      */
     private function canCreateMeetings($professorId)
     {
-        // Check if meeting creation is globally enabled
-        $meetingCreationEnabled = AdminSetting::getValue('meeting_creation_enabled', '1') === '1';
-        
-        if (!$meetingCreationEnabled) {
-            return false;
+        // Check whitelist first: whitelisted professors always can create
+        $whitelist = AdminSetting::getValue('meeting_whitelist_professors', '');
+        if (!empty($whitelist)) {
+            $ids = array_filter(explode(',', $whitelist));
+            return in_array($professorId, $ids);
         }
-        
-        // Check whitelist if it exists
-        $whitelistedProfessors = AdminSetting::getValue('meeting_whitelist_professors', '');
-        
-        if (!empty($whitelistedProfessors)) {
-            $whitelistedIds = array_filter(explode(',', $whitelistedProfessors));
-            return in_array($professorId, $whitelistedIds);
-        }
-        
-        // If no whitelist, global setting applies
-        return true;
+        // Otherwise use global toggle
+        return AdminSetting::getValue('meeting_creation_enabled', '1') === '1';
     }
 
     public function index()
@@ -317,7 +309,7 @@ class ProfessorMeetingController extends Controller
 
     public function stats(ClassMeeting $meeting)
     {
-        $professorId = session('professor_id');
+        $professorId = session('professor_id'); // Consistent with rest of controller
 
         // Verify professor owns this meeting
         if ($meeting->professor_id != $professorId) {
@@ -325,16 +317,26 @@ class ProfessorMeetingController extends Controller
         }
 
         try {
-            // Get total students in the batch
-            $totalStudents = $meeting->batch->enrollments()->count();
+            // Get total students in the batch via enrollments table
+            $totalStudents = DB::table('enrollments')
+                ->where('batch_id', $meeting->batch_id)
+                ->where('enrollment_status', 'approved')
+                ->count();
             
-            // Get joined students (this would need attendance tracking implementation)
-            $joinedStudents = 0; // Placeholder for now
+            // Get students who have joined the meeting
+            $joinedStudents = MeetingAttendanceLog::where('meeting_id', $meeting->meeting_id)
+                ->whereNotNull('joined_at')
+                ->count();
             
             return response()->json([
                 'success' => true,
                 'total_students' => $totalStudents,
-                'joined_students' => $joinedStudents
+                'joined_students' => $joinedStudents,
+                'meeting' => [
+                    'status' => $meeting->status,
+                    'actual_start_time' => $meeting->actual_start_time,
+                    'actual_end_time' => $meeting->actual_end_time
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -2,6 +2,17 @@
 
 @section('title', 'My Meetings')
 
+@php
+    // Build meetingData for all meetings before any HTML
+    $meetingData = [];
+    foreach ($meetings as $meeting) {
+        $meetingData[$meeting->meeting_id] = [
+            'status' => $meeting->status,
+            'actual_start_time' => $meeting->actual_start_time,
+            'actual_end_time' => $meeting->actual_end_time
+        ];
+    }
+@endphp
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -98,7 +109,7 @@
                                     <h5 class="mb-0">{{ $program->program_name }}</h5>
                                 </div>
                                 <div class="card-body">
-                                    @foreach($program->batches as $batch)
+@foreach($program->batches as $batch)
                                         <div class="batch-section mb-4">
                                             <h6 class="text-muted mb-3">{{ $batch->batch_name }}</h6>
                                             
@@ -130,11 +141,30 @@
                                             <div class="tab-content" id="pills-tabContent-{{ $program->program_id }}-{{ $batch->batch_id }}">
                                                 @php
                                                     $batchMeetings = $meetings->where('batch_id', $batch->batch_id);
-                                                    $currentMeetings = $batchMeetings->where('status', 'ongoing');
-                                                    $todayMeetings = $batchMeetings->filter(function($meeting) {
-                                                        return \Carbon\Carbon::parse($meeting->meeting_date)->isToday();
+                                                    // Current: today, started (actual_start_time set), not ended
+                                                    $currentMeetings = $batchMeetings->filter(function($meeting) {
+                                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
+                                                        return $meetingDate->isToday() && $meeting->actual_start_time && !$meeting->actual_end_time;
                                                     });
-                                                    $upcomingMeetings = $batchMeetings->where('meeting_date', '>', now())->where('status', '!=', 'completed');
+
+                                                    // Remove current from pool for other categories
+                                                    $nonCurrentMeetings = $batchMeetings->reject(function($meeting) use ($currentMeetings) {
+                                                        return $currentMeetings->contains('meeting_id', $meeting->meeting_id);
+                                                    });
+
+                                                    // Today's: today, not started (actual_start_time null), not in current
+                                                    $todayMeetings = $nonCurrentMeetings->filter(function($meeting) {
+                                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
+                                                        return $meetingDate->isToday() && !$meeting->actual_start_time;
+                                                    });
+
+                                                    // Upcoming: future, not started
+                                                    $upcomingMeetings = $nonCurrentMeetings->filter(function($meeting) {
+                                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
+                                                        return $meetingDate->isAfter(\Carbon\Carbon::today()) && !$meeting->actual_start_time;
+                                                    });
+
+                                                    // Finished: completed status
                                                     $finishedMeetings = $batchMeetings->where('status', 'completed');
                                                 @endphp
                                                 
@@ -152,6 +182,7 @@
                                                                             <div class="btn-group btn-group-sm">
                                                                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); openMeetingModal('{{ $meeting->meeting_id }}', '{{ $meeting->title }}', '{{ $meeting->meeting_url }}')">
                                                                                     <i class="bi bi-play-circle"></i>
+                                                                                </button>
                                                                                 </button>
                                                                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();" data-bs-toggle="modal" data-bs-target="#editMeetingModal"
                                                                                     data-meeting-id="{{ $meeting->meeting_id }}"
@@ -187,6 +218,7 @@
                                                                             <div class="btn-group btn-group-sm">
                                                                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); openMeetingModal('{{ $meeting->meeting_id }}', '{{ $meeting->title }}', '{{ $meeting->meeting_url }}')">
                                                                                     <i class="bi bi-play-circle"></i>
+                                                                                </button>
                                                                                 </button>
                                                                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation();" data-bs-toggle="modal" data-bs-target="#editMeetingModal"
                                                                                     data-meeting-id="{{ $meeting->meeting_id }}"
@@ -632,6 +664,8 @@
 <script>
 // Pass batches data to JavaScript
 window.allBatches = {!! json_encode($batches) !!};
+// Pass all meeting status data to JavaScript (accumulated from all programs/batches)
+window.meetingData = {!! json_encode($meetingData) !!};
 </script>
 <script>
 let meetingTimer;
@@ -886,20 +920,44 @@ document.addEventListener('DOMContentLoaded', function() {
 function openMeetingModal(meetingId, meetingTitle, meetingLink) {
     currentMeetingId = meetingId;
     currentMeetingLink = meetingLink;
-    
     document.getElementById('modalMeetingTitle').textContent = meetingTitle;
     document.getElementById('meetingTimer').textContent = '00:00:00';
-    
-    // Reset button states
-    document.getElementById('startMeetingBtn').style.display = 'block';
-    document.getElementById('openMeetingBtn').style.display = 'none';
-    document.getElementById('finishMeetingBtn').style.display = 'none';
-    document.getElementById('manageAttendanceBtn').style.display = 'none';
+
+    // Get meeting status info
+    let meetingInfo = (window.meetingData && window.meetingData[meetingId]) ? window.meetingData[meetingId] : {};
+    console.log('openMeetingModal: meetingId', meetingId, 'meetingInfo', meetingInfo); // DEBUG
+    let status = meetingInfo.status;
+    let actualStart = meetingInfo.actual_start_time;
+    let actualEnd = meetingInfo.actual_end_time;
+
+    // Set button states based on meeting status
+    if (status === 'ongoing' && actualStart && !actualEnd) {
+        document.getElementById('startMeetingBtn').style.display = 'none';
+        document.getElementById('openMeetingBtn').style.display = 'block';
+        document.getElementById('finishMeetingBtn').style.display = 'block';
+        document.getElementById('manageAttendanceBtn').style.display = 'block';
+    } else if ((status === 'scheduled' || !status) && !actualStart) {
+        document.getElementById('startMeetingBtn').style.display = 'block';
+        document.getElementById('openMeetingBtn').style.display = 'none';
+        document.getElementById('finishMeetingBtn').style.display = 'none';
+        document.getElementById('manageAttendanceBtn').style.display = 'none';
+    } else if (status === 'completed' || actualEnd) {
+        document.getElementById('startMeetingBtn').style.display = 'none';
+        document.getElementById('openMeetingBtn').style.display = 'none';
+        document.getElementById('finishMeetingBtn').style.display = 'none';
+        document.getElementById('manageAttendanceBtn').style.display = 'block';
+    } else {
+        // Fallback: hide all except start
+        document.getElementById('startMeetingBtn').style.display = 'block';
+        document.getElementById('openMeetingBtn').style.display = 'none';
+        document.getElementById('finishMeetingBtn').style.display = 'none';
+        document.getElementById('manageAttendanceBtn').style.display = 'none';
+    }
     document.querySelector('.attendance-section').style.display = 'none';
-    
+
     // Fetch student stats for this meeting
     fetchMeetingStats(meetingId);
-    
+
     // Show modal
     new bootstrap.Modal(document.getElementById('meetingControlModal')).show();
 }
@@ -917,6 +975,15 @@ function fetchMeetingStats(meetingId) {
         if (data.success) {
             document.getElementById('totalStudents').textContent = data.total_students || 0;
             document.getElementById('joinedStudents').textContent = data.joined_students || 0;
+            
+            // Update window.meetingData with latest meeting status
+            if (data.meeting && window.meetingData) {
+                window.meetingData[meetingId] = {
+                    status: data.meeting.status,
+                    actual_start_time: data.meeting.actual_start_time,
+                    actual_end_time: data.meeting.actual_end_time
+                };
+            }
         } else {
             console.error('Failed to fetch meeting stats:', data.message);
             document.getElementById('totalStudents').textContent = '0';
@@ -952,6 +1019,8 @@ function startMeeting() {
       .then(data => {
           if (data.success) {
               console.log('Meeting started successfully');
+              // Refresh meeting stats to get updated status
+              fetchMeetingStats(currentMeetingId);
           }
       });
 }

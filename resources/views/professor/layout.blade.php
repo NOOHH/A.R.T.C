@@ -249,6 +249,11 @@
                                 </div>
                             </div>
 
+                            @php
+                                $attendanceEnabled = \App\Models\AdminSetting::where('setting_key', 'attendance_enabled')->value('setting_value') !== 'false';
+                                $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
+                            @endphp
+                            @if($attendanceEnabled || $gradingEnabled)
                             <!-- Reports -->
                             <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.reports')) active @endif">
                                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
@@ -258,17 +263,23 @@
                                 </a>
                                 <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.reports')) show @endif" id="reportsMenu">
                                     <div class="submenu">
+                                        @if($attendanceEnabled)
                                         <a href="{{ route('professor.reports.attendance') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.reports.attendance') active @endif">
                                             <i class="bi bi-calendar-check"></i>
                                             <span>Attendance</span>
                                         </a>
+                                        @endif
+                                        @if($gradingEnabled)
                                         <a href="{{ route('professor.reports.grades') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.reports.grades') active @endif">
                                             <i class="bi bi-award"></i>
                                             <span>Grades</span>
                                         </a>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
+
+                            @endif
 
                             <!-- Chat -->
                             <div class="nav-item">

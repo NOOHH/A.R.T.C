@@ -10,16 +10,17 @@ class AdminSetting extends Model
     use HasFactory;
 
     protected $table = 'admin_settings';
+    protected $primaryKey = 'setting_id';
 
     protected $fillable = [
         'setting_key',
         'setting_value',
-        'description',
-        'is_public'
+        'setting_description',
+        'is_active'
     ];
 
     protected $casts = [
-        'is_public' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -40,7 +41,7 @@ class AdminSetting extends Model
             ['setting_key' => $key],
             [
                 'setting_value' => $value,
-                'description' => $description,
+                'setting_description' => $description,
                 'updated_at' => now()
             ]
         );

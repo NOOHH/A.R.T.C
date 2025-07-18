@@ -74,7 +74,7 @@
                                                 <br>
                                                 <small class="text-muted">Started {{ $meetingDate->diffForHumans() }}</small>
                                             </div>
-                                            @if($meeting->meeting_url)
+                                            @if($meeting->meeting_url && $meeting->actual_start_time)
                                                 <a href="{{ $meeting->meeting_url }}" 
                                                    target="_blank" 
                                                    class="btn btn-danger btn-sm"
@@ -84,6 +84,40 @@
                                             @else
                                                 <span class="text-muted small">No link available</span>
                                             @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Today's Meetings -->
+            @if($todaysMeetings->count() > 0)
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-day me-2"></i>Today's Meetings
+                                <span class="badge bg-light text-info ms-2">{{ $todaysMeetings->count() }}</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                @foreach($todaysMeetings as $meeting)
+                                    @php
+                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
+                                    @endphp
+                                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">{{ $meeting->title }}</div>
+                                            <small class="text-muted">{{ $meetingDate->format('h:i A') }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="text-muted small">Not started</span>
                                         </div>
                                     </div>
                                 @endforeach
@@ -109,10 +143,8 @@
                                     @foreach($upcomingMeetings as $meeting)
                                         @php
                                             $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-                                            $now = \Carbon\Carbon::now();
                                             $isToday = $meetingDate->isToday();
                                             $isTomorrow = $meetingDate->isTomorrow();
-                                            $isNow = $meetingDate->isPast() && $meetingDate->diffInMinutes($now) <= ($meeting->duration_minutes ?? 60);
                                         @endphp
                                         <div class="list-group-item d-flex justify-content-between align-items-start">
                                             <div class="ms-2 me-auto">
@@ -128,9 +160,7 @@
                                             </div>
                                             <div class="text-end">
                                                 <div class="mb-2">
-                                                    @if($isNow)
-                                                        <span class="badge bg-danger">Live Now</span>
-                                                    @elseif($isToday)
+                                                    @if($isToday)
                                                         <span class="badge bg-success">Today</span>
                                                     @elseif($isTomorrow)
                                                         <span class="badge bg-warning">Tomorrow</span>
@@ -143,16 +173,7 @@
                                                     <br>
                                                     <small class="text-muted">{{ $meetingDate->diffForHumans() }}</small>
                                                 </div>
-                                                @if($meeting->meeting_url)
-                                                    <a href="{{ $meeting->meeting_url }}" 
-                                                       target="_blank" 
-                                                       class="btn btn-primary btn-sm"
-                                                       onclick="logMeetingAccess({{ $meeting->meeting_id }})">
-                                                        <i class="bi bi-camera-video me-1"></i>Join Meeting
-                                                    </a>
-                                                @else
-                                                    <span class="text-muted small">No link available</span>
-                                                @endif
+                                                <span class="text-muted small">Not started yet</span>
                                             </div>
                                         </div>
                                     @endforeach
@@ -167,20 +188,28 @@
                         </div>
                     </div>
 
-                    <!-- Past Meetings -->
-                    @if($pastMeetings->count() > 0)
+                    <!-- Finished Meetings -->
+                    @if(isset($finishedMeetings) && $finishedMeetings->count() > 0)
                     <div class="card mt-4">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="bi bi-clock-history me-2"></i>Past Meetings
+                                <i class="bi bi-check2-circle me-2"></i>Finished Meetings & Attendance
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="list-group list-group-flush">
-                                @foreach($pastMeetings->take(5) as $meeting)
+                                @foreach($finishedMeetings as $meeting)
                                     @php
                                         $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-                                        $attended = $meeting->attendanceLogs->where('student_id', $studentId)->isNotEmpty();
+                                        $attendanceLog = $meeting->attendanceLogs->where('student_id', $studentId)->first();
+                                        $attendanceStatus = $attendanceLog ? $attendanceLog->attendance_status : 'absent';
+                                        $statusLabel = [
+                                            'present' => ['label' => 'Present', 'class' => 'success'],
+                                            'late' => ['label' => 'Late', 'class' => 'warning'],
+                                            'absent' => ['label' => 'Absent', 'class' => 'danger'],
+                                            'excused' => ['label' => 'Excused', 'class' => 'info'],
+                                            'joined' => ['label' => 'Joined', 'class' => 'primary'],
+                                        ][$attendanceStatus] ?? ['label' => ucfirst($attendanceStatus), 'class' => 'secondary'];
                                     @endphp
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
                                         <div class="ms-2 me-auto">
@@ -192,15 +221,9 @@
                                             </small>
                                         </div>
                                         <div class="text-end">
-                                            @if($attended)
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-check-circle me-1"></i>Attended
-                                                </span>
-                                            @else
-                                                <span class="badge bg-danger">
-                                                    <i class="bi bi-x-circle me-1"></i>Absent
-                                                </span>
-                                            @endif
+                                            <span class="badge bg-{{ $statusLabel['class'] }}">
+                                                <i class="bi bi-person-check me-1"></i>{{ $statusLabel['label'] }}
+                                            </span>
                                         </div>
                                     </div>
                                 @endforeach
