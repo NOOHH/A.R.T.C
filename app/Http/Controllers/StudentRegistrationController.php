@@ -302,6 +302,20 @@ class StudentRegistrationController extends Controller
                                 'file_type' => $fileExtension
                             ]);
                             
+                        } elseif ($field->field_type === 'file' && !$request->hasFile($fieldName)) {
+                            // Check if we have a validated file path from OCR validation
+                            $filePathField = $fieldName . '_path';
+                            if ($request->has($filePathField)) {
+                                $validatedFilePath = $request->input($filePathField);
+                                if ($validatedFilePath) {
+                                    $registration->{$fieldName} = $validatedFilePath;
+                                    Log::info("Using validated file path for field {$fieldName}", [
+                                        'field_name' => $fieldName,
+                                        'file_path' => $validatedFilePath
+                                    ]);
+                                }
+                            }
+                            
                         } elseif ($field->field_type === 'module_selection' && $request->has($fieldName)) {
                             // Handle module selection (array of module IDs)
                             $selectedModules = $request->input($fieldName, []);
@@ -796,7 +810,24 @@ class StudentRegistrationController extends Controller
         try {
             DB::beginTransaction();
 
-            Log::info('Modular enrollment submission started', $request->except(['password', 'password_confirmation']));
+            Log::info('=== MODULAR ENROLLMENT DETAILED DEBUG ===', [
+                'request_method' => $request->method(),
+                'all_input_data' => $request->except(['password', 'password_confirmation']),
+                'selected_modules_value' => $request->input('selected_modules'),
+                'form_files' => array_keys($request->allFiles()),
+                'has_files' => !empty($request->allFiles()),
+                'file_count' => count($request->allFiles()),
+                'form_data_count' => count($request->except(['password', 'password_confirmation'])),
+                'program_id' => $request->input('program_id'),
+                'package_id' => $request->input('package_id'), 
+                'education_level' => $request->input('education_level'),
+                'start_date' => $request->input('Start_Date'),
+                'learning_mode' => $request->input('learning_mode'),
+                'enrollment_type' => $request->input('enrollment_type'),
+                'user_logged_in' => (bool) (session('user_id') || auth()->check()),
+                'session_user_id' => session('user_id'),
+                'auth_check' => auth()->check()
+            ]);
 
             // Base validation rules
             $rules = [
@@ -805,7 +836,7 @@ class StudentRegistrationController extends Controller
                 'learning_mode' => 'required|in:synchronous,asynchronous',
                 'batch_id' => 'nullable|exists:student_batches,batch_id',
                 'selected_modules' => 'required|string', // Can be JSON string
-                'education_level' => 'required|string',
+                'education_level' => 'required|string|in:Undergraduate,Graduate',
                 'Start_Date' => 'required|date',
                 'enrollment_type' => 'required|in:Modular',
                 'plan_id' => 'nullable|integer',
@@ -820,19 +851,137 @@ class StudentRegistrationController extends Controller
                 $rules['password'] = 'required|min:8|confirmed';
             }
 
+            // Add file validation rules for education level requirements - ONLY for selected education level
+            $selectedEducationLevel = $request->input('education_level');
+            Log::info('Selected education level for file validation', ['education_level' => $selectedEducationLevel]);
+            
+            if ($selectedEducationLevel) {
+                // Find the education level in database
+                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                
+                if (!$educationLevel) {
+                    Log::warning('Education level not found', ['education_level' => $selectedEducationLevel]);
+                } else {
+                    Log::info('Education level found', [
+                        'id' => $educationLevel->id,
+                        'name' => $educationLevel->level_name,
+                        'has_file_requirements' => !empty($educationLevel->file_requirements)
+                    ]);
+                    
+                    if ($educationLevel->file_requirements) {
+                        $fileRequirements = is_string($educationLevel->file_requirements) 
+                            ? json_decode($educationLevel->file_requirements, true) 
+                            : $educationLevel->file_requirements;
+                        
+                        if (is_array($fileRequirements)) {
+                            Log::info('Processing file requirements', ['count' => count($fileRequirements)]);
+                            
+                            foreach ($fileRequirements as $requirement) {
+                                if (isset($requirement['available_modular_plan']) && $requirement['available_modular_plan']) {
+                                    $fieldName = $requirement['field_name'] ?? $requirement['document_type'];
+                                    
+                                    if ($fieldName) {
+                                        // Normalize field name to match form field names
+                                        $normalizedFieldName = strtolower($fieldName);
+                                        
+                                        // Check if the file is uploaded
+                                        $hasFile = $request->hasFile($normalizedFieldName);
+                                        $isRequired = isset($requirement['is_required']) && $requirement['is_required'];
+                                        
+                                        if ($isRequired) {
+                                            // If file is required, always add validation rule
+                                            $rules[$normalizedFieldName] = 'required|file|max:10240'; // 10MB max
+                                            Log::info('Added required file rule', [
+                                                'field' => $normalizedFieldName,
+                                                'original_field' => $fieldName,
+                                                'has_file' => $hasFile,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                        } elseif ($hasFile) {
+                                            // If file is optional but uploaded, validate format
+                                            $rules[$normalizedFieldName] = 'file|max:10240'; // 10MB max
+                                            Log::info('Added optional file rule', [
+                                                'field' => $normalizedFieldName,
+                                                'original_field' => $fieldName,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Log::warning('File requirements is not valid array', ['raw_data' => $educationLevel->file_requirements]);
+                        }
+                    } else {
+                        Log::info('No file requirements for this education level', ['education_level' => $selectedEducationLevel]);
+                    }
+                }
+            }
+
             // Validate the request data
             $validator = Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
                 DB::rollBack();
-                Log::error('Modular enrollment validation failed', $validator->errors()->toArray());
+                
+                // Enhanced error logging with better file error messages
+                $errors = $validator->errors()->toArray();
+                $enhancedErrors = [];
+                
+                foreach ($errors as $field => $messages) {
+                    // Check if this is a file field error
+                    if (in_array($field, array_keys($rules)) && strpos($rules[$field], 'file') !== false) {
+                        $enhancedErrors[$field] = [
+                            "The {$field} file is required for your selected education level. Please upload the required document."
+                        ];
+                    } else {
+                        $enhancedErrors[$field] = $messages;
+                    }
+                }
+                
+                Log::error('Modular enrollment validation failed', [
+                    'errors' => $errors,
+                    'enhanced_errors' => $enhancedErrors,
+                    'input_data' => $request->except(['password', 'password_confirmation', '_token']),
+                    'has_selected_modules' => $request->has('selected_modules'),
+                    'selected_modules_value' => $request->input('selected_modules'),
+                    'form_files' => array_keys($request->allFiles()),
+                    'education_level' => $selectedEducationLevel,
+                    'validation_rules' => array_keys($rules)
+                ]);
+                
                 return response()->json([
                     'success' => false,
-                    'errors' => $validator->errors()
+                    'errors' => $enhancedErrors
                 ], 422);
             }
 
             $validated = $validator->validated();
+
+            // Process uploaded files
+            $uploadedFiles = [];
+            $allFiles = $request->allFiles();
+            if (!empty($allFiles)) {
+                foreach ($allFiles as $fieldName => $file) {
+                    try {
+                        if ($file && $file->isValid()) {
+                            $fileName = time() . '_' . $file->getClientOriginalName();
+                            $filePath = $file->storeAs('uploads/education_requirements', $fileName, 'public');
+                            $uploadedFiles[$fieldName] = $filePath;
+                            Log::info('File uploaded successfully', [
+                                'field' => $fieldName,
+                                'original_name' => $file->getClientOriginalName(),
+                                'stored_path' => $filePath
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('File upload failed', [
+                            'field' => $fieldName,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
 
             // Process dynamic form fields
             $dynamicFields = [];
@@ -852,16 +1001,16 @@ class StudentRegistrationController extends Controller
             if (!empty($validated['referral_code'])) {
                 // Check if referral code is from a director
                 $director = \App\Models\Director::where('referral_code', $validated['referral_code'])
-                    ->where('is_active', true)
+                    ->where('directors_archived', false)
                     ->first();
                 
                 if ($director) {
-                    $directorsId = $director->director_id;
+                    $directorsId = $director->directors_id;
                     Log::info('Referral from director', ['director_id' => $directorsId, 'referral_code' => $validated['referral_code']]);
                 } else {
                     // Check if referral code is from a professor
                     $professor = \App\Models\Professor::where('referral_code', $validated['referral_code'])
-                        ->where('is_active', true)
+                        ->where('is_archived', false)
                         ->first();
                     
                     if ($professor) {
@@ -926,12 +1075,27 @@ class StudentRegistrationController extends Controller
                 $selectedModules = $selectedModulesData;
             }
 
-            // Create registration record (this is the main table for registrations)
-            $registration = \App\Models\Registration::create([
+            Log::info('Parsed selected modules', ['modules' => $selectedModules]);
+
+            // Extract course selections from modules data
+            $selectedCourses = [];
+            if (is_array($selectedModules)) {
+                foreach ($selectedModules as $moduleData) {
+                    if (is_array($moduleData) && isset($moduleData['selected_courses'])) {
+                        if (is_array($moduleData['selected_courses'])) {
+                            $selectedCourses = array_merge($selectedCourses, $moduleData['selected_courses']);
+                        }
+                    }
+                }
+            }
+            
+            Log::info('Extracted course selections', ['courses' => $selectedCourses]);
+
+            // Prepare registration data
+            $registrationData = [
                 'user_id' => $user->user_id,
-                'firstname' => $validated['user_firstname'],
-                'lastname' => $validated['user_lastname'],
-                // Note: 'email' column doesn't exist in registrations table - email is stored in users table
+                'firstname' => $validated['user_firstname'] ?? ($user->user_firstname ?? ''),
+                'lastname' => $validated['user_lastname'] ?? ($user->user_lastname ?? ''),
                 'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
                 'program_name' => $program->program_name ?? '',
@@ -939,14 +1103,27 @@ class StudentRegistrationController extends Controller
                 'learning_mode' => $validated['learning_mode'],
                 'enrollment_type' => $validated['enrollment_type'],
                 'education_level' => $validated['education_level'],
-                'selected_modules' => $validated['selected_modules'],
+                'selected_modules' => $validated['selected_modules'], // Store full module data
+                'selected_courses' => json_encode($selectedCourses), // Store extracted course IDs
                 'Start_Date' => $validated['Start_Date'], // Match the actual column name in database
                 'status' => 'pending',
                 'dynamic_fields' => json_encode(array_merge([
                     'referral_code' => $validated['referral_code'] ?? '',
                     'registration_mode' => $validated['learning_mode']
                 ], $dynamicFields))
-            ]);
+            ];
+
+            // Add uploaded file paths to registration data
+            foreach ($uploadedFiles as $fieldName => $filePath) {
+                // Map common file field names to registration columns
+                $columnName = $this->mapFileFieldToColumn($fieldName);
+                if ($columnName) {
+                    $registrationData[$columnName] = $filePath;
+                }
+            }
+
+            // Create registration record (this is the main table for registrations)
+            $registration = \App\Models\Registration::create($registrationData);
 
             Log::info('Registration created successfully', ['registration_id' => $registration->registration_id]);
 
@@ -964,6 +1141,7 @@ class StudentRegistrationController extends Controller
             // Create enrollment record (without student_id as student hasn't been created yet)
             $enrollment = \App\Models\Enrollment::create([
                 'user_id' => $user->user_id,
+                'registration_id' => $registration->registration_id,
                 'student_id' => null, // Will be set when admin approves and creates student record
                 'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
@@ -973,8 +1151,7 @@ class StudentRegistrationController extends Controller
                 'enrollment_status' => 'pending',
                 'payment_status' => 'pending',
                 'education_level' => $validated['education_level'],
-                'Start_Date' => $validated['Start_Date'],
-                'Modular_enrollment' => $validated['selected_modules']
+                'Start_Date' => $validated['Start_Date']
             ]);
 
             Log::info('Enrollment created successfully', ['enrollment_id' => $enrollment->enrollment_id]);
@@ -989,10 +1166,13 @@ class StudentRegistrationController extends Controller
                     
                     if ($moduleId) {
                         try {
-                            \App\Models\RegistrationModule::create([
-                                'registration_id' => $registration->registration_id,
-                                'module_id' => $moduleId
-                            ]);
+                            // Check if RegistrationModule model exists, if not skip this part
+                            if (class_exists('\App\Models\RegistrationModule')) {
+                                \App\Models\RegistrationModule::create([
+                                    'registration_id' => $registration->registration_id,
+                                    'module_id' => $moduleId
+                                ]);
+                            }
                             Log::info('Module registered', ['module_id' => $moduleId, 'registration_id' => $registration->registration_id]);
                             
                             // Handle course-level enrollments if specified
@@ -1071,7 +1251,8 @@ class StudentRegistrationController extends Controller
             Log::info('Modular enrollment completed successfully', [
                 'user_id' => $user->user_id,
                 'enrollment_id' => $enrollment->enrollment_id,
-                'registration_id' => $registration->registration_id
+                'registration_id' => $registration->registration_id,
+                'uploaded_files_count' => count($uploadedFiles)
             ]);
 
             return response()->json([
@@ -1691,6 +1872,61 @@ class StudentRegistrationController extends Controller
     /**
      * Get package details for course selection
      */
+    /**
+     * Map file upload field names to registration table columns
+     */
+    private function mapFileFieldToColumn($fieldName)
+    {
+        $mapping = [
+            'good_moral' => 'good_moral',
+            'psa' => 'PSA',
+            'PSA' => 'PSA',
+            'birth_certificate' => 'PSA', // Birth certificate often maps to PSA
+            'course_cert' => 'Course_Cert',
+            'course_certificate' => 'Course_Cert',
+            'tor' => 'TOR',
+            'transcript_of_records' => 'TOR',
+            'cert_of_grad' => 'Cert_of_Grad',
+            'certificate_of_graduation' => 'Cert_of_Grad',
+            'diploma' => 'Cert_of_Grad',
+            'diploma_certificate' => 'diploma_certificate',
+            'valid_id' => 'valid_id',
+            'school_id' => 'valid_id',
+            'photo_2x2' => 'photo_2x2',
+            'passport_photo' => 'passport_photo',
+            'medical_certificate' => 'medical_certificate',
+            'ama_namin' => 'ama_namin', // Custom field from education levels
+        ];
+
+        $normalizedFieldName = strtolower($fieldName);
+        
+        // Check exact matches first
+        if (isset($mapping[$normalizedFieldName])) {
+            return $mapping[$normalizedFieldName];
+        }
+
+        // Check for partial matches
+        foreach ($mapping as $pattern => $column) {
+            if (strpos($normalizedFieldName, $pattern) !== false) {
+                return $column;
+            }
+        }
+
+        // If no mapping found, use the field name as column name (if it exists in the table)
+        $registrationColumns = [
+            'good_moral', 'PSA', 'Course_Cert', 'TOR', 'Cert_of_Grad', 
+            'valid_id', 'birth_certificate', 'diploma_certificate', 
+            'medical_certificate', 'passport_photo', 'photo_2x2', 'ama_namin'
+        ];
+
+        if (in_array($normalizedFieldName, $registrationColumns)) {
+            return $normalizedFieldName;
+        }
+
+        // Default: try to store as a custom field name in lowercase
+        return $normalizedFieldName;
+    }
+
     public function getPackageDetails(Request $request)
     {
         try {

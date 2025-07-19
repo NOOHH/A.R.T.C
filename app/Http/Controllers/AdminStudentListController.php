@@ -53,6 +53,80 @@ class AdminStudentListController extends Controller
     }
 
     /**
+     * Export students to CSV
+     */
+    public function export(Request $request)
+    {
+        $students = Student::with(['user', 'program', 'enrollment.batch', 'enrollments.program', 'enrollments.package'])
+            ->where('is_archived', false)
+            ->orderBy('lastname')
+            ->get();
+
+        $filename = 'students_export_' . date('Y-m-d_H-i-s') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($students) {
+            $file = fopen('php://output', 'w');
+            
+            // Add CSV headers
+            fputcsv($file, [
+                'Student ID',
+                'First Name', 
+                'Middle Name',
+                'Last Name',
+                'Email',
+                'Contact Number',
+                'Emergency Contact',
+                'Address',
+                'City',
+                'State/Province',
+                'ZIP Code',
+                'Program',
+                'Enrollment Type',
+                'Package',
+                'Batch',
+                'Start Date',
+                'Date Approved',
+                'Status',
+                'Is Archived'
+            ]);
+            
+            // Add data rows
+            foreach ($students as $student) {
+                $enrollment = $student->enrollments->first();
+                fputcsv($file, [
+                    $student->student_id ?? '',
+                    $student->firstname ?? '',
+                    $student->middlename ?? '',
+                    $student->lastname ?? '',
+                    $student->email ?? ($student->user->email ?? ''),
+                    $student->contact_number ?? '',
+                    $student->emergency_contact_number ?? '',
+                    $student->street_address ?? '',
+                    $student->city ?? '',
+                    $student->state_province ?? '',
+                    $student->zipcode ?? '',
+                    $student->program->program_name ?? 'N/A',
+                    $enrollment->enrollment_type ?? 'N/A',
+                    $enrollment->package->package_name ?? 'N/A',
+                    $enrollment->batch->batch_name ?? 'N/A',
+                    $student->Start_Date ?? '',
+                    $student->date_approved ? $student->date_approved->format('Y-m-d H:i:s') : '',
+                    $student->date_approved ? 'Approved' : 'Pending',
+                    $student->is_archived ? 'Yes' : 'No'
+                ]);
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Show a single student's details.
      */
     public function show(Student $student)

@@ -2,6 +2,19 @@
 
 @section('title', 'Payment History')
 
+@section('head')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+@endsection
+
+@section('head')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="base-url" content="{{ url('') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+@endsection
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -85,7 +98,7 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-info" 
-                                                        onclick="viewDetails({{ $enrollment->enrollment_id }})">
+                                                        onclick="viewPaymentDetails({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
                                                 @if($enrollment->payment_status === 'failed')
@@ -114,20 +127,176 @@
     </div>
 </div>
 
+<!-- Payment Details Modal -->
+<div class="modal fade" id="paymentDetailsModal" tabindex="-1" aria-labelledby="paymentDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentDetailsModalLabel">Payment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="payment-details-content">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function viewDetails(enrollmentId) {
-    // Redirect to enrollment details page
-    window.location.href = `/admin/enrollment/${enrollmentId}`;
+function viewPaymentDetails(enrollmentId) {
+    const modal = new bootstrap.Modal(document.getElementById('paymentDetailsModal'));
+    const contentDiv = document.getElementById('payment-details-content');
+    const baseUrl = window.location.origin;
+    
+    // Show loading state
+    contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading payment details...</p></div>';
+    modal.show();
+    
+    // Fetch enrollment/payment details
+    fetch(`${baseUrl}/admin/student/enrollment/${enrollmentId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch payment details');
+            }
+            return response.json();
+        })
+        .then(data => {
+            function na(value) {
+                return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
+            }
+            
+            // Build the payment details content
+            let content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-person"></i> Student Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Name:</strong></div>
+                                    <div class="col-sm-8">${na(data.student_name)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Email:</strong></div>
+                                    <div class="col-sm-8">${na(data.email)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Phone:</strong></div>
+                                    <div class="col-sm-8">${na(data.contact_number)}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Program Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Program:</strong></div>
+                                    <div class="col-sm-8">${na(data.program_name)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Package:</strong></div>
+                                    <div class="col-sm-8">${na(data.package_name)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Enrollment Type:</strong></div>
+                                    <div class="col-sm-8">${na(data.enrollment_type)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="bi bi-credit-card"></i> Payment Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Amount:</strong></div>
+                                    <div class="col-sm-8">₱${na(data.amount ? parseFloat(data.amount).toLocaleString() : '0.00')}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Payment Status:</strong></div>
+                                    <div class="col-sm-8">
+                                        <span class="badge ${data.payment_status === 'paid' || data.payment_status === 'completed' ? 'bg-success' : data.payment_status === 'failed' ? 'bg-danger' : 'bg-warning'}">
+                                            ${na(data.payment_status)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Payment Method:</strong></div>
+                                    <div class="col-sm-8">${na(data.payment_method)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Reference No:</strong></div>
+                                    <div class="col-sm-8">${na(data.reference_number)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Transaction ID:</strong></div>
+                                    <div class="col-sm-8">${na(data.transaction_id)}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-clock"></i> Timeline</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Enrolled:</strong></div>
+                                    <div class="col-sm-8">${na(data.enrollment_date)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Payment Date:</strong></div>
+                                    <div class="col-sm-8">${na(data.payment_date)}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Last Updated:</strong></div>
+                                    <div class="col-sm-8">${na(data.updated_at)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            contentDiv.innerHTML = content;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            contentDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Failed to load payment details. Please try again.
+                </div>
+            `;
+        });
 }
 
 function retryPayment(enrollmentId) {
     if (confirm('Are you sure you want to retry this payment?')) {
-        // Add AJAX call to retry payment
-        fetch(`/admin/enrollment/${enrollmentId}/retry-payment`, {
+        const baseUrl = window.location.origin;
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch(`${baseUrl}/admin/enrollment/${enrollmentId}/retry-payment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': token
             }
         })
         .then(response => response.json())
@@ -136,7 +305,7 @@ function retryPayment(enrollmentId) {
                 alert('Payment retry initiated');
                 location.reload();
             } else {
-                alert('Error retrying payment');
+                alert('Error retrying payment: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -145,5 +314,20 @@ function retryPayment(enrollmentId) {
         });
     }
 }
+
+// Fix aria-hidden accessibility issue
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentDetailsModal = document.getElementById('paymentDetailsModal');
+    if (paymentDetailsModal) {
+        paymentDetailsModal.addEventListener('show.bs.modal', function () {
+            // Remove aria-hidden when modal is opening
+            paymentDetailsModal.removeAttribute('aria-hidden');
+        });
+        
+        paymentDetailsModal.addEventListener('hidden.bs.modal', function () {
+            // Add aria-hidden when modal is completely closed
+            paymentDetailsModal.setAttribute('aria-hidden', 'true');
+        });
+    }
+});
 </script>
-@endsection

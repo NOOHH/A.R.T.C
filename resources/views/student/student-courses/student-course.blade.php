@@ -70,14 +70,14 @@
     transition: width 0.6s ease;
   }
   
-  /* Learning Module Structure */
-  .learning-modules {
+  /* Module Container Styles */
+  .modules-hierarchy {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
   }
   
-  .learning-module {
+  .module-container {
     border: 2px solid #e1e5e9;
     border-radius: 15px;
     background: white;
@@ -86,9 +86,82 @@
     transition: all 0.3s ease;
   }
   
-  .learning-module:hover {
+  .module-container:hover {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
+  }
+  
+  .course-container {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .course-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+  
+  .course-header:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  }
+  
+  .course-header h5 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .course-content {
+    display: none;
+    padding: 1.5rem;
+    background: #ffffff;
+  }
+  
+  .course-content.expanded {
+    display: block;
+  }
+  
+  .course-toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 1.1rem;
+  }
+  
+  .course-toggle-icon.expanded {
+    transform: rotate(90deg);
+  }
+  
+  .content-item-type {
+    background: #007bff;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .content-item-type.assignment { background: #dc3545; }
+  .content-item-type.pdf { background: #fd7e14; }
+  .content-item-type.lesson { background: #17a2b8; }
+  .content-item-type.quiz { background: #6f42c1; }
+  .content-item-type.test { background: #e83e8c; }
+  .content-item-type.link { background: #20c997; }
+  .content-item-type.module { background: #007bff; }
+  
+  .content-item-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
   }
   
   .module-header {
@@ -167,12 +240,14 @@
     border: 1px solid #e9ecef;
     border-radius: 10px;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   }
   
   .content-item:hover {
     background: #f1f3f4;
     border-color: #dee2e6;
     transform: translateX(3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
   }
   
   .content-item-info {
@@ -192,12 +267,13 @@
     text-transform: uppercase;
   }
   
-  .content-type-badge.assignment { background: #dc3545; }
-  .content-type-badge.pdf { background: #fd7e14; }
-  .content-type-badge.video { background: #6f42c1; }
-  .content-type-badge.quiz { background: #e83e8c; }
-  .content-type-badge.test { background: #20c997; }
-  .content-type-badge.link { background: #17a2b8; }
+  .content-type-badge.assignment { background: linear-gradient(135deg, #dc3545, #c82333); }
+  .content-type-badge.pdf { background: linear-gradient(135deg, #fd7e14, #e55a00); }
+  .content-type-badge.video { background: linear-gradient(135deg, #6f42c1, #5a2d91); }
+  .content-type-badge.lesson { background: linear-gradient(135deg, #17a2b8, #138496); }
+  .content-type-badge.quiz { background: linear-gradient(135deg, #e83e8c, #d91a72); }
+  .content-type-badge.test { background: linear-gradient(135deg, #20c997, #1e7e34); }
+  .content-type-badge.link { background: linear-gradient(135deg, #007bff, #0056b3); }
   
   .content-details h6 {
     margin: 0 0 0.25rem 0;
@@ -218,21 +294,24 @@
   }
   
   .action-btn {
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.2rem;
     font-size: 0.875rem;
-    border-radius: 6px;
+    border-radius: 8px;
     border: none;
     font-weight: 500;
     transition: all 0.2s ease;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   
   .action-btn:hover {
     transform: translateY(-1px);
     text-decoration: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   }
   
   .start-btn {
@@ -243,23 +322,6 @@
   .start-btn:hover {
     background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
     color: white;
-  }
-  
-  .completed-btn {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-  }
-  
-  .completed-btn:hover {
-    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-    color: white;
-  }
-  
-  .locked-btn {
-    background: #6c757d;
-    color: white;
-    cursor: not-allowed;
-    opacity: 0.7;
   }
   
   .download-btn {
@@ -290,34 +352,6 @@
   .submit-btn:hover {
     background: #e55a00;
     color: white;
-  }
-  
-  .completion-checkbox {
-    margin-left: 1rem;
-    transform: scale(1.2);
-  }
-  
-  .completion-status {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    font-weight: 600;
-    margin-left: 1rem;
-  }
-  
-  .completion-status.completed {
-    background: #d4edda;
-    color: #155724;
-  }
-  
-  .completion-status.in-progress {
-    background: #fff3cd;
-    color: #856404;
-  }
-  
-  .completion-status.locked {
-    background: #f8d7da;
-    color: #721c24;
   }
   
   .no-content-message {
@@ -363,6 +397,38 @@
     box-shadow: none;
   }
   
+  /* Loading Indicator */
+  .loading-indicator {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  /* Lesson Section */
+  .lesson-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #007bff;
+  }
+
+  .lesson-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .lesson-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+
   /* Video Modal */
   .video-modal {
     position: fixed;
@@ -454,12 +520,12 @@
 
     <!-- Learning Modules -->
     @if($totalModules > 0)
-        <div class="learning-modules" id="learningModules">
+        <div class="modules-hierarchy" id="modulesHierarchy">
             @foreach($course['modules'] as $index => $module)
-                <div class="learning-module" data-module-id="{{ $module['id'] ?? $index }}">
-                    <div class="module-header" onclick="toggleModule({{ $module['id'] ?? $index }})">
+                <div class="module-container" data-module-id="{{ $module['id'] ?? $index }}">
+                    <div class="module-header" onclick="toggleModule('{{ $module['id'] ?? $index }}')">
                         <div class="module-title-section">
-                            <i class="bi bi-book"></i>
+                            <i class="bi bi-grip-vertical"></i>
                             <div>
                                 <h4>{{ $module['title'] ?? $module['name'] }}</h4>
                                 @if($module['description'])
@@ -476,119 +542,42 @@
                                 @endif
                             </div>
                         </div>
-                        <i class="bi bi-chevron-right module-toggle-icon"></i>
+                        <i class="bi bi-chevron-right module-toggle-icon" id="module-toggle-icon-{{ $module['id'] ?? $index }}"></i>
                     </div>
                     
                     <div class="module-content" id="module-content-{{ $module['id'] ?? $index }}">
-                        <div class="content-list">
-                            <!-- Single content item -->
-                            <div class="content-item">
-                                <div class="content-item-info">
-                                    <span class="content-type-badge {{ $module['type'] }}">
-                                        {{ strtoupper($module['type']) }}
-                                    </span>
-                                    <div class="content-details">
-                                        <h6>{{ $module['title'] ?? $module['name'] }}</h6>
-                                        @if($module['description'])
-                                            <p>{{ $module['description'] }}</p>
-                                        @endif
+                        <div class="courses-list" id="courses-list-{{ $module['id'] ?? $index }}" style="padding: 1.5rem;">
+                            <!-- Loading indicator -->
+                            <div class="loading-indicator" id="loading-{{ $module['id'] ?? $index }}">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
-                                    @if($module['is_completed'])
-                                        <span class="completion-status completed">
-                                            <i class="bi bi-check-circle"></i> Completed
-                                        </span>
-                                    @elseif($module['is_locked'])
-                                        <span class="completion-status locked">
-                                            <i class="bi bi-lock"></i> Locked
-                                        </span>
-                                    @else
-                                        <span class="completion-status in-progress">
-                                            <i class="bi bi-clock"></i> Available
-                                        </span>
-                                    @endif
-                                </div>
-                                
-                                <div class="content-actions">
-                                    @if($module['is_locked'])
-                                        <button class="action-btn locked-btn" disabled>
-                                            <i class="bi bi-lock"></i> Locked
-                                        </button>
-                                    @else
-                                        <!-- Start/Continue Learning Button -->
-                                        <a href="{{ route('student.module', ['moduleId' => $module['id']]) }}" 
-                                           class="action-btn {{ $module['is_completed'] ? 'completed-btn' : 'start-btn' }}">
-                                            @if($module['is_completed'])
-                                                <i class="bi bi-eye"></i> Review
-                                            @else
-                                                @switch($module['type'])
-                                                    @case('assignment')
-                                                        <i class="bi bi-pencil"></i> Start Assignment
-                                                        @break
-                                                    @case('quiz')
-                                                        <i class="bi bi-question-circle"></i> Take Quiz
-                                                        @break
-                                                    @case('test')
-                                                        <i class="bi bi-clipboard-check"></i> Take Test
-                                                        @break
-                                                    @case('video')
-                                                        <i class="bi bi-play"></i> Watch Video
-                                                        @break
-                                                    @default
-                                                        <i class="bi bi-play-fill"></i> Start Learning
-                                                @endswitch
-                                            @endif
-                                        </a>
-                                        
-                                        <!-- Download Button for files -->
-                                        @if($module['attachment_url'])
-                                            <a href="{{ $module['attachment_url'] }}" download 
-                                               class="action-btn download-btn">
-                                                <i class="bi bi-download"></i> Download
-                                            </a>
-                                        @endif
-                                        
-                                        <!-- Watch Video Button -->
-                                        @if($module['video_path'] || isset($module['content_data']['video_url']))
-                                            <button class="action-btn watch-btn" 
-                                                    onclick="openVideoModal('{{ $module['video_path'] ?? $module['content_data']['video_url'] ?? '' }}', '{{ $module['title'] ?? $module['name'] }}')">
-                                                <i class="bi bi-play"></i> Watch
-                                            </button>
-                                        @endif
-                                        
-                                        <!-- Submit Assignment Button -->
-                                        @if($module['type'] == 'assignment' && !$module['is_completed'])
-                                            <a href="{{ route('student.assignment.submit', ['assignmentId' => $module['id']]) }}" 
-                                               class="action-btn submit-btn">
-                                                <i class="bi bi-upload"></i> Submit
-                                            </a>
-                                        @endif
-                                    @endif
-                                    
-                                    <!-- Mark as Complete Checkbox -->
-                                    @if(!$module['is_locked'] && !$module['is_completed'])
-                                        <input type="checkbox" class="completion-checkbox" 
-                                               data-module-id="{{ $module['id'] }}" 
-                                               onchange="markItemComplete(this, {{ $module['id'] }})"
-                                               title="Mark as complete">
-                                    @endif
+                                    <p class="mt-2">Loading course content...</p>
                                 </div>
                             </div>
+                            
+                            <!-- Courses content will be loaded here -->
+                            <div class="courses-content" id="courses-content-{{ $module['id'] ?? $index }}" style="display: none;">
+                                <!-- Content will be dynamically loaded -->
+                            </div>
                         </div>
+
+                        <!-- Module Complete Section -->
+                        @if(!$module['is_completed'])
+                            <div class="module-complete-section" style="margin: 1.5rem;">
+                                <i class="bi bi-trophy" style="font-size: 2.5rem; color: #28a745; margin-bottom: 1rem;"></i>
+                                <h4 style="color: #28a745; margin-bottom: 0.5rem;">Complete This Module</h4>
+                                <p style="color: #6c757d; margin-bottom: 1.5rem;">Mark this module as complete when you've finished all activities.</p>
+                                <button class="complete-module-btn" onclick="markModuleComplete({{ $module['id'] ?? $index }})">
+                                    <i class="bi bi-check-circle"></i> Mark Module as Complete
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endforeach
         </div>
-
-        <!-- Module Complete Section -->
-        @if($progress < 100)
-            <div class="module-complete-section">
-                <h4><i class="bi bi-trophy"></i> Complete Your Learning Journey</h4>
-                <p>Mark the entire course as complete when you've finished all activities.</p>
-                <button class="complete-module-btn" onclick="markCourseComplete()" {{ $progress < 100 ? '' : 'disabled' }}>
-                    <i class="bi bi-check-circle"></i> Mark Course as Complete
-                </button>
-            </div>
-        @endif
     @else
         <div class="no-content-message">
             <i class="bi bi-book" style="font-size: 4rem; opacity: 0.3;"></i>
@@ -603,7 +592,7 @@
     <div class="video-modal-content">
         <div class="video-modal-header">
             <h5 id="videoModalTitle">Video Content</h5>
-            <button class="video-modal-close" onclick="closeVideoModal()">
+            <button type="button" class="video-modal-close" onclick="closeVideoModal()">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -614,935 +603,315 @@
 
 @push('scripts')
 <script>
-// Global variables for student interface
-let currentProgress = {{ $progress }};
-let totalModules = {{ $totalModules }};
-let completedModules = {{ $completedModules }};
-
-// Toggle module content
-function toggleModule(moduleId) {
-    const content = document.getElementById(`module-content-${moduleId}`);
-    const icon = content.previousElementSibling.querySelector('.module-toggle-icon');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📚 Student Course Page - Initializing...');
     
-    if (content.classList.contains('expanded')) {
-        content.classList.remove('expanded');
-        icon.classList.remove('expanded');
-    } else {
-        content.classList.add('expanded');
-        icon.classList.add('expanded');
-    }
-}
+    // Constants
+    const programId = {{ $program->program_id ?? 0 }};
+    
+    // Core Toggle Functions
+    window.toggleModule = function(moduleId) {
+        console.log('🔄 Toggling module:', moduleId);
+        const content = document.getElementById(`module-content-${moduleId}`);
+        const icon = document.getElementById(`module-toggle-icon-${moduleId}`);
+        
+        if (content) {
+            const isExpanding = !content.classList.contains('expanded');
+            content.classList.toggle('expanded');
+            console.log('✅ Module content toggled - Expanded:', isExpanding);
+            
+            if (isExpanding) {
+                loadModuleCourses(moduleId);
+            }
+        }
+        
+        if (icon) {
+            icon.classList.toggle('expanded');
+        }
+    };
 
-// Mark individual item as complete
-function markItemComplete(checkbox, moduleId) {
-    if (checkbox.checked) {
-        // Send API request to mark as complete
-        fetch('/student/modules/mark-item-complete', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                module_id: moduleId,
-                program_id: {{ $program->program_id ?? 0 }}
+    window.toggleCourse = function(courseId) {
+        const content = document.getElementById(`course-content-${courseId}`);
+        const icon = document.getElementById(`course-toggle-icon-${courseId}`);
+        if (content) content.classList.toggle('expanded');
+        if (icon) icon.classList.toggle('expanded');
+    };
+
+    // Load Module Courses Function
+    function loadModuleCourses(moduleId) {
+        const loadingIndicator = document.getElementById(`loading-${moduleId}`);
+        const coursesContent = document.getElementById(`courses-content-${moduleId}`);
+        
+        if (!loadingIndicator || !coursesContent) {
+            console.error('Loading elements not found for module:', moduleId);
+            return;
+        }
+
+        loadingIndicator.style.display = 'block';
+        coursesContent.style.display = 'none';
+
+        fetch(`/student/module/${moduleId}/courses`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update visual indicators
-                const moduleElement = checkbox.closest('.learning-module');
-                const statusBadge = moduleElement.querySelector('.module-status-badge');
-                statusBadge.className = 'module-status-badge completed';
-                statusBadge.innerHTML = '<i class="bi bi-check-circle"></i> Completed';
+            .then(data => {
+                console.log('📚 Loaded courses for module:', moduleId, data);
                 
-                const completionStatus = checkbox.closest('.content-item').querySelector('.completion-status');
-                completionStatus.className = 'completion-status completed';
-                completionStatus.innerHTML = '<i class="bi bi-check-circle"></i> Completed';
+                if (data.success && data.courses) {
+                    displayCourses(moduleId, data.courses);
+                } else {
+                    showNoCourseContent(moduleId);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading courses:', error);
+                showErrorContent(moduleId, error.message);
+            })
+            .finally(() => {
+                loadingIndicator.style.display = 'none';
+                coursesContent.style.display = 'block';
+            });
+    }
+
+    // Display Courses Function
+    function displayCourses(moduleId, courses) {
+        const coursesContent = document.getElementById(`courses-content-${moduleId}`);
+        
+        if (!courses || courses.length === 0) {
+            showNoCourseContent(moduleId);
+            return;
+        }
+
+        let coursesHtml = '';
+        
+        courses.forEach((course, index) => {
+            const courseId = `${moduleId}-${course.course_id}`;
+            const hasContent = (course.lessons && course.lessons.length > 0) || 
+                              (course.direct_content_items && course.direct_content_items.length > 0);
+            
+            coursesHtml += `
+                <div class="course-container">
+                    <div class="course-header" onclick="toggleCourse('${courseId}')">
+                        <div>
+                            <h5><i class="bi bi-book"></i> ${course.course_name}</h5>
+                            <small>${course.course_description || 'Course materials and activities'}</small>
+                        </div>
+                        <i class="bi bi-chevron-right course-toggle-icon" id="course-toggle-icon-${courseId}"></i>
+                    </div>
+                    
+                    <div class="course-content" id="course-content-${courseId}">
+                        ${hasContent ? generateCourseContentHtml(course) : '<div class="no-content-message"><p>No content available for this course yet.</p></div>'}
+                    </div>
+                </div>
+            `;
+        });
+        
+        coursesContent.innerHTML = coursesHtml;
+    }
+
+    // Generate Course Content HTML
+    function generateCourseContentHtml(course) {
+        let contentHtml = '<div class="content-list">';
+        
+        if (course.direct_content_items && course.direct_content_items.length > 0) {
+            course.direct_content_items.forEach(item => {
+                contentHtml += generateContentItemHtml(item);
+            });
+        }
+        
+        if (course.lessons && course.lessons.length > 0) {
+            course.lessons.forEach(lesson => {
+                contentHtml += `
+                    <div class="lesson-section">
+                        <h6 class="lesson-title"><i class="bi bi-play-circle"></i> ${lesson.lesson_name}</h6>
+                        ${lesson.lesson_description ? `<p class="lesson-description">${lesson.lesson_description}</p>` : ''}
+                `;
                 
-                // Hide checkbox and update action buttons
-                checkbox.style.display = 'none';
-                const startBtn = checkbox.closest('.content-actions').querySelector('.start-btn');
-                if (startBtn) {
-                    startBtn.className = 'action-btn completed-btn';
-                    startBtn.innerHTML = '<i class="bi bi-eye"></i> Review';
+                if (lesson.content_items && lesson.content_items.length > 0) {
+                    lesson.content_items.forEach(item => {
+                        contentHtml += generateContentItemHtml(item);
+                    });
                 }
                 
-                updateProgressDisplay();
-                showSuccessMessage('Item marked as complete! 🎉');
-            } else {
-                checkbox.checked = false;
-                alert('Error marking item as complete: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            checkbox.checked = false;
-            alert('An error occurred while marking the item as complete');
-        });
+                contentHtml += '</div>';
+            });
+        }
+        
+        contentHtml += '</div>';
+        return contentHtml;
     }
-}
 
-// Mark entire course as complete
-function markCourseComplete() {
-    if (confirm('Are you sure you want to mark this entire course as complete? This action cannot be undone.')) {
-        fetch('/student/courses/mark-complete', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                program_id: {{ $program->program_id ?? 0 }}
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateProgressDisplay();
-                showSuccessMessage('Course marked as complete! 🎉');
-                
-                // Disable the button
-                const btn = document.querySelector('.complete-module-btn');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Course Completed';
-                }
-                
-                // Update all module status badges
-                document.querySelectorAll('.module-status-badge').forEach(badge => {
-                    badge.className = 'module-status-badge completed';
-                    badge.innerHTML = '<i class="bi bi-check-circle"></i> Completed';
-                });
-            } else {
-                alert('Error marking course as complete: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while marking the course as complete');
-        });
+    // Generate Content Item HTML
+    function generateContentItemHtml(item) {
+        const contentTypeClass = item.content_type.toLowerCase();
+        const actionButton = generateActionButton(item);
+        
+        return `
+            <div class="content-item">
+                <div class="content-item-info">
+                    <div class="content-type-badge ${contentTypeClass}">
+                        ${item.content_type.toUpperCase()}
+                    </div>
+                    <div class="content-details">
+                        <h6>${item.content_title}</h6>
+                        <p>${item.content_description || 'No description available'}</p>
+                        ${item.due_date ? `<small class="text-muted"><i class="bi bi-calendar"></i> Due: ${new Date(item.due_date).toLocaleDateString()}</small>` : ''}
+                    </div>
+                </div>
+                <div class="content-actions">
+                    ${actionButton}
+                    ${item.is_required ? '<span class="badge bg-warning text-dark">Required</span>' : ''}
+                </div>
+            </div>
+        `;
     }
-}
 
-// Update progress display
-function updateProgressDisplay() {
-    // Update progress bar
-    const progressBar = document.querySelector('.progress-bar-fill');
-    if (progressBar) {
-        currentProgress = Math.min(currentProgress + (100 / totalModules), 100);
-        progressBar.style.width = currentProgress + '%';
+    // Generate Action Button
+    function generateActionButton(item) {
+        switch (item.content_type.toLowerCase()) {
+            case 'assignment':
+                return `<a href="#" class="action-btn submit-btn">
+                    <i class="bi bi-upload"></i> Submit
+                </a>`;
+            case 'pdf':
+                return `<a href="${item.attachment_path ? '/storage/' + item.attachment_path : '#'}" target="_blank" class="action-btn download-btn">
+                    <i class="bi bi-download"></i> Download
+                </a>`;
+            case 'video':
+                return `<button class="action-btn watch-btn" onclick="openVideoModal('${item.content_url || item.attachment_path}', '${item.content_title}')">
+                    <i class="bi bi-play"></i> Watch
+                </button>`;
+            case 'lesson':
+                return `<a href="#" class="action-btn start-btn">
+                    <i class="bi bi-play-circle"></i> Start
+                </a>`;
+            case 'quiz':
+            case 'test':
+                return `<a href="#" class="action-btn start-btn">
+                    <i class="bi bi-pencil-square"></i> Take ${item.content_type}
+                </a>`;
+            case 'link':
+                const linkData = item.content_data ? JSON.parse(item.content_data) : {};
+                const linkUrl = linkData.url || '#';
+                return `<a href="${linkUrl}" target="_blank" class="action-btn start-btn">
+                    <i class="bi bi-link-45deg"></i> Open Link
+                </a>`;
+            default:
+                return `<a href="#" class="action-btn start-btn">
+                    <i class="bi bi-eye"></i> View
+                </a>`;
+        }
     }
-    
-    // Update progress text
-    const progressTexts = document.querySelectorAll('.d-flex.justify-content-between span');
-    if (progressTexts.length >= 2) {
-        completedModules = Math.min(completedModules + 1, totalModules);
-        progressTexts[0].textContent = `${completedModules} of ${totalModules} modules completed`;
-        progressTexts[1].innerHTML = `<strong>${Math.round(currentProgress)}% complete</strong>`;
-    }
-}
 
-// Video modal functions
-function openVideoModal(videoUrl, title) {
-    const modal = document.getElementById('videoModal');
-    const frame = document.getElementById('videoFrame');
-    const titleElement = document.getElementById('videoModalTitle');
-    
-    titleElement.textContent = title || 'Video Content';
-    
-    // Support for various video formats
-    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-        // Convert YouTube URLs to embed format
+    // Error and No Content Functions
+    function showNoCourseContent(moduleId) {
+        const coursesContent = document.getElementById(`courses-content-${moduleId}`);
+        coursesContent.innerHTML = `
+            <div class="no-content-message">
+                <i class="bi bi-book" style="font-size: 3rem; opacity: 0.3;"></i>
+                <h5>No Courses Available</h5>
+                <p>This module doesn't have any courses or content yet.</p>
+            </div>
+        `;
+    }
+
+    function showErrorContent(moduleId, errorMessage) {
+        const coursesContent = document.getElementById(`courses-content-${moduleId}`);
+        coursesContent.innerHTML = `
+            <div class="no-content-message">
+                <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
+                <h5>Error Loading Content</h5>
+                <p>There was an error loading the course content: ${errorMessage}</p>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadModuleCourses(${moduleId})">
+                    <i class="bi bi-arrow-clockwise"></i> Retry
+                </button>
+            </div>
+        `;
+    }
+
+    // Video Modal Functions
+    window.openVideoModal = function(videoUrl, title) {
+        const modal = document.getElementById('videoModal');
+        const frame = document.getElementById('videoFrame');
+        const titleElement = document.getElementById('videoModalTitle');
+        
+        if (!modal || !frame || !titleElement) return;
+
+        titleElement.textContent = title || 'Video Content';
+        
         let embedUrl = videoUrl;
-        if (videoUrl.includes('watch?v=')) {
+        if (videoUrl.includes('youtube.com/watch?v=')) {
             embedUrl = videoUrl.replace('watch?v=', 'embed/');
         } else if (videoUrl.includes('youtu.be/')) {
             embedUrl = videoUrl.replace('youtu.be/', 'youtube.com/embed/');
         }
         frame.src = embedUrl;
-    } else {
-        frame.src = videoUrl;
-    }
-    
-    modal.classList.add('show');
-}
+        
+        modal.classList.add('show');
+    };
 
-function closeVideoModal() {
-    const modal = document.getElementById('videoModal');
-    const frame = document.getElementById('videoFrame');
-    
-    modal.classList.remove('show');
-    frame.src = '';
-}
+    window.closeVideoModal = function() {
+        const modal = document.getElementById('videoModal');
+        const frame = document.getElementById('videoFrame');
+        
+        if (modal) modal.classList.remove('show');
+        if (frame) frame.src = '';
+    };
 
-// Show success message
-function showSuccessMessage(message) {
-    const toast = document.createElement('div');
-    toast.className = 'alert alert-success position-fixed';
-    toast.style.cssText = `
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border-radius: 10px;
-        animation: slideIn 0.3s ease;
-    `;
-    toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi bi-check-circle-fill me-2" style="font-size: 1.2rem;"></i>
-            ${message}
-            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
+    // Module Complete Function
+    window.markModuleComplete = function(moduleId) {
+        if (!confirm('Are you sure you want to mark this module as complete?')) {
+            return;
         }
-    }, 5000);
-}
 
-// Initialize page functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Add CSS animation for toast notifications
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Initialize progress tracking
-    console.log('Student course interface loaded');
-    console.log(`Progress: ${currentProgress}%, Modules: ${completedModules}/${totalModules}`);
-    
-    // Auto-expand first available module
-    const firstModule = document.querySelector('.learning-module .module-header');
-    if (firstModule) {
-        setTimeout(() => {
-            const moduleId = firstModule.closest('.learning-module').getAttribute('data-module-id');
-            if (moduleId) {
-                toggleModule(moduleId);
-            }
-        }, 500);
-    }
-    
-    // Close video modal when clicking outside
-    document.getElementById('videoModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeVideoModal();
-        }
-    });
-});
-</script>
-@endpush
-        height: 100%;
-        background: linear-gradient(90deg, #3498db, #9b59b6);
-        border-radius: 5px;
-        transition: width 1s ease;
-    }
-    
-    .progress-stats {
-        display: flex;
-        justify-content: space-between;
-        color: #7f8c8d;
-        font-size: 0.9rem;
-    }
-    
-    /* Module Navigation Tabs */
-    .module-tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-    
-    .module-tab {
-        padding: 10px 20px;
-        background: #f1f2f6;
-        border: none;
-        border-radius: 30px;
-        color: #555;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-    
-    .module-tab.active {
-        background: #3498db;
-        color: white;
-    }
-    
-    /* Modules List */
-    .modules-list {
-        margin-top: 30px;
-    }
-    
-    .module-card {
-        background: white;
-        border-radius: 15px;
-        margin-bottom: 20px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .module-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    
-    .module-header {
-        padding: 20px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .module-title {
-        margin: 0;
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: #2c3e50;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .module-icon {
-        font-size: 1.4rem;
-        color: #3498db;
-    }
-    
-    .module-status {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    
-    .status-locked {
-        background: #f1f2f6;
-        color: #7f8c8d;
-    }
-    
-    .status-available {
-        background: #e7f3ff;
-        color: #3498db;
-    }
-    
-    .status-completed {
-        background: #e8f5e9;
-        color: #4caf50;
-    }
-    
-    .module-body {
-        padding: 20px;
-    }
-    
-    .module-description {
-        margin-bottom: 20px;
-        color: #555;
-        line-height: 1.6;
-    }
-    
-    .module-actions {
-        text-align: right;
-    }
-    
-    .start-module-btn {
-        background: #3498db;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .start-module-btn:hover {
-        background: #2980b9;
-    }
-    
-    .locked-module-btn {
-        background: #bdc3c7;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: 600;
-        cursor: not-allowed;
-        display: inline-block;
-    }
-    
-    .completed-module-btn {
-        background: #2ecc71;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .completed-module-btn:hover {
-        background: #27ae60;
-    }
-    
-    /* Empty state */
-    .no-modules {
-        background: #f8f9fa;
-        padding: 60px 20px;
-        text-align: center;
-        border-radius: 15px;
-        color: #7f8c8d;
-        border: 2px dashed #e9ecef;
-    }
-    
-    .no-modules::before {
-        content: '📚';
-        display: block;
-        font-size: 3rem;
-        margin-bottom: 20px;
-        opacity: 0.5;
-    }
-    
-    /* Content type badge styles */
-    .content-type {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-left: 10px;
-        text-transform: uppercase;
-    }
-    
-    .content-type.module { background: #e7f3ff; color: #0066cc; }
-    .content-type.assignment { background: #fff3e0; color: #ff9800; }
-    .content-type.quiz { background: #f3e5f5; color: #9c27b0; }
-    .content-type.test { background: #ffebee; color: #f44336; }
-    .content-type.link { background: #e8f5e8; color: #4caf50; }
-</style>
-@endpush
-
-@section('content')
-<div class="student-course-container">
-    <!-- Course Header -->
-    <div class="course-header">
-        <div class="course-info">
-            <h1>{{ $program->program_name }}</h1>
-            <p class="course-description">{{ $program->program_description ?? 'Explore the comprehensive curriculum designed to enhance your learning experience.' }}</p>
-            <div class="course-stats">
-                <div class="stat-item">
-                    <i class="bi bi-graph-up"></i> Progress: {{ $progress }}%
-                </div>
-                <div class="stat-item">
-                    <i class="bi bi-book"></i> Modules: {{ $completedModules }}/{{ $totalModules }}
-                </div>
-                <div class="stat-item">
-                    <i class="bi bi-award"></i> Assignments: {{ count($modulesByType['assignment'] ?? []) }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Progress Section -->
-    <div class="progress-section">
-        <h3><i class="bi bi-trophy"></i> Your Learning Progress</h3>
-        <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: {{ $progress }}%;"></div>
-        </div>
-        <div class="d-flex justify-content-between">
-            <span>{{ $completedModules }} of {{ $totalModules }} modules completed</span>
-            <span><strong>{{ $progress }}% complete</strong></span>
-        </div>
-    </div>
-
-    <!-- Hierarchical Module Structure -->
-    @if($totalModules > 0)
-        <div class="modules-hierarchy" id="modulesHierarchy">
-            @php
-                $groupedModules = collect($course['modules'] ?? [])->groupBy(function($module) {
-                    return $module['module_name'] ?? 'Module ' . ($loop->iteration ?? 1);
-                });
-            @endphp
-
-            @foreach($groupedModules as $moduleName => $moduleItems)
-                @php
-                    $firstItem = $moduleItems->first();
-                    $moduleId = $firstItem['module_id'] ?? $loop->iteration;
-                    $moduleCompleted = $moduleItems->every(function($item) {
-                        return $item['is_completed'] ?? false;
-                    });
-                    $moduleLocked = $moduleItems->every(function($item) {
-                        return $item['is_locked'] ?? false;
-                    });
-                @endphp
-                
-                <div class="module-container" data-module-id="{{ $moduleId }}">
-                    <div class="module-header" onclick="toggleStudentModule({{ $moduleId }})">
-                        <div class="module-title-section">
-                            <i class="bi bi-grip-vertical"></i>
-                            <div>
-                                <h4>{{ $moduleName }}</h4>
-                                @if($firstItem['module_description'] ?? false)
-                                    <small>{{ $firstItem['module_description'] }}</small>
-                                @endif
-                            </div>
-                            <div class="module-status-badge {{ $moduleCompleted ? 'completed' : ($moduleLocked ? 'locked' : '') }}">
-                                @if($moduleCompleted)
-                                    <i class="bi bi-check-circle"></i> Completed
-                                @elseif($moduleLocked)
-                                    <i class="bi bi-lock"></i> Locked
-                                @else
-                                    <i class="bi bi-play-circle"></i> Available
-                                @endif
-                            </div>
-                        </div>
-                        <i class="bi bi-chevron-right module-toggle-icon"></i>
-                    </div>
-                    
-                    <div class="module-content" id="student-module-content-{{ $moduleId }}">
-                        <div class="courses-list">
-                            @if($moduleItems->count() > 1)
-                                <!-- If multiple items, group them as course content -->
-                                <div class="course-container">
-                                    <div class="course-header-inner" onclick="toggleStudentCourse({{ $moduleId }}, 1)">
-                                        <div>
-                                            <h5><i class="bi bi-book"></i> Course Content</h5>
-                                            <small>{{ $moduleItems->count() }} items</small>
-                                        </div>
-                                        <i class="bi bi-chevron-right course-toggle-icon"></i>
-                                    </div>
-                                    
-                                    <div class="course-content" id="student-course-content-{{ $moduleId }}-1">
-                                        @foreach($moduleItems as $item)
-                                            <div class="content-item">
-                                                <div class="content-item-info">
-                                                    <span class="content-item-type {{ $item['type'] }}">
-                                                        {{ strtoupper($item['type']) }}
-                                                    </span>
-                                                    <div>
-                                                        <strong>{{ $item['title'] }}</strong>
-                                                        @if($item['description'])
-                                                            <div class="text-muted">{{ $item['description'] }}</div>
-                                                        @endif
-                                                    </div>
-                                                    @if($item['is_completed'])
-                                                        <span class="completion-status completed">
-                                                            <i class="bi bi-check-circle"></i> Completed
-                                                        </span>
-                                                    @elseif($item['is_locked'])
-                                                        <span class="completion-status locked">
-                                                            <i class="bi bi-lock"></i> Locked
-                                                        </span>
-                                                    @else
-                                                        <span class="completion-status in-progress">
-                                                            <i class="bi bi-clock"></i> Available
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                                
-                                                <div class="content-item-actions">
-                                                    @if($item['is_locked'])
-                                                        <button class="btn locked-btn" disabled>
-                                                            <i class="bi bi-lock"></i> Locked
-                                                        </button>
-                                                    @elseif($item['is_completed'])
-                                                        <a href="{{ route('student.module', ['moduleId' => $item['id']]) }}" class="btn completed-btn">
-                                                            <i class="bi bi-eye"></i> Review
-                                                        </a>
-                                                    @else
-                                                        <a href="{{ route('student.module', ['moduleId' => $item['id']]) }}" class="btn start-btn">
-                                                            @switch($item['type'])
-                                                                @case('assignment')
-                                                                    <i class="bi bi-pencil"></i> Start Assignment
-                                                                    @break
-                                                                @case('quiz')
-                                                                    <i class="bi bi-question-circle"></i> Take Quiz
-                                                                    @break
-                                                                @case('test')
-                                                                    <i class="bi bi-clipboard-check"></i> Take Test
-                                                                    @break
-                                                                @case('link')
-                                                                    <i class="bi bi-box-arrow-up-right"></i> Open Link
-                                                                    @break
-                                                                @default
-                                                                    <i class="bi bi-play-fill"></i> Start
-                                                            @endswitch
-                                                        </a>
-                                                    @endif
-                                                    
-                                                    @if($item['type'] == 'assignment')
-                                                        <a href="{{ route('student.assignment.submissions', ['assignmentId' => $item['id']]) }}" class="btn btn-outline-primary btn-sm">
-                                                            <i class="bi bi-file-text"></i> Submissions
-                                                        </a>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @else
-                                <!-- Single item - display directly -->
-                                @php $item = $moduleItems->first(); @endphp
-                                <div class="content-item">
-                                    <div class="content-item-info">
-                                        <span class="content-item-type {{ $item['type'] }}">
-                                            {{ strtoupper($item['type']) }}
-                                        </span>
-                                        <div>
-                                            <strong>{{ $item['title'] }}</strong>
-                                            @if($item['description'])
-                                                <div class="text-muted">{{ $item['description'] }}</div>
-                                            @endif
-                                        </div>
-                                        @if($item['is_completed'])
-                                            <span class="completion-status completed">
-                                                <i class="bi bi-check-circle"></i> Completed
-                                            </span>
-                                        @elseif($item['is_locked'])
-                                            <span class="completion-status locked">
-                                                <i class="bi bi-lock"></i> Locked
-                                            </span>
-                                        @else
-                                            <span class="completion-status in-progress">
-                                                <i class="bi bi-clock"></i> Available
-                                            </span>
-                                        @endif
-                                    </div>
-                                    
-                                    <div class="content-item-actions">
-                                        @if($item['is_locked'])
-                                            <button class="btn locked-btn" disabled>
-                                                <i class="bi bi-lock"></i> Locked
-                                            </button>
-                                        @elseif($item['is_completed'])
-                                            <a href="{{ route('student.module', ['moduleId' => $item['id']]) }}" class="btn completed-btn">
-                                                <i class="bi bi-eye"></i> Review
-                                            </a>
-                                        @else
-                                            <a href="{{ route('student.module', ['moduleId' => $item['id']]) }}" class="btn start-btn">
-                                                @switch($item['type'])
-                                                    @case('assignment')
-                                                        <i class="bi bi-pencil"></i> Start Assignment
-                                                        @break
-                                                    @case('quiz')
-                                                        <i class="bi bi-question-circle"></i> Take Quiz
-                                                        @break
-                                                    @case('test')
-                                                        <i class="bi bi-clipboard-check"></i> Take Test
-                                                        @break
-                                                    @case('link')
-                                                        <i class="bi bi-box-arrow-up-right"></i> Open Link
-                                                        @break
-                                                    @default
-                                                        <i class="bi bi-play-fill"></i> Start
-                                                @endswitch
-                                            </a>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
-        <!-- Mark Module Complete Section -->
-        @if($progress < 100)
-            <div class="mark-complete-section">
-                <h4><i class="bi bi-trophy"></i> Complete Your Learning Journey</h4>
-                <p>Mark the entire module as complete when you've finished all activities.</p>
-                <button class="mark-complete-btn" onclick="markModuleComplete()" {{ $progress < 100 ? '' : 'disabled' }}>
-                    <i class="bi bi-check-circle"></i> Mark Module as Complete
-                </button>
-            </div>
-        @endif
-    @else
-        <div class="no-content-message">
-            <i class="bi bi-book" style="font-size: 4rem; opacity: 0.3;"></i>
-            <h3>No Content Available Yet</h3>
-            <p>Check back later for course materials and assignments.</p>
-        </div>
-    @endif
-</div>
-@endsection
-
-@push('scripts')
-<script>
-// Global variables for student interface
-let currentProgress = {{ $progress }};
-let totalModules = {{ $totalModules }};
-let completedModules = {{ $completedModules }};
-
-// Student module toggle functionality
-function toggleStudentModule(moduleId) {
-    const content = document.getElementById(`student-module-content-${moduleId}`);
-    const icon = content.previousElementSibling.querySelector('.module-toggle-icon');
-    
-    if (content.classList.contains('expanded')) {
-        content.classList.remove('expanded');
-        icon.classList.remove('expanded');
-    } else {
-        content.classList.add('expanded');
-        icon.classList.add('expanded');
-    }
-}
-
-// Student course toggle functionality
-function toggleStudentCourse(moduleId, courseId) {
-    const content = document.getElementById(`student-course-content-${moduleId}-${courseId}`);
-    const icon = content.previousElementSibling.querySelector('.course-toggle-icon');
-    
-    if (content.classList.contains('expanded')) {
-        content.classList.remove('expanded');
-        icon.classList.remove('expanded');
-    } else {
-        content.classList.add('expanded');
-        icon.classList.add('expanded');
-    }
-}
-
-// Mark module as complete
-function markModuleComplete() {
-    if (confirm('Are you sure you want to mark this module as complete? This action cannot be undone.')) {
-        // Here you would make an API call to mark the module as complete
-        fetch('/student/modules/mark-complete', {
+        fetch(`/student/module/${moduleId}/complete`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                module_id: currentModuleId,
-                program_id: {{ $program->program_id ?? 0 }}
-            })
+            body: JSON.stringify({ program_id: programId })
         })
-        .then(response => response.json())
+        .then(res => res.ok ? res.json() : Promise.reject('Network response was not ok.'))
         .then(data => {
             if (data.success) {
-                // Update UI to reflect completion
-                updateProgressDisplay();
-                showSuccessMessage('Module marked as complete! 🎉');
-                
-                // Disable the button
-                const btn = document.querySelector('.mark-complete-btn');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Module Completed';
+                const moduleEl = document.querySelector(`.module-container[data-module-id="${moduleId}"]`);
+                if (moduleEl) {
+                    const badge = moduleEl.querySelector('.module-status-badge');
+                    if (badge) {
+                        badge.className = 'module-status-badge completed';
+                        badge.innerHTML = '<i class="bi bi-check-circle"></i> Completed';
+                    }
+                    
+                    const completeSection = moduleEl.querySelector('.module-complete-section');
+                    if (completeSection) {
+                        completeSection.style.display = 'none';
+                    }
                 }
+                alert('Module marked as complete! 🎉');
             } else {
-                alert('Error marking module as complete: ' + (data.message || 'Unknown error'));
+                alert('Error: ' + (data.message || 'Could not mark module as complete.'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while marking the module as complete');
+            alert('An error occurred while marking the module as complete.');
         });
-    }
-}
+    };
 
-// Update progress display
-function updateProgressDisplay() {
-    // Update progress bar
-    const progressBar = document.querySelector('.progress-bar-fill');
-    if (progressBar) {
-        currentProgress = Math.min(currentProgress + (100 / totalModules), 100);
-        progressBar.style.width = currentProgress + '%';
-    }
+    // Debug: Check module data
+    const moduleContainers = document.querySelectorAll('.module-container');
+    console.log('🔍 Found module containers:', moduleContainers.length);
     
-    // Update progress text
-    const progressTexts = document.querySelectorAll('.progress-stats span');
-    if (progressTexts.length >= 2) {
-        completedModules = Math.min(completedModules + 1, totalModules);
-        progressTexts[0].textContent = `${completedModules} of ${totalModules} modules completed`;
-        progressTexts[1].innerHTML = `<strong>${Math.round(currentProgress)}% complete</strong>`;
-    }
-}
+    moduleContainers.forEach((container, index) => {
+        const moduleId = container.getAttribute('data-module-id');
+        console.log(`📋 Module ${index + 1}: ID = ${moduleId}`);
+    });
 
-// Show success message
-function showSuccessMessage(message) {
-    // Create success toast notification
-    const toast = document.createElement('div');
-    toast.className = 'alert alert-success position-fixed';
-    toast.style.cssText = `
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border-radius: 10px;
-        animation: slideIn 0.3s ease;
-    `;
-    toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi bi-check-circle-fill me-2" style="font-size: 1.2rem;"></i>
-            ${message}
-            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 5000);
-}
-
-// Initialize page functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Add CSS animation for toast notifications
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Initialize progress tracking
-    console.log('Student course interface loaded');
-    console.log(`Progress: ${currentProgress}%, Modules: ${completedModules}/${totalModules}`);
-    
-    // Auto-expand first available module
-    const firstModule = document.querySelector('.module-container .module-header');
-    if (firstModule) {
-        // Auto-expand first module after a short delay
-        setTimeout(() => {
-            const moduleId = firstModule.closest('.module-container').getAttribute('data-module-id');
-            if (moduleId) {
-                toggleStudentModule(moduleId);
-                
-                // Also expand first course if it exists
-                setTimeout(() => {
-                    const firstCourse = document.querySelector(`#student-module-content-${moduleId} .course-header-inner`);
-                    if (firstCourse) {
-                        toggleStudentCourse(moduleId, 1);
-                    }
-                }, 300);
-            }
-        }, 500);
-    }
+    console.log('✅ Student Course Page - Initialization complete!');
 });
 </script>
 @endpush
-
-@if(isset($showAccessModal) && $showAccessModal)
-<!-- Special Access Notification Modal -->
-<div class="modal fade" id="specialAccessModal" tabindex="-1" aria-labelledby="specialAccessModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="specialAccessModalLabel">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Special Access Granted
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-info mb-3">
-                    <h6 class="alert-heading">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        Important Notice
-                    </h6>
-                    <p class="mb-2">You have been granted special access to this program as part of your batch enrollment.</p>
-                    <hr class="my-2">
-                    <p class="mb-1">
-                        <strong>Current Status:</strong>
-                        <span class="badge bg-{{ $enrollmentStatus === 'approved' ? 'success' : 'warning' }} ms-2">
-                            {{ ucfirst($enrollmentStatus) }}
-                        </span>
-                    </p>
-                    <p class="mb-0">
-                        <strong>Payment Status:</strong>
-                        <span class="badge bg-{{ $paymentStatus === 'paid' ? 'success' : 'warning' }} ms-2">
-                            {{ ucfirst($paymentStatus) }}
-                        </span>
-                    </p>
-                </div>
-                
-                <div class="d-flex align-items-start mb-3">
-                    <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
-                    <div>
-                        <h6 class="mb-1">What you can do:</h6>
-                        <ul class="mb-0 text-muted">
-                            <li>Access all course materials and modules</li>
-                            <li>Participate in live sessions and discussions</li>
-                            <li>Submit assignments and take quizzes</li>
-                            <li>Track your learning progress</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                @if($enrollmentStatus !== 'approved' || $paymentStatus !== 'paid')
-                <div class="d-flex align-items-start">
-                    <i class="bi bi-info-circle-fill text-primary me-3 fs-4"></i>
-                    <div>
-                        <h6 class="mb-1">Action Required:</h6>
-                        <p class="mb-0 text-muted">
-                            @if($enrollmentStatus !== 'approved')
-                                Your registration is still being reviewed by the administration.
-                            @endif
-                            @if($paymentStatus !== 'paid')
-                                @if($enrollmentStatus !== 'approved') Additionally, @endif
-                                Please complete your payment to finalize your enrollment.
-                            @endif
-                            Contact the admin office if you need assistance.
-                        </p>
-                    </div>
-                </div>
-                @endif
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                    <i class="bi bi-check-lg me-2"></i>I Understand
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Show the modal automatically when page loads
-    const specialAccessModal = new bootstrap.Modal(document.getElementById('specialAccessModal'));
-    specialAccessModal.show();
-});
-</script>
-@endif

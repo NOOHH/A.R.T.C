@@ -293,6 +293,17 @@
                         <input type="number" class="form-control" id="max_capacity" name="max_capacity" min="1" required>
                     </div>
                     <div class="mb-3">
+                        <label for="batch_status" class="form-label">Batch Status</label>
+                        <select class="form-control" id="batch_status" name="batch_status" required>
+                            <option value="">Select status</option>
+                            <option value="pending">Pending</option>
+                            <option value="available">Available</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="registration_deadline" class="form-label">Registration Deadline</label>
                         <input type="date" class="form-control" id="registration_deadline" name="registration_deadline" required>
                     </div>
@@ -362,6 +373,17 @@
                         <label for="edit_max_capacity{{ $batch->batch_id }}" class="form-label">Maximum Capacity</label>
                         <input type="number" class="form-control" id="edit_max_capacity{{ $batch->batch_id }}" name="max_capacity" value="{{ $batch->max_capacity }}" min="{{ $batch->current_capacity }}" required>
                         <small class="text-muted">Current enrollment: {{ $batch->current_capacity }} students</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_batch_status{{ $batch->batch_id }}" class="form-label">Batch Status</label>
+                        <select class="form-control" id="edit_batch_status{{ $batch->batch_id }}" name="batch_status" required>
+                            <option value="">Select status</option>
+                            <option value="pending" {{ $batch->batch_status == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="available" {{ $batch->batch_status == 'available' ? 'selected' : '' }}>Available</option>
+                            <option value="ongoing" {{ $batch->batch_status == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
+                            <option value="completed" {{ $batch->batch_status == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="closed" {{ $batch->batch_status == 'closed' ? 'selected' : '' }}>Closed</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="edit_registration_deadline{{ $batch->batch_id }}" class="form-label">Registration Deadline</label>

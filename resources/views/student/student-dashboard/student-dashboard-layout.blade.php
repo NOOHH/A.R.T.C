@@ -68,6 +68,24 @@
 
     @yield('head')
     @stack('styles')
+    <style>
+        .sidebar-close {
+            display: none; /* Hidden by default on desktop */
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+        }
+        @media (max-width: 991.98px) {
+            .modern-sidebar.active .sidebar-close {
+                display: block; /* Show only on mobile when sidebar is active */
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="student-container">
@@ -120,6 +138,7 @@
                         <i class="bi bi-mortarboard"></i>
                         <span class="brand-title">Student Portal</span>
                     </div>
+                    <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
                 </div>
                 
                 <!-- Sidebar Content -->
@@ -262,7 +281,8 @@
     @csrf
 </form>
 
-@yield('scripts')
+@stack('scripts')
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Sidebar Toggle Functionality
@@ -360,29 +380,34 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const targetId = this.getAttribute('data-bs-target');
             const targetElement = document.querySelector(targetId);
-            const parentNav = this.closest('.dropdown-nav');
             
             if (targetElement) {
-                // Toggle Bootstrap collapse
-                const bsCollapse = new bootstrap.Collapse(targetElement, {
-                    toggle: true
-                });
-                
-                // Toggle parent nav class for styling
-                if (parentNav) {
-                    parentNav.classList.toggle('show');
-                }
+                // Use Bootstrap's native collapse instance to toggle
+                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(targetElement);
+                bsCollapse.toggle();
             }
         });
     });
 
-    // Auto-open dropdowns that are marked as active
-    document.querySelectorAll('.dropdown-nav.active').forEach(dropdown => {
-        dropdown.classList.add('show');
-        const collapseElement = dropdown.querySelector('.collapse');
-        if (collapseElement) {
-            collapseElement.classList.add('show');
+    // Adjust parent 'show' class based on Bootstrap collapse events
+    document.querySelectorAll('.collapse').forEach(collapseElement => {
+        const parentNav = collapseElement.closest('.dropdown-nav');
+        if (parentNav) {
+            collapseElement.addEventListener('show.bs.collapse', function () {
+                parentNav.classList.add('show');
+            });
+            collapseElement.addEventListener('hide.bs.collapse', function () {
+                parentNav.classList.remove('show');
+            });
         }
+    });
+
+    // Auto-open dropdowns that are marked as active
+    document.querySelectorAll('.dropdown-nav.active .collapse').forEach(collapse => {
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapse, {
+            toggle: false
+        });
+        bsCollapse.show();
     });
 
     // Initialize sidebar state on page load - Bootstrap compatible

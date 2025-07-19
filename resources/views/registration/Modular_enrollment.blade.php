@@ -13,522 +13,12 @@
 @push('styles')
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
     <meta name="csrf-token" content="{{ csrf_token() }}">
+     <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_enrollment.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        /* Multi-step form styles */
-        .form-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem 0;
-        }
-        
-        .form-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            position: relative;
-        }
-        
-        /* Stepper styles */
-        .stepper-progress {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-bottom: 1px solid #e9ecef;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .stepper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        }
-        
-        .stepper .step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 2;
-            background: white;
-            padding: 0.5rem;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            transition: all 0.3s ease;
-        }
-        
-        /* Step Content Container - Bootstrap 5 Compatible */
-        .step-content {
-            display: none;
-            padding: 2rem;
-            min-height: 600px;
-            opacity: 0;
-            transform: translateX(50px);
-            transition: all 0.4s ease;
-        }
-        
-        .step-content.active {
-            display: block;
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        /* Bootstrap Grid Enhancements */
-        .row {
-            margin-left: -0.75rem;
-            margin-right: -0.75rem;
-        }
-        
-        .col, .col-md-6, .col-lg-4, .col-xl-3 {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-        
-        /* Card Layout Consistency */
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            height: 100%;
-            overflow: hidden;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .selection-card {
-            cursor: pointer;
-            border: 2px solid transparent;
-            position: relative;
-        }
-        
-        .selection-card.selected {
-            border-color: #6a82fb;
-            background: linear-gradient(135deg, #6a82fb 0%, #fc466b 100%);
-            color: white;
-        }
-        
-        .selection-card.selected::after {
-            content: '✓';
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 30px;
-            height: 30px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6a82fb;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-            position: relative;
-        }
-        
-        .stepper .step.active {
-            background: #6a82fb;
-            color: white;
-        }
-        
-        .stepper .step.completed {
-            background: #28a745;
-            color: white;
-        }
-        
-        .stepper .step .circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .stepper .step .label {
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        .stepper .bar {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: #e9ecef;
-            transform: translateY(-50%);
-            z-index: 1;
-        }
-        
-        .stepper .bar .progress {
-            height: 100%;
-            background: #6a82fb;
-            transition: width 0.3s ease;
-        }
-        
-        /* Step content styles */
-        .step-content {
-            display: none;
-            padding: 3rem;
-            min-height: 500px;
-        }
-        
-        .step-content.active {
-            display: block;
-        }
-        
-        .step-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        
-        .step-header h2 {
-            color: #333;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-        
-        .step-header p {
-            color: #666;
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        /* Card grid styles */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        
-        .selection-card {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 15px;
-            padding: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .selection-card:hover {
-            border-color: #6a82fb;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(106, 130, 251, 0.2);
-        }
-        
-        .selection-card.selected {
-            border-color: #6a82fb;
-            background: linear-gradient(135deg, #6a82fb 0%, #8b5cf6 100%);
-            color: white;
-        }
-        
-        .selection-card.selected::before {
-            content: '✓';
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: white;
-            color: #6a82fb;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .card-header {
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        
-        .card-price {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #6a82fb;
-        }
-        
-        .selection-card.selected .card-price {
-            color: white;
-        }
-        
-        .card-description {
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-        
-        .card-features {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .card-features li {
-            padding: 0.5rem 0;
-            position: relative;
-            padding-left: 1.5rem;
-        }
-        
-        .card-features li::before {
-            content: '✓';
-            position: absolute;
-            left: 0;
-            color: #28a745;
-            font-weight: bold;
-        }
-        
-        .selection-card.selected .card-features li::before {
-            color: white;
-        }
-        
-        /* Navigation buttons */
-        .navigation-buttons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 2rem;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .btn-nav {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary {
-            background: #6a82fb;
-            color: white;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            background: #5a6fd8;
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        
-        /* Loading states */
-        .loading-spinner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            color: #6a82fb;
-        }
-        
-        .alert {
-            padding: 1rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-        }
-        
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        /* Hidden inputs */
-        .hidden-inputs {
-            display: none;
-        }
 
-        .package-card-pro {
-            border: 2px solid #e9ecef;
-            border-radius: 18px;
-            box-shadow: 0 4px 24px rgba(106,130,251,0.08);
-            transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
-            cursor: pointer;
-            min-width: 270px;
-            max-width: 320px;
-            background: #fff;
-            position: relative;
-        }
-        .package-card-pro:hover, .package-card-pro.selected {
-            border-color: #6a82fb;
-            box-shadow: 0 8px 32px rgba(106,130,251,0.18);
-            transform: translateY(-4px) scale(1.03);
-        }
-        .package-card-pro.selected::after {
-            content: '';
-            position: absolute;
-            top: 12px; right: 12px;
-            width: 22px; height: 22px;
-            background: #6a82fb;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 2px #6a82fb;
-        }
-        .next-btn-pro {
-            min-width: 320px;
-            font-size: 1.15rem;
-            font-weight: 600;
-            box-shadow: 0 2px 12px rgba(106,130,251,0.10);
-            border-radius: 12px;
-            letter-spacing: 0.03em;
-        }
-
-        /* Account Step Card */
-        .account-step-card {
-            padding: 3rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        /* Form Grid for Step 5 */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Email and Referral Input Groups */
-        .email-input-group, .referral-input-group {
-            display: flex;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: border-color 0.3s ease;
-        }
-
-        .email-input-group:focus-within, .referral-input-group:focus-within {
-            border-color: #6a82fb;
-        }
-
-        .email-input-group input, .referral-input-group input {
-            flex: 1;
-            border: none;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-            outline: none;
-            background: transparent;
-        }
-
-        .btn-otp, .btn-validate-referral {
-            background: #6a82fb;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .btn-otp:hover, .btn-validate-referral:hover {
-            background: #5a6fd8;
-        }
-
-        .btn-otp:disabled, .btn-validate-referral:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* Error and Success Messages */
-        .error-message {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        .success-message {
-            color: #28a745;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        /* Login Prompt */
-        .login-prompt {
-            text-align: center;
-            margin: 2rem 0;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .login-prompt a {
-            color: #6a82fb;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .login-prompt a:hover {
-            text-decoration: underline;
-        }
-
-        /* Form Navigation */
-        .form-navigation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 2rem;
-            border-top: 1px solid #e9ecef;
-        }
-
-        @media (max-width: 600px) {
-            .package-card-pro { min-width: 90vw; max-width: 98vw; }
-            .next-btn-pro { min-width: 90vw; }
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .account-step-card {
-                padding: 2rem 1rem;
-            }
-        }
     </style>
 @endpush
 
@@ -583,34 +73,67 @@
             <input type="hidden" id="learning_mode" name="learning_mode" value="">
         </div>
 
-        <!-- Step 1: Package Selection (Bootstrap Cards) -->
+        <!-- Step 1: Package Selection (Bootstrap Carousel) -->
         <div class="step-content active" id="content-1">
             <div class="step-header mb-4">
                 <h2 class="fw-bold text-center" style="font-size:2.5rem;">Choose Your Package</h2>
                 <p class="text-center text-muted" style="font-size:1.15rem;">Select a learning package that suits your needs</p>
             </div>
-            <div class="d-flex justify-content-center gap-4 flex-wrap mb-5">
-                @foreach($packages as $package)
-                    <div class="package-card-pro card p-4 mb-3"
-                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->module_count ?? $package->modules_count ?? 3 }}, '{{ $package->selection_mode ?? 'modules' }}', {{ $package->course_count ?? 0 }})"
-                         data-package-id="{{ $package->package_id }}">
-                        <div class="card-body text-center">
-                            <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
-                            <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
-                            <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
-                            <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
-                                @if($package->selection_mode === 'courses')
-                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->course_count ?? 'All' }} courses included</li>
-                                @else
-                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->module_count ?? $package->modules_count ?? 3 }} modules included</li>
-                                @endif
-                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
-                                <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
-                                <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
-                            </ul>
+            
+            <!-- Bootstrap Carousel for Packages -->
+            <div id="packageCarousel" class="carousel slide package-carousel-container" data-bs-ride="false">
+                <div class="carousel-inner">
+                    @php $chunkSize = 2; @endphp
+                    @foreach($packages->chunk($chunkSize) as $index => $packageChunk)
+                        <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                            <div class="d-flex justify-content-center gap-4 flex-wrap">
+                                @foreach($packageChunk as $package)
+                                    <div class="package-card-pro card p-4 mb-3"
+                                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->module_count ?? $package->modules_count ?? 3 }}, '{{ $package->selection_mode ?? 'modules' }}', {{ $package->course_count ?? 0 }})"
+                                         data-package-id="{{ $package->package_id }}">
+                                        <div class="card-body text-center">
+                                            <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
+                                            <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
+                                            <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
+                                            <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
+                                                @if($package->selection_mode === 'courses')
+                                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->course_count ?? 'All' }} courses included</li>
+                                                @else
+                                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->module_count ?? $package->modules_count ?? 3 }} modules included</li>
+                                                @endif
+                                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
+                                                <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
+                                                <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
+                    @endforeach
+                </div>
+                
+                <!-- Carousel Controls -->
+                @if($packages->count() > $chunkSize)
+                    <button class="carousel-control-prev" type="button" data-bs-target="#packageCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#packageCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                @endif
+                
+                <!-- Carousel Indicators -->
+                @if($packages->chunk($chunkSize)->count() > 1)
+                    <div class="carousel-indicators">
+                        @foreach($packages->chunk($chunkSize) as $index => $chunk)
+                            <button type="button" data-bs-target="#packageCarousel" data-bs-slide-to="{{ $index }}" 
+                                    class="{{ $index == 0 ? 'active' : '' }}" aria-label="Slide {{ $index + 1 }}"></button>
+                        @endforeach
                     </div>
-                @endforeach
+                @endif
             </div>
             
             <!-- Immediate Script for Package Selection -->
@@ -635,6 +158,7 @@
                     
                     // Store selection
                     selectedPackageId = packageId;
+                    selectedProgramId = programId; // Also store program ID
                     packageSelectionMode = selectionMode;
                     
                     if (selectionMode === 'courses') {
@@ -645,9 +169,21 @@
                         packageCourseLimit = null; // No course limit for module-based packages
                     }
                     
-                    // Update hidden inputs
+                    // Update hidden inputs - CRITICAL: Set both package_id AND program_id
                     if (document.getElementById('package_id')) {
                         document.getElementById('package_id').value = packageId;
+                        console.log('Set package_id to:', packageId);
+                    }
+                    if (document.getElementById('program_id')) {
+                        document.getElementById('program_id').value = programId;
+                        console.log('Set program_id to:', programId);
+                    }
+                    // Also update the final form hidden inputs
+                    if (document.getElementById('packageIdInput')) {
+                        document.getElementById('packageIdInput').value = packageId;
+                    }
+                    if (document.getElementById('hidden_program_id')) {
+                        document.getElementById('hidden_program_id').value = programId;
                     }
                     
                     // Enable next button
@@ -668,14 +204,37 @@
             </div>
         </div>
 
-        <!-- Step 2: Program Selection (unchanged, but use Bootstrap grid) -->
+        <!-- Step 2: Program Selection (Bootstrap Carousel) -->
         <div class="step-content" id="content-2">
             <div class="step-header">
                 <h2>Select Your Program</h2>
                 <p>Choose the program that aligns with your career goals</p>
             </div>
-            <div class="row" id="programsGrid">
-                <!-- Programs will be loaded here -->
+            
+            <!-- Bootstrap Carousel for Programs -->
+            <div id="programCarousel" class="carousel slide program-carousel-container" data-bs-ride="false">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="row" id="programsGrid">
+                            <!-- Programs will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Carousel Controls -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#programCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#programCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                
+                <!-- Carousel Indicators -->
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                </div>
             </div>
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
@@ -687,14 +246,37 @@
             </div>
         </div>
 
-        <!-- Step 3: Module Selection (unchanged, but use Bootstrap grid) -->
+        <!-- Step 3: Module Selection (Bootstrap Carousel) -->
         <div class="step-content" id="content-3">
             <div class="step-header">
                 <h2>Select Your Modules</h2>
                 <p>Choose the modules you want to enroll in (up to <span id="moduleLimit">3</span> modules)</p>
             </div>
-            <div class="row" id="modulesGrid">
-                <!-- Modules will be loaded here -->
+            
+            <!-- Bootstrap Carousel for Modules -->
+            <div id="moduleCarousel" class="carousel slide module-carousel-container" data-bs-ride="false">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="row" id="modulesGrid">
+                            <!-- Modules will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Carousel Controls -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#moduleCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#moduleCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                
+                <!-- Carousel Indicators -->
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#moduleCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                </div>
             </div>
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
@@ -1214,6 +796,42 @@
     function updateStepper() {
         // Update step indicators
         for (let i = 1; i <= totalSteps; i++) {
+            const stepElement = document.getElementById(`step-${i}`);
+            const contentElement = document.getElementById(`content-${i}`);
+            
+            if (stepElement) {
+                if (i < currentStep) {
+                    stepElement.classList.add('completed');
+                    stepElement.classList.remove('active');
+                } else if (i === currentStep) {
+                    stepElement.classList.add('active');
+                    stepElement.classList.remove('completed');
+                } else {
+                    stepElement.classList.remove('active', 'completed');
+                }
+            }
+
+            if (contentElement) {
+                if (i === currentStep) {
+                    contentElement.classList.add('active');
+                } else {
+                    contentElement.classList.remove('active');
+                }
+            }
+        }
+        
+        // Update progress bar
+        const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) {
+            progressBar.style.width = progress + '%';
+        }
+    }
+    
+    // Update stepper UI
+    function updateStepper() {
+        // Update step indicators
+        for (let i = 1; i <= totalSteps; i++) {
             const step = document.getElementById(`step-${i}`);
             step.classList.remove('active', 'completed');
             
@@ -1311,31 +929,74 @@
     
     // Display programs in the grid
     function displayPrograms(programs) {
-        const grid = document.getElementById('programsGrid');
+        const carousel = document.getElementById('programCarousel');
+        const carouselInner = carousel.querySelector('.carousel-inner');
+        const indicators = carousel.querySelector('.carousel-indicators');
         
-        let programsHtml = '';
-        programs.forEach(program => {
-            const isSelected = program.program_id == selectedProgramId;
-            programsHtml += `
-                <div class="col-md-6 mb-4">
-                    <div class="card selection-card h-100 ${isSelected ? 'selected' : ''}" 
-                         onclick="selectProgram(${program.program_id})">
-                        <div class="card-body">
-                            <h4 class="card-title">${program.program_name}</h4>
-                            <p class="card-text">${program.program_description || 'No description available.'}</p>
-                            <ul class="list-unstyled mt-3 mb-0">
-                                <li><i class="bi bi-check2 text-success"></i> Professional certification</li>
-                                <li><i class="bi bi-check2 text-success"></i> Industry-relevant skills</li>
-                                <li><i class="bi bi-check2 text-success"></i> Expert instructors</li>
-                                <li><i class="bi bi-check2 text-success"></i> Career advancement</li>
-                            </ul>
+        // Clear existing content
+        carouselInner.innerHTML = '';
+        indicators.innerHTML = '';
+        
+        // Group programs into slides (2 programs per slide)
+        const programsPerSlide = 2;
+        const slides = [];
+        for (let i = 0; i < programs.length; i += programsPerSlide) {
+            slides.push(programs.slice(i, i + programsPerSlide));
+        }
+        
+        // Create carousel slides
+        slides.forEach((slidePrograms, slideIndex) => {
+            const isActive = slideIndex === 0 ? 'active' : '';
+            
+            let programsHtml = '';
+            slidePrograms.forEach(program => {
+                const isSelected = program.program_id == selectedProgramId;
+                programsHtml += `
+                    <div class="col-md-6 mb-4">
+                        <div class="card selection-card h-100 ${isSelected ? 'selected' : ''}" 
+                             onclick="selectProgram(${program.program_id})">
+                            <div class="card-body">
+                                <h4 class="card-title">${program.program_name}</h4>
+                                <p class="card-text">${program.program_description || 'No description available.'}</p>
+                                <ul class="list-unstyled mt-3 mb-0">
+                                    <li><i class="bi bi-check2 text-success"></i> Professional certification</li>
+                                    <li><i class="bi bi-check2 text-success"></i> Industry-relevant skills</li>
+                                    <li><i class="bi bi-check2 text-success"></i> Expert instructors</li>
+                                    <li><i class="bi bi-check2 text-success"></i> Career advancement</li>
+                                </ul>
+                            </div>
                         </div>
+                    </div>
+                `;
+            });
+            
+            const slideHtml = `
+                <div class="carousel-item ${isActive}">
+                    <div class="row" id="programsGrid${slideIndex === 0 ? '' : slideIndex}">
+                        ${programsHtml}
                     </div>
                 </div>
             `;
+            
+            carouselInner.innerHTML += slideHtml;
+            
+            // Create indicator
+            const indicator = `
+                <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${slideIndex}" 
+                        class="${isActive}" ${isActive ? 'aria-current="true"' : ''} aria-label="Slide ${slideIndex + 1}"></button>
+            `;
+            indicators.innerHTML += indicator;
         });
         
-        grid.innerHTML = programsHtml;
+        // If only one slide, hide carousel controls and indicators
+        const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+        if (slides.length <= 1) {
+            controls.forEach(control => control.style.display = 'none');
+            indicators.style.display = 'none';
+        } else {
+            controls.forEach(control => control.style.display = 'block');
+            indicators.style.display = 'flex';
+        }
         
         // If program is pre-selected from package, enable next button
         if (selectedProgramId) {
@@ -1370,49 +1031,93 @@
     
     // Display modules
     function displayModules(modules) {
-        const grid = document.getElementById('modulesGrid');
+        const carousel = document.getElementById('moduleCarousel');
+        const carouselInner = carousel.querySelector('.carousel-inner');
+        const indicators = carousel.querySelector('.carousel-indicators');
         
         if (!modules || modules.length === 0) {
-            grid.innerHTML = '<div class="alert alert-info">No modules available for this program.</div>';
+            carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No modules available for this program.</div></div>';
+            indicators.innerHTML = '';
             return;
         }
         
-        let modulesHtml = '';
-        modules.forEach(module => {
-            const moduleName = module.name || module.module_name || 'Unnamed Module';
-            const moduleDesc = module.description || module.module_description || 'No description available';
+        // Clear existing content
+        carouselInner.innerHTML = '';
+        indicators.innerHTML = '';
+        
+        // Group modules into slides (2 modules per slide)
+        const modulesPerSlide = 2;
+        const slides = [];
+        for (let i = 0; i < modules.length; i += modulesPerSlide) {
+            slides.push(modules.slice(i, i + modulesPerSlide));
+        }
+        
+        // Create carousel slides
+        slides.forEach((slideModules, slideIndex) => {
+            const isActive = slideIndex === 0 ? 'active' : '';
             
-            modulesHtml += `
-                <div class="col-md-6 mb-4">
-                    <div class="module-card" data-module-id="${module.id}">
-                        <div class="card module-card h-100">
-                            <div class="card-body">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.id}" 
-                                           value="${module.id}" onchange="handleModuleSelection(this)">
-                                    <label class="form-check-label module-title" for="module_${module.id}">${moduleName}</label>
-                                </div>
-                                <p class="card-text module-description">${moduleDesc}</p>
-                                <div class="module-meta">
-                                    <span class="module-duration">
-                                        <i class="bi bi-clock"></i> ${module.duration || 'Flexible'}
-                                    </span>
-                                    <span class="module-level">${module.level || 'All Levels'}</span>
-                                </div>
-                                <div class="module-actions">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                            onclick="showCoursesModal(${module.id}, '${moduleName}')">
-                                        <i class="bi bi-list"></i> View Courses
-                                    </button>
+            let modulesHtml = '';
+            slideModules.forEach(module => {
+                const moduleName = module.name || module.module_name || 'Unnamed Module';
+                const moduleDesc = module.description || module.module_description || 'No description available';
+                
+                modulesHtml += `
+                    <div class="col-md-6 mb-4">
+                        <div class="module-card" data-module-id="${module.id}">
+                            <div class="card module-card h-100">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.id}" 
+                                               value="${module.id}" onchange="handleModuleSelection(this)">
+                                        <label class="form-check-label module-title" for="module_${module.id}">${moduleName}</label>
+                                    </div>
+                                    <p class="card-text module-description">${moduleDesc}</p>
+                                    <div class="module-meta">
+                                        <span class="module-duration">
+                                            <i class="bi bi-clock"></i> ${module.duration || 'Flexible'}
+                                        </span>
+                                        <span class="module-level">${module.level || 'All Levels'}</span>
+                                    </div>
+                                    <div class="module-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                onclick="showCoursesModal(${module.id}, '${moduleName}')">
+                                            <i class="bi bi-list"></i> View Courses
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                `;
+            });
+            
+            const slideHtml = `
+                <div class="carousel-item ${isActive}">
+                    <div class="row" id="modulesGrid${slideIndex === 0 ? '' : slideIndex}">
+                        ${modulesHtml}
+                    </div>
                 </div>
             `;
+            
+            carouselInner.innerHTML += slideHtml;
+            
+            // Create indicator
+            const indicator = `
+                <button type="button" data-bs-target="#moduleCarousel" data-bs-slide-to="${slideIndex}" 
+                        class="${isActive}" ${isActive ? 'aria-current="true"' : ''} aria-label="Slide ${slideIndex + 1}"></button>
+            `;
+            indicators.innerHTML += indicator;
         });
         
-        grid.innerHTML = modulesHtml;
+        // If only one slide, hide carousel controls and indicators
+        const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+        if (slides.length <= 1) {
+            controls.forEach(control => control.style.display = 'none');
+            indicators.style.display = 'none';
+        } else {
+            controls.forEach(control => control.style.display = 'block');
+            indicators.style.display = 'flex';
+        }
     }
     
     // Handle module selection
@@ -2196,14 +1901,27 @@
             coursesBadge.textContent = `${coursesCount} course${coursesCount > 1 ? 's' : ''} selected`;
         }
         
+        // CRITICAL FIX: Ensure the module exists in selectedModules array
+        const moduleIndex = selectedModules.findIndex(m => m.id == moduleId);
+        const moduleTitle = moduleCard ? moduleCard.querySelector('.module-title')?.textContent || `Module ${moduleId}` : `Module ${moduleId}`;
+        
+        if (moduleIndex === -1) {
+            // Module doesn't exist in selectedModules, add it
+            const moduleData = {
+                id: moduleId,
+                name: moduleTitle,
+                selected_courses: selectedCourses[moduleId]
+            };
+            selectedModules.push(moduleData);
+            console.log('✅ Added module to selectedModules:', moduleData);
+        } else {
+            // Module exists, update it with course selections
+            selectedModules[moduleIndex].selected_courses = selectedCourses[moduleId];
+            console.log('✅ Updated existing module with courses:', selectedModules[moduleIndex]);
+        }
+        
         // Update the selected_modules data to include course selections
         updateSelectedModulesWithCourses();
-        
-        // Also update the selected modules array to include course data for the current module
-        const moduleIndex = selectedModules.findIndex(m => m.id == moduleId);
-        if (moduleIndex !== -1) {
-            selectedModules[moduleIndex].selected_courses = selectedCourses[moduleId];
-        }
         
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('coursesModal'));
@@ -2259,6 +1977,7 @@
             if (!req.available_modular_plan) return; // Only show for modular plan
             const label = req.custom_name || req.field_name || req.document_type;
             const required = req.is_required ? 'required' : '';
+            const requiredClass = req.is_required ? 'border-warning' : '';
             let accept = '';
             switch (req.file_type) {
                 case 'image': accept = '.jpg,.jpeg,.png,.gif'; break;
@@ -2266,10 +1985,14 @@
                 case 'document': accept = '.pdf,.doc,.docx'; break;
                 default: accept = '*'; break;
             }
-            html += `<div class="form-group">
-                <label>${label} ${req.is_required ? '<span class="text-danger">*</span>' : ''}</label>
-                <input type="file" name="${label.replace(/\s+/g, '_').toLowerCase()}" class="form-control" accept="${accept}" ${required}>
-                <small class="form-text text-muted">Upload ${label} (${accept.replace(/\./g, '').toUpperCase()} only)</small>
+            html += `<div class="form-group mb-3">
+                <label class="form-label fw-bold">${label} ${req.is_required ? '<span class="text-danger">*</span>' : '<span class="text-muted">(Optional)</span>'}</label>
+                <input type="file" name="${label.replace(/\s+/g, '_').toLowerCase()}" class="form-control ${requiredClass}" accept="${accept}" ${required} onchange="handleFileUpload(this)">
+                <div class="form-text">
+                    <i class="fas fa-info-circle text-info me-1"></i>
+                    Upload ${label} (${accept.replace(/\./g, '').toUpperCase()} files only, max 10MB)
+                    ${req.is_required ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>This file is required for your education level</small>' : ''}
+                </div>
             </div>`;
         });
         requirementsDiv.innerHTML = html;
@@ -2288,12 +2011,72 @@ function copyStepperDataToFinalForm() {
     let referralCode = '';
     
     if (!isUserLoggedIn) {
+        // Get values from the actual form fields, not just the email field
         userFirstname = document.getElementById('user_firstname')?.value || '';
         userLastname = document.getElementById('user_lastname')?.value || '';
         userEmail = document.getElementById('user_email')?.value || '';
         password = document.getElementById('password')?.value || '';
         passwordConfirmation = document.getElementById('password_confirmation')?.value || '';
         referralCode = document.getElementById('referral_code')?.value || '';
+        
+        // CRITICAL FIX: Validate that fields are not incorrectly duplicated
+        if (userFirstname === userEmail || userLastname === userEmail || password === userEmail) {
+            console.error('❌ CRITICAL ERROR: Form fields have duplicate values! This indicates a form field mapping issue.');
+            console.error('Field values:', {
+                userFirstname,
+                userLastname,
+                userEmail,
+                password: password ? '[HIDDEN]' : '[EMPTY]',
+                passwordConfirmation: passwordConfirmation ? '[HIDDEN]' : '[EMPTY]'
+            });
+            
+            // If firstname and lastname are same as email, prompt user to enter correct values
+            if (userFirstname === userEmail) {
+                alert('Error: First name field appears to have email value. Please refresh the page and enter your actual first name.');
+                return; // Stop form submission
+            }
+        }
+        
+        // Additional validation: ensure required fields are not empty
+        if (!userFirstname.trim()) {
+            alert('Error: First name is required.');
+            document.getElementById('user_firstname')?.focus();
+            return;
+        }
+        
+        if (!userLastname.trim()) {
+            alert('Error: Last name is required.');
+            document.getElementById('user_lastname')?.focus();
+            return;
+        }
+        
+        if (!userEmail.trim()) {
+            alert('Error: Email is required.');
+            document.getElementById('user_email')?.focus();
+            return;
+        }
+        
+        if (!password.trim()) {
+            alert('Error: Password is required.');
+            document.getElementById('password')?.focus();
+            return;
+        }
+        
+        if (password !== passwordConfirmation) {
+            alert('Error: Passwords do not match.');
+            document.getElementById('password_confirmation')?.focus();
+            return;
+        }
+        
+        // Debug: Log the actual values being collected
+        console.log('🔍 COLLECTING ACCOUNT DATA:', {
+            userFirstname: userFirstname,
+            userLastname: userLastname, 
+            userEmail: userEmail,
+            hasPassword: !!password,
+            hasPasswordConfirmation: !!passwordConfirmation,
+            referralCode: referralCode
+        });
     } else {
         // For logged-in users, we don't need to collect account data
         console.log('User is logged in, skipping account data collection');
@@ -2304,10 +2087,25 @@ function copyStepperDataToFinalForm() {
     const programId = document.getElementById('program_id')?.value || '';
     const selectedModules = document.getElementById('selected_modules')?.value || '';
     const learningMode = document.getElementById('learning_mode')?.value || '';
+    const educationLevel = document.getElementById('educationLevel')?.value || ''; // Get education level
+
+    console.log('🔍 FORM DATA DEBUG:', {
+        packageId, 
+        programId, 
+        selectedModules, 
+        learningMode,
+        educationLevel,
+        hasPackageId: !!packageId,
+        hasProgramId: !!programId,
+        hasEducationLevel: !!educationLevel
+    });
 
     // Final form hidden fields
     const form = document.getElementById('modularEnrollmentForm');
-    if (!form) return;
+    if (!form) {
+        console.error('❌ Form not found: modularEnrollmentForm');
+        return;
+    }
 
     // Set or create hidden fields for account info (only for non-logged-in users)
     if (!isUserLoggedIn) {
@@ -2319,11 +2117,12 @@ function copyStepperDataToFinalForm() {
         setOrCreateHidden(form, 'referral_code', referralCode);
     }
     
-    // Set or create hidden fields for stepper selections
+    // Set or create hidden fields for stepper selections - CRITICAL: These must have valid database IDs
     setOrCreateHidden(form, 'package_id', packageId);
     setOrCreateHidden(form, 'program_id', programId);
     setOrCreateHidden(form, 'selected_modules', selectedModules);
     setOrCreateHidden(form, 'learning_mode', learningMode);
+    setOrCreateHidden(form, 'education_level', educationLevel); // Ensure education_level is set
     
     // Handle start date - set to today if empty
     const startDateInput = form.querySelector('input[name="Start_Date"]');
@@ -2341,8 +2140,15 @@ function setOrCreateHidden(form, name, value) {
         input.type = 'hidden';
         input.name = name;
         form.appendChild(input);
+        console.log(`✅ Created hidden input: ${name}`);
     }
     input.value = value;
+    console.log(`🔧 Set ${name} = ${value} (type: ${typeof value})`);
+    
+    // Validate critical fields
+    if ((name === 'package_id' || name === 'program_id') && (!value || value === '')) {
+        console.error(`❌ CRITICAL: ${name} is empty! This will cause validation to fail.`);
+    }
 }
 
 // Hook into step navigation and form submission
@@ -2375,7 +2181,7 @@ document.addEventListener('DOMContentLoaded', function() {
             copyStepperDataToFinalForm();
             
             // Validate that required data is present
-            const requiredFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode'];
+            const requiredFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
             
             // Add account fields to validation only for non-logged-in users
             if (!isUserLoggedIn) {
@@ -2383,19 +2189,45 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const missingFields = [];
+            const invalidFields = [];
             
             requiredFields.forEach(field => {
                 const input = form.querySelector(`input[name="${field}"]`);
                 if (!input || !input.value.trim()) {
                     missingFields.push(field);
+                } else {
+                    // Additional validation for database IDs
+                    if (field === 'program_id') {
+                        const programId = parseInt(input.value);
+                        if (isNaN(programId) || ![32, 33, 34, 35].includes(programId)) {
+                            invalidFields.push(`program_id (${input.value}) - should be 32, 33, 34, or 35`);
+                        }
+                    }
+                    if (field === 'package_id') {
+                        const packageId = parseInt(input.value);
+                        if (isNaN(packageId) || ![18, 19, 20, 21].includes(packageId)) {
+                            invalidFields.push(`package_id (${input.value}) - should be 18, 19, 20, or 21`);
+                        }
+                    }
                 }
             });
             
             if (missingFields.length > 0) {
-                alert('Missing required fields: ' + missingFields.join(', '));
+                alert('❌ Missing required fields: ' + missingFields.join(', '));
                 console.error('Missing required fields:', missingFields);
                 return;
             }
+            
+            if (invalidFields.length > 0) {
+                alert('❌ Invalid database IDs: ' + invalidFields.join(', '));
+                console.error('Invalid database IDs:', invalidFields);
+                return;
+            }
+            
+            console.log('✅ All validation checks passed, submitting form...');
+            
+            // CRITICAL DEBUG: Log all form data before submission
+            console.log('=== FORM SUBMISSION DEBUG ===');
             
             // Submit via AJAX to handle the response properly
             const formData = new FormData(form);
@@ -2407,8 +2239,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📅 Force-set Start_Date in FormData to:', today);
             }
             
-            // Log form data for debugging
-            console.log('Submitting form data:', Object.fromEntries(formData));
+            // Debug: Log all form data (safely hiding passwords)
+            const formDataObject = {};
+            const fileFields = []; // Track file fields specifically
+            for (let [key, value] of formData.entries()) {
+                if (key === 'password' || key === 'password_confirmation') {
+                    formDataObject[key] = value ? '[HIDDEN - ' + value.length + ' chars]' : '[EMPTY]';
+                } else if (value instanceof File) {
+                    formDataObject[key] = `[FILE: ${value.name}, size: ${value.size} bytes]`;
+                    fileFields.push(key);
+                } else {
+                    formDataObject[key] = value;
+                }
+            }
+            console.log('📋 Complete FormData being submitted:', formDataObject);
+            console.log('📎 File fields found:', fileFields);
+            
+            // Validate critical fields one more time before submission
+            const criticalFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
+            const missingCriticalFields = [];
+            
+            criticalFields.forEach(field => {
+                const value = formData.get(field);
+                if (!value || value === '' || value === 'null' || value === 'undefined') {
+                    missingCriticalFields.push(field);
+                }
+            });
+            
+            if (missingCriticalFields.length > 0) {
+                console.error('❌ CRITICAL FIELDS MISSING OR EMPTY:', missingCriticalFields);
+                alert('Critical form fields are missing: ' + missingCriticalFields.join(', ') + '. Please refresh the page and try again.');
+                return;
+            }
+            
+            console.log('✅ All critical fields validated');
+            console.log('🚀 Submitting to:', form.action);
             
             fetch(form.action, {
                 method: 'POST',
@@ -2417,20 +2282,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': CSRF_TOKEN
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Server response status:', response.status);
+                console.log('Server response headers:', Object.fromEntries(response.headers));
+                return response.json();
+            })
             .then(data => {
+                console.log('Server response data:', data);
                 if (data.success) {
                     alert('Registration completed successfully!');
                     // Redirect to success page or login
                     window.location.href = '/login?message=registration_success';
                 } else {
-                    alert('Registration failed: ' + (data.message || 'Unknown error'));
+                    // Enhanced error handling for validation errors
+                    let errorMessage = 'Registration failed';
+                    
+                    if (data.errors) {
+                        console.error('Validation errors:', data.errors);
+                        
+                        // Check for file-related errors specifically
+                        const fileErrors = [];
+                        const otherErrors = [];
+                        
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            const isFileField = field.includes('tor') || field.includes('psa') || field.includes('good_moral') || 
+                                              field.includes('certificate') || field.includes('transcript') || field.includes('diploma');
+                            
+                            if (isFileField) {
+                                fileErrors.push(`${field.replace(/_/g, ' ').toUpperCase()}: ${messages.join(', ')}`);
+                            } else {
+                                otherErrors.push(`${field}: ${messages.join(', ')}`);
+                            }
+                        }
+                        
+                        if (fileErrors.length > 0) {
+                            errorMessage += '\n\nMissing required files for your education level:\n' + fileErrors.join('\n');
+                            errorMessage += '\n\nPlease upload the required documents in the form above and try again.';
+                        }
+                        
+                        if (otherErrors.length > 0) {
+                            errorMessage += '\n\nOther errors:\n' + otherErrors.join('\n');
+                        }
+                    } else if (data.message) {
+                        errorMessage += ': ' + data.message;
+                    }
+                    
+                    alert(errorMessage);
                     console.error('Registration failed:', data);
                 }
             })
             .catch(error => {
                 console.error('Form submission error:', error);
-                alert('Form submission failed. Please try again.');
+                alert('Form submission failed. Please check your connection and try again.');
             });
         });
     }
@@ -2703,7 +2606,7 @@ function handleFileUpload(inputElement) {
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     
-    fetch('/ocr/process', {
+    fetch('/registration/validate-file', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -2727,26 +2630,35 @@ function handleFileUpload(inputElement) {
             return;
         }
         
-        console.log('OCR processing response:', data);
+        console.log('File validation response:', data);
         
         if (data.success) {
-            showSuccessModal('Document processed successfully!');
+            showSuccessModal('Document validated successfully!');
+            
+            // CRITICAL FIX: Store the file path for form submission
+            if (data.file_path) {
+                let hiddenFileInput = document.querySelector(`input[name="${fieldName}_path"]`);
+                if (!hiddenFileInput) {
+                    hiddenFileInput = document.createElement('input');
+                    hiddenFileInput.type = 'hidden';
+                    hiddenFileInput.name = fieldName + '_path';
+                    inputElement.parentNode.appendChild(hiddenFileInput);
+                }
+                hiddenFileInput.value = data.file_path;
+                console.log('Stored file path for', fieldName, ':', data.file_path);
+            }
             
             // Handle education level detection
-            if (data.data && data.data.education_level_detected) {
-                handleEducationLevelDetection(data.data.education_level_detected);
+            if (data.certificate_level) {
+                handleEducationLevelDetection(data.certificate_level);
             }
             
-            if (data.data && data.data.program_suggestions && data.data.program_suggestions.length > 0) {
-                showProgramSuggestions(data.data.program_suggestions);
-            }
-            
-            if (data.data && data.data.extracted_text) {
-                console.log('Extracted text:', data.data.extracted_text);
+            if (data.suggestions && data.suggestions.length > 0) {
+                showProgramSuggestions(data.suggestions);
             }
         } else {
-            console.error('OCR processing failed:', data);
-            showErrorModal(data.message || 'Document processing failed');
+            console.error('File validation failed:', data);
+            showErrorModal(data.message || 'File validation failed');
             inputElement.value = '';
         }
     })

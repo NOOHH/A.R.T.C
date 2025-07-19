@@ -36,6 +36,7 @@ class Registration extends Model
         'emergency_contact_number',
         'Telephone_Number', // New dynamic field
         'selected_modules', // New dynamic field
+        'selected_courses', // Add course selections
         'Start_Date',
         'start_date', // Alternative field name
         'status',
@@ -76,6 +77,8 @@ class Registration extends Model
         'scholarship_program',
         'employment_status',
         'monthly_income',
+        // Custom education level file fields
+        'ama_namin',
     ];
 
     // Explicitly guard against batch_id assignment - it should never be in registrations table
@@ -86,6 +89,7 @@ class Registration extends Model
     protected $casts = [
         'dynamic_fields' => 'array',
         'selected_modules' => 'array', // Cast JSON field to array
+        'selected_courses' => 'array', // Cast JSON field to array for course selections
     ];
 
     // Get display name for registration mode from dynamic fields

@@ -298,46 +298,6 @@
                             </a>
                         </div>
                         @endif
-
-                        <!-- Reports Section -->
-                        <div class="nav-section">
-                            <div class="nav-section-title">
-                                <span>Reports</span>
-                            </div>
-                            <div class="nav-item dropdown-nav">
-                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
-                                    <i class="bi bi-file-earmark-bar-graph"></i>
-                                    <span>Reports</span>
-                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                                </a>
-                                <div class="collapse" id="reportsMenu">
-                                    <div class="submenu">
-                                        <a href="#" class="submenu-link">
-                                            <i class="bi bi-file-earmark-text"></i>
-                                            <span>Student Reports</span>
-                                        </a>
-                                        <a href="#" class="submenu-link">
-                                            <i class="bi bi-file-earmark-person"></i>
-                                            <span>Professor Reports</span>
-                                        </a>
-                                        <a href="#" class="submenu-link">
-                                            <i class="bi bi-file-earmark-check"></i>
-                                            <span>Enrollment Reports</span>
-                                        </a>
-                                        @if($isAdmin)
-                                        <a href="#" class="submenu-link">
-                                            <i class="bi bi-file-earmark-chart"></i>
-                                            <span>Financial Reports</span>
-                                        </a>
-                                        <a href="#" class="submenu-link">
-                                            <i class="bi bi-share"></i>
-                                            <span>Referral Reports</span>
-                                        </a>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </nav>
 
                     <!-- Sidebar Footer (Bottom Section) -->

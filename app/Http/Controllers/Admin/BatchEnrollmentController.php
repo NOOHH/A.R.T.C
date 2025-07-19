@@ -28,6 +28,18 @@ class BatchEnrollmentController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        // Authentication is handled by middleware
+        $programs = Program::where('is_archived', 0)->get();
+        $professors = Professor::where('professor_archived', 0)->get();
+
+        return view('admin.admin-student-enrollment.batch-create', [
+            'programs' => $programs,
+            'professors' => $professors
+        ]);
+    }
+
     public function store(Request $request)
     {
         // Authentication is handled by middleware
@@ -37,7 +49,7 @@ class BatchEnrollmentController extends Controller
             'program_id' => 'required|exists:programs,program_id',
             'professor_ids' => 'nullable|array',
             'professor_ids.*' => 'exists:professors,professor_id',
-            'batch_capacity' => 'required|integer|min:1',
+            'max_capacity' => 'required|integer|min:1',
             'enrollment_deadline' => 'nullable|date',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
@@ -66,7 +78,7 @@ class BatchEnrollmentController extends Controller
         $batch = StudentBatch::create([
             'batch_name' => $request->batch_name,
             'program_id' => $request->program_id,
-            'max_capacity' => $request->batch_capacity,
+            'max_capacity' => $request->max_capacity,
             'current_capacity' => 0,
             'batch_status' => $status,
             'registration_deadline' => $request->enrollment_deadline ? \Carbon\Carbon::parse($request->enrollment_deadline) : null,
@@ -539,11 +551,12 @@ class BatchEnrollmentController extends Controller
         $batch = StudentBatch::with(['program', 'enrollments.user'])->findOrFail($id);
         
         $enrollments = $batch->enrollments->map(function ($enrollment) {
+            $user = $enrollment->user;
             return [
-                'Student Name' => $enrollment->user->user_firstname . ' ' . $enrollment->user->user_lastname,
-                'Email' => $enrollment->user->email,
-                'Enrollment Date' => $enrollment->enrollment_date->format('Y-m-d'),
-                'Status' => $enrollment->enrollment_status
+                'Student Name' => $user ? $user->user_firstname . ' ' . $user->user_lastname : 'N/A',
+                'Email' => $user ? $user->email : 'N/A',
+                'Enrollment Date' => $enrollment->enrollment_date ? $enrollment->enrollment_date->format('Y-m-d') : 'N/A',
+                'Status' => $enrollment->enrollment_status ?? 'N/A'
             ];
         });
 

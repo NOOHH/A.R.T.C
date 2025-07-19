@@ -1,769 +1,911 @@
-/* ===== BOOTSTRAP 5 MODULAR ENROLLMENT MULTI-STEP FORM ===== */
+        /* Multi-step form styles */
+        .form-container {
+            min-height: 100vh;
+            background: none !important;
+            padding: 2rem 0;
 
-/* Custom Bootstrap 5 Overrides and Extensions */
+        }
+        
+        .form-wrapper {
+            max-width: 800px;
+            width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Stepper styles */
+        .stepper-progress {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-bottom: 1px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        
+        .stepper .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Step Content Container - Bootstrap 5 Compatible */
+        .step-content {
+            display: none;
+            padding: 2rem;
+              min-height: var(--stepper‐height);
+                max-height: var(--stepper‐height);
+                overflow-y: auto;         /* scroll if content overflows */
+                transition: opacity 0.4s ease,
+                            transform 0.4s ease; /* keep your nice slide/ fade */
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.4s ease;
+        }
+        
+        .step-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step-content:last-child {
+  min-height: auto;
+  max-height: none;
+  overflow-y: visible;
+}
+        
+        /* Bootstrap Grid Enhancements */
+        .row {
+            margin-left: -0.75rem;
+            margin-right: -0.75rem;
+        }
+        
+        .col, .col-md-6, .col-lg-4, .col-xl-3 {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+        
+        /* Card Layout Consistency */
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .selection-card {
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        
+        .selection-card.selected {
+            border-color: #6a82fb;
+            background: linear-gradient(135deg, #6a82fb 0%, #fc466b 100%);
+            color: white;
+        }
+
+        /* Bootstrap Carousel Styles for Package/Program/Module Selection */
+        .package-carousel-container,
+        .program-carousel-container,
+        .module-carousel-container {
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 5%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: auto 0;
+            height: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .carousel-control-prev {
+            left: -60px;
+        }
+
+        .carousel-control-next {
+            right: -60px;
+        }
+
+        .carousel-indicators {
+            bottom: -50px;
+        }
+
+        .carousel-indicators [data-bs-target] {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #667eea;
+            border: 0;
+            margin: 0 4px;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-indicators .active {
+            opacity: 1;
+            transform: scale(1.2);
+            background-color: #fc466b;
+        }
+
+        /* Package Card Enhancements for Carousel */
+        .package-card-pro {
+            min-width: 300px;
+            max-width: 350px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+
+        .package-card-pro:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .package-card-pro.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        }
+
+        .package-card-pro.selected .text-primary {
+            color: white !important;
+        }
+
+        .package-card-pro.selected .text-muted {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        .package-card-pro.selected .text-success {
+            color: #90ee90 !important;
+        }
+        
+        .selection-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6a82fb;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .stepper .step.active {
+            background: #6a82fb;
+            color: white;
+        }
+        
+        .stepper .step.completed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .stepper .step .circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .stepper .step .label {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .stepper .bar {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e9ecef;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        
+        .stepper .bar .progress {
+            height: 100%;
+            background: #6a82fb;
+            transition: width 0.3s ease;
+        }
+        
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        .step-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .step-header h2 {
+            color: #333;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .step-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Card grid styles */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .selection-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .selection-card:hover {
+            border-color: #6a82fb;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(106, 130, 251, 0.2);
+        }
+        
+        .selection-card.selected {
+            border-color: #6a82fb;
+            background: linear-gradient(135deg, #6a82fb 0%, #8b5cf6 100%);
+            color: white;
+        }
+        
+        .selection-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            color: #6a82fb;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #6a82fb;
+        }
+        
+        .selection-card.selected .card-price {
+            color: white;
+        }
+        
+        .card-description {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .card-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .card-features li {
+            padding: 0.5rem 0;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        
+        .card-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .selection-card.selected .card-features li::before {
+            color: white;
+        }
+        
+        /* Navigation buttons */
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 2rem;
+            border-top: 1px solid #e9ecef;
+            min-height: 100px; 
+        }
+        
+        .btn-nav {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #6a82fb;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        /* Loading states */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #6a82fb;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Hidden inputs */
+        .hidden-inputs {
+            display: none;
+        }
+
+        .package-card-pro {
+            border: 2px solid #e9ecef;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(106,130,251,0.08);
+            transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+            cursor: pointer;
+            min-width: 270px;
+            max-width: 320px;
+            background: #fff;
+            position: relative;
+        }
+        .package-card-pro:hover, .package-card-pro.selected {
+            border-color: #6a82fb;
+            box-shadow: 0 8px 32px rgba(106,130,251,0.18);
+            transform: translateY(-4px) scale(1.03);
+        }
+        .package-card-pro.selected::after {
+            content: '';
+            position: absolute;
+            top: 12px; right: 12px;
+            width: 22px; height: 22px;
+            background: #6a82fb;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #6a82fb;
+        }
+        .next-btn-pro {
+            min-width: 320px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            box-shadow: 0 2px 12px rgba(106,130,251,0.10);
+            border-radius: 12px;
+            letter-spacing: 0.03em;
+        }
+
+        /* Account Step Card */
+        .account-step-card {
+            padding: 3rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Form Grid for Step 5 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Email and Referral Input Groups */
+        .email-input-group, .referral-input-group {
+            display: flex;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .email-input-group:focus-within, .referral-input-group:focus-within {
+            border-color: #6a82fb;
+        }
+
+        .email-input-group input, .referral-input-group input {
+            flex: 1;
+            border: none;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            outline: none;
+            background: transparent;
+        }
+
+        .btn-otp, .btn-validate-referral {
+            background: #6a82fb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-otp:hover, .btn-validate-referral:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-otp:disabled, .btn-validate-referral:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Error and Success Messages */
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Login Prompt */
+        .login-prompt {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .login-prompt a {
+            color: #6a82fb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-prompt a:hover {
+            text-decoration: underline;
+        }
+
+        /* Form Navigation */
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 2rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 600px) {
+            .package-card-pro { min-width: 90vw; max-width: 98vw; }
+            .next-btn-pro { min-width: 90vw; }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .account-step-card {
+                padding: 2rem 1rem;
+            }
+        }
+
+        /* Bootstrap 5 Carousel Enhancements */
+        .carousel {
+            position: relative;
+            overflow: visible;
+        }
+
+        .program-carousel-container,
+        .module-carousel-container {
+            margin: 0 -15px;
+            padding: 20px 0;
+        }
+
+        .carousel-inner {
+            overflow: visible;
+            padding: 0 15px;
+        }
+
+        .carousel-item {
+            transition: transform 0.6s ease-in-out;
+        }
+
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(106, 130, 251, 0.1);
+            border: 2px solid #6a82fb;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            background-color: rgba(106, 130, 251, 0.2);
+            opacity: 1;
+        }
+
+        .carousel-control-prev {
+            left: -25px;
+        }
+
+        .carousel-control-next {
+            right: -25px;
+        }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            width: 20px;
+            height: 20px;
+            filter: invert(1);
+        }
+
+        .carousel-indicators {
+            position: relative;
+            margin: 20px 0 0 0;
+            justify-content: center;
+        }
+
+        .carousel-indicators button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 5px;
+            background-color: #dee2e6;
+            border: none;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-indicators button.active,
+        .carousel-indicators button:hover {
+            background-color: #6a82fb;
+            opacity: 1;
+        }
+
+        /* Carousel Card Adjustments */
+        .carousel .card {
+            margin-bottom: 0;
+            height: auto;
+            min-height: 350px;
+        }
+
+        /* Loading State for Carousels */
+        .carousel .loading-spinner {
+            text-align: center;
+            padding: 50px 0;
+            color: #6c757d;
+        }
+
+        /* Responsive Carousel */
+        @media (max-width: 768px) {
+            .carousel-control-prev,
+            .carousel-control-next {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .carousel-control-prev {
+                left: -20px;
+            }
+            
+            .carousel-control-next {
+                right: -20px;
+            }
+            
+            .program-carousel-container,
+            .module-carousel-container {
+                margin: 0 -10px;
+            }
+            
+            .carousel-inner {
+                padding: 0 10px;
+            }
+        }
+
+        /* Next Button Sizing Fix */
+        .next-btn-pro {
+            font-size: 1rem;
+            padding: 12px 30px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            min-width: auto;
+            max-width: 300px;
+        }
+
+        .next-btn-pro:active,
+        .next-btn-pro:focus {
+            transform: none;
+            box-shadow: 0 0 0 0.2rem rgba(106, 130, 251, 0.25);
+        }
+
+
 :root {
-    --bs-primary: #3b82f6;
-    --bs-secondary: #6b7280;
-    --bs-success: #10b981;
-    --bs-danger: #ef4444;
-    --bs-warning: #f59e0b;
-    --bs-info: #06b6d4;
-    --bs-light: #f8fafc;
-    --bs-dark: #1e293b;
-    --bs-border-radius: 0.5rem;
-    --bs-border-radius-lg: 0.75rem;
-    --bs-border-radius-xl: 1rem;
-    --wizard-step-size: 2.5rem;
-    --wizard-step-border: 2px;
-    --wizard-progress-height: 2px;
+  /* tweak this to the height of your tallest stepper page */
+  --stepper‐height: 600px;
+}
+/* override the default h-100 so cards size to content */
+.module-card.h-100 {
+  height: auto !important;
 }
 
-/* Reset and Base Styles */
-* {
-    box-sizing: border-box;
+/* The card wrapper */
+.module-card.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  cursor: pointer;
+  min-height: 280px;
 }
 
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: var(--bs-light);
-    color: var(--bs-dark);
-    line-height: 1.6;
+/* lift on hover */
+.module-card.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
 }
 
-/* Override Bootstrap container for wizard */
-.wizard-container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1rem;
-}
-
-/* Wizard Content Container */
-.wizard-content-container {
-    background: white;
-    border-radius: var(--bs-border-radius-xl);
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border: 1px solid rgba(0, 0, 0, 0.125);
-    overflow: hidden;
-}
-
-/* ===== STEP PROGRESS INDICATOR ===== */
-.wizard-progress {
-    background: white;
-    padding: 2rem 2rem 1rem;
-    border-bottom: 1px solid var(--bs-border-color);
-}
-
-.progress-steps {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    max-width: 600px;
-    margin: 0 auto;
-    position: relative;
-    gap: 2rem;
-}
-
-/* Progress Line */
-.progress-steps::before {
-    content: '';
-    position: absolute;
-    top: calc(var(--wizard-step-size) / 2);
-    left: calc(var(--wizard-step-size) / 2);
-    right: calc(var(--wizard-step-size) / 2);
-    height: var(--wizard-progress-height);
-    background-color: var(--bs-border-color);
-    z-index: 1;
-}
-
-.progress-steps::after {
-    content: '';
-    position: absolute;
-    top: calc(var(--wizard-step-size) / 2);
-    left: calc(var(--wizard-step-size) / 2);
-    height: var(--wizard-progress-height);
-    background-color: var(--bs-primary);
-    z-index: 2;
-    transition: width 0.3s ease;
-    width: 0%;
-}
-
-/* Progress states */
-.progress-steps.step-1::after { width: 0%; }
-.progress-steps.step-2::after { width: 50%; }
-.progress-steps.step-3::after { width: 100%; }
-
-/* Step Indicators */
-.step-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    z-index: 3;
-    text-align: center;
-}
-
-.step-number {
-    width: var(--wizard-step-size);
-    height: var(--wizard-step-size);
-    border-radius: 50%;
-    background-color: var(--bs-border-color);
-    color: var(--bs-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-    transition: all 0.3s ease;
-    border: var(--wizard-step-border) solid var(--bs-border-color);
-}
-
-.step-indicator.active .step-number {
-    background-color: var(--bs-primary);
-    color: white;
-    border-color: var(--bs-primary);
-    transform: scale(1.1);
-}
-
-.step-indicator.completed .step-number {
-    background-color: var(--bs-success);
-    color: white;
-    border-color: var(--bs-success);
-}
-
-.step-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--bs-secondary);
-    max-width: 80px;
-    line-height: 1.2;
-}
-
-.step-indicator.active .step-label {
-    color: var(--bs-primary);
-    font-weight: 600;
-}
-
-.step-indicator.completed .step-label {
-    color: var(--bs-success);
-    font-weight: 600;
-}
-
-/* ===== STEP CONTENT ===== */
-.step-content {
-    display: none;
-    padding: 2rem;
-    min-height: 400px;
-}
-
-.step-content.active {
-    display: block;
-    animation: fadeInUp 0.3s ease-out;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(1rem);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Step Headers */
-.step-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.step-header h2 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--bs-dark);
-    margin-bottom: 0.5rem;
-}
-
-.step-header p {
-    color: var(--bs-secondary);
-    font-size: 1rem;
-    margin-bottom: 0;
-}
-
-/* ===== FORM COMPONENTS (Bootstrap 5 Enhanced) ===== */
-
-/* Form Groups */
-.form-floating {
-    margin-bottom: 1.5rem;
-}
-
-.form-control,
-.form-select {
-    border-radius: var(--bs-border-radius);
-    border: 1px solid var(--bs-border-color);
-    transition: all 0.15s ease-in-out;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
-}
-
-.form-control.is-valid,
-.form-select.is-valid {
-    border-color: var(--bs-success);
-}
-
-.form-control.is-invalid,
-.form-select.is-invalid {
-    border-color: var(--bs-danger);
-}
-
-/* ===== SELECTION CARDS ===== */
-.selection-cards {
-    display: grid;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.selection-cards.grid-2 {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-
-.selection-cards.grid-3 {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-}
-
-.selection-card {
-    background: white;
-    border: 2px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius-lg);
-    padding: 1.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.selection-card:hover {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-}
-
-.selection-card.selected {
-    border-color: var(--bs-primary);
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.selection-indicator {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    background-color: var(--bs-primary);
-    color: white;
-    border-radius: 50%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.selection-card.selected .selection-indicator {
-    display: flex;
-}
-
-/* Card Content */
-.card-header h3,
-.card-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--bs-dark);
-    margin-bottom: 0.5rem;
-}
-
-.card-price {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--bs-primary);
-    margin-bottom: 1rem;
-}
-
-.card-description {
-    color: var(--bs-secondary);
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
-    flex-grow: 1;
-}
-
-.card-features {
-    margin-top: auto;
-}
-
-.card-features ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.card-features li {
-    padding: 0.25rem 0;
-    color: var(--bs-dark);
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-}
-
-.card-features li::before {
-    content: '✓';
-    color: var(--bs-success);
-    font-weight: 600;
-    margin-right: 0.5rem;
-    flex-shrink: 0;
-}
-
-/* ===== PACKAGE CARDS ===== */
-.packages-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-/* ===== MODULE CARDS ===== */
-.modules-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.module-card {
-    background: white;
-    border: 2px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
-    padding: 1.25rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.module-card:hover {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
-}
-
-.module-card.selected {
-    border-color: var(--bs-primary);
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.module-header {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.module-checkbox {
-    margin-right: 0.75rem;
-    margin-top: 0.125rem;
-    width: 1.125rem;
-    height: 1.125rem;
-    accent-color: var(--bs-primary);
-}
-
-.module-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--bs-dark);
-    margin: 0;
-    cursor: pointer;
-    flex: 1;
-}
-
-.module-description {
-    color: var(--bs-secondary);
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
-    line-height: 1.5;
-}
-
-.module-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid var(--bs-border-color);
-}
-
-.module-duration {
-    color: var(--bs-secondary);
-    font-size: 0.75rem;
-}
-
-.module-price {
-    font-weight: 600;
-    color: var(--bs-primary);
-    font-size: 0.875rem;
-}
-
-/* ===== LEARNING MODE CARDS ===== */
-.learning-mode-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.learning-mode-card {
-    background: white;
-    border: 2px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius-lg);
-    padding: 1.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-    position: relative;
-}
-
-.learning-mode-card:hover {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
-}
-
-.learning-mode-card.selected {
-    border-color: var(--bs-primary);
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.learning-mode-icon {
-    font-size: 2rem;
-    color: var(--bs-primary);
-    margin-bottom: 1rem;
-}
-
-.learning-mode-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--bs-dark);
-    margin-bottom: 0.5rem;
-}
-
-.learning-mode-description {
-    color: var(--bs-secondary);
-    font-size: 0.875rem;
-}
-
-/* ===== NAVIGATION BUTTONS ===== */
-.navigation-buttons {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    border-top: 1px solid var(--bs-border-color);
-    background-color: var(--bs-light);
-}
-
-.btn-nav {
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--bs-border-radius);
-    font-weight: 600;
-    font-size: 0.875rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.15s ease-in-out;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-}
-
-.btn-nav:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-}
-
-.btn-nav.btn-secondary {
-    background-color: var(--bs-secondary);
-    color: white;
-}
-
-.btn-nav.btn-secondary:hover:not(:disabled) {
-    background-color: #4b5563;
-}
-
-.btn-nav.btn-primary {
-    background-color: var(--bs-primary);
-    color: white;
-}
-
-.btn-nav.btn-primary:hover:not(:disabled) {
-    background-color: #2563eb;
-}
-
-/* ===== ALERTS (Bootstrap 5 Compatible) ===== */
-.alert-container {
-    position: relative;
-    z-index: 1050;
-}
-
-.alert {
-    border-radius: var(--bs-border-radius);
-    border: 1px solid transparent;
-    margin-bottom: 1rem;
-    padding: 0.75rem 1rem;
-}
+/* selected state */
+.module-card.card.selected {
+  border-color: #667eea;
+  background-color: #f0f4ff;
+}
 
-.alert-success {
-    color: #0f5132;
-    background-color: #d1e7dd;
-    border-color: #badbcc;
+/* body flexes to push meta/actions to bottom */
+.module-card.card .card-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.alert-danger {
-    color: #842029;
-    background-color: #f8d7da;
-    border-color: #f5c2c7;
+/* title */
+.module-card .module-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
 }
 
-.alert-info {
-    color: #055160;
-    background-color: #cff4fc;
-    border-color: #b6effb;
+/* description fills the middle */
+.module-card .module-description {
+  flex: 1 1 auto;
+  color: #4a5568;
+  margin-bottom: 1rem;
 }
-
-/* ===== LOADING SPINNER ===== */
-.spinner-border {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    vertical-align: text-bottom;
-    border: 0.25em solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spinner-border 0.75s linear infinite;
+
+/* meta row */
+.module-card .module-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #718096;
+  margin-bottom: 1rem;
+}
+
+/* “View Courses” button styling */
+.module-card .module-actions .btn-outline-secondary {
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+  color: #667eea;
 }
-
-.spinner-border-sm {
-    width: 0.875rem;
-    height: 0.875rem;
-    border-width: 0.2em;
+.module-card .module-actions .btn-outline-secondary:hover {
+  text-decoration: underline;
 }
-
-@keyframes spinner-border {
-    to {
-        transform: rotate(360deg);
-    }
+/* Entire modal container */
+#coursesModal .modal-dialog {
+  max-width: 700px;
 }
-
-/* ===== COUNTERS AND SUMMARIES ===== */
-.module-counter,
-.package-summary {
-    background-color: var(--bs-light);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
+#coursesModal .modal-content {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  background: #f9fafb;
 }
 
-.module-counter h4,
-.package-summary h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--bs-dark);
-    margin-bottom: 0.5rem;
+/* Header with a nice gradient and no bottom border */
+#coursesModal .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-bottom: none;
+  padding: 1.5rem 2rem;
 }
-
-.module-counter p {
-    color: var(--bs-secondary);
-    font-size: 0.875rem;
-    margin: 0;
+#coursesModal .modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
-.counter-display {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--bs-primary);
+/* Body scroll area */
+#coursesModal .modal-body {
+  background: #ffffff;
+  padding: 1.5rem 2rem;
+  max-height: 55vh;
+  overflow-y: auto;
 }
 
-/* ===== INPUT GROUPS (Password Toggle) ===== */
-.input-group {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
-    width: 100%;
+/* Each course card */
+#coursesModal .course-selection-item {
+  background: #f1f3f5;
+  border: none;
+  border-radius: .75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 1rem;
+  transition: transform .2s, box-shadow .2s;
 }
-
-.input-group .form-control {
-    position: relative;
-    flex: 1 1 auto;
-    width: 1%;
-    min-width: 0;
+#coursesModal .course-selection-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
-.input-group-text {
-    display: flex;
-    align-items: center;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--bs-secondary);
-    text-align: center;
-    white-space: nowrap;
-    background-color: var(--bs-light);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
+/* Checkbox sizing */
+#coursesModal .course-checkbox {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-top: .2rem;
 }
 
-.password-toggle {
-    background: none;
-    border: none;
-    color: var(--bs-secondary);
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: var(--bs-border-radius);
+/* Course title and description */
+#coursesModal .course-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #2d3748;
 }
-
-.password-toggle:hover {
-    color: var(--bs-primary);
+#coursesModal .course-description {
+  color: #4a5568;
+  margin-bottom: .5rem;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 768px) {
-    .wizard-container {
-        padding: 0.5rem;
-    }
-    
-    .wizard-progress {
-        padding: 1rem;
-    }
-    
-    .step-content {
-        padding: 1rem;
-    }
-    
-    .packages-grid,
-    .modules-grid,
-    .learning-mode-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .navigation-buttons {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-    }
-    
-    .btn-nav {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .progress-steps {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .progress-steps::before,
-    .progress-steps::after {
-        display: none;
-    }
-    
-    .step-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .card-price {
-        font-size: 1.5rem;
-    }
-    
-    :root {
-        --wizard-step-size: 2rem;
-    }
+/* Price badge */
+#coursesModal .badge {
+  background: #667eea;
+  color: #fff;
+  font-weight: 500;
+  border-radius: .5rem;
 }
 
-@media (max-width: 480px) {
-    .wizard-container {
-        padding: 0.25rem;
-    }
-    
-    .wizard-content-container {
-        border-radius: var(--bs-border-radius);
-    }
-    
-    .step-content {
-        padding: 1rem 0.5rem;
-    }
-    
-    .selection-card,
-    .module-card,
-    .learning-mode-card {
-        padding: 1rem;
-    }
-    
-    .step-header {
-        margin-bottom: 1.5rem;
-    }
-    
-    .step-header h2 {
-        font-size: 1.25rem;
-    }
-    
-    .step-header p {
-        font-size: 0.875rem;
-    }
+/* Footer with flat buttons */
+#coursesModal .modal-footer {
+  background: #f6f7f9;
+  border-top: none;
+  padding: 1rem 2rem;
 }
-
-/* ===== ACCESSIBILITY IMPROVEMENTS ===== */
-@media (prefers-reduced-motion: reduce) {
-    .step-content.active {
-        animation: none;
-    }
-    
-    .step-number,
-    .selection-card,
-    .module-card,
-    .learning-mode-card,
-    .btn-nav {
-        transition: none;
-    }
+#coursesModal .btn-secondary {
+  background: #6c757d;
+  border: none;
+  border-radius: .5rem;
+  padding: .5rem 1.25rem;
+  color: #fff;
 }
-
-/* Focus visible for better keyboard navigation */
-.step-number:focus-visible,
-.selection-card:focus-visible,
-.module-card:focus-visible,
-.learning-mode-card:focus-visible,
-.btn-nav:focus-visible {
-    outline: 2px solid var(--bs-primary);
-    outline-offset: 2px;
+#coursesModal .btn-primary {
+  background: #667eea;
+  border: none;
+  border-radius: .5rem;
+  padding: .5rem 1.25rem;
 }
 
-/* ===== PRINT STYLES ===== */
-@media print {
-    .wizard-progress,
-    .navigation-buttons {
-        display: none !important;
-    }
-    
-    .step-content {
-        display: block !important;
-        page-break-inside: avoid;
-    }
-    
-    .wizard-content-container {
-        box-shadow: none;
-        border: 1px solid #000;
-    }
-}

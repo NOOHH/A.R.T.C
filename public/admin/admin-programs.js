@@ -134,8 +134,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             const li = document.createElement('li');
                             li.innerHTML = `
                                 <strong>${enrollment.student_name}</strong><br>
-                                <small>Email: ${enrollment.student_email}</small><br>
-                                <small>Enrolled: ${enrollment.enrollment_date}</small>
+                                <small>Email: ${enrollment.email}</small><br>
+                                <small>Enrolled: ${enrollment.enrolled_at}</small>
                             `;
                             li.style.cssText = 'margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; list-style: none;';
                             enrollmentsList.appendChild(li);

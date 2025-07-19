@@ -118,6 +118,7 @@ Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection
 */
 Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(function () {
     Route::get('/', [BatchEnrollmentController::class, 'index'])->name('admin.batches.index');
+    Route::get('/create', [BatchEnrollmentController::class, 'create'])->name('admin.batches.create');
     Route::post('/', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
     Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
     Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
@@ -139,6 +140,11 @@ Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(funct
     Route::post('/{batchId}/enrollments/{enrollmentId}/move-to-current', [BatchEnrollmentController::class, 'moveStudentToCurrent'])->name('admin.batches.move-to-current');
     Route::post('/{batchId}/enrollments/{enrollmentId}/move-to-pending', [BatchEnrollmentController::class, 'moveStudentToPending'])->name('admin.batches.move-to-pending');
 });
+
+// Alias route for batch enrollment (for backward compatibility)
+Route::get('/admin/student/enrollment/batch', [BatchEnrollmentController::class, 'index'])
+     ->name('admin.student.enrollment.batch')
+     ->middleware(['admin.director.auth']);
 
 /*
 |--------------------------------------------------------------------------
@@ -311,6 +317,23 @@ Route::post('/check-email-availability', [StudentRegistrationController::class, 
 Route::get('/test-enrollment', function() {
     return view('test-enrollment');
 })->name('test.enrollment');
+
+// Test route for modular enrollment testing
+Route::get('/test-modular-enrollment', function() {
+    return view('test-modular-enrollment');
+})->name('test.modular.enrollment');
+
+// Test route for comprehensive system testing
+Route::get('/test-all-fixes', function() {
+    return view('test-all-fixes');
+})->name('test.all.fixes');
+
+// CSRF token endpoint for testing
+Route::get('/csrf-token', function() {
+    return response()->json([
+        'csrf_token' => csrf_token()
+    ]);
+});
 
 // Unified login page and authentication for all user types
 Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
@@ -560,6 +583,12 @@ Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approv
      ->name('admin.registration.approve');
 Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'])
      ->name('admin.registration.reject');
+Route::post('/admin/registration/{id}/reject-with-reason', [AdminController::class, 'rejectWithReason'])
+     ->name('admin.registration.reject.reason');
+
+// Get registration details
+Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
+     ->name('admin.registration.details');
 
 // List student registrations
 Route::get('/admin-student-registration', [AdminController::class, 'studentRegistration'])
@@ -568,6 +597,22 @@ Route::get('/admin-student-registration/pending', [AdminController::class, 'stud
      ->name('admin.student.registration.pending');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
+
+// Student history actions
+Route::get('/admin/student/{id}/details', [AdminController::class, 'getStudentDetailsJson'])
+     ->name('admin.student.details');
+Route::post('/admin/student/{id}/undo-approval', [AdminController::class, 'undoApproval'])
+     ->name('admin.student.undo.approval');
+
+// Enrollment details for payment history
+Route::get('/admin/student/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])
+     ->name('admin.enrollment.details');
+Route::get('/admin/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])
+     ->name('admin.enrollment.details.json');
+
+// Enrollment assignment route  
+Route::post('/admin/enrollment/assign', [AdminController::class, 'assignEnrollment'])
+     ->name('admin.enrollment.assign');
 
 // Payment management routes
 Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
@@ -788,10 +833,10 @@ Route::delete('/admin/packages/{id}/delete', [AdminPackageController::class, 'de
 // Additional Package Management Routes
 Route::get('/admin/packages/program/{program_id}/modules', [AdminPackageController::class, 'getModules'])
      ->name('admin.packages.get-modules');
-Route::get('/get-program-modules', [AdminPackageController::class, 'getProgramModules'])
-     ->name('get-program-modules');
-Route::get('/get-module-courses', [AdminPackageController::class, 'getModuleCourses'])
-     ->name('get-module-courses');
+Route::get('/admin/get-program-modules', [AdminPackageController::class, 'getProgramModules'])
+     ->name('admin.get-program-modules');  // Changed to avoid conflict
+Route::get('/admin/get-module-courses', [AdminPackageController::class, 'getModuleCourses'])
+     ->name('admin.get-module-courses');  // Changed to avoid conflict
 Route::get('/get-package-details', [AdminPackageController::class, 'getPackageDetails'])
      ->name('get-package-details');
 Route::post('/admin/packages/{id}/archive', [AdminPackageController::class, 'archive'])
@@ -1096,6 +1141,10 @@ Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
 Route::get('/admin/students', [AdminStudentListController::class, 'index'])
      ->name('admin.students.index');
 
+// Export students to CSV
+Route::get('/admin/students/export', [AdminStudentListController::class, 'export'])
+     ->name('admin.students.export');
+
 // View archived students (must come before dynamic routes)
 Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])
      ->name('admin.students.archived');
@@ -1107,6 +1156,10 @@ Route::get('/admin/students/{student:student_id}', [AdminStudentListController::
 // Approve student
 Route::patch('/admin/students/{student:student_id}/approve', [AdminStudentListController::class, 'approve'])
      ->name('admin.students.approve');
+
+// Disapprove student 
+Route::patch('/admin/students/{student:student_id}/disapprove', [AdminStudentListController::class, 'disapprove'])
+     ->name('admin.students.disapprove');
 
 // Archive student
 Route::patch('/admin/students/{student:student_id}/archive', [AdminStudentListController::class, 'archive'])

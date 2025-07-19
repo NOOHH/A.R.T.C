@@ -219,41 +219,6 @@
                 @endforelse
             </div>
         </div>
-
-        <!-- Assignment -->
-        <div class="assignment-panel">
-            <div class="panel-header">
-                <h3>👨‍🎓 Course Assignment</h3>
-            </div>
-            <form id="courseAssignmentForm" class="assignment-form" action="{{ route('admin.programs.assign') }}" method="POST">
-                @csrf
-                <div class="form-group">
-                    <label for="student_select">Select Student:</label>
-                    <select id="student_select" name="student_id" required>
-                        <option value="">Choose a student...</option>
-                        @foreach($students ?? [] as $student)
-                            <option value="{{ $student->student_id }}">{{ $student->firstname ?? $student->first_name }} {{ $student->lastname ?? $student->last_name }} ({{ $student->email ?? 'No email' }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="program_select">Select Program:</label>
-                    <select id="program_select" name="program_id" required>
-                        <option value="">Choose a program...</option>
-                        @foreach($programs ?? [] as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="assignment_notes">Notes (optional):</label>
-                    <textarea id="assignment_notes" name="notes" rows="3" placeholder="Additional notes about this assignment..."></textarea>
-                </div>
-                <button type="submit" class="assign-btn">
-                    ✓ Assign Program
-                </button>
-            </form>
-        </div>
     </div>
 </div>
 
@@ -270,6 +235,7 @@
         <form action="{{ route('admin.programs.store') }}" method="POST">
             @csrf
             <input type="text" name="program_name" placeholder="Program Name" required>
+            <textarea name="program_description" placeholder="Program Description" rows="4" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="cancelAddModal">Cancel</button>
                 <button type="submit" class="add-btn">Add Program</button>
