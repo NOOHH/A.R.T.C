@@ -14,8 +14,6 @@
         const VALIDATE_URL = "{{ route('registration.validateFile') }}";
         const CSRF_TOKEN   = "{{ csrf_token() }}";
         </script>
-
-        <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -25,6 +23,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
     <!-- reCAPTCHA -->
     @if(env('RECAPTCHA_SITE_KEY'))
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -89,14 +88,23 @@
 
     // Define critical functions immediately for onclick handlers
     function selectPackage(packageId, packageName, packagePrice) {
+        console.log('=== selectPackage called ===');
+        console.log('Package ID:', packageId);
+        console.log('Package Name:', packageName);
+        console.log('Package Price:', packagePrice);
+        
         // Remove selection from all package cards
-        document.querySelectorAll('.package-card').forEach(card => {
+        document.querySelectorAll('.package-card-pro').forEach(card => {
             card.classList.remove('selected');
         });
         
-        // Highlight selected package
-        if (event && event.target) {
-            event.target.closest('.package-card').classList.add('selected');
+        // Highlight selected package using data attribute
+        const selectedCard = document.querySelector(`[data-package-id="${packageId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+            console.log('Package card highlighted:', selectedCard);
+        } else {
+            console.error('Selected package card not found for ID:', packageId);
         }
         
         // Store selection in global variable
@@ -114,6 +122,9 @@
         const packageInput = document.querySelector('input[name="package_id"]');
         if (packageInput) {
             packageInput.value = packageId;
+            console.log('Package input updated:', packageInput.value);
+        } else {
+            console.error('Package input field not found');
         }
         
         // Show selected package display
@@ -131,36 +142,26 @@
             nextBtn.style.opacity = '1';
             nextBtn.style.cursor = 'pointer';
             nextBtn.style.pointerEvents = 'auto';
-        }
-    }
-
-    function scrollPackages(direction) {
-        const carousel = document.getElementById('packagesCarousel');
-        if (!carousel) return;
-        
-        const scrollAmount = 340; // Package card width + gap
-        
-        if (direction === 'left') {
-            carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            console.log('Next button enabled successfully');
         } else {
-            carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            console.error('Package next button not found');
         }
+        
+        console.log('Package selection completed successfully');
     }
 
     function selectLearningMode(mode) {
         console.log('Selecting learning mode:', mode);
         
         // Remove selection from all learning mode cards
-        document.querySelectorAll('.learning-mode-card').forEach(card => {
-            card.style.border = '3px solid transparent';
-            card.style.boxShadow = 'none';
+        document.querySelectorAll('.selection-card').forEach(card => {
+            card.classList.remove('selected');
         });
         
         // Highlight selected learning mode using data attribute
         const selectedCard = document.querySelector(`[data-mode="${mode}"]`);
         if (selectedCard) {
-            selectedCard.style.border = '3px solid #667eea';
-            selectedCard.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
+            selectedCard.classList.add('selected');
             console.log('Selected card highlighted:', selectedCard);
         } else {
             console.error('No card found for mode:', mode);
@@ -217,7 +218,7 @@
             nextBtn.disabled = false;
             nextBtn.style.opacity = '1';
             nextBtn.style.cursor = 'pointer';
-            nextBtn.style.background = 'linear-gradient(90deg,#a259c6,#6a82fb)';
+            nextBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             nextBtn.classList.add('enabled');
             console.log('Next button enabled and styled');
         } else {
@@ -227,11 +228,19 @@
 
 
     function nextStep() {
-        console.log('nextStep called, current step:', currentStep);
+        console.log('=== nextStep called, current step:', currentStep, '===');
+        console.log('isUserLoggedIn:', isUserLoggedIn);
 
         if (currentStep === 1) {
             const packageInput = document.querySelector('input[name="package_id"]');
             const sessionPackageId = sessionStorage.getItem('selectedPackageId');
+            console.log('Checking package selection:', {
+                selectedPackageId,
+                windowSelectedPackageId: window.selectedPackageId,
+                packageInputValue: packageInput?.value,
+                sessionPackageId
+            });
+            
             if (!selectedPackageId && !window.selectedPackageId && !packageInput?.value && !sessionPackageId) {
                 showWarning('Please select a package before proceeding.');
                 return;
@@ -239,39 +248,51 @@
             if (!selectedPackageId && (window.selectedPackageId || packageInput?.value || sessionPackageId)) {
                 selectedPackageId = window.selectedPackageId || packageInput?.value || sessionPackageId;
             }
-            animateStepTransition('step-1', 'step-2');
+            
+            console.log('Transitioning from step 1 to step 2');
+            animateStepTransition('step-content-1','step-content-2');
             currentStep = 2;
             updateStepper(currentStep);
+            console.log('Step transition completed. New currentStep:', currentStep);
         } else if (currentStep === 2) {
             const learningModeValue = document.getElementById('learning_mode')?.value;
+            console.log('Learning mode value:', learningModeValue);
+            
             if (!learningModeValue) {
                 showWarning('Please select a learning mode before proceeding.');
                 return;
             }
             if (isUserLoggedIn) {
-                animateStepTransition('step-2', 'step-4');
-                currentStep = 4;
+                // For logged-in users, go directly to step 3 (Form)
+                console.log('Logged in user: transitioning from step 2 to step 3');
+                animateStepTransition('step-content-2', 'step-content-3');
+                currentStep = 3;
                 updateStepper(currentStep);
                 setTimeout(() => {
                     fillLoggedInUserData();
-                    // Load batches when entering step 4
+                    // Load batches when entering step 3 for logged-in users
                     const programSelect = document.getElementById('programSelect');
                     if (programSelect && programSelect.value) {
                         loadBatchesForProgram(programSelect.value);
                     }
                 }, 300);
             } else {
-                animateStepTransition('step-2', 'step-3');
+                // For non-logged-in users, go to step 3 (Account)
+                console.log('Non-logged in user: transitioning from step 2 to step 3');
+                animateStepTransition('step-content-2', 'step-content-3');
                 currentStep = 3;
                 updateStepper(currentStep);
             }
-        } else if (currentStep === 3) {
+            console.log('Step transition completed. New currentStep:', currentStep);
+        } else if (currentStep === 3 && !isUserLoggedIn) {
+            // Only for non-logged-in users: step 3 is Account, step 4 is Form
             if (!validateStep3()) {
                 showWarning('Please fill in all required fields correctly.');
                 return;
             }
             copyAccountDataToStudentForm();
-            animateStepTransition('step-3', 'step-4');
+            console.log('Non-logged in user: transitioning from step 3 to step 4');
+            animateStepTransition('step-content-3', 'step-content-4');
             currentStep = 4;
             updateStepper(currentStep);
             setTimeout(() => {
@@ -282,6 +303,7 @@
                     loadBatchesForProgram(programSelect.value);
                 }
             }, 300);
+            console.log('Step transition completed. New currentStep:', currentStep);
         }
         // updateProgressBar(); <-- Only keep this in animateStepTransition
     }
@@ -290,20 +312,24 @@
     function prevStep() {
         console.log('prevStep called, current step:', currentStep);
 
-        if (currentStep === 4) {
-            // From student registration, check if user is logged in and learning mode
-            const learningMode = document.getElementById('learning_mode')?.value;
-
-            if (isUserLoggedIn) {
-                // Skip account registration and go back to learning mode
-                console.log('User logged in - going back to learning mode');
-                animateStepTransition('step-4', 'step-2', true);
+        if (isUserLoggedIn) {
+            // For logged-in users: 1 (Packages) -> 2 (Learning Mode) -> 3 (Form)
+            if (currentStep === 3) {
+                // From form, go back to learning mode
+                animateStepTransition('step-content-3', 'step-content-2', true);
                 currentStep = 2;
                 updateStepper(currentStep);
-            } else {
-                // User not logged in, go back to account registration
-                console.log('User not logged in - going back to account registration');
-                animateStepTransition('step-4', 'step-3', true);
+            } else if (currentStep === 2) {
+                // From learning mode, go back to packages
+                animateStepTransition('step-content-2', 'step-content-1', true);
+                currentStep = 1;
+                updateStepper(currentStep);
+            }
+        } else {
+            // For non-logged-in users: 1 (Packages) -> 2 (Learning Mode) -> 3 (Account) -> 4 (Form)
+            if (currentStep === 4) {
+                // From form, go back to account registration
+                animateStepTransition('step-content-4', 'step-content-3', true);
                 currentStep = 3;
                 updateStepper(currentStep);
                 // Trigger validation after going back to step 3
@@ -311,30 +337,55 @@
                     validateStep3();
                     console.log('Step 3 validation triggered after going back');
                 }, 500);
+            } else if (currentStep === 3) {
+                // From account registration, go back to learning mode
+                animateStepTransition('step-content-3', 'step-content-2', true);
+                currentStep = 2;
+                updateStepper(currentStep);
+            } else if (currentStep === 2) {
+                // From learning mode, go back to package selection
+                animateStepTransition('step-content-2', 'step-content-1', true);
+                currentStep = 1;
+                updateStepper(currentStep);
             }
-        } else if (currentStep === 3) {
-            // From account registration, go back to learning mode
-            animateStepTransition('step-3', 'step-2', true);
-            currentStep = 2;
-            updateStepper(currentStep);
-        } else if (currentStep === 2) {
-            // From learning mode back to package selection
-            animateStepTransition('step-2', 'step-1', true);
-            currentStep = 1;
-            updateStepper(currentStep);
         }
     }
 
     function updateStepper(currentStep) {
-    for (let i = 1; i <= 4; i++) {
-        let step = document.getElementById('stepper-' + i);
-        if (!step) continue;
-        if (i <= currentStep) {
-        step.classList.add('active');
-        } else {
-        step.classList.remove('active');
+        console.log('=== updateStepper called with currentStep:', currentStep, '===');
+        // Determine total steps based on login status
+        const totalSteps = isUserLoggedIn ? 3 : 4;
+        console.log('Total steps:', totalSteps, '(based on isUserLoggedIn:', isUserLoggedIn, ')');
+        
+        // Update step states
+        for (let i = 1; i <= totalSteps; i++) {
+            let step = document.getElementById('step-' + i);
+            console.log(`Step ${i}:`, step ? 'found' : 'not found');
+            if (!step) continue;
+            
+            if (i < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+                console.log(`Step ${i}: marked as completed`);
+            } else if (i === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+                console.log(`Step ${i}: marked as active`);
+            } else {
+                step.classList.remove('active', 'completed');
+                console.log(`Step ${i}: cleared active/completed`);
+            }
         }
-    }
+        
+        // Update progress bar
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) {
+            const percentage = (currentStep / totalSteps) * 100;
+            progressBar.style.width = percentage + '%';
+            console.log('Progress bar updated to:', percentage + '%');
+        } else {
+            console.warn('Progress bar element not found');
+        }
     }
 
     // Helper function to show warning messages
@@ -380,45 +431,50 @@
         const from = document.getElementById(fromStep);
         const to = document.getElementById(toStep);
         
+        console.log('Animating transition:', fromStep, '->', toStep);
+        console.log('From element found:', !!from);
+        console.log('To element found:', !!to);
+        
         if (!from || !to) {
             console.error('Step elements not found:', fromStep, toStep);
+            // Fallback: just hide/show without animation
+            const allSteps = document.querySelectorAll('.step-content');
+            allSteps.forEach(step => {
+                step.style.display = 'none';
+                step.classList.remove('active');
+            });
+            if (to) {
+                to.style.display = 'block';
+                to.classList.add('active');
+                // Don't override CSS transition styles
+            }
             return;
         }
         
-        // Update progress bar
-        updateProgressBar();
+        console.log('Starting transition animation...');
         
-        // Add transition classes
-        from.style.transition = 'all 0.3s ease-in-out';
-        to.style.transition = 'all 0.3s ease-in-out';
+        // Hide all other steps
+        const allSteps = document.querySelectorAll('.step-content');
+        allSteps.forEach(step => {
+            if (step !== to) {
+                step.classList.remove('active');
+                // Let CSS handle the display/opacity transition
+            }
+        });
         
-        // Hide current step
-        from.style.opacity = '0';
-        from.style.transform = isBack ? 'translateX(50px)' : 'translateX(-50px)';
+        // Show the target step - let CSS handle the transition
+        to.classList.add('active');
         
+        console.log('Step transition completed - target step should now be animating in');
+        
+        // Check if the transition worked after the CSS animation completes
         setTimeout(() => {
-            // Hide current step completely
-            from.style.display = 'none';
-            from.classList.remove('active');
-            
-            // Show new step
-            to.style.display = 'block';
-            to.style.opacity = '0';
-            to.style.transform = isBack ? 'translateX(-50px)' : 'translateX(50px)';
-            to.classList.add('active');
-            
-            // Animate in new step
-            setTimeout(() => {
-                to.style.opacity = '1';
-                to.style.transform = 'translateX(0)';
-            }, 50);
-            
-            // Reset transforms after animation
-            setTimeout(() => {
-                from.style.transform = '';
-                to.style.transform = '';
-            }, 350);
-        }, 300);
+            const toStepVisible = window.getComputedStyle(to).display !== 'none' && to.classList.contains('active');
+            const toStepOpacity = window.getComputedStyle(to).opacity;
+            console.log('Post-transition check - target step visible:', toStepVisible);
+            console.log('Target step computed opacity:', toStepOpacity);
+            console.log('Target step classes:', to.className);
+        }, 450); // Wait for CSS transition to complete (400ms + buffer)
     }
 
     // Helper function to update hidden start date field
@@ -1513,31 +1569,37 @@
     @section('content')
     <div class="form-container">
         <div class="form-wrapper">
-            <!-- Progress Bar -->
-    <!-- Stepper Progress Bar -->
-    <div class="stepper-progress">
-    <div class="stepper">
-        <div class="step" id="stepper-1">
-        <div class="circle">1</div>
-        <div class="label">Package</div>
-        </div>
-        <div class="bar"></div>
-        <div class="step" id="stepper-2">
-        <div class="circle">2</div>
-        <div class="label">Mode</div>
-        </div>
-        <div class="bar"></div>
-        <div class="step" id="stepper-3">
-        <div class="circle">3</div>
-        <div class="label">Account</div>
-        </div>
-        <div class="bar"></div>
-        <div class="step" id="stepper-4">
-        <div class="circle">4</div>
-        <div class="label">Finish</div>
-        </div>
-    </div>
-    </div>
+            <!-- Stepper Progress -->
+            <div class="stepper-progress">
+                <div class="stepper">
+                    <div class="bar">
+                        <div class="progress" id="progressBar" style="width: 25%;"></div>
+                    </div>
+                    <div class="step active" id="step-1">
+                        <div class="circle">1</div>
+                        <div class="label">Packages</div>
+                    </div>
+                    <div class="step" id="step-2">
+                        <div class="circle">2</div>
+                        <div class="label">Learning Mode</div>
+                    </div>
+                    @if(!$userLoggedIn)
+                    <div class="step" id="step-3">
+                        <div class="circle">3</div>
+                        <div class="label">Account</div>
+                    </div>
+                    <div class="step" id="step-4">
+                        <div class="circle">4</div>
+                        <div class="label">Form</div>
+                    </div>
+                    @else
+                    <div class="step" id="step-3">
+                        <div class="circle">3</div>
+                        <div class="label">Form</div>
+                    </div>
+                    @endif
+                </div>
+            </div>
 
             <form action="{{ route('student.register') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="enrollmentForm" novalidate onsubmit="return handleFormSubmission(event)">
                 @csrf
@@ -1550,122 +1612,143 @@
                 <input type="hidden" name="learning_mode" id="learning_mode" value="">
                 <!-- Removed duplicate hidden Start_Date field - using the visible date input instead -->
 
-            </div>
-        </div>         
-                <!-- Step 1 -->
-                <div class="step active" id="step-1">
-                    <div class="step-header">
-                        <h2>
-                            <i class="bi bi-box-seam me-2"></i>
-                            Choose Your Package
-                        </h2>
-                        <p>Select the package that best fits your learning goals.</p>
+                <!-- Step 1: Package Selection (Bootstrap Carousel) -->
+                <div class="step-content active" id="step-content-1">
+                    <div class="step-header mb-4">
+                        <h2 class="fw-bold text-center" style="font-size:2.5rem;">Choose Your Package</h2>
+                        <p class="text-center text-muted" style="font-size:1.15rem;">Select a learning package that suits your needs</p>
                     </div>
-
-                    <div class="package-carousel-wrapper" style="position:relative;width:100%;display:flex;justify-content:center;align-items:center;">
-                        <!-- Left Arrow -->
-                        <button type="button" class="carousel-arrow left" onclick="scrollPackages('left')">&lt;</button>
-
-                        <!-- Cards Container (Horizontal Scroll/Flex) -->
-                        <div class="package-cards-container" id="packagesCarousel">
-                            @foreach($packages as $package)
-                            <div 
-                                class="package-card"
-                                onclick="selectPackage('{{ $package->package_id }}','{{ addslashes($package->package_name) }}','{{ $package->amount }}')"
-                            >
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ $package->package_name }}</h5>
-                                    <p class="card-text">{{ $package->description ?? 'No description yet.' }}</p>
-                                    <div class="package-price">₱{{ number_format($package->amount, 2) }}</div>
+                    
+                    <!-- Bootstrap Carousel for Packages -->
+                    <div id="packageCarousel" class="carousel slide package-carousel-container" data-bs-ride="false">
+                        <div class="carousel-inner">
+                            @php $chunkSize = 2; @endphp
+                            @foreach($packages->chunk($chunkSize) as $index => $packageChunk)
+                                <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                                    <div class="d-flex justify-content-center gap-4 flex-wrap">
+                                        @foreach($packageChunk as $package)
+                                            <div class="package-card-pro card p-4 mb-3"
+                                                 onclick="selectPackage('{{ $package->package_id }}', '{{ addslashes($package->package_name) }}', '{{ $package->amount }}')"
+                                                 data-package-id="{{ $package->package_id }}">
+                                                <div class="card-body text-center">
+                                                    <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
+                                                    <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
+                                                    <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
+                                                    <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
+                                                        <li><i class="bi bi-check2 text-success"></i> Full program access</li>
+                                                        <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
+                                                        <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
+                                                        <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
-
-                        <!-- Right Arrow -->
-                        <button type="button" class="carousel-arrow right" onclick="scrollPackages('right')">&gt;</button>
+                        
+                        <!-- Carousel Controls -->
+                        @if($packages->count() > $chunkSize)
+                            <button class="carousel-control-prev" type="button" data-bs-target="#packageCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#packageCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        @endif
+                        
+                        <!-- Carousel Indicators -->
+                        @if($packages->chunk($chunkSize)->count() > 1)
+                            <div class="carousel-indicators">
+                                @foreach($packages->chunk($chunkSize) as $index => $chunk)
+                                    <button type="button" data-bs-target="#packageCarousel" data-bs-slide-to="{{ $index }}" 
+                                            class="{{ $index == 0 ? 'active' : '' }}" aria-label="Slide {{ $index + 1 }}"></button>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
 
-                    <div class="selected-package-summary mt-3 mb-4" style="text-align:left;">
+                    <!-- Selected Package Display -->
+                    <div id="selectedPackageDisplay" class="selected-package-summary mt-3 mb-4" style="text-align:center; display:none;">
                         <span class="ms-3">
                             <i class="bi bi-check-circle-fill text-success"></i>
                             Selected Package: <strong id="selectedPackageName">None</strong>
                         </span>
                     </div>
 
-                    <div class="form-navigation">
-                        <button
-                            type="button"
-                            onclick="nextStep()"
-                            id="packageNextBtn"
-                            disabled
-                            class="btn btn-primary btn-lg"
-                        >
-                            Next <i class="bi bi-arrow-right ms-2"></i>
+                    <div class="d-flex justify-content-center mt-4">
+                        <button type="button" class="btn btn-lg btn-primary next-btn-pro" onclick="nextStep()" disabled id="packageNextBtn">
+                            NEXT: SELECT LEARNING MODE <i class="bi bi-arrow-right ms-2"></i>
                         </button>
                     </div>
                 </div>
 
         <!-- Step 2: Learning Mode Selection -->
-        <div class="step" id="step-2">
-            <div class="white-step-container">
-                <div class="step-header">
-                    <h2><i class="bi bi-mortarboard me-2"></i>Choose Learning Mode</h2>
-                    <p>Select how you'd like to take your classes.</p>
-                </div>
-
-                <div class="learning-modes horizontal">
-                    @if(isset($fullPlan) && $fullPlan->enable_synchronous)
-                    <div class="learning-mode-card" onclick="selectLearningMode('synchronous')" data-mode="synchronous">
-                        <div class="mode-icon"><i class="bi bi-camera-video"></i></div>
-                        <h4>Synchronous</h4>
-                        <p>Live classes with real-time interaction</p>
-                        <ul>
-                            <li>Live video sessions</li>
-                            <li>Real-time Q&A</li>
-                            <li>Interactive discussions</li>
-                            <li>Scheduled class times</li>
-                        </ul>
+        <div class="step-content" id="step-content-2">
+            <div class="step-header">
+                <h2>Choose Learning Mode</h2>
+                <p>Select how you'd like to take your classes</p>
+            </div>
+            
+            <div class="row justify-content-center">
+                @if(isset($fullPlan) && $fullPlan->enable_synchronous)
+                <div class="col-md-5 mb-4">
+                    <div class="card selection-card h-100" onclick="selectLearningMode('synchronous')" data-mode="synchronous" style="cursor:pointer;">
+                        <div class="card-body">
+                            <h4 class="card-title">Synchronous Learning</h4>
+                            <p class="card-text">Learn in real-time with live classes and instructor interaction</p>
+                            <ul class="list-unstyled mt-3 mb-0">
+                                <li><i class="bi bi-check2 text-success"></i> Live online classes</li>
+                                <li><i class="bi bi-check2 text-success"></i> Real-time instructor interaction</li>
+                                <li><i class="bi bi-check2 text-success"></i> Structured schedule</li>
+                                <li><i class="bi bi-check2 text-success"></i> Group discussions</li>
+                            </ul>
+                        </div>
                     </div>
-                    @endif
-                    
-                    @if(isset($fullPlan) && $fullPlan->enable_asynchronous)
-                    <div class="learning-mode-card" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous">
-                        <div class="mode-icon"><i class="bi bi-play-circle"></i></div>
-                        <h4>Asynchronous</h4>
-                        <p>Self-paced learning with recorded content</p>
-                        <ul>
-                            <li>Pre-recorded videos</li>
-                            <li>Study at your own pace</li>
-                            <li>24/7 access to materials</li>
-                            <li>Flexible scheduling</li>
-                        </ul>
-                    </div>
-                    @endif
                 </div>
+                @endif
+                
+                @if(isset($fullPlan) && $fullPlan->enable_asynchronous)
+                <div class="col-md-5 mb-4">
+                    <div class="card selection-card h-100" onclick="selectLearningMode('asynchronous')" data-mode="asynchronous" style="cursor:pointer;">
+                        <div class="card-body">
+                            <h4 class="card-title">Asynchronous Learning</h4>
+                            <p class="card-text">Learn at your own pace with pre-recorded materials</p>
+                            <ul class="list-unstyled mt-3 mb-0">
+                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
+                                <li><i class="bi bi-check2 text-success"></i> Pre-recorded materials</li>
+                                <li><i class="bi bi-check2 text-success"></i> Flexible schedule</li>
+                                <li><i class="bi bi-check2 text-success"></i> 24/7 access</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
-            <div id="selectedLearningModeDisplay" class="selected-display" style="display: none;">
-                <div class="selected-item">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    <span>Selected Mode: <strong id="selectedLearningModeName"></strong></span>
-                </div>
+            <!-- Selected Learning Mode Display -->
+            <div id="selectedLearningModeDisplay" class="selected-display mt-3 mb-4" style="text-align:center; display:none;">
+                <span>
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    Selected Mode: <strong id="selectedLearningModeName">None</strong>
+                </span>
             </div>
-
-            <div class="form-navigation">
-                <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                    <i class="bi bi-arrow-left me-2"></i> Back
+            
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
+                    <i class="bi bi-arrow-left me-2"></i> Previous
                 </button>
-                <button type="button" onclick="nextStep()" id="learningModeNextBtn" disabled class="btn btn-primary btn-lg">
-                    Next <i class="bi bi-arrow-right ms-2"></i>
+                <button type="button" class="btn btn-primary btn-lg" onclick="nextStep()" disabled id="learningModeNextBtn">
+                    NEXT: ACCOUNT <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
         </div>
-    </div>
 
     <!-- Step 3: Account Registration (only for non-logged users) -->
-
-    <div class="step" id="step-3">
+    <div class="step-content" id="step-content-3">
         <div class="account-step-card">
             <div class="step-header">
                 <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
@@ -1739,9 +1822,8 @@
         </div>
     </div>
 
-
-    <!-- Step 4: Student Registration -->
-    <div class="step" id="step-4">
+    <!-- Step 3/4: Student Registration - Dynamic ID based on login status -->
+    <div class="step-content" id="{{ $userLoggedIn ? 'step-content-3' : 'step-content-4' }}">
         <div class="student-step-card">
             <div class="step-header">
                 <h2><i class="bi bi-person-lines-fill me-2"></i>Complete Your Registration</h2>
@@ -1948,10 +2030,10 @@
         </div>
     </div>
 
-
             </form>
         </div>
     </div>
+</div>
 
     <!-- Warning Modal -->
     <div id="warningModal" class="modal-overlay" style="display: none;">
@@ -2026,9 +2108,48 @@
     <script>
     // Update hidden fields when page loads
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== DOM Content Loaded - Initializing registration form ===');
+        console.log('Current step on load:', currentStep);
+        console.log('Is user logged in:', isUserLoggedIn);
+        
+        // Check initial state of step elements
+        for (let i = 1; i <= 4; i++) {
+            const stepContent = document.getElementById('step-' + i);
+            const stepIndicator = document.querySelector(`.stepper .step:nth-child(${i+1})`); // +1 because of the bar element
+            console.log(`Step ${i} content:`, stepContent ? 'found' : 'not found');
+            console.log(`Step ${i} indicator:`, stepIndicator ? 'found' : 'not found');
+            if (stepContent) {
+                console.log(`Step ${i} content display:`, stepContent.style.display || 'default');
+                console.log(`Step ${i} content classes:`, stepContent.className);
+            }
+        }
+        
         updateHiddenStartDate();
         updateHiddenProgramId();
         updateProgressBar(); // Initialize progress bar
+        
+        // Initialize stepper to ensure step 1 is shown
+        updateStepper(currentStep);
+        
+        // Ensure proper initial state of all steps - work with existing CSS
+        const allSteps = document.querySelectorAll('.step-content');
+        allSteps.forEach((step, index) => {
+            if (index === 0) { // First step (step-1)
+                step.classList.add('active');
+                console.log('Step 1 initialized as active - CSS will handle visibility');
+            } else {
+                step.classList.remove('active');
+                console.log(`Step ${index + 1} initialized as inactive - CSS will handle hiding`);
+            }
+        });
+        
+        // Check initial visibility after CSS has had time to apply
+        setTimeout(() => {
+            const step1 = document.getElementById('step-1');
+            const step1Visible = step1 && window.getComputedStyle(step1).display !== 'none';
+            const step1Opacity = step1 ? window.getComputedStyle(step1).opacity : 'unknown';
+            console.log('Initial state check - Step 1 visible:', step1Visible, 'opacity:', step1Opacity);
+        }, 100);
         
         // Add event listeners for changes
     const programSelect = document.getElementById('programSelect');

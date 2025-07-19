@@ -1,4 +1,485 @@
 /* ===== PROFESSIONAL ENROLLMENT FORM DESIGN ===== */
+/* Multi-step form styles */
+.form-container {
+    min-height: 100vh;
+    background: none !important;
+    padding: 2rem 0;
+}
+
+.form-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Stepper styles */
+.stepper-progress {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-bottom: 1px solid #e9ecef;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.stepper .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    transition: all 0.3s ease;
+}
+
+.stepper .step .circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    background: #e9ecef;
+    color: #6c757d;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stepper .step .label {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    text-align: center;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.stepper .bar {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #e9ecef;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.stepper .bar .progress {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+.stepper .step.active {
+    background: #6a82fb;
+    color: white;
+}
+
+.stepper .step.active .circle {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.stepper .step.active .label {
+    color: #667eea;
+    font-weight: 700;
+}
+
+.stepper .step.completed {
+    background: #28a745;
+    color: white;
+}
+
+.stepper .step.completed .circle {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.stepper .step.completed .label {
+    color: #28a745;
+    font-weight: 700;
+}
+
+/* Step Content Container - Bootstrap 5 Compatible */
+.step-content {
+    display: none;
+    padding: 3rem;
+    min-height: auto; 
+    opacity: 0;
+    transform: translateX(50px);
+    transition: all 0.4s ease;
+    background: white;
+    max-width: 800px;
+    margin: 0 auto;  
+}
+
+#step-content-3 {
+  min-height: auto !important;
+}
+@media (min-width: 1200px) {
+  .form-wrapper,
+  .step-content {
+    padding: 2rem;         /* controls inner whitespace */
+  }
+}
+
+.step-content.active {
+    display: block !important;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.step-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.step-header h2 {
+    color: #333;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.step-header p {
+    color: #666;
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Bootstrap Carousel Styles for Package Selection */
+.package-carousel-container {
+    position: relative;
+    margin: 2rem 0;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 5%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    margin: auto 0;
+    height: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-control-prev {
+    left: -60px;
+}
+
+.carousel-control-next {
+    right: -60px;
+}
+
+.carousel-indicators {
+    bottom: -50px;
+}
+
+.carousel-indicators [data-bs-target] {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #667eea;
+    border: 0;
+    margin: 0 4px;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.carousel-indicators .active {
+    opacity: 1;
+    transform: scale(1.2);
+    background-color: #fc466b;
+}
+
+/* Package Card Enhancements for Carousel */
+.package-card-pro {
+    min-width: 300px;
+    max-width: 350px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.package-card-pro:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.package-card-pro.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+}
+
+.package-card-pro.selected .text-primary {
+    color: white !important;
+}
+
+.package-card-pro.selected .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.package-card-pro.selected .text-success {
+    color: #90ee90 !important;
+}
+
+/* Selection Cards for Learning Mode */
+.selection-card {
+    cursor: pointer;
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.selection-card:hover {
+    border-color: #6a82fb;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(106, 130, 251, 0.2);
+}
+
+.selection-card.selected {
+    border-color: #6a82fb;
+    background: linear-gradient(135deg, #6a82fb 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.selection-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: white;
+    color: #6a82fb;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Button Styles */
+.next-btn-pro {
+    min-width: 320px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 2rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    letter-spacing: 0.03em;
+}
+
+.next-btn-pro:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.next-btn-pro:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Account Step Card */
+.account-step-card {
+    padding: 3rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Form Grid for Account Step */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Email and Referral Input Groups */
+.email-input-group, .referral-input-group {
+    display: flex;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+}
+
+.email-input-group:focus-within, .referral-input-group:focus-within {
+    border-color: #6a82fb;
+}
+
+.email-input-group input, .referral-input-group input {
+    flex: 1;
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    outline: none;
+    background: transparent;
+}
+
+.btn-otp, .btn-validate-referral {
+    background: #6a82fb;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-otp:hover, .btn-validate-referral:hover {
+    background: #5a6fd8;
+}
+
+.btn-otp:disabled, .btn-validate-referral:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Error and Success Messages */
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.success-message {
+    color: #28a745;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Login Prompt */
+.login-prompt {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.login-prompt a {
+    color: #6a82fb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-prompt a:hover {
+    text-decoration: underline;
+}
+
+/* Form Navigation */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .package-card-pro { 
+        min-width: 90vw; 
+        max-width: 98vw; 
+    }
+    
+    .next-btn-pro { 
+        min-width: 90vw; 
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stepper .step { 
+        min-width: 36px; 
+    }
+    
+    .stepper .circle { 
+        width: 28px; 
+        height: 28px; 
+        font-size: 1rem; 
+    }
+    
+    .stepper .label { 
+        font-size: 0.72rem; 
+    }
+    
+    .step-content {
+        padding: 2rem 1rem;
+    }
+    
+    .step-header h2 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 450px) {
+    .stepper .label {
+        font-size: 0.6rem;
+    }
+    
+    .stepper .step { 
+        min-width: 24px; 
+    }
+    
+    .stepper .circle { 
+        width: 22px; 
+        height: 22px; 
+        font-size: 0.9rem; 
+    }
+}
+
+/* Legacy styles to maintain compatibility */
 /* OTP Verification Styles */
 .email-input-group {
     position: relative;
@@ -232,11 +713,13 @@ body.registration-page {
 
 
 .form-wrapper {
-    background: transparent;
+    background: #fff;  
     border-radius: 18px;
     width: 100%;
-    max-width: 1200px;
-    margin: 32px 0;
+    max-width: 800px;
+    margin: 2rem auto;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }
 
 /* Container Styles */
@@ -424,88 +907,6 @@ body.registration-page {
   flex: 0 0 300px;
   max-width: 500px;
   min-height: 350px;
-}
-.stepper-progress {
-  position: sticky;
-  top: 0;
-  z-index: 999;            /* sit above everything else */
-  background: inherit;      /* keep the same gradient behind it */
-  padding: -100px 0;          /* tighten up the top/bottom padding if you like */
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-width: 320px;
-  max-width: 1100px;
-  margin: 0 auto;
-  gap: 0;
-  
-}
-
-.stepper .step {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  cursor: pointer;
-  
-}
-
-.stepper .bar {
-  flex: 1 1 50px;
-  height: 4px;
-  background: #ececec;
-  margin: 0 4px;
-  border-radius: 3px;
-  z-index: 0;
-  min-width: 24px;
-}
-
-@media (max-width: 900px) {
-  .stepper-progress { padding: 12px 0 10px 0; }
-  .stepper { max-width: 98vw; }
-  .stepper .step { min-width: 36px; }
-  .stepper .circle { width: 28px; height: 28px; font-size: 1rem; }
-}
-
-@media (max-width: 600px) {
-  .stepper-progress { padding: 4px 0 4px 0; }
-  .stepper { max-width: 98vw; }
-  .stepper .step { min-width: 24px; }
-  .stepper .circle { width: 22px; height: 22px; font-size: 0.9rem; }
-  .stepper .label { font-size: 0.72rem; }
-}
-@media (max-width: 450px) {
-  .stepper .label {
-    font-size: 0.6rem;
-  }
-}
-
-.stepper-progress::-webkit-scrollbar { display: none; }
-.stepper-progress { scrollbar-width: none; -ms-overflow-style: none; }
-
-
-.stepper-progress {
-  overflow-x: auto;
-}
-.stepper {
-  min-width: 360px;
-  margin-bottom: -10px;
-}
-
-.stepper .step.active .circle {
-  background: linear-gradient(90deg,#a259c6,#6a82fb);
-  color: #fff;
-  border: 2.5px solid #a259c6;
-  box-shadow: 0 6px 24px rgba(102,126,234,.10);
-}
-.stepper .step.active .label {
-  color: #a259c6;
-  font-weight: 700;
 }
 
 
@@ -1128,5 +1529,4 @@ label .required {
 .step.completed + .bar {
   background: #10b981 !important;
 }
-
 

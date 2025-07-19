@@ -1057,15 +1057,154 @@ class AdminModuleController extends Controller
      */
     public function courseContentStore(Request $request)
     {
-        $request->validate([
-            'program_id' => 'required|exists:programs,program_id',
-            'module_id' => 'required|exists:modules,modules_id',
-            'course_id' => 'required|exists:courses,subject_id',
-            'content_type' => 'required|in:lesson,quiz,test,assignment',
-            'content_title' => 'required|string|max:255',
-            'content_description' => 'nullable|string',
-            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg|max:10240',
+        // Enhanced logging for debugging
+        \Log::info('Course content store request received', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'all_data' => $request->all(),
+            'files' => $request->files->all(),
+            'has_attachment' => $request->hasFile('attachment'),
+            'content_type' => $request->get('content_type'),
+            'course_id' => $request->get('course_id'),
+            'module_id' => $request->get('module_id'),
+            'program_id' => $request->get('program_id')
         ]);
+
+        // Check if required fields are present
+        $requiredFields = ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'];
+        $missingFields = [];
+        foreach ($requiredFields as $field) {
+            if (!$request->has($field) || $request->get($field) === null || $request->get($field) === '') {
+                $missingFields[] = $field;
+            }
+        }
+
+        if (!empty($missingFields)) {
+            \Log::warning('Missing required fields', [
+                'missing_fields' => $missingFields,
+                'received_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing required fields: ' . implode(', ', $missingFields),
+                'errors' => [
+                    'missing_fields' => $missingFields,
+                    'received_fields' => array_keys($request->all())
+                ]
+            ], 422);
+        }
+
+        // Add detailed logging before validation
+        \Log::info('Course content store request received', [
+            'has_file' => $request->hasFile('attachment'),
+            'file_info' => $request->hasFile('attachment') ? [
+                'original_name' => $request->file('attachment')->getClientOriginalName(),
+                'size' => $request->file('attachment')->getSize(),
+                'mime_type' => $request->file('attachment')->getMimeType(),
+                'error' => $request->file('attachment')->getError(),
+                'is_valid' => $request->file('attachment')->isValid()
+            ] : 'No file',
+            'request_data_size' => count($request->all()),
+            'php_limits' => [
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+                'max_file_uploads' => ini_get('max_file_uploads')
+            ],
+            'all_request_data' => $request->except(['attachment', '_token'])
+        ]);
+
+        try {
+            // Custom file validation before Laravel validation
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                
+                \Log::info('File upload details', [
+                    'file_error' => $file->getError(),
+                    'file_size' => $file->getSize(),
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_mime' => $file->getMimeType(),
+                    'file_temp_path' => $file->getRealPath(),
+                    'is_valid' => $file->isValid()
+                ]);
+                
+                if (!$file->isValid()) {
+                    $errorMessages = [
+                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit: ' . ini_get('upload_max_filesize') . ')',
+                        UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
+                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
+                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                        UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+                    ];
+                    
+                    $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error (code: ' . $file->getError() . ')';
+                    
+                    \Log::error('File upload validation failed', [
+                        'error_code' => $file->getError(),
+                        'error_message' => $errorMessage,
+                        'file_size' => $file->getSize(),
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_mime' => $file->getMimeType()
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File upload failed',
+                        'errors' => ['attachment' => [$errorMessage]],
+                        'debug_info' => [
+                            'file_error_code' => $file->getError(),
+                            'file_size' => $file->getSize(),
+                            'server_limit' => ini_get('upload_max_filesize')
+                        ]
+                    ], 422);
+                }
+            }
+
+            // Temporarily simplify validation to isolate the issue
+            $validationRules = [
+                'program_id' => 'required|exists:programs,program_id',
+                'module_id' => 'required|exists:modules,modules_id',
+                'course_id' => 'required|exists:courses,subject_id',
+                'content_type' => 'required|in:lesson,quiz,test,assignment,pdf,link,video,document',
+                'content_title' => 'required|string|max:255',
+                'content_description' => 'nullable|string',
+                'enable_submission' => 'nullable|boolean',
+                'allowed_file_types' => 'nullable|string',
+                'max_file_size' => 'nullable|integer|min:1|max:100',
+                'submission_instructions' => 'nullable|string',
+                'content_url' => 'nullable|url'
+            ];
+            
+            // Only add file validation if file is present
+            if ($request->hasFile('attachment')) {
+                $validationRules['attachment'] = 'file|max:51200'; // 50MB limit only
+            }
+            
+            \Log::info('Applying validation rules', [
+                'rules' => $validationRules,
+                'has_file_rule' => isset($validationRules['attachment'])
+            ]);
+
+            $request->validate($validationRules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->except(['attachment']),
+                'files' => $request->hasFile('attachment') ? 'Has file' : 'No file',
+                'validator_messages' => $e->validator->errors()->toArray()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+                'validation_details' => [
+                    'received_fields' => array_keys($request->all()),
+                    'required_fields' => ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'],
+                    'validation_messages' => $e->validator->errors()->toArray()
+                ]
+            ], 422);
+        }
 
         try {
             $attachmentPath = null;
@@ -1073,8 +1212,52 @@ class AdminModuleController extends Controller
             // Handle file upload if present
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
+                
+                // Check file upload errors
+                if ($file->getError() !== UPLOAD_ERR_OK) {
+                    $errorMessages = [
+                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit)',
+                        UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
+                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
+                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                        UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+                    ];
+                    
+                    $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error';
+                    
+                    \Log::error('File upload error', [
+                        'error_code' => $file->getError(),
+                        'error_message' => $errorMessage,
+                        'file_size' => $file->getSize(),
+                        'file_name' => $file->getClientOriginalName()
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The attachment failed to upload',
+                        'errors' => ['attachment' => [$errorMessage]]
+                    ], 422);
+                }
+                
                 $filename = time() . '_' . $file->getClientOriginalName();
                 $attachmentPath = $file->storeAs('content', $filename, 'public');
+                
+                if (!$attachmentPath) {
+                    \Log::error('File storage failed', [
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_size' => $file->getSize()
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The attachment failed to upload',
+                        'errors' => ['attachment' => ['Failed to store file on server']]
+                    ], 422);
+                }
+                
+                \Log::info('File uploaded successfully', ['path' => $attachmentPath]);
             }
 
             // Get the course to find the lesson
@@ -1140,6 +1323,10 @@ class AdminModuleController extends Controller
                 'time_limit' => $request->input('time_limit'),
                 'is_required' => true,
                 'is_active' => true,
+                'enable_submission' => $request->boolean('enable_submission'),
+                'allowed_file_types' => $request->allowed_file_types,
+                'max_file_size' => $request->input('max_file_size', 10),
+                'submission_instructions' => $request->submission_instructions,
             ]);
 
             return response()->json([
@@ -1192,25 +1379,37 @@ class AdminModuleController extends Controller
     public function getContent($id)
     {
         try {
-            $content = ContentItem::findOrFail($id);
+            $content = ContentItem::with(['course.module', 'lesson'])->findOrFail($id);
             
             return response()->json([
                 'success' => true,
                 'content' => [
                     'id' => $content->id,
-                    'title' => $content->title,
-                    'description' => $content->description,
-                    'type' => $content->type,
-                    'file_path' => $content->file_path,
-                    'link' => $content->link,
+                    'title' => $content->content_title,
+                    'content_title' => $content->content_title,
+                    'description' => $content->content_description,
+                    'content_description' => $content->content_description,
+                    'type' => $content->content_type,
+                    'content_type' => $content->content_type,
+                    'file_path' => $content->attachment_path,
+                    'attachment_path' => $content->attachment_path,
+                    'link' => $content->content_url,
+                    'content_url' => $content->content_url,
                     'sort_order' => $content->sort_order,
-                    'course_id' => $content->course_id
+                    'course_id' => $content->course_id,
+                    'lesson_id' => $content->lesson_id,
+                    'module_id' => $content->course ? $content->course->module_id : null,
+                    'enable_submission' => $content->enable_submission ?? false,
+                    'allowed_file_types' => $content->allowed_file_types,
+                    'submission_instructions' => $content->submission_instructions,
+                    'due_date' => $content->due_date
                 ]
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error getting content: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Content not found'
+                'message' => 'Content not found: ' . $e->getMessage()
             ], 404);
         }
     }
@@ -1249,40 +1448,212 @@ class AdminModuleController extends Controller
     public function updateContent(Request $request, $id)
     {
         try {
-            $content = \App\Models\ContentItem::findOrFail($id);
-            
-            $request->validate([
-                'content_title' => 'required|string|max:255',
-                'content_description' => 'nullable|string',
-                'content_type' => 'required|string|in:lesson,assignment,pdf,link',
-                'attachment' => 'nullable|file|max:50240' // 50MB max
+            // Debug logging for file upload issues
+            \Log::info('updateContent debugging', [
+                'content_id' => $id,
+                'inputs' => $request->except(['attachment']),
+                'hasAttachment' => $request->hasFile('attachment'),
+                'files' => $request->allFiles(),
+                'request_all' => $request->all(),
+                'php_upload_settings' => [
+                    'upload_max_filesize' => ini_get('upload_max_filesize'),
+                    'post_max_size' => ini_get('post_max_size'),
+                    'max_file_uploads' => ini_get('max_file_uploads'),
+                    'memory_limit' => ini_get('memory_limit')
+                ]
             ]);
             
-            $content->update($request->only([
-                'content_title',
-                'content_description', 
-                'content_type'
-            ]));
+            if ($request->hasFile('attachment')) {
+                $upload = $request->file('attachment');
+                \Log::info('Attachment info', [
+                    'originalName' => $upload->getClientOriginalName(),
+                    'size' => $upload->getSize(),
+                    'mime' => $upload->getClientMimeType(),
+                    'error' => $upload->getError(),
+                    'isValid' => $upload->isValid(),
+                    'tempName' => $upload->getPathname()
+                ]);
+            }
+            
+            // Special check for empty file fields that Laravel might reject
+            if ($request->has('attachment') && !$request->hasFile('attachment')) {
+                \Log::warning('Attachment field present but no file received', [
+                    'contentId' => $id,
+                    'attachmentValue' => $request->get('attachment'),
+                    'hasFile' => $request->hasFile('attachment')
+                ]);
+                // Remove attachment from validation if it's empty
+                $validationData = $request->except(['attachment']);
+            } else {
+                $validationData = $request->all();
+            }
+            
+            $validator = \Validator::make($validationData, [
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video,document',
+                'attachment' => 'nullable|file', // Remove size limit for testing
+                'link' => 'nullable|url',
+                'sort_order' => 'nullable|integer|min:0',
+                'enable_submission' => 'nullable|boolean',
+                'allowed_file_types' => 'nullable|string',
+                'course_id' => 'nullable|exists:courses,subject_id' // Make course_id nullable for testing
+            ]);
+
+            // Also validate that content exists and get lesson_id from it
+            $content = \App\Models\ContentItem::findOrFail($id);
+
+            if ($validator->fails()) {
+                \Log::error('Validation failed for content update', [
+                    'contentId' => $id,
+                    'errors' => $validator->errors()->toArray(),
+                    'requestData' => $request->except(['attachment']),
+                    'hasFile' => $request->hasFile('attachment'),
+                    'fileInfo' => $request->hasFile('attachment') ? [
+                        'name' => $request->file('attachment')->getClientOriginalName(),
+                        'size' => $request->file('attachment')->getSize(),
+                        'error' => $request->file('attachment')->getError(),
+                        'isValid' => $request->file('attachment')->isValid()
+                    ] : null
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors(),
+                    'debug' => [
+                        'hasFile' => $request->hasFile('attachment'),
+                        'requestKeys' => array_keys($request->all()),
+                        'validationRules' => [
+                            'title' => 'required|string|max:255',
+                            'description' => 'nullable|string',
+                            'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video,document',
+                            'attachment' => 'nullable|file',
+                            'course_id' => 'nullable|exists:courses,subject_id'
+                        ]
+                    ]
+                ], 422);
+            }
+            
+            // Map form fields to database fields
+            $updateData = [
+                'content_title' => $request->title,
+                'content_description' => $request->description,
+                'content_type' => $request->type,
+                'sort_order' => $request->sort_order ?? $content->sort_order ?? 1,
+                'enable_submission' => $request->boolean('enable_submission'),
+                'allowed_file_types' => $request->allowed_file_types
+            ];
+            
+            // Handle link URL for link type content
+            if ($request->type === 'link' && $request->link) {
+                $updateData['content_url'] = $request->link;
+            }
             
             // Handle file upload if provided
-            if ($request->hasFile('attachment')) {
-                // Delete old file
-                if ($content->attachment_path) {
-                    Storage::delete('public/' . $content->attachment_path);
+            if ($request->hasFile('attachment') && $request->file('attachment')->isValid()) {
+                $upload = $request->file('attachment');
+
+                try {
+                    // Delete old file if exists
+                    if ($content->attachment_path && \Storage::disk('public')->exists($content->attachment_path)) {
+                        \Storage::disk('public')->delete($content->attachment_path);
+                        \Log::info('Deleted old file', ['path' => $content->attachment_path]);
+                    }
+                    
+                    // Sanitize filename
+                    $originalName = $upload->getClientOriginalName();
+                    $sanitizedName = preg_replace('/[^A-Za-z0-9\-_\.]/', '_', $originalName);
+                    $filename = time() . '_' . $sanitizedName;
+                    
+                    // Store new file
+                    $path = $upload->storeAs('content', $filename, 'public');
+                    
+                    // Update attachment path
+                    $updateData['attachment_path'] = $path;
+                    
+                    \Log::info('File uploaded successfully', [
+                        'originalName' => $originalName,
+                        'sanitizedName' => $sanitizedName,
+                        'storedPath' => $path,
+                        'contentId' => $id,
+                        'fileSize' => $upload->getSize()
+                    ]);
+                } catch (\Exception $fileError) {
+                    \Log::error('File upload error', [
+                        'error' => $fileError->getMessage(),
+                        'file' => $fileError->getFile(),
+                        'line' => $fileError->getLine(),
+                        'contentId' => $id
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to upload file: ' . $fileError->getMessage()
+                    ], 500);
                 }
+            } else if ($request->hasFile('attachment') && !$request->file('attachment')->isValid()) {
+                // File was uploaded but is invalid
+                $upload = $request->file('attachment');
+                \Log::error('Invalid file upload', [
+                    'originalName' => $upload->getClientOriginalName(),
+                    'size' => $upload->getSize(),
+                    'mime' => $upload->getClientMimeType(),
+                    'error' => $upload->getError(),
+                    'errorMessage' => $upload->getErrorMessage(),
+                    'contentId' => $id
+                ]);
+
+                $errorMessages = [
+                    UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds php.ini limit)',
+                    UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
+                    UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                    UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                    UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                    UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+                ];
                 
-                $file = $request->file('attachment');
-                $path = $file->store('content', 'public');
-                $content->update(['attachment_path' => $path]);
+                $errorMessage = $errorMessages[$upload->getError()] ?? 'Unknown upload error';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The attachment failed to upload: ' . $errorMessage
+                ], 422);
             }
+            
+            // Update content with all data including file path
+            $content->update($updateData);
+            
+            \Log::info('Content updated successfully', [
+                'contentId' => $id,
+                'updatedFields' => array_keys($updateData)
+            ]);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Content updated successfully',
-                'content' => $content
+                'content' => $content->fresh()
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error in updateContent', [
+                'contentId' => $id,
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error updating content: ' . $e->getMessage());
+            \Log::error('Error updating content: ' . $e->getMessage(), [
+                'contentId' => $id,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error updating content: ' . $e->getMessage()
@@ -1324,7 +1695,7 @@ class AdminModuleController extends Controller
         try {
             $request->validate([
                 'content_id' => 'required|integer|exists:content_items,id',
-                'new_course_id' => 'required|integer|exists:course,subject_id',
+                'new_course_id' => 'required|integer|exists:courses,subject_id',
                 'new_module_id' => 'required|integer|exists:modules,modules_id'
             ]);
 
@@ -1354,6 +1725,146 @@ class AdminModuleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to move content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function moveContentToModule(Request $request)
+    {
+        try {
+            $request->validate([
+                'content_id' => 'required|integer|exists:content_items,id',
+                'module_id' => 'required|integer|exists:modules,modules_id'
+            ]);
+
+            $contentId = $request->input('content_id');
+            $moduleId = $request->input('module_id');
+
+            // Find the content item
+            $content = ContentItem::findOrFail($contentId);
+            
+            // Get the first course in the target module, or create a default one
+            $targetCourse = Course::where('module_id', $moduleId)
+                                ->orderBy('created_at', 'asc')
+                                ->first();
+
+            if (!$targetCourse) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No courses found in the target module. Please add a course first.'
+                ], 400);
+            }
+            
+            // Get the highest sort order in the target course
+            $maxSortOrder = ContentItem::where('course_id', $targetCourse->subject_id)
+                                     ->max('content_order') ?? 0;
+
+            // Update the content item
+            $content->update([
+                'course_id' => $targetCourse->subject_id,
+                'content_order' => $maxSortOrder + 1
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content moved successfully to ' . $targetCourse->subject_name
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error moving content to module: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to move content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get module content for the admin content viewer
+     */
+    public function getModuleContent($moduleId)
+    {
+        try {
+            $module = Module::findOrFail($moduleId);
+            
+            // Get courses for this module
+            $courses = Course::where('module_id', $moduleId)
+                          ->orderBy('subject_order', 'asc')
+                          ->get()
+                          ->map(function($course) {
+                              return [
+                                  'course_id' => $course->subject_id,
+                                  'course_name' => $course->subject_name,
+                                  'course_description' => $course->subject_description,
+                                  'course_type' => $course->subject_type,
+                                  'content_items_count' => ContentItem::where('course_id', $course->subject_id)->count()
+                              ];
+                          });
+
+            return response()->json([
+                'success' => true,
+                'module' => [
+                    'module_id' => $module->modules_id,
+                    'module_name' => $module->module_name,
+                    'module_description' => $module->module_description,
+                    'module_order' => $module->module_order,
+                    'type' => $module->type ?? 'Standard'
+                ],
+                'courses' => $courses
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching module content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load module content'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get course content items for the admin content viewer
+     */
+    public function getCourseContentItems($moduleId, $courseId)
+    {
+        try {
+            $module = Module::findOrFail($moduleId);
+            $course = Course::findOrFail($courseId);
+            
+            // Get content items for this course
+            $contentItems = ContentItem::where('course_id', $courseId)
+                                     ->orderBy('content_order', 'asc')
+                                     ->get()
+                                     ->map(function($item) {
+                                         return [
+                                             'id' => $item->id,
+                                             'content_title' => $item->content_title,
+                                             'content_description' => $item->content_description,
+                                             'content_type' => $item->content_type,
+                                             'content_order' => $item->content_order,
+                                             'attachment_path' => $item->attachment_path,
+                                             'content_url' => $item->content_url,
+                                             'created_at' => $item->created_at->format('M d, Y')
+                                         ];
+                                     });
+
+            return response()->json([
+                'success' => true,
+                'module' => [
+                    'module_id' => $module->modules_id,
+                    'module_name' => $module->module_name
+                ],
+                'course' => [
+                    'course_id' => $course->subject_id,
+                    'course_name' => $course->subject_name,
+                    'course_description' => $course->subject_description,
+                    'course_type' => $course->subject_type ?? 'Standard'
+                ],
+                'content_items' => $contentItems
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching course content items: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load course content'
             ], 500);
         }
     }

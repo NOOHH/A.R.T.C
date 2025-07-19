@@ -114,10 +114,13 @@
         </a>
     </div>
 
-    <!-- Modules Display Area -->
-    <div id="modulesDisplayArea">
-        @if(request('program_id') && isset($modules))
-            @if($modules->count() > 0)
+    <!-- Split Layout Container -->
+    <div class="admin-split-container">
+        <!-- Left Panel - Modules List -->
+        <div class="admin-modules-panel">
+            <div id="modulesDisplayArea">
+                @if(request('program_id') && isset($modules))
+                    @if($modules->count() > 0)
 <style>
   /* Hierarchical Module Structure */
   .modules-hierarchy {
@@ -388,7 +391,10 @@
     font-style: italic;
   }
   
-  .drag-handle {
+  .drag-handle,
+  .module-drag-handle,
+  .course-drag-handle,
+  .content-drag-handle {
     cursor: move;
     color: rgba(108, 117, 125, 0.7);
     margin-right: 0.5rem;
@@ -396,15 +402,18 @@
     transition: color 0.2s ease;
   }
   
-  .drag-handle:hover {
+  .drag-handle:hover,
+  .module-drag-handle:hover,
+  .course-drag-handle:hover,
+  .content-drag-handle:hover {
     color: rgba(108, 117, 125, 1);
   }
   
-  .module-header .drag-handle {
+  .module-header .module-drag-handle {
     color: rgba(255, 255, 255, 0.7);
   }
   
-  .module-header .drag-handle:hover {
+  .module-header .module-drag-handle:hover {
     color: rgba(255, 255, 255, 1);
   }
   
@@ -546,7 +555,7 @@
     <div class="module-container" data-module-id="{{ $module->modules_id }}">
       <div class="module-header" onclick="toggleModule({{ $module->modules_id }})">
         <div class="module-title-section">
-          <i class="drag-handle bi bi-grip-vertical"></i>
+          <i class="module-drag-handle bi bi-grip-vertical"></i>
           <i class="module-toggle-icon bi bi-chevron-right"></i>
           <div>
             <h4 class="mb-0">{{ $module->module_name }}</h4>
@@ -601,7 +610,181 @@
             </div>
         @endif
     </div>
+        </div>
+        
+        <!-- Right Panel - Content Viewer -->
+        <div class="admin-content-panel">
+            <div class="content-viewer-header">
+                <h3 id="content-title">Content Viewer</h3>
+                <small id="content-subtitle">Select a module or course to view content</small>
+            </div>
+            
+            <div class="content-viewer-body" id="contentViewer">
+                <div class="content-placeholder">
+                    <i class="bi bi-file-earmark-text" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                    <h4 style="color: #6c757d;">No Content Selected</h4>
+                    <p style="color: #6c757d;">Click on a module or course to view its content here</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+/* Split Layout Styles */
+.admin-split-container {
+    display: flex;
+    height: calc(100vh - 200px);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.admin-modules-panel {
+    flex: 0 0 60%;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.admin-content-panel {
+    flex: 1;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-viewer-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 15px 15px 0 0;
+}
+
+.content-viewer-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.content-viewer-header small {
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.content-viewer-body {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.content-placeholder {
+    text-align: center;
+    color: #6c757d;
+}
+
+.content-display {
+    width: 100%;
+    height: 100%;
+}
+
+.content-display iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 10px;
+}
+
+.content-display .content-text {
+    line-height: 1.6;
+    font-size: 1.1rem;
+}
+
+.courses-preview, .content-items-preview {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.course-preview-item, .content-item-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #667eea;
+}
+
+.course-preview-item h6, .content-item-preview h6 {
+    margin: 0 0 0.5rem 0;
+    color: #495057;
+    font-weight: 600;
+}
+
+.course-preview-item p, .content-item-preview p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.content-item-preview .badge {
+    margin-top: 0.5rem;
+}
+
+.content-item.active {
+    background: #e3f2fd !important;
+    border-color: #2196f3 !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2) !important;
+}
+
+.content-frame {
+    width: 100%;
+    height: 500px;
+    border: none;
+    border-radius: 10px;
+}
+
+.link-preview, .assignment-preview {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.video-container, .pdf-viewer {
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.content-details {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border-left: 4px solid #667eea;
+}
+
+@media (max-width: 1200px) {
+    .admin-split-container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .admin-modules-panel {
+        flex: none;
+        max-height: 500px;
+    }
+    
+    .admin-content-panel {
+        flex: none;
+        height: 400px;
+    }
+}
+</style>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -610,7 +793,7 @@
 let currentArchiveModuleId = null;
 let currentOverrideModuleId = null;
 
-// Module toggle functionality
+// Module toggle functionality with content viewer
 function toggleModule(moduleId) {
     const content = document.getElementById(`module-content-${moduleId}`);
     const icon = content.previousElementSibling.querySelector('.module-toggle-icon');
@@ -623,9 +806,12 @@ function toggleModule(moduleId) {
         icon.classList.add('expanded');
         loadModuleCourses(moduleId);
     }
+    
+    // Load module content in viewer
+    loadModuleContentInViewer(moduleId);
 }
 
-// Course toggle functionality
+// Course toggle functionality with content viewer
 function toggleCourse(moduleId, courseId) {
     const content = document.getElementById(`course-content-${moduleId}-${courseId}`);
     const icon = content.previousElementSibling.querySelector('.course-toggle-icon');
@@ -638,6 +824,521 @@ function toggleCourse(moduleId, courseId) {
         icon.classList.add('expanded');
         loadCourseContent(moduleId, courseId);
     }
+    
+    // Load course content in viewer
+    loadCourseContentInViewer(moduleId, courseId);
+}
+
+// Load module content in the content viewer
+function loadModuleContentInViewer(moduleId) {
+    const titleElement = document.getElementById('content-title');
+    const subtitleElement = document.getElementById('content-subtitle');
+    const viewerBody = document.getElementById('contentViewer');
+    
+    // Show loading state
+    titleElement.textContent = 'Loading Module...';
+    subtitleElement.textContent = 'Fetching module details';
+    viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
+    
+    // Fetch module content
+    fetch(`/admin/modules/${moduleId}/content`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                titleElement.textContent = data.module.module_name;
+                subtitleElement.textContent = `Module • ${data.courses?.length || 0} courses`;
+                
+                let contentHtml = `
+                    <div class="content-display">
+                        <h4>Module Overview</h4>
+                        <p><strong>Description:</strong> ${data.module.module_description || 'No description available'}</p>
+                        <p><strong>Type:</strong> ${data.module.type || 'Standard'}</p>
+                        <p><strong>Order:</strong> ${data.module.module_order || 'Not set'}</p>
+                        
+                        <h5 class="mt-4">Courses (${data.courses?.length || 0})</h5>
+                        <div class="courses-preview">
+                `;
+                
+                if (data.courses && data.courses.length > 0) {
+                    data.courses.forEach(course => {
+                        contentHtml += `
+                            <div class="course-preview-item">
+                                <h6>${course.course_name}</h6>
+                                <p class="text-muted">${course.course_description || 'No description'}</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    contentHtml += '<p class="text-muted">No courses available</p>';
+                }
+                
+                contentHtml += `
+                        </div>
+                    </div>
+                `;
+                
+                viewerBody.innerHTML = contentHtml;
+            } else {
+                viewerBody.innerHTML = '<div class="alert alert-danger">Failed to load module content</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading module content:', error);
+            viewerBody.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+        });
+}
+
+// Load course content in the content viewer
+function loadCourseContentInViewer(moduleId, courseId) {
+    const titleElement = document.getElementById('content-title');
+    const subtitleElement = document.getElementById('content-subtitle');
+    const viewerBody = document.getElementById('contentViewer');
+    
+    // Show loading state
+    titleElement.textContent = 'Loading Course...';
+    subtitleElement.textContent = 'Fetching course content';
+    viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
+    
+    // Fetch course content
+    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                titleElement.textContent = data.course.course_name;
+                subtitleElement.textContent = `Course • ${data.content_items?.length || 0} items`;
+                
+                let contentHtml = `
+                    <div class="content-display">
+                        <h4>Course Details</h4>
+                        <p><strong>Description:</strong> ${data.course.course_description || 'No description available'}</p>
+                        <p><strong>Type:</strong> ${data.course.course_type || 'Standard'}</p>
+                        
+                        <h5 class="mt-4">Content Items (${data.content_items?.length || 0})</h5>
+                        <div class="content-items-preview">
+                `;
+                
+                if (data.content_items && data.content_items.length > 0) {
+                    data.content_items.forEach(item => {
+                        contentHtml += `
+                            <div class="content-item-preview">
+                                <h6><i class="bi bi-${getContentIcon(item.content_type)}"></i> ${item.content_title}</h6>
+                                <p class="text-muted">${item.content_description || 'No description'}</p>
+                                <small class="badge bg-secondary">${item.content_type}</small>
+                            </div>
+                        `;
+                    });
+                } else {
+                    contentHtml += '<p class="text-muted">No content items available</p>';
+                }
+                
+                contentHtml += `
+                        </div>
+                    </div>
+                `;
+                
+                viewerBody.innerHTML = contentHtml;
+            } else {
+                viewerBody.innerHTML = '<div class="alert alert-danger">Failed to load course content</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading course content:', error);
+            viewerBody.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+        });
+}
+
+// Helper function to get content type icon
+function getContentIcon(contentType) {
+    const icons = {
+        'video': 'play-circle',
+        'document': 'file-earmark-text',
+        'quiz': 'question-circle',
+        'assignment': 'pencil-square',
+        'link': 'link-45deg',
+        'test': 'clipboard-check'
+    };
+    return icons[contentType] || 'file-earmark';
+}
+
+// Load individual content item in the content viewer
+function loadContentInViewer(contentId, contentType, contentTitle, moduleId, courseId) {
+    const titleElement = document.getElementById('content-title');
+    const subtitleElement = document.getElementById('content-subtitle');
+    const viewerBody = document.getElementById('contentViewer');
+    
+    // Show loading state
+    titleElement.textContent = 'Loading Content...';
+    subtitleElement.textContent = 'Fetching content details';
+    viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
+    
+    // Fetch content details
+    fetch(`/admin/content/${contentId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const content = data.content;
+                titleElement.textContent = content.content_title || 'Content';
+                subtitleElement.textContent = `${(content.content_type || 'CONTENT').toUpperCase()} • Course ID: ${courseId}`;
+                
+                let contentHtml = '';
+                const contentType = (content.content_type || 'document').toLowerCase();
+                
+                switch(contentType) {
+                    case 'video':
+                        if (content.content_url || content.attachment_path) {
+                            const videoUrl = content.content_url || `/storage/${content.attachment_path}`;
+                            let videoPlayer = '';
+                            
+                            // Check if it's a YouTube or Vimeo URL
+                            if (content.content_url && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com'))) {
+                                let embedUrl = content.content_url;
+                                
+                                // Convert YouTube URLs to embed format
+                                if (content.content_url.includes('youtube.com/watch?v=')) {
+                                    const videoId = content.content_url.split('v=')[1].split('&')[0];
+                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                                } else if (content.content_url.includes('youtu.be/')) {
+                                    const videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
+                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                                } else if (content.content_url.includes('vimeo.com/')) {
+                                    const videoId = content.content_url.split('vimeo.com/')[1].split('/')[0];
+                                    embedUrl = `https://player.vimeo.com/video/${videoId}`;
+                                }
+                                
+                                videoPlayer = `
+                                    <div class="video-container">
+                                        <iframe class="content-frame" src="${embedUrl}" style="width: 100%; height: 450px; border: 1px solid #ddd;" allowfullscreen></iframe>
+                                    </div>
+                                `;
+                            } else {
+                                // Local video file
+                                videoPlayer = `
+                                    <div class="video-container">
+                                        <video controls style="width: 100%; max-height: 450px;" class="border">
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            <source src="${videoUrl}" type="video/webm">
+                                            <source src="${videoUrl}" type="video/ogg">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                `;
+                            }
+                            
+                            contentHtml = `
+                                <div class="content-display">
+                                    ${videoPlayer}
+                                    <div class="content-details mt-3">
+                                        <h5>Video Details</h5>
+                                        <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                        <p><strong>Source:</strong> <a href="${videoUrl}" target="_blank">${content.content_url ? 'External Link' : 'Uploaded File'}</a></p>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = '<div class="alert alert-warning">Video URL not available</div>';
+                        }
+                        break;
+                    
+                    case 'pdf':
+                    case 'document':
+                        if (content.attachment_path) {
+                            const fileUrl = `/storage/${content.attachment_path}`;
+                            const fileName = content.attachment_path.split('/').pop();
+                            const fileExtension = fileName.split('.').pop().toLowerCase();
+                            
+                            let fileViewer = '';
+                            
+                            // Handle different file types
+                            if (fileExtension === 'pdf') {
+                                fileViewer = `
+                                    <div class="pdf-viewer">
+                                        <div class="pdf-controls mb-2">
+                                            <div class="btn-group">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-fullscreen"></i> Full Screen
+                                                </a>
+                                                <a href="${fileUrl}" download class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <iframe class="content-frame" src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
+                                                allowfullscreen>
+                                            <p>Your browser does not support PDFs. 
+                                               <a href="${fileUrl}" target="_blank">Download the PDF</a>
+                                            </p>
+                                        </iframe>
+                                    </div>
+                                `;
+                            } else if (['doc', 'docx'].includes(fileExtension)) {
+                                fileViewer = `
+                                    <div class="document-viewer">
+                                        <div class="document-controls mb-2">
+                                            <div class="btn-group">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                                <button onclick="window.open('https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(window.location.origin + fileUrl)}', '_blank')" class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-eye"></i> View Online
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <iframe class="content-frame" src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + fileUrl)}" 
+                                                style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
+                                                allowfullscreen>
+                                            <p>Document preview not available. <a href="${fileUrl}" target="_blank">Download the document</a></p>
+                                        </iframe>
+                                        <div class="fallback-message mt-2 text-center">
+                                            <small class="text-muted">If the document doesn't load above, you can <a href="${fileUrl}" target="_blank">download it here</a></small>
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (['ppt', 'pptx'].includes(fileExtension)) {
+                                fileViewer = `
+                                    <div class="presentation-viewer">
+                                        <div class="presentation-controls mb-2">
+                                            <div class="btn-group">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                                <button onclick="window.open('https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(window.location.origin + fileUrl)}', '_blank')" class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-eye"></i> View Online
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <iframe class="content-frame" src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + fileUrl)}" 
+                                                style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
+                                                allowfullscreen>
+                                            <p>Presentation preview not available. <a href="${fileUrl}" target="_blank">Download the presentation</a></p>
+                                        </iframe>
+                                        <div class="fallback-message mt-2 text-center">
+                                            <small class="text-muted">If the presentation doesn't load above, you can <a href="${fileUrl}" target="_blank">download it here</a></small>
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (['xls', 'xlsx'].includes(fileExtension)) {
+                                fileViewer = `
+                                    <div class="spreadsheet-viewer">
+                                        <div class="spreadsheet-controls mb-2">
+                                            <div class="btn-group">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                                <button onclick="window.open('https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(window.location.origin + fileUrl)}', '_blank')" class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-eye"></i> View Online
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <iframe class="content-frame" src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + fileUrl)}" 
+                                                style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
+                                                allowfullscreen>
+                                            <p>Spreadsheet preview not available. <a href="${fileUrl}" target="_blank">Download the spreadsheet</a></p>
+                                        </iframe>
+                                        <div class="fallback-message mt-2 text-center">
+                                            <small class="text-muted">If the spreadsheet doesn't load above, you can <a href="${fileUrl}" target="_blank">download it here</a></small>
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                                fileViewer = `
+                                    <div class="image-viewer text-center">
+                                        <img src="${fileUrl}" class="img-fluid" alt="${fileName}" 
+                                             style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;
+                                             box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer;"
+                                             onclick="window.open('${fileUrl}', '_blank')">
+                                    </div>
+                                `;
+                            } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                                fileViewer = `
+                                    <div class="video-viewer">
+                                        <video controls style="width: 100%; max-height: 600px; border-radius: 5px;" class="border">
+                                            <source src="${fileUrl}" type="video/${fileExtension}">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                `;
+                            } else if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
+                                fileViewer = `
+                                    <div class="audio-viewer">
+                                        <audio controls style="width: 100%; border-radius: 5px;" class="border">
+                                            <source src="${fileUrl}" type="audio/${fileExtension}">
+                                            Your browser does not support the audio tag.
+                                        </audio>
+                                    </div>
+                                `;
+                            } else {
+                                fileViewer = `
+                                    <div class="file-preview text-center p-4 border">
+                                        <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">File preview not available for this format</p>
+                                        <p class="text-muted small">${fileName}</p>
+                                    </div>
+                                `;
+                            }
+                            
+                            contentHtml = `
+                                <div class="content-display">
+                                    ${fileViewer}
+                                    <div class="content-details mt-3">
+                                        <h5>Document Details</h5>
+                                        <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                        <p><strong>File:</strong> ${fileName}</p>
+                                        <div class="mt-2">
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
+                                                <i class="bi bi-eye"></i> View in New Tab
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = '<div class="alert alert-warning">Document file not available</div>';
+                        }
+                        break;
+                    
+                    case 'link':
+                        if (content.content_url) {
+                            contentHtml = `
+                                <div class="content-display">
+                                    <div class="link-preview">
+                                        <h5><i class="bi bi-link-45deg"></i> External Link</h5>
+                                        <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                        <p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>
+                                        <div class="mt-3">
+                                            <a href="${content.content_url}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> Open Link
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = '<div class="alert alert-warning">External URL not available</div>';
+                        }
+                        break;
+                    
+                    case 'assignment':
+                        contentHtml = `
+                            <div class="content-display">
+                                <div class="assignment-preview">
+                                    <h5><i class="bi bi-pencil-square"></i> Assignment Details</h5>
+                                    <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                    ${content.due_date ? `<p><strong>Due Date:</strong> ${new Date(content.due_date).toLocaleDateString()}</p>` : ''}
+                                    ${content.submission_instructions ? `<div class="mt-3"><h6>Instructions:</h6><p>${content.submission_instructions}</p></div>` : ''}
+                                    <div class="mt-3">
+                                        <button class="btn btn-info" onclick="viewSubmissions(${contentId})">
+                                            <i class="bi bi-file-earmark-text"></i> View Submissions
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        break;
+                    
+                    default:
+                        let defaultContentHtml = `
+                            <div class="content-display">
+                                <h5>${(content.content_type || 'Content').charAt(0).toUpperCase() + (content.content_type || 'Content').slice(1)} Details</h5>
+                                <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                        `;
+                        
+                        // Handle attachments for any content type
+                        if (content.attachment_path) {
+                            const fileUrl = `/storage/${content.attachment_path}`;
+                            const fileName = content.attachment_path.split('/').pop();
+                            const fileExtension = fileName.split('.').pop().toLowerCase();
+                            
+                            let filePreview = '';
+                            
+                            if (fileExtension === 'pdf') {
+                                filePreview = `
+                                    <div class="file-preview mt-3">
+                                        <iframe src="${fileUrl}" style="width: 100%; height: 400px; border: 1px solid #ddd;"></iframe>
+                                    </div>
+                                `;
+                            } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                                filePreview = `
+                                    <div class="file-preview mt-3 text-center">
+                                        <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+                                    </div>
+                                `;
+                            } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                                filePreview = `
+                                    <div class="file-preview mt-3">
+                                        <video controls style="width: 100%; max-height: 400px;" class="border">
+                                            <source src="${fileUrl}" type="video/${fileExtension}">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                `;
+                            } else if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
+                                filePreview = `
+                                    <div class="file-preview mt-3">
+                                        <audio controls style="width: 100%;" class="border">
+                                            <source src="${fileUrl}" type="audio/${fileExtension}">
+                                            Your browser does not support the audio tag.
+                                        </audio>
+                                    </div>
+                                `;
+                            } else {
+                                filePreview = `
+                                    <div class="file-preview mt-3 text-center p-4 border bg-light">
+                                        <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+                                        <p class="mt-2 mb-0">Preview not available for this file type</p>
+                                        <small class="text-muted">${fileName}</small>
+                                    </div>
+                                `;
+                            }
+                            
+                            defaultContentHtml += `
+                                ${filePreview}
+                                <div class="mt-3">
+                                    <p><strong>File:</strong> ${fileName}</p>
+                                    <div class="file-actions">
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
+                                            <i class="bi bi-eye"></i> View in New Tab
+                                        </a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        if (content.content_url) {
+                            defaultContentHtml += `
+                                <p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>
+                                <div class="mt-2">
+                                    <a href="${content.content_url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-box-arrow-up-right"></i> Open Link
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        
+                        defaultContentHtml += '</div>';
+                        contentHtml = defaultContentHtml;
+                }
+                
+                viewerBody.innerHTML = contentHtml;
+                
+                // Mark content item as active
+                document.querySelectorAll('.content-item').forEach(el => el.classList.remove('active'));
+                document.querySelector(`[data-content-id="${contentId}"]`).classList.add('active');
+                
+            } else {
+                viewerBody.innerHTML = '<div class="alert alert-danger">Failed to load content</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+            viewerBody.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+        });
 }
 
 // Load courses for a module
@@ -694,6 +1395,7 @@ function displayCourses(moduleId, courses) {
             <div class="course-container" data-course-id="${course.subject_id}">
                 <div class="course-header" onclick="toggleCourse(${moduleId}, ${course.subject_id})">
                     <div class="d-flex align-items-center gap-2">
+                        <i class="course-drag-handle bi bi-grip-vertical" onclick="event.stopPropagation();" style="cursor: move; color: rgba(255,255,255,0.7);" title="Drag to move course"></i>
                         <i class="course-toggle-icon bi bi-chevron-right"></i>
                         <div>
                             <h5 class="mb-0">${course.subject_name}</h5>
@@ -717,11 +1419,13 @@ function displayCourses(moduleId, courses) {
                         <!-- Content items will be loaded here -->
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     });
     
     container.innerHTML = html;
+    
+    // Initialize course-level sorting for this module
+    initializeCourseSorting(moduleId);
 }
 
 // Load content items for a course
@@ -776,9 +1480,9 @@ function displayCourseContent(moduleId, courseId, contentItems) {
         const typeIcon = getContentTypeIcon(item.content_type);
         
         html += `
-            <div class="content-item" data-content-id="${item.id}">
+            <div class="content-item" data-content-id="${item.id}" onclick="loadContentInViewer(${item.id}, '${item.content_type}', '${item.content_title}', ${moduleId}, ${courseId})" style="cursor: pointer;">
                 <div class="content-item-info">
-                    <i class="drag-handle bi bi-grip-vertical"></i>
+                    <i class="content-drag-handle bi bi-grip-vertical" onclick="event.stopPropagation();" style="cursor: move;"></i>
                     <span class="content-item-type ${typeClass}">
                         <i class="bi ${typeIcon}"></i> ${item.content_type}
                     </span>
@@ -787,7 +1491,10 @@ function displayCourseContent(moduleId, courseId, contentItems) {
                         ${item.content_description ? `<br><small class="text-muted">${item.content_description}</small>` : ''}
                     </div>
                 </div>
-                <div class="content-item-actions">
+                <div class="content-item-actions" onclick="event.stopPropagation();">
+                    <button class="btn btn-sm btn-primary" onclick="loadContentInViewer(${item.id}, '${item.content_type}', '${item.content_title}', ${moduleId}, ${courseId})" title="View Content">
+                        <i class="bi bi-eye"></i>
+                    </button>
                     ${item.content_type === 'assignment' ? 
                         `<button class="btn btn-sm btn-info" onclick="viewSubmissions(${item.id})">
                             <i class="bi bi-file-earmark-text"></i> Submissions
@@ -1153,6 +1860,22 @@ function editContent(contentId) {
                     const linkSection = document.getElementById('edit_link_section');
                     const fileSection = document.getElementById('edit_file_section');
                     
+                    // Handle submission settings
+                    const enableSubmission = document.getElementById('edit_enable_submission');
+                    const submissionOptions = document.getElementById('edit_submission_options');
+                    if (enableSubmission) {
+                        enableSubmission.checked = data.content.enable_submission || false;
+                        submissionOptions.style.display = enableSubmission.checked ? 'block' : 'none';
+                    }
+                    
+                    // Fill submission options
+                    if (data.content.allowed_file_types) {
+                        document.getElementById('edit_allowed_file_types').value = data.content.allowed_file_types;
+                    }
+                    if (data.content.submission_instructions) {
+                        document.getElementById('edit_submission_instructions').value = data.content.submission_instructions;
+                    }
+                    
                     if (data.content.type === 'link') {
                         linkSection.style.display = 'block';
                         fileSection.style.display = 'none';
@@ -1160,8 +1883,34 @@ function editContent(contentId) {
                     } else {
                         linkSection.style.display = 'none';
                         fileSection.style.display = 'block';
+                        
+                        // Show existing file info
+                        let fileHtml = `
+                            <label for="edit_content_file">Replace File (optional)</label>
+                            <input type="file" id="edit_content_file" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
+                        `;
+                        
+                        if (data.content.file_path) {
+                            const fileName = data.content.file_path.split('/').pop();
+                            fileHtml += `
+                                <div class="current-file-info mt-2 p-2 bg-light rounded">
+                                    <small class="text-muted"><strong>Current file:</strong> 
+                                        <a href="/storage/${data.content.file_path}" target="_blank" class="text-primary">
+                                            <i class="bi bi-file-earmark"></i> ${fileName}
+                                        </a>
+                                    </small>
+                                </div>
+                            `;
+                            fileHtml += `<small class="text-muted">Select a new file to replace the current one, or leave empty to keep existing file.</small>`;
+                        } else {
+                            fileHtml += `<small class="text-muted">No file currently attached.</small>`;
+                        }
+                        
+                        fileSection.innerHTML = fileHtml;
                     }
-                    
+                    document.getElementById('edit_module_id').value = data.content.module_id;
+                    document.getElementById('edit_course_id').value = data.content.course_id;
+                    document.getElementById('edit_lesson_id').value = data.content.lesson_id;
                     // Set form action
                     form.action = `/admin/content/${contentId}`;
                     
@@ -1207,11 +1956,13 @@ function viewSubmissions(assignmentId) {
 
 // Initialize sortable functionality for modules
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin modules JavaScript loaded');
+    
     const modulesContainer = document.getElementById('modulesHierarchy');
     if (modulesContainer && typeof Sortable !== 'undefined') {
         // Module-level sorting
         new Sortable(modulesContainer, {
-            handle: '.drag-handle',
+            handle: '.module-drag-handle',
             animation: 150,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
@@ -1241,6 +1992,26 @@ document.addEventListener('DOMContentLoaded', function() {
     setupModalEventListeners();
 });
 
+// Initialize course sorting within modules
+function initializeCourseSorting(moduleId) {
+    const coursesContainer = document.getElementById(`courses-container-${moduleId}`);
+    if (coursesContainer && typeof Sortable !== 'undefined') {
+        new Sortable(coursesContainer, {
+            handle: '.course-drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: function(evt) {
+                const courseIds = Array.from(coursesContainer.children).map(el => 
+                    el.getAttribute('data-course-id')
+                ).filter(id => id !== null);
+                
+                updateCourseOrder(moduleId, courseIds);
+            }
+        });
+    }
+}
+
 // Initialize content sorting within courses
 function initializeContentSorting() {
     // Find all content containers and make them sortable
@@ -1256,9 +2027,11 @@ function initializeContentSorting() {
                 },
                 animation: 150,
                 ghostClass: 'sortable-ghost',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
-                handle: '.drag-handle',
+                handle: '.content-drag-handle',
                 onEnd: function(evt) {
                     // Get the content IDs in their new order
                     const contentIds = Array.from(evt.to.children).map(el => {
@@ -1449,103 +2222,43 @@ function moveContentToNewLocation(contentId, newCourseId, newModuleId) {
     });
 }
 
+// Move content directly to module level (without specific course)
+function moveContentToModule(contentId, moduleId) {
+    return fetch('/admin/content/move-to-module', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            content_id: contentId,
+            module_id: moduleId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Content moved successfully!', 'success');
+            location.reload(); // Refresh to show updated structure
+        } else {
+            showNotification(data.message || 'Failed to move content. Please try again.', 'error');
+        }
+        return data.success;
+    })
+    .catch(error => {
+        console.error('Error in moveContentToModule:', error);
+        showNotification('Error moving content. Please try again.', 'error');
+        return false;
+    });
+}
+
 // Handle content being dropped directly on a module (not in a specific course)
 function handleContentDropOnModule(contentElement, targetModuleId) {
     const contentId = contentElement.getAttribute('data-content-id');
     
     if (contentId) {
-        // Show modal to select which course in the module to add to
-        showCourseSelectionModal(contentId, targetModuleId);
-    }
-}
-
-// Show modal to select target course when dropping on module
-function showCourseSelectionModal(contentId, moduleId) {
-    // Create modal dynamically
-    const modal = document.createElement('div');
-    modal.className = 'modal-bg';
-    modal.innerHTML = `
-        <div class="modal">
-            <div class="modal-header">
-                <h3><i class="bi bi-arrow-right-circle"></i> Select Target Course</h3>
-                <button type="button" class="modal-close" onclick="this.closest('.modal-bg').remove()">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Select which course to move this content to:</p>
-                <div id="courseSelectionList">
-                    <div class="text-center">
-                        <i class="bi bi-arrow-clockwise fa-spin"></i> Loading courses...
-                    </div>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" onclick="this.closest('.modal-bg').remove()">Cancel</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    modal.classList.add('show');
-    
-    // Load courses for the module
-    loadCoursesForSelection(moduleId, contentId);
-}
-
-// Load courses for selection modal
-function loadCoursesForSelection(moduleId, contentId) {
-    fetch(`/admin/modules/${moduleId}/courses`)
-        .then(response => response.json())
-        .then(data => {
-            const listContainer = document.getElementById('courseSelectionList');
-            
-            if (data.success && data.courses && data.courses.length > 0) {
-                let html = '';
-                data.courses.forEach(course => {
-                    html += `
-                        <div class="course-selection-item" onclick="selectTargetCourse(${contentId}, ${course.subject_id}, ${moduleId}, '${course.subject_name}')">
-                            <i class="bi bi-book"></i>
-                            <strong>${course.subject_name}</strong>
-                            <p>${course.subject_description || 'No description'}</p>
-                        </div>
-                    `;
-                });
-                listContainer.innerHTML = html;
-            } else {
-                listContainer.innerHTML = `
-                    <div class="text-center text-muted">
-                        <i class="bi bi-exclamation-circle"></i>
-                        <p>No courses available in this module.</p>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error loading courses:', error);
-            document.getElementById('courseSelectionList').innerHTML = `
-                <div class="text-center text-danger">
-                    <i class="bi bi-x-circle"></i>
-                    <p>Error loading courses. Please try again.</p>
-                </div>
-            `;
-        });
-}
-
-// Select target course and move content
-function selectTargetCourse(contentId, courseId, moduleId, courseName) {
-    const modal = document.querySelector('.modal-bg');
-    
-    if (confirm(`Move content to "${courseName}"?`)) {
-        moveContentToNewLocation(contentId, courseId, moduleId)
-            .then(success => {
-                modal.remove();
-                if (success) {
-                    location.reload(); // Refresh to show updated structure
-                } else {
-                    showNotification('Failed to move content. Please try again.', 'error');
-                }
-            });
+        // Move content directly to module level (no specific course)
+        moveContentToModule(contentId, targetModuleId);
     }
 }
 
@@ -1580,18 +2293,31 @@ function showNotification(message, type = 'info') {
     }, 4000);
 }
 
+// Show alert messages (alias for showNotification)
+function showAlert(message, type = 'info') {
+    showNotification(message, type);
+}
+
 // Setup modal event listeners
 function setupModalEventListeners() {
+    console.log('Setting up modal event listeners');
+    
     // Add Module Modal
     const showAddModal = document.getElementById('showAddModal');
     const addModalBg = document.getElementById('addModalBg');
     const closeAddModal = document.getElementById('closeAddModal');
     const closeAddModalBtn = document.getElementById('closeAddModalBtn');
 
+    console.log('showAddModal button:', showAddModal);
+    console.log('addModalBg:', addModalBg);
+
     if (showAddModal) {
         showAddModal.addEventListener('click', function() {
+            console.log('Add module button clicked');
             addModalBg.classList.add('show');
         });
+    } else {
+        console.error('showAddModal button not found');
     }
 
     if (closeAddModal) {
@@ -1674,25 +2400,30 @@ function setupModalEventListeners() {
     // Form submission handlers
     setupFormHandlers();
     setupProgramChangeHandlers();
+    
+    // Program selector event listener
+    const programSelect = document.getElementById('programSelect');
+    if (programSelect) {
+        programSelect.addEventListener('change', function() {
+            const programId = this.value;
+            if (programId) {
+                window.location.href = `/admin/modules?program_id=${programId}`;
+            } else {
+                document.getElementById('modulesDisplayArea').innerHTML = `
+                    <div class="select-program-msg">
+                        <div class="empty-state">
+                            <i class="bi bi-arrow-up-circle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                            <h4 style="color: #6c757d; margin-bottom: 1rem;">Select a Program</h4>
+                            <p style="color: #6c757d;">Select a program from the dropdown above to view and manage its modules</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
 }
 
-// Program selector event listener
-document.getElementById('programSelect').addEventListener('change', function() {
-    const programId = this.value;
-    if (programId) {
-        window.location.href = `{{ route('admin.modules.index') }}?program_id=${programId}`;
-    } else {
-        document.getElementById('modulesDisplayArea').innerHTML = `
-            <div class="select-program-msg">
-                <div class="empty-state">
-                    <i class="bi bi-arrow-up-circle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                    <h4 style="color: #6c757d; margin-bottom: 1rem;">Select a Program</h4>
-                    <p style="color: #6c757d;">Select a program from the dropdown above to view and manage its modules</p>
-                </div>
-            </div>
-        `;
-    }
-});
+// Removed duplicate program selector event listener
 
 function loadFiltersForProgram(programId) {
     // Load batches for filtering
@@ -1739,6 +2470,32 @@ function updateModuleOrder(moduleIds) {
     });
 }
 
+// Update course order within a module
+function updateCourseOrder(moduleId, courseIds) {
+    fetch('/admin/courses/update-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ 
+            module_id: moduleId,
+            course_ids: courseIds 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Course order updated successfully');
+        } else {
+            console.error('Failed to update course order');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating course order:', error);
+    });
+}
+
 // Update content order
 function updateContentOrder(contentIds) {
     fetch('/admin/content/update-order', {
@@ -1759,6 +2516,91 @@ function updateContentOrder(contentIds) {
     })
     .catch(error => {
         console.error('Error updating content order:', error);
+    });
+}
+
+// Update course order within a module
+function updateCourseOrder(moduleId, courseIds) {
+    fetch('/admin/courses/update-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ 
+            module_id: moduleId,
+            course_ids: courseIds 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Course order updated successfully');
+        } else {
+            console.error('Failed to update course order');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating course order:', error);
+    });
+}
+
+// Move course to different module
+function moveCourseToModule(courseId, newModuleId) {
+    fetch('/admin/courses/move', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ 
+            course_id: courseId,
+            module_id: newModuleId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Course moved successfully');
+            showNotification('Course moved to new module successfully!', 'success');
+        } else {
+            console.error('Failed to move course');
+            showNotification('Failed to move course. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error moving course:', error);
+        showNotification('Error moving course. Please try again.', 'error');
+    });
+}
+
+// Move content to course
+function moveContentToCourse(contentId, courseId, moduleId) {
+    fetch('/admin/content/move', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ 
+            content_id: contentId,
+            course_id: courseId,
+            module_id: moduleId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Content moved to course successfully');
+            showNotification('Content moved successfully!', 'success');
+        } else {
+            console.error('Failed to move content to course');
+            showNotification('Failed to move content. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error moving content:', error);
+        showNotification('Error moving content. Please try again.', 'error');
     });
 }
 
@@ -1806,14 +2648,53 @@ function setupFormHandlers() {
         editContentType.addEventListener('change', function() {
             const linkSection = document.getElementById('edit_link_section');
             const fileSection = document.getElementById('edit_file_section');
+            const submissionSection = document.getElementById('edit_submission_section');
             
             if (this.value === 'link') {
                 linkSection.style.display = 'block';
                 fileSection.style.display = 'none';
+                submissionSection.style.display = 'none';
             } else {
                 linkSection.style.display = 'none';
                 fileSection.style.display = 'block';
+                submissionSection.style.display = this.value === 'assignment' ? 'block' : 'none';
             }
+        });
+    }
+
+    // Submission checkbox handler
+    const editEnableSubmission = document.getElementById('edit_enable_submission');
+    if (editEnableSubmission) {
+        editEnableSubmission.addEventListener('change', function() {
+            const submissionOptions = document.getElementById('edit_submission_options');
+            submissionOptions.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    // File types handler
+    const editAllowedFileTypes = document.getElementById('edit_allowed_file_types');
+    const editCustomFileTypes = document.getElementById('edit_custom_file_types');
+    if (editAllowedFileTypes && editCustomFileTypes) {
+        editAllowedFileTypes.addEventListener('change', function() {
+            editCustomFileTypes.style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+    }
+
+    // Add form submission checkbox handler
+    const enableSubmission = document.getElementById('enable_submission');
+    if (enableSubmission) {
+        enableSubmission.addEventListener('change', function() {
+            const submissionOptions = document.getElementById('submission_options');
+            submissionOptions.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    // Add form file types handler
+    const allowedFileTypes = document.getElementById('allowed_file_types');
+    const customFileTypes = document.getElementById('custom_file_types');
+    if (allowedFileTypes && customFileTypes) {
+        allowedFileTypes.addEventListener('change', function() {
+            customFileTypes.style.display = this.value === 'custom' ? 'block' : 'none';
         });
     }
 }
@@ -2023,74 +2904,179 @@ function submitCourseForm(form) {
 }
 
 function submitCourseContentForm(form) {
-    const formData = new FormData(form);
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Adding...';
+  const formData = new FormData(form);
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Adding…';
 
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Close modal and refresh page
-            document.getElementById('batchModalBg').classList.remove('show');
-            location.reload();
-        } else {
-            alert('Error: ' + (data.message || 'Failed to add content'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-    });
+  console.log('Submitting course content form…', form.action);
+  
+  // Debug form data
+  console.log('Form data entries:');
+  for (let [key, value] of formData.entries()) {
+    if (key === 'attachment' && value instanceof File) {
+      console.log(`${key}:`, {
+        name: value.name,
+        size: value.size,
+        type: value.type,
+        lastModified: value.lastModified
+      });
+    } else {
+      console.log(`${key}:`, value);
+    }
+  }
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+      'Accept': 'application/json'
+    }
+  })
+  .then(async response => {
+    const text = await response.text();
+    console.log('Raw server response:', text);
+
+    if (!response.ok) {
+      // server returned 500/422/etc with HTML or JSON
+      let errorMsg = text;
+      try {
+        // maybe it's JSON with a message?
+        const json = JSON.parse(text);
+        errorMsg = json.message || JSON.stringify(json.errors || json);
+      } catch {}
+      throw new Error(`Server error (${response.status}): ${errorMsg}`);
+    }
+
+    // at this point it's a 200–299, hopefully JSON
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error('Invalid JSON from server: ' + text);
+    }
+  })
+  .then(data => {
+    console.log('Parsed JSON:', data);
+    if (data.success) {
+      alert('Content added successfully!');
+      form.closest('.modal-bg').classList.remove('show');
+      location.reload();
+    } else {
+      alert('Error: ' + (data.message || 'Unknown error'));
+      console.error('Server-side errors:', data.errors || data);
+    }
+  })
+  .catch(err => {
+    console.error('Submit error:', err);
+    alert(err.message);
+  })
+  .finally(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  });
 }
+
 
 function submitEditContentForm(form) {
-    const formData = new FormData(form);
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Updating...';
+  const formData = new FormData(form);
+  
+  // Laravel method‑spoofing
+  if (!formData.has('_method')) {
+    formData.append('_method', 'PUT');
+  }
 
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Close modal and refresh page
-            document.getElementById('editContentModalBg').classList.remove('show');
-            location.reload();
-        } else {
-            alert('Error: ' + (data.message || 'Failed to update content'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
+  // Check if attachment field has a real file
+  const attachmentInput = form.querySelector('input[name="attachment"]');
+  const attachmentFile = attachmentInput ? attachmentInput.files[0] : null;
+  
+  // If there's no file selected, remove empty attachment field
+  if (!attachmentFile || attachmentFile.size === 0) {
+    formData.delete('attachment');
+    console.log('No file selected, removing empty attachment field');
+  } else {
+    console.log('File selected:', {
+      name: attachmentFile.name,
+      size: attachmentFile.size,
+      type: attachmentFile.type
     });
+  }
+
+  // Debug form data
+  console.log('Edit Content Form data entries:');
+  for (let [key, value] of formData.entries()) {
+    if (key === 'attachment' && value instanceof File) {
+      console.log(`${key}:`, {
+        name: value.name,
+        size: value.size,
+        type: value.type,
+        lastModified: value.lastModified
+      });
+    } else {
+      console.log(`${key}:`, value);
+    }
+  }
+
+  // Additional debugging
+  console.log('Form encoding type:', form.enctype);
+  console.log('Form method:', form.method);
+  console.log('Form action:', form.action);
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Updating…';
+
+  fetch(form.action, {
+    method: 'POST',
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+      'Accept': 'application/json'
+    },
+    body: formData
+  })
+  .then(async response => {
+    const data = await response.json();
+    console.log('Edit content server response:', data);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', [...response.headers.entries()]);
+
+    if (response.status === 422) {
+      // validation failed
+      console.error('Edit content validation failed:', data);
+      let messages = [];
+      if (data.errors && typeof data.errors === 'object') {
+        messages = Object.values(data.errors)
+          .flat()
+          .map(msg => `• ${msg}`);
+      } else if (data.message) {
+        messages = [`• ${data.message}`];
+      }
+      alert('Please fix the following errors:\n' + messages.join('\n'));
+    }
+    else if (response.ok) {
+      // success!
+      console.log('Edit content successful:', data);
+      document.getElementById('editContentModalBg').classList.remove('show');
+      location.reload();
+    }
+    else {
+      // some other server error
+      console.error('Server error:', data);
+      alert('An unexpected error occurred. Check the console for details.');
+    }
+  })
+  .catch(err => {
+    console.error('Fetch error:', err);
+    alert('Network error. Please try again.');
+  })
+  .finally(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  });
 }
+
 
 // Legacy function for compatibility
 function showModuleCourses(moduleId, moduleName) {
@@ -2240,6 +3226,49 @@ function showModuleCourses(moduleId, moduleName) {
 
                 <!-- Dynamic content fields will be added here -->
                 <div id="dynamicContentFields"></div>
+
+                <!-- Submission Settings -->
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="enable_submission" name="enable_submission" value="1">
+                        <label class="form-check-label" for="enable_submission">
+                            <i class="bi bi-upload"></i> Enable Student Submissions
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="row" id="submission_options" style="display: none;">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="allowed_file_types">Allowed File Types</label>
+                            <select id="allowed_file_types" name="allowed_file_types" class="form-select">
+                                <option value="">All file types</option>
+                                <option value="image">Images (jpg, png, gif)</option>
+                                <option value="document">Documents (pdf, doc, docx)</option>
+                                <option value="pdf">PDF only</option>
+                                <option value="image,document">Images & Documents</option>
+                                <option value="custom">Custom (specify below)</option>
+                            </select>
+                            <input type="text" id="custom_file_types" name="custom_file_types" class="form-control mt-2" 
+                                   placeholder="e.g., pdf,docx,jpg,png" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="max_file_size">Max File Size (MB)</label>
+                            <input type="number" id="max_file_size" name="max_file_size" class="form-control" 
+                                   min="1" max="100" value="10">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="submission_instructions">Submission Instructions</label>
+                            <textarea id="submission_instructions" name="submission_instructions" 
+                                    class="form-control" rows="2" 
+                                    placeholder="Instructions for students on what to submit..."></textarea>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label for="contentAttachment">Attachment</label>
@@ -2489,6 +3518,9 @@ function showModuleCourses(moduleId, moduleName) {
             @method('PUT')
             <div class="modal-body">
                 <input type="hidden" id="edit_content_id" name="content_id">
+                <input type="hidden" id="edit_module_id" name="module_id">
+                <input type="hidden" id="edit_course_id" name="course_id">
+                <input type="hidden" id="edit_lesson_id" name="lesson_id">
                 
                 <div class="form-group">
                     <label for="edit_content_title">Title <span class="text-danger">*</span></label>
@@ -2513,15 +3545,65 @@ function showModuleCourses(moduleId, moduleName) {
                     </select>
                 </div>
                 
+                <!-- Submission Settings -->
+                <div class="form-group" id="edit_submission_section">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="edit_enable_submission" name="enable_submission" value="1">
+                        <label class="form-check-label" for="edit_enable_submission">
+                            <i class="bi bi-upload"></i> Enable Student Submissions
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="row" id="edit_submission_options" style="display: none;">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="edit_allowed_file_types">Allowed File Types</label>
+                            <select id="edit_allowed_file_types" name="allowed_file_types" class="form-select">
+                                <option value="">All file types</option>
+                                <option value="image">Images (jpg, png, gif)</option>
+                                <option value="document">Documents (pdf, doc, docx)</option>
+                                <option value="pdf">PDF only</option>
+                            </select>
+                            <input type="text" id="edit_custom_file_types" name="custom_file_types" class="form-control mt-2" 
+                                   placeholder="e.g., pdf,docx,jpg,png" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="edit_max_file_size">Max File Size (MB)</label>
+                            <input type="number" id="edit_max_file_size" name="max_file_size" class="form-control" 
+                                   min="1" max="100" value="10">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="edit_submission_instructions">Submission Instructions</label>
+                            <textarea id="edit_submission_instructions" name="submission_instructions" 
+                                    class="form-control" rows="2" 
+                                    placeholder="Instructions for students on what to submit..."></textarea>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="edit_allow_multiple_submissions" 
+                                   name="allow_multiple_submissions" value="1">
+                            <label class="form-check-label" for="edit_allow_multiple_submissions">
+                                Allow multiple submissions (students can resubmit)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-group" id="edit_file_section">
                     <label for="edit_content_file">Replace File (optional)</label>
-                    <input type="file" id="edit_content_file" name="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
+                    <input type="file" id="edit_content_file" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
                     <small class="text-muted">Current file will be kept if no new file is selected.</small>
                 </div>
                 
                 <div class="form-group" id="edit_link_section" style="display: none;">
                     <label for="edit_content_link">External Link URL</label>
-                    <input type="url" id="edit_content_link" name="link" class="form-control" placeholder="https://...">
+                    <input type="url" id="edit_content_link" name="content_url" class="form-control" placeholder="https://...">
                 </div>
                 
                 <div class="form-group">

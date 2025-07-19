@@ -193,4 +193,44 @@ class AdminCourseController extends Controller
             'message' => 'Course order updated successfully!',
         ]);
     }
+
+    public function moveCourse(Request $request)
+    {
+        try {
+            $request->validate([
+                'course_id' => 'required|exists:courses,subject_id',
+                'module_id' => 'required|exists:modules,modules_id',
+            ]);
+
+            $course = Course::findOrFail($request->course_id);
+            $oldModuleId = $course->module_id;
+            
+            // Update the course's module assignment
+            $course->update([
+                'module_id' => $request->module_id,
+                'subject_order' => Course::where('module_id', $request->module_id)->max('subject_order') + 1
+            ]);
+
+            // Also move associated content items to the new module
+            ContentItem::where('course_id', $request->course_id)
+                      ->update(['module_id' => $request->module_id]);
+
+            Log::info('Course moved successfully', [
+                'course_id' => $request->course_id,
+                'old_module_id' => $oldModuleId,
+                'new_module_id' => $request->module_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Course moved successfully!',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error moving course: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error moving course: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

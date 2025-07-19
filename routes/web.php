@@ -387,6 +387,12 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     // Assignment submission routes
     Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
     
+    // Assignment submission routes
+    Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
+    Route::post('/student/submit-assignment', [StudentDashboardController::class, 'submitAssignmentFile'])->name('student.submit-assignment');
+    Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
+    Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
+    
     // Quiz routes
     Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
     Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
@@ -674,6 +680,16 @@ Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore']
 Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
      ->name('admin.modules.course-content-store');
 
+// Test upload route
+Route::get('/test-upload', function() {
+    return view('test_upload_form');
+});
+
+// Test endpoint
+Route::get('/test-endpoint', function() {
+    return response()->json(['message' => 'Test endpoint working', 'time' => now()]);
+});
+
 // Toggle archive status
 Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
      ->name('admin.modules.toggle-archive');
@@ -751,22 +767,32 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.courses.content');
     Route::post('/admin/courses/update-order', [AdminCourseController::class, 'updateOrder'])
          ->name('admin.courses.update-order');
+    Route::post('/admin/courses/move', [AdminCourseController::class, 'moveCourse'])
+         ->name('admin.courses.move');
 });
 
 // Admin Content Routes
 Route::middleware(['admin.auth'])->group(function () {
     Route::get('/admin/modules/{id}', [AdminModuleController::class, 'getModule'])
          ->name('admin.modules.get');
+    Route::get('/admin/modules/{moduleId}/content', [AdminModuleController::class, 'getModuleContent'])
+         ->name('admin.modules.content');
+    Route::get('/admin/modules/{moduleId}/courses/{courseId}/content', [AdminModuleController::class, 'getCourseContentItems'])
+         ->name('admin.modules.courses.content');
     Route::get('/admin/content/{id}', [AdminModuleController::class, 'getContent'])
          ->name('admin.content.get');
     Route::delete('/admin/content/{id}', [AdminModuleController::class, 'deleteContent'])
          ->name('admin.content.delete');
     Route::put('/admin/content/{id}', [AdminModuleController::class, 'updateContent'])
          ->name('admin.content.update');
+    Route::post('/admin/content/{id}', [AdminModuleController::class, 'updateContent'])
+         ->name('admin.content.update.post');
     Route::post('/admin/content/update-order', [AdminModuleController::class, 'updateContentOrder'])
          ->name('admin.content.update-order');
     Route::post('/admin/content/move', [AdminModuleController::class, 'moveContent'])
          ->name('admin.content.move');
+    Route::post('/admin/content/move-to-module', [AdminModuleController::class, 'moveContentToModule'])
+         ->name('admin.content.move-to-module');
 });
 
 // Admin Packages Routes

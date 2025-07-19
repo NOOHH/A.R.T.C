@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Program;
@@ -14,6 +15,7 @@ use App\Models\ContentItem;
 use App\Models\Deadline;
 use App\Models\Announcement;
 use App\Models\Package;
+use App\Models\StudentSubmission;
 
 class StudentDashboardController extends Controller
 {
@@ -320,42 +322,12 @@ class StudentDashboardController extends Controller
         // Continue with normal course view if paid and approved
         // ENHANCED ACCESS CONTROL: Only show modules for courses the student is actually enrolled in
         
-        // First, verify the student has access to this specific course/program
-        $hasValidEnrollment = false;
-        $enrollmentCourseIds = [];
-        
-        if ($enrollment) {
-            // Check if this is a course-specific enrollment through enrollment_courses table
-            $enrollmentCourses = \App\Models\EnrollmentCourse::where('enrollment_id', $enrollment->enrollment_id)
-                ->where('is_active', true)
-                ->pluck('course_id')
-                ->toArray();
-                
-            if (!empty($enrollmentCourses)) {
-                // Student has course-specific enrollments
-                $enrollmentCourseIds = $enrollmentCourses;
-                
-                // Check if the requested course is in their enrolled courses
-                $course = \App\Models\Course::where('subject_id', $courseId)
-                    ->orWhere('program_id', $courseId)
-                    ->first();
-                    
-                if ($course && in_array($course->subject_id, $enrollmentCourseIds)) {
-                    $hasValidEnrollment = true;
-                    Log::info('Student has valid course-specific enrollment', [
-                        'course_id' => $courseId,
-                        'enrolled_courses' => $enrollmentCourseIds
-                    ]);
-                }
-            } else {
-                // No course-specific enrollments, check program-level enrollment
-                if ($enrollment->program_id == $courseId) {
-                    $hasValidEnrollment = true;
-                    Log::info('Student has valid program-level enrollment', [
-                        'program_id' => $courseId
-                    ]);
-                }
-            }
+        // Verify student has valid enrollment in the program
+        $hasValidEnrollment = $enrollment && $enrollment->program_id == $courseId;
+        if ($hasValidEnrollment) {
+            Log::info('Student has valid program-level enrollment', [
+                'program_id' => $courseId
+            ]);
         }
         
         // If student doesn't have valid enrollment, redirect with error
@@ -364,68 +336,36 @@ class StudentDashboardController extends Controller
                 'user_id' => session('user_id'),
                 'requested_course_id' => $courseId,
                 'enrollment_id' => $enrollment ? $enrollment->enrollment_id : null,
-                'enrolled_courses' => $enrollmentCourseIds
             ]);
             
             return redirect()->route('student.dashboard')
                 ->with('error', 'You do not have access to this course. Please contact your administrator if you believe this is an error.');
         }
         
-        // Get modules based on enrollment type and access control
-        $modules = collect();
-        
-        if (!empty($enrollmentCourseIds)) {
-            // Course-specific enrollment: Only show modules for enrolled courses
-            $courses = \App\Models\Course::whereIn('subject_id', $enrollmentCourseIds)->get();
-            
-            foreach ($courses as $course) {
-                $courseModules = Module::where('program_id', $course->program_id)
-                    ->orWhere('course_id', $course->subject_id)
-                    ->where('is_archived', false)
-                    ->orderBy('order', 'asc')
-                    ->orderBy('created_at', 'asc')
-                    ->get();
-                    
-                $modules = $modules->merge($courseModules);
-            }
-            
-            // Remove duplicates
-            $modules = $modules->unique('modules_id');
-            
-            Log::info('Loaded course-specific modules', [
-                'enrolled_courses' => $enrollmentCourseIds,
-                'module_count' => $modules->count()
-            ]);
-            
-        } else {
-            // Program-level enrollment: Apply existing modular filtering logic
-            $modules = Module::where('program_id', $courseId)
-                            ->where('is_archived', false)
-                            ->orderBy('order', 'asc')
-                            ->orderBy('created_at', 'asc')
-                            ->get();
-            
-            // Filter modules for modular enrollments based on selected modules
-            if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
-                // Get selected modules from registration
-                $registration = \App\Models\Registration::where('user_id', session('user_id'))
-                    ->where('program_id', $courseId)
-                    ->where('enrollment_type', 'Modular')
-                    ->first();
-                    
-                if ($registration && $registration->selected_modules) {
-                    $selectedModuleIds = json_decode($registration->selected_modules, true);
-                    if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
-                        // Filter modules to only show selected ones
-                        $modules = $modules->filter(function($module) use ($selectedModuleIds) {
-                            return in_array($module->modules_id, $selectedModuleIds);
-                        });
-                        Log::info('Filtered modules for modular enrollment', [
-                            'original_count' => Module::where('program_id', $courseId)->count(),
-                            'filtered_count' => $modules->count(),
-                            'selected_modules' => $selectedModuleIds
-                        ]);
-                    }
+        // Retrieve modules based on program-level enrollment with proper ordering
+        $modules = Module::where('program_id', $courseId)
+                         ->where('is_archived', false)
+                         ->orderBy('module_order', 'asc')
+                         ->orderBy('modules_id', 'asc')
+                         ->get();
+
+        // Filter modules for modular enrollments based on selected modules
+        if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
+            $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                ->where('program_id', $courseId)
+                ->where('enrollment_type', 'Modular')
+                ->first();
+            if ($registration && $registration->selected_modules) {
+                $selectedModuleIds = json_decode($registration->selected_modules, true);
+                if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
+                    $modules = $modules->filter(function($module) use ($selectedModuleIds) {
+                        return in_array($module->modules_id, $selectedModuleIds);
+                    });
+                    Log::info('Filtered modules for modular enrollment', [
+                        'original_count' => Module::where('program_id', $courseId)->count(),
+                        'filtered_count' => $modules->count(),
+                        'selected_modules' => $selectedModuleIds
+                    ]);
                 }
             }
         }
@@ -440,7 +380,9 @@ class StudentDashboardController extends Controller
         }
         
         // Convert collection to array to prevent duplicates and maintain ordering
-        $modules = $modules->values()->unique('modules_id')->sortBy(['order', 'created_at']);
+        $modules = $modules->values()->unique('modules_id')->sortBy(function($module) {
+            return [$module->order, $module->created_at];
+        });
         
         // Format modules for the view
         $formattedModules = [];
@@ -1324,6 +1266,250 @@ class StudentDashboardController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while loading course content.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get submission information for a content item
+     */
+    public function getSubmissionInfo($contentId)
+    {
+        try {
+            $content = ContentItem::findOrFail($contentId);
+            
+            return response()->json([
+                'success' => true,
+                'allowed_file_types' => $content->allowed_file_types,
+                'max_file_size' => $content->max_file_size / 1024, // Convert KB to MB
+                'submission_instructions' => $content->submission_instructions,
+                'allow_multiple_submissions' => $content->allow_multiple_submissions
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content not found'
+            ], 404);
+        }
+    }
+
+    /**
+     * Submit assignment file
+     */
+    public function submitAssignmentFile(Request $request)
+    {
+        try {
+            $student = Student::where('user_id', session('user_id'))->firstOrFail();
+            $content = ContentItem::findOrFail($request->content_id);
+            
+            // Validate the request
+            $request->validate([
+                'content_id' => 'required|exists:content_items,id',
+                'file' => 'required|file|max:' . ($content->max_file_size ?: 10240), // Default 10MB in KB
+                'notes' => 'nullable|string|max:1000'
+            ]);
+
+            // Check if multiple submissions are allowed
+            if (!$content->allow_multiple_submissions) {
+                $existingSubmission = \App\Models\StudentSubmission::where('student_id', $student->student_id)
+                    ->where('content_id', $content->id)
+                    ->first();
+                
+                if ($existingSubmission) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You have already submitted this assignment. Multiple submissions are not allowed.'
+                    ], 400);
+                }
+            }
+
+            // Validate file type if restrictions are set
+            if ($content->allowed_file_types) {
+                $allowedTypes = $this->getAllowedMimeTypes($content->allowed_file_types);
+                $fileMimeType = $request->file('file')->getMimeType();
+                $fileExtension = strtolower($request->file('file')->getClientOriginalExtension());
+                
+                if (!in_array($fileMimeType, $allowedTypes) && !$this->isAllowedExtension($fileExtension, $content->allowed_file_types)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File type not allowed. Please check the allowed file types.'
+                    ], 400);
+                }
+            }
+
+            // Store the file
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'submission_' . $student->student_id . '_' . $content->id . '_' . time() . '.' . $extension;
+            $filePath = $file->storeAs('submissions', $filename, 'public');
+
+            // Create submission record
+            $submission = \App\Models\StudentSubmission::create([
+                'student_id' => $student->student_id,
+                'content_id' => $content->id,
+                'file_path' => $filePath,
+                'original_filename' => $originalName,
+                'file_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+                'submission_notes' => $request->notes,
+                'status' => 'submitted',
+                'submitted_at' => now()
+            ]);
+
+            Log::info('Assignment submitted successfully', [
+                'student_id' => $student->student_id,
+                'content_id' => $content->id,
+                'submission_id' => $submission->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assignment submitted successfully!',
+                'submission_id' => $submission->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Assignment submission error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while submitting your assignment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get allowed MIME types based on file type restriction
+     */
+    private function getAllowedMimeTypes($allowedTypes)
+    {
+        $mimeTypes = [];
+        $types = explode(',', $allowedTypes);
+        
+        foreach ($types as $type) {
+            switch (trim($type)) {
+                case 'image':
+                    $mimeTypes = array_merge($mimeTypes, [
+                        'image/jpeg', 'image/png', 'image/gif', 'image/webp'
+                    ]);
+                    break;
+                case 'document':
+                    $mimeTypes = array_merge($mimeTypes, [
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-powerpoint',
+                        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+                    ]);
+                    break;
+                case 'pdf':
+                    $mimeTypes[] = 'application/pdf';
+                    break;
+            }
+        }
+        
+        return $mimeTypes;
+    }
+
+    /**
+     * Check if file extension is allowed
+     */
+    private function isAllowedExtension($extension, $allowedTypes)
+    {
+        $allowedExtensions = [];
+        $types = explode(',', $allowedTypes);
+        
+        foreach ($types as $type) {
+            switch (trim($type)) {
+                case 'image':
+                    $allowedExtensions = array_merge($allowedExtensions, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                    break;
+                case 'document':
+                    $allowedExtensions = array_merge($allowedExtensions, ['pdf', 'doc', 'docx', 'ppt', 'pptx']);
+                    break;
+                case 'pdf':
+                    $allowedExtensions[] = 'pdf';
+                    break;
+                default:
+                    // Custom extensions
+                    $allowedExtensions[] = trim($type);
+                    break;
+            }
+        }
+        
+        return in_array($extension, $allowedExtensions);
+    }
+
+    /**
+     * Get content details for content viewer
+     */
+    public function getContent($contentId)
+    {
+        try {
+            // Log the request for debugging
+            \Log::info('StudentDashboardController::getContent called', ['contentId' => $contentId]);
+            
+            // Find the content item
+            $content = DB::table('content_items')
+                ->where('id', $contentId)
+                ->first();
+
+            \Log::info('Content query result', ['content' => $content]);
+
+            if (!$content) {
+                \Log::warning('Content not found', ['contentId' => $contentId]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Content not found'
+                ], 404);
+            }
+
+            // Parse content data if it exists
+            $contentData = null;
+            if ($content->content_data) {
+                try {
+                    $contentData = json_decode($content->content_data, true);
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to parse content_data JSON', ['error' => $e->getMessage()]);
+                    $contentData = null;
+                }
+            }
+
+            $response = [
+                'success' => true,
+                'content' => [
+                    'id' => $content->id,
+                    'content_title' => $content->content_title ?? '',
+                    'content_description' => $content->content_description ?? '',
+                    'content_type' => $content->content_type ?? 'lesson',
+                    'content_text' => $content->content_text ?? '',
+                    'content_url' => $content->content_url ?? '',
+                    'attachment_path' => $content->attachment_path ?? '',
+                    'due_date' => $content->due_date ?? null,
+                    'content_data' => $contentData,
+                    'enable_submission' => $content->enable_submission ?? false,
+                    'submission_instructions' => $content->submission_instructions ?? '',
+                    'allowed_file_types' => $content->allowed_file_types ?? '',
+                    'max_file_size' => $content->max_file_size ?? 10,
+                    'is_required' => $content->is_required ?? false
+                ]
+            ];
+
+            \Log::info('Successful content response', ['response' => $response]);
+            
+            return response()->json($response);
+
+        } catch (\Exception $e) {
+            \Log::error('Error getting content details', [
+                'contentId' => $contentId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading content: ' . $e->getMessage()
             ], 500);
         }
     }

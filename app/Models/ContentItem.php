@@ -23,14 +23,21 @@ class ContentItem extends Model
         'course_id',
         'content_type',
         'content_data',
+        'content_url',
         'attachment_path',
         'max_points',
         'due_date',
         'time_limit',
         'content_order',
         'order',
+        'sort_order',
         'is_required',
         'is_active',
+        'enable_submission',
+        'allowed_file_types',
+        'max_file_size',
+        'submission_instructions',
+        'allow_multiple_submissions',
     ];
 
     protected $casts = [
@@ -39,8 +46,12 @@ class ContentItem extends Model
         'due_date' => 'datetime',
         'time_limit' => 'integer',
         'content_order' => 'integer',
+        'sort_order' => 'integer',
+        'max_file_size' => 'integer',
         'is_required' => 'boolean',
         'is_active' => 'boolean',
+        'enable_submission' => 'boolean',
+        'allow_multiple_submissions' => 'boolean',
     ];
 
     // Relationships

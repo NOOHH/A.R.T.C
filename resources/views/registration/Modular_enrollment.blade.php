@@ -13,522 +13,12 @@
 @push('styles')
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
     <meta name="csrf-token" content="{{ csrf_token() }}">
+     <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_enrollment.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        /* Multi-step form styles */
-        .form-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem 0;
-        }
-        
-        .form-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            position: relative;
-        }
-        
-        /* Stepper styles */
-        .stepper-progress {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-bottom: 1px solid #e9ecef;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .stepper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        }
-        
-        .stepper .step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 2;
-            background: white;
-            padding: 0.5rem;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            transition: all 0.3s ease;
-        }
-        
-        /* Step Content Container - Bootstrap 5 Compatible */
-        .step-content {
-            display: none;
-            padding: 2rem;
-            min-height: 600px;
-            opacity: 0;
-            transform: translateX(50px);
-            transition: all 0.4s ease;
-        }
-        
-        .step-content.active {
-            display: block;
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        /* Bootstrap Grid Enhancements */
-        .row {
-            margin-left: -0.75rem;
-            margin-right: -0.75rem;
-        }
-        
-        .col, .col-md-6, .col-lg-4, .col-xl-3 {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-        
-        /* Card Layout Consistency */
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            height: 100%;
-            overflow: hidden;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .selection-card {
-            cursor: pointer;
-            border: 2px solid transparent;
-            position: relative;
-        }
-        
-        .selection-card.selected {
-            border-color: #6a82fb;
-            background: linear-gradient(135deg, #6a82fb 0%, #fc466b 100%);
-            color: white;
-        }
-        
-        .selection-card.selected::after {
-            content: '✓';
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 30px;
-            height: 30px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6a82fb;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-            position: relative;
-        }
-        
-        .stepper .step.active {
-            background: #6a82fb;
-            color: white;
-        }
-        
-        .stepper .step.completed {
-            background: #28a745;
-            color: white;
-        }
-        
-        .stepper .step .circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .stepper .step .label {
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        .stepper .bar {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: #e9ecef;
-            transform: translateY(-50%);
-            z-index: 1;
-        }
-        
-        .stepper .bar .progress {
-            height: 100%;
-            background: #6a82fb;
-            transition: width 0.3s ease;
-        }
-        
-        /* Step content styles */
-        .step-content {
-            display: none;
-            padding: 3rem;
-            min-height: 500px;
-        }
-        
-        .step-content.active {
-            display: block;
-        }
-        
-        .step-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        
-        .step-header h2 {
-            color: #333;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-        
-        .step-header p {
-            color: #666;
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        /* Card grid styles */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        
-        .selection-card {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 15px;
-            padding: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .selection-card:hover {
-            border-color: #6a82fb;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(106, 130, 251, 0.2);
-        }
-        
-        .selection-card.selected {
-            border-color: #6a82fb;
-            background: linear-gradient(135deg, #6a82fb 0%, #8b5cf6 100%);
-            color: white;
-        }
-        
-        .selection-card.selected::before {
-            content: '✓';
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: white;
-            color: #6a82fb;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .card-header {
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        
-        .card-price {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #6a82fb;
-        }
-        
-        .selection-card.selected .card-price {
-            color: white;
-        }
-        
-        .card-description {
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-        
-        .card-features {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .card-features li {
-            padding: 0.5rem 0;
-            position: relative;
-            padding-left: 1.5rem;
-        }
-        
-        .card-features li::before {
-            content: '✓';
-            position: absolute;
-            left: 0;
-            color: #28a745;
-            font-weight: bold;
-        }
-        
-        .selection-card.selected .card-features li::before {
-            color: white;
-        }
-        
-        /* Navigation buttons */
-        .navigation-buttons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 2rem;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .btn-nav {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary {
-            background: #6a82fb;
-            color: white;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            background: #5a6fd8;
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        
-        /* Loading states */
-        .loading-spinner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            color: #6a82fb;
-        }
-        
-        .alert {
-            padding: 1rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-        }
-        
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        /* Hidden inputs */
-        .hidden-inputs {
-            display: none;
-        }
 
-        .package-card-pro {
-            border: 2px solid #e9ecef;
-            border-radius: 18px;
-            box-shadow: 0 4px 24px rgba(106,130,251,0.08);
-            transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
-            cursor: pointer;
-            min-width: 270px;
-            max-width: 320px;
-            background: #fff;
-            position: relative;
-        }
-        .package-card-pro:hover, .package-card-pro.selected {
-            border-color: #6a82fb;
-            box-shadow: 0 8px 32px rgba(106,130,251,0.18);
-            transform: translateY(-4px) scale(1.03);
-        }
-        .package-card-pro.selected::after {
-            content: '';
-            position: absolute;
-            top: 12px; right: 12px;
-            width: 22px; height: 22px;
-            background: #6a82fb;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 2px #6a82fb;
-        }
-        .next-btn-pro {
-            min-width: 320px;
-            font-size: 1.15rem;
-            font-weight: 600;
-            box-shadow: 0 2px 12px rgba(106,130,251,0.10);
-            border-radius: 12px;
-            letter-spacing: 0.03em;
-        }
-
-        /* Account Step Card */
-        .account-step-card {
-            padding: 3rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        /* Form Grid for Step 5 */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Email and Referral Input Groups */
-        .email-input-group, .referral-input-group {
-            display: flex;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: border-color 0.3s ease;
-        }
-
-        .email-input-group:focus-within, .referral-input-group:focus-within {
-            border-color: #6a82fb;
-        }
-
-        .email-input-group input, .referral-input-group input {
-            flex: 1;
-            border: none;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-            outline: none;
-            background: transparent;
-        }
-
-        .btn-otp, .btn-validate-referral {
-            background: #6a82fb;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .btn-otp:hover, .btn-validate-referral:hover {
-            background: #5a6fd8;
-        }
-
-        .btn-otp:disabled, .btn-validate-referral:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        /* Error and Success Messages */
-        .error-message {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        .success-message {
-            color: #28a745;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        /* Login Prompt */
-        .login-prompt {
-            text-align: center;
-            margin: 2rem 0;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .login-prompt a {
-            color: #6a82fb;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .login-prompt a:hover {
-            text-decoration: underline;
-        }
-
-        /* Form Navigation */
-        .form-navigation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 2rem;
-            border-top: 1px solid #e9ecef;
-        }
-
-        @media (max-width: 600px) {
-            .package-card-pro { min-width: 90vw; max-width: 98vw; }
-            .next-btn-pro { min-width: 90vw; }
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .account-step-card {
-                padding: 2rem 1rem;
-            }
-        }
     </style>
 @endpush
 
@@ -583,34 +73,67 @@
             <input type="hidden" id="learning_mode" name="learning_mode" value="">
         </div>
 
-        <!-- Step 1: Package Selection (Bootstrap Cards) -->
+        <!-- Step 1: Package Selection (Bootstrap Carousel) -->
         <div class="step-content active" id="content-1">
             <div class="step-header mb-4">
                 <h2 class="fw-bold text-center" style="font-size:2.5rem;">Choose Your Package</h2>
                 <p class="text-center text-muted" style="font-size:1.15rem;">Select a learning package that suits your needs</p>
             </div>
-            <div class="d-flex justify-content-center gap-4 flex-wrap mb-5">
-                @foreach($packages as $package)
-                    <div class="package-card-pro card p-4 mb-3"
-                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->module_count ?? $package->modules_count ?? 3 }}, '{{ $package->selection_mode ?? 'modules' }}', {{ $package->course_count ?? 0 }})"
-                         data-package-id="{{ $package->package_id }}">
-                        <div class="card-body text-center">
-                            <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
-                            <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
-                            <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
-                            <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
-                                @if($package->selection_mode === 'courses')
-                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->course_count ?? 'All' }} courses included</li>
-                                @else
-                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->module_count ?? $package->modules_count ?? 3 }} modules included</li>
-                                @endif
-                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
-                                <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
-                                <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
-                            </ul>
+            
+            <!-- Bootstrap Carousel for Packages -->
+            <div id="packageCarousel" class="carousel slide package-carousel-container" data-bs-ride="false">
+                <div class="carousel-inner">
+                    @php $chunkSize = 2; @endphp
+                    @foreach($packages->chunk($chunkSize) as $index => $packageChunk)
+                        <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                            <div class="d-flex justify-content-center gap-4 flex-wrap">
+                                @foreach($packageChunk as $package)
+                                    <div class="package-card-pro card p-4 mb-3"
+                                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->module_count ?? $package->modules_count ?? 3 }}, '{{ $package->selection_mode ?? 'modules' }}', {{ $package->course_count ?? 0 }})"
+                                         data-package-id="{{ $package->package_id }}">
+                                        <div class="card-body text-center">
+                                            <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
+                                            <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
+                                            <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
+                                            <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
+                                                @if($package->selection_mode === 'courses')
+                                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->course_count ?? 'All' }} courses included</li>
+                                                @else
+                                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->module_count ?? $package->modules_count ?? 3 }} modules included</li>
+                                                @endif
+                                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
+                                                <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
+                                                <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
+                    @endforeach
+                </div>
+                
+                <!-- Carousel Controls -->
+                @if($packages->count() > $chunkSize)
+                    <button class="carousel-control-prev" type="button" data-bs-target="#packageCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#packageCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                @endif
+                
+                <!-- Carousel Indicators -->
+                @if($packages->chunk($chunkSize)->count() > 1)
+                    <div class="carousel-indicators">
+                        @foreach($packages->chunk($chunkSize) as $index => $chunk)
+                            <button type="button" data-bs-target="#packageCarousel" data-bs-slide-to="{{ $index }}" 
+                                    class="{{ $index == 0 ? 'active' : '' }}" aria-label="Slide {{ $index + 1 }}"></button>
+                        @endforeach
                     </div>
-                @endforeach
+                @endif
             </div>
             
             <!-- Immediate Script for Package Selection -->
@@ -668,14 +191,37 @@
             </div>
         </div>
 
-        <!-- Step 2: Program Selection (unchanged, but use Bootstrap grid) -->
+        <!-- Step 2: Program Selection (Bootstrap Carousel) -->
         <div class="step-content" id="content-2">
             <div class="step-header">
                 <h2>Select Your Program</h2>
                 <p>Choose the program that aligns with your career goals</p>
             </div>
-            <div class="row" id="programsGrid">
-                <!-- Programs will be loaded here -->
+            
+            <!-- Bootstrap Carousel for Programs -->
+            <div id="programCarousel" class="carousel slide program-carousel-container" data-bs-ride="false">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="row" id="programsGrid">
+                            <!-- Programs will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Carousel Controls -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#programCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#programCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                
+                <!-- Carousel Indicators -->
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                </div>
             </div>
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
@@ -687,14 +233,37 @@
             </div>
         </div>
 
-        <!-- Step 3: Module Selection (unchanged, but use Bootstrap grid) -->
+        <!-- Step 3: Module Selection (Bootstrap Carousel) -->
         <div class="step-content" id="content-3">
             <div class="step-header">
                 <h2>Select Your Modules</h2>
                 <p>Choose the modules you want to enroll in (up to <span id="moduleLimit">3</span> modules)</p>
             </div>
-            <div class="row" id="modulesGrid">
-                <!-- Modules will be loaded here -->
+            
+            <!-- Bootstrap Carousel for Modules -->
+            <div id="moduleCarousel" class="carousel slide module-carousel-container" data-bs-ride="false">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="row" id="modulesGrid">
+                            <!-- Modules will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Carousel Controls -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#moduleCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#moduleCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                
+                <!-- Carousel Indicators -->
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#moduleCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                </div>
             </div>
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
@@ -1214,6 +783,42 @@
     function updateStepper() {
         // Update step indicators
         for (let i = 1; i <= totalSteps; i++) {
+            const stepElement = document.getElementById(`step-${i}`);
+            const contentElement = document.getElementById(`content-${i}`);
+            
+            if (stepElement) {
+                if (i < currentStep) {
+                    stepElement.classList.add('completed');
+                    stepElement.classList.remove('active');
+                } else if (i === currentStep) {
+                    stepElement.classList.add('active');
+                    stepElement.classList.remove('completed');
+                } else {
+                    stepElement.classList.remove('active', 'completed');
+                }
+            }
+
+            if (contentElement) {
+                if (i === currentStep) {
+                    contentElement.classList.add('active');
+                } else {
+                    contentElement.classList.remove('active');
+                }
+            }
+        }
+        
+        // Update progress bar
+        const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) {
+            progressBar.style.width = progress + '%';
+        }
+    }
+    
+    // Update stepper UI
+    function updateStepper() {
+        // Update step indicators
+        for (let i = 1; i <= totalSteps; i++) {
             const step = document.getElementById(`step-${i}`);
             step.classList.remove('active', 'completed');
             
@@ -1311,31 +916,74 @@
     
     // Display programs in the grid
     function displayPrograms(programs) {
-        const grid = document.getElementById('programsGrid');
+        const carousel = document.getElementById('programCarousel');
+        const carouselInner = carousel.querySelector('.carousel-inner');
+        const indicators = carousel.querySelector('.carousel-indicators');
         
-        let programsHtml = '';
-        programs.forEach(program => {
-            const isSelected = program.program_id == selectedProgramId;
-            programsHtml += `
-                <div class="col-md-6 mb-4">
-                    <div class="card selection-card h-100 ${isSelected ? 'selected' : ''}" 
-                         onclick="selectProgram(${program.program_id})">
-                        <div class="card-body">
-                            <h4 class="card-title">${program.program_name}</h4>
-                            <p class="card-text">${program.program_description || 'No description available.'}</p>
-                            <ul class="list-unstyled mt-3 mb-0">
-                                <li><i class="bi bi-check2 text-success"></i> Professional certification</li>
-                                <li><i class="bi bi-check2 text-success"></i> Industry-relevant skills</li>
-                                <li><i class="bi bi-check2 text-success"></i> Expert instructors</li>
-                                <li><i class="bi bi-check2 text-success"></i> Career advancement</li>
-                            </ul>
+        // Clear existing content
+        carouselInner.innerHTML = '';
+        indicators.innerHTML = '';
+        
+        // Group programs into slides (2 programs per slide)
+        const programsPerSlide = 2;
+        const slides = [];
+        for (let i = 0; i < programs.length; i += programsPerSlide) {
+            slides.push(programs.slice(i, i + programsPerSlide));
+        }
+        
+        // Create carousel slides
+        slides.forEach((slidePrograms, slideIndex) => {
+            const isActive = slideIndex === 0 ? 'active' : '';
+            
+            let programsHtml = '';
+            slidePrograms.forEach(program => {
+                const isSelected = program.program_id == selectedProgramId;
+                programsHtml += `
+                    <div class="col-md-6 mb-4">
+                        <div class="card selection-card h-100 ${isSelected ? 'selected' : ''}" 
+                             onclick="selectProgram(${program.program_id})">
+                            <div class="card-body">
+                                <h4 class="card-title">${program.program_name}</h4>
+                                <p class="card-text">${program.program_description || 'No description available.'}</p>
+                                <ul class="list-unstyled mt-3 mb-0">
+                                    <li><i class="bi bi-check2 text-success"></i> Professional certification</li>
+                                    <li><i class="bi bi-check2 text-success"></i> Industry-relevant skills</li>
+                                    <li><i class="bi bi-check2 text-success"></i> Expert instructors</li>
+                                    <li><i class="bi bi-check2 text-success"></i> Career advancement</li>
+                                </ul>
+                            </div>
                         </div>
+                    </div>
+                `;
+            });
+            
+            const slideHtml = `
+                <div class="carousel-item ${isActive}">
+                    <div class="row" id="programsGrid${slideIndex === 0 ? '' : slideIndex}">
+                        ${programsHtml}
                     </div>
                 </div>
             `;
+            
+            carouselInner.innerHTML += slideHtml;
+            
+            // Create indicator
+            const indicator = `
+                <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${slideIndex}" 
+                        class="${isActive}" ${isActive ? 'aria-current="true"' : ''} aria-label="Slide ${slideIndex + 1}"></button>
+            `;
+            indicators.innerHTML += indicator;
         });
         
-        grid.innerHTML = programsHtml;
+        // If only one slide, hide carousel controls and indicators
+        const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+        if (slides.length <= 1) {
+            controls.forEach(control => control.style.display = 'none');
+            indicators.style.display = 'none';
+        } else {
+            controls.forEach(control => control.style.display = 'block');
+            indicators.style.display = 'flex';
+        }
         
         // If program is pre-selected from package, enable next button
         if (selectedProgramId) {
@@ -1370,49 +1018,93 @@
     
     // Display modules
     function displayModules(modules) {
-        const grid = document.getElementById('modulesGrid');
+        const carousel = document.getElementById('moduleCarousel');
+        const carouselInner = carousel.querySelector('.carousel-inner');
+        const indicators = carousel.querySelector('.carousel-indicators');
         
         if (!modules || modules.length === 0) {
-            grid.innerHTML = '<div class="alert alert-info">No modules available for this program.</div>';
+            carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No modules available for this program.</div></div>';
+            indicators.innerHTML = '';
             return;
         }
         
-        let modulesHtml = '';
-        modules.forEach(module => {
-            const moduleName = module.name || module.module_name || 'Unnamed Module';
-            const moduleDesc = module.description || module.module_description || 'No description available';
+        // Clear existing content
+        carouselInner.innerHTML = '';
+        indicators.innerHTML = '';
+        
+        // Group modules into slides (2 modules per slide)
+        const modulesPerSlide = 2;
+        const slides = [];
+        for (let i = 0; i < modules.length; i += modulesPerSlide) {
+            slides.push(modules.slice(i, i + modulesPerSlide));
+        }
+        
+        // Create carousel slides
+        slides.forEach((slideModules, slideIndex) => {
+            const isActive = slideIndex === 0 ? 'active' : '';
             
-            modulesHtml += `
-                <div class="col-md-6 mb-4">
-                    <div class="module-card" data-module-id="${module.id}">
-                        <div class="card module-card h-100">
-                            <div class="card-body">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.id}" 
-                                           value="${module.id}" onchange="handleModuleSelection(this)">
-                                    <label class="form-check-label module-title" for="module_${module.id}">${moduleName}</label>
-                                </div>
-                                <p class="card-text module-description">${moduleDesc}</p>
-                                <div class="module-meta">
-                                    <span class="module-duration">
-                                        <i class="bi bi-clock"></i> ${module.duration || 'Flexible'}
-                                    </span>
-                                    <span class="module-level">${module.level || 'All Levels'}</span>
-                                </div>
-                                <div class="module-actions">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                            onclick="showCoursesModal(${module.id}, '${moduleName}')">
-                                        <i class="bi bi-list"></i> View Courses
-                                    </button>
+            let modulesHtml = '';
+            slideModules.forEach(module => {
+                const moduleName = module.name || module.module_name || 'Unnamed Module';
+                const moduleDesc = module.description || module.module_description || 'No description available';
+                
+                modulesHtml += `
+                    <div class="col-md-6 mb-4">
+                        <div class="module-card" data-module-id="${module.id}">
+                            <div class="card module-card h-100">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.id}" 
+                                               value="${module.id}" onchange="handleModuleSelection(this)">
+                                        <label class="form-check-label module-title" for="module_${module.id}">${moduleName}</label>
+                                    </div>
+                                    <p class="card-text module-description">${moduleDesc}</p>
+                                    <div class="module-meta">
+                                        <span class="module-duration">
+                                            <i class="bi bi-clock"></i> ${module.duration || 'Flexible'}
+                                        </span>
+                                        <span class="module-level">${module.level || 'All Levels'}</span>
+                                    </div>
+                                    <div class="module-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                onclick="showCoursesModal(${module.id}, '${moduleName}')">
+                                            <i class="bi bi-list"></i> View Courses
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                `;
+            });
+            
+            const slideHtml = `
+                <div class="carousel-item ${isActive}">
+                    <div class="row" id="modulesGrid${slideIndex === 0 ? '' : slideIndex}">
+                        ${modulesHtml}
+                    </div>
                 </div>
             `;
+            
+            carouselInner.innerHTML += slideHtml;
+            
+            // Create indicator
+            const indicator = `
+                <button type="button" data-bs-target="#moduleCarousel" data-bs-slide-to="${slideIndex}" 
+                        class="${isActive}" ${isActive ? 'aria-current="true"' : ''} aria-label="Slide ${slideIndex + 1}"></button>
+            `;
+            indicators.innerHTML += indicator;
         });
         
-        grid.innerHTML = modulesHtml;
+        // If only one slide, hide carousel controls and indicators
+        const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
+        if (slides.length <= 1) {
+            controls.forEach(control => control.style.display = 'none');
+            indicators.style.display = 'none';
+        } else {
+            controls.forEach(control => control.style.display = 'block');
+            indicators.style.display = 'flex';
+        }
     }
     
     // Handle module selection

@@ -594,7 +594,7 @@ class StudentController extends Controller
 
             // Update session
             session(['user_email' => $request->new_email]);
-
+            
             // Clear OTP data
             session()->forget(['email_change_otp', 'email_change_new_email', 'email_change_otp_expires']);
 
@@ -603,6 +603,31 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error verifying OTP']);
         }
+    }
+
+    public function enrollmentPage(Request $request)
+    {
+        // Determine if user is logged in for blade template
+        $isUserLoggedIn = session('user_id') || (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
+
+        // Initialize required variables for the view
+        $enrollmentType = $request->get('type', 'full');
+        $programs = \App\Models\Program::where('is_active', true)->get();
+        $packages = \App\Models\Package::where('is_active', true)->get();
+        $formRequirements = \App\Models\FormRequirement::active()->get();
+        $educationLevels = ['High School', 'College', 'Graduate', 'Postgraduate'];
+        
+        // Get student data if user is logged in
+        $student = null;
+        if ($isUserLoggedIn) {
+            $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        }
+        
+        // Create default objects for plans
+        $fullPlan = (object) ['name' => 'Full Program Plan', 'description' => 'Complete program enrollment'];
+        $modularPlan = (object) ['name' => 'Modular Plan', 'description' => 'Subject-by-subject enrollment'];
+
+        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan', 'educationLevels', 'isUserLoggedIn'));
     }
 
     private function validateRecaptcha($response)
