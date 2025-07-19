@@ -135,7 +135,7 @@
                             <div class="student-name">{{ $registration->firstname }} {{ $registration->lastname }}</div>
                             <div class="student-date">{{ $registration->created_at ? $registration->created_at->format('M d, Y') : 'Jul 02, 2025' }}</div>
                         </div>
-                        <button class="review-btn view-btn" data-id="{{ $registration->id }}">Review</button>
+                        <a href="{{ route('admin.student.registration.pending') }}" class="review-btn view-btn">Review</a>
                     </div>
                     @endforeach
                     @if($registrations->count() > 3)

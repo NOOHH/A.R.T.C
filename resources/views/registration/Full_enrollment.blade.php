@@ -269,7 +269,11 @@
                 currentStep = 3;
                 updateStepper(currentStep);
                 setTimeout(() => {
-                    fillLoggedInUserData();
+                    // Ensure the form fields exist before filling data
+                    const firstnameField = document.querySelector('input[name="firstname"]');
+                    if (firstnameField) {
+                        fillLoggedInUserData();
+                    }
                     // Load batches when entering step 3 for logged-in users
                     const programSelect = document.getElementById('programSelect');
                     if (programSelect && programSelect.value) {
@@ -1163,6 +1167,20 @@
             
             if (data.success) {
                 showSuccessModal('Document validated successfully!');
+                
+                // CRITICAL FIX: Store the file path for form submission
+                if (data.file_path) {
+                    // Create or update hidden input for this file field
+                    let hiddenFileInput = document.querySelector(`input[name="${fieldName}_path"]`);
+                    if (!hiddenFileInput) {
+                        hiddenFileInput = document.createElement('input');
+                        hiddenFileInput.type = 'hidden';
+                        hiddenFileInput.name = fieldName + '_path';
+                        inputElement.parentNode.appendChild(hiddenFileInput);
+                    }
+                    hiddenFileInput.value = data.file_path;
+                    console.log('Stored file path for', fieldName, ':', data.file_path);
+                }
                 
                 if (data.suggestions && data.suggestions.length > 0) {
                     showProgramSuggestions(data.suggestions);

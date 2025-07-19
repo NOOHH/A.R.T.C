@@ -14,9 +14,14 @@
   {{-- Header --}}
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> List of Students</h2>
-    <a href="{{ route('admin.students.archived') }}" class="btn btn-outline-secondary">
-      <i class="bi bi-archive"></i> View Archived
-    </a>
+    <div class="d-flex gap-2">
+      <a href="{{ route('admin.students.export') }}" class="btn btn-success">
+        <i class="bi bi-download"></i> Export to CSV
+      </a>
+      <a href="{{ route('admin.students.archived') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-archive"></i> View Archived
+      </a>
+    </div>
   </div>
 
   {{-- Filters --}}

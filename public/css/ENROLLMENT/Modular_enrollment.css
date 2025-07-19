@@ -7,8 +7,9 @@
         }
         
         .form-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 800px;
+            width: 800px;
+            margin: 2rem auto;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -50,7 +51,11 @@
         .step-content {
             display: none;
             padding: 2rem;
-            min-height: 600px;
+              min-height: var(--stepper‐height);
+                max-height: var(--stepper‐height);
+                overflow-y: auto;         /* scroll if content overflows */
+                transition: opacity 0.4s ease,
+                            transform 0.4s ease; /* keep your nice slide/ fade */
             opacity: 0;
             transform: translateX(50px);
             transition: all 0.4s ease;
@@ -61,6 +66,12 @@
             opacity: 1;
             transform: translateX(0);
         }
+
+        .step-content:last-child {
+  min-height: auto;
+  max-height: none;
+  overflow-y: visible;
+}
         
         /* Bootstrap Grid Enhancements */
         .row {
@@ -252,12 +263,6 @@
             transition: width 0.3s ease;
         }
         
-        /* Step content styles */
-        .step-content {
-            display: none;
-            padding: 3rem;
-            min-height: 500px;
-        }
         
         .step-content.active {
             display: block;
@@ -386,6 +391,7 @@
             align-items: center;
             padding-top: 2rem;
             border-top: 1px solid #e9ecef;
+            min-height: 100px; 
         }
         
         .btn-nav {
@@ -736,3 +742,170 @@
             transform: none;
             box-shadow: 0 0 0 0.2rem rgba(106, 130, 251, 0.25);
         }
+
+
+:root {
+  /* tweak this to the height of your tallest stepper page */
+  --stepper‐height: 600px;
+}
+/* override the default h-100 so cards size to content */
+.module-card.h-100 {
+  height: auto !important;
+}
+
+/* The card wrapper */
+.module-card.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  cursor: pointer;
+  min-height: 280px;
+}
+
+/* lift on hover */
+.module-card.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+}
+
+/* selected state */
+.module-card.card.selected {
+  border-color: #667eea;
+  background-color: #f0f4ff;
+}
+
+/* body flexes to push meta/actions to bottom */
+.module-card.card .card-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* title */
+.module-card .module-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+/* description fills the middle */
+.module-card .module-description {
+  flex: 1 1 auto;
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+/* meta row */
+.module-card .module-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #718096;
+  margin-bottom: 1rem;
+}
+
+/* “View Courses” button styling */
+.module-card .module-actions .btn-outline-secondary {
+  border: none;
+  padding: 0;
+  font-size: 0.9rem;
+  color: #667eea;
+}
+.module-card .module-actions .btn-outline-secondary:hover {
+  text-decoration: underline;
+}
+/* Entire modal container */
+#coursesModal .modal-dialog {
+  max-width: 700px;
+}
+#coursesModal .modal-content {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  background: #f9fafb;
+}
+
+/* Header with a nice gradient and no bottom border */
+#coursesModal .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-bottom: none;
+  padding: 1.5rem 2rem;
+}
+#coursesModal .modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Body scroll area */
+#coursesModal .modal-body {
+  background: #ffffff;
+  padding: 1.5rem 2rem;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+/* Each course card */
+#coursesModal .course-selection-item {
+  background: #f1f3f5;
+  border: none;
+  border-radius: .75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 1rem;
+  transition: transform .2s, box-shadow .2s;
+}
+#coursesModal .course-selection-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* Checkbox sizing */
+#coursesModal .course-checkbox {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-top: .2rem;
+}
+
+/* Course title and description */
+#coursesModal .course-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #2d3748;
+}
+#coursesModal .course-description {
+  color: #4a5568;
+  margin-bottom: .5rem;
+}
+
+/* Price badge */
+#coursesModal .badge {
+  background: #667eea;
+  color: #fff;
+  font-weight: 500;
+  border-radius: .5rem;
+}
+
+/* Footer with flat buttons */
+#coursesModal .modal-footer {
+  background: #f6f7f9;
+  border-top: none;
+  padding: 1rem 2rem;
+}
+#coursesModal .btn-secondary {
+  background: #6c757d;
+  border: none;
+  border-radius: .5rem;
+  padding: .5rem 1.25rem;
+  color: #fff;
+}
+#coursesModal .btn-primary {
+  background: #667eea;
+  border: none;
+  border-radius: .5rem;
+  padding: .5rem 1.25rem;
+}
+

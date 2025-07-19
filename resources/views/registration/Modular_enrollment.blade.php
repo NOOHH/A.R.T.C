@@ -158,6 +158,7 @@
                     
                     // Store selection
                     selectedPackageId = packageId;
+                    selectedProgramId = programId; // Also store program ID
                     packageSelectionMode = selectionMode;
                     
                     if (selectionMode === 'courses') {
@@ -168,9 +169,21 @@
                         packageCourseLimit = null; // No course limit for module-based packages
                     }
                     
-                    // Update hidden inputs
+                    // Update hidden inputs - CRITICAL: Set both package_id AND program_id
                     if (document.getElementById('package_id')) {
                         document.getElementById('package_id').value = packageId;
+                        console.log('Set package_id to:', packageId);
+                    }
+                    if (document.getElementById('program_id')) {
+                        document.getElementById('program_id').value = programId;
+                        console.log('Set program_id to:', programId);
+                    }
+                    // Also update the final form hidden inputs
+                    if (document.getElementById('packageIdInput')) {
+                        document.getElementById('packageIdInput').value = packageId;
+                    }
+                    if (document.getElementById('hidden_program_id')) {
+                        document.getElementById('hidden_program_id').value = programId;
                     }
                     
                     // Enable next button
@@ -1888,14 +1901,27 @@
             coursesBadge.textContent = `${coursesCount} course${coursesCount > 1 ? 's' : ''} selected`;
         }
         
+        // CRITICAL FIX: Ensure the module exists in selectedModules array
+        const moduleIndex = selectedModules.findIndex(m => m.id == moduleId);
+        const moduleTitle = moduleCard ? moduleCard.querySelector('.module-title')?.textContent || `Module ${moduleId}` : `Module ${moduleId}`;
+        
+        if (moduleIndex === -1) {
+            // Module doesn't exist in selectedModules, add it
+            const moduleData = {
+                id: moduleId,
+                name: moduleTitle,
+                selected_courses: selectedCourses[moduleId]
+            };
+            selectedModules.push(moduleData);
+            console.log('✅ Added module to selectedModules:', moduleData);
+        } else {
+            // Module exists, update it with course selections
+            selectedModules[moduleIndex].selected_courses = selectedCourses[moduleId];
+            console.log('✅ Updated existing module with courses:', selectedModules[moduleIndex]);
+        }
+        
         // Update the selected_modules data to include course selections
         updateSelectedModulesWithCourses();
-        
-        // Also update the selected modules array to include course data for the current module
-        const moduleIndex = selectedModules.findIndex(m => m.id == moduleId);
-        if (moduleIndex !== -1) {
-            selectedModules[moduleIndex].selected_courses = selectedCourses[moduleId];
-        }
         
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('coursesModal'));
@@ -1951,6 +1977,7 @@
             if (!req.available_modular_plan) return; // Only show for modular plan
             const label = req.custom_name || req.field_name || req.document_type;
             const required = req.is_required ? 'required' : '';
+            const requiredClass = req.is_required ? 'border-warning' : '';
             let accept = '';
             switch (req.file_type) {
                 case 'image': accept = '.jpg,.jpeg,.png,.gif'; break;
@@ -1958,10 +1985,14 @@
                 case 'document': accept = '.pdf,.doc,.docx'; break;
                 default: accept = '*'; break;
             }
-            html += `<div class="form-group">
-                <label>${label} ${req.is_required ? '<span class="text-danger">*</span>' : ''}</label>
-                <input type="file" name="${label.replace(/\s+/g, '_').toLowerCase()}" class="form-control" accept="${accept}" ${required}>
-                <small class="form-text text-muted">Upload ${label} (${accept.replace(/\./g, '').toUpperCase()} only)</small>
+            html += `<div class="form-group mb-3">
+                <label class="form-label fw-bold">${label} ${req.is_required ? '<span class="text-danger">*</span>' : '<span class="text-muted">(Optional)</span>'}</label>
+                <input type="file" name="${label.replace(/\s+/g, '_').toLowerCase()}" class="form-control ${requiredClass}" accept="${accept}" ${required} onchange="handleFileUpload(this)">
+                <div class="form-text">
+                    <i class="fas fa-info-circle text-info me-1"></i>
+                    Upload ${label} (${accept.replace(/\./g, '').toUpperCase()} files only, max 10MB)
+                    ${req.is_required ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>This file is required for your education level</small>' : ''}
+                </div>
             </div>`;
         });
         requirementsDiv.innerHTML = html;
@@ -1980,12 +2011,72 @@ function copyStepperDataToFinalForm() {
     let referralCode = '';
     
     if (!isUserLoggedIn) {
+        // Get values from the actual form fields, not just the email field
         userFirstname = document.getElementById('user_firstname')?.value || '';
         userLastname = document.getElementById('user_lastname')?.value || '';
         userEmail = document.getElementById('user_email')?.value || '';
         password = document.getElementById('password')?.value || '';
         passwordConfirmation = document.getElementById('password_confirmation')?.value || '';
         referralCode = document.getElementById('referral_code')?.value || '';
+        
+        // CRITICAL FIX: Validate that fields are not incorrectly duplicated
+        if (userFirstname === userEmail || userLastname === userEmail || password === userEmail) {
+            console.error('❌ CRITICAL ERROR: Form fields have duplicate values! This indicates a form field mapping issue.');
+            console.error('Field values:', {
+                userFirstname,
+                userLastname,
+                userEmail,
+                password: password ? '[HIDDEN]' : '[EMPTY]',
+                passwordConfirmation: passwordConfirmation ? '[HIDDEN]' : '[EMPTY]'
+            });
+            
+            // If firstname and lastname are same as email, prompt user to enter correct values
+            if (userFirstname === userEmail) {
+                alert('Error: First name field appears to have email value. Please refresh the page and enter your actual first name.');
+                return; // Stop form submission
+            }
+        }
+        
+        // Additional validation: ensure required fields are not empty
+        if (!userFirstname.trim()) {
+            alert('Error: First name is required.');
+            document.getElementById('user_firstname')?.focus();
+            return;
+        }
+        
+        if (!userLastname.trim()) {
+            alert('Error: Last name is required.');
+            document.getElementById('user_lastname')?.focus();
+            return;
+        }
+        
+        if (!userEmail.trim()) {
+            alert('Error: Email is required.');
+            document.getElementById('user_email')?.focus();
+            return;
+        }
+        
+        if (!password.trim()) {
+            alert('Error: Password is required.');
+            document.getElementById('password')?.focus();
+            return;
+        }
+        
+        if (password !== passwordConfirmation) {
+            alert('Error: Passwords do not match.');
+            document.getElementById('password_confirmation')?.focus();
+            return;
+        }
+        
+        // Debug: Log the actual values being collected
+        console.log('🔍 COLLECTING ACCOUNT DATA:', {
+            userFirstname: userFirstname,
+            userLastname: userLastname, 
+            userEmail: userEmail,
+            hasPassword: !!password,
+            hasPasswordConfirmation: !!passwordConfirmation,
+            referralCode: referralCode
+        });
     } else {
         // For logged-in users, we don't need to collect account data
         console.log('User is logged in, skipping account data collection');
@@ -1996,10 +2087,25 @@ function copyStepperDataToFinalForm() {
     const programId = document.getElementById('program_id')?.value || '';
     const selectedModules = document.getElementById('selected_modules')?.value || '';
     const learningMode = document.getElementById('learning_mode')?.value || '';
+    const educationLevel = document.getElementById('educationLevel')?.value || ''; // Get education level
+
+    console.log('🔍 FORM DATA DEBUG:', {
+        packageId, 
+        programId, 
+        selectedModules, 
+        learningMode,
+        educationLevel,
+        hasPackageId: !!packageId,
+        hasProgramId: !!programId,
+        hasEducationLevel: !!educationLevel
+    });
 
     // Final form hidden fields
     const form = document.getElementById('modularEnrollmentForm');
-    if (!form) return;
+    if (!form) {
+        console.error('❌ Form not found: modularEnrollmentForm');
+        return;
+    }
 
     // Set or create hidden fields for account info (only for non-logged-in users)
     if (!isUserLoggedIn) {
@@ -2011,11 +2117,12 @@ function copyStepperDataToFinalForm() {
         setOrCreateHidden(form, 'referral_code', referralCode);
     }
     
-    // Set or create hidden fields for stepper selections
+    // Set or create hidden fields for stepper selections - CRITICAL: These must have valid database IDs
     setOrCreateHidden(form, 'package_id', packageId);
     setOrCreateHidden(form, 'program_id', programId);
     setOrCreateHidden(form, 'selected_modules', selectedModules);
     setOrCreateHidden(form, 'learning_mode', learningMode);
+    setOrCreateHidden(form, 'education_level', educationLevel); // Ensure education_level is set
     
     // Handle start date - set to today if empty
     const startDateInput = form.querySelector('input[name="Start_Date"]');
@@ -2033,8 +2140,15 @@ function setOrCreateHidden(form, name, value) {
         input.type = 'hidden';
         input.name = name;
         form.appendChild(input);
+        console.log(`✅ Created hidden input: ${name}`);
     }
     input.value = value;
+    console.log(`🔧 Set ${name} = ${value} (type: ${typeof value})`);
+    
+    // Validate critical fields
+    if ((name === 'package_id' || name === 'program_id') && (!value || value === '')) {
+        console.error(`❌ CRITICAL: ${name} is empty! This will cause validation to fail.`);
+    }
 }
 
 // Hook into step navigation and form submission
@@ -2067,7 +2181,7 @@ document.addEventListener('DOMContentLoaded', function() {
             copyStepperDataToFinalForm();
             
             // Validate that required data is present
-            const requiredFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode'];
+            const requiredFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
             
             // Add account fields to validation only for non-logged-in users
             if (!isUserLoggedIn) {
@@ -2075,19 +2189,45 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const missingFields = [];
+            const invalidFields = [];
             
             requiredFields.forEach(field => {
                 const input = form.querySelector(`input[name="${field}"]`);
                 if (!input || !input.value.trim()) {
                     missingFields.push(field);
+                } else {
+                    // Additional validation for database IDs
+                    if (field === 'program_id') {
+                        const programId = parseInt(input.value);
+                        if (isNaN(programId) || ![32, 33, 34, 35].includes(programId)) {
+                            invalidFields.push(`program_id (${input.value}) - should be 32, 33, 34, or 35`);
+                        }
+                    }
+                    if (field === 'package_id') {
+                        const packageId = parseInt(input.value);
+                        if (isNaN(packageId) || ![18, 19, 20, 21].includes(packageId)) {
+                            invalidFields.push(`package_id (${input.value}) - should be 18, 19, 20, or 21`);
+                        }
+                    }
                 }
             });
             
             if (missingFields.length > 0) {
-                alert('Missing required fields: ' + missingFields.join(', '));
+                alert('❌ Missing required fields: ' + missingFields.join(', '));
                 console.error('Missing required fields:', missingFields);
                 return;
             }
+            
+            if (invalidFields.length > 0) {
+                alert('❌ Invalid database IDs: ' + invalidFields.join(', '));
+                console.error('Invalid database IDs:', invalidFields);
+                return;
+            }
+            
+            console.log('✅ All validation checks passed, submitting form...');
+            
+            // CRITICAL DEBUG: Log all form data before submission
+            console.log('=== FORM SUBMISSION DEBUG ===');
             
             // Submit via AJAX to handle the response properly
             const formData = new FormData(form);
@@ -2099,8 +2239,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📅 Force-set Start_Date in FormData to:', today);
             }
             
-            // Log form data for debugging
-            console.log('Submitting form data:', Object.fromEntries(formData));
+            // Debug: Log all form data (safely hiding passwords)
+            const formDataObject = {};
+            const fileFields = []; // Track file fields specifically
+            for (let [key, value] of formData.entries()) {
+                if (key === 'password' || key === 'password_confirmation') {
+                    formDataObject[key] = value ? '[HIDDEN - ' + value.length + ' chars]' : '[EMPTY]';
+                } else if (value instanceof File) {
+                    formDataObject[key] = `[FILE: ${value.name}, size: ${value.size} bytes]`;
+                    fileFields.push(key);
+                } else {
+                    formDataObject[key] = value;
+                }
+            }
+            console.log('📋 Complete FormData being submitted:', formDataObject);
+            console.log('📎 File fields found:', fileFields);
+            
+            // Validate critical fields one more time before submission
+            const criticalFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
+            const missingCriticalFields = [];
+            
+            criticalFields.forEach(field => {
+                const value = formData.get(field);
+                if (!value || value === '' || value === 'null' || value === 'undefined') {
+                    missingCriticalFields.push(field);
+                }
+            });
+            
+            if (missingCriticalFields.length > 0) {
+                console.error('❌ CRITICAL FIELDS MISSING OR EMPTY:', missingCriticalFields);
+                alert('Critical form fields are missing: ' + missingCriticalFields.join(', ') + '. Please refresh the page and try again.');
+                return;
+            }
+            
+            console.log('✅ All critical fields validated');
+            console.log('🚀 Submitting to:', form.action);
             
             fetch(form.action, {
                 method: 'POST',
@@ -2109,20 +2282,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': CSRF_TOKEN
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Server response status:', response.status);
+                console.log('Server response headers:', Object.fromEntries(response.headers));
+                return response.json();
+            })
             .then(data => {
+                console.log('Server response data:', data);
                 if (data.success) {
                     alert('Registration completed successfully!');
                     // Redirect to success page or login
                     window.location.href = '/login?message=registration_success';
                 } else {
-                    alert('Registration failed: ' + (data.message || 'Unknown error'));
+                    // Enhanced error handling for validation errors
+                    let errorMessage = 'Registration failed';
+                    
+                    if (data.errors) {
+                        console.error('Validation errors:', data.errors);
+                        
+                        // Check for file-related errors specifically
+                        const fileErrors = [];
+                        const otherErrors = [];
+                        
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            const isFileField = field.includes('tor') || field.includes('psa') || field.includes('good_moral') || 
+                                              field.includes('certificate') || field.includes('transcript') || field.includes('diploma');
+                            
+                            if (isFileField) {
+                                fileErrors.push(`${field.replace(/_/g, ' ').toUpperCase()}: ${messages.join(', ')}`);
+                            } else {
+                                otherErrors.push(`${field}: ${messages.join(', ')}`);
+                            }
+                        }
+                        
+                        if (fileErrors.length > 0) {
+                            errorMessage += '\n\nMissing required files for your education level:\n' + fileErrors.join('\n');
+                            errorMessage += '\n\nPlease upload the required documents in the form above and try again.';
+                        }
+                        
+                        if (otherErrors.length > 0) {
+                            errorMessage += '\n\nOther errors:\n' + otherErrors.join('\n');
+                        }
+                    } else if (data.message) {
+                        errorMessage += ': ' + data.message;
+                    }
+                    
+                    alert(errorMessage);
                     console.error('Registration failed:', data);
                 }
             })
             .catch(error => {
                 console.error('Form submission error:', error);
-                alert('Form submission failed. Please try again.');
+                alert('Form submission failed. Please check your connection and try again.');
             });
         });
     }
@@ -2395,7 +2606,7 @@ function handleFileUpload(inputElement) {
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     
-    fetch('/ocr/process', {
+    fetch('/registration/validate-file', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -2419,26 +2630,35 @@ function handleFileUpload(inputElement) {
             return;
         }
         
-        console.log('OCR processing response:', data);
+        console.log('File validation response:', data);
         
         if (data.success) {
-            showSuccessModal('Document processed successfully!');
+            showSuccessModal('Document validated successfully!');
+            
+            // CRITICAL FIX: Store the file path for form submission
+            if (data.file_path) {
+                let hiddenFileInput = document.querySelector(`input[name="${fieldName}_path"]`);
+                if (!hiddenFileInput) {
+                    hiddenFileInput = document.createElement('input');
+                    hiddenFileInput.type = 'hidden';
+                    hiddenFileInput.name = fieldName + '_path';
+                    inputElement.parentNode.appendChild(hiddenFileInput);
+                }
+                hiddenFileInput.value = data.file_path;
+                console.log('Stored file path for', fieldName, ':', data.file_path);
+            }
             
             // Handle education level detection
-            if (data.data && data.data.education_level_detected) {
-                handleEducationLevelDetection(data.data.education_level_detected);
+            if (data.certificate_level) {
+                handleEducationLevelDetection(data.certificate_level);
             }
             
-            if (data.data && data.data.program_suggestions && data.data.program_suggestions.length > 0) {
-                showProgramSuggestions(data.data.program_suggestions);
-            }
-            
-            if (data.data && data.data.extracted_text) {
-                console.log('Extracted text:', data.data.extracted_text);
+            if (data.suggestions && data.suggestions.length > 0) {
+                showProgramSuggestions(data.suggestions);
             }
         } else {
-            console.error('OCR processing failed:', data);
-            showErrorModal(data.message || 'Document processing failed');
+            console.error('File validation failed:', data);
+            showErrorModal(data.message || 'File validation failed');
             inputElement.value = '';
         }
     })

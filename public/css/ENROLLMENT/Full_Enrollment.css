@@ -125,12 +125,15 @@
     display: none;
     padding: 3rem;
     min-height: auto; 
+    max-height: none!important;
+    height: auto;
     opacity: 0;
     transform: translateX(50px);
     transition: all 0.4s ease;
     background: white;
     max-width: 800px;
     margin: 0 auto;  
+    margin-bottom: 2rem;
 }
 
 #step-content-3 {
@@ -219,7 +222,7 @@
 .carousel-indicators .active {
     opacity: 1;
     transform: scale(1.2);
-    background-color: #fc466b;
+    background-color: #0d2983;
 }
 
 /* Package Card Enhancements for Carousel */
@@ -705,10 +708,10 @@ body.registration-page {
 .form-container {
   display: flex;
   justify-content: center;
-  align-items: center;    /* center vertically instead of pushing to the top */
-  height: 1.5rem ;          /* keep a full‐screen container so centering works */
+align-items: flex-start !important;   /* center vertically instead of pushing to the top */
+  height:  auto !important;        /* keep a full‐screen container so centering works */
   width: 100%;
-  padding: 0;              /* you can re-add a little padding if you want breathing room */
+  padding: 2rem 0;             /* you can re-add a little padding if you want breathing room */
 }
 
 

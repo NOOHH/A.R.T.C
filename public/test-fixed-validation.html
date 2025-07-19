@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment Test - Fixed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .test-scenario { 
+            border: 2px solid #dee2e6; 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 8px; 
+        }
+        .test-undergraduate { border-color: #fd7e14; background-color: #fff3cd; }
+        .test-graduate { border-color: #0d6efd; background-color: #cff4fc; }
+        .result-box {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d1edff; border: 1px solid #0d6efd; }
+        .error { background-color: #f8d7da; border: 1px solid #dc3545; }
+        .files-section {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Modular Enrollment Validation Test - FIXED</h1>
+        
+        <div class="alert alert-info">
+            <h5>Test Summary</h5>
+            <p><strong>Issue:</strong> User reports 422 errors when selecting Graduate level</p>
+            <p><strong>Root Cause Found:</strong> Graduate level has optional file requirements (is_required: false) but validation was treating them as required</p>
+            <p><strong>Fix Applied:</strong> Updated controller to only validate required files based on education level settings</p>
+        </div>
+
+        <!-- Test Scenario 1: Graduate Level (Should Work - Optional Files) -->
+        <div class="test-scenario test-graduate">
+            <h3>🎓 Test 1: Graduate Level Registration (No Files Required)</h3>
+            <p class="text-info">Graduate level has <strong>optional</strong> file requirements. This should work without uploading files.</p>
+            
+            <form id="graduateForm" class="mb-3">
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Education Level</label>
+                        <select name="education_level" class="form-select" required>
+                            <option value="Graduate" selected>Graduate</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Program</label>
+                        <select name="program_id" class="form-select" required>
+                            <option value="1">Test Program</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Package</label>
+                        <select name="package_id" class="form-select" required>
+                            <option value="1">Test Package</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Learning Mode</label>
+                        <select name="learning_mode" class="form-select" required>
+                            <option value="synchronous">Synchronous</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="Start_Date" class="form-control" value="2025-02-01" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Enrollment Type</label>
+                        <select name="enrollment_type" class="form-select" required>
+                            <option value="Modular">Modular</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="selected_modules" value='[{"module_id": 1, "module_name": "Test Module"}]'>
+                
+                <!-- Account Information (for new users) -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="user_firstname" class="form-control" value="John" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="user_lastname" class="form-control" value="Doe" required>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="graduate.test@example.com" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" value="password123" required>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="password_confirmation" value="password123">
+                
+                <div class="files-section">
+                    <h5>File Requirements (Graduate Level - ALL OPTIONAL)</h5>
+                    <p class="text-muted"><small>For Graduate level, all files are optional. Test without uploading any files.</small></p>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">School ID <span class="badge bg-secondary">Optional</span></label>
+                        <input type="file" name="school_id" class="form-control" accept=".jpg,.jpeg,.png,.gif">
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">TOR <span class="badge bg-secondary">Optional</span></label>
+                        <input type="file" name="tor" class="form-control" accept=".pdf">
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">Good Moral <span class="badge bg-secondary">Optional</span></label>
+                        <input type="file" name="good_moral" class="form-control" accept=".pdf">
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">PSA <span class="badge bg-secondary">Optional</span></label>
+                        <input type="file" name="psa" class="form-control" accept=".pdf">
+                    </div>
+                </div>
+                
+                <button type="button" onclick="submitTest('graduateForm', 'graduateResult')" class="btn btn-primary">
+                    Test Graduate Registration (No Files)
+                </button>
+            </form>
+            
+            <div id="graduateResult" class="result-box" style="display: none;"></div>
+        </div>
+
+        <!-- Test Scenario 2: Undergraduate Level (Required Files) -->
+        <div class="test-scenario test-undergraduate">
+            <h3>🎒 Test 2: Undergraduate Level Registration (Files Required)</h3>
+            <p class="text-warning">Undergraduate level has <strong>required</strong> file uploads. This should fail without files.</p>
+            
+            <form id="undergraduateForm" class="mb-3">
+                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Education Level</label>
+                        <select name="education_level" class="form-select" required>
+                            <option value="Undergraduate" selected>Undergraduate</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Program</label>
+                        <select name="program_id" class="form-select" required>
+                            <option value="1">Test Program</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Package</label>
+                        <select name="package_id" class="form-select" required>
+                            <option value="1">Test Package</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Learning Mode</label>
+                        <select name="learning_mode" class="form-select" required>
+                            <option value="synchronous">Synchronous</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="Start_Date" class="form-control" value="2025-02-01" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Enrollment Type</label>
+                        <select name="enrollment_type" class="form-select" required>
+                            <option value="Modular">Modular</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="selected_modules" value='[{"module_id": 1, "module_name": "Test Module"}]'>
+                
+                <!-- Account Information (for new users) -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="user_firstname" class="form-control" value="Jane" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="user_lastname" class="form-control" value="Smith" required>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="undergraduate.test@example.com" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" value="password123" required>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="password_confirmation" value="password123">
+                
+                <div class="files-section">
+                    <h5>File Requirements (Undergraduate Level - ALL REQUIRED)</h5>
+                    <p class="text-muted"><small>For Undergraduate level, all files are required. This test will fail validation without files.</small></p>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">School ID <span class="badge bg-danger">Required</span></label>
+                        <input type="file" name="school_id" class="form-control" accept=".jpg,.jpeg,.png,.gif">
+                        <small class="text-muted">Leave empty to test validation error</small>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">TOR <span class="badge bg-danger">Required</span></label>
+                        <input type="file" name="tor" class="form-control" accept=".pdf">
+                        <small class="text-muted">Leave empty to test validation error</small>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">Good Moral <span class="badge bg-danger">Required</span></label>
+                        <input type="file" name="good_moral" class="form-control" accept=".pdf">
+                        <small class="text-muted">Leave empty to test validation error</small>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label">PSA <span class="badge bg-danger">Required</span></label>
+                        <input type="file" name="psa" class="form-control" accept=".pdf">
+                        <small class="text-muted">Leave empty to test validation error</small>
+                    </div>
+                </div>
+                
+                <button type="button" onclick="submitTest('undergraduateForm', 'undergraduateResult')" class="btn btn-warning">
+                    Test Undergraduate Registration (Should Fail - No Files)
+                </button>
+            </form>
+            
+            <div id="undergraduateResult" class="result-box" style="display: none;"></div>
+        </div>
+
+        <div class="mt-4">
+            <h5>Expected Results:</h5>
+            <ul>
+                <li><strong>Graduate Test:</strong> Should succeed (201/200 status) - files are optional</li>
+                <li><strong>Undergraduate Test:</strong> Should fail (422 status) with file validation errors - files are required</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Get CSRF token from meta tag or create one
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                         document.querySelector('input[name="_token"]')?.value;
+
+        function submitTest(formId, resultId) {
+            const form = document.getElementById(formId);
+            const resultDiv = document.getElementById(resultId);
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box';
+            resultDiv.textContent = 'Submitting test request...';
+            
+            const formData = new FormData(form);
+            
+            // Add CSRF token if not present
+            if (!formData.has('_token') && csrfToken) {
+                formData.append('_token', csrfToken);
+            }
+            
+            // Log what we're sending
+            console.log('Form data being sent:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + (value instanceof File ? 'FILE: ' + value.name : value));
+            }
+            
+            fetch('/A.R.T.C/enrollment/modular/submit', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                }
+            })
+            .then(response => {
+                return response.text().then(text => {
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        data = { raw_response: text };
+                    }
+                    return { status: response.status, data, raw: text };
+                });
+            })
+            .then(result => {
+                const { status, data, raw } = result;
+                
+                if (status >= 200 && status < 300) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.textContent = `✅ SUCCESS (${status})\n\n` + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.textContent = `❌ VALIDATION ERROR (${status})\n\n` + 
+                        (data.errors ? 'Validation Errors:\n' + JSON.stringify(data.errors, null, 2) : raw);
+                }
+            })
+            .catch(error => {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = `❌ NETWORK ERROR\n\n${error.message}`;
+                console.error('Error:', error);
+            });
+        }
+
+        // Auto-generate CSRF token for forms if needed
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!csrfToken) {
+                console.warn('No CSRF token found. Tests might fail.');
+            }
+        });
+    </script>
+</body>
+</html>

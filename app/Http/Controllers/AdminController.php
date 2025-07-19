@@ -9,8 +9,12 @@ use App\Models\Registration;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Program;
+use App\Models\Package;
+use App\Models\Batch;
+use App\Models\Course;
 use App\Models\Module;
 use App\Models\Enrollment;
+use App\Models\Payment;
 use App\Models\PaymentHistory;
 use Carbon\Carbon;
 
@@ -82,6 +86,41 @@ class AdminController extends Controller
         try {
             $registration = Registration::with(['user', 'program', 'package', 'plan'])->findOrFail($id);
             
+            // Parse course selections if modular
+            $courseInfo = 'Full';
+            if ($registration->enrollment_type === 'Modular' && $registration->selected_courses) {
+                $selectedCourses = is_string($registration->selected_courses) 
+                    ? json_decode($registration->selected_courses, true) 
+                    : $registration->selected_courses;
+                
+                if (is_array($selectedCourses) && count($selectedCourses) > 0) {
+                    // Get course names
+                    $courseNames = [];
+                    foreach ($selectedCourses as $courseData) {
+                        if (is_array($courseData)) {
+                            // Handle module with courses structure
+                            if (isset($courseData['selected_courses']) && is_array($courseData['selected_courses'])) {
+                                foreach ($courseData['selected_courses'] as $courseId) {
+                                    $course = \App\Models\Course::find($courseId);
+                                    if ($course) {
+                                        $courseNames[] = $course->subject_name;
+                                    }
+                                }
+                            }
+                        } else {
+                            // Handle direct course ID
+                            $course = \App\Models\Course::find($courseData);
+                            if ($course) {
+                                $courseNames[] = $course->subject_name;
+                            }
+                        }
+                    }
+                    $courseInfo = count($courseNames) > 0 ? implode(', ', $courseNames) : 'Modular (courses not specified)';
+                } else {
+                    $courseInfo = 'Modular';
+                }
+            }
+            
             return response()->json([
                 'registration_id' => $registration->registration_id,
                 'firstname' => $registration->firstname,
@@ -99,7 +138,10 @@ class AdminController extends Controller
                 'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
                 'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
                 'plan_name' => $registration->plan_name ?? ($registration->plan ? $registration->plan->plan_name : 'N/A'),
+                'plan_type' => $registration->enrollment_type ?? 'Full',
+                'course_info' => $courseInfo,
                 'learning_mode' => $registration->learning_mode,
+                'education_level' => $registration->education_level,
                 'Start_Date' => $registration->Start_Date,
                 'status' => $registration->status,
                 'PSA' => $registration->PSA,
@@ -107,6 +149,8 @@ class AdminController extends Controller
                 'Course_Cert' => $registration->Course_Cert,
                 'good_moral' => $registration->good_moral,
                 'photo_2x2' => $registration->photo_2x2,
+                'birth_certificate' => $registration->birth_certificate,
+                'diploma_certificate' => $registration->diploma_certificate,
                 'created_at' => $registration->created_at->format('M d, Y H:i')
             ]);
         } catch (\Exception $e) {
@@ -194,6 +238,21 @@ class AdminController extends Controller
                 
                 $enrollment->save();
                 
+                // Update batch capacity if batch is assigned and payment is also completed
+                if ($enrollment->batch_id && $enrollment->payment_status === 'paid') {
+                    $batch = \App\Models\StudentBatch::find($enrollment->batch_id);
+                    if ($batch) {
+                        // Recalculate actual capacity based on approved and paid enrollments
+                        $actualCapacity = \App\Models\Enrollment::where('batch_id', $batch->batch_id)
+                            ->where('enrollment_status', 'approved')
+                            ->where('payment_status', 'paid')
+                            ->count();
+                        
+                        $batch->update(['current_capacity' => $actualCapacity]);
+                        Log::info('Updated batch capacity', ['batch_id' => $batch->batch_id, 'new_capacity' => $actualCapacity]);
+                    }
+                }
+                
                 // Process referral if both enrollment and payment are approved/paid
                 \App\Helpers\ReferralCodeGenerator::processPendingReferral($enrollment->enrollment_id);
             } else {
@@ -254,6 +313,321 @@ class AdminController extends Controller
         }
     }
 
+    public function rejectWithReason(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000'
+            ]);
+
+            $registration = Registration::findOrFail($id);
+            
+            // Store the rejection reason
+            $registration->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->reason
+            ]);
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Registration rejected: ' . $request->reason);
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Rejection failed: ' . $e->getMessage());
+        }
+    }
+
+    public function getStudentDetailsJson($id)
+    {
+        try {
+            $student = Student::with(['user', 'enrollments.program', 'enrollments.package'])->findOrFail($id);
+            
+            return response()->json([
+                'student_id' => $student->student_id,
+                'firstname' => $student->firstname,
+                'middlename' => $student->middlename,
+                'lastname' => $student->lastname,
+                'email' => $student->email ?? ($student->user->email ?? 'N/A'),
+                'contact_number' => $student->contact_number,
+                'emergency_contact_number' => $student->emergency_contact_number,
+                'student_school' => $student->student_school,
+                'street_address' => $student->street_address,
+                'city' => $student->city,
+                'state_province' => $student->state_province,
+                'zipcode' => $student->zipcode,
+                'good_moral' => $student->good_moral,
+                'PSA' => $student->PSA,
+                'Course_Cert' => $student->Course_Cert,
+                'TOR' => $student->TOR,
+                'Cert_of_Grad' => $student->Cert_of_Grad,
+                'photo_2x2' => $student->photo_2x2,
+                'Undergraduate' => $student->Undergraduate,
+                'Graduate' => $student->Graduate,
+                'Start_Date' => $student->Start_Date,
+                'status' => $student->user->role ?? 'N/A',
+                'date_approved' => $student->date_approved,
+                'enrollments' => $student->enrollments->map(function ($enrollment) {
+                    return [
+                        'program_name' => $enrollment->program->program_name ?? 'N/A',
+                        'package_name' => $enrollment->package->package_name ?? 'N/A',
+                        'enrollment_type' => $enrollment->enrollment_type ?? 'N/A',
+                        'enrollment_status' => $enrollment->enrollment_status ?? 'N/A',
+                        'payment_status' => $enrollment->payment_status ?? 'N/A'
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Student not found or database error.'], 404);
+        }
+    }
+
+    public function undoApproval(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $student = Student::findOrFail($id);
+            $user = User::find($student->user_id);
+
+            // Create a registration record from the student data
+            $registration = Registration::create([
+                'user_id' => $student->user_id,
+                'firstname' => $student->firstname,
+                'middlename' => $student->middlename,
+                'lastname' => $student->lastname,
+                'student_school' => $student->student_school,
+                'street_address' => $student->street_address,
+                'city' => $student->city,
+                'state_province' => $student->state_province,
+                'zipcode' => $student->zipcode,
+                'contact_number' => $student->contact_number,
+                'emergency_contact_number' => $student->emergency_contact_number,
+                'good_moral' => $student->good_moral,
+                'PSA' => $student->PSA,
+                'Course_Cert' => $student->Course_Cert,
+                'TOR' => $student->TOR,
+                'Cert_of_Grad' => $student->Cert_of_Grad,
+                'photo_2x2' => $student->photo_2x2,
+                'Undergraduate' => $student->Undergraduate,
+                'Graduate' => $student->Graduate,
+                'Start_Date' => $student->Start_Date,
+                'status' => 'pending'
+            ]);
+
+            // Downgrade user role back to guest
+            if ($user) {
+                $user->role = 'guest';
+                $user->save();
+            }
+
+            // Delete enrollments
+            Enrollment::where('student_id', $student->student_id)->delete();
+
+            // Delete student record
+            $student->delete();
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Student approval has been undone. Student moved back to pending registrations.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                             ->with('error', 'Undo approval failed: ' . $e->getMessage());
+        }
+    }
+
+    public function getEnrollmentDetailsJson($id)
+    {
+        try {
+            $enrollment = Enrollment::with(['student.user', 'program', 'package'])
+                                  ->findOrFail($id);
+            
+            $studentName = '';
+            $email = '';
+            $contactNumber = 'N/A';
+            
+            // Handle case where enrollment has student_id
+            if ($enrollment->student) {
+                $studentName = trim(
+                    ($enrollment->student->firstname ?? '') . ' ' . 
+                    ($enrollment->student->middlename ?? '') . ' ' . 
+                    ($enrollment->student->lastname ?? '')
+                );
+                
+                if ($enrollment->student->user) {
+                    $email = $enrollment->student->user->email ?? $enrollment->student->email ?? '';
+                } else {
+                    $email = $enrollment->student->email ?? '';
+                }
+                $contactNumber = $enrollment->student->contact_number ?? 'N/A';
+                
+            } 
+            // Handle case where enrollment only has user_id (like enrollment 131)
+            elseif ($enrollment->user_id) {
+                $user = User::find($enrollment->user_id);
+                if ($user) {
+                    $studentName = trim(($user->user_firstname ?? '') . ' ' . ($user->user_lastname ?? ''));
+                    $email = $user->email ?? '';
+                }
+                
+                // Try to find student by user_id
+                $student = Student::where('user_id', $enrollment->user_id)->first();
+                if ($student) {
+                    $contactNumber = $student->contact_number ?? 'N/A';
+                    // Override with student data if found
+                    if (!$studentName) {
+                        $studentName = trim(
+                            ($student->firstname ?? '') . ' ' . 
+                            ($student->middlename ?? '') . ' ' . 
+                            ($student->lastname ?? '')
+                        );
+                    }
+                    if (!$email) {
+                        $email = $student->email ?? '';
+                    }
+                }
+            }
+            
+            // Get payment details from payments table (for pending payments)
+            $payment = Payment::where('enrollment_id', $enrollment->enrollment_id)
+                             ->orderBy('created_at', 'desc')
+                             ->first();
+            
+            // Get payment history (for completed/processed payments)
+            $paymentHistory = PaymentHistory::where('enrollment_id', $enrollment->enrollment_id)
+                                           ->orderBy('created_at', 'desc')
+                                           ->get();
+            
+            // Determine current payment status and details
+            $paymentStatus = $enrollment->payment_status ?? 'pending';
+            $paymentMethod = 'N/A';
+            $paymentAmount = 0;
+            $paymentDate = null;
+            $referenceNumber = 'N/A';
+            $transactionId = 'N/A';
+            $paymentNotes = '';
+            
+            // Get amount from package or enrollment
+            if ($enrollment->package && isset($enrollment->package->price)) {
+                $paymentAmount = $enrollment->package->price;
+            } elseif ($enrollment->package && isset($enrollment->package->amount)) {
+                $paymentAmount = $enrollment->package->amount;
+            }
+            
+            if ($payment) {
+                // Use data from payments table for pending payments
+                $paymentStatus = $payment->payment_status ?? $paymentStatus;
+                $paymentMethod = $payment->payment_method ?? 'N/A';
+                $paymentAmount = $payment->amount ?? $paymentAmount;
+                $paymentDate = $payment->created_at;
+                $paymentNotes = $payment->notes ?? '';
+                
+                // Extract payment details if JSON
+                if ($payment->payment_details) {
+                    $details = is_string($payment->payment_details) ? json_decode($payment->payment_details, true) : $payment->payment_details;
+                    if (is_array($details)) {
+                        $referenceNumber = $details['reference_number'] ?? $referenceNumber;
+                        $transactionId = $details['transaction_id'] ?? $transactionId;
+                    }
+                }
+            }
+            
+            // If there's payment history, get the latest one for display
+            $latestHistory = $paymentHistory->first();
+            if ($latestHistory && in_array($latestHistory->payment_status, ['completed', 'verified', 'approved'])) {
+                $paymentStatus = $latestHistory->payment_status;
+                $paymentMethod = $latestHistory->payment_method ?? $paymentMethod;
+                $paymentAmount = $latestHistory->amount ?? $paymentAmount;
+                $paymentDate = $latestHistory->payment_date ?? $latestHistory->created_at;
+                $paymentNotes = $latestHistory->payment_notes ?? $paymentNotes;
+            }
+            
+            return response()->json([
+                'enrollment_id' => $enrollment->enrollment_id,
+                'student_name' => $studentName ?: 'N/A',
+                'email' => $email ?: 'N/A',
+                'contact_number' => $contactNumber,
+                'program_name' => $enrollment->program->program_name ?? 'N/A',
+                'package_name' => $enrollment->package->package_name ?? 'N/A',
+                'enrollment_type' => $enrollment->enrollment_type ?? 'N/A',
+                'amount' => $paymentAmount,
+                'payment_status' => $paymentStatus,
+                'payment_method' => $paymentMethod,
+                'reference_number' => $referenceNumber,
+                'transaction_id' => $transactionId,
+                'payment_notes' => $paymentNotes,
+                'enrollment_date' => $enrollment->created_at ? $enrollment->created_at->format('M d, Y h:i A') : 'N/A',
+                'payment_date' => $paymentDate ? $paymentDate->format('M d, Y h:i A') : 'N/A',
+                'updated_at' => $enrollment->updated_at ? $enrollment->updated_at->format('M d, Y h:i A') : 'N/A',
+                'enrollment_status' => $enrollment->enrollment_status ?? 'active',
+                'payment_history' => $paymentHistory->map(function($history) {
+                    return [
+                        'amount' => $history->amount,
+                        'status' => $history->payment_status,
+                        'method' => $history->payment_method,
+                        'date' => $history->payment_date ? $history->payment_date->format('M d, Y h:i A') : $history->created_at->format('M d, Y h:i A'),
+                        'notes' => $history->payment_notes ?? '',
+                        'processed_by' => $history->processed_by_admin_id ?? null
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching enrollment details: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['error' => 'Enrollment not found or database error: ' . $e->getMessage()], 404);
+        }
+    }
+
+    public function assignEnrollment(Request $request)
+    {
+        try {
+            $request->validate([
+                'student_id' => 'required|exists:students,student_id',
+                'program_id' => 'required|exists:programs,program_id', 
+                'batch_id' => 'required|exists:batches,batch_id',
+                'enrollment_type' => 'required|in:modular,full,accelerated',
+                'learning_mode' => 'required|in:online,onsite,hybrid',
+                'course_id' => 'nullable|exists:courses,course_id'
+            ]);
+
+            DB::beginTransaction();
+
+            // Get the package for the program (you might need to adjust this logic)
+            $package = Package::where('program_id', $request->program_id)->first();
+            if (!$package) {
+                return redirect()->back()->with('error', 'No package found for this program.');
+            }
+
+            // Create enrollment
+            $enrollment = Enrollment::create([
+                'student_id' => $request->student_id,
+                'program_id' => $request->program_id,
+                'package_id' => $package->package_id,
+                'batch_id' => $request->batch_id,
+                'enrollment_type' => $request->enrollment_type,
+                'learning_mode' => $request->learning_mode,
+                'course_id' => $request->enrollment_type === 'modular' ? $request->course_id : null,
+                'enrollment_status' => 'enrolled',
+                'payment_status' => 'pending',
+                'amount' => $package->package_price,
+                'enrollment_date' => now()
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.enrollments.index')
+                ->with('success', 'Student enrollment assigned successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                             ->with('error', 'Enrollment assignment failed: ' . $e->getMessage());
+        }
+    }
+
     public function studentRegistration()
     {
         $registrations = Registration::with(['user', 'package', 'program', 'plan'])
@@ -268,7 +642,35 @@ class AdminController extends Controller
 
     public function studentRegistrationHistory()
     {
-        $registrations = Student::with(['user', 'enrollments.program', 'enrollments.package'])->get();
+        // Get approved registrations (students) with their enrollment details
+        $registrations = Student::with(['user', 'enrollments.program', 'enrollments.package', 'enrollments.registration'])
+                                ->whereNotNull('date_approved')
+                                ->get()
+                                ->map(function ($student) {
+                                    // Transform student data to match registration structure
+                                    $enrollment = $student->enrollments->first();
+                                    
+                                    return (object) [
+                                        'registration_id' => $student->student_id, // Use student_id as identifier for history
+                                        'firstname' => $student->firstname,
+                                        'middlename' => $student->middlename,
+                                        'lastname' => $student->lastname,
+                                        'user' => $student->user,
+                                        'email' => $student->email ?? ($student->user->email ?? 'N/A'),
+                                        'program_name' => $enrollment->program->program_name ?? 'N/A',
+                                        'package_name' => $enrollment->package->package_name ?? 'N/A',
+                                        'plan_name' => $enrollment->enrollment_type ?? 'Full',
+                                        'enrollment_type' => $enrollment->enrollment_type ?? 'Full',
+                                        'selected_courses' => $enrollment->registration->selected_courses ?? null,
+                                        'selected_modules' => $enrollment->registration->selected_modules ?? null,
+                                        'status' => 'approved',
+                                        'created_at' => $student->date_approved ?? $student->created_at,
+                                        'student' => $student, // Include original student object
+                                        'program' => $enrollment->program ?? null,
+                                        'package' => $enrollment->package ?? null,
+                                    ];
+                                });
+        
         return view('admin.admin-student-registration.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => true,
@@ -344,13 +746,25 @@ class AdminController extends Controller
                                             : $enrollment->registration->selected_modules;
                                             
                                         if (is_array($selectedModules) && !empty($selectedModules)) {
-                                            $modules = \App\Models\Module::whereIn('modules_id', $selectedModules)->get();
-                                            foreach ($modules as $module) {
-                                                $enrolledItems[] = [
-                                                    'type' => 'Module',
-                                                    'name' => $module->module_name ?? 'Unknown Module',
-                                                    'id' => $module->modules_id ?? 'N/A'
-                                                ];
+                                            // Flatten the array in case it's nested
+                                            $moduleIds = [];
+                                            foreach ($selectedModules as $module) {
+                                                if (is_array($module) && isset($module['modules_id'])) {
+                                                    $moduleIds[] = $module['modules_id'];
+                                                } elseif (is_numeric($module)) {
+                                                    $moduleIds[] = $module;
+                                                }
+                                            }
+                                            
+                                            if (!empty($moduleIds)) {
+                                                $modules = \App\Models\Module::whereIn('modules_id', $moduleIds)->get();
+                                                foreach ($modules as $module) {
+                                                    $enrolledItems[] = [
+                                                        'type' => 'Module',
+                                                        'name' => $module->module_name ?? 'Unknown Module',
+                                                        'id' => $module->modules_id ?? 'N/A'
+                                                    ];
+                                                }
                                             }
                                         }
                                     }
@@ -474,13 +888,25 @@ class AdminController extends Controller
                                             : $enrollment->registration->selected_modules;
                                             
                                         if (is_array($selectedModules) && !empty($selectedModules)) {
-                                            $modules = \App\Models\Module::whereIn('modules_id', $selectedModules)->get();
-                                            foreach ($modules as $module) {
-                                                $enrolledItems[] = [
-                                                    'type' => 'Module',
-                                                    'name' => $module->module_name ?? 'Unknown Module',
-                                                    'id' => $module->modules_id ?? 'N/A'
-                                                ];
+                                            // Flatten the array in case it's nested
+                                            $moduleIds = [];
+                                            foreach ($selectedModules as $module) {
+                                                if (is_array($module) && isset($module['modules_id'])) {
+                                                    $moduleIds[] = $module['modules_id'];
+                                                } elseif (is_numeric($module)) {
+                                                    $moduleIds[] = $module;
+                                                }
+                                            }
+                                            
+                                            if (!empty($moduleIds)) {
+                                                $modules = \App\Models\Module::whereIn('modules_id', $moduleIds)->get();
+                                                foreach ($modules as $module) {
+                                                    $enrolledItems[] = [
+                                                        'type' => 'Module',
+                                                        'name' => $module->module_name ?? 'Unknown Module',
+                                                        'id' => $module->modules_id ?? 'N/A'
+                                                    ];
+                                                }
                                             }
                                         }
                                     }
@@ -589,6 +1015,21 @@ class AdminController extends Controller
                 'payment_status' => 'paid',
                 'updated_at' => now()
             ]);
+            
+            // Update batch capacity if enrollment is approved and has a batch
+            if ($enrollment->batch_id && $enrollment->enrollment_status === 'approved') {
+                $batch = \App\Models\StudentBatch::find($enrollment->batch_id);
+                if ($batch) {
+                    // Recalculate actual capacity based on approved and paid enrollments
+                    $actualCapacity = \App\Models\Enrollment::where('batch_id', $batch->batch_id)
+                        ->where('enrollment_status', 'approved')
+                        ->where('payment_status', 'paid')
+                        ->count();
+                    
+                    $batch->update(['current_capacity' => $actualCapacity]);
+                    Log::info('Updated batch capacity after payment', ['batch_id' => $batch->batch_id, 'new_capacity' => $actualCapacity]);
+                }
+            }
             
             // Process referral if both enrollment and payment are approved/paid
             \App\Helpers\ReferralCodeGenerator::processPendingReferral($enrollment->enrollment_id);

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Program;
+use App\Models\Student;
+use App\Models\Batch;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -141,10 +144,12 @@ class AdminProgramController extends Controller
     {
         $request->validate([
             'program_name' => 'required|string|max:100',
+            'program_description' => 'nullable|string|max:1000',
         ]);
 
         Program::create([
             'program_name' => $request->program_name,
+            'program_description' => $request->program_description,
             'created_by_admin_id' => Auth::user()->admin_id ?? 1,
             'is_archived' => false,
         ]);
@@ -156,17 +161,90 @@ class AdminProgramController extends Controller
 
     public function batchStore(Request $request)
     {
-        $request->validate([
-            'programs' => 'required|array|min:1',
-            'programs.*.program_name' => 'required|string|max:100',
-            'programs.*.program_description' => 'nullable|string|max:500',
-        ]);
+        // Check if this is a CSV file upload or direct array data
+        if ($request->hasFile('csv_file')) {
+            // Handle CSV file upload
+            $request->validate([
+                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            ]);
+
+            try {
+                $file = $request->file('csv_file');
+                $programs = [];
+                
+                // Read CSV file
+                if (($handle = fopen($file->getPathname(), "r")) !== FALSE) {
+                    // Skip header row if it exists
+                    $firstRow = fgetcsv($handle, 1000, ",");
+                    
+                    // Check if first row looks like a header (contains "name" or "description")
+                    $isHeader = (stripos($firstRow[0] ?? '', 'name') !== false || 
+                               stripos($firstRow[0] ?? '', 'program') !== false);
+                    
+                    if (!$isHeader) {
+                        // First row is data, process it
+                        if (!empty($firstRow[0])) {
+                            $programs[] = [
+                                'program_name' => trim($firstRow[0]),
+                                'program_description' => !empty($firstRow[1]) ? trim($firstRow[1]) : null,
+                            ];
+                        }
+                    }
+                    
+                    // Process remaining rows
+                    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                        if (!empty($data[0])) {
+                            $programs[] = [
+                                'program_name' => trim($data[0]),
+                                'program_description' => !empty($data[1]) ? trim($data[1]) : null,
+                            ];
+                        }
+                    }
+                    fclose($handle);
+                }
+
+                if (empty($programs)) {
+                    return redirect()
+                        ->route('admin.programs.index')
+                        ->with('error', 'No valid program data found in the CSV file.');
+                }
+
+            } catch (\Exception $e) {
+                return redirect()
+                    ->route('admin.programs.index')
+                    ->with('error', 'Error reading CSV file: ' . $e->getMessage());
+            }
+        } else {
+            // Handle direct array data
+            $request->validate([
+                'programs' => 'required|array|min:1',
+                'programs.*.program_name' => 'required|string|max:100',
+                'programs.*.program_description' => 'nullable|string|max:500',
+            ]);
+            
+            $programs = $request->programs;
+        }
+
+        // Validate program data
+        foreach ($programs as $index => $programData) {
+            if (empty($programData['program_name']) || strlen($programData['program_name']) > 100) {
+                return redirect()
+                    ->route('admin.programs.index')
+                    ->with('error', "Invalid program name at row " . ($index + 1));
+            }
+            
+            if (!empty($programData['program_description']) && strlen($programData['program_description']) > 500) {
+                return redirect()
+                    ->route('admin.programs.index')
+                    ->with('error', "Program description too long at row " . ($index + 1));
+            }
+        }
 
         try {
             $createdCount = 0;
             $adminId = Auth::user()->admin_id ?? 1;
 
-            foreach ($request->programs as $programData) {
+            foreach ($programs as $programData) {
                 Program::create([
                     'program_name' => $programData['program_name'],
                     'program_description' => $programData['program_description'] ?? null,
@@ -264,30 +342,44 @@ class AdminProgramController extends Controller
         $program = Program::findOrFail($id);
 
         try {
-            $rows = DB::table('students')
-                ->leftJoin('users', 'students.user_id', '=', 'users.user_id')
-                ->where('students.program_id', $id)
-                ->select([
-                    'students.firstname',
-                    'students.lastname',
-                    'students.email',
-                    'users.email as user_email',
-                    'students.created_at',
-                    'students.student_id as id',
-                    'students.Start_Date'
-                ])
-                ->get();
+            // Get all enrollments for this program with related data
+            $enrollments = $program->enrollments()
+                ->with(['user', 'student', 'package'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($enrollment) {
+                    // Determine student info from either user or student relationship
+                    $studentName = 'Unknown Student';
+                    $email = 'No email available';
+                    $studentId = null;
+                    $startDate = null;
 
-            $enrollments = $rows->map(function ($r) {
-                return [
-                    'student_name' => trim(($r->firstname ?? '') . ' ' . ($r->lastname ?? '')) ?: 'Unknown Student',
-                    'email' => $r->email ?: $r->user_email ?: 'No email available',
-                    'student_id' => $r->id,
-                    'enrolled_at' => $r->created_at ? Carbon::parse($r->created_at)->format('M d, Y') : 'Unknown date',
-                    'status' => 'Enrolled',
-                    'start_date' => $r->Start_Date ? Carbon::parse($r->Start_Date)->format('M d, Y') : 'Not set',
-                ];
-            });
+                    if ($enrollment->user) {
+                        $firstName = $enrollment->user->user_firstname ?? '';
+                        $lastName = $enrollment->user->user_lastname ?? '';
+                        $studentName = trim($firstName . ' ' . $lastName) ?: 'Unknown Student';
+                        $email = $enrollment->user->email ?? 'No email available';
+                    } elseif ($enrollment->student) {
+                        $firstName = $enrollment->student->firstname ?? '';
+                        $lastName = $enrollment->student->lastname ?? '';
+                        $studentName = trim($firstName . ' ' . $lastName) ?: 'Unknown Student';
+                        $email = $enrollment->student->email ?? 'No email available';
+                        $studentId = $enrollment->student->student_id;
+                        $startDate = $enrollment->student->Start_Date;
+                    }
+
+                    return [
+                        'student_name' => $studentName,
+                        'email' => $email,
+                        'student_id' => $studentId ?? $enrollment->enrollment_id,
+                        'enrolled_at' => $enrollment->created_at ? $enrollment->created_at->format('M d, Y') : 'Unknown date',
+                        'enrollment_status' => ucfirst($enrollment->enrollment_status ?? 'pending'),
+                        'payment_status' => ucfirst($enrollment->payment_status ?? 'pending'),
+                        'package_name' => $enrollment->package->package_name ?? 'N/A',
+                        'start_date' => $startDate ? \Carbon\Carbon::parse($startDate)->format('M d, Y') : 'Not set',
+                        'learning_mode' => $enrollment->learning_mode ?? 'N/A',
+                    ];
+                });
 
             return response()->json([
                 'program_name' => $program->program_name,
@@ -295,7 +387,7 @@ class AdminProgramController extends Controller
                 'enrollments' => $enrollments,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching enrollments: ' . $e->getMessage());
+            Log::error('Error fetching enrollments for program ' . $id . ': ' . $e->getMessage());
 
             return response()->json([
                 'error' => 'Error loading enrollments: ' . $e->getMessage(),
@@ -374,21 +466,30 @@ class AdminProgramController extends Controller
                 ->where('enrollments.status', 'completed')
                 ->count();
 
-            return view('admin.admin-student-enrollments.admin-enrollments', compact(
+            return view('admin.admin-student-enrollment.admin-enrollments', compact(
                 'totalEnrollments',
-                'activeEnrollments',
+                'activeEnrollments', 
                 'pendingEnrollments',
                 'completedCourses'
-            ));
+            ) + [
+                'approvedStudents' => Student::whereNotNull('date_approved')->get(),
+                'programs' => Program::where('is_archived', false)->get(),
+                'batches' => Batch::where('is_active', true)->get(),
+                'courses' => Course::where('is_archived', false)->get()
+            ]);
         } catch (\Exception $e) {
             Log::error('Enrollment management error: ' . $e->getMessage());
 
-            return view('admin.admin-student-enrollments.admin-enrollments', [
+            return view('admin.admin-student-enrollment.admin-enrollments', [
                 'dbError' => 'Unable to load enrollment data.',
                 'totalEnrollments' => 0,
                 'activeEnrollments' => 0,
                 'pendingEnrollments' => 0,
-                'completedCourses' => 0
+                'completedCourses' => 0,
+                'approvedStudents' => collect(),
+                'programs' => collect(),
+                'batches' => collect(),
+                'courses' => collect()
             ]);
         }
     }
