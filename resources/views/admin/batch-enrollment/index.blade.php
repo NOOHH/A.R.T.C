@@ -132,7 +132,7 @@
                 <h5 class="modal-title">Edit Batch</h5>
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
-            <form action="{{ route('admin.batches.update', $batch->id) }}" method="POST">
+            <form class="edit-batch-form" data-batch-id="{{ $batch->id }}">
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
@@ -187,6 +187,34 @@ function deleteBatch(batchId) {
         });
     }
 }
+
+// AJAX for Edit Batch forms
+
+document.querySelectorAll('.edit-batch-form').forEach(form => {
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        const batchId = form.getAttribute('data-batch-id');
+        const formData = new FormData(form);
+        fetch(`/admin/batches/${batchId}`, {
+            method: 'POST', // Laravel expects POST with _method=PUT
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                // DO NOT set 'Content-Type' here!
+            },
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                return response.text().then(text => { throw new Error(text); });
+            }
+        })
+        .catch(error => {
+            alert('Update failed: ' + error.message);
+        });
+    };
+});
 </script>
 @endpush
 @endsection

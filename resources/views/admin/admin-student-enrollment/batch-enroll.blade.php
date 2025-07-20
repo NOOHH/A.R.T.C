@@ -153,10 +153,12 @@
                                     <td>{{ $batch->batch_name }}</td>
                                     <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
                                     <td>
-                                        @if($batch->assignedProfessor)
-                                            <span class="badge bg-success me-1">
-                                                {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
-                                            </span>
+                                        @if($batch->professors && $batch->professors->count() > 0)
+                                            @foreach($batch->professors as $professor)
+                                                <span class="badge bg-success me-1">
+                                                    {{ $professor->professor_name }}
+                                                </span>
+                                            @endforeach
                                         @else
                                             <span class="badge bg-secondary">Unassigned</span>
                                         @endif
@@ -304,8 +306,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="enrollment_deadline" class="form-label">Registration Deadline</label>
-                        <input type="date" class="form-control" id="enrollment_deadline" name="enrollment_deadline" required>
+                        <label for="registration_deadline" class="form-label">Registration Deadline</label>
+                        <input type="date" class="form-control" id="registration_deadline" name="registration_deadline" required>
                     </div>
                     <div class="mb-3">
                         <label for="start_date" class="form-label">Start Date</label>
@@ -386,8 +388,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_enrollment_deadline{{ $batch->batch_id }}" class="form-label">Registration Deadline</label>
-                        <input type="date" class="form-control" id="edit_enrollment_deadline{{ $batch->batch_id }}" name="enrollment_deadline" value="{{ $batch->registration_deadline->format('Y-m-d') }}" required>
+                        <label for="edit_registration_deadline{{ $batch->batch_id }}" class="form-label">Registration Deadline</label>
+                        <input type="date" class="form-control" id="edit_registration_deadline{{ $batch->batch_id }}" name="registration_deadline" value="{{ $batch->registration_deadline->format('Y-m-d') }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="edit_start_date{{ $batch->batch_id }}" class="form-label">Start Date</label>
@@ -549,15 +551,15 @@
 // Set minimum dates for date inputs
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
-    const enrollmentDeadlineInput = document.getElementById('enrollment_deadline');
+    const registrationDeadlineInput = document.getElementById('registration_deadline');
     const startDateInput = document.getElementById('start_date');
     
     // Note: We allow registration deadline to be any date to support ongoing batches
-    if(enrollmentDeadlineInput) {
+    if(registrationDeadlineInput) {
         // Don't set minimum date for registration deadline - allow flexibility for ongoing batches
         
         // Update start date minimum when registration deadline changes
-        enrollmentDeadlineInput.addEventListener('change', function() {
+        registrationDeadlineInput.addEventListener('change', function() {
             if(startDateInput) {
                 // Allow start date to be same or before registration deadline for ongoing batches
                 // But don't enforce minimum based on registration deadline
@@ -861,13 +863,34 @@ function updateBatch(event, batchId) {
     const form = document.getElementById(`editBatchForm${batchId}`);
     const formData = new FormData(form);
     
-    fetch(`{{ url('admin/batches') }}/${batchId}`, {
+    // Convert FormData to object, handling multi-select fields properly
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (key.endsWith('[]')) {
+            // Handle array fields (like professor_ids[])
+            const arrayKey = key.slice(0, -2); // Remove '[]' suffix
+            if (!data[arrayKey]) {
+                data[arrayKey] = [];
+            }
+            data[arrayKey].push(value);
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Check for required fields
+    if (!data.registration_deadline) {
+        alert('Registration deadline is required');
+        return;
+    }
+    
+    fetch(`{{ url('admin/batches') }}/${batchId}/update`, {
         method: 'PUT',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(Object.fromEntries(formData))
+        body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {

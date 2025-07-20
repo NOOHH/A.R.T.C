@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Batch;
 use App\Models\StudentBatch;
 use App\Models\Program;
+use App\Models\Professor;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,12 +18,14 @@ class AdminBatchController extends Controller
      */
     public function index()
     {
-        $batches = StudentBatch::with(['program', 'creator', 'assignedProfessor'])
+        $batches = StudentBatch::with(['program', 'creator', 'assignedProfessor', 'professors'])
             ->withCount('enrollments')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        return view('admin.admin-student-enrollment.batch-enroll', compact('batches'));
+        $professors = Professor::where('professor_archived', false)->get();
+
+        return view('admin.batch-enrollment.index', compact('batches', 'professors'));
     }
 
     /**
@@ -92,18 +95,37 @@ class AdminBatchController extends Controller
             'batch_status' => 'required|in:available,ongoing,closed',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
-            'registration_deadline' => 'required|date'
+            'registration_deadline' => 'required|date',
+            'professor_ids' => 'nullable|array',
+            'professor_ids.*' => 'exists:professors,professor_id'
         ]);
 
         // Don't allow reducing capacity below current enrollment count
         $currentEnrollmentCount = $batch->current_capacity ?? 0;
         if ($validated['max_capacity'] < $currentEnrollmentCount) {
-            return back()->withErrors([
-                'max_capacity' => "Cannot reduce capacity below current enrollment count ({$currentEnrollmentCount} students)"
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot reduce capacity below current enrollment count ({$currentEnrollmentCount} students)"
+            ], 422);
         }
 
+        // Remove professor_ids from validated data before updating batch
+        $professorIds = $validated['professor_ids'] ?? [];
+        unset($validated['professor_ids']);
+
         $batch->update($validated);
+
+        // Handle professor assignments
+        if (isset($professorIds)) {
+            $batch->professors()->sync($professorIds);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Batch updated successfully!'
+            ]);
+        }
 
         return redirect()->route('admin.batches.index')
             ->with('success', 'Batch updated successfully!');
@@ -214,5 +236,52 @@ class AdminBatchController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    /**
+     * Assign professors to a batch
+     */
+    public function assignProfessors(Request $request, $id)
+    {
+        $request->validate([
+            'professor_ids' => 'required|array',
+            'professor_ids.*' => 'exists:professors,id'
+        ]);
+
+        $batch = StudentBatch::findOrFail($id);
+        
+        // Sync professors to the batch
+        $batch->professors()->sync($request->professor_ids);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Professors assigned successfully'
+        ]);
+    }
+
+    /**
+     * Remove a professor from a batch
+     */
+    public function removeProfessor($batchId, $professorId)
+    {
+        $batch = StudentBatch::findOrFail($batchId);
+        $batch->professors()->detach($professorId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Professor removed successfully'
+        ]);
+    }
+
+    /**
+     * Get all professors for assignment
+     */
+    public function getProfessors()
+    {
+        $professors = Professor::where('is_archived', false)
+            ->select('id', 'first_name', 'last_name', 'email', 'department')
+            ->get();
+
+        return response()->json($professors);
     }
 }
