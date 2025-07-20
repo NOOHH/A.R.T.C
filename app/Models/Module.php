@@ -114,11 +114,44 @@ class Module extends Model
     {
         return $this->hasMany(ModuleCompletion::class, 'module_id', 'modules_id');
     }
+
+    public function adminOverride()
+    {
+        return $this->hasOne(AdminOverride::class, 'target_id')
+            ->where('override_type', 'module');
+    }
+
+    public function progress()
+    {
+        return $this->hasMany(StudentProgress::class, 'item_id')
+            ->where('item_type', 'module');
+    }
     
     // Check if a student has completed this module
     public function isCompletedBy($studentId)
     {
-        return $this->completions()->where('student_id', $studentId)->exists();
+        return StudentProgress::isCompleted($studentId, 'module', $this->modules_id);
+    }
+
+    // Override system helper methods
+    public function isAccessibleTo($studentId = null)
+    {
+        return AdminOverride::isItemAccessible('module', $this->modules_id, $studentId);
+    }
+
+    public function getLockReasonFor($studentId = null)
+    {
+        return AdminOverride::getItemLockReason('module', $this->modules_id, $studentId);
+    }
+
+    public function getProgressFor($studentId)
+    {
+        return StudentProgress::getProgress($studentId, 'module', $this->modules_id);
+    }
+
+    public function markCompletedBy($studentId, $completionData = null)
+    {
+        return StudentProgress::markItemCompleted($studentId, 'module', $this->modules_id, $completionData);
     }
 
     // Scope for ordering modules

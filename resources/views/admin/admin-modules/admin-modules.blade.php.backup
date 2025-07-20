@@ -2140,12 +2140,12 @@ function editContent(contentId) {
                             <input type="file" id="edit_content_file" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
                         `;
                         
-                        if (data.content.attachment_path) {
-                            const fileName = data.content.attachment_path.split('/').pop();
+                        if (data.content.file_path) {
+                            const fileName = data.content.file_path.split('/').pop();
                             fileHtml += `
                                 <div class="current-file-info mt-2 p-2 bg-light rounded">
                                     <small class="text-muted"><strong>Current file:</strong> 
-                                        <a href="/storage/${data.content.attachment_path}" target="_blank" class="text-primary">
+                                        <a href="/storage/${data.content.file_path}" target="_blank" class="text-primary">
                                             <i class="bi bi-file-earmark"></i> ${fileName}
                                         </a>
                                     </small>

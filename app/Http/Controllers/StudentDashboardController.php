@@ -10,7 +10,8 @@ use App\Models\Student;
 use App\Models\Program;
 use App\Models\Module;
 use App\Models\Course;
-use App\Models\Lesson;
+use App\Models\StudentProgress;
+use App\Models\AdminOverride;
 use App\Models\ContentItem;
 use App\Models\Deadline;
 use App\Models\Announcement;
@@ -434,6 +435,17 @@ class StudentDashboardController extends Controller
                 }
             }
             
+            // Check module accessibility using override system
+            $moduleAccessible = true;
+            $moduleLockReason = null;
+            
+            if ($student) {
+                $moduleAccessible = AdminOverride::isItemAccessible('module', $module->modules_id, $student->student_id);
+                if (!$moduleAccessible) {
+                    $moduleLockReason = AdminOverride::getLockReasonForStudent('module', $module->modules_id, $student->student_id);
+                }
+            }
+            
             $formattedModule = [
                 'id' => $module->modules_id,
                 'name' => $module->module_name,
@@ -448,6 +460,8 @@ class StudentDashboardController extends Controller
                 'is_locked' => $isLocked,
                 'is_completed' => $isCompleted,
                 'has_admin_override' => $hasAdminOverride,
+                'is_accessible' => $moduleAccessible,
+                'lock_reason' => $moduleLockReason,
                 'content_data' => $contentData,
                 'video_path' => $module->video_path,
                 'additional_content' => $module->additional_content
@@ -641,21 +655,18 @@ class StudentDashboardController extends Controller
             ->ordered()
             ->get();
         
-        // Format courses with their content (lessons, PDFs, etc.)
+        // Format courses with their content (content items, PDFs, etc.)
         $formattedCourses = [];
         foreach ($courses as $course) {
-            // Get lessons for this course
-            $lessons = Lesson::where('course_id', $course->subject_id)
-                ->where('is_active', true)
-                ->orderBy('lesson_order', 'asc')
-                ->get();
+            // Get the current student ID for override checks
+            $studentId = auth()->id();
             
-            // Get content items for this course
+            // Get content items for this course (replacing lessons)
             $contentItems = ContentItem::where('course_id', $course->subject_id)
                 ->where('is_active', true)
                 ->orderBy('content_order', 'asc')
                 ->get();
-            
+
             $formattedCourses[] = [
                 'id' => $course->subject_id,
                 'name' => $course->subject_name,
@@ -663,18 +674,13 @@ class StudentDashboardController extends Controller
                 'price' => $course->subject_price,
                 'order' => $course->subject_order,
                 'is_required' => $course->is_required,
-                'lessons' => $lessons->map(function($lesson) {
-                    return [
-                        'id' => $lesson->lesson_id,
-                        'name' => $lesson->lesson_name,
-                        'description' => $lesson->lesson_description,
-                        'duration' => $lesson->lesson_duration,
-                        'video_url' => $lesson->lesson_video_url,
-                        'order' => $lesson->lesson_order,
-                        'learning_mode' => $lesson->learning_mode,
-                    ];
-                }),
-                'content_items' => $contentItems->map(function($item) {
+                'is_accessible' => $course->isAccessibleTo($studentId),
+                'lock_reason' => $course->getLockReasonFor($studentId),
+                'is_completed' => $course->isCompletedBy($studentId),
+                'progress' => $course->getProgressFor($studentId),
+                // Remove lessons since table is dropped
+                'lessons' => [],
+                'content_items' => $contentItems->map(function($item) use ($studentId) {
                     return [
                         'id' => $item->id,
                         'title' => $item->content_title,
@@ -682,11 +688,16 @@ class StudentDashboardController extends Controller
                         'type' => $item->content_type,
                         'data' => $item->content_data,
                         'attachment_path' => $item->attachment_path,
+                        'url' => $item->content_url,
+                        'order' => $item->content_order,
+                        'is_accessible' => $item->isAccessibleTo($studentId),
+                        'lock_reason' => $item->getLockReasonFor($studentId),
+                        'is_completed' => $item->isCompletedBy($studentId),
+                        'progress' => $item->getProgressFor($studentId),
                         'attachment_url' => $item->attachment_path ? asset('storage/' . $item->attachment_path) : null,
                         'max_points' => $item->max_points,
                         'due_date' => $item->due_date,
                         'time_limit' => $item->time_limit,
-                        'order' => $item->content_order,
                     ];
                 })
             ];
@@ -1184,25 +1195,30 @@ class StudentDashboardController extends Controller
             
             // Get courses associated with this module
             $courses = \App\Models\Course::where('module_id', $moduleId)
-                ->with(['lessons' => function($query) {
-                    $query->with(['contentItems' => function($contentQuery) {
-                        $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
-                    }])->orderBy('lesson_order');
-                }])
                 ->select('subject_id', 'subject_name', 'subject_description', 'subject_price', 'is_required', 'module_id')
                 ->orderBy('subject_order')
                 ->get();
 
             // Also get direct content items (not linked to lessons)
             $directContentItems = \App\Models\ContentItem::whereIn('course_id', $courses->pluck('subject_id'))
-                ->whereNull('lesson_id')
                 ->select('id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required')
                 ->orderBy('content_order')
                 ->get();
             
             // Format the response
-            $formattedCourses = $courses->map(function($course) use ($directContentItems) {
+            $formattedCourses = $courses->map(function($course) use ($directContentItems, $student) {
                 $courseDirectItems = $directContentItems->where('course_id', $course->subject_id);
+                
+                // Check course accessibility
+                $courseAccessible = true;
+                $courseLockReason = null;
+                
+                if ($student) {
+                    $courseAccessible = AdminOverride::isItemAccessible('course', $course->subject_id, $student->student_id);
+                    if (!$courseAccessible) {
+                        $courseLockReason = AdminOverride::getLockReasonForStudent('course', $course->subject_id, $student->student_id);
+                    }
+                }
                 
                 return [
                     'course_id' => $course->subject_id,
@@ -1211,29 +1227,21 @@ class StudentDashboardController extends Controller
                     'price' => $course->subject_price,
                     'duration' => null, // Not available in this table structure
                     'required' => (bool) $course->is_required,
-                    'lessons' => $course->lessons->map(function($lesson) {
-                        return [
-                            'id' => $lesson->lesson_id,
-                            'lesson_name' => $lesson->lesson_name,
-                            'lesson_description' => $lesson->lesson_description,
-                            'duration' => $lesson->lesson_duration ?? null,
-                            'content_items' => $lesson->contentItems->map(function($item) {
-                                return [
-                                    'id' => $item->id,
-                                    'content_type' => $item->content_type,
-                                    'content_title' => $item->content_title,
-                                    'content_description' => $item->content_description,
-                                    'content_url' => $item->attachment_path,
-                                    'attachment_path' => $item->attachment_path,
-                                    'content_data' => $item->content_data,
-                                    'max_points' => $item->max_points,
-                                    'due_date' => $item->due_date,
-                                    'is_required' => (bool) $item->is_required
-                                ];
-                            })
-                        ];
-                    }),
-                    'direct_content_items' => $courseDirectItems->map(function($item) {
+                    'is_accessible' => $courseAccessible,
+                    'lock_reason' => $courseLockReason,
+                    'lessons' => [], // No lessons since lessons table is dropped
+                    'direct_content_items' => $courseDirectItems->map(function($item) use ($student) {
+                        // Check content accessibility
+                        $contentAccessible = true;
+                        $contentLockReason = null;
+                        
+                        if ($student) {
+                            $contentAccessible = AdminOverride::isItemAccessible('content', $item->id, $student->student_id);
+                            if (!$contentAccessible) {
+                                $contentLockReason = AdminOverride::getLockReasonForStudent('content', $item->id, $student->student_id);
+                            }
+                        }
+                        
                         return [
                             'id' => $item->id,
                             'content_type' => $item->content_type,
@@ -1244,7 +1252,9 @@ class StudentDashboardController extends Controller
                             'content_data' => $item->content_data,
                             'max_points' => $item->max_points,
                             'due_date' => $item->due_date,
-                            'is_required' => (bool) $item->is_required
+                            'is_required' => (bool) $item->is_required,
+                            'is_accessible' => $contentAccessible,
+                            'lock_reason' => $contentLockReason
                         ];
                     })
                 ];

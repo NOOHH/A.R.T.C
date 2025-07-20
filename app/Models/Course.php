@@ -41,12 +41,25 @@ class Course extends Model
 
     public function lessons()
     {
-        return $this->hasMany(Lesson::class, 'course_id', 'subject_id');
+        // Lessons table is dropped - return an empty hasMany relationship that won't break eager loading
+        return $this->hasMany(ContentItem::class, 'course_id', 'subject_id')->whereRaw('1 = 0'); // Always false condition
     }
 
     public function contentItems()
     {
         return $this->hasMany(ContentItem::class, 'course_id', 'subject_id');
+    }
+
+    public function adminOverride()
+    {
+        return $this->hasOne(AdminOverride::class, 'target_id')
+            ->where('override_type', 'course');
+    }
+
+    public function progress()
+    {
+        return $this->hasMany(StudentProgress::class, 'item_id')
+            ->where('item_type', 'course');
     }
 
     public function enrollmentCourses()
@@ -106,5 +119,42 @@ class Course extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('subject_order', 'asc');
+    }
+
+    // Override system helper methods
+    public function isAccessibleTo($studentId = null)
+    {
+        // First check if parent module is accessible
+        if ($this->module && !$this->module->isAccessibleTo($studentId)) {
+            return false;
+        }
+        
+        // Then check if admin has overridden this course
+        return AdminOverride::isItemAccessible('course', $this->subject_id, $studentId);
+    }
+
+    public function getLockReasonFor($studentId = null)
+    {
+        // Check module first
+        if ($this->module && !$this->module->isAccessibleTo($studentId)) {
+            return $this->module->getLockReasonFor($studentId);
+        }
+        
+        return AdminOverride::getItemLockReason('course', $this->subject_id, $studentId);
+    }
+
+    public function isCompletedBy($studentId)
+    {
+        return StudentProgress::isCompleted($studentId, 'course', $this->subject_id);
+    }
+
+    public function getProgressFor($studentId)
+    {
+        return StudentProgress::getProgress($studentId, 'course', $this->subject_id);
+    }
+
+    public function markCompletedBy($studentId, $completionData = null)
+    {
+        return StudentProgress::markItemCompleted($studentId, 'course', $this->subject_id, $completionData);
     }
 }

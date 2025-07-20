@@ -123,6 +123,69 @@
     overflow-y: auto;
   }
 
+  /* Override System Styles for Students */
+  .locked-item {
+    opacity: 0.6;
+    position: relative;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  .locked-item::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(220, 53, 69, 0.1);
+    border: 2px dashed #dc3545;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .lock-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .lock-overlay.scheduled {
+    background: rgba(255, 193, 7, 0.9);
+    color: #000;
+  }
+
+  .lock-overlay.prerequisite {
+    background: rgba(108, 117, 125, 0.9);
+    color: white;
+  }
+
+  .locked-item .module-header {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+  }
+
+  .locked-item .course-header {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+  }
+
+  .locked-item .content-item {
+    background: #f8f9fa !important;
+    border-color: #6c757d !important;
+  }
+
   .content-placeholder {
     text-align: center;
     color: #6c757d;
@@ -1188,11 +1251,18 @@
             <div class="modules-hierarchy">
                 @if(isset($course['modules']) && count($course['modules']) > 0)
                     @foreach($course['modules'] as $index => $module)
-                    <div class="module-container" data-module-id="{{ $module['id'] ?? $index }}">
-                        <div class="module-header" onclick="toggleModule('{{ $module['id'] ?? $index }}')">
+                    @php
+                        $isAccessible = $module['is_accessible'] ?? true;
+                        $lockReason = $module['lock_reason'] ?? null;
+                    @endphp
+                    <div class="module-container {{ !$isAccessible ? 'locked-item' : '' }}" data-module-id="{{ $module['id'] ?? $index }}">
+                        <div class="module-header" onclick="{{ $isAccessible ? "toggleModule('" . ($module['id'] ?? $index) . "')" : 'return false;' }}">
                             <div class="module-title">
                                 <div class="module-number {{ isset($module['is_completed']) && $module['is_completed'] ? 'completed' : '' }}">
                                     {{ $index + 1 }}
+                                    @if(!$isAccessible)
+                                        <i class="bi bi-lock position-absolute" style="font-size: 0.7rem; top: -2px; right: -2px;"></i>
+                                    @endif
                                 </div>
                                 <div class="module-info">
                                     <h3>{{ $module['name'] ?? $module['title'] ?? 'Module ' . ($index + 1) }}</h3>
@@ -1201,6 +1271,13 @@
                             </div>
                             <i class="bi bi-chevron-right module-toggle" id="module-toggle-{{ $module['id'] ?? $index }}"></i>
                         </div>
+                        
+                        @if(!$isAccessible && $lockReason)
+                        <div class="lock-overlay">
+                            <i class="bi bi-lock"></i>
+                            <span>{{ $lockReason }}</span>
+                        </div>
+                        @endif
                         
                         <div class="module-content" id="module-content-{{ $module['id'] ?? $index }}">
                             <div class="loading-indicator" id="loading-{{ $module['id'] ?? $index }}" style="display: none;">
@@ -1416,17 +1493,24 @@ document.addEventListener('DOMContentLoaded', function() {
         let coursesHtml = '';
         courses.forEach((course, index) => {
             const courseId = course.course_id || course.subject_id;
+            const isAccessible = course.is_accessible !== false;
+            const lockReason = course.lock_reason || null;
+            
             // Check for content in both lessons and direct content items
             const hasLessonContent = course.lessons && course.lessons.some(lesson => lesson.content_items && lesson.content_items.length > 0);
             const hasDirectContent = course.direct_content_items && course.direct_content_items.length > 0;
             const hasContent = hasLessonContent || hasDirectContent;
             
+            const lockedClass = !isAccessible ? 'locked-item' : '';
+            const clickHandler = isAccessible ? `toggleCourse('${moduleId}', '${courseId}')` : 'return false;';
+            
             coursesHtml += `
-                <div class="course-item">
-                    <div class="course-header" onclick="toggleCourse('${moduleId}', '${courseId}')">
+                <div class="course-item ${lockedClass}" data-course-id="${courseId}">
+                    <div class="course-header" onclick="${clickHandler}">
                         <div class="course-info">
                             <div class="course-icon">
                                 <i class="bi bi-book"></i>
+                                ${!isAccessible ? '<i class="bi bi-lock position-absolute" style="font-size: 0.6rem; top: -2px; right: -2px; color: #dc3545;"></i>' : ''}
                             </div>
                             <div class="course-details">
                                 <h5>${course.course_name || course.subject_name}</h5>
@@ -1436,6 +1520,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="bi bi-chevron-right course-toggle" id="course-toggle-${moduleId}-${courseId}"></i>
                     </div>
                     
+                    ${!isAccessible && lockReason ? `
+                    <div class="lock-overlay ${getLockType(lockReason)}">
+                        <i class="bi bi-lock"></i>
+                        <span>${lockReason}</span>
+                    </div>
+                    ` : ''}
+                    
                     <div class="content-list" id="content-list-${moduleId}-${courseId}">
                         ${hasContent ? generateContentListHtml(course, moduleId, courseId) : '<div style="padding: 1rem; color: #6c757d; text-align: center;">No content available</div>'}
                     </div>
@@ -1444,6 +1535,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         coursesContent.innerHTML = coursesHtml;
+    }
+
+    // Helper function to determine lock type for styling
+    function getLockType(lockReason) {
+        if (lockReason.includes('Available on') || lockReason.includes('available on')) {
+            return 'scheduled';
+        } else if (lockReason.includes('Complete') || lockReason.includes('complete')) {
+            return 'prerequisite';
+        }
+        return '';
     }
     
     // Toggle course content - admin-style
@@ -1470,7 +1571,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (courseToggle) courseToggle.classList.toggle('expanded');
         
         currentCourseId = courseId;
-        currentCourseId = courseId;
     };
     
     // Generate content list HTML - admin-style structure
@@ -1496,15 +1596,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     lesson.content_items.forEach((item, index) => {
                         const typeIcon = getContentTypeIcon(item.content_type);
                         const statusIcon = item.completed ? '<div class="progress-ring completed"><i class="bi bi-check"></i></div>' : '<div class="progress-ring"></div>';
+                        const isAccessible = item.is_accessible !== false;
+                        const lockReason = item.lock_reason || null;
+                        const lockedClass = !isAccessible ? 'locked-item' : '';
+                        const clickHandler = isAccessible ? `loadContent('${item.id}', '${item.content_type}', '${item.content_title}')` : 'return false;';
                         
                         html += `
-                            <div class="content-item ${item.completed ? 'completed' : ''}" onclick="loadContent('${item.id}', '${item.content_type}', '${item.content_title}')">
+                            <div class="content-item ${item.completed ? 'completed' : ''} ${lockedClass}" onclick="${clickHandler}">
                                 <div class="content-type-icon">
                                     <i class="bi ${typeIcon}"></i>
+                                    ${!isAccessible ? '<i class="bi bi-lock position-absolute" style="font-size: 0.6rem; top: -2px; right: -2px; color: #dc3545;"></i>' : ''}
                                 </div>
                                 <span class="content-type-badge ${(item.content_type || 'content').toLowerCase()}">${(item.content_type || 'CONTENT').toUpperCase()}</span>
                                 <span class="content-title">${item.content_title}</span>
                                 <div class="content-status">${statusIcon}</div>
+                                ${!isAccessible && lockReason ? `
+                                <div class="lock-overlay ${getLockType(lockReason)}">
+                                    <i class="bi bi-lock"></i>
+                                    <span>${lockReason}</span>
+                                </div>
+                                ` : ''}
                             </div>
                         `;
                     });
@@ -1517,15 +1628,26 @@ document.addEventListener('DOMContentLoaded', function() {
             course.direct_content_items.forEach((item, index) => {
                 const typeIcon = getContentTypeIcon(item.content_type);
                 const statusIcon = item.completed ? '<div class="progress-ring completed"><i class="bi bi-check"></i></div>' : '<div class="progress-ring"></div>';
+                const isAccessible = item.is_accessible !== false;
+                const lockReason = item.lock_reason || null;
+                const lockedClass = !isAccessible ? 'locked-item' : '';
+                const clickHandler = isAccessible ? `loadContent('${item.id}', '${item.content_type}', '${item.content_title}')` : 'return false;';
                 
                 html += `
-                    <div class="content-item ${item.completed ? 'completed' : ''}" onclick="loadContent('${item.id}', '${item.content_type}', '${item.content_title}')">
+                    <div class="content-item ${item.completed ? 'completed' : ''} ${lockedClass}" onclick="${clickHandler}">
                         <div class="content-type-icon">
                             <i class="bi ${typeIcon}"></i>
+                            ${!isAccessible ? '<i class="bi bi-lock position-absolute" style="font-size: 0.6rem; top: -2px; right: -2px; color: #dc3545;"></i>' : ''}
                         </div>
                         <span class="content-type-badge ${(item.content_type || 'content').toLowerCase()}">${(item.content_type || 'CONTENT').toUpperCase()}</span>
                         <span class="content-title">${item.content_title}</span>
                         <div class="content-status">${statusIcon}</div>
+                        ${!isAccessible && lockReason ? `
+                        <div class="lock-overlay ${getLockType(lockReason)}">
+                            <i class="bi bi-lock"></i>
+                            <span>${lockReason}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 `;
             });
@@ -1721,19 +1843,57 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Handle different file types
                         if (['pdf'].includes(fileExt)) {
                             contentHtml += `
-                                <div class="pdf-viewer mb-3">
-                                    <iframe src="${fileUrl}" width="100%" height="600px" style="border: 1px solid #ddd; border-radius: 5px;"></iframe>
+                                <div class="pdf-viewer mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h6 class="mb-0"><i class="bi bi-file-pdf text-danger"></i> ${fileName}</h6>
+                                            <small class="text-muted">PDF Document</small>
+                                        </div>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                    <div class="pdf-container" style="border: 2px solid #dee2e6; border-radius: 6px; overflow: hidden; background: white;">
+                                        <iframe src="${fileUrl}" 
+                                                width="100%" 
+                                                height="700px" 
+                                                style="border: none; display: block;"
+                                                frameborder="0">
+                                            <p>Your browser does not support PDF viewing. <a href="${fileUrl}" target="_blank">Download the PDF</a></p>
+                                        </iframe>
+                                    </div>
                                 </div>
                             `;
                         } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExt)) {
                             contentHtml += `
-                                <div class="image-viewer mb-3 text-center">
-                                    <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
+                                <div class="image-viewer mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h6 class="mb-0"><i class="bi bi-image text-primary"></i> ${fileName}</h6>
+                                            <small class="text-muted">Image File</small>
+                                        </div>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                    <div class="text-center">
+                                        <img src="${fileUrl}" class="img-fluid" alt="${fileName}" 
+                                             style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; max-height: 600px;">
+                                    </div>
                                 </div>
                             `;
                         } else if (['mp4', 'webm', 'ogg'].includes(fileExt)) {
                             contentHtml += `
-                                <div class="video-viewer mb-3">
+                                <div class="video-viewer mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h6 class="mb-0"><i class="bi bi-camera-video text-success"></i> ${fileName}</h6>
+                                            <small class="text-muted">Video File</small>
+                                        </div>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
                                     <video controls style="width: 100%; max-height: 500px; border: 1px solid #ddd; border-radius: 5px;">
                                         <source src="${fileUrl}" type="video/${fileExt}">
                                         Your browser does not support the video tag.
@@ -1742,7 +1902,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             `;
                         } else if (['mp3', 'wav', 'ogg'].includes(fileExt)) {
                             contentHtml += `
-                                <div class="audio-viewer mb-3">
+                                <div class="audio-viewer mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h6 class="mb-0"><i class="bi bi-music-note text-info"></i> ${fileName}</h6>
+                                            <small class="text-muted">Audio File</small>
+                                        </div>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
                                     <audio controls style="width: 100%; border: 1px solid #ddd; border-radius: 5px;">
                                         <source src="${fileUrl}" type="audio/${fileExt}">
                                         Your browser does not support the audio tag.
@@ -1751,31 +1920,33 @@ document.addEventListener('DOMContentLoaded', function() {
                             `;
                         } else if (['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt)) {
                             contentHtml += `
-                                <div class="document-viewer mb-3 text-center p-4 border rounded bg-light">
-                                    <i class="bi bi-file-earmark-word text-primary" style="font-size: 3rem;"></i>
-                                    <p class="mt-2 mb-0">Document: ${fileName}</p>
-                                    <small class="text-muted">Click download to view the document</small>
+                                <div class="document-viewer mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <div class="text-center p-4 border rounded bg-white">
+                                        <i class="bi bi-file-earmark-word text-primary" style="font-size: 3rem;"></i>
+                                        <h6 class="mt-3 mb-2">${fileName}</h6>
+                                        <p class="text-muted mb-3">Document file - Click download to view</p>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                            <i class="bi bi-download"></i> Download Document
+                                        </a>
+                                    </div>
                                 </div>
                             `;
                         } else {
                             contentHtml += `
-                                <div class="file-viewer mb-3 text-center p-4 border rounded bg-light">
-                                    <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
-                                    <p class="mt-2 mb-0">File: ${fileName}</p>
-                                    <small class="text-muted">Preview not available for this file type</small>
+                                <div class="file-viewer mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <div class="text-center p-4 border rounded bg-white">
+                                        <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+                                        <h6 class="mt-3 mb-2">${fileName}</h6>
+                                        <p class="text-muted mb-3">File preview not available</p>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary">
+                                            <i class="bi bi-download"></i> Download File
+                                        </a>
+                                    </div>
                                 </div>
                             `;
                         }
                         
                         contentHtml += `
-                                        <div class="file-actions">
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary me-2">
-                                                <i class="bi bi-download"></i> Download ${fileName}
-                                            </a>
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary">
-                                                <i class="bi bi-eye"></i> View in New Tab
-                                            </a>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

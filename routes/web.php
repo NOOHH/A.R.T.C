@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+
 // Admin: Delete a meeting for a professor
 Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
 use App\Http\Controllers\StudentController;
@@ -783,11 +784,33 @@ Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 
 Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
      ->name('admin.modules.archive');
 
-// Admin override settings
+// Admin override settings (legacy - keeping for compatibility)
 Route::get   ('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
      ->name('admin.modules.get-override');
 Route::patch ('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
      ->name('admin.modules.update-override');
+
+// New Admin Override System Routes
+Route::middleware(['admin.auth'])->prefix('admin/overrides')->group(function () {
+    Route::get('/status/{type}/{id}', [App\Http\Controllers\AdminOverrideController::class, 'getStatus'])
+         ->name('admin.overrides.status');
+    Route::get('/prerequisites', [App\Http\Controllers\AdminOverrideController::class, 'getPrerequisites'])
+         ->name('admin.overrides.prerequisites');
+    Route::post('/clear-schedule', [App\Http\Controllers\AdminOverrideController::class, 'clearSchedule'])
+         ->name('admin.overrides.clear-schedule');
+    Route::post('/toggle-lock', [App\Http\Controllers\AdminOverrideController::class, 'toggleLock'])
+         ->name('admin.overrides.toggle-lock');
+    Route::post('/set-schedule', [App\Http\Controllers\AdminOverrideController::class, 'setSchedule'])
+         ->name('admin.overrides.set-schedule');
+    Route::post('/set-prerequisite', [App\Http\Controllers\AdminOverrideController::class, 'setPrerequisite'])
+         ->name('admin.overrides.set-prerequisite');
+    Route::post('/bulk-lock', [App\Http\Controllers\AdminOverrideController::class, 'bulkLock'])
+         ->name('admin.overrides.bulk-lock');
+    Route::post('/bulk-unlock', [App\Http\Controllers\AdminOverrideController::class, 'bulkUnlock'])
+         ->name('admin.overrides.bulk-unlock');
+    Route::get('/list/{programId}', [App\Http\Controllers\AdminOverrideController::class, 'getItemOverrides'])
+         ->name('admin.overrides.list');
+});
 
 // Admin side API routes
 Route::get('admin/programs/{program}/batches',   [AdminModuleController::class, 'getBatchesForProgram']);

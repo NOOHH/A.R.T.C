@@ -1,0 +1,47 @@
+<!-- Test Upload Form to verify file upload is working -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <h2>Test File Upload</h2>
+    <form action="{{ route('admin.modules.course-content-store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="program_id" value="33">
+        <input type="hidden" name="module_id" value="54">
+        <input type="hidden" name="course_id" value="24">
+        <input type="hidden" name="content_type" value="lesson">
+        <input type="hidden" name="content_title" value="Test Upload">
+        <input type="hidden" name="content_description" value="Testing file upload">
+        
+        <div>
+            <label for="attachment">Choose File:</label>
+            <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx">
+        </div>
+        
+        <div style="margin-top: 10px;">
+            <button type="submit">Upload Test</button>
+        </div>
+    </form>
+    
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const formData = new FormData(this);
+            console.log('Form submission test:');
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    console.log(key + ':', {
+                        name: value.name,
+                        size: value.size,
+                        type: value.type
+                    });
+                } else {
+                    console.log(key + ':', value);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

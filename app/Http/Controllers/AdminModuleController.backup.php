@@ -66,7 +66,7 @@ class AdminModuleController extends Controller
         \Log::info("=== FILE UPLOAD DEBUG START ===");
         \Log::info("Request method: " . $request->method());
         \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
+        \Log::info("Request has files: " . ($request->hasFile() ? "YES" : "NO"));
         \Log::info("Request files count: " . count($request->files->all()));
         \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
@@ -98,7 +98,7 @@ class AdminModuleController extends Controller
         
         // ADDITIONAL FILE UPLOAD DEBUG
         \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+            "request_has_files" => $request->hasFile(),
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -310,7 +310,7 @@ class AdminModuleController extends Controller
         \Log::info("=== FILE UPLOAD DEBUG START ===");
         \Log::info("Request method: " . $request->method());
         \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
+        \Log::info("Request has files: " . ($request->hasFile() ? "YES" : "NO"));
         \Log::info("Request files count: " . count($request->files->all()));
         \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
@@ -342,7 +342,7 @@ class AdminModuleController extends Controller
         
         // ADDITIONAL FILE UPLOAD DEBUG
         \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+            "request_has_files" => $request->hasFile(),
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -1206,7 +1206,7 @@ class AdminModuleController extends Controller
         \Log::info("=== FILE UPLOAD DEBUG START ===");
         \Log::info("Request method: " . $request->method());
         \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
+        \Log::info("Request has files: " . ($request->hasFile() ? "YES" : "NO"));
         \Log::info("Request files count: " . count($request->files->all()));
         \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
@@ -1238,7 +1238,7 @@ class AdminModuleController extends Controller
         
         // ADDITIONAL FILE UPLOAD DEBUG
         \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+            "request_has_files" => $request->hasFile(),
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -1311,7 +1311,7 @@ class AdminModuleController extends Controller
         \Log::info("=== FILE UPLOAD DEBUG START ===");
         \Log::info("Request method: " . $request->method());
         \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
+        \Log::info("Request has files: " . ($request->hasFile() ? "YES" : "NO"));
         \Log::info("Request files count: " . count($request->files->all()));
         \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
@@ -1343,7 +1343,7 @@ class AdminModuleController extends Controller
         
         // ADDITIONAL FILE UPLOAD DEBUG
         \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+            "request_has_files" => $request->hasFile(),
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -1387,7 +1387,7 @@ class AdminModuleController extends Controller
         \Log::info("=== FILE UPLOAD DEBUG START ===");
         \Log::info("Request method: " . $request->method());
         \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
+        \Log::info("Request has files: " . ($request->hasFile() ? "YES" : "NO"));
         \Log::info("Request files count: " . count($request->files->all()));
         \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
@@ -1419,7 +1419,7 @@ class AdminModuleController extends Controller
         
         // ADDITIONAL FILE UPLOAD DEBUG
         \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+            "request_has_files" => $request->hasFile(),
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -1682,7 +1682,7 @@ class AdminModuleController extends Controller
         \Log::info("=== FILE UPLOAD DEBUG START ===");
         \Log::info("Request method: " . $request->method());
         \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
+        \Log::info("Request has files: " . ($request->hasFile() ? "YES" : "NO"));
         \Log::info("Request files count: " . count($request->files->all()));
         \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
@@ -1714,7 +1714,7 @@ class AdminModuleController extends Controller
         
         // ADDITIONAL FILE UPLOAD DEBUG
         \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => count($request->files->all()) > 0,
+            "request_has_files" => $request->hasFile(),
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
