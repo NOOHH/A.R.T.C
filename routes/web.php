@@ -11,6 +11,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UnifiedLoginController;
 use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\StudentAnalyticsController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
 use App\Http\Controllers\AdminModuleController;
@@ -358,6 +359,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
+    Route::get('/student/analytics', [StudentAnalyticsController::class, 'index'])->name('student.analytics');
     
     // Test route for debugging student settings
     Route::get('/test-student-settings', function () {
@@ -578,6 +580,13 @@ Route::get('/payment/cancel', [PaymentController::class, 'paymentCancel'])->name
 Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof'])->name('payment.upload-proof');
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
+// Student Payment Modal routes
+Route::middleware(['student.auth'])->group(function () {
+    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentModalController::class, 'getPaymentMethods'])->name('student.payment.methods');
+    Route::post('/student/payment/upload-proof', [App\Http\Controllers\StudentPaymentModalController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
+    Route::get('/student/payment/enrollment/{enrollmentId}/details', [App\Http\Controllers\StudentPaymentModalController::class, 'getEnrollmentPaymentDetails'])->name('student.payment.enrollment.details');
+});
+
 // Admin dashboard and admin routes with middleware
 Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
@@ -725,6 +734,17 @@ Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore']
 // Store course content
 Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
      ->name('admin.modules.course-content-store');
+
+// Test course content endpoint
+Route::post('/admin/modules/test-course-content', function(Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'Test endpoint working!',
+        'received_data' => $request->all(),
+        'has_file' => $request->hasFile('attachment'),
+        'timestamp' => now()->toISOString()
+    ]);
+})->name('admin.modules.test-course-content');
 
 // Test upload route
 Route::get('/test-upload', function() {
@@ -1109,6 +1129,9 @@ Route::get('/admin/analytics/subject/{id}', [AdminAnalyticsController::class, 'g
 // Export routes
 Route::get('/admin/analytics/export', [AdminAnalyticsController::class, 'export'])
      ->name('admin.analytics.export');
+
+Route::get('/admin/analytics/export-complete', [AdminAnalyticsController::class, 'exportComplete'])
+     ->name('admin.analytics.export-complete');
 
 Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 'generateSubjectReport'])
      ->name('admin.analytics.subject-report');

@@ -148,6 +148,12 @@ class AdminAnalyticsController extends Controller
 
     public function export(Request $request)
     {
+        // Check if user is admin only (not director)
+        $userType = session('user_type');
+        if (!$userType || $userType !== 'admin') {
+            return response()->json(['error' => 'Access denied. Export functionality is restricted to admins only.'], 403);
+        }
+
         try {
             $format = $request->get('format', 'pdf');
             $filters = $this->getFilters($request);
@@ -157,22 +163,340 @@ class AdminAnalyticsController extends Controller
                 'charts' => $this->getChartData($filters),
                 'tables' => $this->getTableData($filters),
                 'filters' => $filters,
-                'generated_at' => now()->format('Y-m-d H:i:s')
+                'generated_at' => now()->format('Y-m-d H:i:s'),
+                'exported_by' => session('user_name') ?? 'Admin',
+                'export_format' => $format
             ];
 
             if ($format === 'excel') {
-                // For now, return JSON data for Excel export
-                return response()->json($data, 200, [
-                    'Content-Type' => 'application/json',
-                    'Content-Disposition' => 'attachment; filename="analytics-report-' . now()->format('Y-m-d') . '.json"'
-                ]);
+                return $this->exportToExcel($data);
+            } elseif ($format === 'csv') {
+                return $this->exportToCSV($data);
             } else {
-                // For now, return HTML view for PDF export
-                return view('admin.admin-analytics.exports.pdf-report', $data);
+                return $this->exportToPDF($data);
             }
         } catch (\Exception $e) {
             Log::error('Export error: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to export data'], 500);
+            return response()->json(['error' => 'Failed to export data: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function exportToExcel($data)
+    {
+        // Create Excel format data
+        $excelData = [
+            'summary' => [
+                'Board Pass Rate' => $data['metrics']['boardPassRate'] . '%',
+                'Total Students' => $data['metrics']['totalStudents'],
+                'Average Quiz Score' => $data['metrics']['avgQuizScore'] . '%',
+                'Completion Rate' => $data['metrics']['completionRate'] . '%',
+            ],
+            'top_performers' => $data['tables']['topPerformers'] ?? [],
+            'bottom_performers' => $data['tables']['bottomPerformers'] ?? [],
+            'subject_breakdown' => $data['tables']['subjectBreakdown'] ?? [],
+            'metadata' => [
+                'Generated At' => $data['generated_at'],
+                'Exported By' => $data['exported_by'],
+                'Filters Applied' => json_encode($data['filters'])
+            ]
+        ];
+
+        return response()->json($excelData, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'attachment; filename="analytics-report-' . now()->format('Y-m-d-H-i-s') . '.json"'
+        ]);
+    }
+
+    private function exportToCSV($data)
+    {
+        $filename = 'analytics-report-' . now()->format('Y-m-d-H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($data) {
+            $file = fopen('php://output', 'w');
+            
+            // Write summary metrics
+            fputcsv($file, ['ANALYTICS SUMMARY']);
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Board Pass Rate', $data['metrics']['boardPassRate'] . '%']);
+            fputcsv($file, ['Total Students', $data['metrics']['totalStudents']]);
+            fputcsv($file, ['Average Quiz Score', $data['metrics']['avgQuizScore'] . '%']);
+            fputcsv($file, ['Completion Rate', $data['metrics']['completionRate'] . '%']);
+            fputcsv($file, []); // Empty row
+
+            // Write top performers
+            if (!empty($data['tables']['topPerformers'])) {
+                fputcsv($file, ['TOP PERFORMERS']);
+                fputcsv($file, ['Rank', 'Name', 'Score', 'Program']);
+                foreach ($data['tables']['topPerformers'] as $index => $student) {
+                    fputcsv($file, [
+                        $index + 1,
+                        $student['name'] ?? 'N/A',
+                        ($student['score'] ?? 0) . '%',
+                        $student['program'] ?? 'N/A'
+                    ]);
+                }
+                fputcsv($file, []); // Empty row
+            }
+
+            // Write bottom performers
+            if (!empty($data['tables']['bottomPerformers'])) {
+                fputcsv($file, ['STUDENTS NEEDING SUPPORT']);
+                fputcsv($file, ['Rank', 'Name', 'Score', 'Program']);
+                foreach ($data['tables']['bottomPerformers'] as $index => $student) {
+                    fputcsv($file, [
+                        $index + 1,
+                        $student['name'] ?? 'N/A',
+                        ($student['score'] ?? 0) . '%',
+                        $student['program'] ?? 'N/A'
+                    ]);
+                }
+                fputcsv($file, []); // Empty row
+            }
+
+            // Write metadata
+            fputcsv($file, ['EXPORT INFORMATION']);
+            fputcsv($file, ['Generated At', $data['generated_at']]);
+            fputcsv($file, ['Exported By', $data['exported_by']]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    private function exportToPDF($data)
+    {
+        return view('admin.admin-analytics.exports.pdf-report', $data);
+    }
+
+    public function exportComplete(Request $request)
+    {
+        // Check if user is admin only (not director)
+        $userType = session('user_type');
+        if (!$userType || $userType !== 'admin') {
+            return response()->json(['error' => 'Access denied. Complete export functionality is restricted to admins only.'], 403);
+        }
+
+        try {
+            $format = $request->get('format', 'csv');
+            
+            // Get comprehensive data
+            $data = [
+                'students' => $this->getAllStudentsData(),
+                'programs' => $this->getAllProgramsData(),
+                'quiz_results' => $this->getAllQuizResults(),
+                'enrollments' => $this->getAllEnrollmentsData(),
+                'board_passers' => $this->getAllBoardPassersData(),
+                'generated_at' => now()->format('Y-m-d H:i:s'),
+                'exported_by' => session('user_name') ?? 'Admin'
+            ];
+
+            if ($format === 'csv') {
+                return $this->exportCompleteToCSV($data);
+            } else {
+                return response()->json($data, 200, [
+                    'Content-Type' => 'application/json',
+                    'Content-Disposition' => 'attachment; filename="complete-analytics-export-' . now()->format('Y-m-d-H-i-s') . '.json"'
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Complete export error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to export complete data: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function exportCompleteToCSV($data)
+    {
+        $filename = 'complete-analytics-export-' . now()->format('Y-m-d-H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ];
+
+        $callback = function() use ($data) {
+            $file = fopen('php://output', 'w');
+            
+            // Export metadata
+            fputcsv($file, ['COMPLETE ANALYTICS EXPORT']);
+            fputcsv($file, ['Generated At', $data['generated_at']]);
+            fputcsv($file, ['Exported By', $data['exported_by']]);
+            fputcsv($file, []);
+
+            // Export students data
+            if (!empty($data['students'])) {
+                fputcsv($file, ['STUDENTS DATA']);
+                fputcsv($file, ['ID', 'Name', 'Email', 'Program', 'Status', 'Registration Date']);
+                foreach ($data['students'] as $student) {
+                    fputcsv($file, [
+                        $student['id'] ?? '',
+                        $student['name'] ?? '',
+                        $student['email'] ?? '',
+                        $student['program'] ?? '',
+                        $student['status'] ?? '',
+                        $student['registration_date'] ?? ''
+                    ]);
+                }
+                fputcsv($file, []);
+            }
+
+            // Export quiz results
+            if (!empty($data['quiz_results'])) {
+                fputcsv($file, ['QUIZ RESULTS']);
+                fputcsv($file, ['Student ID', 'Student Name', 'Quiz Title', 'Score', 'Date Taken', 'Status']);
+                foreach ($data['quiz_results'] as $result) {
+                    fputcsv($file, [
+                        $result['student_id'] ?? '',
+                        $result['student_name'] ?? '',
+                        $result['quiz_title'] ?? '',
+                        $result['score'] ?? '',
+                        $result['date_taken'] ?? '',
+                        $result['status'] ?? ''
+                    ]);
+                }
+                fputcsv($file, []);
+            }
+
+            // Export enrollments
+            if (!empty($data['enrollments'])) {
+                fputcsv($file, ['ENROLLMENTS']);
+                fputcsv($file, ['Student ID', 'Student Name', 'Program', 'Batch', 'Status', 'Enrollment Date']);
+                foreach ($data['enrollments'] as $enrollment) {
+                    fputcsv($file, [
+                        $enrollment['student_id'] ?? '',
+                        $enrollment['student_name'] ?? '',
+                        $enrollment['program_name'] ?? '',
+                        $enrollment['batch_name'] ?? '',
+                        $enrollment['status'] ?? '',
+                        $enrollment['enrollment_date'] ?? ''
+                    ]);
+                }
+                fputcsv($file, []);
+            }
+
+            // Export board passers
+            if (!empty($data['board_passers'])) {
+                fputcsv($file, ['BOARD EXAM PASSERS']);
+                fputcsv($file, ['Student Name', 'Exam Year', 'Result', 'Rating', 'Program']);
+                foreach ($data['board_passers'] as $passer) {
+                    fputcsv($file, [
+                        $passer['student_name'] ?? '',
+                        $passer['exam_year'] ?? '',
+                        $passer['result'] ?? '',
+                        $passer['rating'] ?? '',
+                        $passer['program'] ?? ''
+                    ]);
+                }
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    private function getAllStudentsData()
+    {
+        try {
+            return DB::table('users')
+                ->leftJoin('registrations', 'users.user_id', '=', 'registrations.user_id')
+                ->leftJoin('programs', 'registrations.program_id', '=', 'programs.program_id')
+                ->where('users.role', 'student')
+                ->select(
+                    'users.user_id as id',
+                    DB::raw("CONCAT(users.user_firstname, ' ', users.user_lastname) as name"),
+                    'users.email',
+                    'programs.program_name as program',
+                    'registrations.status',
+                    'users.created_at as registration_date'
+                )
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::error('Error getting students data: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getAllProgramsData()
+    {
+        try {
+            return Program::with(['modules'])
+                ->select('program_id', 'program_name', 'created_at')
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::error('Error getting programs data: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getAllQuizResults()
+    {
+        try {
+            return DB::table('quiz_results')
+                ->join('users', 'quiz_results.user_id', '=', 'users.user_id')
+                ->join('quizzes', 'quiz_results.quiz_id', '=', 'quizzes.quiz_id')
+                ->select(
+                    'quiz_results.user_id as student_id',
+                    DB::raw("CONCAT(users.user_firstname, ' ', users.user_lastname) as student_name"),
+                    'quizzes.quiz_title',
+                    'quiz_results.score',
+                    'quiz_results.created_at as date_taken',
+                    DB::raw("CASE WHEN quiz_results.score >= 70 THEN 'Passed' ELSE 'Failed' END as status")
+                )
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::error('Error getting quiz results: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getAllEnrollmentsData()
+    {
+        try {
+            return DB::table('enrollments')
+                ->join('users', 'enrollments.user_id', '=', 'users.user_id')
+                ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->leftJoin('batches', 'enrollments.batch_id', '=', 'batches.batch_id')
+                ->select(
+                    'enrollments.user_id as student_id',
+                    DB::raw("CONCAT(users.user_firstname, ' ', users.user_lastname) as student_name"),
+                    'programs.program_name',
+                    'batches.batch_name',
+                    'enrollments.status',
+                    'enrollments.created_at as enrollment_date'
+                )
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::error('Error getting enrollments data: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getAllBoardPassersData()
+    {
+        try {
+            return DB::table('board_passers')
+                ->select('student_name', 'exam_year', 'result', 'rating', 'program')
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::error('Error getting board passers data: ' . $e->getMessage());
+            return [];
         }
     }
 

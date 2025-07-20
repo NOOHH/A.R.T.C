@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Modal Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background: #f8f9fa; }
+        .test-section { margin: 20px 0; border: 1px solid #ccc; padding: 20px; background: white; border-radius: 8px; }
+        .log-area { background: #f5f5f5; padding: 15px; min-height: 200px; font-family: 'Courier New', monospace; font-size: 12px; border-radius: 5px; }
+        .modal { z-index: 1055 !important; }
+        .modal-backdrop { z-index: 1050 !important; }
+        .test-btn { margin: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Student Dashboard Modal Test</h1>
+        <p class="text-muted">This page tests the exact modal functionality used in the student dashboard</p>
+        
+        <div class="test-section">
+            <h2>1. Modal Tests</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="btn btn-warning test-btn" onclick="testStatusModal('pending', 'Test Course - Pending')">
+                        🟡 Test Pending Status Modal
+                    </button>
+                    <button class="btn btn-danger test-btn" onclick="testStatusModal('rejected', 'Test Course - Rejected')">
+                        🔴 Test Rejected Status Modal
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-primary test-btn" onclick="testPaymentModal()">
+                        💳 Test Payment Modal
+                    </button>
+                    <button class="btn btn-secondary test-btn" onclick="clearLog()">
+                        🗑️ Clear Log
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <h4>🎯 Test Instructions:</h4>
+                <ol>
+                    <li><strong>Click a modal button</strong> - Modal should appear</li>
+                    <li><strong>Try ESC key</strong> - Should close the modal</li>
+                    <li><strong>Click backdrop (outside modal)</strong> - Should close the modal</li>
+                    <li><strong>Click X button</strong> - Should close the modal</li>
+                    <li><strong>Click Close button</strong> - Should close the modal</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Debug Console</h2>
+            <div class="log-area" id="debugLog"></div>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalTitle" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalTitle">Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="statusModalBody">
+                    <!-- Content will be filled by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Payment Test</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="bi bi-credit-card-2-front" style="font-size: 3rem; color: #0d6efd;"></i>
+                        <h4 class="mt-3">Payment Modal Test</h4>
+                        <p>This is a test of the payment modal functionality.</p>
+                        <div class="alert alert-info">
+                            Test all interaction methods: backdrop click, ESC key, close buttons
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let paymentModalInstance = null;
+        
+        function log(message) {
+            const logArea = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Student modal test page loaded');
+            log('🔧 Bootstrap available: ' + (typeof bootstrap !== 'undefined' ? 'YES ✅' : 'NO ❌'));
+            
+            // Enhanced global escape key handler
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    log('⌨️ ESC key pressed - checking for open modals');
+                    
+                    // Check for payment modal
+                    const paymentModal = document.getElementById('paymentModal');
+                    if (paymentModal && paymentModal.classList.contains('show')) {
+                        log('🔄 Closing payment modal via ESC');
+                        const instance = bootstrap.Modal.getInstance(paymentModal);
+                        if (instance) {
+                            instance.hide();
+                        } else if (paymentModalInstance) {
+                            paymentModalInstance.hide();
+                        }
+                    }
+                    
+                    // Check for status modal
+                    const statusModal = document.getElementById('statusModal');
+                    if (statusModal && statusModal.classList.contains('show')) {
+                        log('🔄 Closing status modal via ESC');
+                        const instance = bootstrap.Modal.getInstance(statusModal);
+                        if (instance) {
+                            instance.hide();
+                        }
+                    }
+                }
+            }, true);
+            
+            // Global backdrop click handler
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
+                    log('🖱️ Modal backdrop clicked: ' + e.target.id);
+                    const instance = bootstrap.Modal.getInstance(e.target);
+                    if (instance) {
+                        instance.hide();
+                    }
+                }
+            });
+        });
+        
+        function testStatusModal(status, courseName) {
+            log(`🔄 Testing status modal: ${status} - ${courseName}`);
+            
+            const statusModalElement = document.getElementById('statusModal');
+            const title = document.getElementById('statusModalTitle');
+            const body = document.getElementById('statusModalBody');
+            
+            let modalContent = '';
+            
+            switch(status) {
+                case 'pending':
+                    title.textContent = 'Pending Verification';
+                    modalContent = `
+                        <div class="text-center">
+                            <i class="bi bi-hourglass-split text-warning" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">Enrollment Under Review</h5>
+                            <p>Your enrollment for <strong>${courseName}</strong> is currently being reviewed.</p>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Please wait for admin approval.
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'rejected':
+                    title.textContent = 'Enrollment Rejected';
+                    modalContent = `
+                        <div class="text-center">
+                            <i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">Enrollment Rejected</h5>
+                            <p>Unfortunately, your enrollment for <strong>${courseName}</strong> has been rejected.</p>
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Please contact support.
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            body.innerHTML = modalContent;
+            
+            // Force remove existing instance
+            const existingInstance = bootstrap.Modal.getInstance(statusModalElement);
+            if (existingInstance) {
+                existingInstance.dispose();
+                log('🗑️ Disposed existing status modal instance');
+            }
+            
+            try {
+                const statusModalInstance = new bootstrap.Modal(statusModalElement, {
+                    backdrop: 'static',
+                    keyboard: true,
+                    focus: true
+                });
+                
+                statusModalElement.addEventListener('shown.bs.modal', function() {
+                    log('✅ Status modal fully shown');
+                }, { once: true });
+                
+                statusModalElement.addEventListener('hidden.bs.modal', function() {
+                    log('❌ Status modal hidden');
+                }, { once: true });
+                
+                statusModalInstance.show();
+                log('🚀 Status modal show() called');
+                
+            } catch (error) {
+                log('❌ Error showing status modal: ' + error.message);
+            }
+        }
+        
+        function testPaymentModal() {
+            log('🔄 Testing payment modal');
+            
+            const paymentModalElement = document.getElementById('paymentModal');
+            
+            // Force remove existing instance
+            const existingInstance = bootstrap.Modal.getInstance(paymentModalElement);
+            if (existingInstance) {
+                existingInstance.dispose();
+                log('🗑️ Disposed existing payment modal instance');
+            }
+            
+            try {
+                paymentModalInstance = new bootstrap.Modal(paymentModalElement, {
+                    backdrop: 'static',
+                    keyboard: true,
+                    focus: true
+                });
+                
+                paymentModalElement.addEventListener('shown.bs.modal', function() {
+                    log('✅ Payment modal fully shown');
+                }, { once: true });
+                
+                paymentModalElement.addEventListener('hidden.bs.modal', function() {
+                    log('❌ Payment modal hidden');
+                    paymentModalInstance = null;
+                }, { once: true });
+                
+                paymentModalInstance.show();
+                log('🚀 Payment modal show() called');
+                
+            } catch (error) {
+                log('❌ Error showing payment modal: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

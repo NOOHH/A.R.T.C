@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class AdminModuleController extends Controller
 {
@@ -55,7 +56,7 @@ class AdminModuleController extends Controller
             'program_id' => 'required|exists:programs,program_id',
             'batch_id' => 'required|exists:student_batches,batch_id',
             'learning_mode' => 'required|in:Synchronous,Asynchronous',
-            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg|max:102400',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg,avi,mov|max:102400', // Increased size limit and added more formats
             'content_type' => 'nullable|string|in:module,assignment,quiz,ai_quiz,test,link',
             'video_url' => 'nullable|url',
         ]);
@@ -63,26 +64,26 @@ class AdminModuleController extends Controller
         $attachmentPath = null;
         
         // ENHANCED FILE UPLOAD DEBUGGING
-        \Log::info("=== FILE UPLOAD DEBUG START ===");
-        \Log::info("Request method: " . $request->method());
-        \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
-        \Log::info("Request files count: " . count($request->files->all()));
-        \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
+        Log::info("=== FILE UPLOAD DEBUG START ===");
+        Log::info("Request method: " . $request->method());
+        Log::info("Request content type: " . $request->header("Content-Type"));
+        Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
+        Log::info("Request files count: " . count($request->files->all()));
+        Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
         // Check all files in request
         foreach ($request->files->all() as $key => $file) {
             if ($file instanceof \Illuminate\Http\UploadedFile) {
-                \Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
+                Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
             } else {
-                \Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
+                Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
             }
         }
         
         // Check specific attachment
         $attachmentFile = $request->file("attachment");
         if ($attachmentFile) {
-            \Log::info("Attachment file details: " . json_encode([
+            Log::info("Attachment file details: " . json_encode([
                 "name" => $attachmentFile->getClientOriginalName(),
                 "size" => $attachmentFile->getSize(),
                 "mime" => $attachmentFile->getMimeType(),
@@ -91,14 +92,14 @@ class AdminModuleController extends Controller
                 "tmp_name" => $attachmentFile->getRealPath()
             ]));
         } else {
-            \Log::info("No attachment file found");
+            Log::info("No attachment file found");
         }
-        \Log::info("=== FILE UPLOAD DEBUG END ===");
+        Log::info("=== FILE UPLOAD DEBUG END ===");
         
         
         // ADDITIONAL FILE UPLOAD DEBUG
-        \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+        Log::info("Pre-hasFile debug:", [
+            "request_has_files" => count($request->files->all()) > 0,
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -106,8 +107,44 @@ class AdminModuleController extends Controller
         
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $attachmentPath = $file->storeAs('modules', $filename, 'public');
+            if ($file && $file->isValid() && $file->getError() === UPLOAD_ERR_OK) {
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $attachmentPath = $file->storeAs('content', $filename, 'public');
+                if (!$attachmentPath) {
+                    Log::error('File storage failed', [
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_size' => $file->getSize()
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The attachment failed to upload',
+                        'errors' => ['attachment' => ['Failed to store file on server']]
+                    ], 422);
+                }
+                Log::info('File uploaded successfully', ['path' => $attachmentPath]);
+            } else if ($file) {
+                $errorMessages = [
+                    UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit)',
+                    UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
+                    UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                    UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
+                    UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                    UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+                ];
+                $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error';
+                Log::error('File upload error', [
+                    'error_code' => $file->getError(),
+                    'error_message' => $errorMessage,
+                    'file_size' => $file->getSize(),
+                    'file_name' => $file->getClientOriginalName()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The attachment failed to upload',
+                    'errors' => ['attachment' => [$errorMessage]]
+                ], 422);
+            }
         }
 
         // Handle AI document upload
@@ -205,6 +242,19 @@ class AdminModuleController extends Controller
             $this->generateAIQuiz($module);
         }
 
+        // Check if it's an AJAX request
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Module created successfully!',
+                'data' => [
+                    'module_id' => $module->modules_id,
+                    'module_name' => $module->module_name,
+                    'program_id' => $module->program_id
+                ]
+            ]);
+        }
+
         return redirect()->route('admin.modules.index', ['program_id' => $request->program_id])
                         ->with('success', 'Module created successfully!');
     }
@@ -300,33 +350,33 @@ class AdminModuleController extends Controller
             'module_name' => 'required|string|max:255',
             'module_description' => 'nullable|string',
             'program_id' => 'required|exists:programs,program_id',
-            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,avi,mov|max:102400',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,avi,mov,webm,ogg|max:102400', // Added more formats
             'content_type' => 'nullable|string|in:module,assignment,quiz,test,link',
         ]);
 
         // Handle file upload if provided
         
         // ENHANCED FILE UPLOAD DEBUGGING
-        \Log::info("=== FILE UPLOAD DEBUG START ===");
-        \Log::info("Request method: " . $request->method());
-        \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
-        \Log::info("Request files count: " . count($request->files->all()));
-        \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
+        Log::info("=== FILE UPLOAD DEBUG START ===");
+        Log::info("Request method: " . $request->method());
+        Log::info("Request content type: " . $request->header("Content-Type"));
+        Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
+        Log::info("Request files count: " . count($request->files->all()));
+        Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
         // Check all files in request
         foreach ($request->files->all() as $key => $file) {
             if ($file instanceof \Illuminate\Http\UploadedFile) {
-                \Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
+                Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
             } else {
-                \Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
+                Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
             }
         }
         
         // Check specific attachment
         $attachmentFile = $request->file("attachment");
         if ($attachmentFile) {
-            \Log::info("Attachment file details: " . json_encode([
+            Log::info("Attachment file details: " . json_encode([
                 "name" => $attachmentFile->getClientOriginalName(),
                 "size" => $attachmentFile->getSize(),
                 "mime" => $attachmentFile->getMimeType(),
@@ -335,14 +385,14 @@ class AdminModuleController extends Controller
                 "tmp_name" => $attachmentFile->getRealPath()
             ]));
         } else {
-            \Log::info("No attachment file found");
+            Log::info("No attachment file found");
         }
-        \Log::info("=== FILE UPLOAD DEBUG END ===");
+        Log::info("=== FILE UPLOAD DEBUG END ===");
         
         
         // ADDITIONAL FILE UPLOAD DEBUG
-        \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
+        Log::info("Pre-hasFile debug:", [
+            "request_has_files" => count($request->files->all()) > 0,
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
             "all_files" => array_keys($request->files->all())
@@ -364,6 +414,19 @@ class AdminModuleController extends Controller
         $module->module_description = $request->module_description;
         $module->program_id = $request->program_id;
         $module->save();
+
+        // Check if it's an AJAX request
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Module updated successfully!',
+                'data' => [
+                    'module_id' => $module->modules_id,
+                    'module_name' => $module->module_name,
+                    'program_id' => $module->program_id
+                ]
+            ]);
+        }
 
         return redirect()->route('admin.modules.index', ['program_id' => $module->program_id])
                         ->with('success', 'Module updated successfully!');
@@ -1058,7 +1121,7 @@ class AdminModuleController extends Controller
                 ->with('success', 'Quiz generated successfully and assigned to the batch!');
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('AI Quiz generation error: ' . $e->getMessage());
+            Log::error('AI Quiz generation error: ' . $e->getMessage());
             $programs = \App\Models\Program::all();
             return view('admin.admin-modules.admin-quiz-generator', compact('programs'))
                 ->with('error', 'Error generating AI quiz: ' . $e->getMessage());
@@ -1143,154 +1206,37 @@ class AdminModuleController extends Controller
      */
     public function courseContentStore(Request $request)
     {
-        // Enhanced logging for debugging
-        \Log::info('Course content store request received', [
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
-            'all_data' => $request->all(),
-            'files' => $request->files->all(),
-            'has_attachment' => $request->hasFile('attachment'),
-            'content_type' => $request->get('content_type'),
-            'course_id' => $request->get('course_id'),
-            'module_id' => $request->get('module_id'),
-            'program_id' => $request->get('program_id')
-        ]);
-
-        // Check if required fields are present
-        $requiredFields = ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'];
-        $missingFields = [];
-        foreach ($requiredFields as $field) {
-            if (!$request->has($field) || $request->get($field) === null || $request->get($field) === '') {
-                $missingFields[] = $field;
-            }
-        }
-
-        if (!empty($missingFields)) {
-            \Log::warning('Missing required fields', [
-                'missing_fields' => $missingFields,
-                'received_data' => $request->all()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Missing required fields: ' . implode(', ', $missingFields),
-                'errors' => [
-                    'missing_fields' => $missingFields,
-                    'received_fields' => array_keys($request->all())
-                ]
-            ], 422);
-        }
-
-        // Add detailed logging before validation
-        \Log::info('Course content store request received', [
-            'has_file' => $request->hasFile('attachment'),
-            'file_info' => $request->hasFile('attachment') ? [
-                'original_name' => $request->file('attachment')->getClientOriginalName(),
-                'size' => $request->file('attachment')->getSize(),
-                'mime_type' => $request->file('attachment')->getMimeType(),
-                'error' => $request->file('attachment')->getError(),
-                'is_valid' => $request->file('attachment')->isValid()
-            ] : 'No file',
-            'request_data_size' => count($request->all()),
-            'php_limits' => [
-                'upload_max_filesize' => ini_get('upload_max_filesize'),
-                'post_max_size' => ini_get('post_max_size'),
-                'max_file_uploads' => ini_get('max_file_uploads')
-            ],
-            'all_request_data' => $request->except(['attachment', '_token'])
-        ]);
-
         try {
-            // Custom file validation before Laravel validation
-            
-        // ENHANCED FILE UPLOAD DEBUGGING
-        \Log::info("=== FILE UPLOAD DEBUG START ===");
-        \Log::info("Request method: " . $request->method());
-        \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
-        \Log::info("Request files count: " . count($request->files->all()));
-        \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
-        
-        // Check all files in request
-        foreach ($request->files->all() as $key => $file) {
-            if ($file instanceof \Illuminate\Http\UploadedFile) {
-                \Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
-            } else {
-                \Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
-            }
-        }
-        
-        // Check specific attachment
-        $attachmentFile = $request->file("attachment");
-        if ($attachmentFile) {
-            \Log::info("Attachment file details: " . json_encode([
-                "name" => $attachmentFile->getClientOriginalName(),
-                "size" => $attachmentFile->getSize(),
-                "mime" => $attachmentFile->getMimeType(),
-                "error" => $attachmentFile->getError(),
-                "is_valid" => $attachmentFile->isValid(),
-                "tmp_name" => $attachmentFile->getRealPath()
-            ]));
-        } else {
-            \Log::info("No attachment file found");
-        }
-        \Log::info("=== FILE UPLOAD DEBUG END ===");
-        
-        
-        // ADDITIONAL FILE UPLOAD DEBUG
-        \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
-            "request_files_count" => count($request->files->all()),
-            "attachment_exists" => $request->files->has("attachment"),
-            "all_files" => array_keys($request->files->all())
-        ]);
-        
-        if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                
-                \Log::info('File upload details', [
-                    'file_error' => $file->getError(),
-                    'file_size' => $file->getSize(),
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_mime' => $file->getMimeType(),
-                    'file_temp_path' => $file->getRealPath(),
-                    'is_valid' => $file->isValid()
-                ]);
-                
-                if (!$file->isValid()) {
-                    $errorMessages = [
-                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit: ' . ini_get('upload_max_filesize') . ')',
-                        UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
-                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
-                        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
-                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
-                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-                        UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
-                    ];
-                    
-                    $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error (code: ' . $file->getError() . ')';
-                    
-                    \Log::error('File upload validation failed', [
-                        'error_code' => $file->getError(),
-                        'error_message' => $errorMessage,
-                        'file_size' => $file->getSize(),
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_mime' => $file->getMimeType()
-                    ]);
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'File upload failed',
-                        'errors' => ['attachment' => [$errorMessage]],
-                        'debug_info' => [
-                            'file_error_code' => $file->getError(),
-                            'file_size' => $file->getSize(),
-                            'server_limit' => ini_get('upload_max_filesize')
-                        ]
-                    ], 422);
+            // Log the incoming request for debugging
+            Log::info('Course content store request received', [
+                'method' => $request->method(),
+                'has_attachment' => $request->hasFile('attachment'),
+                'content_type' => $request->get('content_type'),
+                'course_id' => $request->get('course_id'),
+                'module_id' => $request->get('module_id'),
+                'program_id' => $request->get('program_id'),
+                'content_title' => $request->get('content_title'),
+            ]);
+
+            // Validate required fields
+            $requiredFields = ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'];
+            $missingFields = [];
+            foreach ($requiredFields as $field) {
+                if (!$request->has($field) || $request->get($field) === null || $request->get($field) === '') {
+                    $missingFields[] = $field;
                 }
             }
 
-            // Temporarily simplify validation to isolate the issue
+            if (!empty($missingFields)) {
+                Log::warning('Missing required fields', ['missing_fields' => $missingFields]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Missing required fields: ' . implode(', ', $missingFields),
+                    'errors' => ['missing_fields' => $missingFields]
+                ], 422);
+            }
+
+            // Validate the request
             $validationRules = [
                 'program_id' => 'required|exists:programs,program_id',
                 'module_id' => 'required|exists:modules,modules_id',
@@ -1304,134 +1250,41 @@ class AdminModuleController extends Controller
                 'submission_instructions' => 'nullable|string',
                 'content_url' => 'nullable|url'
             ];
-            
-            // Only add file validation if file is present
-            
-        // ENHANCED FILE UPLOAD DEBUGGING
-        \Log::info("=== FILE UPLOAD DEBUG START ===");
-        \Log::info("Request method: " . $request->method());
-        \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
-        \Log::info("Request files count: " . count($request->files->all()));
-        \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
-        
-        // Check all files in request
-        foreach ($request->files->all() as $key => $file) {
-            if ($file instanceof \Illuminate\Http\UploadedFile) {
-                \Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
-            } else {
-                \Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
+
+            if ($request->hasFile('attachment')) {
+                $validationRules['attachment'] = 'file|max:51200|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg,avi,mov'; // 50MB max, added more formats
             }
-        }
-        
-        // Check specific attachment
-        $attachmentFile = $request->file("attachment");
-        if ($attachmentFile) {
-            \Log::info("Attachment file details: " . json_encode([
-                "name" => $attachmentFile->getClientOriginalName(),
-                "size" => $attachmentFile->getSize(),
-                "mime" => $attachmentFile->getMimeType(),
-                "error" => $attachmentFile->getError(),
-                "is_valid" => $attachmentFile->isValid(),
-                "tmp_name" => $attachmentFile->getRealPath()
-            ]));
-        } else {
-            \Log::info("No attachment file found");
-        }
-        \Log::info("=== FILE UPLOAD DEBUG END ===");
-        
-        
-        // ADDITIONAL FILE UPLOAD DEBUG
-        \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
-            "request_files_count" => count($request->files->all()),
-            "attachment_exists" => $request->files->has("attachment"),
-            "all_files" => array_keys($request->files->all())
-        ]);
-        
-        if ($request->hasFile('attachment')) {
-                $validationRules['attachment'] = 'file|max:51200'; // 50MB limit only
-            }
-            
-            \Log::info('Applying validation rules', [
-                'rules' => $validationRules,
-                'has_file_rule' => isset($validationRules['attachment'])
-            ]);
 
             $request->validate($validationRules);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed', [
-                'errors' => $e->errors(),
-                'request_data' => $request->except(['attachment']),
-                'files' => $request->hasFile('attachment') ? 'Has file' : 'No file',
-                'validator_messages' => $e->validator->errors()->toArray()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-                'validation_details' => [
-                    'received_fields' => array_keys($request->all()),
-                    'required_fields' => ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'],
-                    'validation_messages' => $e->validator->errors()->toArray()
-                ]
-            ], 422);
-        }
 
-        try {
+            // Handle file upload
             $attachmentPath = null;
-            
-            // Handle file upload if present
-            
-        // ENHANCED FILE UPLOAD DEBUGGING
-        \Log::info("=== FILE UPLOAD DEBUG START ===");
-        \Log::info("Request method: " . $request->method());
-        \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . ($count($request->files->all()) > 0 ? "YES" : "NO"));
-        \Log::info("Request files count: " . count($request->files->all()));
-        \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
-        
-        // Check all files in request
-        foreach ($request->files->all() as $key => $file) {
-            if ($file instanceof \Illuminate\Http\UploadedFile) {
-                \Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
-            } else {
-                \Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
-            }
-        }
-        
-        // Check specific attachment
-        $attachmentFile = $request->file("attachment");
-        if ($attachmentFile) {
-            \Log::info("Attachment file details: " . json_encode([
-                "name" => $attachmentFile->getClientOriginalName(),
-                "size" => $attachmentFile->getSize(),
-                "mime" => $attachmentFile->getMimeType(),
-                "error" => $attachmentFile->getError(),
-                "is_valid" => $attachmentFile->isValid(),
-                "tmp_name" => $attachmentFile->getRealPath()
-            ]));
-        } else {
-            \Log::info("No attachment file found");
-        }
-        \Log::info("=== FILE UPLOAD DEBUG END ===");
-        
-        
-        // ADDITIONAL FILE UPLOAD DEBUG
-        \Log::info("Pre-hasFile debug:", [
-            "request_has_files" => $count($request->files->all()) > 0,
-            "request_files_count" => count($request->files->all()),
-            "attachment_exists" => $request->files->has("attachment"),
-            "all_files" => array_keys($request->files->all())
-        ]);
-        
-        if ($request->hasFile('attachment')) {
+            if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                
-                // Check file upload errors
-                if ($file->getError() !== UPLOAD_ERR_OK) {
+
+                Log::info('Processing file upload', [
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_size' => $file->getSize(),
+                    'file_error' => $file->getError(),
+                    'is_valid' => $file->isValid()
+                ]);
+
+                if ($file->isValid() && $file->getError() === UPLOAD_ERR_OK) {
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $attachmentPath = $file->storeAs('content', $filename, 'public');
+
+                    if (!$attachmentPath) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'File upload failed - could not store file',
+                            'errors' => ['attachment' => ['Failed to store file on server']]
+                        ], 422);
+                    }
+
+                    Log::info('File uploaded successfully', ['path' => $attachmentPath]);
+                } else {
                     $errorMessages = [
-                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit)',
+                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server limit)',
                         UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
                         UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
                         UPLOAD_ERR_NO_FILE => 'No file was uploaded',
@@ -1439,49 +1292,43 @@ class AdminModuleController extends Controller
                         UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
                         UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
                     ];
-                    
                     $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error';
-                    
-                    \Log::error('File upload error', [
+
+                    Log::error('File upload error', [
                         'error_code' => $file->getError(),
                         'error_message' => $errorMessage,
-                        'file_size' => $file->getSize(),
                         'file_name' => $file->getClientOriginalName()
                     ]);
-                    
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'The attachment failed to upload',
+                        'message' => 'File upload failed',
                         'errors' => ['attachment' => [$errorMessage]]
                     ], 422);
                 }
-                
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $attachmentPath = $file->storeAs('content', $filename, 'public');
-                
-                if (!$attachmentPath) {
-                    \Log::error('File storage failed', [
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_size' => $file->getSize()
-                    ]);
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'The attachment failed to upload',
-                        'errors' => ['attachment' => ['Failed to store file on server']]
-                    ], 422);
-                }
-                
-                \Log::info('File uploaded successfully', ['path' => $attachmentPath]);
             }
 
-            // Get the course
-            $course = Course::findOrFail($request->course_id);
+            // Get referenced objects to ensure they exist
+            $program = Program::find($request->program_id);
+            $module = Module::find($request->module_id);
+            $course = Course::find($request->course_id);
+
+            if (!$program || !$module || !$course) {
+                Log::error('Referenced objects not found', [
+                    'program_exists' => $program ? true : false,
+                    'module_exists' => $module ? true : false,
+                    'course_exists' => $course ? true : false,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Referenced program, module, or course not found'
+                ], 404);
+            }
 
             // Prepare content-specific data
             $contentData = [];
             $contentType = $request->input('content_type');
-            
+
             switch ($contentType) {
                 case 'lesson':
                 case 'video':
@@ -1524,7 +1371,7 @@ class AdminModuleController extends Controller
                     break;
             }
 
-            // Create content item directly linked to course (no lesson_id)
+            // Create content item directly linked to course
             $contentItem = \App\Models\ContentItem::create([
                 'content_title' => $request->input('content_title'),
                 'content_description' => $request->input('content_description'),
@@ -1620,7 +1467,7 @@ class AdminModuleController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error getting content: ' . $e->getMessage());
+            Log::error('Error getting content: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Content not found: ' . $e->getMessage()
@@ -1663,7 +1510,7 @@ class AdminModuleController extends Controller
     {
         try {
             // Debug logging for file upload issues
-            \Log::info('updateContent debugging', [
+            Log::info('updateContent debugging', [
                 'content_id' => $id,
                 'inputs' => $request->except(['attachment']),
                 'hasAttachment' => $request->hasFile('attachment'),
@@ -1679,26 +1526,26 @@ class AdminModuleController extends Controller
             
             
         // ENHANCED FILE UPLOAD DEBUGGING
-        \Log::info("=== FILE UPLOAD DEBUG START ===");
-        \Log::info("Request method: " . $request->method());
-        \Log::info("Request content type: " . $request->header("Content-Type"));
-        \Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
-        \Log::info("Request files count: " . count($request->files->all()));
-        \Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
+        Log::info("=== FILE UPLOAD DEBUG START ===");
+        Log::info("Request method: " . $request->method());
+        Log::info("Request content type: " . $request->header("Content-Type"));
+        Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
+        Log::info("Request files count: " . count($request->files->all()));
+        Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
         
         // Check all files in request
         foreach ($request->files->all() as $key => $file) {
             if ($file instanceof \Illuminate\Http\UploadedFile) {
-                \Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
+                Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
             } else {
-                \Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
+                Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
             }
         }
         
         // Check specific attachment
         $attachmentFile = $request->file("attachment");
         if ($attachmentFile) {
-            \Log::info("Attachment file details: " . json_encode([
+            Log::info("Attachment file details: " . json_encode([
                 "name" => $attachmentFile->getClientOriginalName(),
                 "size" => $attachmentFile->getSize(),
                 "mime" => $attachmentFile->getMimeType(),
@@ -1707,13 +1554,13 @@ class AdminModuleController extends Controller
                 "tmp_name" => $attachmentFile->getRealPath()
             ]));
         } else {
-            \Log::info("No attachment file found");
+            Log::info("No attachment file found");
         }
-        \Log::info("=== FILE UPLOAD DEBUG END ===");
+        Log::info("=== FILE UPLOAD DEBUG END ===");
         
         
         // ADDITIONAL FILE UPLOAD DEBUG
-        \Log::info("Pre-hasFile debug:", [
+        Log::info("Pre-hasFile debug:", [
             "request_has_files" => count($request->files->all()) > 0,
             "request_files_count" => count($request->files->all()),
             "attachment_exists" => $request->files->has("attachment"),
@@ -1722,7 +1569,7 @@ class AdminModuleController extends Controller
         
         if ($request->hasFile('attachment')) {
                 $upload = $request->file('attachment');
-                \Log::info('Attachment info', [
+                Log::info('Attachment info', [
                     'originalName' => $upload->getClientOriginalName(),
                     'size' => $upload->getSize(),
                     'mime' => $upload->getClientMimeType(),
@@ -1734,7 +1581,7 @@ class AdminModuleController extends Controller
             
             // Special check for empty file fields that Laravel might reject
             if ($request->has('attachment') && !$request->hasFile('attachment')) {
-                \Log::warning('Attachment field present but no file received', [
+                Log::warning('Attachment field present but no file received', [
                     'contentId' => $id,
                     'attachmentValue' => $request->get('attachment'),
                     'hasFile' => $request->hasFile('attachment')
@@ -1745,7 +1592,7 @@ class AdminModuleController extends Controller
                 $validationData = $request->all();
             }
             
-            $validator = \Validator::make($validationData, [
+            $validator = Validator::make($validationData, [
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video,document',
@@ -1761,7 +1608,7 @@ class AdminModuleController extends Controller
             $content = \App\Models\ContentItem::findOrFail($id);
 
             if ($validator->fails()) {
-                \Log::error('Validation failed for content update', [
+                Log::error('Validation failed for content update', [
                     'contentId' => $id,
                     'errors' => $validator->errors()->toArray(),
                     'requestData' => $request->except(['attachment']),
@@ -1813,9 +1660,9 @@ class AdminModuleController extends Controller
 
                 try {
                     // Delete old file if exists
-                    if ($content->attachment_path && \Storage::disk('public')->exists($content->attachment_path)) {
-                        \Storage::disk('public')->delete($content->attachment_path);
-                        \Log::info('Deleted old file', ['path' => $content->attachment_path]);
+                    if ($content->attachment_path && Storage::disk('public')->exists($content->attachment_path)) {
+                        Storage::disk('public')->delete($content->attachment_path);
+                        Log::info('Deleted old file', ['path' => $content->attachment_path]);
                     }
                     
                     // Sanitize filename
@@ -1829,7 +1676,7 @@ class AdminModuleController extends Controller
                     // Update attachment path
                     $updateData['attachment_path'] = $path;
                     
-                    \Log::info('File uploaded successfully', [
+                    Log::info('File uploaded successfully', [
                         'originalName' => $originalName,
                         'sanitizedName' => $sanitizedName,
                         'storedPath' => $path,
@@ -1837,7 +1684,7 @@ class AdminModuleController extends Controller
                         'fileSize' => $upload->getSize()
                     ]);
                 } catch (\Exception $fileError) {
-                    \Log::error('File upload error', [
+                    Log::error('File upload error', [
                         'error' => $fileError->getMessage(),
                         'file' => $fileError->getFile(),
                         'line' => $fileError->getLine(),
@@ -1852,7 +1699,7 @@ class AdminModuleController extends Controller
             } else if ($request->hasFile('attachment') && !$request->file('attachment')->isValid()) {
                 // File was uploaded but is invalid
                 $upload = $request->file('attachment');
-                \Log::error('Invalid file upload', [
+                Log::error('Invalid file upload', [
                     'originalName' => $upload->getClientOriginalName(),
                     'size' => $upload->getSize(),
                     'mime' => $upload->getClientMimeType(),
@@ -1882,7 +1729,7 @@ class AdminModuleController extends Controller
             // Update content with all data including file path
             $content->update($updateData);
             
-            \Log::info('Content updated successfully', [
+            Log::info('Content updated successfully', [
                 'contentId' => $id,
                 'updatedFields' => array_keys($updateData)
             ]);
@@ -1893,7 +1740,7 @@ class AdminModuleController extends Controller
                 'content' => $content->fresh()
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation error in updateContent', [
+            Log::error('Validation error in updateContent', [
                 'contentId' => $id,
                 'errors' => $e->errors()
             ]);
@@ -1904,7 +1751,7 @@ class AdminModuleController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error updating content: ' . $e->getMessage(), [
+            Log::error('Error updating content: ' . $e->getMessage(), [
                 'contentId' => $id,
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -2052,7 +1899,7 @@ class AdminModuleController extends Controller
                                   'course_id' => $course->subject_id,
                                   'course_name' => $course->subject_name,
                                   'course_description' => $course->subject_description,
-                                  'course_type' => $course->subject_type,
+                                  'course_order' => $course->subject_order,
                                   'content_items_count' => ContentItem::where('course_id', $course->subject_id)->count()
                               ];
                           });
@@ -2064,7 +1911,10 @@ class AdminModuleController extends Controller
                     'module_name' => $module->module_name,
                     'module_description' => $module->module_description,
                     'module_order' => $module->module_order,
-                    'type' => $module->type ?? 'Standard'
+                    'type' => $module->content_type ?? 'module',
+                    'attachment' => $module->attachment,
+                    'learning_mode' => $module->learning_mode,
+                    'created_at' => $module->created_at
                 ],
                 'courses' => $courses
             ]);

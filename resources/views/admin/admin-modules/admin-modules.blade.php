@@ -85,7 +85,7 @@
                 <label for="contentTypeFilter">Filter by Content Type:</label>
                 <select id="contentTypeFilter" class="form-select">
                     <option value="">All Content Types</option>
-                    <option value="module">Module</option>
+                    <option value="module">Module/Lesson</option>
                     <option value="assignment">Assignment</option>
                     <option value="quiz">Quiz</option>
                     <option value="test">Test</option>
@@ -283,7 +283,7 @@
     background: #fd7e14;
   }
   
-  .content-item-type.module {
+  .content-item-type.lesson {
     background: #17a2b8;
   }
   
@@ -498,150 +498,6 @@
     transform: translateY(-2px);
     color: white;
   }
-
-  .override-control-btn {
-    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-    color: white;
-  }
-
-  .override-control-btn:hover {
-    background: linear-gradient(135deg, #c82333 0%, #e55a00 100%);
-    transform: translateY(-2px);
-    color: white;
-  }
-
-  /* Override Panel Styles */
-  .override-panel {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-    overflow: hidden;
-  }
-
-  .override-panel-header {
-    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-    color: white;
-    padding: 1.5rem;
-  }
-
-  .override-panel-header h5 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-  }
-
-  .override-panel-header p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 0.9rem;
-  }
-
-  .override-controls-row {
-    padding: 1.5rem;
-    display: flex;
-    gap: 2rem;
-    align-items: end;
-    flex-wrap: wrap;
-  }
-
-  .override-control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .override-control-group label {
-    font-weight: 600;
-    color: #495057;
-    font-size: 0.9rem;
-  }
-
-  .override-control-group .btn-group .btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-
-  /* Lock/Unlock indicators for items */
-  .item-locked {
-    opacity: 0.6;
-    position: relative;
-  }
-
-  .item-locked::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(220, 53, 69, 0.1);
-    border: 2px dashed #dc3545;
-    border-radius: 8px;
-    pointer-events: none;
-  }
-
-  .lock-indicator {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: #dc3545;
-    color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    z-index: 10;
-  }
-
-  .lock-indicator.scheduled {
-    background: #ffc107;
-    color: #000;
-  }
-
-  .lock-indicator.prerequisite {
-    background: #6c757d;
-  }
-
-  /* Override action buttons in items */
-  .override-actions {
-    display: flex;
-    gap: 0.25rem;
-    margin-left: 0.5rem;
-  }
-
-  .override-actions .btn {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.7rem;
-    border-radius: 4px;
-  }
-
-  /* Override button styling */
-  .btn-override-controls {
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    border: none;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
-  }
-  
-  .btn-override-controls:hover {
-    background: linear-gradient(135deg, #0056b3, #004085);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
-    color: white;
-  }
-  
-  .btn-override-controls:active {
-    transform: translateY(0);
-  }
   
   /* Cross-module drag and drop styles */
   .drag-over {
@@ -692,60 +548,6 @@
       opacity: 1;
     }
   }
-
-  /* Override Modal Styles */
-  .override-item-info {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1.5rem;
-    border-left: 4px solid #007bff;
-  }
-
-  .override-section {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    background: #ffffff;
-  }
-
-  .override-section h5 {
-    margin-bottom: 0.75rem;
-    color: #495057;
-    font-weight: 600;
-  }
-
-  .override-section small {
-    color: #6c757d;
-    margin-top: 0.25rem;
-    display: block;
-  }
-
-  .override-controls .form-control {
-    border-radius: 4px;
-  }
-
-  .override-controls .btn {
-    border-radius: 4px;
-    white-space: nowrap;
-  }
-
-  .notification {
-    border-radius: 6px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  #overrideModal .modal {
-    max-width: 900px;
-    width: 90%;
-  }
-
-  #overrideModal .modal-body {
-    max-height: 80vh;
-    overflow-y: auto;
-    padding: 2rem;
-  }
 </style>
 
 <div class="modules-hierarchy" id="modulesHierarchy">
@@ -766,9 +568,6 @@
         <div class="module-actions" onclick="event.stopPropagation();">
           <button class="btn add-course-btn" onclick="showAddCourseModal({{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')">
             <i class="bi bi-plus-circle"></i> Add Course
-          </button>
-          <button class="btn btn-override-controls" onclick="showOverrideModal('module', {{ $module->modules_id }}, '{{ addslashes($module->module_name) }}')" title="Override Controls">
-            <i class="bi bi-gear"></i>
           </button>
           <button class="btn btn-sm btn-outline-light" onclick="editModule({{ $module->modules_id }})">
             <i class="bi bi-pencil"></i>
@@ -1053,9 +852,71 @@ function loadModuleContentInViewer(moduleId) {
                     <div class="content-display">
                         <h4>Module Overview</h4>
                         <p><strong>Description:</strong> ${data.module.module_description || 'No description available'}</p>
-                        <p><strong>Type:</strong> ${data.module.type || 'Standard'}</p>
+                        <p><strong>Type:</strong> ${data.module.type || 'module'}</p>
+                        <p><strong>Learning Mode:</strong> ${data.module.learning_mode || 'Not set'}</p>
                         <p><strong>Order:</strong> ${data.module.module_order || 'Not set'}</p>
-                        
+                `;
+                
+                // Add attachment section if module has an attachment
+                if (data.module.attachment) {
+                    const attachmentUrl = `/storage/${data.module.attachment}`;
+                    const fileName = data.module.attachment.split('/').pop();
+                    const fileExtension = fileName.split('.').pop().toLowerCase();
+                    
+                    contentHtml += `
+                        <div class="mt-4">
+                            <h5>📎 Module Attachment</h5>
+                            <div class="attachment-preview border rounded p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span><strong>File:</strong> ${fileName}</span>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="${attachmentUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="${attachmentUrl}" download class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                    `;
+                    
+                    // Show PDF preview if it's a PDF file
+                    if (fileExtension === 'pdf') {
+                        contentHtml += `
+                                <div class="pdf-preview mt-3">
+                                    <iframe src="${attachmentUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=85" 
+                                            style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 5px;"
+                                            allowfullscreen>
+                                        <p>PDF preview not available. <a href="${attachmentUrl}" target="_blank">View in new tab</a></p>
+                                    </iframe>
+                                </div>
+                        `;
+                    } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                        // Show image preview
+                        contentHtml += `
+                                <div class="image-preview mt-3">
+                                    <img src="${attachmentUrl}" alt="${fileName}" 
+                                         style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;">
+                                </div>
+                        `;
+                    } else {
+                        // Show file info for other types
+                        contentHtml += `
+                                <div class="file-info mt-3">
+                                    <p class="text-muted">
+                                        <i class="bi bi-file-earmark"></i> ${fileExtension.toUpperCase()} file - Click "View" to open
+                                    </p>
+                                </div>
+                        `;
+                    }
+                    
+                    contentHtml += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                contentHtml += `
                         <h5 class="mt-4">Courses (${data.courses?.length || 0})</h5>
                         <div class="courses-preview">
                 `;
@@ -1063,9 +924,12 @@ function loadModuleContentInViewer(moduleId) {
                 if (data.courses && data.courses.length > 0) {
                     data.courses.forEach(course => {
                         contentHtml += `
-                            <div class="course-preview-item">
+                            <div class="course-preview-item border-bottom pb-2 mb-2">
                                 <h6>${course.course_name}</h6>
-                                <p class="text-muted">${course.course_description || 'No description'}</p>
+                                <p class="text-muted mb-1">${course.course_description || 'No description'}</p>
+                                <small class="text-info">
+                                    <i class="bi bi-file-text"></i> ${course.content_items_count || 0} content items
+                                </small>
                             </div>
                         `;
                     });
@@ -1604,9 +1468,6 @@ function displayCourses(moduleId, courses) {
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm btn-outline-light" onclick="showOverrideModal('course', ${course.subject_id}, '${course.subject_name}')" title="Override Controls">
-                            <i class="bi bi-gear"></i>
-                        </button>
                         <button class="btn btn-sm btn-outline-light" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')">
                             <i class="bi bi-plus"></i> Add Content
                         </button>
@@ -1696,9 +1557,6 @@ function displayCourseContent(moduleId, courseId, contentItems) {
                     </div>
                 </div>
                 <div class="content-item-actions" onclick="event.stopPropagation();">
-                    <button class="btn btn-sm btn-outline-light" onclick="showOverrideModal('content', ${item.id}, '${item.content_title}')" title="Override Controls">
-                        <i class="bi bi-gear"></i>
-                    </button>
                     <button class="btn btn-sm btn-primary" onclick="loadContentInViewer(${item.id}, '${item.content_type}', '${item.content_title}', ${moduleId}, ${courseId})" title="View Content">
                         <i class="bi bi-eye"></i>
                     </button>
@@ -1742,19 +1600,19 @@ function getContentTypeClass(type) {
     const classes = {
         'assignment': 'assignment',
         'pdf': 'pdf',
-        'module': 'module',
+        'lesson': 'lesson',
         'quiz': 'quiz',
         'test': 'test',
         'link': 'link'
     };
-    return classes[type] || 'module';
+    return classes[type] || 'lesson';
 }
 
 function getContentTypeIcon(type) {
     const icons = {
         'assignment': 'bi-file-earmark-text',
         'pdf': 'bi-file-pdf',
-        'module': 'bi-journal-text',
+        'lesson': 'bi-journal-text',
         'quiz': 'bi-question-circle',
         'test': 'bi-clipboard-check',
         'link': 'bi-link-45deg'
@@ -1768,28 +1626,6 @@ function showAddCourseModal(moduleId, moduleName = '') {
     const form = document.getElementById('addCourseForm');
     
     if (modal && form) {
-        // Reset modal to "add" mode
-        const modalTitle = modal.querySelector('.modal-header h3');
-        if (modalTitle) {
-            modalTitle.innerHTML = '<i class="bi bi-plus-circle"></i> Add New Course';
-        }
-        
-        // Reset form action to create mode
-        form.action = '{{ route("admin.courses.store") }}';
-        
-        // Remove any method spoofing
-        const methodInput = form.querySelector('input[name="_method"]');
-        if (methodInput) {
-            methodInput.remove();
-        }
-        
-        // Clear form fields
-        const nameField = document.getElementById('courseSubjectName');
-        const descField = document.getElementById('courseSubjectDescription');
-        
-        if (nameField) nameField.value = '';
-        if (descField) descField.value = '';
-        
         // Pre-fill the module selection if moduleId is provided
         if (moduleId) {
             // Set the program first by finding which program this module belongs to
@@ -1988,43 +1824,22 @@ function editCourse(courseId) {
                 // Extract course data - handle both response formats
                 const courseData = data.course || data;
                 
-                // Use the existing addCourseModal for editing
-                const modal = document.getElementById('addCourseModalBg');
+                // Open edit modal with pre-filled data
+                const modal = document.getElementById('editCourseModalBg');
                 if (modal) {
-                    // Update modal title to indicate editing
-                    const modalTitle = modal.querySelector('.modal-header h3');
-                    if (modalTitle) {
-                        modalTitle.innerHTML = '<i class="bi bi-pencil-square"></i> Edit Course';
-                    }
-                    
                     // Fill form with course data
-                    const nameField = document.getElementById('courseSubjectName');
-                    const descField = document.getElementById('courseSubjectDescription');
-                    const moduleField = document.getElementById('courseModuleId');
+                    document.getElementById('editCourseName').value = courseData.subject_name || '';
+                    document.getElementById('editCourseDescription').value = courseData.subject_description || '';
+                    document.getElementById('editCourseModuleSelect').value = courseData.module_id || '';
                     
-                    if (nameField) nameField.value = courseData.subject_name || '';
-                    if (descField) descField.value = courseData.subject_description || '';
-                    if (moduleField) moduleField.value = courseData.module_id || '';
-                    
-                    // Update form action for editing
-                    const form = document.getElementById('addCourseForm');
+                    // Set form action
+                    const form = document.getElementById('editCourseForm');
                     if (form) {
                         form.action = `/admin/courses/${courseId}`;
-                        // Add method spoofing for PUT request
-                        let methodInput = form.querySelector('input[name="_method"]');
-                        if (!methodInput) {
-                            methodInput = document.createElement('input');
-                            methodInput.type = 'hidden';
-                            methodInput.name = '_method';
-                            form.appendChild(methodInput);
-                        }
-                        methodInput.value = 'PUT';
                     }
                     
-                    // Show the modal
                     modal.classList.add('show');
                 } else {
-                    console.error('Course modal not found');
                     // Fallback to simple editing if modal is not available
                     const newName = prompt('Enter new course name:', courseData.subject_name || '');
                     if (newName && newName.trim() !== '' && newName.trim() !== courseData.subject_name) {
@@ -2140,12 +1955,12 @@ function editContent(contentId) {
                             <input type="file" id="edit_content_file" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
                         `;
                         
-                        if (data.content.attachment_path) {
-                            const fileName = data.content.attachment_path.split('/').pop();
+                        if (data.content.file_path) {
+                            const fileName = data.content.file_path.split('/').pop();
                             fileHtml += `
                                 <div class="current-file-info mt-2 p-2 bg-light rounded">
                                     <small class="text-muted"><strong>Current file:</strong> 
-                                        <a href="/storage/${data.content.attachment_path}" target="_blank" class="text-primary">
+                                        <a href="/storage/${data.content.file_path}" target="_blank" class="text-primary">
                                             <i class="bi bi-file-earmark"></i> ${fileName}
                                         </a>
                                     </small>
@@ -2160,7 +1975,7 @@ function editContent(contentId) {
                     }
                     document.getElementById('edit_module_id').value = data.content.module_id;
                     document.getElementById('edit_course_id').value = data.content.course_id;
-                    // Removed lesson_id reference since lessons table is dropped
+                    document.getElementById('edit_lesson_id').value = data.content.lesson_id;
                     // Set form action
                     form.action = `/admin/content/${contentId}`;
                     
@@ -2647,68 +2462,6 @@ function setupModalEventListeners() {
         });
     }
 
-    // Edit Module Modal
-    const editModalBg = document.getElementById('editModalBg');
-    const closeEditModal = document.getElementById('closeEditModal');
-    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
-
-    if (closeEditModal) {
-        closeEditModal.addEventListener('click', function() {
-            editModalBg.classList.remove('show');
-        });
-    }
-
-    if (closeEditModalBtn) {
-        closeEditModalBtn.addEventListener('click', function() {
-            editModalBg.classList.remove('show');
-        });
-    }
-
-    // Module Courses Modal
-    const moduleCoursesModalBg = document.getElementById('moduleCoursesModalBg');
-    const closeModuleCoursesModal = document.getElementById('closeModuleCoursesModal');
-    const closeModuleCoursesModalBtn = document.getElementById('closeModuleCoursesModalBtn');
-
-    if (closeModuleCoursesModal) {
-        closeModuleCoursesModal.addEventListener('click', function() {
-            moduleCoursesModalBg.classList.remove('show');
-        });
-    }
-
-    if (closeModuleCoursesModalBtn) {
-        closeModuleCoursesModalBtn.addEventListener('click', function() {
-            moduleCoursesModalBg.classList.remove('show');
-        });
-    }
-
-    // Course Content Modal
-    const courseContentModalBg = document.getElementById('courseContentModalBg');
-    const closeCourseContentModal = document.getElementById('closeCourseContentModal');
-    const closeCourseContentModalBtn = document.getElementById('closeCourseContentModalBtn');
-
-    if (closeCourseContentModal) {
-        closeCourseContentModal.addEventListener('click', function() {
-            courseContentModalBg.classList.remove('show');
-        });
-    }
-
-    if (closeCourseContentModalBtn) {
-        closeCourseContentModalBtn.addEventListener('click', function() {
-            courseContentModalBg.classList.remove('show');
-        });
-    }
-
-    // Override Modal
-    const overrideModal = document.getElementById('overrideModal');
-    if (overrideModal) {
-        // Close modal when clicking outside
-        overrideModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeOverrideModal();
-            }
-        });
-    }
-
     // Form submission handlers
     setupFormHandlers();
     setupProgramChangeHandlers();
@@ -3149,6 +2902,38 @@ function submitModuleForm(form) {
     const formData = new FormData(form);
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
+    const attachmentInput = form.querySelector('input[name="attachment"]');
+    
+    // Enhanced file validation
+    if (attachmentInput && attachmentInput.files.length > 0) {
+        const file = attachmentInput.files[0];
+        console.log('Module attachment file:', {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            extension: file.name.split('.').pop().toLowerCase()
+        });
+        
+        // Client-side validation
+        const maxSize = 104857600; // 100MB in bytes
+        if (file.size > maxSize) {
+            alert('File is too large. Maximum size allowed is 100MB.');
+            return;
+        }
+        
+        const allowedExtensions = ['pdf', 'doc', 'docx', 'zip', 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Invalid file type. Allowed types: PDF, DOC, DOCX, ZIP, Images, Videos');
+            return;
+        }
+        
+        // PDF specific validation
+        if (fileExtension === 'pdf' && file.type !== 'application/pdf') {
+            console.warn('PDF file detected but MIME type is:', file.type);
+        }
+    }
     
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
@@ -3157,10 +2942,30 @@ function submitModuleForm(form) {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If it's not JSON, return the text to see what we got
+            return response.text().then(text => {
+                console.error('Expected JSON but got:', text.substring(0, 200));
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+    })
     .then(data => {
         if (data.success) {
             // Close modal and refresh page
@@ -3219,6 +3024,41 @@ function submitCourseContentForm(form) {
   const formData = new FormData(form);
   const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
+  const attachmentInput = form.querySelector('input[type="file"]');
+  
+  // Enhanced file validation
+  if (attachmentInput && attachmentInput.files.length > 0) {
+    const file = attachmentInput.files[0];
+    console.log('File selected for upload:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: new Date(file.lastModified),
+      extension: file.name.split('.').pop().toLowerCase()
+    });
+    
+    // Client-side validation
+    const maxSize = 52428800; // 50MB in bytes
+    if (file.size > maxSize) {
+      alert('File is too large. Maximum size allowed is 50MB.');
+      return;
+    }
+    
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'zip', 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert('Invalid file type. Allowed types: PDF, DOC, DOCX, ZIP, Images, Videos');
+      return;
+    }
+    
+    // Additional MIME type validation for PDFs
+    if (fileExtension === 'pdf' && file.type !== 'application/pdf') {
+      console.warn('PDF file detected but MIME type is:', file.type);
+      // Allow it but log the warning
+    }
+  }
+  
   submitBtn.disabled = true;
   submitBtn.textContent = 'Adding…';
 
@@ -3244,21 +3084,33 @@ function submitCourseContentForm(form) {
     body: formData,
     headers: {
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
     }
   })
   .then(async response => {
     const text = await response.text();
     console.log('Raw server response:', text);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', [...response.headers.entries()]);
 
     if (!response.ok) {
       // server returned 500/422/etc with HTML or JSON
       let errorMsg = text;
+      
+      // Check if it's HTML (DOCTYPE indicates HTML page)
+      if (text.startsWith('<!DOCTYPE') || text.includes('<html>')) {
+        console.error('Server returned HTML page instead of JSON:', text.substring(0, 200));
+        throw new Error(`Server error (${response.status}): Server returned HTML page instead of JSON. This usually indicates a server-side error or routing issue.`);
+      }
+      
       try {
         // maybe it's JSON with a message?
         const json = JSON.parse(text);
         errorMsg = json.message || JSON.stringify(json.errors || json);
-      } catch {}
+      } catch {
+        // It's not JSON either
+      }
       throw new Error(`Server error (${response.status}): ${errorMsg}`);
     }
 
@@ -3266,7 +3118,8 @@ function submitCourseContentForm(form) {
     try {
       return JSON.parse(text);
     } catch (err) {
-      throw new Error('Invalid JSON from server: ' + text);
+      console.error('Response was not valid JSON:', text);
+      throw new Error('Invalid JSON from server: ' + text.substring(0, 200));
     }
   })
   .then(data => {
@@ -3457,8 +3310,9 @@ function showModuleCourses(moduleId, moduleName) {
 
                 <div class="form-group">
                     <label for="attachment">Attachment</label>
-                    <input type="file" id="attachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
-                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
+                    <input type="file" id="attachment" name="attachment" class="form-control" 
+                           accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB)</small>
                 </div>
 
                 <!-- Content-specific fields will be populated by JavaScript -->
@@ -3584,8 +3438,9 @@ function showModuleCourses(moduleId, moduleName) {
 
                 <div class="form-group">
                     <label for="contentAttachment">Attachment</label>
-                    <input type="file" id="contentAttachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
-                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
+                    <input type="file" id="contentAttachment" name="attachment" class="form-control" 
+                           accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 50MB)</small>
                 </div>
 
             </div>
@@ -3613,85 +3468,49 @@ function showModuleCourses(moduleId, moduleName) {
     </div>
 </div>
 
-<!-- Override Control Modal -->
+<!-- Override Modal -->
 <div class="modal-bg" id="overrideModal">
     <div class="modal">
         <div class="modal-header">
-            <h3><i class="bi bi-shield-lock"></i> Override Controls</h3>
-            <button type="button" class="modal-close" onclick="closeOverrideModal()">
+            <h3><i class="bi bi-unlock-fill"></i> Admin Override Settings</h3>
+            <button type="button" class="modal-close" id="closeOverrideModal">
                 <i class="bi bi-x"></i>
             </button>
         </div>
         <div class="modal-body">
-            <div class="override-item-info">
-                <p>Managing: <strong id="overrideItemName"></strong></p>
-                <small class="text-muted">Type: <span id="overrideItemType"></span></small>
-            </div>
-            
-            <div class="override-controls">
-                <!-- Lock/Unlock Section -->
-                <div class="override-section">
-                    <h5><i class="bi bi-lock"></i> Lock Control</h5>
-                    <div class="d-flex align-items-center gap-3">
-                        <button type="button" class="btn btn-danger" id="toggleLockBtn" onclick="toggleItemLock()">
-                            <i class="bi bi-lock"></i> Toggle Lock
-                        </button>
-                        <div class="flex-grow-1">
-                            <input type="text" class="form-control" id="lockReason" placeholder="Lock reason (optional)">
-                        </div>
-                        <button type="button" class="btn btn-primary" onclick="saveLockSettings()">
-                            <i class="bi bi-check"></i> Save
-                        </button>
+            <p>Configure admin override settings for: <strong id="overrideModuleName"></strong></p>
+            <form id="overrideForm">
+                <div class="admin-override-checkboxes">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="override_completion_modal" name="admin_override[]" value="completion">
+                        <label class="form-check-label" for="override_completion_modal">
+                            <i class="bi bi-check-circle"></i> Override Completion Requirements
+                        </label>
                     </div>
-                    <small class="text-muted">Lock this item to prevent student access</small>
-                </div>
-
-                <!-- Schedule Release Section -->
-                <div class="override-section">
-                    <h5><i class="bi bi-calendar-event"></i> Schedule Release</h5>
-                    <div class="d-flex align-items-center gap-3">
-                        <input type="datetime-local" class="form-control" id="releaseDate">
-                        <button type="button" class="btn btn-warning" onclick="setReleaseSchedule()">
-                            <i class="bi bi-calendar-check"></i> Set Schedule
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="clearReleaseSchedule()">
-                            <i class="bi bi-x"></i> Clear
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="saveScheduleSettings()">
-                            <i class="bi bi-check"></i> Save
-                        </button>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="override_prerequisites_modal" name="admin_override[]" value="prerequisites">
+                        <label class="form-check-label" for="override_prerequisites_modal">
+                            <i class="bi bi-arrow-right-circle"></i> Override Prerequisites
+                        </label>
                     </div>
-                    <small class="text-muted">Schedule when this item becomes available</small>
-                </div>
-
-                <!-- Prerequisites Section -->
-                <div class="override-section">
-                    <h5><i class="bi bi-arrow-right-circle"></i> Prerequisites</h5>
-                    <div class="d-flex align-items-center gap-3">
-                        <select class="form-control" id="prerequisiteSelect">
-                            <option value="">No prerequisite</option>
-                        </select>
-                        <button type="button" class="btn btn-info" onclick="setPrerequisite()">
-                            <i class="bi bi-check"></i> Set Prerequisite
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="savePrerequisiteSettings()">
-                            <i class="bi bi-check"></i> Save
-                        </button>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="override_time_limits_modal" name="admin_override[]" value="time_limits">
+                        <label class="form-check-label" for="override_time_limits_modal">
+                            <i class="bi bi-clock"></i> Override Time Limits
+                        </label>
                     </div>
-                    <small class="text-muted">Require completion of another item first</small>
-                </div>
-
-                <!-- Current Status -->
-                <div class="override-section">
-                    <h5><i class="bi bi-info-circle"></i> Current Status</h5>
-                    <div id="currentOverrideStatus" class="alert alert-info">
-                        Loading current status...
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="override_access_control_modal" name="admin_override[]" value="access_control">
+                        <label class="form-check-label" for="override_access_control_modal">
+                            <i class="bi bi-unlock"></i> Override Access Control
+                        </label>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeOverrideModal()">Close</button>
+            <button type="button" class="cancel-btn" onclick="closeOverrideModal()">Cancel</button>
+            <button type="button" class="add-btn" onclick="saveOverrideSettings()">Save Override Settings</button>
         </div>
     </div>
 </div>
@@ -3969,570 +3788,3 @@ function showModuleCourses(moduleId, moduleName) {
 </div>
 
 @endsection
-
-@push('scripts')
-<script>
-// Admin Override System JavaScript Functions
-
-// Toggle item lock/unlock
-function toggleItemLock(itemType, itemId, studentId = null) {
-    const data = {
-        override_type: itemType,
-        target_id: itemId,
-        student_id: studentId,
-        is_locked: true // This will be toggled by the backend based on current state
-    };
-    
-    fetch('/admin/overrides/toggle-lock', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            // Update UI to reflect the change
-            updateItemLockStatus(itemType, itemId, data.is_locked);
-        } else {
-            showAlert('Error: ' + (data.message || 'Failed to toggle lock'), 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error toggling lock:', error);
-        showAlert('Error toggling lock status', 'danger');
-    });
-}
-
-// Show schedule release modal
-function showScheduleModal(itemType, itemId) {
-    const modal = document.getElementById('scheduleReleaseModal');
-    if (modal) {
-        document.getElementById('schedule_item_type').value = itemType;
-        document.getElementById('schedule_item_id').value = itemId;
-        document.getElementById('schedule_item_name').textContent = `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} ID: ${itemId}`;
-        modal.classList.add('show');
-    }
-}
-
-// Show prerequisite modal
-function showPrerequisiteModal(itemType, itemId) {
-    const modal = document.getElementById('prerequisiteModal');
-    if (modal) {
-        document.getElementById('prereq_item_type').value = itemType;
-        document.getElementById('prereq_item_id').value = itemId;
-        document.getElementById('prereq_item_name').textContent = `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} ID: ${itemId}`;
-        
-        // Load available prerequisites based on item type
-        loadPrerequisiteOptions(itemType, itemId);
-        modal.classList.add('show');
-    }
-}
-
-// Show bulk lock modal
-function showBulkLockModal() {
-    const modal = document.getElementById('bulkLockModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
-}
-
-// Show bulk unlock modal
-function showBulkUnlockModal() {
-    const modal = document.getElementById('bulkUnlockModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
-}
-
-// Show schedule release modal
-function showScheduleReleaseModal() {
-    const modal = document.getElementById('scheduleReleaseModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
-}
-
-// Show prerequisite modal
-function showPrerequisiteModal() {
-    const modal = document.getElementById('prerequisiteModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
-}
-
-// Update item lock status in UI
-function updateItemLockStatus(itemType, itemId, isLocked) {
-    const itemSelector = `[data-${itemType}-id="${itemId}"]`;
-    const itemElement = document.querySelector(itemSelector);
-    
-    if (itemElement) {
-        if (isLocked) {
-            itemElement.classList.add('item-locked');
-            // Add lock indicator if not already present
-            if (!itemElement.querySelector('.lock-indicator')) {
-                const lockIcon = document.createElement('div');
-                lockIcon.className = 'lock-indicator';
-                lockIcon.innerHTML = '<i class="bi bi-lock"></i>';
-                lockIcon.title = 'Locked by admin';
-                itemElement.style.position = 'relative';
-                itemElement.appendChild(lockIcon);
-            }
-        } else {
-            itemElement.classList.remove('item-locked');
-            // Remove lock indicator
-            const lockIndicator = itemElement.querySelector('.lock-indicator');
-            if (lockIndicator) {
-                lockIndicator.remove();
-            }
-        }
-    }
-}
-
-// Load prerequisite options
-function loadPrerequisiteOptions(itemType, itemId) {
-    const select = document.getElementById('prerequisite_select');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Loading...</option>';
-    
-    fetch(`/admin/overrides/prerequisites/${itemType}/${itemId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let options = '<option value="">No prerequisite</option>';
-                data.prerequisites.forEach(item => {
-                    options += `<option value="${item.type}:${item.id}">${item.name}</option>`;
-                });
-                select.innerHTML = options;
-            } else {
-                select.innerHTML = '<option value="">Error loading prerequisites</option>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading prerequisites:', error);
-            select.innerHTML = '<option value="">Error loading prerequisites</option>';
-        });
-}
-
-// Process bulk operations
-function processBulkLock() {
-    const selectedItems = getSelectedItems();
-    const reason = document.getElementById('bulk_lock_reason').value;
-    
-    if (selectedItems.length === 0) {
-        showAlert('Please select items to lock', 'warning');
-        return;
-    }
-    
-    fetch('/admin/overrides/bulk-lock', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            items: selectedItems,
-            reason: reason
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(`Successfully locked ${data.count} items`, 'success');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            showAlert('Error: ' + (data.message || 'Failed to bulk lock'), 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error with bulk lock:', error);
-        showAlert('Error processing bulk lock', 'danger');
-    });
-}
-
-function processBulkUnlock() {
-    const selectedItems = getSelectedItems();
-    
-    if (selectedItems.length === 0) {
-        showAlert('Please select items to unlock', 'warning');
-        return;
-    }
-    
-    fetch('/admin/overrides/bulk-unlock', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            items: selectedItems
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(`Successfully unlocked ${data.count} items`, 'success');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            showAlert('Error: ' + (data.message || 'Failed to bulk unlock'), 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error with bulk unlock:', error);
-        showAlert('Error processing bulk unlock', 'danger');
-    });
-}
-
-// Helper function to get selected items (you'll need to implement item selection UI)
-function getSelectedItems() {
-    const selectedItems = [];
-    
-    // Check for selected modules
-    document.querySelectorAll('.module-container input[type="checkbox"]:checked').forEach(checkbox => {
-        selectedItems.push({
-            type: 'module',
-            id: checkbox.getAttribute('data-module-id')
-        });
-    });
-    
-    // Check for selected courses
-    document.querySelectorAll('.course-container input[type="checkbox"]:checked').forEach(checkbox => {
-        selectedItems.push({
-            type: 'course',
-            id: checkbox.getAttribute('data-course-id')
-        });
-    });
-    
-    // Check for selected content
-    document.querySelectorAll('.content-item input[type="checkbox"]:checked').forEach(checkbox => {
-        selectedItems.push({
-            type: 'content',
-            id: checkbox.getAttribute('data-content-id')
-        });
-    });
-    
-    return selectedItems;
-}
-
-// Override Modal Management
-let currentOverrideItem = null;
-
-function showOverrideModal(type, id, name) {
-    currentOverrideItem = {
-        type: type,
-        id: id,
-        name: name
-    };
-    
-    // Update modal title and info
-    document.getElementById('overrideItemName').textContent = name;
-    document.getElementById('overrideItemType').textContent = type;
-    
-    // Reset form fields
-    document.getElementById('lockReason').value = '';
-    document.getElementById('releaseDate').value = '';
-    document.getElementById('prerequisiteSelect').value = '';
-    
-    // Load current override status
-    loadCurrentOverrideStatus(type, id);
-    
-    // Load prerequisites options
-    loadPrerequisiteOptions(type);
-    
-    // Show modal
-    document.getElementById('overrideModal').classList.add('show');
-}
-
-function closeOverrideModal() {
-    document.getElementById('overrideModal').classList.remove('show');
-    currentOverrideItem = null;
-}
-
-function loadCurrentOverrideStatus(type, id) {
-    const statusDiv = document.getElementById('currentOverrideStatus');
-    statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
-    
-    fetch(`/admin/overrides/status/${type}/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let statusHtml = '<div>';
-                
-                if (data.status.is_locked) {
-                    statusHtml += `<div class="text-danger"><i class="bi bi-lock"></i> Locked</div>`;
-                    if (data.status.lock_reason) {
-                        statusHtml += `<small>Reason: ${data.status.lock_reason}</small>`;
-                    }
-                } else {
-                    statusHtml += `<div class="text-success"><i class="bi bi-unlock"></i> Unlocked</div>`;
-                }
-                
-                if (data.status.release_date) {
-                    statusHtml += `<div><i class="bi bi-calendar"></i> Releases: ${new Date(data.status.release_date).toLocaleString()}</div>`;
-                }
-                
-                if (data.status.prerequisite_name) {
-                    statusHtml += `<div><i class="bi bi-arrow-right"></i> Requires: ${data.status.prerequisite_name}</div>`;
-                }
-                
-                statusHtml += '</div>';
-                statusDiv.innerHTML = statusHtml;
-                statusDiv.className = 'alert alert-info';
-            } else {
-                statusDiv.innerHTML = '<div class="text-danger">Failed to load status</div>';
-                statusDiv.className = 'alert alert-danger';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading override status:', error);
-            statusDiv.innerHTML = '<div class="text-danger">Error loading status</div>';
-            statusDiv.className = 'alert alert-danger';
-        });
-}
-
-function loadPrerequisiteOptions(type) {
-    const select = document.getElementById('prerequisiteSelect');
-    select.innerHTML = '<option value="">No prerequisite</option>';
-    
-    fetch('/admin/overrides/prerequisites')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                data.prerequisites.forEach(item => {
-                    if (item.type !== type || item.id !== currentOverrideItem.id) {
-                        const option = document.createElement('option');
-                        option.value = `${item.type}_${item.id}`;
-                        option.textContent = `${item.type}: ${item.name}`;
-                        select.appendChild(option);
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading prerequisites:', error);
-        });
-}
-
-function toggleItemLock() {
-    if (!currentOverrideItem) return;
-    
-    const lockReason = document.getElementById('lockReason').value;
-    const button = document.getElementById('toggleLockBtn');
-    const originalText = button.innerHTML;
-    
-    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
-    button.disabled = true;
-    
-    fetch('/admin/overrides/toggle-lock', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            type: currentOverrideItem.type,
-            id: currentOverrideItem.id,
-            lock_reason: lockReason
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadCurrentOverrideStatus(currentOverrideItem.type, currentOverrideItem.id);
-            showNotification('Lock status updated successfully', 'success');
-        } else {
-            showNotification(data.message || 'Failed to update lock status', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error toggling lock:', error);
-        showNotification('Error updating lock status', 'error');
-    })
-    .finally(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
-}
-
-function setReleaseSchedule() {
-    if (!currentOverrideItem) return;
-    
-    const releaseDate = document.getElementById('releaseDate').value;
-    if (!releaseDate) {
-        showNotification('Please select a release date', 'warning');
-        return;
-    }
-    
-    fetch('/admin/overrides/set-schedule', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            type: currentOverrideItem.type,
-            id: currentOverrideItem.id,
-            release_date: releaseDate
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadCurrentOverrideStatus(currentOverrideItem.type, currentOverrideItem.id);
-            showNotification('Release schedule set successfully', 'success');
-        } else {
-            showNotification(data.message || 'Failed to set release schedule', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error setting schedule:', error);
-        showNotification('Error setting release schedule', 'error');
-    });
-}
-
-function clearReleaseSchedule() {
-    if (!currentOverrideItem) return;
-    
-    fetch('/admin/overrides/clear-schedule', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            type: currentOverrideItem.type,
-            id: currentOverrideItem.id
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('releaseDate').value = '';
-            loadCurrentOverrideStatus(currentOverrideItem.type, currentOverrideItem.id);
-            showNotification('Release schedule cleared', 'success');
-        } else {
-            showNotification(data.message || 'Failed to clear schedule', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error clearing schedule:', error);
-        showNotification('Error clearing schedule', 'error');
-    });
-}
-
-function setPrerequisite() {
-    if (!currentOverrideItem) return;
-    
-    const prerequisiteValue = document.getElementById('prerequisiteSelect').value;
-    
-    fetch('/admin/overrides/set-prerequisite', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            type: currentOverrideItem.type,
-            id: currentOverrideItem.id,
-            prerequisite: prerequisiteValue
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadCurrentOverrideStatus(currentOverrideItem.type, currentOverrideItem.id);
-            showNotification('Prerequisite updated successfully', 'success');
-        } else {
-            showNotification(data.message || 'Failed to set prerequisite', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error setting prerequisite:', error);
-        showNotification('Error setting prerequisite', 'error');
-    });
-}
-
-// New save functions for individual sections
-function saveLockSettings() {
-    toggleItemLock();
-}
-
-function saveScheduleSettings() {
-    setReleaseSchedule();
-}
-
-function savePrerequisiteSettings() {
-    setPrerequisite();
-}
-
-function showNotification(message, type) {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} notification`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-        max-width: 500px;
-    `;
-    notification.innerHTML = `
-        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
-        ${message}
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 3000);
-}
-
-// Close modal on background click
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'overrideModal') {
-        closeOverrideModal();
-    }
-});
-
-// Close modal functions
-function closeOverrideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('show');
-    }
-}
-
-// Initialize override system when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Load existing overrides and update UI
-    loadExistingOverrides();
-});
-
-function loadExistingOverrides() {
-    const programId = document.getElementById('programSelect').value;
-    if (!programId) return;
-    
-    fetch(`/admin/overrides/list/${programId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                data.overrides.forEach(override => {
-                    updateItemLockStatus(override.override_type, override.target_id, override.is_locked);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading overrides:', error);
-        });
-}
-</script>
-@endpush

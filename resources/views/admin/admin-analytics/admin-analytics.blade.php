@@ -214,6 +214,60 @@
     border-color: var(--accent-color);
 }
 
+.export-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.export-panel:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.export-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.export-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.export-btn:focus {
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-success.dropdown-toggle {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-success.dropdown-toggle:hover {
+    background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    transform: translateY(-1px);
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
+}
+
 .table-professional {
     border-radius: var(--border-radius);
     overflow: hidden;
@@ -398,22 +452,59 @@
             </div>
         </div>
         
-        <!-- Export Options -->
+        <!-- Export Options (Admin Only) -->
+        @if(isset($isAdmin) && $isAdmin)
         <div class="row mt-3">
-            <div class="col-12 text-end">
-                <div class="btn-group">
-                    <button type="button" class="btn export-btn" onclick="exportData('pdf')">
-                        <i class="fas fa-file-pdf me-2"></i>Export PDF
-                    </button>
-                    <button type="button" class="btn export-btn mx-2" onclick="exportData('excel')">
-                        <i class="fas fa-file-excel me-2"></i>Export Excel
-                    </button>
-                    <button type="button" class="btn export-btn" onclick="refreshData()">
-                        <i class="fas fa-sync-alt me-2"></i>Refresh
-                    </button>
+            <div class="col-12">
+                <div class="export-panel">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-2"><i class="fas fa-download me-2"></i>Data Export Options</h6>
+                            <p class="text-muted small mb-0">Export analytics data in various formats. Admin access only.</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group">
+                                <button type="button" class="btn export-btn" onclick="exportData('pdf')" title="Export as PDF">
+                                    <i class="fas fa-file-pdf me-2"></i>PDF
+                                </button>
+                                <button type="button" class="btn export-btn mx-1" onclick="exportData('excel')" title="Export as JSON">
+                                    <i class="fas fa-file-code me-2"></i>JSON
+                                </button>
+                                <button type="button" class="btn export-btn" onclick="exportData('csv')" title="Export as CSV">
+                                    <i class="fas fa-file-csv me-2"></i>CSV
+                                </button>
+                                <div class="btn-group ms-2">
+                                    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-database me-2"></i>Complete Export
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="exportCompleteData('csv')">
+                                            <i class="fas fa-file-csv me-2"></i>All Data (CSV)
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="exportCompleteData('json')">
+                                            <i class="fas fa-file-code me-2"></i>All Data (JSON)
+                                        </a></li>
+                                    </ul>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="refreshData()" title="Refresh Data">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        @else
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> Data export functionality is restricted to administrators only.
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- Referral Analytics Section (Admin Only) -->
@@ -1455,7 +1546,70 @@ function exportData(format) {
     
     showAlert(`Preparing ${format.toUpperCase()} export...`, 'info');
     
-    window.open(`/admin/analytics/export?${queryParams}`, '_blank');
+    // Check if user is admin
+    @if(!isset($isAdmin) || !$isAdmin)
+        showAlert('Export functionality is restricted to administrators only.', 'error');
+        return;
+    @endif
+    
+    try {
+        const exportUrl = `/admin/analytics/export?${queryParams}`;
+        
+        if (format === 'csv') {
+            // For CSV, create a download link
+            const link = document.createElement('a');
+            link.href = exportUrl;
+            link.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('CSV export completed successfully!', 'success');
+        } else {
+            // For other formats, open in new window
+            window.open(exportUrl, '_blank');
+            showAlert(`${format.toUpperCase()} export opened in new window.`, 'success');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showAlert('Export failed. Please try again.', 'error');
+    }
+}
+
+function exportCompleteData(format) {
+    @if(!isset($isAdmin) || !$isAdmin)
+        showAlert('Complete data export is restricted to administrators only.', 'error');
+        return;
+    @endif
+    
+    // Show loading state
+    showAlert(`Preparing complete ${format.toUpperCase()} export... This may take a while.`, 'info');
+    
+    try {
+        const exportUrl = `/admin/analytics/export-complete?format=${format}`;
+        
+        if (format === 'csv') {
+            // For CSV, create a download link
+            const link = document.createElement('a');
+            link.href = exportUrl;
+            link.download = `complete-analytics-export-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('Complete CSV export completed successfully!', 'success');
+        } else {
+            // For JSON, download as file
+            const link = document.createElement('a');
+            link.href = exportUrl;
+            link.download = `complete-analytics-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('Complete JSON export completed successfully!', 'success');
+        }
+    } catch (error) {
+        console.error('Complete export error:', error);
+        showAlert('Complete export failed. Please try again.', 'error');
+    }
 }
 
 // Additional functions
