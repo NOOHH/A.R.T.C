@@ -280,13 +280,13 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="professor_id" class="form-label">Assigned Professor (Optional)</label>
-                        <select class="form-control" id="professor_id" name="professor_id">
-                            <option value="">Select a professor</option>
+                        <label for="professor_ids" class="form-label">Assigned Professor(s) (Optional)</label>
+                        <select class="form-control" id="professor_ids" name="professor_ids[]" multiple>
                             @foreach($professors as $professor)
                                 <option value="{{ $professor->professor_id }}">{{ $professor->professor_name }}</option>
                             @endforeach
                         </select>
+                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
                     </div>
                     <div class="mb-3">
                         <label for="max_capacity" class="form-label">Maximum Capacity</label>
@@ -304,8 +304,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="registration_deadline" class="form-label">Registration Deadline</label>
-                        <input type="date" class="form-control" id="registration_deadline" name="registration_deadline" required>
+                        <label for="enrollment_deadline" class="form-label">Registration Deadline</label>
+                        <input type="date" class="form-control" id="enrollment_deadline" name="enrollment_deadline" required>
                     </div>
                     <div class="mb-3">
                         <label for="start_date" class="form-label">Start Date</label>
@@ -317,8 +317,8 @@
                         <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <label for="batch_description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="batch_description" name="batch_description" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -359,15 +359,15 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_professor_id{{ $batch->batch_id }}" class="form-label">Assigned Professor (Optional)</label>
-                        <select class="form-control" id="edit_professor_id{{ $batch->batch_id }}" name="professor_id">
-                            <option value="">Select a professor</option>
+                        <label for="edit_professor_ids{{ $batch->batch_id }}" class="form-label">Assigned Professor(s) (Optional)</label>
+                        <select class="form-control" id="edit_professor_ids{{ $batch->batch_id }}" name="professor_ids[]" multiple>
                             @foreach($professors as $professor)
-                                <option value="{{ $professor->professor_id }}" {{ $batch->professor_id == $professor->professor_id ? 'selected' : '' }}>
+                                <option value="{{ $professor->professor_id }}" {{ in_array($professor->professor_id, $batch->professors->pluck('professor_id')->toArray()) ? 'selected' : '' }}>
                                     {{ $professor->professor_name }}
                                 </option>
                             @endforeach
                         </select>
+                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_max_capacity{{ $batch->batch_id }}" class="form-label">Maximum Capacity</label>
@@ -386,8 +386,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_registration_deadline{{ $batch->batch_id }}" class="form-label">Registration Deadline</label>
-                        <input type="date" class="form-control" id="edit_registration_deadline{{ $batch->batch_id }}" name="registration_deadline" value="{{ $batch->registration_deadline->format('Y-m-d') }}" required>
+                        <label for="edit_enrollment_deadline{{ $batch->batch_id }}" class="form-label">Registration Deadline</label>
+                        <input type="date" class="form-control" id="edit_enrollment_deadline{{ $batch->batch_id }}" name="enrollment_deadline" value="{{ $batch->registration_deadline->format('Y-m-d') }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="edit_start_date{{ $batch->batch_id }}" class="form-label">Start Date</label>
@@ -399,8 +399,8 @@
                         <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_description{{ $batch->batch_id }}" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="edit_description{{ $batch->batch_id }}" name="description" rows="3">{{ $batch->description }}</textarea>
+                        <label for="edit_batch_description{{ $batch->batch_id }}" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="edit_batch_description{{ $batch->batch_id }}" name="batch_description" rows="3">{{ $batch->description }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -549,15 +549,15 @@
 // Set minimum dates for date inputs
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
-    const registrationDeadlineInput = document.getElementById('registration_deadline');
+    const enrollmentDeadlineInput = document.getElementById('enrollment_deadline');
     const startDateInput = document.getElementById('start_date');
     
     // Note: We allow registration deadline to be any date to support ongoing batches
-    if(registrationDeadlineInput) {
+    if(enrollmentDeadlineInput) {
         // Don't set minimum date for registration deadline - allow flexibility for ongoing batches
         
         // Update start date minimum when registration deadline changes
-        registrationDeadlineInput.addEventListener('change', function() {
+        enrollmentDeadlineInput.addEventListener('change', function() {
             if(startDateInput) {
                 // Allow start date to be same or before registration deadline for ongoing batches
                 // But don't enforce minimum based on registration deadline

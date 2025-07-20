@@ -1416,6 +1416,24 @@
             </div>
         </div>
     </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 mx-auto">
+            <div class="card shadow-sm border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-certificate me-2"></i>Certificate Management
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="mb-3">Generate and download certificates for students based on their enrollment and completion status.</p>
+                    <a href="{{ route('certificate.show') }}" class="btn btn-success">
+                        <i class="fas fa-file-download me-2"></i>Generate Certificate
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 @push('scripts')
 <script>

@@ -36,21 +36,23 @@
   /* Main Layout - Split View */
   .course-main-layout {
     display: flex;
-    gap: 2rem;
-    padding: 0 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    gap: 1.5rem;
+    padding: 0 1rem;
+    max-width: 100%;
+    margin: 0;
     min-height: calc(100vh - 200px);
+    overflow: hidden;
   }
 
   /* Left Panel - Module Navigation */
   .modules-panel {
-    flex: 0 0 45%;
+    flex: 0 0 400px;
     background: white;
     border-radius: 15px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    height: fit-content;
+    height: calc(100vh - 250px);
+    overflow-y: auto;
   }
 
   .modules-panel-header {
@@ -59,6 +61,9 @@
     padding: 1.5rem;
     font-weight: 600;
     font-size: 1.1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   /* Right Panel - Content Viewer */
@@ -70,7 +75,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 600px;
+    height: calc(100vh - 250px);
+    max-width: calc(100vw - 450px);
   }
 
   .content-viewer-header {
@@ -119,8 +125,10 @@
 
   .content-viewer-body {
     flex: 1;
-    padding: 2rem;
+    padding: 1rem;
     overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 350px);
   }
 
   .content-placeholder {
@@ -889,21 +897,58 @@
     color: white;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .learning-platform {
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .course-main-layout {
+        gap: 1rem;
+        padding: 0 0.5rem;
+    }
+    
+    .modules-panel {
+        flex: 0 0 350px;
+    }
+    
+    .content-viewer-panel {
+        max-width: calc(100vw - 370px);
+    }
+}
+
+@media (max-width: 992px) {
+    .course-main-layout {
         flex-direction: column;
-        height: auto;
+        gap: 1rem;
     }
     
-    .course-outline {
+    .modules-panel {
+        flex: none;
         width: 100%;
-        height: auto;
-        max-height: 40vh;
+        height: 300px;
+        overflow-y: auto;
     }
     
-    .main-content {
-        height: 60vh;
+    .content-viewer-panel {
+        flex: none;
+        width: 100%;
+        height: calc(100vh - 400px);
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .course-header {
+        padding: 1rem;
+    }
+    
+    .course-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .content-viewer-body {
+        padding: 0.5rem;
+    }
+    
+    .modules-panel {
+        height: 250px;
     }
 }
 
@@ -1334,9 +1379,50 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.12/pdfobject.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎓 Admin-Style Student Learning Platform - Initializing...');
+    
+    // Debug PDFObject loading
+    if (typeof PDFObject !== 'undefined') {
+        console.log('✅ PDFObject loaded successfully, version:', PDFObject.version || 'Unknown');
+    } else {
+        console.error('❌ PDFObject failed to load from CDN');
+    }
+    
+    // Add test function to debug content loading
+    window.testPdfViewer = function(contentId) {
+        console.log('🧪 Testing PDF viewer with contentId:', contentId);
+        const viewer = document.getElementById('content-viewer');
+        if (viewer) {
+            loadPdfContent(contentId, viewer);
+        } else {
+            console.error('❌ Content viewer element not found');
+        }
+    };
+    
+    // Check if required elements exist
+    const requiredElements = [
+        'modules-hierarchy',
+        'content-viewer-header', 
+        'content-viewer-body'
+    ];
+    
+    const missingElements = [];
+    requiredElements.forEach(elementId => {
+        const element = document.getElementById(elementId) || document.querySelector(`.${elementId}`);
+        if (!element) {
+            missingElements.push(elementId);
+        }
+    });
+    
+    if (missingElements.length > 0) {
+        console.warn('Missing required elements:', missingElements);
+    }
+    
+    // Check if toggleModule function is properly defined
+    console.log('toggleModule function available:', typeof window.toggleModule === 'function');
     
     // Global variables
     let currentContentId = null;
@@ -1353,9 +1439,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const moduleToggle = document.getElementById(`module-toggle-${moduleId}`);
         const moduleHeader = document.querySelector(`[data-module-id="${moduleId}"] .module-header`);
         
-        if (!moduleContent) return;
+        // Enhanced debugging
+        console.log('Module elements found:', {
+            moduleContent: moduleContent ? 'Found' : 'Not found',
+            moduleToggle: moduleToggle ? 'Found' : 'Not found',
+            moduleHeader: moduleHeader ? 'Found' : 'Not found',
+            moduleId: moduleId
+        });
+        
+        if (!moduleContent) {
+            console.error('Module content element not found for moduleId:', moduleId);
+            return;
+        }
         
         const isExpanding = !moduleContent.classList.contains('expanded');
+        console.log('Module is expanding:', isExpanding);
         
         // Close all other modules (admin-style behavior)
         document.querySelectorAll('.module-content.expanded').forEach(el => {
@@ -1373,6 +1471,12 @@ document.addEventListener('DOMContentLoaded', function() {
         moduleContent.classList.toggle('expanded');
         if (moduleToggle) moduleToggle.classList.toggle('expanded');
         if (moduleHeader) moduleHeader.classList.toggle('active');
+        
+        console.log('Module classes after toggle:', {
+            moduleContentExpanded: moduleContent.classList.contains('expanded'),
+            moduleToggleExpanded: moduleToggle ? moduleToggle.classList.contains('expanded') : 'N/A',
+            moduleHeaderActive: moduleHeader ? moduleHeader.classList.contains('active') : 'N/A'
+        });
         
         if (isExpanding) {
             loadModuleCourses(moduleId);
@@ -1469,7 +1573,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (courseHeader) courseHeader.classList.toggle('active');
         if (courseToggle) courseToggle.classList.toggle('expanded');
         
-        currentCourseId = courseId;
         currentCourseId = courseId;
     };
     
@@ -1608,17 +1711,124 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load PDF content
     function loadPdfContent(contentId, viewer) {
+        console.log('📄 Loading PDF content:', contentId);
+        
         fetch(`/student/content/${contentId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     const pdfUrl = `/storage/${data.content.attachment_path}`;
+                    const fileName = data.content.attachment_path ? data.content.attachment_path.split('/').pop() : 'document.pdf';
+                    
+                    console.log('📄 PDF URL:', pdfUrl);
+                    console.log('📄 PDFObject available:', typeof PDFObject !== 'undefined');
+                    
                     viewer.innerHTML = `
-                        <div class="pdf-viewer">
-                            <iframe class="content-frame" src="${pdfUrl}"></iframe>
+                        <div class="pdf-viewer" style="width: 100%; height: 100%;">
+                            <div class="pdf-controls mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-file-earmark-pdf text-danger"></i> 
+                                        ${data.content.content_title || 'PDF Document'}
+                                    </h5>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="${pdfUrl}" target="_blank" class="btn btn-primary">
+                                            <i class="bi bi-fullscreen"></i> Full Screen
+                                        </a>
+                                        <a href="${pdfUrl}" download="${fileName}" class="btn btn-outline-primary">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                                ${data.content.content_description ? `<p class="text-muted mt-2 mb-0">${data.content.content_description}</p>` : ''}
+                            </div>
+                            <div id="pdf-container-${contentId}" class="pdf-frame-container" style="width: 100%; height: calc(100vh - 400px); border: 1px solid #ddd; border-radius: 8px; background: #f5f5f5;">
+                                <div class="text-center p-4" id="pdf-loading-${contentId}">
+                                    <i class="bi bi-hourglass-split" style="font-size: 3rem; color: #6c757d;"></i>
+                                    <p class="mt-2">Loading PDF viewer...</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Use PDFObject to embed PDF with enhanced fallback
+                    setTimeout(() => {
+                        const pdfContainer = document.getElementById(`pdf-container-${contentId}`);
+                        
+                        if (typeof PDFObject !== 'undefined') {
+                            console.log('📄 Using PDFObject to embed PDF');
+                            
+                            const options = {
+                                height: "100%",
+                                width: "100%",
+                                pdfOpenParams: {
+                                    navpanes: 0,
+                                    toolbar: 1,
+                                    statusbar: 0,
+                                    view: "FitH",
+                                    pagemode: "none"
+                                }
+                            };
+
+                            const success = PDFObject.embed(pdfUrl, `#pdf-container-${contentId}`, options);
+                            
+                            if (!success) {
+                                console.log('📄 PDFObject failed, falling back to iframe');
+                                // Fallback to iframe if PDFObject fails
+                                pdfContainer.innerHTML = `
+                                    <iframe src="${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH" 
+                                            style="width: 100%; height: 100%; border: none; border-radius: 8px;"
+                                            onload="console.log('📄 PDF iframe loaded successfully')"
+                                            onerror="console.error('📄 PDF iframe failed to load')">
+                                        <p>Your browser does not support iframes. 
+                                           <a href="${pdfUrl}" target="_blank">Click here to view the PDF</a>
+                                        </p>
+                                    </iframe>
+                                `;
+                            } else {
+                                console.log('📄 PDFObject embedded successfully');
+                            }
+                        } else {
+                            console.log('📄 PDFObject not available, using iframe fallback');
+                            // Fallback to iframe if PDFObject is not available
+                            pdfContainer.innerHTML = `
+                                <iframe src="${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH" 
+                                        style="width: 100%; height: 100%; border: none; border-radius: 8px;"
+                                        onload="console.log('📄 PDF iframe fallback loaded successfully')"
+                                        onerror="console.error('📄 PDF iframe fallback failed to load')">
+                                    <p>Your browser does not support PDF viewing. 
+                                       <a href="${pdfUrl}" target="_blank" class="btn btn-primary">
+                                           <i class="bi bi-download"></i> Download PDF
+                                       </a>
+                                    </p>
+                                </iframe>
+                            `;
+                        }
+                    }, 100);
+                                           Open PDF in new tab
+                                       </a>
+                                    </p>
+                                </iframe>
+                            
+                        }
+                    }, 100);
+                } else {
+                    viewer.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Unable to load PDF: ${data.message || 'PDF file not found'}
                         </div>
                     `;
                 }
+            })
+            .catch(error => {
+                console.error('Error loading PDF:', error);
+                viewer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-x-circle"></i>
+                        Error loading PDF: ${error.message}
+                    </div>
+                `;
             });
     }
     
@@ -1722,7 +1932,158 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (['pdf'].includes(fileExt)) {
                             contentHtml += `
                                 <div class="pdf-viewer mb-3">
-                                    <iframe src="${fileUrl}" width="100%" height="600px" style="border: 1px solid #ddd; border-radius: 5px;"></iframe>
+                                    <div class="pdf-controls mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="bi bi-file-earmark-pdf text-danger"></i> ${fileName}
+                                            </h6>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary">
+                                                    <i class="bi bi-fullscreen"></i> Full Screen
+                                                </a>
+                                                <a href="${fileUrl}" download="${fileName}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="pdf-embed-${lesson.id}" style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px; background: #f5f5f5;">
+                                        <div class="text-center p-4">
+                                            <i class="bi bi-hourglass-split" style="font-size: 3rem; color: #6c757d;"></i>
+                                            <p class="mt-2">Loading PDF...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <script>
+                                    setTimeout(() => {
+                                        if (typeof PDFObject !== 'undefined') {
+                                            const options = {
+                                                height: "700px",
+                                                width: "100%",
+                                                pdfOpenParams: {
+                                                    navpanes: 0,
+                                                    toolbar: 1,
+                                                    statusbar: 0,
+                                                    view: "FitH"
+                                                }
+                                            };
+                                            const success = PDFObject.embed("${fileUrl}", "#pdf-embed-${lesson.id}", options);
+                                            if (!success) {
+                                                document.getElementById('pdf-embed-${lesson.id}').innerHTML = \`
+                                                    <iframe src="${fileUrl}#toolbar=1&navpanes=0" 
+                                                            width="100%" height="700px" 
+                                                            style="border: none; border-radius: 5px;">
+                                                        <p>Your browser does not support PDF viewing. <a href="${fileUrl}" target="_blank">Click here to download</a></p>
+                                                    </iframe>
+                                                \`;
+                                            }
+                                        } else {
+                                            document.getElementById('pdf-embed-${lesson.id}').innerHTML = \`
+                                                <iframe src="${fileUrl}#toolbar=1&navpanes=0" 
+                                                        width="100%" height="700px" 
+                                                        style="border: none; border-radius: 5px;">
+                                                    <p>Your browser does not support PDF viewing. <a href="${fileUrl}" target="_blank">Click here to download</a></p>
+                                                </iframe>
+                                            \`;
+                                        }
+                                    }, 100);
+                                </script>
+                            `;
+                            
+                        } else if (['doc', 'docx'].includes(fileExt)) {
+                            contentHtml += `
+                                <div class="document-viewer mb-3">
+                                    <div class="document-controls mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="bi bi-file-earmark-word text-primary"></i> ${fileName}
+                                            </h6>
+                                            <div class="btn-group btn-group-sm">
+                                                <button onclick="window.open('https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(window.location.origin + '${fileUrl}')}', '_blank')" class="btn btn-outline-info">
+                                                    <i class="bi bi-eye"></i> View Online
+                                                </button>
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary">
+                                                    <i class="bi bi-fullscreen"></i> Full Screen
+                                                </a>
+                                                <a href="${fileUrl}" download="${fileName}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + '${fileUrl}')}" 
+                                            width="100%" height="700px" 
+                                            style="border: 1px solid #ddd; border-radius: 5px;"
+                                            allowfullscreen>
+                                        <p>Document preview not available. <a href="${fileUrl}" target="_blank">Download the document</a></p>
+                                    </iframe>
+                                    <div class="text-center mt-2">
+                                        <small class="text-muted">If the document doesn't display, try the <strong>View Online</strong> button or download it.</small>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (['ppt', 'pptx'].includes(fileExt)) {
+                            contentHtml += `
+                                <div class="presentation-viewer mb-3">
+                                    <div class="presentation-controls mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="bi bi-file-earmark-ppt text-warning"></i> ${fileName}
+                                            </h6>
+                                            <div class="btn-group btn-group-sm">
+                                                <button onclick="window.open('https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(window.location.origin + '${fileUrl}')}', '_blank')" class="btn btn-outline-info">
+                                                    <i class="bi bi-eye"></i> View Online
+                                                </button>
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary">
+                                                    <i class="bi bi-fullscreen"></i> Full Screen
+                                                </a>
+                                                <a href="${fileUrl}" download="${fileName}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + '${fileUrl}')}" 
+                                            width="100%" height="700px" 
+                                            style="border: 1px solid #ddd; border-radius: 5px;"
+                                            allowfullscreen>
+                                        <p>Presentation preview not available. <a href="${fileUrl}" target="_blank">Download the presentation</a></p>
+                                    </iframe>
+                                    <div class="text-center mt-2">
+                                        <small class="text-muted">If the presentation doesn't display, try the <strong>View Online</strong> button or download it.</small>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (['xls', 'xlsx'].includes(fileExt)) {
+                            contentHtml += `
+                                <div class="spreadsheet-viewer mb-3">
+                                    <div class="spreadsheet-controls mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="bi bi-file-earmark-excel text-success"></i> ${fileName}
+                                            </h6>
+                                            <div class="btn-group btn-group-sm">
+                                                <button onclick="window.open('https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(window.location.origin + '${fileUrl}')}', '_blank')" class="btn btn-outline-info">
+                                                    <i class="bi bi-eye"></i> View Online
+                                                </button>
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary">
+                                                    <i class="bi bi-fullscreen"></i> Full Screen
+                                                </a>
+                                                <a href="${fileUrl}" download="${fileName}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + '${fileUrl}')}" 
+                                            width="100%" height="700px" 
+                                            style="border: 1px solid #ddd; border-radius: 5px;"
+                                            allowfullscreen>
+                                        <p>Spreadsheet preview not available. <a href="${fileUrl}" target="_blank">Download the spreadsheet</a></p>
+                                    </iframe>
+                                    <div class="text-center mt-2">
+                                        <small class="text-muted">If the spreadsheet doesn't display, try the <strong>View Online</strong> button or download it.</small>
+                                    </div>
                                 </div>
                             `;
                         } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExt)) {
@@ -1749,6 +2110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </audio>
                                 </div>
                             `;
+                            const fullUrl = window.location.origin + fileUrl;
                         } else if (['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(fileExt)) {
                             contentHtml += `
                                 <div class="document-viewer mb-3 text-center p-4 border rounded bg-light">
@@ -1806,9 +2168,13 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error loading lesson:', error);
-                viewer.innerHTML = `<div class="alert alert-danger">Error loading lesson: ${error.message}</div>`;
+                viewer.innerHTML = `<div class="alert alert-danger">
+                    <h5>Error loading lesson: ${error.message}</h5>
+                    <p>Please check the browser console for more details.</p>
+                    <p>Content ID: ${contentId}</p>
+                </div>`;
             });
-    }
+    
     
     // Navigation functions
     function updateNavigationButtons() {

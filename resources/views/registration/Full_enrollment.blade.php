@@ -33,9 +33,35 @@
     <!-- Critical JavaScript functions for immediate availability -->
     <script>
         
+    // User authentication state - check both Laravel session and PHP session (MOVED TO TOP)
+    @php
+        $userLoggedIn = session('user_id') || (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
+        $userId = session('user_id') ?: (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '');
+        $userName = session('user_name') ?: (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '');
+        $userFirstname = session('user_firstname') ?: (isset($_SESSION['user_firstname']) ? $_SESSION['user_firstname'] : '');
+        $userLastname = session('user_lastname') ?: (isset($_SESSION['user_lastname']) ? $_SESSION['user_lastname'] : '');
+        $userEmail = session('user_email') ?: (isset($_SESSION['user_email']) ? $_SESSION['user_email'] : '');
+    @endphp
+
+    // Declare isUserLoggedIn FIRST to avoid temporal dead zone
+    const isUserLoggedIn = {{ $userLoggedIn ? 'true' : 'false' }};
+    const loggedInUserId = '{{ $userId }}';
+    const loggedInUserName = '{{ $userName }}';
+    const loggedInUserFirstname = '{{ $userFirstname }}';
+    const loggedInUserLastname = '{{ $userLastname }}';
+    const loggedInUserEmail = '{{ $userEmail }}';
+
+    console.log('Session check:', {
+        isUserLoggedIn,
+        loggedInUserId,
+        loggedInUserName,
+        loggedInUserFirstname,
+        loggedInUserLastname,
+        loggedInUserEmail
+    });
         
-    // Global variables (declare first for immediate availability)
-    let currentStep = 1;
+    // Global variables (declare after isUserLoggedIn to avoid temporal dead zone)
+    let currentStep = isUserLoggedIn ? 1 : 1;  // Start at step 1 for both, but logged-in users skip account check step
     let selectedPackageId = null;
     let selectedPaymentMethod = null;
     let currentPackageIndex = 0;
@@ -59,34 +85,25 @@
 
     console.log('Plan configuration:', planConfig);
 
-    // Check if user is logged in (set from server)
-    // User authentication state - check both Laravel session and PHP session
-    @php
-        $userLoggedIn = session('user_id') || (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
-        $userId = session('user_id') ?: (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '');
-        $userName = session('user_name') ?: (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '');
-        $userFirstname = session('user_firstname') ?: (isset($_SESSION['user_firstname']) ? $_SESSION['user_firstname'] : '');
-        $userLastname = session('user_lastname') ?: (isset($_SESSION['user_lastname']) ? $_SESSION['user_lastname'] : '');
-        $userEmail = session('user_email') ?: (isset($_SESSION['user_email']) ? $_SESSION['user_email'] : '');
-    @endphp
-
-    const isUserLoggedIn = {{ $userLoggedIn ? 'true' : 'false' }};
-    const loggedInUserId = '{{ $userId }}';
-    const loggedInUserName = '{{ $userName }}';
-    const loggedInUserFirstname = '{{ $userFirstname }}';
-    const loggedInUserLastname = '{{ $userLastname }}';
-    const loggedInUserEmail = '{{ $userEmail }}';
-
-    console.log('Session check:', {
-        isUserLoggedIn,
-        loggedInUserId,
-        loggedInUserName,
-        loggedInUserFirstname,
-        loggedInUserLastname,
-        loggedInUserEmail
-    });
-
     // Define critical functions immediately for onclick handlers
+    
+    // New function to handle account selection in Step 1
+    function selectAccountOption(hasAccount) {
+        console.log('Account option selected:', hasAccount ? 'has account' : 'no account');
+        
+        if (hasAccount) {
+            // Redirect to login page
+            window.location.href = "{{ route('login') }}";
+            return;
+        } else {
+            // Continue to step 2 (packages)
+            console.log('Continuing to package selection');
+            animateStepTransition('step-content-1', 'step-content-2');
+            currentStep = 2;
+            updateStepper(currentStep);
+        }
+    }
+    
     function selectPackage(packageId, packageName, packagePrice) {
         console.log('=== selectPackage called ===');
         console.log('Package ID:', packageId);
@@ -232,76 +249,117 @@
         console.log('isUserLoggedIn:', isUserLoggedIn);
 
         if (currentStep === 1) {
-            const packageInput = document.querySelector('input[name="package_id"]');
-            const sessionPackageId = sessionStorage.getItem('selectedPackageId');
-            console.log('Checking package selection:', {
-                selectedPackageId,
-                windowSelectedPackageId: window.selectedPackageId,
-                packageInputValue: packageInput?.value,
-                sessionPackageId
-            });
-            
-            if (!selectedPackageId && !window.selectedPackageId && !packageInput?.value && !sessionPackageId) {
-                showWarning('Please select a package before proceeding.');
-                return;
-            }
-            if (!selectedPackageId && (window.selectedPackageId || packageInput?.value || sessionPackageId)) {
-                selectedPackageId = window.selectedPackageId || packageInput?.value || sessionPackageId;
-            }
-            
-            console.log('Transitioning from step 1 to step 2');
-            animateStepTransition('step-content-1','step-content-2');
-            currentStep = 2;
-            updateStepper(currentStep);
-            console.log('Step transition completed. New currentStep:', currentStep);
-        } else if (currentStep === 2) {
-            const learningModeValue = document.getElementById('learning_mode')?.value;
-            console.log('Learning mode value:', learningModeValue);
-            
-            if (!learningModeValue) {
-                showWarning('Please select a learning mode before proceeding.');
-                return;
-            }
             if (isUserLoggedIn) {
-                // For logged-in users, go directly to step 3 (Form)
-                console.log('Logged in user: transitioning from step 2 to step 3');
+                // For logged-in users, step 1 is package selection
+                const packageInput = document.querySelector('input[name="package_id"]');
+                const sessionPackageId = sessionStorage.getItem('selectedPackageId');
+                console.log('Checking package selection:', {
+                    selectedPackageId,
+                    windowSelectedPackageId: window.selectedPackageId,
+                    packageInputValue: packageInput?.value,
+                    sessionPackageId
+                });
+                
+                if (!selectedPackageId && !window.selectedPackageId && !packageInput?.value && !sessionPackageId) {
+                    showWarning('Please select a package before proceeding.');
+                    return;
+                }
+                if (!selectedPackageId && (window.selectedPackageId || packageInput?.value || sessionPackageId)) {
+                    selectedPackageId = window.selectedPackageId || packageInput?.value || sessionPackageId;
+                }
+                
+                console.log('Logged-in user: transitioning from step 1 (packages) to step 2 (learning mode)');
+                animateStepTransition('step-content-1','step-content-2');
+                currentStep = 2;
+                updateStepper(currentStep);
+            } else {
+                // For non-logged-in users, step 1 is account check - handled by selectAccountOption
+                console.log('Step 1 should be handled by selectAccountOption');
+                return;
+            }
+        } else if (currentStep === 2) {
+            if (isUserLoggedIn) {
+                // For logged-in users, step 2 is learning mode selection
+                const learningModeValue = document.getElementById('learning_mode')?.value;
+                console.log('Learning mode value:', learningModeValue);
+                
+                if (!learningModeValue) {
+                    showWarning('Please select a learning mode before proceeding.');
+                    return;
+                }
+                
+                console.log('Logged-in user: transitioning from step 2 (learning mode) to step 3 (form)');
                 animateStepTransition('step-content-2', 'step-content-3');
                 currentStep = 3;
                 updateStepper(currentStep);
                 setTimeout(() => {
-                    // Ensure the form fields exist before filling data
-                    const firstnameField = document.querySelector('input[name="firstname"]');
-                    if (firstnameField) {
-                        fillLoggedInUserData();
-                    }
-                    // Load batches when entering step 3 for logged-in users
+                    // Prefill user data for logged-in users
+                    fillLoggedInUserData();
+                    
+                    // Load batches when entering form step
                     const programSelect = document.getElementById('programSelect');
                     if (programSelect && programSelect.value) {
                         loadBatchesForProgram(programSelect.value);
                     }
                 }, 300);
             } else {
-                // For non-logged-in users, go to step 3 (Account)
-                console.log('Non-logged in user: transitioning from step 2 to step 3');
-                animateStepTransition('step-content-2', 'step-content-3');
+                // For non-logged-in users, step 2 is package selection
+                const packageInput = document.querySelector('input[name="package_id"]');
+                const sessionPackageId = sessionStorage.getItem('selectedPackageId');
+                console.log('Checking package selection:', {
+                    selectedPackageId,
+                    windowSelectedPackageId: window.selectedPackageId,
+                    packageInputValue: packageInput?.value,
+                    sessionPackageId
+                });
+                
+                if (!selectedPackageId && !window.selectedPackageId && !packageInput?.value && !sessionPackageId) {
+                    showWarning('Please select a package before proceeding.');
+                    return;
+                }
+                if (!selectedPackageId && (window.selectedPackageId || packageInput?.value || sessionPackageId)) {
+                    selectedPackageId = window.selectedPackageId || packageInput?.value || sessionPackageId;
+                }
+                
+                console.log('Non-logged-in user: transitioning from step 2 (packages) to step 3 (learning mode)');
+                animateStepTransition('step-content-2','step-content-3');
                 currentStep = 3;
                 updateStepper(currentStep);
             }
-            console.log('Step transition completed. New currentStep:', currentStep);
-        } else if (currentStep === 3 && !isUserLoggedIn) {
-            // Only for non-logged-in users: step 3 is Account, step 4 is Form
-            if (!validateStep3()) {
+        } else if (currentStep === 3) {
+            if (isUserLoggedIn) {
+                // For logged-in users, step 3 is the final form - no next step needed unless submitting
+                console.log('Logged-in user at final step (form)');
+                return;
+            } else {
+                // For non-logged-in users, step 3 is learning mode selection
+                const learningModeValue = document.getElementById('learning_mode')?.value;
+                console.log('Learning mode value:', learningModeValue);
+                
+                if (!learningModeValue) {
+                    showWarning('Please select a learning mode before proceeding.');
+                    return;
+                }
+                
+                console.log('Non-logged-in user: transitioning from step 3 (learning mode) to step 4 (account)');
+                animateStepTransition('step-content-3', 'step-content-4');
+                currentStep = 4;
+                updateStepper(currentStep);
+            }
+        } else if (currentStep === 4 && !isUserLoggedIn) {
+            // Only for non-logged-in users: step 4 is Account, step 5 is Form
+            if (!validateStep4()) {
                 showWarning('Please fill in all required fields correctly.');
                 return;
             }
             copyAccountDataToStudentForm();
-            console.log('Non-logged in user: transitioning from step 3 to step 4');
-            animateStepTransition('step-content-3', 'step-content-4');
-            currentStep = 4;
+            console.log('Non-logged in user: transitioning from step 4 to step 5');
+            animateStepTransition('step-content-4', 'step-content-5');
+            currentStep = 5;
             updateStepper(currentStep);
             setTimeout(() => {
                 copyAccountDataToStudentForm();
-                // Load batches when entering step 4
+                // Load batches when entering step 5
                 const programSelect = document.getElementById('programSelect');
                 if (programSelect && programSelect.value) {
                     loadBatchesForProgram(programSelect.value);
@@ -330,24 +388,29 @@
                 updateStepper(currentStep);
             }
         } else {
-            // For non-logged-in users: 1 (Packages) -> 2 (Learning Mode) -> 3 (Account) -> 4 (Form)
-            if (currentStep === 4) {
+            // For non-logged-in users: 1 (Account Check) -> 2 (Packages) -> 3 (Learning Mode) -> 4 (Account) -> 5 (Form)
+            if (currentStep === 5) {
                 // From form, go back to account registration
+                animateStepTransition('step-content-5', 'step-content-4', true);
+                currentStep = 4;
+                updateStepper(currentStep);
+                // Trigger validation after going back to step 4
+                setTimeout(() => {
+                    validateStep4();
+                    console.log('Step 4 validation triggered after going back');
+                }, 500);
+            } else if (currentStep === 4) {
+                // From account registration, go back to learning mode
                 animateStepTransition('step-content-4', 'step-content-3', true);
                 currentStep = 3;
                 updateStepper(currentStep);
-                // Trigger validation after going back to step 3
-                setTimeout(() => {
-                    validateStep3();
-                    console.log('Step 3 validation triggered after going back');
-                }, 500);
             } else if (currentStep === 3) {
-                // From account registration, go back to learning mode
+                // From learning mode, go back to package selection
                 animateStepTransition('step-content-3', 'step-content-2', true);
                 currentStep = 2;
                 updateStepper(currentStep);
             } else if (currentStep === 2) {
-                // From learning mode, go back to package selection
+                // From package selection, go back to account check
                 animateStepTransition('step-content-2', 'step-content-1', true);
                 currentStep = 1;
                 updateStepper(currentStep);
@@ -358,7 +421,7 @@
     function updateStepper(currentStep) {
         console.log('=== updateStepper called with currentStep:', currentStep, '===');
         // Determine total steps based on login status
-        const totalSteps = isUserLoggedIn ? 3 : 4;
+        const totalSteps = isUserLoggedIn ? 3 : 5; // Logged-in: 3 steps, Non-logged-in: 5 steps
         console.log('Total steps:', totalSteps, '(based on isUserLoggedIn:', isUserLoggedIn, ')');
         
         // Update step states
@@ -516,15 +579,9 @@
         const selectedProgramId = programId || (programSelect ? programSelect.value : null);
         
         // Only show batches for synchronous mode and when a program is selected
-        if (!selectedProgramId || learningMode !== 'synchronous') {
-            console.log('Hiding batch container - conditions not met');
-            console.log('- Program selected:', !!selectedProgramId);
-            console.log('- Learning mode is synchronous:', learningMode === 'synchronous');
-            
-            if (batchContainer) {
-                batchContainer.style.display = 'none';
-                console.log('Batch container hidden');
-            }
+        if (!selectedProgramId /* || learningMode !== 'synchronous' */) {
+            // Remove the learningMode check if you want to always show
+            batchContainer.style.display = 'none';
             return;
         }
         
@@ -941,7 +998,7 @@
 
     // Helper function to copy account data to student form
     function copyAccountDataToStudentForm() {
-        console.log('Copying account data to student form...');
+        console.log('=== Copying account data to student form ===');
         
         if (isUserLoggedIn) {
             // If user is logged in, use session data for step 4 fields
@@ -949,37 +1006,71 @@
             const lastnameField = document.querySelector('input[name="lastname"]');
             const emailField = document.querySelector('input[name="email"]');
             
+            console.log('Logged in user data:', {
+                loggedInUserFirstname,
+                loggedInUserLastname,
+                loggedInUserEmail
+            });
+            
             if (firstnameField && loggedInUserFirstname) {
                 firstnameField.value = loggedInUserFirstname;
-                console.log('Filled firstname from session:', loggedInUserFirstname);
+                console.log('✅ Filled firstname from session:', loggedInUserFirstname);
+            } else {
+                console.log('❌ Could not fill firstname:', { firstnameField: !!firstnameField, loggedInUserFirstname });
             }
+            
             if (lastnameField && loggedInUserLastname) {
                 lastnameField.value = loggedInUserLastname;
-                console.log('Filled lastname from session:', loggedInUserLastname);
+                console.log('✅ Filled lastname from session:', loggedInUserLastname);
+            } else {
+                console.log('❌ Could not fill lastname:', { lastnameField: !!lastnameField, loggedInUserLastname });
             }
+            
             if (emailField && loggedInUserEmail) {
                 emailField.value = loggedInUserEmail;
-                console.log('Filled email from session:', loggedInUserEmail);
+                console.log('✅ Filled email from session:', loggedInUserEmail);
+            } else {
+                console.log('❌ Could not fill email:', { emailField: !!emailField, loggedInUserEmail });
             }
         } else {
-            // Copy from step 3 account registration to step 4 student form
-            const step3Fields = {
+            // Copy from step 4 account registration to step 5 student form (new step numbers)
+            console.log('Non-logged in user - copying from account registration step');
+            
+            const step4Fields = {
                 'user_firstname': 'firstname',
                 'user_lastname': 'lastname', 
                 'user_email': 'email'
             };
             
-            Object.keys(step3Fields).forEach(step3Field => {
-                const step4Field = step3Fields[step3Field];
-                const sourceField = document.querySelector(`input[name="${step3Field}"]`);
-                const targetField = document.querySelector(`input[name="${step4Field}"]`);
+            Object.keys(step4Fields).forEach(step4Field => {
+                const step5Field = step4Fields[step4Field];
+                const sourceField = document.querySelector(`input[name="${step4Field}"]`);
+                const targetField = document.querySelector(`input[name="${step5Field}"]`);
                 
-                if (sourceField && targetField && sourceField.value) {
-                    targetField.value = sourceField.value;
-                    console.log(`Copied ${step3Field} -> ${step4Field}: ${sourceField.value}`);
+                console.log(`Checking field mapping: ${step4Field} -> ${step5Field}`, {
+                    sourceField: !!sourceField,
+                    targetField: !!targetField,
+                    sourceValue: sourceField?.value
+                });
+                
+                if (sourceField && targetField && sourceField.value.trim()) {
+                    targetField.value = sourceField.value.trim();
+                    console.log(`✅ Copied ${step4Field} -> ${step5Field}: ${sourceField.value}`);
+                    
+                    // Trigger any validation or change events
+                    const event = new Event('input', { bubbles: true });
+                    targetField.dispatchEvent(event);
+                } else {
+                    console.log(`❌ Could not copy ${step4Field} -> ${step5Field}:`, {
+                        sourceExists: !!sourceField,
+                        targetExists: !!targetField,
+                        hasValue: sourceField?.value?.trim() || 'empty'
+                    });
                 }
             });
         }
+        
+        console.log('=== Account data copy completed ===');
     }
 
     // Helper function to fill logged in user data
@@ -1059,6 +1150,13 @@
         
         if (!file) return;
         
+        console.log('=== File Upload Started ===');
+        console.log('Field:', fieldName, 'File:', file.name);
+        
+        // CRITICAL FIX: Store original file reference to prevent losing it
+        const originalFileName = file.name;
+        const originalFileSize = file.size;
+        
         // Get user's name for validation - check all possible field names
         const firstNameSelectors = [
             'input[name="firstname"]',
@@ -1126,7 +1224,7 @@
         
         if (!firstName || !lastName) {
             showErrorModal('Please enter your first name and last name in the form before uploading documents.');
-            inputElement.value = '';
+            // DON'T clear the file input here - let user keep their selection
             return;
         }
         
@@ -1159,79 +1257,161 @@
                 console.error('JSON parse error:', jsonError);
                 console.error('Raw response:', rawText);
                 showErrorModal('Server returned invalid response. Check console for details.');
-                inputElement.value = '';
+                // DON'T clear file - keep the uploaded file
                 return;
             }
             
             console.log('File validation response:', data); // Debug log
             
             if (data.success) {
+                console.log('✅ File validation successful');
                 showSuccessModal('Document validated successfully!');
                 
                 // CRITICAL FIX: Store the file path for form submission
                 if (data.file_path) {
-                    // Create or update hidden input for this file field
-                    let hiddenFileInput = document.querySelector(`input[name="${fieldName}_path"]`);
+                    // Always create/update hidden input inside the form
+                    let form = inputElement.closest('form');
+                    let hiddenFileInput = form.querySelector(`input[name="${fieldName}_path"]`);
                     if (!hiddenFileInput) {
                         hiddenFileInput = document.createElement('input');
                         hiddenFileInput.type = 'hidden';
                         hiddenFileInput.name = fieldName + '_path';
-                        inputElement.parentNode.appendChild(hiddenFileInput);
+                        form.appendChild(hiddenFileInput);
                     }
                     hiddenFileInput.value = data.file_path;
-                    console.log('Stored file path for', fieldName, ':', data.file_path);
+                    console.log('✅ Stored file path for', fieldName, ':', data.file_path);
                 }
                 
+                // FIXED: Handle program suggestions
                 if (data.suggestions && data.suggestions.length > 0) {
+                    console.log('✅ Found program suggestions:', data.suggestions);
                     showProgramSuggestions(data.suggestions);
+                } else {
+                    console.log('No program suggestions found');
                 }
                 
+                // Handle education level detection
                 if (data.certificate_level) {
+                    console.log('✅ Education level detected:', data.certificate_level);
                     handleEducationLevelDetection(data.certificate_level);
                 }
+                
+                // Add success styling to the input
+                inputElement.classList.add('is-valid');
+                inputElement.classList.remove('is-invalid');
+                
             } else {
-                console.error('File validation failed:', data);
+                console.error('❌ File validation failed:', data);
                 showErrorModal(data.message || 'File validation failed');
-                inputElement.value = '';
+                
+                // CRITICAL FIX: Don't clear the file input on validation error
+                // Instead, add error styling but keep the file
+                inputElement.classList.add('is-invalid');
+                inputElement.classList.remove('is-valid');
+                
+                console.log('File kept in input despite validation error');
             }
         })
         .catch(error => {
             closeLoadingModal();
-            console.error('File validation error:', error);
+            console.error('❌ File validation error:', error);
             showErrorModal('Network error occurred. Please check your connection and try again.');
-            inputElement.value = '';
+            
+            // CRITICAL FIX: Don't clear the file input on network error
+            // Add error styling but preserve the file
+            inputElement.classList.add('is-invalid');
+            inputElement.classList.remove('is-valid');
+            
+            console.log('File kept in input despite network error');
         });
+        
+        console.log('=== File Upload Process Initiated ===');
     }
 
-    // Show program suggestions in dropdown
+    // Show program suggestions in dropdown - ENHANCED VERSION
     function showProgramSuggestions(suggestions) {
+        console.log('=== Showing Program Suggestions ===');
+        console.log('Suggestions received:', suggestions);
+        
         const programSelect = document.getElementById('programSelect');
-        if (!programSelect) return;
+        if (!programSelect) {
+            console.error('Program select element not found');
+            return;
+        }
         
         // Clear existing suggestions
         const existingSuggestions = programSelect.querySelectorAll('.suggestion-option');
-        existingSuggestions.forEach(option => option.remove());
+        existingSuggestions.forEach(option => {
+            console.log('Removing existing suggestion:', option.textContent);
+            option.remove();
+        });
         
-        // Add suggestion header
+        // Add suggestion header if suggestions exist
         if (suggestions.length > 0) {
+            console.log('Adding suggestions header and options...');
+            
+            // Create and add header option
             const headerOption = document.createElement('option');
             headerOption.disabled = true;
-            headerOption.textContent = '--- Suggested Programs ---';
+            headerOption.textContent = '--- Suggested Programs (Based on Your Document) ---';
             headerOption.className = 'suggestion-header';
-            programSelect.insertBefore(headerOption, programSelect.children[1]);
+            headerOption.style.fontWeight = 'bold';
+            headerOption.style.color = '#007bff';
             
-            // Add suggestions
-            suggestions.forEach(suggestion => {
-                const option = document.createElement('option');
-                option.value = suggestion.program.program_id;
-                option.textContent = `⭐ ${suggestion.program.program_name} (Match: ${suggestion.score})`;
-                option.className = 'suggestion-option';
-                option.style.backgroundColor = '#e3f2fd';
-                programSelect.insertBefore(option, programSelect.children[programSelect.children.length]);
+            // Insert after the default "Select Program" option
+            if (programSelect.children.length > 0) {
+                programSelect.insertBefore(headerOption, programSelect.children[1]);
+            } else {
+                programSelect.appendChild(headerOption);
+            }
+            
+            // Add each suggestion
+            suggestions.forEach((suggestion, index) => {
+                const suggestionOption = document.createElement('option');
+                suggestionOption.value = suggestion.program_id || suggestion.id;
+                suggestionOption.textContent = `⭐ ${suggestion.program_name || suggestion.name}`;
+                suggestionOption.className = 'suggestion-option';
+                suggestionOption.style.backgroundColor = '#e3f2fd';
+                suggestionOption.style.fontWeight = '500';
+                suggestionOption.dataset.suggestion = 'true';
+                
+                console.log(`Adding suggestion ${index + 1}:`, suggestion.program_name || suggestion.name);
+                
+                // Insert after header
+                const headerIndex = Array.from(programSelect.children).indexOf(headerOption);
+                if (headerIndex !== -1 && headerIndex + 1 + index < programSelect.children.length) {
+                    programSelect.insertBefore(suggestionOption, programSelect.children[headerIndex + 1 + index]);
+                } else {
+                    programSelect.appendChild(suggestionOption);
+                }
             });
             
-            // Show notification
-            showInfoModal(`We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs at the top of the dropdown.`);
+            // Highlight the dropdown to draw attention
+            programSelect.style.borderColor = '#007bff';
+            programSelect.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
+            
+            // Show notification modal
+            showInfoModal(`🎯 Great! We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
+            
+            // Auto-scroll to the program select field
+            setTimeout(() => {
+                programSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Flash animation to draw attention
+                let flashCount = 0;
+                const flashInterval = setInterval(() => {
+                    programSelect.style.backgroundColor = flashCount % 2 === 0 ? '#fff3cd' : 'white';
+                    flashCount++;
+                    if (flashCount >= 6) {
+                        clearInterval(flashInterval);
+                        programSelect.style.backgroundColor = 'white';
+                    }
+                }, 300);
+            }, 1000);
+            
+            console.log('✅ Program suggestions added successfully');
+        } else {
+            console.log('No suggestions to display');
         }
     }
 
@@ -1480,6 +1660,12 @@
                                 ${requirement.description ? ' - ' + requirement.description : ''}
                             </small>
                         `;
+                        // Re-attach any existing hidden file path input for this field
+                        const form = document.getElementById('enrollmentForm');
+                        const existingHidden = form.querySelector(`input[name="${fieldName}_path"]`);
+                        if (existingHidden) {
+                            fieldDiv.appendChild(existingHidden);
+                        }
                         requirementsContainer.appendChild(fieldDiv);
                     }
                 }
@@ -1492,6 +1678,15 @@
     // Legacy function for backward compatibility
     function toggleGraduationCertificate() {
         toggleEducationLevelRequirements();
+    }
+
+    function removeUploadedFile(fieldName) {
+        // Remove hidden input and uploaded info
+        const form = document.getElementById('enrollmentForm');
+        const hiddenInput = form.querySelector(`input[name='${fieldName}_path']`);
+        if (hiddenInput) hiddenInput.remove();
+        const uploadedInfo = document.getElementById('uploaded-' + fieldName);
+        if (uploadedInfo) uploadedInfo.style.display = 'none';
     }
 
     </script>
@@ -1581,6 +1776,31 @@
         background-position: right calc(0.375em + 0.1875rem) center;
         background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
     }
+    
+    /* Account Check Step Styles */
+    .account-check-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .account-option-card:hover .card {
+        border-color: #007bff !important;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .account-option-card .card {
+        transition: all 0.3s ease;
+        border: 2px solid #e9ecef;
+    }
+    
+    .account-option-card .icon-container {
+        margin-bottom: 1rem;
+    }
+    
+    .question-section {
+        margin-bottom: 2rem;
+    }
     </style>
     @endpush
 
@@ -1591,28 +1811,32 @@
             <div class="stepper-progress">
                 <div class="stepper">
                     <div class="bar">
-                        <div class="progress" id="progressBar" style="width: 25%;"></div>
+                        <div class="progress" id="progressBar" style="width: {{ $userLoggedIn ? '25%' : '20%' }};"></div>
                     </div>
-                    <div class="step active" id="step-1">
+                    <div class="step {{ !$userLoggedIn ? 'active' : '' }}" id="step-1">
                         <div class="circle">1</div>
+                        <div class="label">Account Check</div>
+                    </div>
+                    <div class="step {{ $userLoggedIn ? 'active' : '' }}" id="step-2">
+                        <div class="circle">2</div>
                         <div class="label">Packages</div>
                     </div>
-                    <div class="step" id="step-2">
-                        <div class="circle">2</div>
+                    <div class="step" id="step-3">
+                        <div class="circle">3</div>
                         <div class="label">Learning Mode</div>
                     </div>
                     @if(!$userLoggedIn)
-                    <div class="step" id="step-3">
-                        <div class="circle">3</div>
-                        <div class="label">Account</div>
-                    </div>
                     <div class="step" id="step-4">
                         <div class="circle">4</div>
+                        <div class="label">Account</div>
+                    </div>
+                    <div class="step" id="step-5">
+                        <div class="circle">5</div>
                         <div class="label">Form</div>
                     </div>
                     @else
-                    <div class="step" id="step-3">
-                        <div class="circle">3</div>
+                    <div class="step" id="step-4">
+                        <div class="circle">4</div>
                         <div class="label">Form</div>
                     </div>
                     @endif
@@ -1630,8 +1854,71 @@
                 <input type="hidden" name="learning_mode" id="learning_mode" value="">
                 <!-- Removed duplicate hidden Start_Date field - using the visible date input instead -->
 
-                <!-- Step 1: Package Selection (Bootstrap Carousel) -->
-                <div class="step-content active" id="step-content-1">
+                <!-- Step 1: Account Check -->
+                <div class="step-content {{ !$userLoggedIn ? 'active' : '' }}" id="step-content-1">
+                    <div class="step-header mb-4">
+                        <h2 class="fw-bold text-center" style="font-size:2.5rem;">Welcome to Registration</h2>
+                        <p class="text-center text-muted" style="font-size:1.15rem;">Let's get you started with your enrollment</p>
+                    </div>
+                    
+                    <div class="account-check-container">
+                        <div class="row justify-content-center">
+                            <div class="col-md-10">
+                                <div class="question-section text-center mb-4">
+                                    <h4 class="fw-bold mb-3">Do you already have an account with us?</h4>
+                                    <p class="text-muted">Choose the option that applies to you</p>
+                                </div>
+                                
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="account-option-card" onclick="selectAccountOption(true)">
+                                            <div class="card h-100 p-4 border-2" style="cursor: pointer; transition: all 0.3s ease;">
+                                                <div class="card-body text-center">
+                                                    <div class="icon-container mb-3">
+                                                        <i class="fas fa-user-check" style="font-size: 3rem; color: #28a745;"></i>
+                                                    </div>
+                                                    <h5 class="card-title fw-bold mb-3">Yes, I have an account</h5>
+                                                    <p class="card-text text-muted mb-4">I already registered before and want to log in to my existing account</p>
+                                                    <div class="features-list text-start">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-check text-success me-2"></i>Access your previous information<br>
+                                                            <i class="fas fa-check text-success me-2"></i>Continue existing enrollments<br>
+                                                            <i class="fas fa-check text-success me-2"></i>View your enrollment history
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="account-option-card" onclick="selectAccountOption(false)">
+                                            <div class="card h-100 p-4 border-2" style="cursor: pointer; transition: all 0.3s ease;">
+                                                <div class="card-body text-center">
+                                                    <div class="icon-container mb-3">
+                                                        <i class="fas fa-user-plus" style="font-size: 3rem; color: #007bff;"></i>
+                                                    </div>
+                                                    <h5 class="card-title fw-bold mb-3">No, I'm new here</h5>
+                                                    <p class="card-text text-muted mb-4">I'm enrolling for the first time and need to create a new account</p>
+                                                    <div class="features-list text-start">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-check text-success me-2"></i>Create a new account<br>
+                                                            <i class="fas fa-check text-success me-2"></i>Start fresh enrollment<br>
+                                                            <i class="fas fa-check text-success me-2"></i>Get started immediately
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Package Selection (Bootstrap Carousel) -->
+                <div class="step-content {{ $userLoggedIn ? 'active' : '' }}" id="step-content-2">
                     <div class="step-header mb-4">
                         <h2 class="fw-bold text-center" style="font-size:2.5rem;">Choose Your Package</h2>
                         <p class="text-center text-muted" style="font-size:1.15rem;">Select a learning package that suits your needs</p>
@@ -1704,8 +1991,8 @@
                     </div>
                 </div>
 
-        <!-- Step 2: Learning Mode Selection -->
-        <div class="step-content" id="step-content-2">
+        <!-- Step 3: Learning Mode Selection -->
+        <div class="step-content" id="step-content-3">
             <div class="step-header">
                 <h2>Choose Learning Mode</h2>
                 <p>Select how you'd like to take your classes</p>
@@ -1765,8 +2052,8 @@
             </div>
         </div>
 
-    <!-- Step 3: Account Registration (only for non-logged users) -->
-    <div class="step-content" id="step-content-3">
+    <!-- Step 4: Account Registration (only for non-logged users) -->
+    <div class="step-content" id="step-content-4">
         <div class="account-step-card">
             <div class="step-header">
                 <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
@@ -1833,15 +2120,15 @@
                 <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
                     <i class="bi bi-arrow-left me-2"></i> Back
                 </button>
-                <button type="button" onclick="nextStep()" id="step3NextBtn" disabled class="btn btn-primary btn-lg">
+                <button type="button" onclick="nextStep()" id="step4NextBtn" disabled class="btn btn-primary btn-lg">
                     Next <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Step 3/4: Student Registration - Dynamic ID based on login status -->
-    <div class="step-content" id="{{ $userLoggedIn ? 'step-content-3' : 'step-content-4' }}">
+    <!-- Step 4/5: Student Registration - Dynamic ID based on login status -->
+    <div class="step-content" id="{{ $userLoggedIn ? 'step-content-4' : 'step-content-5' }}">
         <div class="student-step-card">
             <div class="step-header">
                 <h2><i class="bi bi-person-lines-fill me-2"></i>Complete Your Registration</h2>
@@ -1852,6 +2139,14 @@
             @if(isset($formRequirements) && $formRequirements->count() > 0)
                 @php 
                     $currentSection = null;
+                    $hasFirstname = false;
+                    $hasLastname = false;
+                    if (isset($formRequirements)) {
+                        foreach ($formRequirements as $field) {
+                            if ($field->field_name === 'firstname') $hasFirstname = true;
+                            if ($field->field_name === 'lastname') $hasLastname = true;
+                        }
+                    }
                 @endphp
                 @foreach($formRequirements as $field)
                     @if($field->field_type === 'section')
@@ -1892,9 +2187,11 @@
                                         class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
                                         {{ $field->is_required ? 'required' : '' }}>
                                 @elseif($field->field_type === 'file')
-                                    <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                        class="form-control" accept=".jpg,.jpeg,.png,.pdf" 
-                                        onchange="handleFileUpload(this)" {{ $field->is_required ? 'required' : '' }}>
+                                    <div class="form-group" id="file-group-{{ $field->field_name }}">
+                                        <label for="{{ $field->field_name }}">{{ $field->field_label }}</label>
+                                        <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" onchange="handleFileUpload(this)">
+                                        <div class="uploaded-file-info" id="uploaded-{{ $field->field_name }}" style="display:none;"></div>
+                                    </div>
                                     @if(isset($student) && $student->{$field->field_name})
                                         <div class="existing-file-info mt-2">
                                             <small class="text-success">
@@ -1943,6 +2240,24 @@
                         @endif
                     @endif
                 @endforeach
+                @if(!$hasFirstname)
+                <div class="form-group">
+                    <label for="firstname" style="font-weight:700;">
+                        <i class="bi bi-person me-2"></i>First Name
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" name="firstname" id="firstname" class="form-control" required>
+                </div>
+                @endif
+                @if(!$hasLastname)
+                <div class="form-group">
+                    <label for="lastname" style="font-weight:700;">
+                        <i class="bi bi-person me-2"></i>Last Name
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" name="lastname" id="lastname" class="form-control" required>
+                </div>
+                @endif
             @else
                 <!-- Fallback fields if no dynamic fields are configured -->
                 <div class="form-group">
@@ -1990,7 +2305,7 @@
             </div>
 
             <div class="form-group" style="margin-top:2.2rem;">
-                <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program</label>
+                <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program <span class="text-danger">*</span></label>
                 <select name="program_id" class="form-select" required id="programSelect" onchange="onProgramSelectionChange();">
                     <option value="">Select Program</option>
                     @foreach($programs as $program)
@@ -2130,15 +2445,42 @@
         console.log('Current step on load:', currentStep);
         console.log('Is user logged in:', isUserLoggedIn);
         
-        // Check initial state of step elements
-        for (let i = 1; i <= 4; i++) {
-            const stepContent = document.getElementById('step-' + i);
-            const stepIndicator = document.querySelector(`.stepper .step:nth-child(${i+1})`); // +1 because of the bar element
-            console.log(`Step ${i} content:`, stepContent ? 'found' : 'not found');
-            console.log(`Step ${i} indicator:`, stepIndicator ? 'found' : 'not found');
-            if (stepContent) {
-                console.log(`Step ${i} content display:`, stepContent.style.display || 'default');
-                console.log(`Step ${i} content classes:`, stepContent.className);
+        // Initialize stepper to ensure correct step display
+        updateStepper(currentStep);
+        
+        // Determine which step content to show based on login status
+        const allSteps = document.querySelectorAll('.step-content');
+        allSteps.forEach((step, index) => {
+            step.classList.remove('active');
+        });
+        
+        if (isUserLoggedIn) {
+            // For logged-in users: start with step 1 (packages)
+            console.log('Logged-in user: Showing package selection (step-content-1)');
+            const packageStep = document.getElementById('step-content-1');
+            if (packageStep) {
+                packageStep.classList.add('active');
+                console.log('Package selection step activated');
+            }
+            
+            // Hide account check step for logged-in users
+            const accountCheckStep = document.getElementById('step-content-0'); // If it exists
+            if (accountCheckStep) {
+                accountCheckStep.style.display = 'none';
+                console.log('Account check step hidden for logged-in user');
+            }
+            
+            // Prefill user data if form fields are already available
+            setTimeout(() => {
+                fillLoggedInUserData();
+            }, 100);
+        } else {
+            // For non-logged-in users: start with step 1 (account check)
+            console.log('Non-logged-in user: Showing account check (step-content-1)');
+            const accountCheckStep = document.getElementById('step-content-1');
+            if (accountCheckStep) {
+                accountCheckStep.classList.add('active');
+                console.log('Account check step activated');
             }
         }
         
@@ -2146,28 +2488,16 @@
         updateHiddenProgramId();
         updateProgressBar(); // Initialize progress bar
         
-        // Initialize stepper to ensure step 1 is shown
-        updateStepper(currentStep);
-        
-        // Ensure proper initial state of all steps - work with existing CSS
-        const allSteps = document.querySelectorAll('.step-content');
-        allSteps.forEach((step, index) => {
-            if (index === 0) { // First step (step-1)
-                step.classList.add('active');
-                console.log('Step 1 initialized as active - CSS will handle visibility');
-            } else {
-                step.classList.remove('active');
-                console.log(`Step ${index + 1} initialized as inactive - CSS will handle hiding`);
-            }
-        });
-        
         // Check initial visibility after CSS has had time to apply
         setTimeout(() => {
-            const step1 = document.getElementById('step-1');
-            const step1Visible = step1 && window.getComputedStyle(step1).display !== 'none';
-            const step1Opacity = step1 ? window.getComputedStyle(step1).opacity : 'unknown';
-            console.log('Initial state check - Step 1 visible:', step1Visible, 'opacity:', step1Opacity);
-        }, 100);
+            const activeStep = document.querySelector('.step-content.active');
+            if (activeStep) {
+                const stepVisible = window.getComputedStyle(activeStep).display !== 'none';
+                const stepOpacity = window.getComputedStyle(activeStep).opacity;
+                console.log('Active step check - Visible:', stepVisible, 'Opacity:', stepOpacity);
+                console.log('Active step ID:', activeStep.id);
+            }
+        }, 200);
         
         // Add event listeners for changes
     const programSelect = document.getElementById('programSelect');
@@ -2200,28 +2530,36 @@
             validationTimer = setTimeout(validateStep3, 500); // Wait 500ms after user stops typing
         }
         
+        function debouncedValidateStep4() {
+            clearTimeout(validationTimer);
+            validationTimer = setTimeout(validateStep4, 500); // Wait 500ms after user stops typing
+        }
+        
+        // Use appropriate validation function based on login status and current step
+        const validationFunction = isUserLoggedIn ? debouncedValidateStep3 : debouncedValidateStep4;
+        
         if (firstnameField) {
-            firstnameField.addEventListener('input', debouncedValidateStep3);
+            firstnameField.addEventListener('input', validationFunction);
         }
         if (lastnameField) {
-            lastnameField.addEventListener('input', debouncedValidateStep3);
+            lastnameField.addEventListener('input', validationFunction);
         }
         if (emailField) {
             emailField.addEventListener('input', function() {
                 setTimeout(validateEmail, 300);
-                debouncedValidateStep3();
+                validationFunction();
             });
         }
         if (passwordField) {
             passwordField.addEventListener('input', function() {
                 setTimeout(validatePassword, 50);
-                debouncedValidateStep3();
+                validationFunction();
             });
         }
         if (passwordConfirmField) {
             passwordConfirmField.addEventListener('input', function() {
                 setTimeout(validatePasswordConfirmation, 50);
-                debouncedValidateStep3();
+                validationFunction();
             });
         }
     });
@@ -2401,6 +2739,78 @@
         return allFieldsFilled && allValidationsPassed;
     }
 
+    // Function to validate all Step 4 (Account Registration) fields - updated function name for new step structure
+    function validateStep4() {
+        const firstnameField = document.getElementById('user_firstname');
+        const lastnameField = document.getElementById('user_lastname');
+        const emailField = document.getElementById('user_email');
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('password_confirmation');
+        const nextBtn = document.getElementById('step4NextBtn'); // Updated button ID
+        
+        // Don't validate if we're not on step 4 or if the step is not visible
+        const step4Element = document.getElementById('step-4');
+        if (!step4Element || step4Element.style.display === 'none' || !step4Element.classList.contains('active')) {
+            return false;
+        }
+        
+        // Check if all required fields are filled
+        const isFirstnameFilled = firstnameField && firstnameField.value.trim().length > 0;
+        const isLastnameFilled = lastnameField && lastnameField.value.trim().length > 0;
+        const isEmailFilled = emailField && emailField.value.trim().length > 0;
+        const isPasswordFilled = passwordField && passwordField.value.length >= 8;
+        const isPasswordConfirmFilled = passwordConfirmField && passwordConfirmField.value.length > 0;
+        
+        // Check if validations pass
+        const isPasswordValid = validatePassword();
+        const isPasswordConfirmValid = validatePasswordConfirmation();
+        
+        // Check if email field has error by looking at error message visibility
+        const emailError = document.getElementById('emailError');
+        const emailHasError = emailError && emailError.style.display === 'block';
+        
+        // Check if password errors are showing
+        const passwordError = document.getElementById('passwordError');
+        const passwordMatchError = document.getElementById('passwordMatchError');
+        const passwordHasError = passwordError && passwordError.style.display === 'block';
+        const passwordMatchHasError = passwordMatchError && passwordMatchError.style.display === 'block';
+        
+        // Enable next button only if all conditions are met INCLUDING email verification
+        const allFieldsFilled = isFirstnameFilled && isLastnameFilled && isEmailFilled && isPasswordFilled && isPasswordConfirmFilled;
+        const allValidationsPassed = isPasswordValid && isPasswordConfirmValid && !emailHasError && !passwordHasError && !passwordMatchHasError;
+        const emailVerified = enrollmentEmailVerified; // OTP verification required
+        
+        console.log('Step 4 Validation:', {
+            allFieldsFilled,
+            allValidationsPassed,
+            emailVerified,
+            isFirstnameFilled,
+            isLastnameFilled,
+            isEmailFilled,
+            isPasswordFilled,
+            isPasswordConfirmFilled,
+            isPasswordValid,
+            isPasswordConfirmValid,
+            emailHasError,
+            passwordHasError,
+            passwordMatchHasError
+        });
+        
+        if (nextBtn) {
+            if (allFieldsFilled && allValidationsPassed && emailVerified) {
+                nextBtn.disabled = false;
+                nextBtn.style.opacity = '1';
+                nextBtn.style.cursor = 'pointer';
+            } else {
+                nextBtn.disabled = true;
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.cursor = 'not-allowed';
+            }
+        }
+        
+        return allFieldsFilled && allValidationsPassed;
+    }
+
     // Handle form submission and add batch_id if selected
     function handleFormSubmission(event) {
     console.log('🚀 FORM SUBMISSION STARTED');
@@ -2423,8 +2833,9 @@
     console.log('  jQuery available:', typeof $ !== 'undefined');
     
     // Check if we're on the correct step
-    if (currentStep !== 4) {
-        console.error('❌ FORM SUBMISSION BLOCKED: Not on step 4, current step is:', currentStep);
+    const finalStep = isUserLoggedIn ? 4 : 5;
+    if (currentStep !== finalStep) {
+        console.error(`❌ FORM SUBMISSION BLOCKED: Not on step ${finalStep}, current step is:`, currentStep);
         event.preventDefault();
         showFormErrors(['Please complete all previous steps before submitting.']);
         return false;

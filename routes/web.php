@@ -43,6 +43,7 @@ use App\Http\Controllers\ProgramController;
 // routes/web.php
 
 use App\Http\Controllers\Api\ReferralController;
+use App\Http\Controllers\CertificateController;
 
 Route::get(
     '/student/module/{module}/course/{course}/content-items',
@@ -630,7 +631,7 @@ Route::get('/admin-student-registration/payment/history', [AdminController::clas
 Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
      ->name('admin.enrollment.mark-paid');
 
-// View one student registration’s details
+// View one student registration's details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
      ->name('admin.student.registration.view');
 
@@ -643,7 +644,7 @@ Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'sh
 Route::get('/admin/programs', [AdminProgramController::class, 'index'])
      ->name('admin.programs.index');
 
-// Show “Add New Program” form
+// Show "Add New Program" form
 Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])
      ->name('admin.programs.create');
 
@@ -1967,4 +1968,53 @@ Route::prefix('test-api/test')->group(function () {
 
     Route::get('/course-access', [\App\Http\Controllers\CourseTestController::class, 'testCourseAccess']);
     Route::get('/course-enrollment', [\App\Http\Controllers\CourseTestController::class, 'testCreateCourseEnrollment']);
+});
+
+// Certificate routes (accessible by admin, director, and student roles)
+Route::middleware(['web', 'session.auth'])->group(function () {
+    Route::get('/certificate/show', [CertificateController::class, 'show'])->name('certificate.show');
+    Route::get('/certificate/download', [CertificateController::class, 'download'])->name('certificate.download');
+});
+
+// Certificate verification route (public access for QR code verification)
+Route::get('/certificate/verify', [CertificateController::class, 'verify'])->name('certificate.verify');
+
+Route::middleware(['web', 'auth', 'admin.director.auth'])->group(function () {
+    Route::get('/admin/certificates', function () {
+        // Get approved students with enrollments
+        $students = \App\Models\Student::with(['user'])
+            ->whereHas('enrollments', function($query) {
+                $query->where('enrollment_status', 'approved');
+            })
+            ->get();
+
+        // Get eligible enrollments for certificates
+        $eligibleEnrollments = \App\Models\Enrollment::with(['student', 'user', 'program'])
+            ->where('enrollment_status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        return view('admin.certificates', compact('students', 'eligibleEnrollments'));
+    })->name('admin.certificates');
+
+    // API endpoint to get student enrollments
+    Route::get('/admin/student-enrollments/{userId}', function($userId) {
+        $enrollments = \App\Models\Enrollment::where('user_id', $userId)
+            ->with(['program'])
+            ->get()
+            ->map(function($enrollment) {
+                return [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'program_name' => $enrollment->program->program_name ?? 'Unknown Program',
+                    'enrollment_type' => $enrollment->enrollment_type,
+                    'enrollment_status' => $enrollment->enrollment_status
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'enrollments' => $enrollments
+        ]);
+    });
 });
