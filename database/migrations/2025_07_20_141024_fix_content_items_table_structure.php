@@ -13,6 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
+<<<<<<< HEAD
         Schema::table('content_items', function (Blueprint $table) {
             // Check if lesson_id exists and drop it
             if (Schema::hasColumn('content_items', 'lesson_id')) {
@@ -83,6 +84,9 @@ return new class extends Migration
                 $table->integer('sort_order')->default(0)->after('content_order');
             }
         });
+=======
+        //
+>>>>>>> origin/broken-enroll-upload
     }
 
     /**
@@ -92,6 +96,7 @@ return new class extends Migration
      */
     public function down()
     {
+<<<<<<< HEAD
         Schema::table('content_items', function (Blueprint $table) {
             // Drop new foreign keys if they exist
             try {
@@ -132,5 +137,8 @@ return new class extends Migration
                 }
             }
         });
+=======
+        //
+>>>>>>> origin/broken-enroll-upload
     }
 };
