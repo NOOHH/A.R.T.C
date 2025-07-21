@@ -13,6 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
+<<<<<<< HEAD
         // Add override columns to modules table (without foreign keys for now)
         Schema::table('modules', function (Blueprint $table) {
             if (!Schema::hasColumn('modules', 'is_locked')) {
@@ -99,6 +100,11 @@ return new class extends Migration
                 $table->dropColumn('lesson_id');
             });
         }
+=======
+        Schema::table('existing_tables', function (Blueprint $table) {
+            //
+        });
+>>>>>>> broken-enroll-upload
     }
 
     /**
@@ -108,6 +114,7 @@ return new class extends Migration
      */
     public function down()
     {
+<<<<<<< HEAD
         // Remove override columns from modules table
         Schema::table('modules', function (Blueprint $table) {
             $table->dropForeign(['prerequisite_module_id']);
@@ -136,6 +143,10 @@ return new class extends Migration
                 'is_locked', 'requires_prerequisite', 'prerequisite_content_id', 
                 'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
             ]);
+=======
+        Schema::table('existing_tables', function (Blueprint $table) {
+            //
+>>>>>>> broken-enroll-upload
         });
     }
 };

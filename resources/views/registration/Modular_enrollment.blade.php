@@ -29,36 +29,40 @@
         <div class="stepper-progress">
             <div class="stepper">
                 <div class="bar">
-                    <div class="progress" id="progressBar" style="width: 16.67%;"></div>
+                    <div class="progress" id="progressBar" style="width: {{ $isUserLoggedIn ? '20%' : '14.28%' }};"></div>
                 </div>
-                <div class="step active" id="step-1">
+                <div class="step {{ !$isUserLoggedIn ? 'active' : '' }}" id="step-1">
                     <div class="circle">1</div>
-                    <div class="label">Packages</div>
+                    <div class="label">Account Check</div>
                 </div>
-                <div class="step" id="step-2">
+                <div class="step {{ $isUserLoggedIn ? 'active' : '' }}" id="step-2">
                     <div class="circle">2</div>
-                    <div class="label">Programs</div>
+                    <div class="label">Packages</div>
                 </div>
                 <div class="step" id="step-3">
                     <div class="circle">3</div>
-                    <div class="label">Modules</div>
+                    <div class="label">Programs</div>
                 </div>
                 <div class="step" id="step-4">
                     <div class="circle">4</div>
+                    <div class="label">Modules</div>
+                </div>
+                <div class="step" id="step-5">
+                    <div class="circle">5</div>
                     <div class="label">Learning Mode</div>
                 </div>
                 @if(!$isUserLoggedIn)
-                <div class="step" id="step-5">
-                    <div class="circle">5</div>
-                    <div class="label">Account</div>
-                </div>
                 <div class="step" id="step-6">
                     <div class="circle">6</div>
+                    <div class="label">Account</div>
+                </div>
+                <div class="step" id="step-7">
+                    <div class="circle">7</div>
                     <div class="label">Form</div>
                 </div>
                 @else
-                <div class="step" id="step-5">
-                    <div class="circle">5</div>
+                <div class="step" id="step-6">
+                    <div class="circle">6</div>
                     <div class="label">Form</div>
                 </div>
                 @endif
@@ -73,8 +77,71 @@
             <input type="hidden" id="learning_mode" name="learning_mode" value="">
         </div>
 
-        <!-- Step 1: Package Selection (Bootstrap Carousel) -->
-        <div class="step-content active" id="content-1">
+        <!-- Step 1: Account Check -->
+        <div class="step-content {{ !$isUserLoggedIn ? 'active' : '' }}" id="content-1">
+            <div class="step-header mb-4">
+                <h2 class="fw-bold text-center" style="font-size:2.5rem;">Welcome to Modular Enrollment</h2>
+                <p class="text-center text-muted" style="font-size:1.15rem;">Let's get you started with your modular enrollment</p>
+            </div>
+            
+            <div class="account-check-container">
+                <div class="row justify-content-center">
+                    <div class="col-md-10">
+                        <div class="question-section text-center mb-4">
+                            <h4 class="fw-bold mb-3">Do you already have an account with us?</h4>
+                            <p class="text-muted">Choose the option that applies to you</p>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="account-option-card" onclick="selectAccountOption(true)">
+                                    <div class="card h-100 p-4 border-2" style="cursor: pointer; transition: all 0.3s ease;">
+                                        <div class="card-body text-center">
+                                            <div class="icon-container mb-3">
+                                                <i class="fas fa-user-check" style="font-size: 3rem; color: #28a745;"></i>
+                                            </div>
+                                            <h5 class="card-title fw-bold mb-3">Yes, I have an account</h5>
+                                            <p class="card-text text-muted mb-4">I already registered before and want to log in to my existing account</p>
+                                            <div class="features-list text-start">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-check text-success me-2"></i>Access your previous information<br>
+                                                    <i class="fas fa-check text-success me-2"></i>Continue existing enrollments<br>
+                                                    <i class="fas fa-check text-success me-2"></i>View your enrollment history
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="account-option-card" onclick="selectAccountOption(false)">
+                                    <div class="card h-100 p-4 border-2" style="cursor: pointer; transition: all 0.3s ease;">
+                                        <div class="card-body text-center">
+                                            <div class="icon-container mb-3">
+                                                <i class="fas fa-user-plus" style="font-size: 3rem; color: #007bff;"></i>
+                                            </div>
+                                            <h5 class="card-title fw-bold mb-3">No, I'm new here</h5>
+                                            <p class="card-text text-muted mb-4">I'm enrolling for the first time and need to create a new account</p>
+                                            <div class="features-list text-start">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-check text-success me-2"></i>Create a new account<br>
+                                                    <i class="fas fa-check text-success me-2"></i>Start fresh enrollment<br>
+                                                    <i class="fas fa-check text-success me-2"></i>Get started immediately
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Package Selection (Bootstrap Carousel) -->
+        <div class="step-content {{ $isUserLoggedIn ? 'active' : '' }}" id="content-2">
             <div class="step-header mb-4">
                 <h2 class="fw-bold text-center" style="font-size:2.5rem;">Choose Your Package</h2>
                 <p class="text-center text-muted" style="font-size:1.15rem;">Select a learning package that suits your needs</p>
@@ -138,12 +205,6 @@
             
             <!-- Immediate Script for Package Selection -->
             <script>
-                // Global variables for package selection
-                let selectedPackageId = null;
-                let packageSelectionMode = 'modules';
-                let packageModuleLimit = null;
-                let packageCourseLimit = null;
-                
                 // Package selection function
                 function selectPackage(packageId, programId, moduleCount, selectionMode = 'modules', courseCount = 0) {
                     console.log('Package selected:', { packageId, programId, moduleCount, selectionMode, courseCount });
@@ -204,10 +265,10 @@
             </div>
         </div>
 
-        <!-- Step 2: Program Selection (Bootstrap Carousel) -->
-        <div class="step-content" id="content-2">
+        <!-- Step 3: Program Selection (Bootstrap Carousel) -->
+        <div class="step-content" id="content-3">
             <div class="step-header">
-                <h2>Select Your Program</h2>
+                <h2>Select Your Program*</h2>
                 <p>Choose the program that aligns with your career goals</p>
             </div>
             
@@ -246,8 +307,8 @@
             </div>
         </div>
 
-        <!-- Step 3: Module Selection (Bootstrap Carousel) -->
-        <div class="step-content" id="content-3">
+        <!-- Step 4: Module Selection (Bootstrap Carousel) -->
+        <div class="step-content" id="content-4">
             <div class="step-header">
                 <h2>Select Your Modules</h2>
                 <p>Choose the modules you want to enroll in (up to <span id="moduleLimit">3</span> modules)</p>
@@ -288,8 +349,8 @@
             </div>
         </div>
 
-        <!-- Step 4: Learning Mode Selection (Bootstrap cards) -->
-        <div class="step-content" id="content-4">
+        <!-- Step 5: Learning Mode Selection (Bootstrap cards) -->
+        <div class="step-content" id="content-5">
             <div class="step-header">
                 <h2>Choose Learning Mode</h2>
                 <p>Select how you'd like to take your classes</p>
@@ -334,9 +395,9 @@
             </div>
         </div>
 
-        <!-- Step 5: Account Registration (Enhanced with OTP and Referral validation) - Only show for non-logged-in users -->
+        <!-- Step 6: Account Registration (Enhanced with OTP and Referral validation) - Only show for non-logged-in users -->
         @if(!$isUserLoggedIn)
-        <div class="step-content" id="content-5">
+        <div class="step-content" id="content-6">
             <div class="account-step-card">
                 <div class="step-header">
                     <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
@@ -402,7 +463,7 @@
                     <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
                         <i class="bi bi-arrow-left me-2"></i> Back
                     </button>
-                    <button type="button" onclick="nextStep()" id="step5NextBtn" disabled class="btn btn-primary btn-lg">
+                    <button type="button" onclick="nextStep()" id="step6NextBtn" disabled class="btn btn-primary btn-lg">
                         Next <i class="bi bi-arrow-right ms-2"></i>
                     </button>
                 </div>
@@ -410,8 +471,8 @@
         </div>
         @endif
 
-        <!-- Step 6: Final Registration Form (for non-logged-in users) OR Step 5: Final Registration Form (for logged-in users) -->
-        <div class="step-content" id="content-{{ $isUserLoggedIn ? '5' : '6' }}">
+        <!-- Step 7: Final Registration Form (for non-logged-in users) OR Step 6: Final Registration Form (for logged-in users) -->
+        <div class="step-content" id="content-{{ $isUserLoggedIn ? '6' : '7' }}">
             <div class="step-header">
                 <h2>Complete Your Registration</h2>
                 @if($isUserLoggedIn)
@@ -564,7 +625,7 @@
                 <!-- Dynamic Education Level File Requirements -->
                 <div id="educationLevelRequirements" style="display: none;"></div>
                 <div class="form-group" style="margin-top:2.2rem;">
-                    <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program</label>
+                    <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program <span class="text-danger">*</span></label>
                     <select name="program_id" class="form-select" required id="programSelect" onchange="onProgramSelectionChange();">
                         <option value="">Select Program</option>
                         @foreach($programs as $program)
@@ -725,15 +786,27 @@
 
 @push('scripts')
 <script>
-    // Global variables
-    let currentStep = 1;
-    let totalSteps = {{ $isUserLoggedIn ? 5 : 6 }}; // Dynamic total steps based on login status
+    // Global variables - consolidated to avoid temporal dead zone issues
+    let currentStep = {{ $isUserLoggedIn ? 2 : 1 }}; // Start at step 2 for logged-in users, step 1 for new users
+    let totalSteps = {{ $isUserLoggedIn ? 6 : 7 }}; // Updated total steps: 1 (Account Check) + 5 original steps
     let isUserLoggedIn = @json($isUserLoggedIn);
-    // selectedPackageId, packageSelectionMode, packageModuleLimit, packageCourseLimit are declared above
+    
+    // Package selection variables (moved from earlier script block)
+    let selectedPackageId = null;
+    let packageSelectionMode = 'modules';
+    let packageModuleLimit = null;
+    let packageCourseLimit = null;
+    
+    // Other form variables
     let selectedProgramId = null;
     let selectedModules = [];
     let selectedLearningMode = null;
     let selectedAccountType = null;
+    
+    // Course selection variables
+    let currentModuleId = null;
+    let selectedCourses = {};
+    let extraModulePrice = 0;
     
     // CSRF token
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -743,47 +816,70 @@
         updateStepper();
         loadStepContent();
 
-        // Account Registration Step 5 validation
-        const nextBtn = document.getElementById('step5NextBtn');
+        // Account Registration Step validation (updated for new step structure)
+        const nextBtn = document.getElementById('step6NextBtn'); // Updated ID for step 6
         if (nextBtn) {
             // Initial validation
-            validateStep5();
+            validateStep6(); // Updated function name
         }
     });
+    
+    // Account selection function for step 1
+    function selectAccountOption(hasAccount) {
+        console.log('Account option selected:', hasAccount ? 'has account' : 'no account');
+        
+        if (hasAccount) {
+            // Redirect to login page
+            window.location.href = "{{ route('login') }}";
+            return;
+        } else {
+            // Continue to step 2 (packages)
+            console.log('Continuing to package selection');
+            currentStep = 2;
+            updateStepper();
+            loadStepContent();
+        }
+    }
     
     // Step navigation
     function nextStep() {
         if (currentStep < totalSteps) {
-            // Skip account creation step (step 5) if user is already logged in
-            if (isUserLoggedIn && currentStep === 4) {
-                // Skip from step 4 (learning mode) directly to step 6 (form) 
-                // But we need to renumber the steps for logged in users
-                currentStep = 5; // This will be the final form step for logged-in users
+            // Handle step transitions based on new structure
+            if (currentStep === 1) {
+                // This should not be reached since step 1 uses selectAccountOption
+                console.log('Step 1 should use selectAccountOption');
+                return;
+            } else if (isUserLoggedIn && currentStep === 5) {
+                // Skip from step 5 (learning mode) directly to step 6 (form) for logged-in users
+                currentStep = 6;
+            } else if (!isUserLoggedIn && currentStep === 6) {
+                // For non-logged-in users, go from step 6 (account) to step 7 (form)
+                currentStep = 7;
+                copyStepperDataToFinalForm(); // Copy account data to final form
             } else {
+                // Normal progression
                 currentStep++;
             }
             
-            // Copy data when leaving step 5 (account registration) for non-logged-in users
-            if (!isUserLoggedIn && currentStep === 6) {
+            // Copy data when moving to final step
+            if ((isUserLoggedIn && currentStep === 6) || (!isUserLoggedIn && currentStep === 7)) {
                 copyStepperDataToFinalForm();
             }
             
             updateStepper();
             loadStepContent();
-            
-            // If moving to final step, copy all data again
-            if ((isUserLoggedIn && currentStep === 5) || (!isUserLoggedIn && currentStep === 6)) {
-                copyStepperDataToFinalForm();
-            }
         }
     }
     
     function prevStep() {
         if (currentStep > 1) {
-            // Handle stepping back for logged-in users (skip account creation)
-            if (isUserLoggedIn && currentStep === 5) {
-                // Go back from step 5 (form) to step 4 (learning mode) for logged-in users
-                currentStep = 4;
+            // Handle stepping back based on new structure
+            if (isUserLoggedIn && currentStep === 6) {
+                // Go back from step 6 (form) to step 5 (learning mode) for logged-in users
+                currentStep = 5;
+            } else if (isUserLoggedIn && currentStep === 2) {
+                // Don't go back to step 1 (account check) for logged-in users
+                return;
             } else {
                 currentStep--;
             }
@@ -1220,55 +1316,55 @@
     
     // Setup account form
     function setupAccountForm() {
-        console.log('Setting up account form for step 5');
+        console.log('Setting up account form for step 6'); // Updated step number
         
-        // Add validation listeners for Step 5
+        // Add validation listeners for Step 6 (updated from Step 5)
         const firstnameField = document.getElementById('user_firstname');
         const lastnameField = document.getElementById('user_lastname');
         const emailField = document.getElementById('user_email');
         const passwordField = document.getElementById('password');
         const passwordConfirmField = document.getElementById('password_confirmation');
-        const nextBtn = document.getElementById('step5NextBtn');
+        const nextBtn = document.getElementById('step6NextBtn'); // Updated button ID
         
         // Debounce timer for validation
         let validationTimer = null;
         
-        function debouncedValidateStep5() {
+        function debouncedValidateStep6() { // Updated function name
             clearTimeout(validationTimer);
-            validationTimer = setTimeout(validateStep5, 500);
+            validationTimer = setTimeout(validateStep6, 500); // Updated function call
         }
         
-        if (firstnameField) firstnameField.addEventListener('input', debouncedValidateStep5);
-        if (lastnameField) lastnameField.addEventListener('input', debouncedValidateStep5);
+        if (firstnameField) firstnameField.addEventListener('input', debouncedValidateStep6);
+        if (lastnameField) lastnameField.addEventListener('input', debouncedValidateStep6);
         if (emailField) {
             emailField.addEventListener('input', function() {
                 setTimeout(validateEmail, 300);
-                debouncedValidateStep5();
+                debouncedValidateStep6();
             });
         }
         if (passwordField) {
             passwordField.addEventListener('input', function() {
                 setTimeout(validatePassword, 50);
-                debouncedValidateStep5();
+                debouncedValidateStep6();
             });
         }
         if (passwordConfirmField) {
             passwordConfirmField.addEventListener('input', function() {
                 setTimeout(validatePasswordConfirmation, 50);
-                debouncedValidateStep5();
+                debouncedValidateStep6();
             });
         }
     }
 
-    // Validate Step 5 (Account Registration)
-    function validateStep5() {
+    // Validate Step 6 (Account Registration) - Updated from Step 5
+    function validateStep6() { // Updated function name
         const firstname = document.getElementById('user_firstname')?.value.trim() || '';
         const lastname = document.getElementById('user_lastname')?.value.trim() || '';
         const email = document.getElementById('user_email')?.value.trim() || '';
         const password = document.getElementById('password')?.value || '';
         const passwordConfirm = document.getElementById('password_confirmation')?.value || '';
         const referralCode = document.getElementById('referral_code')?.value.trim() || '';
-        const nextBtn = document.getElementById('step5NextBtn');
+        const nextBtn = document.getElementById('step6NextBtn'); // Updated button ID
 
         // Check referral requirements
         const referralEnabled = document.getElementById('referral_code') !== null;
@@ -1563,8 +1659,8 @@
                         emailField.style.borderColor = '#28a745';
                     }
                     
-                    // Re-validate step 5
-                    validateStep5();
+                    // Re-validate step 6 (updated from step 5)
+                    validateStep6();
                 }, 1500);
             } else {
                 if (statusDiv) {
@@ -1650,8 +1746,8 @@
                 referralField.style.borderColor = '#dc3545';
             }
             
-            // Re-validate step 5
-            validateStep5();
+            // Re-validate step 6 (updated from step 5)
+            validateStep6();
         })
         .catch(error => {
             console.error('Error validating referral code:', error);
@@ -1687,12 +1783,6 @@
         // Here you would submit the form data to the server
         alert('Enrollment submission would happen here!');
     }
-    
-    // Global variables for course selection
-    let currentModuleId = null;
-    let selectedCourses = {};
-    // packageCourseLimit is already declared above - removing duplicate
-    let extraModulePrice = 0; // Price per extra course from package data
     
     // Show courses modal with course selection capability
     function showCoursesModal(moduleId, moduleName) {
@@ -2019,8 +2109,9 @@ function copyStepperDataToFinalForm() {
         passwordConfirmation = document.getElementById('password_confirmation')?.value || '';
         referralCode = document.getElementById('referral_code')?.value || '';
         
-        // CRITICAL FIX: Validate that fields are not incorrectly duplicated
-        if (userFirstname === userEmail || userLastname === userEmail || password === userEmail) {
+        // Debug logging (only show when fields actually have problematic values)
+        const hasProblematicValues = userFirstname === userEmail && userEmail !== '' && userFirstname !== '';
+        if (hasProblematicValues) {
             console.error('❌ CRITICAL ERROR: Form fields have duplicate values! This indicates a form field mapping issue.');
             console.error('Field values:', {
                 userFirstname,

@@ -123,7 +123,7 @@ Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(funct
     Route::get('/create', [BatchEnrollmentController::class, 'create'])->name('admin.batches.create');
     Route::post('/', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
     Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
-    Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
+    Route::put('/{id}', [BatchEnrollmentController::class, 'updateBatch'])->name('admin.batches.update');
     Route::post('/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
     Route::post('/{id}/approve', [BatchEnrollmentController::class, 'approveBatch'])->name('admin.batches.approve');
     Route::get('/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
@@ -1404,7 +1404,7 @@ Route::middleware(['professor.auth'])
          ->name('meetings.reports');
     Route::post('/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
          ->name('meetings.start');
-    Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
+    Route::post('/meetings/{meeting}/finish', [\AppHttp\Controllers\ProfessorMeetingController::class, 'finish'])
          ->name('meetings.finish');
     
     // Additional professor routes for meetings/settings
@@ -2014,3 +2014,10 @@ Route::prefix('test-api/test')->group(function () {
     Route::get('/course-access', [\App\Http\Controllers\CourseTestController::class, 'testCourseAccess']);
     Route::get('/course-enrollment', [\App\Http\Controllers\CourseTestController::class, 'testCreateCourseEnrollment']);
 });
+
+// Certificate Management Route
+Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates');
+
+// Certificate viewing and downloading
+Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
+Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');

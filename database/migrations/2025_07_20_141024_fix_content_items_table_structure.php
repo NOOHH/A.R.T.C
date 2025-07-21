@@ -14,6 +14,7 @@ return new class extends Migration
     public function up()
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
         Schema::table('content_items', function (Blueprint $table) {
             // Check if lesson_id exists and drop it
             if (Schema::hasColumn('content_items', 'lesson_id')) {
@@ -87,6 +88,9 @@ return new class extends Migration
 =======
         //
 >>>>>>> origin/broken-enroll-upload
+=======
+        //
+>>>>>>> broken-enroll-upload
     }
 
     /**
@@ -96,6 +100,7 @@ return new class extends Migration
      */
     public function down()
     {
+<<<<<<< HEAD
 <<<<<<< HEAD
         Schema::table('content_items', function (Blueprint $table) {
             // Drop new foreign keys if they exist
@@ -140,5 +145,8 @@ return new class extends Migration
 =======
         //
 >>>>>>> origin/broken-enroll-upload
+=======
+        //
+>>>>>>> broken-enroll-upload
     }
 };

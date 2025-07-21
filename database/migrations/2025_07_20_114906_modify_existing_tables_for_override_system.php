@@ -13,6 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
+<<<<<<< HEAD
         // First, drop the lessons table constraint from content_items
         Schema::table('content_items', function (Blueprint $table) {
             // Drop foreign key constraint to lessons table
@@ -88,6 +89,9 @@ return new class extends Migration
                 $table->foreign('student_id')->references('user_id')->on('users')->onDelete('cascade');
             });
         }
+=======
+        //
+>>>>>>> broken-enroll-upload
     }
 
     /**
@@ -97,6 +101,7 @@ return new class extends Migration
      */
     public function down()
     {
+<<<<<<< HEAD
         // Remove override columns from content_items table
         Schema::table('content_items', function (Blueprint $table) {
             if (Schema::hasColumn('content_items', 'is_locked_by_admin')) {
@@ -151,5 +156,8 @@ return new class extends Migration
         Schema::table('content_items', function (Blueprint $table) {
             $table->unsignedBigInteger('lesson_id')->nullable()->after('content_description');
         });
+=======
+        //
+>>>>>>> broken-enroll-upload
     }
 };

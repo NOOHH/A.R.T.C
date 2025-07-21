@@ -3,7 +3,11 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
+<<<<<<< HEAD
 -- Generation Time: Jul 20, 2025 at 02:55 PM
+=======
+-- Generation Time: Jul 20, 2025 at 10:15 PM
+>>>>>>> broken-enroll-upload
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -85,12 +89,21 @@ CREATE TABLE `admin_settings` (
 
 INSERT INTO `admin_settings` (`setting_id`, `setting_key`, `setting_value`, `setting_description`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'ai_quiz_enabled', 'true', 'Enable or disable AI Quiz Generator feature for professors', 1, '2025-07-07 07:17:23', '2025-07-07 07:17:23'),
+<<<<<<< HEAD
 (2, 'meeting_creation_enabled', '1', 'Enable or disable meeting creation for professors', 1, '2025-07-18 12:52:43', '2025-07-20 01:40:15'),
 (100, 'referral_enabled', '1', 'Enable/disable referral code field in registration', 1, NULL, NULL),
 (101, 'referral_required', '0', 'Make referral code required in registration', 1, NULL, NULL),
 (102, 'grading_enabled', 'true', NULL, 1, '2025-07-18 05:00:49', '2025-07-20 01:40:22'),
 (103, 'upload_videos_enabled', 'true', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 05:00:49'),
 (104, 'attendance_enabled', 'true', NULL, 1, '2025-07-18 05:00:49', '2025-07-20 01:40:22'),
+=======
+(2, 'meeting_creation_enabled', '0', 'Enable or disable meeting creation for professors', 1, '2025-07-18 12:52:43', '2025-07-18 07:47:52'),
+(100, 'referral_enabled', '1', 'Enable/disable referral code field in registration', 1, NULL, NULL),
+(101, 'referral_required', '0', 'Make referral code required in registration', 1, NULL, NULL),
+(102, 'grading_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 07:48:16'),
+(103, 'upload_videos_enabled', 'true', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 05:00:49'),
+(104, 'attendance_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 07:48:16'),
+>>>>>>> broken-enroll-upload
 (106, 'meeting_whitelist_professors', '', NULL, 1, '2025-07-18 05:49:04', '2025-07-18 07:48:23'),
 (108, 'view_programs_enabled', 'false', NULL, 1, '2025-07-18 06:14:52', '2025-07-18 07:28:40');
 
@@ -176,6 +189,25 @@ CREATE TABLE `attendance` (
 -- --------------------------------------------------------
 
 --
+<<<<<<< HEAD
+=======
+-- Table structure for table `batch_professors`
+--
+
+CREATE TABLE `batch_professors` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `batch_id` int(11) NOT NULL,
+  `professor_id` int(11) NOT NULL,
+  `assigned_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `assigned_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+>>>>>>> broken-enroll-upload
 -- Table structure for table `chats`
 --
 
@@ -346,7 +378,11 @@ INSERT INTO `courses` (`subject_id`, `subject_name`, `subject_description`, `mod
 (21, 'level 2', 'yes', 48, 1000.00, 1, 0, 0, 1, NULL, '2025-07-19 03:49:49', '2025-07-19 04:34:03', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (22, 'uploader', '1', 48, 100.00, 3, 0, 0, 1, NULL, '2025-07-19 10:07:31', '2025-07-19 10:07:31', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (23, 'Banana Dev', 'yes', 50, 100.00, 1, 0, 0, 1, NULL, '2025-07-19 10:08:02', '2025-07-20 01:00:35', 0, 0, NULL, NULL, NULL, NULL, NULL),
+<<<<<<< HEAD
 (24, 'BBB', 'BBB', 54, 99.00, 1, 0, 0, 1, NULL, '2025-07-20 01:09:31', '2025-07-20 01:21:13', 0, 0, NULL, NULL, NULL, NULL, NULL),
+=======
+(24, 'BBB', 'BBB', 54, 99.00, 1, 0, 0, 1, NULL, '2025-07-20 01:09:31', '2025-07-20 01:21:13', 1, 0, NULL, NULL, NULL, NULL, NULL),
+>>>>>>> broken-enroll-upload
 (25, 'yeas', 'fsfasdfas', 54, 11.00, 2, 0, 0, 1, NULL, '2025-07-20 01:55:29', '2025-07-20 01:55:29', 0, 0, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
@@ -395,7 +431,11 @@ CREATE TABLE `directors` (
 --
 
 INSERT INTO `directors` (`directors_id`, `admin_id`, `directors_name`, `directors_first_name`, `directors_last_name`, `directors_email`, `directors_password`, `referral_code`, `directors_archived`, `has_all_program_access`, `created_at`, `updated_at`) VALUES
+<<<<<<< HEAD
 (7, 1, 'alek piriz', 'alek', 'piriz', 'alek@gmail.com', '$2y$10$s3kQ8WZkve6JCITGtYBsxuMVngwxE8ob7lsURyKGdnUyCCVrgx8QG', 'DIREDITALPI', 0, 1, '2025-07-09 12:04:55', '2025-07-18 08:02:59'),
+=======
+(7, 1, 'alek piriz', 'alek', 'piriz', 'alek@gmail.com', '$2y$10$.eS0jFVC9.cpmtFI7J/bqe5/cwNumfI4JzgI8Hrtl7tcCBknTL/ey', NULL, 0, 1, '2025-07-09 12:04:55', '2025-07-09 12:21:25'),
+>>>>>>> broken-enroll-upload
 (8, 1, '123123 weq', '123123', 'weq', 'Director1@gmail.com', '$2y$10$gWhR8euTSIkWAGcsLm83OueLzPoOCUQ41gh3VE/PfGRiN4bWKHiyC', NULL, 0, 1, '2025-07-12 05:32:17', '2025-07-12 05:41:43'),
 (999, 1, 'Test Director', 'Test', 'Director', 'director@test.com', '$2y$10$NW5OepcYIwp9Aq0WFrthnOBTQ5shyTDkT9AhJo9gEpyebef/a6L8S', NULL, 0, 1, '2025-07-13 12:51:05', '2025-07-13 12:51:05');
 
@@ -438,7 +478,11 @@ CREATE TABLE `education_levels` (
 
 INSERT INTO `education_levels` (`id`, `level_name`, `file_requirements`, `available_for_general`, `available_for_professional`, `available_for_review`, `created_at`, `updated_at`, `is_active`, `level_order`) VALUES
 (1, 'Undergraduate', '[{\"field_name\":\"school_id\",\"document_type\":\"school_id\",\"file_type\":\"image\",\"custom_name\":null,\"is_required\":true,\"available_full_plan\":true,\"available_modular_plan\":true,\"description\":\"Valid school identification\"},{\"field_name\":\"TOR\",\"document_type\":\"TOR\",\"file_type\":\"pdf\",\"custom_name\":null,\"is_required\":true,\"available_full_plan\":true,\"available_modular_plan\":true,\"description\":\"Transcript of Records\"},{\"field_name\":\"good_moral\",\"document_type\":\"good_moral\",\"file_type\":\"pdf\",\"custom_name\":null,\"is_required\":true,\"available_full_plan\":true,\"available_modular_plan\":true,\"description\":\"Certificate of Good Moral Character\"},{\"field_name\":\"PSA\",\"document_type\":\"PSA\",\"file_type\":\"pdf\",\"custom_name\":null,\"is_required\":true,\"available_full_plan\":true,\"available_modular_plan\":true,\"description\":\"PSA Birth Certificate\"}]', 1, 1, 1, '2025-07-14 07:58:48', '2025-07-14 11:06:21', 1, 0),
+<<<<<<< HEAD
 (2, 'Graduate', '\"[{\\\"field_name\\\":\\\"school_id\\\",\\\"document_type\\\":\\\"school_id\\\",\\\"file_type\\\":\\\"image\\\",\\\"custom_name\\\":null,\\\"is_required\\\":false,\\\"available_full_plan\\\":true,\\\"available_modular_plan\\\":true},{\\\"field_name\\\":\\\"diploma\\\",\\\"document_type\\\":\\\"diploma\\\",\\\"file_type\\\":\\\"pdf\\\",\\\"custom_name\\\":null,\\\"is_required\\\":false,\\\"available_full_plan\\\":true,\\\"available_modular_plan\\\":true}]\"', 1, 1, 1, '2025-07-14 07:58:48', '2025-07-16 00:03:37', 0, 0);
+=======
+(2, 'Graduate', '\"[{\\\"field_name\\\":\\\"school_id\\\",\\\"document_type\\\":\\\"school_id\\\",\\\"file_type\\\":\\\"image\\\",\\\"custom_name\\\":null,\\\"is_required\\\":false,\\\"available_full_plan\\\":true,\\\"available_modular_plan\\\":true},{\\\"field_name\\\":\\\"diploma\\\",\\\"document_type\\\":\\\"diploma\\\",\\\"file_type\\\":\\\"pdf\\\",\\\"custom_name\\\":null,\\\"is_required\\\":false,\\\"available_full_plan\\\":true,\\\"available_modular_plan\\\":true}]\"', 1, 1, 1, '2025-07-14 07:58:48', '2025-07-16 00:03:37', 1, 0);
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -470,8 +514,57 @@ CREATE TABLE `enrollments` (
 --
 
 INSERT INTO `enrollments` (`enrollment_id`, `registration_id`, `student_id`, `user_id`, `program_id`, `package_id`, `enrollment_type`, `learning_mode`, `batch_id`, `individual_start_date`, `individual_end_date`, `enrollment_status`, `payment_status`, `batch_access_granted`, `created_at`, `updated_at`) VALUES
+<<<<<<< HEAD
 (132, 131, '2025-07-00004', 151, 33, 14, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'pending', 1, '2025-07-18 08:12:06', '2025-07-18 08:14:43'),
 (133, NULL, NULL, 152, 33, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 11:19:59', '2025-07-18 11:19:59');
+=======
+(100, 101, '2025-07-00001', 112, 33, 14, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'paid', 1, '2025-07-09 12:14:01', '2025-07-09 12:15:13'),
+(101, 102, '2025-07-00002', 113, 33, 14, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'paid', 1, '2025-07-09 12:15:39', '2025-07-09 12:17:12'),
+(102, 103, '2025-07-00008', 114, 33, 13, 'Full', 'Asynchronous', 7, NULL, NULL, 'approved', 'paid', 0, '2025-07-09 12:19:09', '2025-07-11 07:38:54'),
+(103, 104, '2025-07-00003', 115, 33, 12, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'paid', 0, '2025-07-10 11:09:43', '2025-07-10 11:12:01'),
+(104, 105, NULL, 116, 32, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'pending', 'paid', 0, '2025-07-10 11:28:36', '2025-07-15 04:55:55'),
+(105, 106, NULL, 119, 32, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'pending', 'paid', 0, '2025-07-10 12:07:45', '2025-07-14 10:06:16'),
+(106, 107, '2025-07-00004', 120, 33, 12, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'paid', 0, '2025-07-11 00:41:30', '2025-07-11 00:41:44'),
+(107, 108, '2025-07-00005', 121, 33, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-11 01:36:42', '2025-07-11 01:40:03'),
+(108, 109, '2025-07-00006', 122, 34, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-11 04:31:18', '2025-07-11 04:32:21'),
+(109, 110, '2025-07-00007', 123, 34, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-11 06:09:46', '2025-07-11 06:10:28'),
+(110, 111, '2025-07-00011', 124, 32, 12, 'Full', 'Synchronous', 8, NULL, NULL, 'approved', 'paid', 0, '2025-07-11 09:28:40', '2025-07-18 03:07:11'),
+(111, 112, '2025-07-00009', 125, 32, 12, 'Full', 'Synchronous', 8, NULL, NULL, 'approved', 'paid', 0, '2025-07-11 13:07:36', '2025-07-20 11:39:17'),
+(112, 114, '2025-07-00010', 131, 33, 12, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'paid', 0, '2025-07-14 12:43:34', '2025-07-15 23:46:58'),
+(113, NULL, 'TEST000136', 136, 32, 12, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-17 12:28:59', '2025-07-17 12:28:59'),
+(114, NULL, 'FULL000137', 137, 34, 14, 'Full', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-17 12:28:59', '2025-07-17 12:28:59'),
+(115, NULL, 'TEST000136', 136, 32, 12, 'Full', 'Asynchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-17 19:00:28', '2025-07-17 19:00:28'),
+(116, NULL, NULL, 140, 33, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 02:54:39', '2025-07-18 02:54:39'),
+(117, NULL, NULL, 141, 33, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 02:55:22', '2025-07-18 02:55:22'),
+(118, NULL, '2025-07-00012', 141, 33, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-18 03:07:16', '2025-07-18 03:07:16'),
+(119, NULL, '2025-07-00013', 140, 33, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-18 03:07:21', '2025-07-18 03:07:21'),
+(120, NULL, NULL, 142, 33, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 03:08:41', '2025-07-18 03:08:41'),
+(121, NULL, '2025-07-00014', 142, 33, 12, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-18 03:08:53', '2025-07-18 03:08:53'),
+(122, NULL, NULL, 143, 34, 12, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 03:10:53', '2025-07-18 03:10:53'),
+(123, NULL, NULL, 144, 33, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 05:55:52', '2025-07-18 05:55:52'),
+(124, 124, NULL, 145, 32, 12, 'Full', 'Asynchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 06:17:36', '2025-07-18 06:17:36'),
+(125, NULL, NULL, 146, 34, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 06:28:44', '2025-07-18 06:28:44'),
+(126, NULL, NULL, 147, 33, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 06:58:51', '2025-07-18 06:58:51'),
+(127, 127, NULL, 148, 33, 12, 'Full', 'Synchronous', 7, NULL, NULL, 'pending', 'pending', 1, '2025-07-18 07:14:10', '2025-07-20 11:39:23'),
+(128, NULL, NULL, 149, 32, 12, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 07:15:20', '2025-07-18 07:15:20'),
+(129, NULL, NULL, 150, 33, 16, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 11:22:12', '2025-07-18 11:22:12'),
+(130, NULL, NULL, 151, 34, 16, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 11:23:51', '2025-07-18 11:23:51'),
+(131, NULL, NULL, 152, 33, 21, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'paid', 0, '2025-07-18 11:58:30', '2025-07-19 08:00:20'),
+(132, NULL, '2025-07-00001', 152, 33, 21, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-18 12:01:39', '2025-07-18 12:02:04'),
+(133, NULL, NULL, 153, 33, 18, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 13:04:26', '2025-07-18 13:04:26'),
+(134, NULL, NULL, 154, 33, 19, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 'pending', 0, '2025-07-18 23:20:49', '2025-07-18 23:20:49'),
+(135, 134, '2025-07-00002', 155, 33, 18, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'pending', 0, '2025-07-19 01:39:02', '2025-07-19 03:43:13'),
+(136, NULL, '2025-07-00003', 154, 33, 19, 'Full', 'Asynchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-19 03:43:45', '2025-07-19 03:43:45'),
+(137, NULL, NULL, 156, 33, 19, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 'paid', 0, '2025-07-19 03:48:30', '2025-07-19 09:19:24'),
+(138, NULL, '2025-07-00004', 156, 33, 19, 'Full', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-19 03:49:05', '2025-07-19 08:17:21'),
+(139, NULL, NULL, 157, 33, 19, 'Modular', 'Synchronous', NULL, NULL, NULL, 'pending', 'paid', 0, '2025-07-19 05:44:05', '2025-07-19 08:16:16'),
+(140, 137, NULL, 158, 33, 18, 'Full', 'Synchronous', 7, NULL, NULL, 'pending', 'pending', 0, '2025-07-19 09:33:53', '2025-07-19 09:33:53'),
+(141, 138, '2025-07-00005', 159, 33, 18, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'pending', 0, '2025-07-19 09:56:41', '2025-07-19 13:00:30'),
+(142, 139, '2025-07-00006', 160, 33, 18, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'pending', 0, '2025-07-19 10:42:06', '2025-07-19 13:00:56'),
+(143, 140, '2025-07-00008', 161, 33, 18, 'Modular', 'Synchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-19 12:09:56', '2025-07-19 13:01:08'),
+(144, 141, '2025-07-00007', 162, 33, 18, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'pending', 0, '2025-07-19 12:13:47', '2025-07-19 13:01:24'),
+(145, 142, '2025-07-00008', 161, 33, 19, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-19 12:27:22', '2025-07-19 13:05:04');
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -538,6 +631,7 @@ CREATE TABLE `form_requirements` (
   `section_name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+<<<<<<< HEAD
 --
 -- Dumping data for table `form_requirements`
 --
@@ -546,6 +640,40 @@ INSERT INTO `form_requirements` (`id`, `field_name`, `field_label`, `field_type`
 (18, 'first_name', 'First Name', 'text', 'student', 'both', 0, 1, 0, NULL, NULL, 3, '2025-07-15 06:34:22', '2025-07-16 00:02:41', NULL),
 (19, 'last_name', 'Last Name', 'text', 'student', 'both', 0, 1, 0, NULL, NULL, 4, '2025-07-15 06:54:16', '2025-07-16 00:02:41', NULL),
 (20, 'test', 'test', 'text', 'student', 'both', 0, 1, 0, NULL, NULL, 5, '2025-07-16 00:02:41', '2025-07-16 00:02:41', NULL);
+=======
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `lessons`
+--
+
+CREATE TABLE `lessons` (
+  `lesson_id` bigint(20) UNSIGNED NOT NULL,
+  `lesson_name` varchar(255) NOT NULL,
+  `lesson_description` text DEFAULT NULL,
+  `course_id` int(11) NOT NULL,
+  `lesson_price` decimal(10,2) DEFAULT NULL,
+  `lesson_duration` int(11) DEFAULT NULL,
+  `lesson_video_url` varchar(255) DEFAULT NULL,
+  `lesson_order` int(11) NOT NULL DEFAULT 0,
+  `is_required` tinyint(1) NOT NULL DEFAULT 1,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `learning_mode` enum('Synchronous','Asynchronous','Both') NOT NULL DEFAULT 'Both',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `lessons`
+--
+
+INSERT INTO `lessons` (`lesson_id`, `lesson_name`, `lesson_description`, `course_id`, `lesson_price`, `lesson_duration`, `lesson_video_url`, `lesson_order`, `is_required`, `is_active`, `learning_mode`, `created_at`, `updated_at`) VALUES
+(1, 'Test Lesson', 'Test Lesson Description', 1, 29.99, NULL, NULL, 1, 1, 1, 'Both', '2025-07-16 10:31:08', '2025-07-16 10:31:08'),
+(2, 'Variables and Data Types', 'Learn about variables and different data types', 2, NULL, NULL, NULL, 1, 1, 1, 'Both', NULL, NULL),
+(3, 'Control Structures', 'Understanding if statements, loops, and conditions', 2, NULL, NULL, NULL, 2, 1, 1, 'Both', NULL, NULL),
+(4, 'Functions and Methods', 'Creating and using functions in programming', 2, NULL, NULL, NULL, 3, 1, 1, 'Both', NULL, NULL),
+(9, 'KangKong Chips - Main Lesson', 'Auto-generated lesson for KangKong Chips', 14, 0.00, 60, NULL, 0, 1, 1, 'Both', '2025-07-17 11:05:11', '2025-07-17 11:05:11');
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -644,9 +772,19 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (43, '2025_07_17_125010_add_lesson_fields_to_lessons_table', 35),
 (44, '2025_07_17_125751_update_content_type_enum_in_content_items_table', 36),
 (45, '2025_07_17_200906_add_wizard_fields_to_packages_table', 37),
+<<<<<<< HEAD
 (46, '2025_07_18_144157_create_registration_modules_table', 38),
 (47, '2025_07_20_000001_add_locking_override_fields', 39),
 (48, '2025_07_20_115548_add_override_columns_to_existing_tables', 40);
+=======
+(47, '2025_07_19_000001_create_package_courses_table', 38),
+(48, '2025_07_19_000002_add_course_selection_to_packages', 39),
+(49, '2025_07_19_000003_create_enrollment_courses_table', 40),
+(51, '2025_07_18_180043_create_package_modules_pivot_table', 41),
+(52, '2025_07_18_182506_add_course_selection_fields_to_packages_table', 42),
+(53, '2025_07_19_160000_add_course_storage_to_registrations', 43),
+(54, '2025_07_19_161000_fix_enrollment_courses_table', 44);
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -701,7 +839,11 @@ INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `progr
 (51, 'test', 'test', 33, 7, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-18 09:34:35', '2025-07-18 09:34:56', 1, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (52, 'Mecha', '1', 32, 8, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-19 04:23:36', '2025-07-19 04:24:14', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 3),
 (53, 'Mecha', '1', 32, 8, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-19 04:23:49', '2025-07-19 04:24:14', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
+<<<<<<< HEAD
 (54, 'AAA', 'aaa', 33, 7, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-20 01:05:38', '2025-07-20 01:21:01', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+=======
+(54, 'AAA', 'aaa', 33, 7, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-20 01:05:38', '2025-07-20 13:10:26', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -735,8 +877,19 @@ CREATE TABLE `packages` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `package_type` enum('full','modular') NOT NULL DEFAULT 'full',
+<<<<<<< HEAD
   `module_count` int(11) DEFAULT 0,
   `allowed_modules` int(11) NOT NULL DEFAULT 2,
+=======
+  `selection_type` enum('module','course','both') NOT NULL DEFAULT 'module',
+  `selection_mode` enum('modules','courses') NOT NULL DEFAULT 'modules',
+  `module_count` int(11) DEFAULT 0,
+  `course_count` int(11) DEFAULT NULL,
+  `min_courses` int(11) DEFAULT NULL,
+  `max_courses` int(11) DEFAULT NULL,
+  `allowed_modules` int(11) NOT NULL DEFAULT 2,
+  `allowed_courses` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`allowed_courses`)),
+>>>>>>> broken-enroll-upload
   `extra_module_price` decimal(10,2) DEFAULT NULL,
   `price` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -745,10 +898,70 @@ CREATE TABLE `packages` (
 -- Dumping data for table `packages`
 --
 
+<<<<<<< HEAD
 INSERT INTO `packages` (`package_id`, `package_name`, `description`, `amount`, `program_id`, `created_by_admin_id`, `created_at`, `updated_at`, `package_type`, `module_count`, `allowed_modules`, `extra_module_price`, `price`) VALUES
 (12, 'level 1', 'E', 100.00, 32, 1, '2025-07-09 12:00:41', '2025-07-15 14:11:42', 'modular', 3, 2, NULL, 499.00),
 (13, 'Legendary', 'yes', 500.00, 33, 1, '2025-07-09 12:00:50', '2025-07-15 14:11:42', 'modular', 2, 2, NULL, 599.00),
 (14, 'Godlike', 'no', 3999.00, 34, 1, '2025-07-09 12:01:07', '2025-07-15 14:11:42', 'full', 0, 2, NULL, 1500.00);
+=======
+INSERT INTO `packages` (`package_id`, `package_name`, `description`, `amount`, `program_id`, `created_by_admin_id`, `created_at`, `updated_at`, `package_type`, `selection_type`, `selection_mode`, `module_count`, `course_count`, `min_courses`, `max_courses`, `allowed_modules`, `allowed_courses`, `extra_module_price`, `price`) VALUES
+(18, 'Package 1', 'Consists of 2 Courses', 2500.00, 33, 1, '2025-07-18 11:50:42', '2025-07-18 11:54:05', 'modular', 'course', 'courses', NULL, 2, NULL, NULL, 2, NULL, NULL, 2500.00),
+(19, 'Package 2', 'Consists of 3 Courses', 3000.00, 33, 1, '2025-07-18 11:53:46', '2025-07-18 11:53:46', 'modular', 'course', 'courses', NULL, 3, NULL, NULL, 2, NULL, NULL, 3000.00),
+(20, 'Package 3', 'Consists of 2 Modules', 10000.00, 33, 1, '2025-07-18 11:55:42', '2025-07-18 11:55:42', 'modular', 'module', 'modules', 2, NULL, NULL, NULL, 2, NULL, NULL, 10000.00),
+(21, 'Package 4', 'Consists of 1 modules 2 courses', 7500.00, 33, 1, '2025-07-18 11:56:37', '2025-07-18 11:56:37', 'modular', 'both', 'courses', 1, 2, NULL, NULL, 2, NULL, NULL, 7500.00);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_courses`
+--
+
+CREATE TABLE `package_courses` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `package_id` int(10) UNSIGNED NOT NULL,
+  `course_id` int(10) UNSIGNED NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `package_courses`
+--
+
+INSERT INTO `package_courses` (`id`, `package_id`, `course_id`, `created_at`, `updated_at`) VALUES
+(9, 18, 11, '2025-07-18 11:50:42', '2025-07-18 11:50:42'),
+(10, 18, 14, '2025-07-18 11:50:42', '2025-07-18 11:50:42'),
+(11, 18, 16, '2025-07-18 11:50:42', '2025-07-18 11:50:42'),
+(12, 19, 11, '2025-07-18 11:53:46', '2025-07-18 11:53:46'),
+(13, 19, 14, '2025-07-18 11:53:46', '2025-07-18 11:53:46'),
+(14, 19, 16, '2025-07-18 11:53:46', '2025-07-18 11:53:46'),
+(15, 21, 14, '2025-07-18 11:56:37', '2025-07-18 11:56:37'),
+(16, 21, 16, '2025-07-18 11:56:37', '2025-07-18 11:56:37'),
+(17, 21, 11, '2025-07-18 11:56:37', '2025-07-18 11:56:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_modules`
+--
+
+CREATE TABLE `package_modules` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `package_id` bigint(20) UNSIGNED NOT NULL,
+  `modules_id` bigint(20) UNSIGNED NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `package_modules`
+--
+
+INSERT INTO `package_modules` (`id`, `package_id`, `modules_id`, `created_at`, `updated_at`) VALUES
+(2, 20, 46, '2025-07-18 11:55:42', '2025-07-18 11:55:42'),
+(3, 20, 47, '2025-07-18 11:55:42', '2025-07-18 11:55:42'),
+(4, 21, 46, '2025-07-18 11:56:37', '2025-07-18 11:56:37');
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -815,7 +1028,16 @@ CREATE TABLE `payment_history` (
 --
 
 INSERT INTO `payment_history` (`payment_history_id`, `enrollment_id`, `user_id`, `student_id`, `program_id`, `package_id`, `amount`, `payment_status`, `payment_method`, `payment_notes`, `payment_date`, `processed_by_admin_id`, `created_at`, `updated_at`) VALUES
+<<<<<<< HEAD
 (21, 129, 150, '2025-07-00002', 33, 12, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-18 07:55:45', 1, '2025-07-18 07:55:45', '2025-07-18 07:55:45');
+=======
+(21, 132, NULL, '2025-07-00001', 33, 21, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-18 12:02:04', 1, '2025-07-18 12:02:04', '2025-07-18 12:02:04'),
+(22, 131, NULL, NULL, 33, 21, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-19 08:00:20', 1, '2025-07-19 08:00:20', '2025-07-19 08:00:20'),
+(23, 139, NULL, NULL, 33, 19, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-19 08:16:16', 1, '2025-07-19 08:16:16', '2025-07-19 08:16:16'),
+(24, 138, NULL, '2025-07-00004', 33, 19, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-19 08:17:21', 1, '2025-07-19 08:17:21', '2025-07-19 08:17:21'),
+(25, 137, NULL, NULL, 33, 19, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-19 09:19:24', 1, '2025-07-19 09:19:24', '2025-07-19 09:19:24'),
+(26, 145, 161, '2025-07-00008', 33, 19, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-19 13:05:04', 1, '2025-07-19 13:05:04', '2025-07-19 13:05:04');
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -931,6 +1153,17 @@ CREATE TABLE `professor_batch` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+<<<<<<< HEAD
+=======
+--
+-- Dumping data for table `professor_batch`
+--
+
+INSERT INTO `professor_batch` (`id`, `batch_id`, `professor_id`, `assigned_at`, `assigned_by`, `created_at`, `updated_at`) VALUES
+(1, 9, 8, NULL, NULL, '2025-07-20 11:32:15', '2025-07-20 11:32:15'),
+(2, 8, 8, NULL, NULL, '2025-07-20 11:39:04', '2025-07-20 11:39:04');
+
+>>>>>>> broken-enroll-upload
 -- --------------------------------------------------------
 
 --
@@ -978,10 +1211,18 @@ CREATE TABLE `programs` (
 --
 
 INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `director_id`, `created_at`, `updated_at`, `is_archived`, `program_description`) VALUES
+<<<<<<< HEAD
 (32, 'Engineer', 1, NULL, '2025-07-09 12:02:51', '2025-07-09 12:02:51', 0, NULL),
 (33, 'Culinary', 1, NULL, '2025-07-09 12:02:58', '2025-07-09 12:02:58', 0, NULL),
 (34, 'Nursing', 1, NULL, '2025-07-09 12:03:03', '2025-07-09 12:03:03', 0, NULL),
 (35, 'Mechanical Engineer', 1, NULL, '2025-07-16 06:48:28', '2025-07-16 06:48:28', 0, NULL);
+=======
+(32, 'Engineer', 1, NULL, '2025-07-09 12:02:51', '2025-07-19 07:55:58', 0, NULL),
+(33, 'Culinary', 1, NULL, '2025-07-09 12:02:58', '2025-07-19 12:36:48', 1, NULL),
+(34, 'Nursing', 1, NULL, '2025-07-09 12:03:03', '2025-07-09 12:03:03', 0, NULL),
+(35, 'Mechanical Engineer', 1, NULL, '2025-07-16 06:48:28', '2025-07-16 06:48:28', 0, NULL),
+(36, 'Civil Engineer', 1, NULL, '2025-07-19 12:37:12', '2025-07-19 12:37:12', 0, 'Civil');
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -1129,6 +1370,10 @@ CREATE TABLE `registrations` (
   `monthly_income` decimal(10,2) DEFAULT NULL,
   `school_name` varchar(255) DEFAULT NULL,
   `selected_modules` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`selected_modules`)),
+<<<<<<< HEAD
+=======
+  `selected_courses` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`selected_courses`)),
+>>>>>>> broken-enroll-upload
   `test_field_auto` varchar(255) DEFAULT NULL,
   `testering` varchar(255) DEFAULT NULL,
   `master` varchar(255) DEFAULT NULL,
@@ -1141,15 +1386,26 @@ CREATE TABLE `registrations` (
   `Test` varchar(255) DEFAULT NULL,
   `last_name` varchar(255) DEFAULT NULL,
   `referral_code` varchar(20) DEFAULT NULL,
+<<<<<<< HEAD
   `ama_namin` varchar(255) DEFAULT NULL
+=======
+  `school_id` varchar(255) DEFAULT NULL
+>>>>>>> broken-enroll-upload
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `registrations`
 --
 
+<<<<<<< HEAD
 INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `program_name`, `enrollment_type`, `learning_mode`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `dynamic_fields`, `photo_2x2`, `Start_Date`, `status`, `created_at`, `updated_at`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `education_level`, `sync_async_mode`, `Test`, `last_name`, `referral_code`, `ama_namin`) VALUES
 (132, 152, 12, 'level 1', NULL, NULL, 33, 'Culinary', 'Modular', 'synchronous', 'alex', NULL, 'butas', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"synchronous\\\",\\\"first_name\\\":\\\"alexsis\\\",\\\"last_name\\\":\\\"butas\\\",\\\"test\\\":null}\"', NULL, '2025-07-19', 'pending', '2025-07-18 11:19:59', '2025-07-18 11:19:59', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":\\\"48\\\",\\\"name\\\":\\\"Carbonara\\\",\\\"selected_courses\\\":[\\\"17\\\"]}]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, NULL, NULL);
+=======
+INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `program_name`, `enrollment_type`, `learning_mode`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `dynamic_fields`, `photo_2x2`, `Start_Date`, `status`, `created_at`, `updated_at`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `selected_courses`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `education_level`, `sync_async_mode`, `Test`, `last_name`, `referral_code`, `school_id`) VALUES
+(132, 153, 18, 'Package 1', NULL, NULL, 33, 'Culinary', 'Modular', 'asynchronous', '12345678', NULL, '12345678', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\",\\\"first_name\\\":\\\"12345678\\\",\\\"last_name\\\":\\\"12345678\\\",\\\"test\\\":\\\"12345678\\\"}\"', NULL, '2025-07-26', 'rejected', '2025-07-18 13:04:26', '2025-07-19 07:38:32', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":\\\"45\\\",\\\"name\\\":\\\"Modules 4\\\",\\\"selected_courses\\\":[]},{\\\"id\\\":\\\"44\\\",\\\"name\\\":\\\"Asignment\\\",\\\"selected_courses\\\":[]}]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Undergraduate', 'sync', NULL, NULL, NULL, NULL),
+(136, 157, 19, 'Package 2', NULL, NULL, 33, 'Culinary', 'Modular', 'synchronous', 'Modular_enrollment1@gmail.com', NULL, 'Modular_enrollment1@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"synchronous\\\",\\\"first_name\\\":\\\"Modular_enrollment1@gmail.com\\\",\\\"last_name\\\":\\\"Modular_enrollment1@gmail.com\\\",\\\"test\\\":\\\"Modular_enrollment1@gmail.com\\\"}\"', NULL, '2025-07-19', 'rejected', '2025-07-19 05:44:05', '2025-07-19 07:38:27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, NULL, NULL),
+(137, 158, 18, NULL, NULL, NULL, 33, NULL, 'Full', 'synchronous', 'Modular_enrollment1@gmail.com', NULL, 'Modular_enrollment1@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-08-02', 'rejected', '2025-07-19 09:33:53', '2025-07-19 13:00:39', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', '12345678', 'Dela Vega', NULL, NULL);
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -1166,6 +1422,7 @@ CREATE TABLE `registration_modules` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+<<<<<<< HEAD
 
 --
 -- Dumping data for table `registration_modules`
@@ -1174,6 +1431,8 @@ CREATE TABLE `registration_modules` (
 INSERT INTO `registration_modules` (`id`, `registration_id`, `module_id`, `subject_id`, `package_id`, `created_at`, `updated_at`) VALUES
 (2, 128, 46, NULL, NULL, '2025-07-18 07:15:20', '2025-07-18 07:15:20'),
 (3, 132, 48, NULL, NULL, '2025-07-18 11:20:00', '2025-07-18 11:20:00');
+=======
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -1257,17 +1516,30 @@ CREATE TABLE `students` (
   `test_auto_column_1752439854` varchar(255) DEFAULT NULL,
   `nyan` varchar(255) DEFAULT NULL,
   `Test` varchar(255) DEFAULT NULL,
+<<<<<<< HEAD
   `last_name` varchar(255) DEFAULT NULL
+=======
+  `last_name` varchar(255) DEFAULT NULL,
+  `school_id` varchar(255) DEFAULT NULL
+>>>>>>> broken-enroll-upload
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `students`
 --
 
+<<<<<<< HEAD
 INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `photo_2x2`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `is_archived`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `education_level`, `program_name`, `enrollment_type`, `learning_mode`, `Undergraduate`, `Graduate`, `dynamic_fields`, `status`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `referral_code`, `ama_namin`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `Test`, `last_name`) VALUES
 ('2025-07-00001', 148, '12345678', NULL, '12345678', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-18 15:14:10', '2025-07-18 07:14:10', '2025-07-18 07:14:10', 'vince03handsome@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '859997'),
 ('2025-07-00002', 150, 'neon', NULL, 'shetzu', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-18 15:53:39', '2025-07-18 07:53:39', '2025-07-18 07:53:39', 'neonshetzu0330@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'shetzu'),
 ('2025-07-00004', 151, 'bryan', NULL, 'justimbaste', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-18 16:09:49', '2025-07-18 08:09:49', '2025-07-18 08:12:06', 'bmjustimbaste2003@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'justimbaste');
+=======
+INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `photo_2x2`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `is_archived`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `education_level`, `program_name`, `enrollment_type`, `learning_mode`, `Undergraduate`, `Graduate`, `dynamic_fields`, `status`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `referral_code`, `ama_namin`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `Test`, `last_name`, `school_id`) VALUES
+('2025-07-00005', 159, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-19 17:56:41', '2025-07-19 09:56:41', '2025-07-19 09:56:41', 'vince03handsome11@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Dela Vega', NULL),
+('2025-07-00006', 160, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-19 18:42:06', '2025-07-19 10:42:06', '2025-07-19 10:42:06', 'vince03handsome@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Dela Vega', NULL),
+('2025-07-00007', 162, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-19 20:13:47', '2025-07-19 12:13:47', '2025-07-19 12:13:47', 'vmdelavega03@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Dela Vega', NULL),
+('2025-07-00008', 161, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-21', '2025-07-19 13:00:16', '2025-07-19 13:00:16', '2025-07-19 13:00:16', 'vince03handsome1q1@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -1297,8 +1569,14 @@ CREATE TABLE `student_batches` (
 --
 
 INSERT INTO `student_batches` (`batch_id`, `batch_name`, `program_id`, `professor_id`, `max_capacity`, `current_capacity`, `batch_status`, `registration_deadline`, `start_date`, `end_date`, `description`, `created_by`, `created_at`, `updated_at`) VALUES
+<<<<<<< HEAD
 (7, 'Batch 1', 33, 8, 10, 1, 'ongoing', '2025-08-15', '2025-07-15', NULL, 'yes', NULL, '2025-07-09 12:12:00', '2025-07-18 08:14:43'),
 (8, 'Batch 1', 32, 8, 10, 0, 'available', '2025-07-15', '2025-07-29', NULL, NULL, NULL, '2025-07-11 01:49:36', '2025-07-11 01:49:36');
+=======
+(7, 'Batch 1', 33, 8, 10, 3, 'ongoing', '2025-08-15', '2025-07-15', NULL, 'yes', NULL, '2025-07-09 12:12:00', '2025-07-20 11:39:23'),
+(8, 'Batch 1', 32, 8, 10, 0, 'available', '2025-07-15', '2025-07-29', NULL, NULL, NULL, '2025-07-11 01:49:36', '2025-07-20 11:39:17'),
+(9, 'Batch Mech 1', 35, NULL, 10, 0, 'available', '2025-07-16', '2025-07-23', '2025-07-31', NULL, NULL, '2025-07-20 10:32:30', '2025-07-20 10:32:30');
+>>>>>>> broken-enroll-upload
 
 -- --------------------------------------------------------
 
@@ -1409,12 +1687,19 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `admin_id`, `directors_id`, `is_online`, `last_seen`, `email`, `user_firstname`, `user_lastname`, `password`, `role`, `enrollment_id`, `created_at`, `updated_at`) VALUES
+<<<<<<< HEAD
 (147, 1, 0, 0, NULL, 'vince03handsome11@gmail.com', '12345678', '12345678', '$2y$10$TIb5NO1N2sURwy.bwGAdwOg.0onwYgZ6biQy9a1cgZos9D9.nIgb.', 'student', 126, '2025-07-18 06:58:51', '2025-07-18 06:58:51'),
 (148, 1, 1, 0, NULL, 'vince03handsome@gmail.com', '12345678', '12345678', '$2y$10$e0oftyPmLi0bGfvA8WA6MuOx98DQCGIhKP0zhnoqB9ga/iaFg0vs6', 'student', NULL, '2025-07-18 07:14:10', '2025-07-18 07:14:10'),
 (149, 1, 0, 0, NULL, '859997a@gmail.com', '859997', '859997', '$2y$10$iG4FNOqz3mOhk5Za2CYZZeLQyFmIv8Rvm1RTgEqrorVhXKwRz.50G', 'student', 128, '2025-07-18 07:15:20', '2025-07-18 07:15:20'),
 (150, 1, 1, 0, NULL, 'neonshetzu0330@gmail.com', 'neon', 'shetzu', '$2y$10$OmGR8Geo5n4amVMfGkfDrO28PAKI5NVbAJdQqbJOrlhZFTXWbjQxS', 'student', NULL, '2025-07-18 07:53:39', '2025-07-18 07:53:39'),
 (151, NULL, NULL, 0, NULL, 'bmjustimbaste2003@gmail.com', 'bryan', 'justimbaste', '$2y$10$pW7AnpwIbkr8FfRXrDzheucn6AyEuhn4z5SwVtRorIja2sZ186SOK', 'student', NULL, '2025-07-18 08:05:16', '2025-07-18 08:05:16'),
 (152, 1, NULL, 0, NULL, 'alexsis@gmail.com', 'alex', 'butas', '$2y$10$ggCrHOgmOMAyQoThwHhkRen40GgL3QScLvVZ.YmVVG951MU9Jj27K', 'student', 133, '2025-07-18 11:19:59', '2025-07-18 11:19:59');
+=======
+(159, 1, 1, 0, NULL, 'vince03handsome11@gmail.com', 'Vince', 'Dela Vega', '$2y$10$/9Sq2sFRghI7TEmsaVnoyOXL/zYcj9P.6MMXiUUDHyEsvArw/b5hK', 'student', NULL, '2025-07-19 09:56:41', '2025-07-19 09:56:41'),
+(160, 1, 1, 0, NULL, 'vince03handsome@gmail.com', 'Vince', 'Dela Vega', '$2y$10$Du8QNUf642.PP6Vwy4ZYc.6sMuQpPuWFeST2/huKvMGwLozeCsEJa', 'student', NULL, '2025-07-19 10:42:05', '2025-07-19 10:42:05'),
+(161, 1, NULL, 0, NULL, 'vince03handsome1q1@gmail.com', 'Vince', 'Dela Vega', '$2y$10$bLLmOygKuFFLx7EXcQ4hkuxr2D07gxBIRkIAxt76dlfkKigSZI4RO', 'student', 145, '2025-07-19 12:09:56', '2025-07-19 12:27:22'),
+(162, 1, 1, 0, NULL, 'vmdelavega03@gmail.com', 'Vince', 'Dela Vega', '$2y$10$EA6wkRVO60WXsA5dcS6wae0XbY4ntv2PpXjMnOLbQ9Bwyf6Qxslh2', 'student', NULL, '2025-07-19 12:13:47', '2025-07-19 12:13:47');
+>>>>>>> broken-enroll-upload
 
 --
 -- Indexes for dumped tables
@@ -1466,6 +1751,15 @@ ALTER TABLE `attendance`
   ADD UNIQUE KEY `unique_attendance` (`student_id`,`program_id`,`attendance_date`);
 
 --
+<<<<<<< HEAD
+=======
+-- Indexes for table `batch_professors`
+--
+ALTER TABLE `batch_professors`
+  ADD PRIMARY KEY (`id`);
+
+--
+>>>>>>> broken-enroll-upload
 -- Indexes for table `chats`
 --
 ALTER TABLE `chats`
@@ -1565,6 +1859,15 @@ ALTER TABLE `form_requirements`
   ADD PRIMARY KEY (`id`);
 
 --
+<<<<<<< HEAD
+=======
+-- Indexes for table `lessons`
+--
+ALTER TABLE `lessons`
+  ADD PRIMARY KEY (`lesson_id`);
+
+--
+>>>>>>> broken-enroll-upload
 -- Indexes for table `meeting_attendance_logs`
 --
 ALTER TABLE `meeting_attendance_logs`
@@ -1607,6 +1910,24 @@ ALTER TABLE `module_completions`
 ALTER TABLE `packages`
   ADD PRIMARY KEY (`package_id`),
   ADD KEY `created_by_admin_id` (`created_by_admin_id`);
+
+--
+-- Indexes for table `package_courses`
+--
+ALTER TABLE `package_courses`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `package_courses_package_id_course_id_unique` (`package_id`,`course_id`),
+  ADD KEY `package_courses_package_id_index` (`package_id`),
+  ADD KEY `package_courses_course_id_index` (`course_id`);
+
+--
+-- Indexes for table `package_modules`
+--
+ALTER TABLE `package_modules`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `package_modules_package_id_modules_id_unique` (`package_id`,`modules_id`),
+  ADD KEY `package_modules_package_id_index` (`package_id`),
+  ADD KEY `package_modules_modules_id_index` (`modules_id`);
 
 --
 -- Indexes for table `password_resets`
@@ -1715,6 +2036,7 @@ ALTER TABLE `referrals`
 ALTER TABLE `registrations`
   ADD PRIMARY KEY (`registration_id`),
   ADD KEY `user_id` (`user_id`);
+<<<<<<< HEAD
 
 --
 -- Indexes for table `registration_modules`
@@ -1725,6 +2047,8 @@ ALTER TABLE `registration_modules`
   ADD KEY `registration_modules_module_id_foreign` (`module_id`),
   ADD KEY `registration_modules_subject_id_foreign` (`subject_id`),
   ADD KEY `registration_modules_package_id_foreign` (`package_id`);
+=======
+>>>>>>> broken-enroll-upload
 
 --
 -- Indexes for table `students`
@@ -1798,6 +2122,15 @@ ALTER TABLE `assignment_submissions`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+<<<<<<< HEAD
+=======
+-- AUTO_INCREMENT for table `batch_professors`
+--
+ALTER TABLE `batch_professors`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+>>>>>>> broken-enroll-upload
 -- AUTO_INCREMENT for table `chats`
 --
 ALTER TABLE `chats`
@@ -1849,7 +2182,11 @@ ALTER TABLE `education_levels`
 -- AUTO_INCREMENT for table `enrollments`
 --
 ALTER TABLE `enrollments`
+<<<<<<< HEAD
   MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
+=======
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `enrollment_courses`
@@ -1867,7 +2204,17 @@ ALTER TABLE `failed_jobs`
 -- AUTO_INCREMENT for table `form_requirements`
 --
 ALTER TABLE `form_requirements`
+<<<<<<< HEAD
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+=======
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT for table `lessons`
+--
+ALTER TABLE `lessons`
+  MODIFY `lesson_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `meeting_attendance_logs`
@@ -1885,7 +2232,11 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
+<<<<<<< HEAD
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+=======
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `modules`
@@ -1903,7 +2254,23 @@ ALTER TABLE `module_completions`
 -- AUTO_INCREMENT for table `packages`
 --
 ALTER TABLE `packages`
+<<<<<<< HEAD
   MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+=======
+  MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT for table `package_courses`
+--
+ALTER TABLE `package_courses`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `package_modules`
+--
+ALTER TABLE `package_modules`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `payments`
@@ -1915,7 +2282,11 @@ ALTER TABLE `payments`
 -- AUTO_INCREMENT for table `payment_history`
 --
 ALTER TABLE `payment_history`
+<<<<<<< HEAD
   MODIFY `payment_history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+=======
+  MODIFY `payment_history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `payment_methods`
@@ -1945,7 +2316,11 @@ ALTER TABLE `professors`
 -- AUTO_INCREMENT for table `professor_batch`
 --
 ALTER TABLE `professor_batch`
+<<<<<<< HEAD
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+=======
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `professor_program`
@@ -1957,7 +2332,11 @@ ALTER TABLE `professor_program`
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
+<<<<<<< HEAD
   MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+=======
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `quizzes`
@@ -1981,6 +2360,7 @@ ALTER TABLE `referrals`
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
+<<<<<<< HEAD
   MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=133;
 
 --
@@ -1988,12 +2368,19 @@ ALTER TABLE `registrations`
 --
 ALTER TABLE `registration_modules`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+=======
+  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=143;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `student_batches`
 --
 ALTER TABLE `student_batches`
+<<<<<<< HEAD
   MODIFY `batch_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+=======
+  MODIFY `batch_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+>>>>>>> broken-enroll-upload
 
 --
 -- AUTO_INCREMENT for table `ui_settings`
@@ -2005,7 +2392,11 @@ ALTER TABLE `ui_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
+<<<<<<< HEAD
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
+=======
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=163;
+>>>>>>> broken-enroll-upload
 
 --
 -- Constraints for dumped tables
@@ -2020,12 +2411,15 @@ ALTER TABLE `class_meetings`
   ADD CONSTRAINT `class_meetings_professor_id_foreign` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`professor_id`) ON DELETE CASCADE;
 
 --
+<<<<<<< HEAD
 -- Constraints for table `content_items`
 --
 ALTER TABLE `content_items`
   ADD CONSTRAINT `content_items_course_id_foreign` FOREIGN KEY (`course_id`) REFERENCES `courses` (`subject_id`) ON DELETE CASCADE;
 
 --
+=======
+>>>>>>> broken-enroll-upload
 -- Constraints for table `directors`
 --
 ALTER TABLE `directors`
@@ -2045,12 +2439,34 @@ ALTER TABLE `enrollments`
   ADD CONSTRAINT `enrollments_batch_id_foreign` FOREIGN KEY (`batch_id`) REFERENCES `student_batches` (`batch_id`) ON DELETE SET NULL;
 
 --
+<<<<<<< HEAD
+=======
+-- Constraints for table `payment_history`
+--
+ALTER TABLE `payment_history`
+  ADD CONSTRAINT `payment_history_ibfk_1` FOREIGN KEY (`enrollment_id`) REFERENCES `enrollments` (`enrollment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `payment_history_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `payment_history_ibfk_3` FOREIGN KEY (`processed_by_admin_id`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL;
+
+--
+>>>>>>> broken-enroll-upload
 -- Constraints for table `professor_batch`
 --
 ALTER TABLE `professor_batch`
   ADD CONSTRAINT `professor_batch_assigned_by_foreign` FOREIGN KEY (`assigned_by`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `professor_batch_batch_id_foreign` FOREIGN KEY (`batch_id`) REFERENCES `student_batches` (`batch_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `professor_batch_professor_id_foreign` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`professor_id`) ON DELETE CASCADE;
+<<<<<<< HEAD
+=======
+
+--
+-- Constraints for table `student_batches`
+--
+ALTER TABLE `student_batches`
+  ADD CONSTRAINT `student_batches_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `student_batches_professor_id_foreign` FOREIGN KEY (`professor_id`) REFERENCES `professors` (`professor_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `student_batches_program_id_foreign` FOREIGN KEY (`program_id`) REFERENCES `programs` (`program_id`) ON DELETE CASCADE;
+>>>>>>> broken-enroll-upload
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

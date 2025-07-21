@@ -153,10 +153,12 @@
                                     <td>{{ $batch->batch_name }}</td>
                                     <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
                                     <td>
-                                        @if($batch->assignedProfessor)
-                                            <span class="badge bg-success me-1">
-                                                {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
-                                            </span>
+                                        @if($batch->professors && $batch->professors->count() > 0)
+                                            @foreach($batch->professors as $professor)
+                                                <span class="badge bg-success me-1">
+                                                    {{ $professor->professor_name }}
+                                                </span>
+                                            @endforeach
                                         @else
                                             <span class="badge bg-secondary">Unassigned</span>
                                         @endif
@@ -280,13 +282,13 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="professor_id" class="form-label">Assigned Professor (Optional)</label>
-                        <select class="form-control" id="professor_id" name="professor_id">
-                            <option value="">Select a professor</option>
+                        <label for="professor_ids" class="form-label">Assigned Professor(s) (Optional)</label>
+                        <select class="form-control" id="professor_ids" name="professor_ids[]" multiple>
                             @foreach($professors as $professor)
                                 <option value="{{ $professor->professor_id }}">{{ $professor->professor_name }}</option>
                             @endforeach
                         </select>
+                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
                     </div>
                     <div class="mb-3">
                         <label for="max_capacity" class="form-label">Maximum Capacity</label>
@@ -317,8 +319,8 @@
                         <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <label for="batch_description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="batch_description" name="batch_description" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -359,15 +361,15 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_professor_id{{ $batch->batch_id }}" class="form-label">Assigned Professor (Optional)</label>
-                        <select class="form-control" id="edit_professor_id{{ $batch->batch_id }}" name="professor_id">
-                            <option value="">Select a professor</option>
+                        <label for="edit_professor_ids{{ $batch->batch_id }}" class="form-label">Assigned Professor(s) (Optional)</label>
+                        <select class="form-control" id="edit_professor_ids{{ $batch->batch_id }}" name="professor_ids[]" multiple>
                             @foreach($professors as $professor)
-                                <option value="{{ $professor->professor_id }}" {{ $batch->professor_id == $professor->professor_id ? 'selected' : '' }}>
+                                <option value="{{ $professor->professor_id }}" {{ in_array($professor->professor_id, $batch->professors->pluck('professor_id')->toArray()) ? 'selected' : '' }}>
                                     {{ $professor->professor_name }}
                                 </option>
                             @endforeach
                         </select>
+                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_max_capacity{{ $batch->batch_id }}" class="form-label">Maximum Capacity</label>
@@ -399,8 +401,8 @@
                         <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_description{{ $batch->batch_id }}" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="edit_description{{ $batch->batch_id }}" name="description" rows="3">{{ $batch->description }}</textarea>
+                        <label for="edit_batch_description{{ $batch->batch_id }}" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="edit_batch_description{{ $batch->batch_id }}" name="batch_description" rows="3">{{ $batch->description }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -861,13 +863,34 @@ function updateBatch(event, batchId) {
     const form = document.getElementById(`editBatchForm${batchId}`);
     const formData = new FormData(form);
     
-    fetch(`{{ url('admin/batches') }}/${batchId}`, {
+    // Convert FormData to object, handling multi-select fields properly
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (key.endsWith('[]')) {
+            // Handle array fields (like professor_ids[])
+            const arrayKey = key.slice(0, -2); // Remove '[]' suffix
+            if (!data[arrayKey]) {
+                data[arrayKey] = [];
+            }
+            data[arrayKey].push(value);
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Check for required fields
+    if (!data.registration_deadline) {
+        alert('Registration deadline is required');
+        return;
+    }
+    
+    fetch(`{{ url('admin/batches') }}/${batchId}/update`, {
         method: 'PUT',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(Object.fromEntries(formData))
+        body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {

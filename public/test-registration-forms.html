@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Registration Forms</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .test-link {
+            display: block;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.3s;
+        }
+        .test-link:hover {
+            background: #e9ecef;
+            color: #212529;
+            text-decoration: none;
+        }
+        .feature-list {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .feature-list h5 {
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+        .feature-list ul {
+            margin-bottom: 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="text-center mb-4">Registration Forms Testing</h1>
+        
+        <div class="feature-list">
+            <h5>🔧 Recent Fixes Applied:</h5>
+            <ul>
+                <li>✅ Added new first step asking if user has existing account</li>
+                <li>✅ Redirect to login page if user has existing account</li>
+                <li>✅ Fixed data copying issues between steps</li>
+                <li>✅ Added missing asterisk (*) to program fields</li>
+                <li>✅ Updated step navigation and validation functions</li>
+                <li>✅ Maintained file upload and saving functionality</li>
+            </ul>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <a href="/enrollment/full" class="test-link">
+                    <h4>🎓 Full Enrollment Form</h4>
+                    <p class="mb-2">Complete program enrollment with all courses</p>
+                    <small class="text-muted">Tests: Account check step → Package selection → Learning mode → Registration → Final form</small>
+                </a>
+            </div>
+            
+            <div class="col-md-6">
+                <a href="/enrollment/modular" class="test-link">
+                    <h4>📚 Modular Enrollment Form</h4>
+                    <p class="mb-2">Selective module/course enrollment</p>
+                    <small class="text-muted">Tests: Account check → Package → Program* → Modules → Learning mode → Registration → Final form</small>
+                </a>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+            <h5>🧪 Testing Instructions:</h5>
+            <ol>
+                <li><strong>Step 1 Test:</strong> Check if "Do you have an existing account?" step appears first</li>
+                <li><strong>Account Option:</strong> Test "Yes" button redirects to login page</li>
+                <li><strong>Account Option:</strong> Test "No" button continues to package selection</li>
+                <li><strong>Data Flow:</strong> Fill forms and verify data carries between steps</li>
+                <li><strong>Required Fields:</strong> Check program fields show asterisk (*)</li>
+                <li><strong>File Upload:</strong> Test document upload and path saving</li>
+                <li><strong>Validation:</strong> Verify all step validations work correctly</li>
+            </ol>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-secondary">← Back to Home</a>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -171,6 +171,13 @@
                                 <span>Dashboard</span>
                             </a>
                         </div>
+                        <!-- Certificate Management -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.certificates') }}" class="nav-link @if(Route::currentRouteName() === 'admin.certificates') active @endif">
+                                <i class="bi bi-award"></i>
+                                <span>Certificate Management</span>
+                            </a>
+                        </div>
 
                         <!-- Registration Management -->
                         <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) active @endif">
