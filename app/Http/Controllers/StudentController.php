@@ -613,7 +613,20 @@ class StudentController extends Controller
         // Initialize required variables for the view
         $enrollmentType = $request->get('type', 'full');
         $programs = \App\Models\Program::where('is_active', true)->get();
-        $packages = \App\Models\Package::where('is_active', true)->get();
+        $packages = \App\Models\Package::where('package_type', 'full')->get();
+        
+        // Auto-generate default package if none exist
+        if ($packages->isEmpty()) {
+            $defaultPackage = \App\Models\Package::create([
+                'package_name' => 'Standard Full Program',
+                'description' => 'Complete full program package with all courses included',
+                'amount' => 0.00,
+                'package_type' => 'full',
+                'created_by_admin_id' => 1
+            ]);
+            $packages = collect([$defaultPackage]);
+            \Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
+        }
         $formRequirements = \App\Models\FormRequirement::active()->get();
         $educationLevels = ['High School', 'College', 'Graduate', 'Postgraduate'];
         

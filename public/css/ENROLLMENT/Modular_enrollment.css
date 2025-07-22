@@ -909,3 +909,20 @@
   padding: .5rem 1.25rem;
 }
 
+
+.stepper .step.completed .label {
+    color: rgb(40, 167, 69)!important;
+    font-weight: bold;
+}
+
+.stepper .step.active .label {
+    color: rgb(102, 126, 234)!important;
+    font-weight: bold;
+     margin-top: 1rem;  
+}
+
+.stepper .step .label {
+    /* bump this up to whatever looks good */
+    margin-top: 1.1rem;   
+    transition: margin-top 0.3s ease;
+  }

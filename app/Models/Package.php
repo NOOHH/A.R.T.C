@@ -20,16 +20,9 @@ class Package extends Model
         'program_id',
         'created_by_admin_id',
         'package_type',
-        'selection_type',
-        'selection_mode',
         'module_count',
-        'course_count',
-        'min_courses',
-        'max_courses',
         'price',
-        'status',
         'allowed_modules',
-        'allowed_courses',
         'extra_module_price',
     ];
 
