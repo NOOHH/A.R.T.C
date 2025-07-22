@@ -1814,4 +1814,31 @@ class AdminSettingsController extends Controller
             ], 500);
         }
     }
+
+    public function updateTermsConditions(Request $request)
+    {
+        try {
+            $request->validate([
+                'full_enrollment_terms' => 'required|string',
+                'modular_enrollment_terms' => 'required|string',
+                'require_terms_acceptance' => 'nullable|boolean'
+            ]);
+
+            // Save terms using AdminSetting model
+            AdminSetting::setValue('full_enrollment_terms', $request->input('full_enrollment_terms'));
+            AdminSetting::setValue('modular_enrollment_terms', $request->input('modular_enrollment_terms'));
+            AdminSetting::setValue('require_terms_acceptance', $request->has('require_terms_acceptance') ? '1' : '0');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Terms and conditions updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating terms and conditions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update terms and conditions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

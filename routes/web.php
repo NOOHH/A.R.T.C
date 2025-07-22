@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -967,6 +967,10 @@ Route::post('/admin/settings/login', [AdminSettingsController::class, 'updateLog
 // Update payment terms settings
 Route::post('/admin/settings/payment-terms', [AdminSettingsController::class, 'updatePaymentTerms'])
      ->name('admin.settings.update.payment.terms');
+
+// Update enrollment terms and conditions
+Route::post('/admin/settings/terms-conditions', [AdminSettingsController::class, 'updateTermsConditions'])
+     ->name('admin.settings.update.terms.conditions');
 
 // Global Logo routes
 Route::post('/admin/settings/global-logo', [AdminSettingsController::class, 'updateGlobalLogo'])

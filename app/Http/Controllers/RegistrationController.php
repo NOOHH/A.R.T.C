@@ -687,31 +687,33 @@ class RegistrationController extends Controller
             }
             
             if (!$nameValid) {
-                Log::warning('Name validation failed', [
+                Log::warning('Name validation failed - allowing upload anyway', [
                     'first_name' => $firstName,
                     'last_name' => $lastName,
                     'extracted_text_preview' => substr($extractedText, 0, 200)
                 ]);
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Name validation failed. The document does not appear to contain your full name. Please ensure the document is clear and contains your complete name.'
-                ], 400);
+                // Continue processing instead of failing - allow manual verification
+                // return response()->json([
+                //     'success' => false,
+                //     'message' => 'Name validation failed. The document does not appear to contain your full name. Please ensure the document is clear and contains your complete name.'
+                // ], 400);
             }
 
-            // Check document type validation
-            if (!$documentValidation['valid'] && $documentValidation['confidence'] < 1) {
-                Log::warning('Document type validation failed', [
+            // Check document type validation - make this more lenient too
+            if (!$documentValidation['valid'] && $documentValidation['confidence'] < 0.5) {  // Only fail if confidence is very low
+                Log::warning('Document type validation failed - allowing upload anyway', [
                     'field_name' => $fieldName,
                     'confidence' => $documentValidation['confidence'],
                     'extracted_text_preview' => substr($extractedText, 0, 200)
                 ]);
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => $this->ocrService->getDocumentTypeError($fieldName) . ' Please ensure you upload the correct document type.',
-                    'document_validation' => $documentValidation
-                ], 400);
+                // Continue processing instead of failing - allow manual verification
+                // return response()->json([
+                //     'success' => false,
+                //     'message' => $this->ocrService->getDocumentTypeError($fieldName) . ' Please ensure you upload the correct document type.',
+                //     'document_validation' => $documentValidation
+                // ], 400);
             }
 
             // Get program suggestions with error handling

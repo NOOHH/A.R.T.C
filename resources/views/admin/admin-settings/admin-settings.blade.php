@@ -229,6 +229,106 @@
                     {{-- Register Tab --}}
                     <div class="tab-pane fade" id="register" role="tabpanel">
                         <div class="row g-4">
+                            {{-- Terms and Conditions Configuration --}}
+                            <div class="col-md-12 mb-4">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-file-contract me-2"></i>Terms and Conditions Configuration
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted mb-4">Configure the terms and conditions text that appears in enrollment forms. You can set different texts for Full Enrollment and Modular Enrollment.</p>
+                                        
+                                        <form id="termsAndConditionsForm">
+                                            @csrf
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="fullEnrollmentTerms" class="form-label">
+                                                            <strong>Full Enrollment Terms & Conditions</strong>
+                                                        </label>
+                                                        <textarea class="form-control" id="fullEnrollmentTerms" name="full_enrollment_terms" rows="12" 
+                                                                  placeholder="Enter terms and conditions for full enrollment...">{{ \App\Models\AdminSetting::getValue('full_enrollment_terms', 'Terms and Conditions for Full Enrollment:
+
+1. Enrollment Agreement
+By enrolling in this full program, you agree to follow all institutional policies and procedures.
+
+2. Payment Terms
+All fees must be paid according to the schedule provided. Late payments may result in suspension of access to course materials.
+
+3. Academic Integrity
+Students are expected to maintain the highest standards of academic honesty and integrity.
+
+4. Program Completion
+Students must complete all required modules and assessments to receive certification.
+
+5. Refund Policy
+Refunds are available according to the institutional refund policy. Please contact administration for details.
+
+6. Data Privacy
+Your personal information will be handled according to our privacy policy and applicable data protection laws.
+
+7. Program Duration
+The program duration is as specified in your enrollment agreement. Extensions may be available upon request.
+
+By proceeding with enrollment, you acknowledge that you have read, understood, and agree to these terms and conditions.') }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="modularEnrollmentTerms" class="form-label">
+                                                            <strong>Modular Enrollment Terms & Conditions</strong>
+                                                        </label>
+                                                        <textarea class="form-control" id="modularEnrollmentTerms" name="modular_enrollment_terms" rows="12" 
+                                                                  placeholder="Enter terms and conditions for modular enrollment...">{{ \App\Models\AdminSetting::getValue('modular_enrollment_terms', 'Terms and Conditions for Modular Enrollment:
+
+1. Module-Based Learning
+You are enrolling in selected modules of our program. Each module is a standalone unit with its own requirements.
+
+2. Flexible Schedule
+Modular enrollment allows you to complete modules at your own pace within the specified timeframes.
+
+3. Payment Terms
+Payment is required per module or package selected. Payment plans may be available for multiple modules.
+
+4. Module Completion
+You must complete all activities and assessments within each enrolled module to receive certification.
+
+5. Prerequisites
+Some modules may have prerequisites. Please ensure you meet all requirements before enrolling.
+
+6. Module Access
+Access to module materials is granted upon payment confirmation and remains active for the duration specified.
+
+7. Certification
+Certificates are awarded upon successful completion of each module. Full program certification requires completion of all core modules.
+
+8. Refund Policy
+Module-specific refund policies apply. Please review the refund terms for each module before enrollment.
+
+By proceeding with modular enrollment, you acknowledge that you have read, understood, and agree to these terms and conditions.') }}</textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="requireTermsAcceptance" name="require_terms_acceptance" 
+                                                           {{ \App\Models\AdminSetting::getValue('require_terms_acceptance', '1') === '1' ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="requireTermsAcceptance">
+                                                        <strong>Require students to accept terms before enrollment</strong>
+                                                    </label>
+                                                </div>
+                                                <button type="submit" class="btn btn-info">
+                                                    <i class="fas fa-save me-2"></i>Save Terms & Conditions
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             {{-- Registration Form Fields --}}
                             <div class="col-md-16">
                                 <div class="card h-100 shadow-sm">
@@ -4350,6 +4450,77 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('#sidebarCustomizationForm input[type="color"], #sidebarFooterCustomizationForm input[type="color"]').forEach(input => {
         input.addEventListener('change', applySidebarColors);
     });
+});
+
+// Terms and Conditions Form Handler
+document.addEventListener('DOMContentLoaded', function() {
+    const termsForm = document.getElementById('termsAndConditionsForm');
+    if (termsForm) {
+        termsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            
+            fetch('/admin/settings/terms-conditions', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success alert
+                    showAlert('success', 'Terms and conditions updated successfully!');
+                } else {
+                    showAlert('danger', 'Failed to update terms and conditions: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Network error occurred while saving terms and conditions.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+    
+    function showAlert(type, message) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert.terms-alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show terms-alert`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Insert before the form
+        const termsCard = document.querySelector('#termsAndConditionsForm').closest('.card');
+        termsCard.parentNode.insertBefore(alertDiv, termsCard);
+        
+        // Auto-hide success alerts after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    }
 });
 </script>
 @endpush

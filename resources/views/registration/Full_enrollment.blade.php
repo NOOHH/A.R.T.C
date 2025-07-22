@@ -2462,10 +2462,30 @@
         <div class="modal-content" style="max-width: 600px;">
             <h3>Terms and Conditions</h3>
             <div style="max-height: 320px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem;">
-                <p>
-                    By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.
-                </p>
-                <!-- Add more actual terms here if you want -->
+                {!! nl2br(e(\App\Models\AdminSetting::getValue('full_enrollment_terms', 'Terms and Conditions for Full Enrollment:
+
+1. Enrollment Agreement
+By enrolling in this full program, you agree to follow all institutional policies and procedures.
+
+2. Payment Terms
+All fees must be paid according to the schedule provided. Late payments may result in suspension of access to course materials.
+
+3. Academic Integrity
+Students are expected to maintain the highest standards of academic honesty and integrity.
+
+4. Program Completion
+Students must complete all required modules and assessments to receive certification.
+
+5. Refund Policy
+Refunds are available according to the institutional refund policy. Please contact administration for details.
+
+6. Data Privacy
+Your personal information will be handled according to our privacy policy and applicable data protection laws.
+
+7. Program Duration
+The program duration is as specified in your enrollment agreement. Extensions may be available upon request.
+
+By proceeding with enrollment, you acknowledge that you have read, understood, and agree to these terms and conditions.'))) !!}
             </div>
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button onclick="acceptTerms()" class="btn btn-primary">Accept</button>
