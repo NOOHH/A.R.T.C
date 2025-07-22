@@ -2848,6 +2848,18 @@
     
     const form = event.target;
     
+    // DUPLICATE PREVENTION: Disable submit button to prevent multiple submissions
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton && submitButton.disabled) {
+        console.warn('⚠️ Form submission blocked - already submitted');
+        event.preventDefault();
+        return false;
+    }
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+    }
+    
     // Enhanced debugging
     console.log('Form action:', form.action);
     console.log('Form method:', form.method);

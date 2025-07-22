@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -261,6 +261,22 @@ Route::get('/enrollment/modular', function () {
     $packages = Package::with('program')
         ->where('package_type', 'modular')
         ->get();
+    
+    // Auto-generate default modular package if none exist
+    if ($packages->isEmpty()) {
+        $defaultPackage = Package::create([
+            'package_name' => 'Standard Modular Package',
+            'description' => 'Flexible modular package allowing course-by-course enrollment',
+            'amount' => 0.00,
+            'package_type' => 'modular',
+            'selection_type' => 'module',
+            'selection_mode' => 'modules',
+            'is_active' => true,
+            'status' => 'active'
+        ]);
+        $packages = collect([$defaultPackage]);
+        \Log::info('Auto-generated default modular package', ['package_id' => $defaultPackage->package_id]);
+    }
     
     $programId = request('program_id');
     

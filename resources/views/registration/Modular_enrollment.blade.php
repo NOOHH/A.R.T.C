@@ -2234,6 +2234,17 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function(e) {
             e.preventDefault(); // Prevent default submission
             
+            // DUPLICATE PREVENTION: Check if form is already being submitted
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton && submitButton.disabled) {
+                console.warn('⚠️ Form submission blocked - already submitted');
+                return;
+            }
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
+            }
+            
             // Copy all stepper data to the form
             copyStepperDataToFinalForm();
             
@@ -2262,8 +2273,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     if (field === 'package_id') {
                         const packageId = parseInt(input.value);
-                        if (isNaN(packageId) || ![18, 19, 20, 21].includes(packageId)) {
-                            invalidFields.push(`package_id (${input.value}) - should be 18, 19, 20, or 21`);
+                        if (isNaN(packageId) || packageId <= 0) {
+                            invalidFields.push(`package_id (${input.value}) is invalid - must be a positive integer`);
                         }
                     }
                 }
@@ -2272,12 +2283,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (missingFields.length > 0) {
                 alert('❌ Missing required fields: ' + missingFields.join(', '));
                 console.error('Missing required fields:', missingFields);
+                // Re-enable submit button on error
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Registration';
+                }
                 return;
             }
             
             if (invalidFields.length > 0) {
                 alert('❌ Invalid database IDs: ' + invalidFields.join(', '));
                 console.error('Invalid database IDs:', invalidFields);
+                // Re-enable submit button on error
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Registration';
+                }
                 return;
             }
             
@@ -2392,11 +2413,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     alert(errorMessage);
                     console.error('Registration failed:', data);
+                    // Re-enable submit button on error
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Complete Registration';
+                    }
                 }
             })
             .catch(error => {
                 console.error('Form submission error:', error);
                 alert('Form submission failed. Please check your connection and try again.');
+                // Re-enable submit button on error
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Registration';
+                }
             });
         });
     }
@@ -2540,6 +2571,7 @@ function toggleEducationLevelRequirements() {
                                id="${fieldName}" 
                                name="${fieldName}" 
                                accept="${acceptTypes}"
+                               onchange="handleFileUpload(this)"
                                ${isRequired ? 'required' : ''}>
                         ${requirement.description ? `<div class="form-text">${requirement.description}</div>` : ''}
                     `;

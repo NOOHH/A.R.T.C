@@ -221,6 +221,33 @@ class StudentRegistrationController extends Controller
 
             DB::beginTransaction();
 
+            // DUPLICATE PREVENTION: Check for recent registration with same data
+            $duplicateCheck = Registration::where('email', $request->email ?? $request->user_email)
+                ->where('program_id', $request->program_id)
+                ->where('package_id', $request->package_id)
+                ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                ->first();
+                
+            if ($duplicateCheck) {
+                DB::rollBack();
+                Log::warning('Duplicate registration attempt prevented', [
+                    'email' => $request->email ?? $request->user_email,
+                    'program_id' => $request->program_id,
+                    'package_id' => $request->package_id,
+                    'recent_registration_id' => $duplicateCheck->registration_id
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration already completed successfully!',
+                    'redirect' => '/registration/success',
+                    'data' => [
+                        'registration_id' => $duplicateCheck->registration_id,
+                        'user_id' => $duplicateCheck->user_id
+                    ]
+                ]);
+            }
+
             // Create or get user
             $user = null;
             
@@ -978,6 +1005,35 @@ class StudentRegistrationController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            // DUPLICATE PREVENTION: Check for recent registration with same data
+            $userEmail = $request->email ?? $request->user_email;
+            $duplicateCheck = Registration::where('email', $userEmail)
+                ->where('program_id', $request->program_id)
+                ->where('package_id', $request->package_id)
+                ->where('enrollment_type', 'Modular')
+                ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                ->first();
+                
+            if ($duplicateCheck) {
+                DB::rollBack();
+                Log::warning('Duplicate modular registration attempt prevented', [
+                    'email' => $userEmail,
+                    'program_id' => $request->program_id,
+                    'package_id' => $request->package_id,
+                    'recent_registration_id' => $duplicateCheck->registration_id
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration already completed successfully!',
+                    'redirect' => '/registration/success',
+                    'data' => [
+                        'registration_id' => $duplicateCheck->registration_id,
+                        'user_id' => $duplicateCheck->user_id
+                    ]
+                ]);
+            }
 
             Log::info('=== MODULAR ENROLLMENT DETAILED DEBUG ===', [
                 'request_method' => $request->method(),
