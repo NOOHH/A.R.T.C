@@ -59,6 +59,22 @@ class AdminStudentListController extends Controller
     {
         $students = Student::with(['user', 'program', 'enrollment.batch', 'enrollments.program', 'enrollments.package'])
             ->where('is_archived', false)
+
+            // Apply search filter
+            ->when($request->filled('search'), function($q) use ($request) {
+                $search = $request->search;
+                $q->where(function($q2) use ($search) {
+                    $q2->where('firstname', 'like', "%{$search}%")
+                       ->orWhere('lastname',  'like', "%{$search}%")
+                       ->orWhere('student_id','like', "%{$search}%")
+                       ->orWhere('email',      'like', "%{$search}%");
+                });
+            })
+
+            // Apply status filter
+            ->when($request->status === 'approved', fn($q) => $q->whereNotNull('date_approved'))
+            ->when($request->status === 'pending',  fn($q) => $q->whereNull('date_approved'))
+
             ->orderBy('lastname')
             ->get();
 
@@ -70,7 +86,7 @@ class AdminStudentListController extends Controller
 
         $callback = function() use ($students) {
             $file = fopen('php://output', 'w');
-            
+
             // Add CSV headers
             fputcsv($file, [
                 'Student ID',
@@ -93,7 +109,7 @@ class AdminStudentListController extends Controller
                 'Status',
                 'Is Archived'
             ]);
-            
+
             // Add data rows
             foreach ($students as $student) {
                 $enrollment = $student->enrollments->first();
@@ -119,7 +135,7 @@ class AdminStudentListController extends Controller
                     $student->is_archived ? 'Yes' : 'No'
                 ]);
             }
-            
+
             fclose($file);
         };
 

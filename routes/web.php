@@ -2064,36 +2064,3 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
     Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
 });
-
-// Debug route for payment method testing
-Route::post('/debug/payment-method', function(\Illuminate\Http\Request $request) {
-    \Log::info('Debug payment method request', [
-        'all_data' => $request->all(),
-        'method_name' => $request->input('method_name'),
-        'method_type' => $request->input('method_type'),
-        'description' => $request->input('description'),
-        'instructions' => $request->input('instructions'),
-        'is_enabled' => $request->input('is_enabled'),
-        'has_qr_file' => $request->hasFile('qr_code'),
-        'qr_file_info' => $request->hasFile('qr_code') ? [
-            'name' => $request->file('qr_code')->getClientOriginalName(),
-            'size' => $request->file('qr_code')->getSize(),
-            'mime_type' => $request->file('qr_code')->getMimeType(),
-            'is_valid' => $request->file('qr_code')->isValid()
-        ] : null
-    ]);
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Debug data logged',
-        'data' => [
-            'method_name' => $request->input('method_name'),
-            'method_type' => $request->input('method_type'),
-            'has_file' => $request->hasFile('qr_code')
-        ]
-    ]);
-});
-
-// Payment Method Field Configuration (for admin dynamic fields)
-Route::get('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'getPaymentMethodFields']);
-Route::post('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'savePaymentMethodFields']);

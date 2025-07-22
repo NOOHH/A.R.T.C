@@ -445,6 +445,9 @@ class AdminProgramController extends Controller
     public function enrollmentManagement()
     {
         try {
+            // Debug log to check if method is being called
+            Log::info('Enrollment management method called');
+            
             $totalEnrollments = DB::table('enrollments')
                 ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
                 ->where('programs.is_archived', false)
@@ -453,7 +456,7 @@ class AdminProgramController extends Controller
             $activeEnrollments = DB::table('enrollments')
                 ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
                 ->where('programs.is_archived', false)
-                ->where('enrollments.status', 'active')
+                ->where('enrollments.enrollment_status', 'enrolled')
                 ->count();
 
             $pendingEnrollments = DB::table('registrations')
@@ -463,8 +466,15 @@ class AdminProgramController extends Controller
             $completedCourses = DB::table('enrollments')
                 ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
                 ->where('programs.is_archived', false)
-                ->where('enrollments.status', 'completed')
+                ->where('enrollments.enrollment_status', 'completed')
                 ->count();
+
+            Log::info('Data loaded successfully', [
+                'totalEnrollments' => $totalEnrollments,
+                'activeEnrollments' => $activeEnrollments,
+                'pendingEnrollments' => $pendingEnrollments,
+                'completedCourses' => $completedCourses
+            ]);
 
             return view('admin.admin-student-enrollment.admin-enrollments', compact(
                 'totalEnrollments',
@@ -473,20 +483,24 @@ class AdminProgramController extends Controller
                 'completedCourses'
             ) + [
                 'approvedStudents' => Student::whereNotNull('date_approved')->get(),
+                'students' => Student::whereNotNull('date_approved')->get(), // Add for multiple selection
                 'programs' => Program::where('is_archived', false)->get(),
                 'batches' => Batch::where('is_active', true)->get(),
                 'courses' => Course::where('is_archived', false)->get()
             ]);
         } catch (\Exception $e) {
-            Log::error('Enrollment management error: ' . $e->getMessage());
+            Log::error('Enrollment management error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return view('admin.admin-student-enrollment.admin-enrollments', [
-                'dbError' => 'Unable to load enrollment data.',
+                'dbError' => 'Unable to load enrollment data: ' . $e->getMessage(),
                 'totalEnrollments' => 0,
                 'activeEnrollments' => 0,
                 'pendingEnrollments' => 0,
                 'completedCourses' => 0,
                 'approvedStudents' => collect(),
+                'students' => collect(), // Add for multiple selection
                 'programs' => collect(),
                 'batches' => collect(),
                 'courses' => collect()

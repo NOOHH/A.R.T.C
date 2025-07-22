@@ -577,24 +577,26 @@ document.getElementById('nonModalContentForm').addEventListener('submit', functi
         }
     })
     .then(async response => {
-        clearInterval(progressInterval);
-        progressFill.style.width = '100%';
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-            // Success animation
-            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Upload Complete!';
-            submitBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-            
-            // Show success message
-            setTimeout(() => {
-                alert('Content uploaded successfully!');
-                // Redirect back to admin modules
-                window.location.href = '{{ route("admin.modules.index") }}';
-            }, 1000);
-        } else {
-            throw new Error(data.message || 'Upload failed');
+        const responseText = await response.text();
+        try {
+            const data = JSON.parse(responseText);
+            if (response.ok && data.success) {
+                // Success animation
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Upload Complete!';
+                submitBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                
+                // Show success message
+                setTimeout(() => {
+                    alert('Content uploaded successfully!');
+                    // Redirect back to admin modules
+                    window.location.href = '{{ route("admin.modules.index") }}';
+                }, 1000);
+            } else {
+                throw new Error(data.message || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Invalid JSON response:', responseText);
+            throw new Error('Unexpected server response');
         }
     })
     .catch(error => {
@@ -609,4 +611,4 @@ document.getElementById('nonModalContentForm').addEventListener('submit', functi
     });
 });
 </script>
-@endsection 
+@endsection

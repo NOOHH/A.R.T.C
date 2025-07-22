@@ -96,11 +96,13 @@
                         </a>
                     </li>
                     @endif
+                    {{--
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('professor.calendar*') ? 'active' : '' }}" href="{{ route('professor.calendar') }}">
                             <i class="fas fa-calendar me-1"></i>Calendar
                         </a>
                     </li>
+                    --}}
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('professor.settings*') ? 'active' : '' }}" href="{{ route('professor.settings') }}">
                             <i class="fas fa-cog me-1"></i>Settings
