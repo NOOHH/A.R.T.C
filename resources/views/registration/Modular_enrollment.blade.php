@@ -489,7 +489,6 @@
                 <input type="hidden" name="program_id" value="" id="hidden_program_id">
                 <input type="hidden" name="plan_id" value="2">
                 <input type="hidden" name="learning_mode" id="learning_mode" value="">
-                <input type="hidden" name="Start_Date" id="hidden_start_date" value="">
                 <input type="hidden" name="selected_modules" id="selected_modules" value="">
 
                 <!-- Dynamic Form Fields -->
@@ -646,12 +645,6 @@
                             <span>Selected Batch: <strong id="selectedBatchName"></strong></span>
                         </div>
                     </div>
-                </div>
-                <div class="form-group" style="margin-top:2rem;">
-                    <label for="start_date_input" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-calendar-event me-2"></i>Start Date</label>
-                    <input type="date" name="Start_Date" id="start_date_input" class="form-control"
-                        value="{{ $student->start_date ?? old('Start_Date') }}" 
-                        onchange="updateHiddenStartDate()" required>
                 </div>
                 <div class="form-check mb-4">
                     <input class="form-check-input" type="checkbox" id="termsCheckbox" name="terms_accepted" required>
@@ -996,13 +989,11 @@
     }
     window.selectProgram = selectProgram;
     
-    // Load programs
+    // Load programs from the database using the /api/programs endpoint
     function loadPrograms() {
         const grid = document.getElementById('programsGrid');
         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading programs...</div>';
-        
-        // Fetch programs from the database via AJAX
-        fetch('/get-programs', {
+        fetch('/api/programs', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -1011,8 +1002,11 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.programs && data.programs.length > 0) {
-                displayPrograms(data.programs);
+            if (Array.isArray(data)) {
+                // Some endpoints return array directly
+                displayPrograms(data);
+            } else if (data.success && (data.data || data.programs)) {
+                displayPrograms(data.data || data.programs);
             } else {
                 grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
             }
@@ -1022,82 +1016,46 @@
             grid.innerHTML = '<div class="alert alert-danger">Error loading programs. Please try again.</div>';
         });
     }
-    
-    // Display programs in the grid
+    // Display programs in the grid (update to show real data)
     function displayPrograms(programs) {
-        const carousel = document.getElementById('programCarousel');
-        const carouselInner = carousel.querySelector('.carousel-inner');
-        const indicators = carousel.querySelector('.carousel-indicators');
-        
-        // Clear existing content
-        carouselInner.innerHTML = '';
-        indicators.innerHTML = '';
-        
-        // Group programs into slides (2 programs per slide)
-        const programsPerSlide = 2;
-        const slides = [];
-        for (let i = 0; i < programs.length; i += programsPerSlide) {
-            slides.push(programs.slice(i, i + programsPerSlide));
+        const grid = document.getElementById('programsGrid');
+        if (!programs || programs.length === 0) {
+            grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
+            return;
         }
-        
-        // Create carousel slides
-        slides.forEach((slidePrograms, slideIndex) => {
-            const isActive = slideIndex === 0 ? 'active' : '';
-            
-            let programsHtml = '';
-            slidePrograms.forEach(program => {
-                const isSelected = program.program_id == selectedProgramId;
-                programsHtml += `
-                    <div class="col-md-6 mb-4">
-                        <div class="card selection-card h-100 ${isSelected ? 'selected' : ''}" 
-                             onclick="selectProgram(${program.program_id})">
-                            <div class="card-body">
-                                <h4 class="card-title">${program.program_name}</h4>
-                                <p class="card-text">${program.program_description || 'No description available.'}</p>
-                                <ul class="list-unstyled mt-3 mb-0">
-                                    <li><i class="bi bi-check2 text-success"></i> Professional certification</li>
-                                    <li><i class="bi bi-check2 text-success"></i> Industry-relevant skills</li>
-                                    <li><i class="bi bi-check2 text-success"></i> Expert instructors</li>
-                                    <li><i class="bi bi-check2 text-success"></i> Career advancement</li>
-                                </ul>
-                            </div>
+        let html = '';
+        programs.forEach(program => {
+            html += `
+                <div class="col-md-6 mb-4">
+                    <div class="card selection-card h-100 ${program.program_id == selectedProgramId ? 'selected' : ''}" onclick="selectProgram(${program.program_id})">
+                        <div class="card-body">
+                            <h4 class="card-title">${program.program_name}</h4>
+                            <p class="card-text">${program.program_description || 'No description available.'}</p>
+                            <div id="modules-for-program-${program.program_id}"></div>
                         </div>
-                    </div>
-                `;
-            });
-            
-            const slideHtml = `
-                <div class="carousel-item ${isActive}">
-                    <div class="row" id="programsGrid${slideIndex === 0 ? '' : slideIndex}">
-                        ${programsHtml}
                     </div>
                 </div>
             `;
-            
-            carouselInner.innerHTML += slideHtml;
-            
-            // Create indicator
-            const indicator = `
-                <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${slideIndex}" 
-                        class="${isActive}" ${isActive ? 'aria-current="true"' : ''} aria-label="Slide ${slideIndex + 1}"></button>
-            `;
-            indicators.innerHTML += indicator;
         });
-        
-        // If only one slide, hide carousel controls and indicators
-        const controls = carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next');
-        if (slides.length <= 1) {
-            controls.forEach(control => control.style.display = 'none');
-            indicators.style.display = 'none';
-        } else {
-            controls.forEach(control => control.style.display = 'block');
-            indicators.style.display = 'flex';
-        }
-        
-        // If program is pre-selected from package, enable next button
-        if (selectedProgramId) {
-            document.getElementById('step2-next').disabled = false;
-        }
+        grid.innerHTML = `<div class="row">${html}</div>`;
+        // Optionally, fetch and display modules for each program
+        programs.forEach(program => {
+            fetch(`/api/programs/${program.program_id}/modules`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.modules && data.modules.length > 0) {
+                        const modulesDiv = document.getElementById(`modules-for-program-${program.program_id}`);
+                        if (modulesDiv) {
+                            let modulesHtml = '<ul class="small text-muted">';
+                            data.modules.forEach(module => {
+                                modulesHtml += `<li>${module.module_name}</li>`;
+                            });
+                            modulesHtml += '</ul>';
+                            modulesDiv.innerHTML = modulesHtml;
+                        }
+                    }
+                });
+        });
     }
     
     // Load modules
@@ -1527,20 +1485,23 @@
             },
             body: JSON.stringify({ email: email })
         })
-        .then(response => response.json())
+        .then(async response => {
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                throw new Error('Server error: Invalid response format.');
+            }
+            return data;
+        })
         .then(data => {
             if (data.success) {
                 // Show OTP modal
                 document.getElementById('otpTargetEmail').textContent = email;
                 const otpModal = new bootstrap.Modal(document.getElementById('otpModal'));
                 otpModal.show();
-                
-                // Setup OTP input handlers
                 setupOTPInputHandlers();
-                
-                if (emailError) {
-                    emailError.style.display = 'none';
-                }
+                if (emailError) emailError.style.display = 'none';
             } else {
                 if (emailError) {
                     emailError.textContent = data.message || 'Failed to send OTP';
@@ -1725,11 +1686,18 @@
             },
             body: JSON.stringify({ referral_code: referralCode })
         })
-        .then(response => response.json())
+        .then(async response => {
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                throw new Error('Server error: Invalid response format.');
+            }
+            return data;
+        })
         .then(data => {
             if (errorDiv) errorDiv.style.display = 'none';
             if (successDiv) successDiv.style.display = 'none';
-            
             if (data.success) {
                 if (successDiv) {
                     successDiv.textContent = `Valid referral code! Referred by: ${data.referrer_name}`;
@@ -1745,15 +1713,13 @@
                 referralField.setAttribute('data-valid', 'false');
                 referralField.style.borderColor = '#dc3545';
             }
-            
-            // Re-validate step 6 (updated from step 5)
             validateStep6();
         })
         .catch(error => {
             console.error('Error validating referral code:', error);
             if (errorDiv) {
                 errorDiv.textContent = 'Validation failed. Please try again.';
-                errorError.style.display = 'block';
+                errorDiv.style.display = 'block';
             }
         })
         .finally(() => {
@@ -2290,8 +2256,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Additional validation for database IDs
                     if (field === 'program_id') {
                         const programId = parseInt(input.value);
-                        if (isNaN(programId) || ![32, 33, 34, 35].includes(programId)) {
-                            invalidFields.push(`program_id (${input.value}) - should be 32, 33, 34, or 35`);
+                        if (isNaN(programId) || programId <= 0) {
+                            invalidFields.push(`program_id (${input.value}) is invalid`);
                         }
                     }
                     if (field === 'package_id') {
@@ -3114,6 +3080,172 @@ function showEducationLevelModal(detectedLevel, matchFound) {
 
 function closeEducationLevelModal() {
     const modal = document.getElementById('educationLevelModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Name sync logic between Account and Form steps
+function syncNamesBetweenSteps() {
+    // Account step fields
+    const accFirst = document.getElementById('user_firstname');
+    const accLast = document.getElementById('user_lastname');
+    // Form step fields (fallback fields)
+    const formFirst = document.getElementById('firstname');
+    const formLast = document.getElementById('lastname');
+    if (!accFirst || !accLast || !formFirst || !formLast) return;
+    // Copy Account -> Form
+    formFirst.value = accFirst.value;
+    formLast.value = accLast.value;
+    // Listen for changes in either and sync
+    accFirst.addEventListener('input', () => { formFirst.value = accFirst.value; });
+    accLast.addEventListener('input', () => { formLast.value = accLast.value; });
+    formFirst.addEventListener('input', () => { accFirst.value = formFirst.value; });
+    formLast.addEventListener('input', () => { accLast.value = formLast.value; });
+}
+document.addEventListener('DOMContentLoaded', syncNamesBetweenSteps);
+
+// Program autofill and disable in Form step
+function autofillProgramInForm() {
+    const programSelect = document.getElementById('programSelect');
+    const hiddenProgramId = document.getElementById('hidden_program_id');
+    if (programSelect && hiddenProgramId && hiddenProgramId.value) {
+        programSelect.value = hiddenProgramId.value;
+        programSelect.disabled = true;
+    }
+}
+document.addEventListener('DOMContentLoaded', autofillProgramInForm);
+
+// File upload with OCR/Tesseract validation and custom file display
+function handleFileUpload(inputElement) {
+    const fieldName = inputElement.name;
+    const file = inputElement.files[0];
+    if (!file) return;
+    // Show loading modal
+    showLoadingModal('Validating document...');
+    // Prepare FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('field', fieldName);
+    fetch('/registration/validate-document', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': CSRF_TOKEN
+        },
+        body: formData
+    })
+    .then(async response => {
+        closeLoadingModal();
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            showErrorModal('Server returned invalid response.');
+            return;
+        }
+        if (data.success && data.file_path) {
+            // Hide the original file input
+            inputElement.style.display = 'none';
+            // Create or update custom file display
+            let customFileDisplay = document.getElementById('custom-' + fieldName);
+            if (!customFileDisplay) {
+                customFileDisplay = document.createElement('div');
+                customFileDisplay.id = 'custom-' + fieldName;
+                customFileDisplay.className = 'custom-file-display';
+                inputElement.parentNode.appendChild(customFileDisplay);
+            }
+            customFileDisplay.innerHTML = `
+                <div class="uploaded-file-container p-3 border rounded bg-success bg-opacity-10 border-success">
+                    <div class="d-flex align-items-center">
+                        <div class="file-icon me-3">
+                            <i class="bi bi-file-earmark-check" style="font-size:2rem;"></i>
+                        </div>
+                        <div class="file-info flex-grow-1">
+                            <div class="file-name fw-bold">${file.name}</div>
+                            <div class="file-size text-muted small">${(file.size/1024).toFixed(1)} KB</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="replaceFileInput('${fieldName}')">
+                            <i class="bi bi-arrow-repeat"></i> Replace
+                        </button>
+                    </div>
+                </div>
+            `;
+            // Add hidden input for DB
+            let hiddenFileInput = inputElement.form.querySelector(`input[name='${fieldName}']`);
+            if (!hiddenFileInput) {
+                hiddenFileInput = document.createElement('input');
+                hiddenFileInput.type = 'hidden';
+                hiddenFileInput.name = fieldName;
+                inputElement.form.appendChild(hiddenFileInput);
+            }
+            hiddenFileInput.value = data.file_path;
+        } else {
+            showErrorModal(data.message || 'File validation failed.');
+        }
+    })
+    .catch(error => {
+        closeLoadingModal();
+        showErrorModal('File upload failed. Please try again.');
+    });
+}
+function replaceFileInput(fieldName) {
+    const customFileDisplay = document.getElementById('custom-' + fieldName);
+    const form = customFileDisplay.closest('form');
+    if (customFileDisplay) customFileDisplay.remove();
+    const fileInput = form.querySelector(`input[type='file'][name='${fieldName}']`);
+    if (fileInput) fileInput.style.display = '';
+    const hiddenInput = form.querySelector(`input[type='hidden'][name='${fieldName}']`);
+    if (hiddenInput) hiddenInput.remove();
+    if (fileInput) fileInput.value = '';
+}
+function showLoadingModal(message) {
+    let modal = document.getElementById('loadingModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'loadingModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <div id="loadingMessage">${message}</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    document.getElementById('loadingMessage').textContent = message;
+    modal.style.display = 'flex';
+}
+function closeLoadingModal() {
+    const modal = document.getElementById('loadingModal');
+    if (modal) modal.style.display = 'none';
+}
+function showErrorModal(message) {
+    let modal = document.getElementById('customModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'customModal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="modalTitle">Error</h5>
+                    <button type="button" onclick="closeModal()" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="modalMessage">${message}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    document.getElementById('modalMessage').textContent = message;
+    modal.style.display = 'flex';
+}
+function closeModal() {
+    const modal = document.getElementById('customModal');
     if (modal) modal.style.display = 'none';
 }
 </script>

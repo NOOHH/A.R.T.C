@@ -973,6 +973,22 @@
 
             <div class="form-row">
                 <div class="form-group">
+                    <label for="package_period_days">Days</label>
+                    <input type="number" id="package_period_days" name="package_period_days" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="package_period_months">Months</label>
+                    <input type="number" id="package_period_months" name="package_period_months" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="package_period_years">Years</label>
+                    <input type="number" id="package_period_years" name="package_period_years" min="0" placeholder="0">
+                </div>
+            </div>
+            <small class="form-text text-muted mb-3">Set the access period for this package. The period starts after payment approval. Leave blank for unlimited access.</small>
+
+            <div class="form-row">
+                <div class="form-group">
                     <label for="program_id" class="required">Program</label>
                     <select id="program_id" name="program_id" required onchange="loadProgramData()">
                         <option value="">Select Program</option>
@@ -1113,6 +1129,22 @@
                     <input type="number" id="edit_amount" name="amount" min="0" step="0.01" required>
                 </div>
             </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit_package_period_days">Days</label>
+                    <input type="number" id="edit_package_period_days" name="package_period_days" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="edit_package_period_months">Months</label>
+                    <input type="number" id="edit_package_period_months" name="package_period_months" min="0" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="edit_package_period_years">Years</label>
+                    <input type="number" id="edit_package_period_years" name="package_period_years" min="0" placeholder="0">
+                </div>
+            </div>
+            <small class="form-text text-muted mb-3">Set the access period for this package. The period starts after payment approval. Leave blank for unlimited access.</small>
 
             <div class="form-row">
                 <div class="form-group">

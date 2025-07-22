@@ -442,6 +442,15 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
 
+// Simplified registration route using profile.php approach
+Route::post('/student/register-simple', [App\Http\Controllers\SimpleRegistrationController::class, 'store'])
+     ->name('student.register.simple');
+
+// Test route for simplified registration form
+Route::get('/registration/simple-test', function () {
+    return view('registration.simple_test');
+})->name('registration.simple.test');
+
 // Account creation POST (separate from full registration)
 Route::post('/student/account/create', [StudentRegistrationController::class, 'handleAccountCreation'])
      ->name('student.account.create');
@@ -602,6 +611,20 @@ Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'
 Route::post('/admin/registration/{id}/reject-with-reason', [AdminController::class, 'rejectWithReason'])
      ->name('admin.registration.reject.reason');
 
+// Enhanced rejection with field-level marking
+Route::post('/admin/registration/{id}/reject-fields', [AdminController::class, 'rejectWithFields'])
+     ->name('admin.registration.reject.fields');
+Route::post('/admin/registration/{id}/approve-resubmission', [AdminController::class, 'approveResubmission'])
+     ->name('admin.registration.approve.resubmission');
+Route::post('/admin/registration/{id}/reset-status', [AdminController::class, 'resetRegistrationStatus'])
+     ->name('admin.registration.reset.status');
+
+// Payment rejection routes
+Route::post('/admin/payment/{id}/reject-fields', [AdminController::class, 'rejectPaymentWithFields'])
+     ->name('admin.payment.reject.fields');
+Route::post('/admin/payment/{id}/approve-resubmission', [AdminController::class, 'approvePaymentResubmission'])
+     ->name('admin.payment.approve.resubmission');
+
 // Get registration details
 Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
      ->name('admin.registration.details');
@@ -611,6 +634,8 @@ Route::get('/admin-student-registration', [AdminController::class, 'studentRegis
      ->name('admin.student.registration');
 Route::get('/admin-student-registration/pending', [AdminController::class, 'studentRegistration'])
      ->name('admin.student.registration.pending');
+Route::get('/admin-student-registration/rejected', [AdminController::class, 'rejectedRegistrations'])
+     ->name('admin.student.registration.rejected');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
 
@@ -633,6 +658,8 @@ Route::post('/admin/enrollment/assign', [AdminController::class, 'assignEnrollme
 // Payment management routes
 Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
      ->name('admin.student.registration.payment.pending');
+Route::get('/admin-student-registration/payment/rejected', [AdminController::class, 'rejectedPayments'])
+     ->name('admin.student.registration.payment.rejected');
 Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
      ->name('admin.student.registration.payment.history');
 
@@ -640,7 +667,7 @@ Route::get('/admin-student-registration/payment/history', [AdminController::clas
 Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
      ->name('admin.enrollment.mark-paid');
 
-// View one student registration’s details
+// View one student registration's details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
      ->name('admin.student.registration.view');
 
@@ -653,7 +680,7 @@ Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'sh
 Route::get('/admin/programs', [AdminProgramController::class, 'index'])
      ->name('admin.programs.index');
 
-// Show “Add New Program” form
+// Show "Add New Program" form
 Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])
      ->name('admin.programs.create');
 
@@ -2021,3 +2048,29 @@ Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::
 // Certificate viewing and downloading
 Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
 Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');
+
+// Admin Payment Management Routes
+Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
+    // Payment management
+    Route::get('/payments/pending', [\App\Http\Controllers\Admin\PaymentController::class, 'pending'])->name('admin.payments.pending');
+    Route::get('/payments/history', [\App\Http\Controllers\Admin\PaymentController::class, 'history'])->name('admin.payments.history');
+    Route::get('/payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('admin.payments.show');
+    Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\PaymentController::class, 'approve'])->name('admin.payments.approve');
+    Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\PaymentController::class, 'reject'])->name('admin.payments.reject');
+    Route::get('/payments/{id}/download-proof', [\App\Http\Controllers\Admin\PaymentController::class, 'downloadProof'])->name('admin.payments.download-proof');
+    Route::get('/payments/stats', [\App\Http\Controllers\Admin\PaymentController::class, 'getStats'])->name('admin.payments.stats');
+    
+    // Payment method field management
+    Route::get('/payment-methods/settings', function() {
+        return view('admin.payment-methods.settings');
+    })->name('admin.payment-methods.settings');
+    
+    Route::get('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'apiIndex']);
+    Route::post('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'store']);
+    Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
+    Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
+});
+
+// Payment Method Field Configuration (for admin dynamic fields)
+Route::get('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'getPaymentMethodFields']);
+Route::post('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'savePaymentMethodFields']);

@@ -13,7 +13,6 @@ return new class extends Migration
      */
     public function up()
     {
-<<<<<<< HEAD
         // Add override columns to modules table (without foreign keys for now)
         Schema::table('modules', function (Blueprint $table) {
             if (!Schema::hasColumn('modules', 'is_locked')) {
@@ -48,7 +47,7 @@ return new class extends Migration
                 $table->boolean('requires_prerequisite')->default(false);
             }
             if (!Schema::hasColumn('courses', 'prerequisite_course_id')) {
-                $table->unsignedBigInteger('prerequisite_course_id')->nullable();
+                $table->unsignedInteger('prerequisite_course_id')->nullable();
             }
             if (!Schema::hasColumn('courses', 'release_date')) {
                 $table->timestamp('release_date')->nullable();
@@ -73,7 +72,7 @@ return new class extends Migration
                 $table->boolean('requires_prerequisite')->default(false);
             }
             if (!Schema::hasColumn('content_items', 'prerequisite_content_id')) {
-                $table->unsignedBigInteger('prerequisite_content_id')->nullable();
+                $table->unsignedInteger('prerequisite_content_id')->nullable();
             }
             if (!Schema::hasColumn('content_items', 'release_date')) {
                 $table->timestamp('release_date')->nullable();
@@ -100,11 +99,6 @@ return new class extends Migration
                 $table->dropColumn('lesson_id');
             });
         }
-=======
-        Schema::table('existing_tables', function (Blueprint $table) {
-            //
-        });
->>>>>>> broken-enroll-upload
     }
 
     /**
@@ -114,39 +108,34 @@ return new class extends Migration
      */
     public function down()
     {
-<<<<<<< HEAD
         // Remove override columns from modules table
         Schema::table('modules', function (Blueprint $table) {
-            $table->dropForeign(['prerequisite_module_id']);
-            $table->dropForeign(['locked_by']);
-            $table->dropColumn([
-                'is_locked', 'requires_prerequisite', 'prerequisite_module_id', 
-                'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
-            ]);
+            if (Schema::hasColumn('modules', 'is_locked')) {
+                $table->dropColumn([
+                    'is_locked', 'requires_prerequisite', 'prerequisite_module_id', 
+                    'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
+                ]);
+            }
         });
 
         // Remove override columns from courses table
         Schema::table('courses', function (Blueprint $table) {
-            $table->dropForeign(['prerequisite_course_id']);
-            $table->dropForeign(['locked_by']);
-            $table->dropColumn([
-                'is_locked', 'requires_prerequisite', 'prerequisite_course_id', 
-                'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
-            ]);
+            if (Schema::hasColumn('courses', 'is_locked')) {
+                $table->dropColumn([
+                    'is_locked', 'requires_prerequisite', 'prerequisite_course_id', 
+                    'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
+                ]);
+            }
         });
 
         // Remove override columns from content_items table
         Schema::table('content_items', function (Blueprint $table) {
-            $table->dropForeign(['prerequisite_content_id']);
-            $table->dropForeign(['locked_by']);
-            $table->dropColumn([
-                'is_locked', 'requires_prerequisite', 'prerequisite_content_id', 
-                'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
-            ]);
-=======
-        Schema::table('existing_tables', function (Blueprint $table) {
-            //
->>>>>>> broken-enroll-upload
+            if (Schema::hasColumn('content_items', 'is_locked')) {
+                $table->dropColumn([
+                    'is_locked', 'requires_prerequisite', 'prerequisite_content_id', 
+                    'release_date', 'completion_criteria', 'lock_reason', 'locked_by'
+                ]);
+            }
         });
     }
 };

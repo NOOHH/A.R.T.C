@@ -15,7 +15,6 @@ return new class extends Migration
     {
         Schema::create('student_progress', function (Blueprint $table) {
             $table->id();
-<<<<<<< HEAD
             $table->unsignedBigInteger('student_id');
             $table->string('item_type'); // 'module', 'course', 'content'
             $table->unsignedBigInteger('item_id'); // ID of the module/course/content
@@ -35,9 +34,6 @@ return new class extends Migration
             
             // Foreign key constraints
             $table->foreign('student_id')->references('user_id')->on('users')->onDelete('cascade');
-=======
-            $table->timestamps();
->>>>>>> broken-enroll-upload
         });
     }
 

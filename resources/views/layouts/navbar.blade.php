@@ -223,58 +223,61 @@
     <main class="main-content flex-grow-1">
         @yield('content')
     </main>
-    @if (!View::hasSection('hide_footer'))
-    <footer class="footer mt-auto">
-        <div class="footer-content">
-            <div class="container">
-                <div class="row">
-                    <!-- Contact Info Section - Mobile First -->
-                    <div class="col-12 col-md-4 footer-section">
-                        <div class="footer-logo-section">
-                            <img src="{{ \App\Helpers\SettingsHelper::getLogoUrl() }}" 
-                                 alt="Logo" class="footer-logo"
-                                 onerror="this.src='{{ asset('images/ARTC_Logo.png') }}'">
-                        </div>
-                        <div class="contact-info">
-                            <h5>Contact Us</h5>
-                            <p><i class="bi bi-telephone"></i> 123-456-7890</p>
-                            <p><i class="bi bi-envelope"></i> artc@gmail.com</p>
-                            <p><i class="bi bi-geo-alt"></i> Ascendo Review and Training Center</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Links Section - Mobile First -->
-                    <div class="col-12 col-md-4 footer-section">
-                        <h5>Links</h5>
-                        <ul class="footer-links">
-                            <li><a href="{{ url('/') }}">Review Courses</a></li>
-                            <li><a href="{{ url('/') }}">About Us</a></li>
-                            <li><a href="{{ url('/') }}">Contact Us</a></li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Additional Links Section - Mobile First -->
-                    <div class="col-12 col-md-4 footer-section">
-                        <h5>&nbsp;</h5>
-                        <ul class="footer-links">
-                            <li><a href="{{ url('/enrollment') }}">Enrollment</a></li>
-                            <li><a href="{{ url('/') }}">Privacy Policy</a></li>
-                        </ul>
-                    </div>
+
+    <!-- Only keep the new custom footer below, remove the old duplicate footer -->
+    <footer class="custom-footer mt-5">
+        <div class="container">
+            <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
+                <div class="footer-logo mb-3 mb-md-0">
+                    <img src="{{ asset('images/ARTC_Logo.png') }}" alt="ARTC Logo" style="height: 40px;">
+                    <span class="footer-title ms-2">Ascendo Review <br>and Training Center</span>
                 </div>
-                
-                <!-- Copyright Section -->
-                <div class="row mt-4">
-                    <div class="col-12 text-center">
-                        <div class="copyright">
-                            {!! $footer['footer_text'] ?? '© Copyright Ascendo Review and Training Center. All Rights Reserved.' !!}
-                        </div>
-                    </div>
+                <div class="footer-social">
+                    <a href="#" class="footer-social-icon"><i class="bi bi-youtube"></i></a>
+                    <a href="#" class="footer-social-icon"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="footer-social-icon"><i class="bi bi-instagram"></i></a>
+                    <a href="#" class="footer-social-icon"><i class="bi bi-linkedin"></i></a>
+                    <a href="#" class="footer-social-icon"><i class="bi bi-x"></i></a>
+                </div>
+            </div>
+            <hr class="footer-divider">
+            <div class="footer-links row py-3">
+                <div class="col-md-3 col-6 mb-3">
+                    <ul class="list-unstyled">
+                        <li><a href="#">Review Programs</a></li>
+                        <li><a href="#">Learning Modalities</a></li>
+                        <li><a href="#"></a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <ul class="list-unstyled">
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#"></a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <ul class="list-unstyled">
+                        <li><a href="#"></a></li>
+                        <li><a href="#"></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom d-flex flex-wrap justify-content-between align-items-center py-3">
+                <div class="footer-copyright">
+                    &copy; {{ date('Y') }} ARTC. All rights reserved.
+                </div>
+                <div class="footer-policies">
+                    <a href="#">Terms and Conditions</a>
+                    <a href="#">Privacy Statement</a>
+                    <a href="#">Cookie Policy</a>
+                    <a href="#">Data Protection</a>
+                    <a href="#">Trademarks</a>
+                    <a href="#">Accessibility</a>
                 </div>
             </div>
         </div>
     </footer>
-@endif
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -396,9 +399,10 @@
     </script>
     
     @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
-</body>
 
-<!-- Global Chat Component -->
+    <!-- Global Chat Component -->
 @include('components.global-chat')
+
+</body>
 
 </html>

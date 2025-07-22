@@ -17,6 +17,7 @@ use App\Models\Package;
 use App\Models\FormRequirement;
 use App\Models\StudentBatch;
 use App\Services\BatchCreationService;
+use Illuminate\Support\Facades\Mail;
 
 class StudentRegistrationController extends Controller
 {
@@ -333,6 +334,18 @@ class StudentRegistrationController extends Controller
                                         'field_name' => $fieldName,
                                         'file_path' => $validatedFilePath
                                     ]);
+                                }
+                            } else {
+                                // Check for direct field name (OCR validation saves with field name directly)
+                                if ($request->has($fieldName)) {
+                                    $directFilePath = $request->input($fieldName);
+                                    if ($directFilePath && is_string($directFilePath) && !empty($directFilePath)) {
+                                        $registration->{$fieldName} = $directFilePath;
+                                        Log::info("Using direct file path for field {$fieldName}", [
+                                            'field_name' => $fieldName,
+                                            'file_path' => $directFilePath
+                                        ]);
+                                    }
                                 }
                             }
                             
@@ -1158,7 +1171,7 @@ class StudentRegistrationController extends Controller
                 } else {
                     // Check if referral code is from a professor
                     $professor = \App\Models\Professor::where('referral_code', $validated['referral_code'])
-                        ->where('is_archived', false)
+                        ->where('professor_archived', false)
                         ->first();
                     
                     if ($professor) {
@@ -1800,6 +1813,18 @@ class StudentRegistrationController extends Controller
             // In a real application, send email here
             // Mail::to($email)->send(new EnrollmentOTPMail($otpCode));
 
+            // Send OTP via email (implement your email sending logic here)
+            try {
+                \Mail::to($email)->send(new \App\Mail\EnrollmentOTPMail($otpCode));
+            } catch (\Exception $mailEx) {
+                \Log::error('Failed to send OTP email', [
+                    'error' => $mailEx->getMessage(),
+                    'email' => $email,
+                    'otp' => $otpCode
+                ]);
+                // Optionally, you can return a response here or continue for debug
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'OTP sent successfully',
@@ -1903,7 +1928,7 @@ class StudentRegistrationController extends Controller
 
             // Check if referral code exists in professors table
             $professor = \App\Models\Professor::where('referral_code', $referralCode)
-                ->where('is_active', true)
+                ->where('professor_archived', false)
                 ->first();
 
             if ($professor) {
@@ -1917,7 +1942,7 @@ class StudentRegistrationController extends Controller
 
             // Check if referral code exists in directors table
             $director = \App\Models\Director::where('referral_code', $referralCode)
-                ->where('is_active', true)
+                ->where('directors_archived', false)
                 ->first();
 
             if ($director) {

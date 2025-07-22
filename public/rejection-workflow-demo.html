@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Rejection/Resubmission Workflow Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-section {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .test-header {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+        }
+        .test-content {
+            padding: 1.5rem;
+        }
+        .admin-panel {
+            border-color: #dc3545;
+        }
+        .admin-panel .test-header {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .student-panel {
+            border-color: #0d6efd;
+        }
+        .student-panel .test-header {
+            background: #cce6ff;
+            color: #084298;
+        }
+        .workflow-arrow {
+            text-align: center;
+            padding: 1rem;
+            font-size: 2rem;
+            color: #6c757d;
+        }
+        .field-highlight {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+        .comparison-demo {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="text-center mb-5">
+            <h1 class="display-4">Registration Rejection/Resubmission Workflow</h1>
+            <p class="lead text-muted">Comprehensive system for handling registration and payment rejections with field-specific marking</p>
+        </div>
+
+        <!-- Workflow Overview -->
+        <div class="test-section">
+            <div class="test-header">
+                <i class="fas fa-sitemap"></i> Workflow Overview
+            </div>
+            <div class="test-content">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <div class="border rounded p-3 mb-2 bg-light">
+                            <i class="fas fa-user-plus fa-2x text-primary"></i>
+                            <p class="mt-2 mb-0">Student Submits</p>
+                        </div>
+                    </div>
+                    <div class="col-md-1 workflow-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="border rounded p-3 mb-2 bg-warning bg-opacity-25">
+                            <i class="fas fa-clock fa-2x text-warning"></i>
+                            <p class="mt-2 mb-0">Pending Review</p>
+                        </div>
+                    </div>
+                    <div class="col-md-1 workflow-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="border rounded p-3 mb-2 bg-danger bg-opacity-25">
+                            <i class="fas fa-times fa-2x text-danger"></i>
+                            <p class="mt-2 mb-0">Admin Rejects</p>
+                        </div>
+                    </div>
+                    <div class="col-md-1 workflow-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="border rounded p-3 mb-2 bg-info bg-opacity-25">
+                            <i class="fas fa-edit fa-2x text-info"></i>
+                            <p class="mt-2 mb-0">Student Resubmits</p>
+                        </div>
+                    </div>
+                    <div class="col-md-1 workflow-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <div class="border rounded p-3 bg-success bg-opacity-25 d-inline-block">
+                        <i class="fas fa-check fa-2x text-success"></i>
+                        <p class="mt-2 mb-0">Final Approval</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Interface Demo -->
+        <div class="test-section admin-panel">
+            <div class="test-header">
+                <i class="fas fa-user-shield"></i> Admin Interface - Registration Review
+            </div>
+            <div class="test-content">
+                <h5>Registration Details</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>John Doe</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>john.doe@email.com</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>+1-555-0123</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Education:</strong></td>
+                                <td>High School</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" onclick="showApproveDemo()">
+                                <i class="fas fa-check"></i> Approve Registration
+                            </button>
+                            <button class="btn btn-danger" onclick="showRejectDemo()">
+                                <i class="fas fa-times"></i> Reject with Field Marking
+                            </button>
+                            <button class="btn btn-info" onclick="showComparisonDemo()">
+                                <i class="fas fa-eye"></i> Compare Resubmission
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rejection Form Demo -->
+                <div id="rejectDemo" class="mt-4" style="display: none;">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0">Reject Registration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Rejection Reason</label>
+                                <textarea class="form-control" rows="3" placeholder="Please provide documentation showing valid high school completion...">Please provide documentation showing valid high school completion. The uploaded transcript appears to be incomplete.</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mark Problematic Fields</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="field1">
+                                            <label class="form-check-label" for="field1">First Name</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="field2">
+                                            <label class="form-check-label" for="field2">Last Name</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="field3" checked>
+                                            <label class="form-check-label" for="field3">Education Level</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="field4">
+                                            <label class="form-check-label" for="field4">Phone</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="field5" checked>
+                                            <label class="form-check-label" for="field5">Uploaded Files</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger">
+                                <i class="fas fa-times"></i> Send Rejection Notice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Demo -->
+                <div id="comparisonDemo" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Side-by-Side Comparison</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-center bg-light p-2">Original Submission</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td>Education Level:</td>
+                                            <td>High School</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Course:</td>
+                                            <td>Computer Science</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Files:</td>
+                                            <td>incomplete_transcript.pdf</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-center bg-success text-white p-2">Resubmitted Version</h6>
+                                    <table class="table table-sm">
+                                        <tr class="table-warning">
+                                            <td>Education Level:</td>
+                                            <td>
+                                                High School Graduate
+                                                <i class="fas fa-edit text-warning ms-1" title="Changed"></i>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Course:</td>
+                                            <td>Computer Science</td>
+                                        </tr>
+                                        <tr class="table-warning">
+                                            <td>Files:</td>
+                                            <td>
+                                                complete_transcript.pdf, diploma.pdf
+                                                <i class="fas fa-edit text-warning ms-1" title="Changed"></i>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <button class="btn btn-success me-2">
+                                    <i class="fas fa-check"></i> Approve Resubmission
+                                </button>
+                                <button class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Reject Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Interface Demo -->
+        <div class="test-section student-panel">
+            <div class="test-header">
+                <i class="fas fa-user-graduate"></i> Student Interface - Rejection Notification
+            </div>
+            <div class="test-content">
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Registration Rejected</h5>
+                    <p>Your registration has been rejected. Please review the issues below and resubmit with corrections.</p>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h6>Rejection Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Rejection Date:</strong> January 22, 2025 2:30 PM</p>
+                        <p><strong>Reason:</strong> Please provide documentation showing valid high school completion. The uploaded transcript appears to be incomplete.</p>
+                        <p><strong>Fields that need correction:</strong></p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item list-group-item-danger">
+                                <i class="fas fa-times text-danger"></i> Education Level
+                            </li>
+                            <li class="list-group-item list-group-item-danger">
+                                <i class="fas fa-times text-danger"></i> Uploaded Files
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h6>Your Registration Details</h6>
+                <table class="table table-striped">
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>John Doe</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>john.doe@email.com</td>
+                    </tr>
+                    <tr class="table-danger">
+                        <td><strong>Education Level:</strong></td>
+                        <td>
+                            High School
+                            <i class="fas fa-exclamation-triangle text-danger ms-2" title="This field needs correction"></i>
+                        </td>
+                    </tr>
+                    <tr class="table-danger">
+                        <td><strong>Uploaded Files:</strong></td>
+                        <td>
+                            incomplete_transcript.pdf
+                            <i class="fas fa-exclamation-triangle text-danger ms-2" title="This field needs correction"></i>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary btn-lg me-2" onclick="showResubmitDemo()">
+                        <i class="fas fa-edit"></i> Resubmit Registration
+                    </button>
+                    <button class="btn btn-secondary btn-lg" onclick="showAbortDemo()">
+                        <i class="fas fa-ban"></i> Abort Process
+                    </button>
+                </div>
+
+                <!-- Resubmit Form Demo -->
+                <div id="resubmitDemo" class="mt-4" style="display: none;">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">Resubmit Registration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <strong>Please correct the highlighted fields:</strong>
+                                <ul class="mb-0">
+                                    <li>Education Level</li>
+                                    <li>Uploaded Files</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Education Level <span class="text-danger">*</span></label>
+                                    <select class="form-control is-invalid">
+                                        <option value="high_school">High School</option>
+                                        <option value="high_school_graduate" selected>High School Graduate</option>
+                                        <option value="college">College</option>
+                                    </select>
+                                    <div class="valid-feedback">Corrected!</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Upload Corrected Documents <span class="text-danger">*</span></label>
+                                    <input type="file" class="form-control is-valid" multiple>
+                                    <div class="valid-feedback">New files ready for upload</div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Resubmit Registration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Abort Demo -->
+                <div id="abortDemo" class="mt-4" style="display: none;">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0">Abort Registration Process</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> This action cannot be undone.
+                            </div>
+                            <p>Type "ABORT" to confirm cancellation:</p>
+                            <input type="text" class="form-control mb-3" placeholder="Type ABORT to confirm">
+                            <button class="btn btn-danger" disabled>
+                                <i class="fas fa-ban"></i> Abort Registration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Dynamic Fields Demo -->
+        <div class="test-section">
+            <div class="test-header">
+                <i class="fas fa-credit-card"></i> Dynamic Payment Method Fields
+            </div>
+            <div class="test-content">
+                <h5>Admin Configuration</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Payment Method: Bank Transfer</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Field Name</label>
+                            <input type="text" class="form-control" value="Account Number" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Field Type</label>
+                            <select class="form-control" disabled>
+                                <option selected>text</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked disabled>
+                                <label class="form-check-label">Required Field</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Student View</h6>
+                        <div class="border rounded p-3 bg-light">
+                            <h6>Bank Transfer Payment</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Account Number *</label>
+                                <input type="text" class="form-control" placeholder="Enter account number">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Bank Name *</label>
+                                <input type="text" class="form-control" placeholder="Enter bank name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reference Number</label>
+                                <input type="text" class="form-control" placeholder="Optional reference">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Features -->
+        <div class="test-section">
+            <div class="test-header">
+                <i class="fas fa-cogs"></i> Technical Implementation Features
+            </div>
+            <div class="test-content">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Database Schema</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <i class="fas fa-table text-primary"></i>
+                                <strong>registration_rejections</strong> - Track rejection history
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-table text-primary"></i>
+                                <strong>payment_rejections</strong> - Payment-specific rejections
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-table text-primary"></i>
+                                <strong>payment_method_fields</strong> - Dynamic payment fields
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-table text-primary"></i>
+                                <strong>terms_conditions</strong> - Versioned terms management
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Key Features</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Field-specific rejection marking
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Side-by-side comparison modals
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Dynamic payment method configuration
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Abort with confirmation system
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Complete audit trail
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showApproveDemo() {
+            hideAllDemos();
+            alert('Registration approved! Student will be notified via email.');
+        }
+
+        function showRejectDemo() {
+            hideAllDemos();
+            document.getElementById('rejectDemo').style.display = 'block';
+        }
+
+        function showComparisonDemo() {
+            hideAllDemos();
+            document.getElementById('comparisonDemo').style.display = 'block';
+        }
+
+        function showResubmitDemo() {
+            hideAllStudentDemos();
+            document.getElementById('resubmitDemo').style.display = 'block';
+        }
+
+        function showAbortDemo() {
+            hideAllStudentDemos();
+            document.getElementById('abortDemo').style.display = 'block';
+        }
+
+        function hideAllDemos() {
+            document.getElementById('rejectDemo').style.display = 'none';
+            document.getElementById('comparisonDemo').style.display = 'none';
+        }
+
+        function hideAllStudentDemos() {
+            document.getElementById('resubmitDemo').style.display = 'none';
+            document.getElementById('abortDemo').style.display = 'none';
+        }
+
+        // Enable abort button when "ABORT" is typed
+        document.addEventListener('DOMContentLoaded', function() {
+            const abortInput = document.querySelector('#abortDemo input[type="text"]');
+            const abortBtn = document.querySelector('#abortDemo button');
+            
+            if (abortInput && abortBtn) {
+                abortInput.addEventListener('input', function() {
+                    if (this.value.toUpperCase() === 'ABORT') {
+                        abortBtn.disabled = false;
+                        abortBtn.classList.remove('btn-secondary');
+                        abortBtn.classList.add('btn-danger');
+                    } else {
+                        abortBtn.disabled = true;
+                        abortBtn.classList.remove('btn-danger');
+                        abortBtn.classList.add('btn-secondary');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

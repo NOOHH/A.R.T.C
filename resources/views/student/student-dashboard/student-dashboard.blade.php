@@ -343,6 +343,7 @@
     .certificate-pending {
         padding: 20px;
     }
+    .certificate-pending-icon {
         font-size: 3rem;
         margin-bottom: 10px;
         opacity: 0.5;
@@ -419,13 +420,14 @@
     }
     
     .modal-backdrop {
-        z-index: 1050 !important;
+        z-index: 1040 !important;
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw !important;
         height: 100vh !important;
         background-color: rgba(0, 0, 0, 0.5) !important;
+        pointer-events: none !important;
     }
     
     .modal.show {
@@ -437,6 +439,7 @@
         width: auto;
         margin: 1.75rem;
         pointer-events: none;
+        z-index: 1060 !important;
     }
     
     .modal-content {
@@ -451,6 +454,8 @@
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.15);
         outline: 0;
+        z-index: 1060 !important;
+        pointer-events: auto !important;
     }
     
     .modal-header {
@@ -477,8 +482,8 @@
     
     .payment-method-card {
         position: relative;
-        z-index: 10;
-        pointer-events: auto;
+        z-index: 1062 !important;
+        pointer-events: auto !important;
         background: white;
         border: 2px solid #e9ecef;
         border-radius: 15px;
@@ -503,18 +508,37 @@
     
     .payment-method-card .card-body {
         padding: 0;
+        z-index: 1061 !important;
+        pointer-events: auto !important;
     }
     
     .payment-method-card h5 {
         color: #2c3e50;
         font-weight: 600;
         margin-bottom: 8px;
+        pointer-events: auto !important;
     }
     
     .payment-method-card p {
         color: #6c757d;
         margin-bottom: 0;
         font-size: 0.9rem;
+        pointer-events: auto !important;
+    }
+    
+    /* Ensure modal content is clickable */
+    .modal-content {
+        z-index: 1060 !important;
+        pointer-events: auto !important;
+    }
+    
+    .modal-body {
+        z-index: 1061 !important;
+        pointer-events: auto !important;
+    }
+    
+    .modal-body * {
+        pointer-events: auto !important;
     }
     
     /* Enhanced deadlines and announcements */
@@ -568,14 +592,6 @@
 @endpush
 
 @section('content')
-    <div class="container">
-        <h2>Payment Modal Debug Test</h2>
-        <p>This page tests the exact same payment modal code from the student dashboard.</p>
-        
-        <button class="btn btn-warning mb-3" onclick="testPaymentModal()" style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
-            🐛 Test Payment Modal
-        </button>
-    </div>
 
     <div class="dashboard-grid">
     <!-- My Programs Section -->
@@ -676,11 +692,12 @@
                                 <i class="bi bi-play-circle"></i> Take Quiz
                             </a>
                         @endif
-                        <span class="badge" style="background: 
-                            @if($deadline->status === 'completed') #28a745
-                            @elseif($deadline->status === 'overdue') #dc3545  
-                            @else #ffc107
-                            @endif; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
+                        @php
+                            $badgeBg = '#ffc107';
+                            if ($deadline->status === 'completed') $badgeBg = '#28a745';
+                            elseif ($deadline->status === 'overdue') $badgeBg = '#dc3545';
+                        @endphp
+                        <span class="badge" style="background: {{ $badgeBg }}; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
                             {{ ucfirst($deadline->status) }}
                         </span>
                     </div>
@@ -859,45 +876,32 @@
                 </div>
                 
                 <div id="paymentStep2" class="payment-step" style="display: none;">
-                    <div id="qrCodeSection" class="text-center mb-4">
-                        <h5 id="paymentMethodTitle">Pay with GCash</h5>
+                    <div id="paymentMethodHeader" class="text-center mb-4">
+                        <h5 id="paymentMethodTitle">Complete Payment</h5>
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle me-2"></i>
                             <strong>Payment Amount: ₱<span id="paymentAmount">0.00</span></strong>
                         </div>
-                        
-                        <div class="qr-code-container mb-4">
+                    </div>
+                    
+                    <!-- QR Code Section (shown if payment method has QR code) -->
+                    <div id="qrCodeSection" class="text-center mb-4" style="display: none;">
+                        <div class="qr-code-container mb-3">
                             <img id="qrCodeImage" src="" alt="QR Code" class="img-fluid" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px;">
-                        </div>
-                        
-                        <div class="payment-instructions">
-                            <h6>Payment Instructions:</h6>
-                            <ol class="text-start">
-                                <li>Scan the QR code using your <span id="paymentMethodName">GCash</span> app</li>
-                                <li>Enter the exact amount: ₱<span id="paymentAmountInstruction">0.00</span></li>
-                                <li>Complete the payment transaction</li>
-                                <li>Take a screenshot of the payment confirmation</li>
-                                <li>Upload the screenshot below for verification</li>
-                            </ol>
                         </div>
                     </div>
                     
-                    <div class="upload-section">
-                        <div class="mb-3">
-                            <label for="paymentProof" class="form-label">
-                                <i class="bi bi-cloud-upload me-2"></i>Upload Payment Screenshot *
-                            </label>
-                            <input type="file" class="form-control" id="paymentProof" accept="image/*" required>
-                            <div class="form-text">Supported formats: JPG, PNG (Max 5MB)</div>
+                    <!-- Payment Instructions Section -->
+                    <div id="paymentInstructions" class="mb-4" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle me-2"></i>Payment Instructions</h6>
+                            <div id="instructionsContent"></div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="referenceNumber" class="form-label">
-                                <i class="bi bi-hash me-2"></i>Reference Number (Optional)
-                            </label>
-                            <input type="text" class="form-control" id="referenceNumber" placeholder="Enter transaction reference number">
-                            <div class="form-text">Any reference number from your payment confirmation</div>
-                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Form Fields Section -->
+                    <div id="dynamicFormFields" class="mb-4">
+                        <!-- Payment method fields will be dynamically generated here -->
                     </div>
                     
                     <div class="d-flex gap-2">
@@ -905,7 +909,7 @@
                             <i class="bi bi-arrow-left me-2"></i>Back
                         </button>
                         <button type="button" class="btn btn-primary flex-fill" id="submitPaymentBtn" onclick="submitPayment()">
-                            <i class="bi bi-cloud-upload me-2"></i>Submit Payment Proof
+                            <i class="bi bi-check me-2"></i>Submit Payment Information
                         </button>
                     </div>
                 </div>
@@ -941,7 +945,53 @@ function testPaymentModal() {
     console.clear();
     console.log('=== PAYMENT MODAL TEST ===');
     console.log('1. Testing modal opening...');
+    
+    // Clean up any existing modals first
+    cleanupModalBackdrops();
+    
     showPaymentModal(999, 'Test Course DEBUG');
+    
+    // Add enhanced debugging after modal loads
+    setTimeout(() => {
+        console.log('2. Checking modal state...');
+        const modal = document.getElementById('paymentModal');
+        const backdrop = document.querySelector('.modal-backdrop');
+        
+        console.log('Modal display:', modal?.style.display);
+        console.log('Modal classes:', modal?.className);
+        console.log('Backdrop exists:', !!backdrop);
+        
+        if (backdrop) {
+            console.log('3. Fixing backdrop z-index...');
+            backdrop.style.zIndex = '1040';
+            backdrop.style.pointerEvents = 'none'; // Allow clicks through backdrop
+        }
+        
+        // Ensure all modal content is properly layered
+        if (modal) {
+            console.log('4. Fixing modal layering...');
+            modal.style.zIndex = '1055';
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.zIndex = '1060';
+                modalContent.style.position = 'relative';
+                modalContent.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Test payment method cards
+        const cards = document.querySelectorAll('.payment-method-card');
+        console.log('5. Payment method cards found:', cards.length);
+        
+        cards.forEach((card, index) => {
+            card.style.zIndex = '1070';
+            card.style.position = 'relative';
+            card.style.pointerEvents = 'auto';
+            console.log(`Fixed card ${index} layering`);
+        });
+        
+        console.log('=== TEST COMPLETE - Try clicking payment methods ===');
+    }, 2000);
 }
 
 // Load meetings data on page load
@@ -1135,24 +1185,11 @@ function showStatusModal(status, courseName, enrollmentId = null) {
         
     } catch (error) {
         console.error('Error showing status modal:', error);
-        // Fallback method
+        // Simple fallback without manual backdrop
         statusModalElement.style.display = 'block';
         statusModalElement.classList.add('show');
         document.body.classList.add('modal-open');
-        
-        // Create backdrop manually if needed
-        if (!document.querySelector('.modal-backdrop')) {
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.style.zIndex = '1050';
-            backdrop.onclick = function() {
-                statusModalElement.style.display = 'none';
-                statusModalElement.classList.remove('show');
-                document.body.classList.remove('modal-open');
-                this.remove();
-            };
-            document.body.appendChild(backdrop);
-        }
+        document.body.style.paddingRight = '15px'; // Compensate for scrollbar
     }
 }
 
@@ -1185,10 +1222,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 existingPaymentInstance.dispose();
             }
             
-            // Create new instance
+            // Create new instance with proper backdrop configuration
             paymentModalInstance = new bootstrap.Modal(paymentModal, {
-                backdrop: true,
-                keyboard: true,
+                backdrop: 'static',
+                keyboard: false,
                 focus: true
             });
             
@@ -1201,7 +1238,8 @@ document.addEventListener('DOMContentLoaded', function() {
             paymentModal.addEventListener('hidden.bs.modal', function() {
                 console.log('Payment modal hidden');
                 resetPaymentModal();
-            });
+                cleanupModalBackdrops();
+            }, { once: true });
             
             // Ensure close buttons work
             paymentModal.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
@@ -1227,7 +1265,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             statusModal.addEventListener('hidden.bs.modal', function() {
                 console.log('Status modal hidden');
-            });
+                cleanupModalBackdrops();
+            }, { once: true });
             
             // Ensure close buttons work
             statusModal.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
@@ -1313,6 +1352,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initModals();
 });
 
+function cleanupModalBackdrops() {
+    document.body.classList.remove('modal-open');
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+}
+
 function resetPaymentModal() {
     goToStep1();
     currentEnrollmentId = null;
@@ -1327,8 +1371,8 @@ function resetPaymentModal() {
 }
 
 function showPaymentModal(enrollmentId, courseName) {
-    console.log('showPaymentModal called with:', enrollmentId, courseName);
     currentEnrollmentId = enrollmentId;
+    console.log('showPaymentModal called with:', enrollmentId, courseName);
     
     // Ensure Bootstrap is available
     if (typeof bootstrap === 'undefined') {
@@ -1379,35 +1423,37 @@ function showPaymentModal(enrollmentId, courseName) {
     paymentModalElement.addEventListener('hidden.bs.modal', function(e) {
         console.log('Payment modal hidden');
         resetPaymentModal();
+        cleanupModalBackdrops();
     }, { once: true });
     
     // Show the modal
     try {
         paymentModalInstance.show();
         console.log('Payment modal show() called successfully');
+        // Fix backdrop z-index and pointer-events
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.zIndex = '1040';
+                backdrop.style.pointerEvents = 'none';
+            }
+            const modal = document.getElementById('paymentModal');
+            if (modal) {
+                modal.style.zIndex = '1055';
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.style.zIndex = '1060';
+                    modalContent.style.pointerEvents = 'auto';
+                }
+            }
+        }, 10);
     } catch (error) {
         console.error('Error showing payment modal:', error);
         // Fallback manual show
         paymentModalElement.style.display = 'block';
         paymentModalElement.classList.add('show');
         document.body.classList.add('modal-open');
-        
-        // Add manual backdrop
-        if (!document.querySelector('.modal-backdrop')) {
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.style.zIndex = '1050';
-            backdrop.addEventListener('click', function(e) {
-                if (confirm('Close payment modal?')) {
-                    paymentModalElement.style.display = 'none';
-                    paymentModalElement.classList.remove('show');
-                    document.body.classList.remove('modal-open');
-                    this.remove();
-                    resetPaymentModal();
-                }
-            });
-            document.body.appendChild(backdrop);
-        }
+        document.body.style.paddingRight = '15px'; // Compensate for scrollbar
     }
 }
 
@@ -1481,6 +1527,7 @@ function renderPaymentMethods(methods) {
   updatedContainer.innerHTML = methods.map(method => {
     const hasQR = method.qr_code_path?.trim() !== '';
     const iconClass = getPaymentMethodIcon(method.method_type);
+    const fieldsJson = JSON.stringify(method.fields || []).replace(/"/g, '&quot;');
     return `
       <div class="col-md-6 mb-3">
         <div
@@ -1491,6 +1538,7 @@ function renderPaymentMethods(methods) {
           data-method-type="${method.method_type}"
           data-qr-path="${method.qr_code_path||''}"
           data-description="${method.description||''}"
+          data-fields="${fieldsJson}"
         >
           <div class="card-body text-center">
             <i class="${iconClass}" style="font-size:2.5rem; margin-bottom:10px;"></i>
@@ -1501,6 +1549,9 @@ function renderPaymentMethods(methods) {
             ${ hasQR
               ? '<span class="badge bg-success">QR Available</span>'
               : '<span class="badge bg-secondary">Manual Process</span>' }
+            ${ method.fields && method.fields.length > 0 
+              ? `<div class="mt-2"><small class="text-info">${method.fields.length} field(s) required</small></div>`
+              : '' }
           </div>
         </div>
       </div>
@@ -1510,15 +1561,35 @@ function renderPaymentMethods(methods) {
 
   // Add single delegated click listener to the updated container
   updatedContainer.addEventListener('click', function(e) {
+    console.log('Container clicked, target:', e.target);
     const card = e.target.closest('.payment-method-card');
-    if (!card) return;
+    if (!card) {
+      console.log('No card found');
+      return;
+    }
     
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
     
     console.log('Card clicked!', card.dataset.methodName);
-    const { methodId, methodName, methodType, qrPath, description } = card.dataset;
-    selectPaymentMethod(methodId, methodName, methodType, qrPath, description);
+    const { methodId, methodName, methodType, qrPath, description, fields } = card.dataset;
+    const fieldsData = fields ? JSON.parse(fields.replace(/&quot;/g, '"')) : [];
+    selectPaymentMethod(methodId, methodName, methodType, qrPath, description, fieldsData);
+  }, true); // Use capture phase
+  
+  // Add additional click handling to ensure cards are clickable
+  updatedContainer.querySelectorAll('.payment-method-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+      console.log('Direct card click:', this.dataset.methodName);
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      const { methodId, methodName, methodType, qrPath, description, fields } = this.dataset;
+      const fieldsData = fields ? JSON.parse(fields.replace(/&quot;/g, '"')) : [];
+      selectPaymentMethod(methodId, methodName, methodType, qrPath, description, fieldsData);
+    }, true);
   });
 }
 
@@ -1534,8 +1605,8 @@ function getPaymentMethodIcon(methodType) {
     return icons[methodType] || 'bi bi-wallet2';
 }
 
-function selectPaymentMethod(id, name, type, qrPath, description) {
-    console.log('Payment method selected:', { id, name, type, qrPath, description });
+function selectPaymentMethod(id, name, type, qrPath, description, fields = []) {
+    console.log('Payment method selected:', { id, name, type, qrPath, description, fields });
     
     // Remove previous selection
     document.querySelectorAll('.payment-method-card').forEach(card => {
@@ -1555,7 +1626,8 @@ function selectPaymentMethod(id, name, type, qrPath, description) {
         name: name,
         type: type,
         qr_path: qrPath,
-        description: description
+        description: description,
+        fields: fields || []
     };
     
     // Show payment details and continue button
@@ -1642,33 +1714,38 @@ function goToStep2() {
         return;
     }
     
-    if (!selectedPaymentMethod.qr_path || selectedPaymentMethod.qr_path.trim() === '') {
-        alert('This payment method does not support QR code payments. Please contact support for assistance.');
-        return;
-    }
-    
-    // Setup QR code step
+    // Setup payment method header
     document.getElementById('paymentMethodTitle').textContent = `Pay with ${selectedPaymentMethod.name}`;
-    document.getElementById('paymentMethodName').textContent = selectedPaymentMethod.name;
     
+    // Setup payment amount
     if (enrollmentDetails) {
         const amount = parseFloat(enrollmentDetails.amount).toFixed(2);
         document.getElementById('paymentAmount').textContent = parseFloat(amount).toLocaleString();
-        document.getElementById('paymentAmountInstruction').textContent = parseFloat(amount).toLocaleString();
     }
     
-    // Set QR code image
+    // Setup QR code section
+    const qrSection = document.getElementById('qrCodeSection');
     const qrImage = document.getElementById('qrCodeImage');
     if (selectedPaymentMethod.qr_path) {
         qrImage.src = `/storage/${selectedPaymentMethod.qr_path}`;
-        qrImage.style.display = 'block';
+        qrSection.style.display = 'block';
     } else {
-        qrImage.style.display = 'none';
+        qrSection.style.display = 'none';
     }
     
-    // Reset form
-    document.getElementById('paymentProof').value = '';
-    document.getElementById('referenceNumber').value = '';
+    // Setup payment instructions
+    const instructionsSection = document.getElementById('paymentInstructions');
+    const instructionsContent = document.getElementById('instructionsContent');
+    if (selectedPaymentMethod.description || selectedPaymentMethod.instructions) {
+        const instructions = selectedPaymentMethod.instructions || selectedPaymentMethod.description;
+        instructionsContent.innerHTML = instructions.replace(/\n/g, '<br>');
+        instructionsSection.style.display = 'block';
+    } else {
+        instructionsSection.style.display = 'none';
+    }
+    
+    // Generate dynamic form fields
+    generateDynamicFormFields();
     
     // Show step 2
     document.getElementById('paymentStep1').style.display = 'none';
@@ -1676,33 +1753,155 @@ function goToStep2() {
     document.getElementById('paymentStep3').style.display = 'none';
 }
 
-async function submitPayment() {
-    const fileInput = document.getElementById('paymentProof');
-    const referenceInput = document.getElementById('referenceNumber');
-    const submitBtn = document.getElementById('submitPaymentBtn');
+function generateDynamicFormFields() {
+    const container = document.getElementById('dynamicFormFields');
+    const fields = selectedPaymentMethod.fields || [];
     
-    if (!fileInput.files[0]) {
-        alert('Please upload payment proof screenshot');
+    if (fields.length === 0) {
+        // If no fields configured, show default message
+        container.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>No additional information required</strong><br>
+                Please complete your payment using the method above and contact support to confirm your payment.
+            </div>
+        `;
         return;
     }
+    
+    // Sort fields by sort_order
+    fields.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    
+    let formHTML = `<div class="dynamic-form-section">`;
+    
+    fields.forEach(field => {
+        const fieldId = `field_${field.field_name}`;
+        const isRequired = field.is_required;
+        const requiredText = isRequired ? ' <span class="text-danger">*</span>' : '';
+        
+        formHTML += `<div class="mb-3">`;
+        formHTML += `<label for="${fieldId}" class="form-label">${field.field_label}${requiredText}</label>`;
+        
+        switch (field.field_type) {
+            case 'text':
+                formHTML += `<input type="text" class="form-control" id="${fieldId}" name="${field.field_name}" ${isRequired ? 'required' : ''} placeholder="${field.field_label}">`;
+                break;
+                
+            case 'number':
+                formHTML += `<input type="number" class="form-control" id="${fieldId}" name="${field.field_name}" ${isRequired ? 'required' : ''} placeholder="${field.field_label}">`;
+                break;
+                
+            case 'date':
+                formHTML += `<input type="date" class="form-control" id="${fieldId}" name="${field.field_name}" ${isRequired ? 'required' : ''}>`;
+                break;
+                
+            case 'file':
+                const acceptTypes = getFileAcceptTypes(field.field_name);
+                formHTML += `<input type="file" class="form-control" id="${fieldId}" name="${field.field_name}" ${isRequired ? 'required' : ''} accept="${acceptTypes}">`;
+                formHTML += `<div class="form-text">Supported formats: ${getFileFormatsText(field.field_name)}</div>`;
+                break;
+                
+            case 'textarea':
+                formHTML += `<textarea class="form-control" id="${fieldId}" name="${field.field_name}" rows="3" ${isRequired ? 'required' : ''} placeholder="${field.field_label}"></textarea>`;
+                break;
+                
+            case 'select':
+                formHTML += `<select class="form-control" id="${fieldId}" name="${field.field_name}" ${isRequired ? 'required' : ''}>`;
+                formHTML += `<option value="">Select ${field.field_label}</option>`;
+                if (field.field_options && Array.isArray(field.field_options)) {
+                    field.field_options.forEach(option => {
+                        formHTML += `<option value="${option}">${option}</option>`;
+                    });
+                }
+                formHTML += `</select>`;
+                break;
+                
+            default:
+                formHTML += `<input type="text" class="form-control" id="${fieldId}" name="${field.field_name}" ${isRequired ? 'required' : ''} placeholder="${field.field_label}">`;
+        }
+        
+        formHTML += `</div>`;
+    });
+    
+    formHTML += `</div>`;
+    container.innerHTML = formHTML;
+}
+
+function getFileAcceptTypes(fieldName) {
+    // Default to image files for most payment-related uploads
+    const imageFields = ['payment_proof', 'screenshot', 'receipt'];
+    if (imageFields.some(field => fieldName.toLowerCase().includes(field))) {
+        return 'image/*';
+    }
+    return '*/*'; // Allow all file types for other fields
+}
+
+function getFileFormatsText(fieldName) {
+    const imageFields = ['payment_proof', 'screenshot', 'receipt'];
+    if (imageFields.some(field => fieldName.toLowerCase().includes(field))) {
+        return 'JPG, PNG (Max 5MB)';
+    }
+    return 'All formats (Max 10MB)';
+}
+
+async function submitPayment() {
+    const submitBtn = document.getElementById('submitPaymentBtn');
     
     if (!selectedPaymentMethod || !currentEnrollmentId || !enrollmentDetails) {
         alert('Missing payment information. Please start over.');
         return;
     }
     
+    // Validate dynamic form fields
+    const dynamicFormSection = document.getElementById('dynamicFormFields');
+    const formInputs = dynamicFormSection.querySelectorAll('input, textarea, select');
+    let isValid = true;
+    let firstInvalidField = null;
+    
+    formInputs.forEach(input => {
+        if (input.hasAttribute('required') && (!input.value || input.value.trim() === '')) {
+            isValid = false;
+            input.classList.add('is-invalid');
+            if (!firstInvalidField) {
+                firstInvalidField = input;
+            }
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        alert('Please fill in all required fields');
+        if (firstInvalidField) {
+            firstInvalidField.focus();
+        }
+        return;
+    }
+    
     // Show loading state
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="bi bi-hourglass-half me-2"></i>Uploading...';
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-half me-2"></i>Submitting...';
     submitBtn.disabled = true;
     
     try {
         const formData = new FormData();
-        formData.append('payment_proof', fileInput.files[0]);
-        formData.append('reference_number', referenceInput.value || '');
+        
+        // Add basic payment information
         formData.append('payment_method_id', selectedPaymentMethod.id);
         formData.append('enrollment_id', currentEnrollmentId);
         formData.append('amount', enrollmentDetails.amount);
+        
+        // Add dynamic form field values
+        formInputs.forEach(input => {
+            const fieldName = input.name;
+            if (input.type === 'file') {
+                if (input.files && input.files[0]) {
+                    formData.append(fieldName, input.files[0]);
+                }
+            } else {
+                formData.append(fieldName, input.value || '');
+            }
+        });
         
         const response = await fetch('/student/payment/upload-proof', {
             method: 'POST',
@@ -1728,13 +1927,16 @@ async function submitPayment() {
         }
         
     } catch (error) {
-        console.error('Error uploading payment proof:', error);
-        alert('Failed to upload payment proof. Please try again.');
+        console.error('Error submitting payment:', error);
+        alert('Failed to submit payment information. Please try again.');
         
         // Reset button
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     }
 }
+</script>
+<script>
+window.showPaymentModal = showPaymentModal;
 </script>
 @endsection

@@ -33,6 +33,80 @@
     <!-- Critical JavaScript functions for immediate availability -->
     <script>
         
+    // GLOBAL FILE INPUT PROTECTION: Prevent InvalidStateError by blocking unsafe value assignments
+    (function() {
+        const originalValueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+        const originalValueSetter = originalValueDescriptor.set;
+        
+        Object.defineProperty(HTMLInputElement.prototype, 'value', {
+            get: originalValueDescriptor.get,
+            set: function(val) {
+                if (this.type === 'file' && val !== '') {
+                    console.warn('🚫 BLOCKED: Attempted to set file input value to non-empty string:', val);
+                    console.trace('Stack trace for blocked file input assignment:');
+                    return; // Block the dangerous assignment
+                }
+                return originalValueSetter.call(this, val);
+            },
+            configurable: true,
+            enumerable: true
+        });
+        
+        console.log('✅ Global file input protection enabled');
+    })();
+    
+    // File upload utility functions
+    function getFileInputElement(fieldName) {
+        return document.getElementById(fieldName) || document.querySelector(`input[name="${fieldName}"]`);
+    }
+    
+    function safelyClearFileInput(fieldName) {
+        const fileInput = getFileInputElement(fieldName);
+        if (!fileInput || fileInput.type !== 'file') return;
+        
+        try {
+            // Method 1: Create new file input element
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.id = fileInput.id;
+            newInput.name = fileInput.name;
+            newInput.className = fileInput.className;
+            
+            // Copy all attributes except value-related ones
+            Array.from(fileInput.attributes).forEach(attr => {
+                if (!['value', 'defaultvalue'].includes(attr.name.toLowerCase())) {
+                    newInput.setAttribute(attr.name, attr.value);
+                }
+            });
+            
+            // Copy data attributes
+            Object.keys(fileInput.dataset).forEach(key => {
+                newInput.dataset[key] = fileInput.dataset[key];
+            });
+            
+            // Re-attach event listeners
+            if (fileInput.hasAttribute('onchange')) {
+                newInput.setAttribute('onchange', fileInput.getAttribute('onchange'));
+            }
+            
+            // Replace old input
+            fileInput.parentNode.replaceChild(newInput, fileInput);
+            console.log('✅ File input safely cleared via replacement');
+            
+        } catch (e) {
+            console.warn('⚠️ Could not replace file input, trying form reset:', e);
+            try {
+                const form = fileInput.closest('form');
+                if (form) {
+                    // Reset only this specific input
+                    fileInput.value = '';
+                }
+            } catch (resetError) {
+                console.warn('⚠️ All clear methods failed:', resetError);
+            }
+        }
+    }
+        
     // User authentication state - check both Laravel session and PHP session (MOVED TO TOP)
     @php
         $userLoggedIn = session('user_id') || (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
@@ -1145,6 +1219,32 @@
 
     // Enhanced file upload with OCR validation
     function handleFileUpload(inputElement) {
+        // CRITICAL SAFETY: Prevent any code from setting file input value to non-empty string
+        const originalValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+        const safeValueSetter = function(val) {
+            if (this.type === 'file' && val !== '') {
+                console.warn('⚠️ Blocked attempt to set file input value to:', val);
+                return; // Block the assignment
+            }
+            return originalValueSetter.call(this, val);
+        };
+        
+        // Temporarily override the value setter for ALL file inputs during this operation
+        Object.defineProperty(HTMLInputElement.prototype, 'value', {
+            set: safeValueSetter,
+            get: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').get,
+            configurable: true
+        });
+        
+        // Restore original after a delay to allow the operation to complete
+        setTimeout(() => {
+            Object.defineProperty(HTMLInputElement.prototype, 'value', {
+                set: originalValueSetter,
+                get: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').get,
+                configurable: true
+            });
+        }, 5000);
+
         const fieldName = inputElement.name;
         const file = inputElement.files[0];
         
@@ -1152,6 +1252,38 @@
         
         console.log('=== File Upload Started ===');
         console.log('Field:', fieldName, 'File:', file.name);
+        
+        // CRITICAL SAFETY: Wrap inputElement to prevent any accidental .value assignments
+        const safeInputElement = {
+            ...inputElement,
+            value: '', // Always return empty string for value property
+            files: inputElement.files,
+            name: inputElement.name,
+            id: inputElement.id,
+            type: inputElement.type,
+            classList: inputElement.classList,
+            style: inputElement.style,
+            closest: inputElement.closest.bind(inputElement),
+            parentNode: inputElement.parentNode
+        };
+        // Override the dangerous value setter
+        Object.defineProperty(safeInputElement, 'value', {
+            get: () => '',
+            set: (val) => {
+                if (val !== '') {
+                    console.warn('⚠️ Attempted to set file input value to non-empty string. Ignoring for safety.');
+                    return;
+                }
+                // Only allow setting to empty string
+                try {
+                    inputElement.value = '';
+                } catch (e) {
+                    console.warn('⚠️ Could not clear file input value:', e);
+                }
+            },
+            enumerable: true,
+            configurable: false
+        });
         
         // CRITICAL FIX: Store original file reference to prevent losing it
         const originalFileName = file.name;
@@ -1267,8 +1399,9 @@
                 console.log('✅ File validation successful');
                 showSuccessModal('Document validated successfully!');
                 
-                // CRITICAL FIX: Store the file path for form submission
-                if (data.file_path) {
+                try {
+                    // CRITICAL FIX: Store the file path for form submission
+                    if (data.file_path) {
                     // Always create/update hidden input inside the form with mapped database field name
                     let form = inputElement.closest('form');
                     
@@ -1316,31 +1449,18 @@
                         <div class="uploaded-file-container p-3 border rounded bg-success bg-opacity-10 border-success">
                             <div class="d-flex align-items-center">
                                 <div class="file-icon me-3">
-                                    <i class="fas fa-file-upload text-success" style="font-size: 1.5rem;"></i>
+                                    <i class="bi bi-file-earmark-check" style="font-size:2rem;"></i>
                                 </div>
                                 <div class="file-info flex-grow-1">
-                                    <div class="file-name fw-bold text-success">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        ${originalFileName}
-                                    </div>
-                                    <div class="file-details text-muted small">
-                                        Size: ${(originalFileSize / 1024).toFixed(1)} KB • 
-                                        Status: <span class="text-success">Validated ✓</span> •
-                                        Field: <code>${dbFieldName}</code>
-                                    </div>
+                                    <div class="file-name fw-bold">${originalFileName}</div>
+                                    <div class="file-size text-muted small">${(originalFileSize/1024).toFixed(1)} KB</div>
                                 </div>
-                                <div class="file-actions">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" 
-                                        onclick="removeUploadedFile('${fieldName}')" title="Remove and upload different file">
-                                        <i class="fas fa-times me-1"></i> Remove
-                                    </button>
-                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="replaceFileInput('${fieldName}')">
+                                    <i class="bi bi-arrow-repeat"></i> Replace
+                                </button>
                             </div>
                         </div>
                     `;
-                    customFileDisplay.style.display = 'block';
-                    
-                    console.log('✅ Custom file display shown, original input hidden');
                 }
                 
                 // FIXED: Handle program suggestions with better validation and fallback
@@ -1384,6 +1504,11 @@
                 // Add success styling to the input
                 inputElement.classList.add('is-valid');
                 inputElement.classList.remove('is-invalid');
+                
+                } catch (styleError) {
+                    console.error('❌ Error during file upload styling:', styleError);
+                    // Continue anyway - this is not critical
+                }
                 
             } else {
                 console.error('❌ File validation failed:', data);
@@ -1806,61 +1931,76 @@
     }
 
     function removeUploadedFile(fieldName) {
-        console.log('🗑️ Removing uploaded file for:', fieldName);
-        
-        // Map OCR field names to database field names (same mapping as in upload)
+    console.log('🗑️ Removing uploaded file for:', fieldName);
+    let protectionActive = true;
+
+    try {
+        // Map OCR field names → DB field names
         const fieldMapping = {
-            'school_id': 'school_id',
-            'diploma': 'diploma', 
-            'good_moral': 'good_moral',
-            'birth_certificate': 'birth_certificate',
-            'tor': 'tor',
-            'valid_id': 'valid_id',
-            'id': 'valid_id',
-            'psa': 'psa_birth_certificate',
-            'form_137': 'form_137'
+            school_id: 'school_id',
+            diploma: 'diploma',
+            good_moral: 'good_moral',
+            birth_certificate: 'birth_certificate',
+            tor: 'tor',
+            valid_id: 'valid_id',
+            id: 'valid_id',
+            psa: 'psa_birth_certificate',
+            form_137: 'form_137'
         };
-        
         const dbFieldName = fieldMapping[fieldName] || fieldName;
-        
-        // Remove hidden input with file path (using database field name)
+
+        // Remove the hidden input that stores the file path
         const form = document.getElementById('enrollmentForm');
         const hiddenInput = form.querySelector(`input[name='${dbFieldName}']`);
         if (hiddenInput) {
             hiddenInput.remove();
             console.log('✅ Removed hidden file path input for:', dbFieldName);
         }
-        
-        // Also check for legacy path-style inputs
-        const legacyHiddenInput = form.querySelector(`input[name='${fieldName}_path']`);
-        if (legacyHiddenInput) {
-            legacyHiddenInput.remove();
-            console.log('✅ Removed legacy hidden file path input');
-        }
-        
-        // Hide custom file display
+
+        // Hide custom display
         const customFileDisplay = document.getElementById('custom-' + fieldName);
         if (customFileDisplay) {
             customFileDisplay.style.display = 'none';
             console.log('✅ Hidden custom file display');
         }
-        
-        // Show the original file input again and clear it
-        const fileInput = document.getElementById(fieldName) || document.querySelector(`input[name="${fieldName}"]`);
-        if (fileInput) {
-            fileInput.style.display = 'block'; // Show the input again
-            fileInput.value = ''; // Clear the file selection
-            fileInput.classList.remove('is-valid', 'is-invalid'); // Reset validation styles
-            console.log('✅ Restored and cleared original file input');
+
+        // Restore the native <input type="file">
+        const oldInput = document.getElementById(fieldName);
+        if (oldInput) {
+            // Create a fresh input element to avoid the InvalidStateError
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.id = oldInput.id;
+            newInput.name = oldInput.name;
+            newInput.className = oldInput.className;
+            newInput.accept = oldInput.accept;
+            newInput.required = oldInput.required;
+            newInput.onchange = () => handleFileUpload(newInput);
+
+            oldInput.parentNode.replaceChild(newInput, oldInput);
+            console.log('✅ Replaced file input with a clean one');
         }
-        
-        // Remove old uploaded info if it exists (legacy)
-        const uploadedInfo = document.getElementById('uploaded-' + fieldName);
-        if (uploadedInfo) {
-            uploadedInfo.style.display = 'none';
-        }
-        
-        console.log('✅ File removal completed for:', fieldName);
+    } catch (error) {
+        console.error('❌ Error in removeUploadedFile:', error);
+    } finally {
+        protectionActive = false;
+    }
+}
+
+    // Add this function to allow replacing the file
+    function replaceFileInput(fieldName) {
+        const customFileDisplay = document.getElementById('custom-' + fieldName);
+        const form = customFileDisplay.closest('form');
+        // Remove the custom display
+        if (customFileDisplay) customFileDisplay.remove();
+        // Show the original file input
+        const fileInput = form.querySelector(`input[type='file'][name='${fieldName}']`);
+        if (fileInput) fileInput.style.display = '';
+        // Remove the hidden input with the file path
+        const hiddenInput = form.querySelector(`input[type='hidden'][name='${fieldName}']`);
+        if (hiddenInput) hiddenInput.remove();
+        // Clear the file input value
+        if (fileInput) fileInput.value = '';
     }
 
     </script>

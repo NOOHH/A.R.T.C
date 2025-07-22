@@ -15,7 +15,6 @@ return new class extends Migration
     {
         Schema::create('admin_overrides', function (Blueprint $table) {
             $table->id();
-<<<<<<< HEAD
             $table->string('override_type'); // 'module', 'course', 'content'
             $table->unsignedBigInteger('target_id'); // ID of the module/course/content
             $table->unsignedBigInteger('student_id')->nullable(); // If null, applies to all students
@@ -38,9 +37,7 @@ return new class extends Migration
             // Foreign key constraints
             $table->foreign('student_id')->references('user_id')->on('users')->onDelete('cascade');
             $table->foreign('created_by')->references('user_id')->on('users')->onDelete('cascade');
-=======
             $table->timestamps();
->>>>>>> broken-enroll-upload
         });
     }
 

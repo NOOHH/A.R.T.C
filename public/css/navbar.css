@@ -603,3 +603,71 @@ body {
         margin-right: 0.5rem;
     }
     
+/* --- Custom Footer Styles --- */
+.custom-footer {
+    background: #333;
+    color: #fff;
+    font-size: 15px;
+}
+.custom-footer a {
+    color: #bdbdbd;
+    text-decoration: none;
+    margin-right: 15px;
+    transition: color 0.2s;
+}
+.custom-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+.footer-logo {
+    display: flex;
+    align-items: center;
+}
+.footer-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    line-height: 1.1;
+}
+.footer-social-icon {
+    font-size: 1.5rem;
+    margin-left: 15px;
+    color: #bdbdbd;
+    transition: color 0.2s;
+}
+.footer-social-icon:hover {
+    color: #fff;
+}
+.footer-divider {
+    border-color: #444;
+    margin: 1rem 0;
+}
+.footer-links ul {
+    padding-left: 0;
+}
+.footer-links li {
+    margin-bottom: 0.5rem;
+}
+.footer-links a {
+    color: #bdbdbd;
+    font-size: 1rem;
+}
+.footer-links a:hover {
+    color: #fff;
+}
+.footer-bottom {
+    border-top: 1px solid #444;
+    font-size: 0.95rem;
+}
+.footer-policies a {
+    margin-right: 10px;
+    font-size: 0.95rem;
+}
+@media (max-width: 768px) {
+    .footer-top, .footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .footer-social {
+        margin-top: 1rem;
+    }
+}

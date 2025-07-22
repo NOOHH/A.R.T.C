@@ -223,10 +223,35 @@
                                                             onclick="viewRegistrationDetails('{{ $registration->registration_id }}')">
                                                         <i class="bi bi-eye"></i> View
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-danger" 
-                                                            onclick="rejectRegistration('{{ $registration->registration_id }}')">
-                                                        <i class="bi bi-x-circle"></i> Reject
-                                                    </button>
+                                                    
+                                                    <!-- Enhanced Rejection Dropdown -->
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                                onclick="enhancedRejectRegistration('{{ $registration->registration_id }}')">
+                                                            <i class="bi bi-x-circle-fill"></i> Enhanced Reject
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-danger dropdown-toggle dropdown-toggle-split" 
+                                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <span class="visually-hidden">Toggle Dropdown</span>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li>
+                                                                <a class="dropdown-item" href="#" 
+                                                                   onclick="enhancedRejectRegistration('{{ $registration->registration_id }}')">
+                                                                    <i class="bi bi-x-circle-fill text-danger"></i> Enhanced Reject
+                                                                    <br><small class="text-muted">Mark specific fields & provide detailed feedback</small>
+                                                                </a>
+                                                            </li>
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <a class="dropdown-item" href="#" 
+                                                                   onclick="rejectRegistration('{{ $registration->registration_id }}')">
+                                                                    <i class="bi bi-x-circle text-warning"></i> Simple Reject
+                                                                    <br><small class="text-muted">Basic rejection with general reason</small>
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 @endif
                                             </div>
                                         </td>
@@ -272,7 +297,100 @@
         </div>
     </div>
 
-    <!-- Rejection Reason Modal -->
+    <!-- Enhanced Rejection Modal with Field Marking -->
+    <div class="modal fade" id="enhancedRejectModal" tabindex="-1" aria-labelledby="enhancedRejectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <form id="enhancedRejectForm" method="POST">
+                    @csrf
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="enhancedRejectModalLabel">
+                            <i class="bi bi-x-circle me-2"></i>Enhanced Registration Rejection
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Left Column: Registration Overview -->
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Registration Overview</h6>
+                                    </div>
+                                    <div class="card-body" id="rejectionOverview">
+                                        <!-- Will be populated with registration details -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column: Field Marking -->
+                            <div class="col-md-8">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Mark Problematic Fields</h6>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-success" onclick="markAllFieldsValid()">
+                                                <i class="bi bi-check-all"></i> Mark All Valid
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" onclick="markAllFieldsInvalid()">
+                                                <i class="bi bi-x-circle"></i> Mark All Invalid
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                        <div id="fieldsMarkingContainer">
+                                            <!-- Will be dynamically populated -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Overall Rejection Reason -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Overall Rejection Reason</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="overallRejectionReason" class="form-label">
+                                                General reason for rejection <span class="text-danger">*</span>
+                                            </label>
+                                            <textarea class="form-control" id="overallRejectionReason" name="rejection_reason" rows="3" 
+                                                      placeholder="Provide a general explanation for why this registration is being rejected..." required></textarea>
+                                            <div class="form-text">This message will be sent to the student via email along with specific field feedback.</div>
+                                        </div>
+                                        
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="allowResubmission" name="allow_resubmission" checked>
+                                            <label class="form-check-label" for="allowResubmission">
+                                                Allow student to resubmit with corrections
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="previewRejectionEmail()">
+                            <i class="bi bi-eye"></i> Preview Email
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-send"></i> Send Rejection & Notify Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejection Reason Modal (Original Simple Version) -->
     <div class="modal fade" id="rejectReasonModal" tabindex="-1" aria-labelledby="rejectReasonModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -522,9 +640,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button type="button" class="btn btn-success" onclick="approveRegistration('${registrationId}')">
                             <i class="bi bi-check-circle"></i> Approve
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="rejectRegistration('${registrationId}')">
-                            <i class="bi bi-x-circle"></i> Reject
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-danger" onclick="enhancedRejectRegistration('${registrationId}')">
+                                <i class="bi bi-x-circle-fill"></i> Enhanced Reject
+                            </button>
+                            <button type="button" class="btn btn-danger dropdown-toggle dropdown-toggle-split" 
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="visually-hidden">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="enhancedRejectRegistration('${registrationId}')">
+                                        <i class="bi bi-x-circle-fill text-danger"></i> Enhanced Reject
+                                        <br><small class="text-muted">Mark specific fields & provide detailed feedback</small>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="rejectRegistration('${registrationId}')">
+                                        <i class="bi bi-x-circle text-warning"></i> Simple Reject
+                                        <br><small class="text-muted">Basic rejection with general reason</small>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     `;
                 }
 
@@ -573,13 +712,242 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     };
 
-    // Global function for rejecting registration
+    // Global function for rejecting registration (original simple version)
     window.rejectRegistration = function(registrationId) {
         const rejectForm = document.getElementById('rejectReasonForm');
         rejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject-with-reason`;
         registrationModal.hide();
         rejectReasonModal.show();
     };
+
+    // Enhanced rejection with field marking
+    window.enhancedRejectRegistration = function(registrationId) {
+        // First, load the registration details to populate the form
+        fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                populateEnhancedRejectionModal(data);
+                const enhancedRejectForm = document.getElementById('enhancedRejectForm');
+                enhancedRejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject-fields`;
+                registrationModal.hide();
+                
+                const enhancedRejectModal = new bootstrap.Modal(document.getElementById('enhancedRejectModal'));
+                enhancedRejectModal.show();
+            })
+            .catch(error => {
+                console.error('Error loading registration details:', error);
+                alert('Failed to load registration details for enhanced rejection');
+            });
+    };
+
+    function populateEnhancedRejectionModal(data) {
+        // Populate overview section
+        const overview = document.getElementById('rejectionOverview');
+        overview.innerHTML = `
+            <div class="mb-3">
+                <strong>Student:</strong><br>
+                ${data.firstname} ${data.middlename || ''} ${data.lastname}
+            </div>
+            <div class="mb-3">
+                <strong>Email:</strong><br>
+                ${data.email || 'N/A'}
+            </div>
+            <div class="mb-3">
+                <strong>Program:</strong><br>
+                ${data.program_name || 'N/A'}
+            </div>
+            <div class="mb-3">
+                <strong>Package:</strong><br>
+                ${data.package_name || 'N/A'}
+            </div>
+            <div class="mb-3">
+                <strong>Submitted:</strong><br>
+                ${new Date(data.created_at).toLocaleDateString()}
+            </div>
+        `;
+
+        // Populate fields marking section
+        const fieldsContainer = document.getElementById('fieldsMarkingContainer');
+        fieldsContainer.innerHTML = '';
+
+        // Define the fields that can be marked for rejection
+        const markableFields = [
+            { key: 'firstname', label: 'First Name', value: data.firstname },
+            { key: 'lastname', label: 'Last Name', value: data.lastname },
+            { key: 'middlename', label: 'Middle Name', value: data.middlename },
+            { key: 'email', label: 'Email Address', value: data.email },
+            { key: 'contact_number', label: 'Contact Number', value: data.contact_number },
+            { key: 'street_address', label: 'Street Address', value: data.street_address },
+            { key: 'city', label: 'City', value: data.city },
+            { key: 'state_province', label: 'State/Province', value: data.state_province },
+            { key: 'zipcode', label: 'Zip Code', value: data.zipcode },
+            { key: 'emergency_contact_number', label: 'Emergency Contact', value: data.emergency_contact_number },
+            { key: 'student_school', label: 'School Name', value: data.student_school },
+            { key: 'good_moral', label: 'Good Moral Certificate', value: data.good_moral },
+            { key: 'PSA', label: 'PSA Birth Certificate', value: data.PSA },
+            { key: 'Course_Cert', label: 'Course Certificate', value: data.Course_Cert },
+            { key: 'TOR', label: 'Transcript of Records', value: data.TOR },
+            { key: 'Cert_of_Grad', label: 'Certificate of Graduation', value: data.Cert_of_Grad },
+            { key: 'photo_2x2', label: '2x2 Photo', value: data.photo_2x2 }
+        ];
+
+        markableFields.forEach(field => {
+            if (field.value) { // Only show fields that have values
+                const fieldHtml = `
+                    <div class="field-marking-item mb-3 p-3 border rounded" data-field="${field.key}">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong>${field.label}</strong>
+                                <br><small class="text-muted">${field.value.length > 50 ? field.value.substring(0, 50) + '...' : field.value}</small>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-check">
+                                    <input class="form-check-input field-status" type="radio" 
+                                           name="field_status_${field.key}" id="valid_${field.key}" value="valid" checked>
+                                    <label class="form-check-label text-success" for="valid_${field.key}">
+                                        <i class="bi bi-check-circle"></i> Valid
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input field-status" type="radio" 
+                                           name="field_status_${field.key}" id="invalid_${field.key}" value="invalid">
+                                    <label class="form-check-label text-danger" for="invalid_${field.key}">
+                                        <i class="bi bi-x-circle"></i> Invalid
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <textarea class="form-control field-comment" 
+                                          name="field_comment_${field.key}" 
+                                          placeholder="Specific issue with this field (optional)"
+                                          rows="2" disabled></textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                fieldsContainer.innerHTML += fieldHtml;
+            }
+        });
+
+        // Add event listeners for field status changes
+        document.querySelectorAll('.field-status').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const fieldKey = this.name.replace('field_status_', '');
+                const commentField = document.querySelector(`textarea[name="field_comment_${fieldKey}"]`);
+                const fieldItem = this.closest('.field-marking-item');
+                
+                if (this.value === 'invalid') {
+                    commentField.disabled = false;
+                    commentField.required = true;
+                    fieldItem.classList.add('border-danger', 'bg-light');
+                    fieldItem.classList.remove('border-success');
+                } else {
+                    commentField.disabled = true;
+                    commentField.required = false;
+                    commentField.value = '';
+                    fieldItem.classList.add('border-success');
+                    fieldItem.classList.remove('border-danger', 'bg-light');
+                }
+            });
+        });
+    }
+
+    // Helper functions for bulk field marking
+    window.markAllFieldsValid = function() {
+        document.querySelectorAll('input[value="valid"]').forEach(radio => {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+        });
+    };
+
+    window.markAllFieldsInvalid = function() {
+        document.querySelectorAll('input[value="invalid"]').forEach(radio => {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+        });
+    };
+
+    // Preview rejection email
+    window.previewRejectionEmail = function() {
+        const rejectedFields = {};
+        const overallReason = document.getElementById('overallRejectionReason').value;
+        
+        // Collect rejected fields and their comments
+        document.querySelectorAll('input[value="invalid"]:checked').forEach(radio => {
+            const fieldKey = radio.name.replace('field_status_', '');
+            const commentField = document.querySelector(`textarea[name="field_comment_${fieldKey}"]`);
+            const fieldLabel = radio.closest('.field-marking-item').querySelector('strong').textContent;
+            
+            if (commentField.value.trim()) {
+                rejectedFields[fieldLabel] = commentField.value.trim();
+            }
+        });
+
+        // Show preview modal (you can implement this)
+        alert(`Email Preview:\n\nOverall Reason: ${overallReason}\n\nRejected Fields: ${JSON.stringify(rejectedFields, null, 2)}`);
+    };
+
+    // Handle enhanced rejection form submission
+    document.getElementById('enhancedRejectForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const overallReason = document.getElementById('overallRejectionReason').value.trim();
+        const allowResubmission = document.getElementById('allowResubmission').checked;
+        const rejectedFields = {};
+        
+        // Collect rejected fields and their comments
+        let hasRejectedFields = false;
+        document.querySelectorAll('input[value="invalid"]:checked').forEach(radio => {
+            const fieldKey = radio.name.replace('field_status_', '');
+            const commentField = document.querySelector(`textarea[name="field_comment_${fieldKey}"]`);
+            
+            if (commentField.value.trim()) {
+                rejectedFields[fieldKey] = commentField.value.trim();
+                hasRejectedFields = true;
+            } else {
+                alert(`Please provide a comment for the rejected field: ${fieldKey}`);
+                commentField.focus();
+                return;
+            }
+        });
+
+        if (!overallReason) {
+            alert('Please provide an overall rejection reason.');
+            document.getElementById('overallRejectionReason').focus();
+            return;
+        }
+
+        if (!hasRejectedFields) {
+            if (!confirm('No specific fields were marked as invalid. Are you sure you want to proceed with a general rejection?')) {
+                return;
+            }
+        }
+
+        // Submit the form data
+        const formData = new FormData();
+        formData.append('_token', token);
+        formData.append('rejection_reason', overallReason);
+        formData.append('rejected_fields', JSON.stringify(rejectedFields));
+        formData.append('can_resubmit', allowResubmission);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Registration rejected successfully with detailed feedback.');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to reject registration. Please try again.');
+        });
+    });
 
     // Global function for undoing approval
     window.undoApproval = function(registrationId) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Models\Registration;
 use App\Models\User;
 use App\Models\Student;
@@ -544,6 +545,12 @@ class AdminController extends Controller
                 $paymentNotes = $latestHistory->payment_notes ?? $paymentNotes;
             }
             
+            // Get registration data if available
+            $registration = null;
+            if ($enrollment->user_id) {
+                $registration = Registration::where('user_id', $enrollment->user_id)->first();
+            }
+            
             return response()->json([
                 'enrollment_id' => $enrollment->enrollment_id,
                 'student_name' => $studentName ?: 'N/A',
@@ -562,6 +569,7 @@ class AdminController extends Controller
                 'payment_date' => $paymentDate ? $paymentDate->format('M d, Y h:i A') : 'N/A',
                 'updated_at' => $enrollment->updated_at ? $enrollment->updated_at->format('M d, Y h:i A') : 'N/A',
                 'enrollment_status' => $enrollment->enrollment_status ?? 'active',
+                'registration' => $registration, // Include registration data for file access
                 'payment_history' => $paymentHistory->map(function($history) {
                     return [
                         'amount' => $history->amount,
@@ -1117,6 +1125,43 @@ class AdminController extends Controller
         }
     }
 
+    public function getPaymentMethodFields($paymentMethodId)
+    {
+        try {
+            $fields = \App\Models\PaymentMethodField::where('payment_method_id', $paymentMethodId)
+                ->orderBy('sort_order')
+                ->get();
+            return response()->json(['success' => true, 'fields' => $fields]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function savePaymentMethodFields(Request $request, $paymentMethodId)
+    {
+        try {
+            $fields = $request->input('fields', []);
+            // Remove old fields
+            \App\Models\PaymentMethodField::where('payment_method_id', $paymentMethodId)->delete();
+            // Add new fields
+            foreach ($fields as $field) {
+                \App\Models\PaymentMethodField::create([
+                    'payment_method_id' => $paymentMethodId,
+                    'field_name' => Str::slug($field['field_label'], '_'),
+                    'field_label' => $field['field_label'],
+                    'field_type' => $field['field_type'],
+                    'is_required' => $field['is_required'] ?? false,
+                    'is_active' => true,
+                    'sort_order' => $field['sort_order'] ?? 0,
+                    'field_options' => null,
+                ]);
+            }
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Display chat logs for admin monitoring
      */
@@ -1374,5 +1419,194 @@ class AdminController extends Controller
     {
         // In a real application, this would delete from database
         return response()->json(['message' => 'FAQ deleted successfully']);
+    }
+
+    /**
+     * Show rejected registrations
+     */
+    public function rejectedRegistrations()
+    {
+        try {
+            $rejectedRegistrations = Registration::where('status', 'rejected')
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            return view('admin.rejected-registrations', compact('rejectedRegistrations'));
+        } catch (\Exception $e) {
+            Log::error('Error fetching rejected registrations: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to load rejected registrations');
+        }
+    }
+
+    /**
+     * Show rejected payments
+     */
+    public function rejectedPayments()
+    {
+        try {
+            $rejectedPayments = Payment::where('payment_status', 'rejected')
+                ->with(['student', 'enrollment'])
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            return view('admin.rejected-payments', compact('rejectedPayments'));
+        } catch (\Exception $e) {
+            Log::error('Error fetching rejected payments: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to load rejected payments');
+        }
+    }
+
+    /**
+     * Reject registration with specific field comments
+     */
+    public function rejectWithFields(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'rejection_reason' => 'required|string|max:1000',
+                'rejected_fields' => 'required|array',
+                'rejected_fields.*' => 'string|max:500'
+            ]);
+
+            $registration = Registration::findOrFail($id);
+            
+            $registration->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+                'rejected_fields' => json_encode($request->rejected_fields),
+                'rejected_at' => now(),
+                'can_resubmit' => true
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration rejected with field-specific feedback'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject registration: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject payment with specific field comments
+     */
+    public function rejectPaymentWithFields(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'rejection_reason' => 'required|string|max:1000',
+                'rejected_fields' => 'required|array',
+                'rejected_fields.*' => 'string|max:500'
+            ]);
+
+            $payment = Payment::findOrFail($id);
+            
+            $payment->update([
+                'payment_status' => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+                'rejected_fields' => json_encode($request->rejected_fields),
+                'rejected_at' => now(),
+                'can_resubmit' => true
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment rejected with field-specific feedback'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject payment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve a resubmitted registration
+     */
+    public function approveResubmission(Request $request, $id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            $registration->update([
+                'status' => 'approved',
+                'rejection_reason' => null,
+                'rejected_fields' => null,
+                'rejected_at' => null,
+                'can_resubmit' => false,
+                'resubmitted_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration resubmission approved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve resubmission: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve a resubmitted payment
+     */
+    public function approvePaymentResubmission(Request $request, $id)
+    {
+        try {
+            $payment = Payment::findOrFail($id);
+            
+            $payment->update([
+                'payment_status' => 'approved',
+                'rejection_reason' => null,
+                'rejected_fields' => null,
+                'rejected_at' => null,
+                'can_resubmit' => false,
+                'resubmitted_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment resubmission approved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve payment resubmission: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset registration status to pending
+     */
+    public function resetRegistrationStatus(Request $request, $id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            $registration->update([
+                'status' => 'pending',
+                'rejection_reason' => null,
+                'rejected_fields' => null,
+                'rejected_at' => null,
+                'can_resubmit' => false
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration status reset to pending'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset registration status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

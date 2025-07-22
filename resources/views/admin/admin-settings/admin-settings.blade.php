@@ -1237,79 +1237,93 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="paymentMethodModalTitle">Add Payment Method</h5>
+                    <h5 class="modal-title" id="paymentMethodModalTitle">Edit Payment Method</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="paymentMethodForm">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="method_name" class="form-label">Method Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="e.g., GCash, Maya, Bank Transfer">
+                    <ul class="nav nav-tabs" id="paymentMethodTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="method-details-tab" data-bs-toggle="tab" data-bs-target="#method-details" type="button" role="tab">Details</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="field-config-tab" data-bs-toggle="tab" data-bs-target="#field-config" type="button" role="tab">Field Configuration</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content pt-3">
+                        <div class="tab-pane fade show active" id="method-details" role="tabpanel">
+                            <form id="paymentMethodForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="method_name" class="form-label">Method Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="e.g., GCash, Maya, Bank Transfer">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="method_type" class="form-label">Method Type <span class="text-danger">*</span></label>
+                                            <select class="form-control" id="method_type" name="method_type" required>
+                                                <option value="">Select Type</option>
+                                                <option value="credit_card">Credit Card</option>
+                                                <option value="gcash">GCash</option>
+                                                <option value="maya">Maya</option>
+                                                <option value="bank_transfer">Bank Transfer</option>
+                                                <option value="cash">Cash</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="method_type" class="form-label">Method Type <span class="text-danger">*</span></label>
-                                    <select class="form-control" id="method_type" name="method_type" required>
-                                        <option value="">Select Type</option>
-                                        <option value="credit_card">Credit Card</option>
-                                        <option value="gcash">GCash</option>
-                                        <option value="maya">Maya</option>
-                                        <option value="bank_transfer">Bank Transfer</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of this payment method"></textarea>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of this payment method"></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="instructions" class="form-label">Payment Instructions</label>
-                            <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Detailed instructions for students on how to use this payment method"></textarea>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="qr_code" class="form-label">QR Code (Optional)</label>
-                                    <input type="file" class="form-control" id="qr_code" name="qr_code" accept="image/*">
-                                    <small class="text-muted">Upload a QR code image for this payment method</small>
+                                    <label for="instructions" class="form-label">Payment Instructions</label>
+                                    <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Detailed instructions for students on how to use this payment method"></textarea>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="form-check mt-4">
-                                        <input class="form-check-input" type="checkbox" id="is_enabled" name="is_enabled" checked>
-                                        <label class="form-check-label" for="is_enabled">
-                                            Enable this payment method
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="qr_code" class="form-label">QR Code (Optional)</label>
+                                            <input type="file" class="form-control" id="qr_code" name="qr_code" accept="image/*">
+                                            <small class="text-muted">Upload a QR code image for this payment method</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="form-check mt-4">
+                                                <input class="form-check-input" type="checkbox" id="is_enabled" name="is_enabled" checked>
+                                                <label class="form-check-label" for="is_enabled">
+                                                    Enable this payment method
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="currentQrCode" style="display: none;" class="mb-3"></div>
+                                <div id="removeQrCodeSection" style="display: none;" class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="remove_qr_code" name="remove_qr_code">
+                                        <label class="form-check-label" for="remove_qr_code">
+                                            Remove current QR code
                                         </label>
                                     </div>
                                 </div>
-                            </div>
+                            </form>
                         </div>
-                        
-                        <!-- Current QR Code Display (for editing) -->
-                        <div id="currentQrCode" style="display: none;" class="mb-3">
-                            <!-- QR code will be populated here -->
+                        <div class="tab-pane fade" id="field-config" role="tabpanel">
+                            <form id="paymentFieldConfigForm">
+                                <div id="paymentFieldsContainer"></div>
+                                <button type="button" class="btn btn-outline-success mt-2" id="addPaymentFieldBtn">
+                                    <i class="fas fa-plus"></i> Add Field
+                                </button>
+                                <button type="submit" class="btn btn-primary mt-2 float-end">
+                                    <i class="fas fa-save"></i> Save Field Configuration
+                                </button>
+                            </form>
                         </div>
-                        
-                        <!-- Remove QR Code Option (for editing) -->
-                        <div id="removeQrCodeSection" style="display: none;" class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="remove_qr_code" name="remove_qr_code">
-                                <label class="form-check-label" for="remove_qr_code">
-                                    Remove current QR code
-                                </label>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -3239,25 +3253,23 @@ function editPaymentMethod(id) {
 function savePaymentMethod() {
     const form = document.getElementById('paymentMethodForm');
     const formData = new FormData(form);
-    
+    // Ensure unchecked checkboxes are sent as 0
+    if (!form.is_enabled.checked) {
+        formData.set('is_enabled', 0);
+    }
     const url = editingPaymentMethodId ? 
         `/admin/settings/payment-methods/${editingPaymentMethodId}` : 
         '/admin/settings/payment-methods/';
-    
     const method = editingPaymentMethodId ? 'PUT' : 'POST';
-
     // Add CSRF token
     formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-    
     if (editingPaymentMethodId) {
         formData.append('_method', 'PUT');
     }
-
     const saveButton = document.getElementById('savePaymentMethodBtn');
     const originalText = saveButton.innerHTML;
     saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     saveButton.disabled = true;
-
     fetch(url, {
         method: 'POST',
         body: formData,
@@ -3269,14 +3281,11 @@ function savePaymentMethod() {
         let data;
         try {
             const text = await response.text();
-            
-            // Check if response is HTML (error page) instead of JSON
             if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
                 console.error('Server returned HTML instead of JSON:', text.substring(0, 200));
                 showAlert('Server error occurred. Please check server logs.', 'danger');
                 return;
             }
-            
             data = JSON.parse(text);
         } catch (jsonError) {
             console.error('JSON parse error:', jsonError);
@@ -3284,11 +3293,8 @@ function savePaymentMethod() {
             showAlert('Server returned invalid response format.', 'danger');
             return;
         }
-        
         if (response.ok && data.success) {
             showAlert(data.message || 'Payment method saved successfully', 'success');
-            
-            // Use Bootstrap 5 vanilla JavaScript instead of jQuery
             const modal = bootstrap.Modal.getInstance(document.getElementById('paymentMethodModal'));
             modal.hide();
             loadPaymentMethods();
@@ -3609,6 +3615,7 @@ function renderEducationLevels(levels) {
                                 <small class="text-muted d-block">Document Requirements:</small>
                                 ${fileReqsHtml || '<span class="text-muted">No document requirements</span>'}
                             </div>
+
                         </div>
                         <div class="col-md-2 text-end">
                             <div class="btn-group">
@@ -3900,5 +3907,136 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', applySidebarColors);
     });
 });
+
+function renderPaymentFieldRow(field, idx) {
+    return `<div class='row align-items-end mb-2 payment-field-row' data-idx='${idx}'>
+        <div class='col-md-4'>
+            <label>Label</label>
+            <input type='text' class='form-control' name='fields[${idx}][field_label]' value='${field.field_label || ''}' required>
+        </div>
+        <div class='col-md-3'>
+            <label>Type</label>
+            <select class='form-select' name='fields[${idx}][field_type]'>
+                <option value='text' ${field.field_type==='text'?'selected':''}>Text</option>
+                <option value='email' ${field.field_type==='email'?'selected':''}>Email</option>
+                <option value='tel' ${field.field_type==='tel'?'selected':''}>Phone</option>
+                <option value='file' ${field.field_type==='file'?'selected':''}>File</option>
+                <option value='number' ${field.field_type==='number'?'selected':''}>Number</option>
+                <option value='textarea' ${field.field_type==='textarea'?'selected':''}>Textarea</option>
+            </select>
+        </div>
+        <div class='col-md-2'>
+            <label>Required</label>
+            <input type='checkbox' class='form-check-input ms-2' name='fields[${idx}][is_required]' ${field.is_required ? 'checked' : ''}>
+        </div>
+        <div class='col-md-2'>
+            <button type='button' class='btn btn-danger btn-sm' onclick='removePaymentFieldRow(this)'>Remove</button>
+        </div>
+    </div>`;
+}
+function removePaymentFieldRow(btn) {
+    btn.closest('.payment-field-row').remove();
+}
+function loadPaymentFieldsForMethod(paymentMethodId) {
+    const container = document.getElementById('paymentFieldsContainer');
+    if (!container) return;
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border"></div></div>';
+    fetch(`/admin/payment-method/${paymentMethodId}/fields`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success || !data.fields) {
+                container.innerHTML = '<div class="alert alert-danger">Unable to load payment fields.</div>';
+                return;
+            }
+            if (data.fields.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No fields configured. Click Add Field to create one.</div>';
+                return;
+            }
+            container.innerHTML = data.fields.map((field, idx) => renderPaymentFieldRow(field, idx)).join('');
+        })
+        .catch(() => {
+            container.innerHTML = '<div class="alert alert-danger">Unable to load payment fields.</div>';
+        });
+}
+document.getElementById('addPaymentFieldBtn').addEventListener('click', function() {
+    const container = document.getElementById('paymentFieldsContainer');
+    const idx = container.querySelectorAll('.payment-field-row').length;
+    container.insertAdjacentHTML('beforeend', renderPaymentFieldRow({field_label:'',field_type:'text',is_required:false}, idx));
+});
+document.getElementById('paymentFieldConfigForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const container = document.getElementById('paymentFieldsContainer');
+    const rows = container.querySelectorAll('.payment-field-row');
+    const fields = Array.from(rows).map((row, idx) => {
+        return {
+            field_label: row.querySelector(`input[name='fields[${idx}][field_label]']`).value,
+            field_type: row.querySelector(`select[name='fields[${idx}][field_type]']`).value,
+            is_required: row.querySelector(`input[name='fields[${idx}][is_required]']`).checked ? 1 : 0,
+            sort_order: idx
+        };
+    });
+    fetch(`/admin/payment-method/${editingPaymentMethodId}/fields`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({fields})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Payment fields saved!', 'success');
+            loadPaymentFieldsForMethod(editingPaymentMethodId);
+        } else {
+            showAlert('Failed to save fields', 'danger');
+        }
+    })
+    .catch(() => {
+        showAlert('Failed to save fields', 'danger');
+    });
+});
+// When opening the modal for edit/add, call loadPaymentFieldsForMethod(id)
+// ... existing code ...
+function editPaymentMethod(id) {
+    // ... existing code ...
+    loadPaymentFieldsForMethod(id);
+    // ... existing code ...
+}
+// ... existing code ...
+
+function editPaymentMethod(id) {
+    const method = paymentMethods.find(m => m.payment_method_id == id);
+    if (!method) return;
+    editingPaymentMethodId = id;
+    document.getElementById('paymentMethodModalTitle').textContent = 'Edit Payment Method';
+    document.getElementById('method_name').value = method.method_name;
+    document.getElementById('method_type').value = method.method_type;
+    document.getElementById('description').value = method.description || '';
+    document.getElementById('instructions').value = method.instructions || '';
+    document.getElementById('is_enabled').checked = method.is_enabled;
+    // Handle QR code display
+    const currentQrCode = document.getElementById('currentQrCode');
+    const removeQrCodeSection = document.getElementById('removeQrCodeSection');
+    if (method.qr_code_path) {
+        currentQrCode.style.display = 'block';
+        currentQrCode.innerHTML = `<label class="form-label">Current QR Code:</label>
+            <div>
+                <img src="/storage/${method.qr_code_path}" alt="Current QR Code" style="max-width: 150px; height: auto;">
+            </div>`;
+        removeQrCodeSection.style.display = 'block';
+    } else {
+        currentQrCode.style.display = 'none';
+        removeQrCodeSection.style.display = 'none';
+    }
+    // Load dynamic fields for this payment method
+    loadPaymentFieldsForMethod(id);
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('paymentMethodModal'));
+    modal.show();
+}
+window.editPaymentMethod = editPaymentMethod;
+// ... existing code ...
 </script>
 @endpush
+
