@@ -15,7 +15,7 @@
 
             <div class="card shadow">
                 <div class="card-body">
-                    <form method="POST" action="{{ route('admin.directors.update', $director) }}">
+                    <form method="POST" action="{{ route('admin.directors.update', $director) }}" autocomplete="off">
                         @csrf
                         @method('PUT')
                         
@@ -48,7 +48,7 @@
                                 <div class="mb-3">
                                     <label for="directors_email" class="form-label">Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control @error('directors_email') is-invalid @enderror" 
-                                           id="directors_email" name="directors_email" value="{{ old('directors_email', $director->directors_email) }}" required>
+                                           id="directors_email" name="directors_email" value="{{ old('directors_email', $director->directors_email) }}" required autocomplete="off">
                                     @error('directors_email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -59,7 +59,7 @@
                                 <div class="mb-3">
                                     <label for="directors_password" class="form-label">Password (leave blank to keep current)</label>
                                     <input type="password" class="form-control @error('directors_password') is-invalid @enderror" 
-                                           id="directors_password" name="directors_password">
+                                           id="directors_password" name="directors_password" autocomplete="new-password">
                                     @error('directors_password')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -82,6 +82,34 @@
                                     </div>
                                     <div class="form-text">Current: {{ $director->referral_code ?? 'Not set' }}</div>
                                     @error('referral_code')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Assign Programs <span class="text-danger">*</span></label>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="selectAllPrograms" onclick="toggleAllProgramsCheckboxes(this)">
+                                        <label class="form-check-label" for="selectAllPrograms">Select All Programs</label>
+                                    </div>
+                                    <div id="programCheckboxList" style="border: 1px solid #ced4da; border-radius: 0.375rem; max-height: 220px; overflow-y: auto; padding: 0.75rem; background: #fafbfc;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="program_all" name="program_access[]" value="all" {{ $director->has_all_program_access ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="program_all">All Programs</label>
+                                        </div>
+                                        @foreach($programs as $program)
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="program_{{ $program->program_id }}" name="program_access[]" value="{{ $program->program_id }}" {{ $director->assignedPrograms->contains('program_id', $program->program_id) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="program_{{ $program->program_id }}">{{ $program->program_name }}</label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <div class="form-text">Check one or more programs, or select 'All Programs'.</div>
+                                    @error('program_access')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -130,6 +158,11 @@ function generateReferralCode() {
     const referralCode = 'DIR' + directorId + nameCode;
     
     document.getElementById('referral_code').value = referralCode;
+}
+
+function toggleAllProgramsCheckboxes(checkbox) {
+    const checkboxes = document.querySelectorAll('#programCheckboxList input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
 }
 </script>
 @endpush
