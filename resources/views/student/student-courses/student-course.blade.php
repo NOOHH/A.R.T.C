@@ -4,7 +4,8 @@
 
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesh<link rel="stylesheet" href="{{ asset('css/student/student-course.css') }}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('css/student/student-course.css') }}">
 <style>
 
 /* --- Enable natural page scrolling --- */
@@ -12,24 +13,27 @@ html, body {
     height: auto !important;
     min-height: 100vh;
     overflow-y: auto !important;
-    overflow-x: }
+    overflow-x: hidden;
+}
 
 /* Remove height constraints that prevent natural scrolling */
 .container-fluid, 
 .container-fluid.h-100,
-.row.justify-content-cent.row.justify-content-center.h-100,
--100,
-.main-c.content-wrapper {
+.row.justify-content-center, 
+.row.justify-content-center.h-100,
+.main-content,
+.content-wrapper {
     height: auto !important;
-    min-height: auto !important    max-height: none !important;
+    min-height: auto !important;
+    max-height: none !important;
     overflow: visible !important;
 }
 
 /* Ensure the student container can scroll naturally */
 .student-course-container {
     height: auto !important;
-    min-height: calc(100vh - 60px); /* Account for any header/padd    max-height: 100px !important;
-ortant;
+    min-height: calc(100vh - 60px); /* Account for any header/padding */
+    max-height: 100px !important;
     overflow-y: auto !important;
     overflow-x: hidden;
     background: #fff;
@@ -112,12 +116,6 @@ ortant;
     <div class="course-main-layout">
         <!-- Floating Toggle Button (shown when panel is collapsed) -->
         <button class="floating-toggle-btn" id="floatingToggleBtn" onclick="toggleModulesPanel()">
-            <i class="bi bi-list"></i>
-        </button>
-
-and >
-
-  <button class="floating-toggle-btn" id="floatingToggleBtn" onclick="toggleModulesPanel()">
             <i class="bi bi-list"></i>
         </button>
 
@@ -352,7 +350,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add window resize handler
         window.addEventListener('resize', function() {
-            updatePanelState();
+            const floatingToggleBtn = document.getElementById('floatingToggleBtn');
+            if (window.innerWidth <= 992) {
+                floatingToggleBtn.style.display = 'flex';
+            } else {
+                floatingToggleBtn.style.display = panelCollapsed ? 'flex' : 'none';
+            }
         });
     }
     
@@ -977,31 +980,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         contentHtml += `
-                            <div class="document-viewer mb-3 text-center p-4 border rounded bg-light">
-                                    <i class="bi bi-file-earmark-word text-primary" style="font-size: 3rem;"></i>
-                                    <p class="mt-2 mb-0">Document: ${fileName}</p>
-                                    <small class="text-muted">Click download to view the document</small>
-                                </div>
-                            `;
-                        } else {
-                            contentHtml += `
-                                <div class="file-viewer mb-3 text-center p-4 border rounded bg-light">
-                                    <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
-                                    <p class="mt-2 mb-0">File: ${fileName}</p>
-                                    <small class="text-muted">Preview not available for this file type</small>
-                                </div>
-                            `;
-                        }
-                        
-                        contentHtml += `
-                                        <div class="file-actions">
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary me-2">
-                                                <i class="bi bi-download"></i> Download ${fileName}
-                                            </a>
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary">
-                                                <i class="bi bi-eye"></i> View in New Tab
-                                            </a>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
