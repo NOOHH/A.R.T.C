@@ -119,6 +119,80 @@ class StudentRegistrationController extends Controller
                 $rules['password'] = 'required|confirmed|min:8';
             }
 
+            // Add education level file validation rules - SIMILAR TO MODULAR ENROLLMENT
+            $selectedEducationLevel = $request->input('education_level');
+            Log::info('Full enrollment - Selected education level for file validation', ['education_level' => $selectedEducationLevel]);
+            
+            if ($selectedEducationLevel) {
+                // Find the education level in database
+                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                
+                if (!$educationLevel) {
+                    Log::warning('Full enrollment - Education level not found', ['education_level' => $selectedEducationLevel]);
+                } else {
+                    Log::info('Full enrollment - Education level found', [
+                        'id' => $educationLevel->id,
+                        'name' => $educationLevel->level_name,
+                        'has_file_requirements' => !empty($educationLevel->file_requirements)
+                    ]);
+                    
+                    if ($educationLevel->file_requirements) {
+                        $fileRequirements = is_string($educationLevel->file_requirements) 
+                            ? json_decode($educationLevel->file_requirements, true) 
+                            : $educationLevel->file_requirements;
+                        
+                        if (is_array($fileRequirements)) {
+                            Log::info('Full enrollment - Processing file requirements', ['count' => count($fileRequirements)]);
+                            
+                            foreach ($fileRequirements as $requirement) {
+                                // Check if the requirement is available for full enrollment
+                                $availableForFull = isset($requirement['available_full_plan']) && $requirement['available_full_plan'];
+                                if (!$availableForFull) {
+                                    // Fall back to modular plan check for compatibility
+                                    $availableForFull = isset($requirement['available_modular_plan']) && $requirement['available_modular_plan'];
+                                }
+                                
+                                if ($availableForFull) {
+                                    $fieldName = $requirement['field_name'] ?? $requirement['document_type'];
+                                    
+                                    if ($fieldName) {
+                                        // Normalize field name to match form field names
+                                        $normalizedFieldName = strtolower($fieldName);
+                                        
+                                        // Check if the file is uploaded
+                                        $hasFile = $request->hasFile($normalizedFieldName);
+                                        $isRequired = isset($requirement['is_required']) && $requirement['is_required'];
+                                        
+                                        if ($isRequired) {
+                                            // If file is required, always add validation rule
+                                            $rules[$normalizedFieldName] = 'required|file|max:10240'; // 10MB max
+                                            Log::info('Full enrollment - Added required file rule', [
+                                                'field' => $normalizedFieldName,
+                                                'original_field' => $fieldName,
+                                                'has_file' => $hasFile,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                        } elseif ($hasFile) {
+                                            // If file is optional but uploaded, validate format
+                                            $rules[$normalizedFieldName] = 'file|max:10240'; // 10MB max
+                                            Log::info('Full enrollment - Added optional file rule', [
+                                                'field' => $normalizedFieldName,
+                                                'original_field' => $fieldName,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Log::warning('Full enrollment - File requirements is not valid array', ['raw_data' => $educationLevel->file_requirements]);
+                        }
+                    } else {
+                        Log::info('Full enrollment - No file requirements for this education level', ['education_level' => $selectedEducationLevel]);
+                    }
+                }
+            }
+
             // Add dynamic form field validation only for active fields
             foreach ($formRequirements as $field) {
                 // Skip sections as they don't need validation
@@ -352,6 +426,82 @@ class StudentRegistrationController extends Controller
                 } catch (\Exception $e) {
                     Log::warning("Error processing field {$fieldName}: " . $e->getMessage());
                     // Continue processing other fields
+                }
+            }
+
+            // ADDITIONAL FILE PROCESSING: Handle education level files directly (similar to modular enrollment)
+            if ($selectedEducationLevel) {
+                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                
+                if ($educationLevel && $educationLevel->file_requirements) {
+                    $fileRequirements = is_string($educationLevel->file_requirements) 
+                        ? json_decode($educationLevel->file_requirements, true) 
+                        : $educationLevel->file_requirements;
+                    
+                    if (is_array($fileRequirements)) {
+                        Log::info('Full enrollment - Processing education level files directly', ['count' => count($fileRequirements)]);
+                        
+                        foreach ($fileRequirements as $requirement) {
+                            // Check if the requirement is available for full enrollment
+                            $availableForFull = isset($requirement['available_full_plan']) && $requirement['available_full_plan'];
+                            if (!$availableForFull) {
+                                // Fall back to modular plan check for compatibility
+                                $availableForFull = isset($requirement['available_modular_plan']) && $requirement['available_modular_plan'];
+                            }
+                            
+                            if ($availableForFull) {
+                                $fieldName = $requirement['field_name'] ?? $requirement['document_type'];
+                                
+                                if ($fieldName) {
+                                    // Normalize field name to match form field names
+                                    $normalizedFieldName = strtolower($fieldName);
+                                    
+                                    // Check if the file is uploaded
+                                    if ($request->hasFile($normalizedFieldName)) {
+                                        try {
+                                            $uploadedFile = $request->file($normalizedFieldName);
+                                            
+                                            // Validate file type (only allow pdf, png, jpeg, jpg, images)
+                                            $allowedMimes = ['pdf', 'png', 'jpeg', 'jpg'];
+                                            $fileExtension = strtolower($uploadedFile->getClientOriginalExtension());
+                                            
+                                            if (!in_array($fileExtension, $allowedMimes)) {
+                                                throw new \Exception("Invalid file type for {$normalizedFieldName}. Only PDF, PNG, JPEG files are allowed.");
+                                            }
+                                            
+                                            // Validate file size (max 10MB)
+                                            if ($uploadedFile->getSize() > 10485760) { // 10MB in bytes
+                                                throw new \Exception("File size for {$normalizedFieldName} exceeds 10MB limit.");
+                                            }
+                                            
+                                            // Use helper method to get the correct database column name
+                                            $dbColumnName = $this->mapFileFieldToColumn($normalizedFieldName);
+                                            
+                                            // Store the file with a unique name to prevent conflicts
+                                            $fileName = time() . '_' . uniqid() . '_' . $uploadedFile->getClientOriginalName();
+                                            $path = $uploadedFile->storeAs('uploads/education_requirements', $fileName, 'public');
+                                            
+                                            // Save the file path to the database
+                                            $registration->{$dbColumnName} = $path;
+                                            
+                                            Log::info("Education level file uploaded successfully", [
+                                                'field_name' => $normalizedFieldName,
+                                                'db_column' => $dbColumnName,
+                                                'file_path' => $path,
+                                                'file_size' => $uploadedFile->getSize(),
+                                                'file_type' => $fileExtension,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                            
+                                        } catch (\Exception $e) {
+                                            Log::error("Error processing education level file {$normalizedFieldName}: " . $e->getMessage());
+                                            throw $e; // Re-throw to be caught by the main try-catch
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
