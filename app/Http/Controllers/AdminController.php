@@ -84,7 +84,15 @@ class AdminController extends Controller
     public function getRegistrationDetailsJson($id)
     {
         try {
-            $registration = Registration::with(['user', 'program', 'package', 'plan'])->findOrFail($id);
+            // Check if the id is a registration_id (like "2025-07-00005") or a database id (numeric)
+            if (is_numeric($id)) {
+                $registration = Registration::with(['user', 'program', 'package', 'plan'])->findOrFail($id);
+            } else {
+                // Try to find by registration_id
+                $registration = Registration::with(['user', 'program', 'package', 'plan'])
+                    ->where('registration_id', $id)
+                    ->firstOrFail();
+            }
             
             // Parse course selections if modular
             $courseInfo = 'Full';

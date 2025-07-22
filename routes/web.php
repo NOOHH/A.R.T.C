@@ -1968,3 +1968,83 @@ Route::prefix('test-api/test')->group(function () {
     Route::get('/course-access', [\App\Http\Controllers\CourseTestController::class, 'testCourseAccess']);
     Route::get('/course-enrollment', [\App\Http\Controllers\CourseTestController::class, 'testCreateCourseEnrollment']);
 });
+
+// Certificate Management Route
+Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates');
+
+// Certificate viewing and downloading
+Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
+Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');
+
+// Test upload page for debugging
+Route::get('/test-upload', function() {
+    return view('test-upload');
+});
+
+Route::get('/test-direct-upload', function() {
+    return view('test-direct-upload');
+});
+
+Route::post('/test-upload', function(\Illuminate\Http\Request $request) {
+    if ($request->hasFile('attachment')) {
+        $file = $request->file('attachment');
+        $path = $file->storeAs('content', time() . '_' . $file->getClientOriginalName(), 'public');
+        return ['success' => true, 'path' => $path, 'file_exists' => file_exists(storage_path('app/public/' . $path))];
+    }
+    return ['success' => false, 'message' => 'No file detected'];
+});
+
+// Admin Payment Management Routes
+Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
+    // Payment management
+    Route::get('/payments/pending', [\App\Http\Controllers\Admin\PaymentController::class, 'pending'])->name('admin.payments.pending');
+    Route::get('/payments/history', [\App\Http\Controllers\Admin\PaymentController::class, 'history'])->name('admin.payments.history');
+    Route::get('/payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('admin.payments.show');
+    Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\PaymentController::class, 'approve'])->name('admin.payments.approve');
+    Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\PaymentController::class, 'reject'])->name('admin.payments.reject');
+    Route::get('/payments/{id}/download-proof', [\App\Http\Controllers\Admin\PaymentController::class, 'downloadProof'])->name('admin.payments.download-proof');
+    Route::get('/payments/stats', [\App\Http\Controllers\Admin\PaymentController::class, 'getStats'])->name('admin.payments.stats');
+    
+    // Payment method field management
+    Route::get('/payment-methods/settings', function() {
+        return view('admin.payment-methods.settings');
+    })->name('admin.payment-methods.settings');
+    
+    Route::get('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'apiIndex']);
+    Route::post('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'store']);
+    Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
+    Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
+});
+
+// Debug route for payment method testing
+Route::post('/debug/payment-method', function(\Illuminate\Http\Request $request) {
+    \Log::info('Debug payment method request', [
+        'all_data' => $request->all(),
+        'method_name' => $request->input('method_name'),
+        'method_type' => $request->input('method_type'),
+        'description' => $request->input('description'),
+        'instructions' => $request->input('instructions'),
+        'is_enabled' => $request->input('is_enabled'),
+        'has_qr_file' => $request->hasFile('qr_code'),
+        'qr_file_info' => $request->hasFile('qr_code') ? [
+            'name' => $request->file('qr_code')->getClientOriginalName(),
+            'size' => $request->file('qr_code')->getSize(),
+            'mime_type' => $request->file('qr_code')->getMimeType(),
+            'is_valid' => $request->file('qr_code')->isValid()
+        ] : null
+    ]);
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Debug data logged',
+        'data' => [
+            'method_name' => $request->input('method_name'),
+            'method_type' => $request->input('method_type'),
+            'has_file' => $request->hasFile('qr_code')
+        ]
+    ]);
+});
+
+// Payment Method Field Configuration (for admin dynamic fields)
+Route::get('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'getPaymentMethodFields']);
+Route::post('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'savePaymentMethodFields']);

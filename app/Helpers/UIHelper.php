@@ -102,8 +102,15 @@ class UIHelper
             color: var(--navbar-submenu-text) !important;
         }
         
+        .sidebar,
+        .modern-sidebar,
+        .sidebar-nav {
+            background: var(--navbar-sidebar-bg) !important;
+        }
+        
         .sidebar-footer,
         .footer {
+            background: var(--navbar-footer-bg) !important;
             background-color: var(--navbar-footer-bg) !important;
         }
         
