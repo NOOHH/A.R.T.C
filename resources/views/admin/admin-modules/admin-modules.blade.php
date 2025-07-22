@@ -103,9 +103,9 @@
         <button type="button" class="add-course-btn" id="showAddCourseModal">
             <i class="bi bi-journal-plus"></i> Add New Course
         </button>
-        <button type="button" class="batch-upload-btn" id="showBatchModal">
+        <a href="{{ route('admin.modules.course-content-upload') }}" class="batch-upload-btn">
             <i class="bi bi-upload"></i> Add Course Content
-        </button>
+        </a>
         <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
             <i class="bi bi-archive"></i> View Archived
         </a>
@@ -1662,51 +1662,31 @@ function showAddCourseModal(moduleId, moduleName = '') {
 }
 
 function showAddContentModal(moduleId, courseId, courseName = '') {
-    const modal = document.getElementById('batchModalBg');
-    const form = document.getElementById('courseContentForm');
+    // Instead of showing a modal, redirect to the dedicated upload page with pre-selected values
+    const baseUrl = '{{ route("admin.modules.course-content-upload") }}';
+    let url = baseUrl;
     
-    if (modal && form) {
-        // Pre-fill the selections if provided
-        if (moduleId && courseId) {
-            // Get program info and pre-fill the form
-            fetch(`/admin/modules/by-program?module_id=${moduleId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.program_id) {
-                        const programSelect = document.getElementById('contentProgramSelect');
-                        const moduleSelect = document.getElementById('contentModuleSelect');
-                        const courseSelect = document.getElementById('contentCourseSelect');
-                        
-                        if (programSelect) {
-                            programSelect.value = data.program_id;
-                            // Load modules for this program
-                            loadModulesForProgram(data.program_id, 'contentModuleSelect');
-                            
-                            // Set the module and then load courses
-                            setTimeout(() => {
-                                if (moduleSelect) {
-                                    moduleSelect.value = moduleId;
-                                    loadCoursesForModule(moduleId, 'contentCourseSelect');
-                                    
-                                    // Set the course after loading
-                                    setTimeout(() => {
-                                        if (courseSelect) {
-                                            courseSelect.value = courseId;
-                                        }
-                                    }, 500);
-                                }
-                            }, 500);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading module info:', error);
-                });
-        }
-        
-        modal.classList.add('show');
+    if (moduleId && courseId) {
+        // Get program info and redirect with query parameters
+        fetch(`/admin/modules/by-program?module_id=${moduleId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.program_id) {
+                    url += `?program_id=${data.program_id}&module_id=${moduleId}&course_id=${courseId}`;
+                } else {
+                    url += `?module_id=${moduleId}&course_id=${courseId}`;
+                }
+                window.location.href = url;
+            })
+            .catch(error => {
+                console.error('Error loading module info:', error);
+                // Fallback: redirect with module and course info only
+                url += `?module_id=${moduleId}&course_id=${courseId}`;
+                window.location.href = url;
+            });
     } else {
-        console.error('Add content modal or form not found');
+        // No specific course selected, just redirect to the upload page
+        window.location.href = url;
     }
 }
 
@@ -2422,28 +2402,29 @@ function setupModalEventListeners() {
     }
 
     // Batch Modal
-    const showBatchModal = document.getElementById('showBatchModal');
-    const batchModalBg = document.getElementById('batchModalBg');
-    const closeBatchModal = document.getElementById('closeBatchModal');
-    const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
+    // Batch modal event listeners - REMOVED (now redirects to dedicated page)
+    // const showBatchModal = document.getElementById('showBatchModal');
+    // const batchModalBg = document.getElementById('batchModalBg');
+    // const closeBatchModal = document.getElementById('closeBatchModal');
+    // const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
 
-    if (showBatchModal) {
-        showBatchModal.addEventListener('click', function() {
-            batchModalBg.classList.add('show');
-        });
-    }
+    // if (showBatchModal) {
+    //     showBatchModal.addEventListener('click', function() {
+    //         batchModalBg.classList.add('show');
+    //     });
+    // }
 
-    if (closeBatchModal) {
-        closeBatchModal.addEventListener('click', function() {
-            batchModalBg.classList.remove('show');
-        });
-    }
+    // if (closeBatchModal) {
+    //     closeBatchModal.addEventListener('click', function() {
+    //         batchModalBg.classList.remove('show');
+    //     });
+    // }
 
-    if (closeBatchModalBtn) {
-        closeBatchModalBtn.addEventListener('click', function() {
-            batchModalBg.classList.remove('show');
-        });
-    }
+    // if (closeBatchModalBtn) {
+    //     closeBatchModalBtn.addEventListener('click', function() {
+    //         batchModalBg.classList.remove('show');
+    //     });
+    // }
 
     // Edit Content Modal
     const editContentModalBg = document.getElementById('editContentModalBg');

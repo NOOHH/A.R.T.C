@@ -1187,7 +1187,7 @@
                                     <i class="fas fa-plus me-1"></i>Add Payment Method
                                 </button>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body text">
                                 <p class="text-muted mb-4">Manage payment methods available to students. Enable/disable methods and upload QR codes for digital payment options.</p>
                                 
                                 <div class="table-responsive">
@@ -1218,7 +1218,7 @@
                                         <strong>Tips:</strong>
                                         <ul class="mb-0 mt-2">
                                             <li>Drag rows to reorder payment methods as they appear to students</li>
-                                            <li>Upload QR codes for digital payment methods (GCash, Maya, etc.)</li>
+                                            <li>Upload QR codes for digital payment methods (GCash, Maya)</li>
                                             <li>Only enabled payment methods will be visible to students</li>
                                             <li>Provide clear instructions for each payment method</li>
                                         </ul>
@@ -1246,7 +1246,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="method_name" class="form-label">Method Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="e.g., GCash, Maya, Bank Transfer">
+                                    <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="GCash, Maya">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1254,12 +1254,8 @@
                                     <label for="method_type" class="form-label">Method Type <span class="text-danger">*</span></label>
                                     <select class="form-control" id="method_type" name="method_type" required>
                                         <option value="">Select Type</option>
-                                        <option value="credit_card">Credit Card</option>
                                         <option value="gcash">GCash</option>
                                         <option value="maya">Maya</option>
-                                        <option value="bank_transfer">Bank Transfer</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="other">Other</option>
                                     </select>
                                 </div>
                             </div>
@@ -1415,8 +1411,7 @@
                 </div>
             </div>
         </div>
-    </div>
-
+        
     <div class="row g-4 mb-4">
         <div class="col-md-6 mx-auto">
             <div class="card shadow-sm border-primary">
@@ -1434,6 +1429,8 @@
             </div>
         </div>
     </div>
+    </div>
+
 @endsection
 @push('scripts')
 <script>

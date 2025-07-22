@@ -148,6 +148,26 @@
     padding: 20px;
     color: #666;
 }
+
+.message.bot {
+    background: #fffbe6;
+    color: #856404;
+    border-left: 4px solid #ffd700;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.08);
+    position: relative;
+    padding-left: 2.5rem;
+}
+.message.bot .message-sender::before {
+    content: '\f059'; /* FontAwesome info-circle or use a question icon */
+    font-family: 'Font Awesome 5 Free', 'FontAwesome', Arial, sans-serif;
+    font-weight: 900;
+    color: #ffd700;
+    margin-right: 0.5rem;
+    position: absolute;
+    left: 1rem;
+    top: 0.7rem;
+    font-size: 1.2em;
+}
 </style>
 @endpush
 
@@ -286,8 +306,18 @@
     if (btn) {
       currentChatType = btn.dataset.type;
       document.getElementById('chatSelectionPanel').classList.add('d-none');
-      document.getElementById('availableUsers').classList.remove('d-none');
-      loadUsersByType(currentChatType);
+      if (currentChatType === 'faq') {
+        document.getElementById('availableUsers').classList.add('d-none');
+        document.getElementById('chatInterface').classList.remove('d-none');
+        document.getElementById('faqQuickResponses').classList.remove('d-none');
+        // Optionally hide chat messages area if you want only FAQ visible:
+        // document.getElementById('chatMessages').classList.add('d-none');
+      } else {
+        document.getElementById('faqQuickResponses').classList.add('d-none');
+        document.getElementById('availableUsers').classList.remove('d-none');
+        document.getElementById('chatInterface').classList.add('d-none');
+        loadUsersByType(currentChatType);
+      }
     }
   });
 
@@ -598,7 +628,28 @@ function createGroupChat() {
 }
 
 function selectFAQ(type) {
-    // FAQ functionality
-    alert('FAQ: ' + type + ' - Feature coming soon!');
+    // FAQ responses mapping (should match admin FAQ management)
+    const faqResponses = {
+        enrollment: "To enroll in a course, go to your dashboard, select 'Available Courses', choose your desired course, and click 'Enroll Now'. Complete the payment process to finalize your enrollment.",
+        payment: "We accept credit/debit cards, PayPal, bank transfers, and installment plans for select courses. All payments are processed securely.",
+        schedule: "Login to your dashboard, go to 'My Courses', and click the 'Schedule' tab. You can also export your schedule to your calendar.",
+        certificate: "Complete all course modules, pass assessments, maintain 80% attendance, and complete the final project. Certificates are generated automatically within 5-7 business days.",
+        support: "Contact support via live chat, email (support@artc.edu), phone (+1-555-123-4567), or submit a ticket through the support portal."
+    };
+    const chatMessages = document.getElementById('chatMessages');
+    const response = faqResponses[type];
+    if (response) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message bot me-auto';
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <div class="message-sender">FAQ Bot</div>
+                <div class="message-text">${response.replace(/\n/g, '<br>')}</div>
+                <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            </div>
+        `;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 }
 </script>
