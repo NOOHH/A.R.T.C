@@ -1302,27 +1302,32 @@
                 
             } else {
                 console.error('❌ File validation failed:', data);
-                showErrorModal(data.message || 'File validation failed');
                 
-                // CRITICAL FIX: Don't clear the file input on validation error
-                // Instead, add error styling but keep the file
-                inputElement.classList.add('is-invalid');
-                inputElement.classList.remove('is-valid');
+                // FALLBACK: Even if OCR validation fails, we still want to allow file upload
+                // Show a warning but don't block the user
+                showWarningModal(data.message || 'File validation failed. However, your file has been uploaded and will be processed manually if needed.');
                 
-                console.log('File kept in input despite validation error');
+                // Add warning styling but still mark as valid for form submission
+                inputElement.classList.add('is-warning');
+                inputElement.classList.remove('is-invalid', 'is-valid');
+                
+                // CRITICAL: Even if validation fails, keep the file for submission
+                // The backend controller will handle it directly
+                console.log('File kept in input despite validation error - will be processed by backend');
             }
         })
         .catch(error => {
             closeLoadingModal();
             console.error('❌ File validation error:', error);
-            showErrorModal('Network error occurred. Please check your connection and try again.');
             
-            // CRITICAL FIX: Don't clear the file input on network error
-            // Add error styling but preserve the file
-            inputElement.classList.add('is-invalid');
-            inputElement.classList.remove('is-valid');
+            // FALLBACK: Even on network error, allow file upload to proceed
+            showWarningModal('Network error occurred during file validation. Your file will still be uploaded and processed manually if needed.');
             
-            console.log('File kept in input despite network error');
+            // Add warning styling but still allow form submission
+            inputElement.classList.add('is-warning');
+            inputElement.classList.remove('is-invalid', 'is-valid');
+            
+            console.log('File kept in input despite network error - will be processed by backend');
         });
         
         console.log('=== File Upload Process Initiated ===');
@@ -1466,6 +1471,10 @@
 
     function showInfoModal(message) {
         showModal('Information', message, 'info');
+    }
+
+    function showWarningModal(message) {
+        showModal('Warning', message, 'warning');
     }
 
     function showModal(title, message, type) {
@@ -1772,6 +1781,14 @@
     .form-control.is-invalid {
         border-color: #dc3545;
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23dc3545' d='M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z'/%3e%3cpath fill='%23dc3545' d='M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    .form-control.is-warning {
+        border-color: #ffc107;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23ffc107' d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z'/%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right calc(0.375em + 0.1875rem) center;
         background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
