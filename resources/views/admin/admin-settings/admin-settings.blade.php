@@ -1033,33 +1033,62 @@
                             <div class="card-body">
                                 <form id="sidebarCustomizationForm" method="POST" action="{{ route('admin.settings.sidebar') }}">
                                     @csrf
-                                    <div class="mb-3">
-                                        <label class="form-label">Background Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_background_color" value="{{ $settings['sidebar']['background_color'] ?? '#2d1b69' }}">
+                                    
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Combined Sidebar Settings:</strong> These settings will apply to both the sidebar navigation and footer sections.
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Gradient Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_gradient_color" value="{{ $settings['sidebar']['gradient_color'] ?? '#1a1340' }}">
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_background_color" value="{{ $settings['sidebar']['background_color'] ?? '#2d1b69' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Gradient Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_gradient_color" value="{{ $settings['sidebar']['gradient_color'] ?? '#1a1340' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_text_color" value="{{ $settings['sidebar']['text_color'] ?? '#ffffff' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Navigation Hover Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_hover_color" value="{{ $settings['sidebar']['hover_color'] ?? '#a91d3a' }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_active_bg_color" value="{{ $settings['sidebar']['active_bg_color'] ?? '#a91d3a' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Active Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_active_text_color" value="{{ $settings['sidebar']['active_text_color'] ?? '#ffffff' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Background Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_footer_bg_color" value="{{ $settings['sidebar']['footer_bg_color'] ?? '#2d1b69' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="sidebar_footer_text_color" value="{{ $settings['sidebar']['footer_text_color'] ?? '#ffffff' }}">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Text Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_text_color" value="{{ $settings['sidebar']['text_color'] ?? '#ffffff' }}">
+                                    
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button type="button" class="btn btn-outline-primary" onclick="previewSidebarColors()">
+                                            <i class="fas fa-eye me-2"></i>Preview Changes
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Save All Sidebar Settings
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="resetSidebarColors()">
+                                            <i class="fas fa-undo me-2"></i>Reset to Default
+                                        </button>
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Hover Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_hover_color" value="{{ $settings['sidebar']['hover_color'] ?? '#a91d3a' }}">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Active Background Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_active_bg_color" value="{{ $settings['sidebar']['active_bg_color'] ?? '#a91d3a' }}">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Active Text Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_active_text_color" value="{{ $settings['sidebar']['active_text_color'] ?? '#ffffff' }}">
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Save Sidebar Settings
-                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -1067,30 +1096,28 @@
                     
                     <div class="col-md-6">
                         <div class="card shadow-sm">
-                            <div class="card-header bg-dark text-white">
+                            <div class="card-header bg-success text-white">
                                 <h5 class="card-title mb-0">
-                                    <i class="fas fa-align-left me-2"></i>Sidebar Footer
+                                    <i class="fas fa-eye me-2"></i>Live Preview
                                 </h5>
                             </div>
-                            <div class="card-body">
-                                <form id="sidebarFooterCustomizationForm" method="POST" action="{{ route('admin.settings.sidebar') }}">
-                                    @csrf
-                                    <div class="mb-3">
-                                        <label class="form-label">Footer Background Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_footer_bg_color" value="{{ $settings['sidebar']['footer_bg_color'] ?? '#2d1b69' }}">
+                            <div class="card-body p-0">
+                                <div class="sidebar-preview" id="sidebarPreview">
+                                    <div class="preview-sidebar" style="background: var(--sidebar-bg, linear-gradient(180deg, #2d1b69 0%, #1a1340 100%)); color: var(--sidebar-text, rgba(255, 255, 255, 0.8)); height: 300px; padding: 15px;">
+                                        <div class="preview-nav-item" style="padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer;" onmouseover="this.style.background='var(--sidebar-hover, rgba(255,255,255,0.1))'" onmouseout="this.style.background='transparent'">
+                                            <i class="fas fa-home me-2"></i>Dashboard
+                                        </div>
+                                        <div class="preview-nav-item active" style="padding: 10px; border-radius: 8px; margin-bottom: 5px; background: var(--sidebar-active-bg, linear-gradient(135deg, #a91d3a, #d4336b)); color: var(--sidebar-active-text, #ffffff);">
+                                            <i class="fas fa-cog me-2"></i>Settings
+                                        </div>
+                                        <div class="preview-nav-item" style="padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer;" onmouseover="this.style.background='var(--sidebar-hover, rgba(255,255,255,0.1))'" onmouseout="this.style.background='transparent'">
+                                            <i class="fas fa-users me-2"></i>Users
+                                        </div>
+                                        <div class="preview-footer" style="position: absolute; bottom: 0; left: 0; right: 0; background: var(--sidebar-footer-bg, linear-gradient(180deg, #2d1b69 0%, #1a1340 100%)); color: var(--sidebar-footer-text, rgba(255, 255, 255, 0.8)); padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                            <small><i class="fas fa-user me-2"></i>Footer Content</small>
+                                        </div>
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Footer Text Color</label>
-                                        <input type="color" class="form-control form-control-color" name="sidebar_footer_text_color" value="{{ $settings['sidebar']['footer_text_color'] ?? '#ffffff' }}">
-                                    </div>
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Note:</strong> The sidebar footer will automatically sync with the main sidebar colors when you save the settings.
-                                    </div>
-                                    <button type="submit" class="btn btn-secondary">
-                                        <i class="fas fa-save me-2"></i>Save Footer Settings
-                                    </button>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3260,7 +3287,7 @@ function savePaymentMethod() {
     }
     const url = editingPaymentMethodId ? 
         `/admin/settings/payment-methods/${editingPaymentMethodId}` : 
-        '/admin/settings/payment-methods/';
+        '/debug/payment-method'; // Temporarily use debug endpoint
     const method = editingPaymentMethodId ? 'PUT' : 'POST';
     // Add CSRF token
     formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
@@ -3300,7 +3327,19 @@ function savePaymentMethod() {
             modal.hide();
             loadPaymentMethods();
         } else {
-            showAlert(data.error || data.message || 'Failed to save payment method', 'danger');
+            let errorMessage = data.error || data.message || 'Failed to save payment method';
+            
+            // If there are validation details, show them
+            if (data.details && typeof data.details === 'object') {
+                console.error('Validation errors:', data.details);
+                const errors = Object.values(data.details).flat();
+                if (errors.length > 0) {
+                    errorMessage += ':\n' + errors.join('\n');
+                }
+            }
+            
+            console.error('Payment method save error:', data);
+            showAlert(errorMessage, 'danger');
         }
     })
     .catch(error => {
@@ -3883,14 +3922,112 @@ function applySidebarColors() {
     const sidebarFooterBg = document.querySelector('input[name="sidebar_footer_bg_color"]').value;
     const sidebarFooterText = document.querySelector('input[name="sidebar_footer_text_color"]').value;
     
-    // Apply CSS variables
+    // Apply CSS variables to both sidebar nav and footer
     document.documentElement.style.setProperty('--sidebar-bg', `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`);
     document.documentElement.style.setProperty('--sidebar-text', sidebarText);
-    document.documentElement.style.setProperty('--sidebar-hover', sidebarHover);
+    document.documentElement.style.setProperty('--sidebar-hover', `rgba(255, 255, 255, 0.1)`);
     document.documentElement.style.setProperty('--sidebar-active-bg', `linear-gradient(135deg, ${sidebarActiveBg}, ${sidebarActiveBg})`);
     document.documentElement.style.setProperty('--sidebar-active-text', sidebarActiveText);
     document.documentElement.style.setProperty('--sidebar-footer-bg', `linear-gradient(180deg, ${sidebarFooterBg} 0%, ${sidebarFooterBg} 100%)`);
     document.documentElement.style.setProperty('--sidebar-footer-text', sidebarFooterText);
+    
+    // Apply to actual sidebar elements if they exist
+    const sidebar = document.querySelector('.modern-sidebar, .sidebar');
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    const sidebarFooter = document.querySelector('.sidebar-footer');
+    
+    if (sidebar) {
+        sidebar.style.background = `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`;
+        sidebar.style.color = sidebarText;
+    }
+    
+    if (sidebarNav) {
+        sidebarNav.style.background = `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`;
+        
+        // Update nav links
+        sidebarNav.querySelectorAll('.nav-link').forEach(link => {
+            if (!link.classList.contains('active')) {
+                link.style.color = sidebarText;
+            }
+        });
+        
+        // Update active nav links
+        sidebarNav.querySelectorAll('.nav-link.active').forEach(link => {
+            link.style.background = `linear-gradient(135deg, ${sidebarActiveBg}, ${sidebarActiveBg})`;
+            link.style.color = sidebarActiveText;
+        });
+    }
+    
+    if (sidebarFooter) {
+        sidebarFooter.style.background = `linear-gradient(180deg, ${sidebarFooterBg} 0%, ${sidebarFooterBg} 100%)`;
+        sidebarFooter.style.color = sidebarFooterText;
+    }
+}
+
+function previewSidebarColors() {
+    applySidebarColors();
+    
+    // Show success message
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+    alertDiv.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>Preview Applied!</strong> Colors have been applied to the live sidebar. Save to make changes permanent.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const form = document.getElementById('sidebarCustomizationForm');
+    form.insertBefore(alertDiv, form.firstChild);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        if (alertDiv && alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+
+function resetSidebarColors() {
+    const defaultColors = {
+        sidebar_background_color: '#2d1b69',
+        sidebar_gradient_color: '#1a1340',
+        sidebar_text_color: '#ffffff',
+        sidebar_hover_color: '#a91d3a',
+        sidebar_active_bg_color: '#a91d3a',
+        sidebar_active_text_color: '#ffffff',
+        sidebar_footer_bg_color: '#2d1b69',
+        sidebar_footer_text_color: '#ffffff'
+    };
+    
+    // Reset form inputs
+    Object.keys(defaultColors).forEach(colorName => {
+        const input = document.querySelector(`input[name="${colorName}"]`);
+        if (input) {
+            input.value = defaultColors[colorName];
+        }
+    });
+    
+    // Apply default colors immediately
+    applySidebarColors();
+    
+    // Show reset message
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-info alert-dismissible fade show mt-2';
+    alertDiv.innerHTML = `
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Colors Reset!</strong> Default sidebar colors have been restored. Don't forget to save!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const form = document.getElementById('sidebarCustomizationForm');
+    form.insertBefore(alertDiv, form.firstChild);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        if (alertDiv && alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
 }
 
 // Add event listeners for sidebar color changes

@@ -114,10 +114,14 @@ html, body {
 
     <!-- Main Layout - Split View with Sliding Support -->
     <div class="course-main-layout">
-        <!-- Floating Toggle Button (shown when panel is collapsed) -->
-        <button class="floating-toggle-btn" id="floatingToggleBtn" onclick="toggleModulesPanel()">
-            <i class="bi bi-list"></i>
-        </button>
+        <!-- Hamburger Menu Toggle (Fixed position, not floating) -->
+        <div class="course-menu-toggle" id="courseMenuToggle">
+            <button class="hamburger-btn" onclick="toggleModulesPanel()" title="Toggle Course Menu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </div>
 
         <!-- Left Panel - Module Navigation (Admin-style hierarchy) -->
         <div class="modules-panel" id="modulesPanel">
@@ -330,10 +334,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sliding Panel Management with Bootstrap 5 support
     function initializeSlidingPanel() {
         const modulesPanel = document.getElementById('modulesPanel');
-        const floatingToggleBtn = document.getElementById('floatingToggleBtn');
+        const courseMenuToggle = document.getElementById('courseMenuToggle');
         
         // Check if elements exist
-        if (!modulesPanel || !floatingToggleBtn) {
+        if (!modulesPanel || !courseMenuToggle) {
             console.warn('Sliding panel elements not found');
             return;
         }
@@ -357,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle modules panel function (Global scope)
     window.toggleModulesPanel = function() {
         const modulesPanel = document.getElementById('modulesPanel');
-        const floatingToggleBtn = document.getElementById('floatingToggleBtn');
+        const courseMenuToggle = document.getElementById('courseMenuToggle');
         const contentViewer = document.querySelector('.content-viewer-panel');
         
         if (!modulesPanel) return;
@@ -373,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (panelCollapsed) {
             // Collapse panel
             modulesPanel.classList.add('collapsed');
-            floatingToggleBtn.classList.add('show');
+            courseMenuToggle.classList.add('show');
             
             // Update content viewer
             if (contentViewer) {
@@ -383,11 +387,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Store panel state in localStorage
             localStorage.setItem('studentPanelCollapsed', 'true');
             
-            console.log('📱 Modules panel collapsed - Content viewer expanded');
+            console.log('📱 Modules panel collapsed - Hamburger menu shown');
         } else {
             // Expand panel
             modulesPanel.classList.remove('collapsed');
-            floatingToggleBtn.classList.remove('show');
+            courseMenuToggle.classList.remove('show');
             
             // Update content viewer
             if (contentViewer) {
@@ -417,25 +421,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update panel state function
     function updatePanelState() {
         const modulesPanel = document.getElementById('modulesPanel');
-        const floatingToggleBtn = document.getElementById('floatingToggleBtn');
+        const courseMenuToggle = document.getElementById('courseMenuToggle');
         
         // Restore panel state from localStorage
         const savedState = localStorage.getItem('studentPanelCollapsed');
         if (savedState === 'true' && window.innerWidth > 992) {
             panelCollapsed = true;
             modulesPanel.classList.add('collapsed');
-            floatingToggleBtn.classList.add('show');
+            courseMenuToggle.classList.add('show');
         }
         
         // Handle mobile responsiveness
         if (window.innerWidth <= 992) {
-            // On mobile, ensure proper behavior
+            // On mobile, ensure hamburger menu is accessible
             if (panelCollapsed) {
-                floatingToggleBtn.style.display = 'flex';
+                courseMenuToggle.classList.add('show');
             }
         } else {
             // On desktop, show/hide based on state
-            floatingToggleBtn.style.display = panelCollapsed ? 'flex' : 'none';
+            if (panelCollapsed) {
+                courseMenuToggle.classList.add('show');
+            } else {
+                courseMenuToggle.classList.remove('show');
+            }
         }
     }
     

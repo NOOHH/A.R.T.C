@@ -1410,13 +1410,24 @@ class AdminSettingsController extends Controller
     public function storePaymentMethod(Request $request)
     {
         try {
+            // Log incoming request data for debugging
+            Log::info('Payment method store request', [
+                'method_name' => $request->method_name,
+                'method_type' => $request->method_type,
+                'description' => $request->description,
+                'instructions' => $request->instructions,
+                'is_enabled' => $request->is_enabled,
+                'has_file' => $request->hasFile('qr_code'),
+                'all_data' => $request->all()
+            ]);
+
             $request->validate([
                 'method_name' => 'required|string|max:255',
                 'method_type' => 'required|in:credit_card,gcash,maya,bank_transfer,cash,other',
                 'description' => 'nullable|string',
                 'instructions' => 'nullable|string',
                 'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
-                'is_enabled' => 'boolean'
+                'is_enabled' => 'nullable|in:0,1,true,false'
             ]);
 
             $qrCodePath = null;
@@ -1456,10 +1467,21 @@ class AdminSettingsController extends Controller
                 'message' => 'Payment method created successfully'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Payment method validation failed', ['errors' => $e->errors()]);
+            Log::error('Payment method validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+                'file_data' => $request->hasFile('qr_code') ? [
+                    'name' => $request->file('qr_code')->getClientOriginalName(),
+                    'size' => $request->file('qr_code')->getSize(),
+                    'mime' => $request->file('qr_code')->getMimeType(),
+                    'valid' => $request->file('qr_code')->isValid()
+                ] : 'no_file'
+            ]);
             return response()->json([
+                'success' => false,
                 'error' => 'Validation failed',
-                'details' => $e->errors()
+                'details' => $e->errors(),
+                'message' => 'Please check the form fields and try again.'
             ], 422);
         } catch (\Exception $e) {
             Log::error('Error creating payment method', [
@@ -1707,22 +1729,27 @@ class AdminSettingsController extends Controller
         ]);
 
         $settings = $this->getCurrentSettings();
+        
+        // Get the background color for unified styling
+        $sidebarBg = $request->sidebar_background_color ?? $settings['sidebar']['background_color'] ?? '#2d1b69';
+        $gradientColor = $request->sidebar_gradient_color ?? $settings['sidebar']['gradient_color'] ?? '#1a1340';
+        $footerBg = $request->sidebar_footer_bg_color ?? $sidebarBg; // Use sidebar bg as default for footer
 
-        // Update sidebar settings
+        // Update sidebar settings with unified colors for nav and footer
         $settings['sidebar'] = array_merge($settings['sidebar'] ?? [], [
-            'background_color' => $request->sidebar_background_color ?? $settings['sidebar']['background_color'] ?? '#2d1b69',
-            'gradient_color' => $request->sidebar_gradient_color ?? $settings['sidebar']['gradient_color'] ?? '#1a1340',
+            'background_color' => $sidebarBg,
+            'gradient_color' => $gradientColor,
             'text_color' => $request->sidebar_text_color ?? $settings['sidebar']['text_color'] ?? '#ffffff',
             'hover_color' => $request->sidebar_hover_color ?? $settings['sidebar']['hover_color'] ?? '#a91d3a',
             'active_bg_color' => $request->sidebar_active_bg_color ?? $settings['sidebar']['active_bg_color'] ?? '#a91d3a',
             'active_text_color' => $request->sidebar_active_text_color ?? $settings['sidebar']['active_text_color'] ?? '#ffffff',
-            'footer_bg_color' => $request->sidebar_footer_bg_color ?? $settings['sidebar']['footer_bg_color'] ?? '#2d1b69',
+            'footer_bg_color' => $footerBg,
             'footer_text_color' => $request->sidebar_footer_text_color ?? $settings['sidebar']['footer_text_color'] ?? '#ffffff',
         ]);
 
         $this->saveSettings($settings);
 
-        return back()->with('success', 'Sidebar settings updated successfully!');
+        return back()->with('success', 'Sidebar navigation and footer settings updated successfully! The changes are now applied to both sections.');
     }
 
     /**
