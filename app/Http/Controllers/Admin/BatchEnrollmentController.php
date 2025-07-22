@@ -4,805 +4,414 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\StudentBatch;
-use App\Models\Program;
-use App\Models\Enrollment;
-use App\Models\Professor;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Student;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Models\Registration;
+use App\Models\Enrollment;
+use App\Models\Program;
+use App\Models\Package;
+use App\Models\Module;
+use App\Models\Course;
+use App\Models\StudentBatch;
 
 class BatchEnrollmentController extends Controller
 {
+    /**
+     * Display the batch enrollment management interface
+     */
     public function index()
     {
-        // Authentication is handled by middleware
-
-        $batches = StudentBatch::with(['program', 'professors'])->orderBy('created_at', 'desc')->get();
-        $programs = Program::where('is_archived', 0)->get();
-        $professors = Professor::where('professor_archived', 0)->get();
-
-        return view('admin.admin-student-enrollment.batch-enroll', [
-            'batches' => $batches,
-            'programs' => $programs,
-            'professors' => $professors
-        ]);
-    }
-
-    public function create()
-    {
-        // Authentication is handled by middleware
-        $programs = Program::where('is_archived', 0)->get();
-        $professors = Professor::where('professor_archived', 0)->get();
-
-        return view('admin.admin-student-enrollment.batch-create', [
-            'programs' => $programs,
-            'professors' => $professors
-        ]);
-    }
-
-    public function store(Request $request)
-    {
-        // Authentication is handled by middleware
-
-        $request->validate([
-            'batch_name' => 'required|string|max:255',
-            'program_id' => 'required|exists:programs,program_id',
-            'professor_ids' => 'nullable|array',
-            'professor_ids.*' => 'exists:professors,professor_id',
-            'max_capacity' => 'required|integer|min:1',
-            'enrollment_deadline' => 'nullable|date',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'batch_description' => 'nullable|string',
-            'batch_status' => 'required|in:available,ongoing,closed,completed'
-        ]);
-
-        // Auto-determine status based on start date if provided
-        $status = $request->batch_status;
-        if ($request->start_date) {
-            $startDate = \Carbon\Carbon::parse($request->start_date);
-            $today = \Carbon\Carbon::today();
-            $endDate = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null;
-            
-            if ($startDate->equalTo($today) || $startDate->lessThan($today)) {
-                if ($endDate && $today->greaterThan($endDate)) {
-                    $status = 'completed';
-                } else {
-                    $status = 'ongoing';
-                }
-            } else {
-                $status = 'available';
-            }
-        }
-
-        $batch = StudentBatch::create([
-            'batch_name' => $request->batch_name,
-            'program_id' => $request->program_id,
-            'max_capacity' => $request->max_capacity,
-            'current_capacity' => 0,
-            'batch_status' => $status,
-            'registration_deadline' => $request->enrollment_deadline ? \Carbon\Carbon::parse($request->enrollment_deadline) : null,
-            'start_date' => $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null,
-            'end_date' => $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null,
-            'description' => $request->batch_description,
-            'created_by' => session('admin_id'), // Track who created the batch
-            'professor_id' => $request->professor_ids ? $request->professor_ids[0] : null // Keep for backward compatibility
-        ]);
-
-        // Assign multiple professors if provided
-        if ($request->professor_ids && count($request->professor_ids) > 0) {
-            $professorData = [];
-            foreach ($request->professor_ids as $professorId) {
-                $professorData[$professorId] = [
-                    'assigned_at' => now(),
-                    'assigned_by' => session('admin_id'),
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ];
-            }
-            $batch->professors()->attach($professorData);
-        }
-
-        $professorCount = $request->professor_ids ? count($request->professor_ids) : 0;
-        $message = 'Batch "' . $batch->batch_name . '" created successfully with status: ' . $status;
-        if ($professorCount > 0) {
-            $message .= ' and ' . $professorCount . ' professor(s) assigned.';
-        }
-
-        return redirect()->back()->with('success', $message);
-    }
-
-    public function show($id)
-    {
-        // Authentication is handled by middleware
-
-        $batch = StudentBatch::find($id);
-        if (!$batch) {
-            return response()->json(['error' => 'Batch not found'], 404);
-        }
-
-        return response()->json($batch);
-    }
-
-    public function update(Request $request, $id)
-    {
-        // Authentication is handled by middleware
-
-        $request->validate([
-            'batch_name' => 'required|string|max:255',
-            'program_id' => 'required|exists:programs,program_id',
-            'professor_id' => 'nullable|integer', // Changed from exists check
-            'max_capacity' => 'required|integer|min:1',
-            'registration_deadline' => 'required|date',
-            'start_date' => 'required|date', // Removed after:registration_deadline for flexibility
-            'end_date' => 'nullable|date|after:start_date',
-            'description' => 'nullable|string'
-        ]);
-
-        $batch = StudentBatch::find($id);
-        if (!$batch) {
-            return response()->json(['error' => 'Batch not found'], 404);
-        }
-
-        // Don't allow reducing max_capacity below current_capacity
-        if ($request->max_capacity < $batch->current_capacity) {
-            return response()->json([
-                'error' => 'Cannot reduce maximum capacity below current enrollment'
-            ], 400);
-        }
-
-        $updateData = [
-            'batch_name' => $request->batch_name,
-            'program_id' => $request->program_id,
-            'professor_id' => $request->professor_id,
-            'max_capacity' => $request->max_capacity,
-            'registration_deadline' => Carbon::parse($request->registration_deadline),
-            'start_date' => Carbon::parse($request->start_date),
-            'description' => $request->description
-        ];
-        
-        // Handle end_date
-        if ($request->end_date) {
-            $updateData['end_date'] = Carbon::parse($request->end_date);
-        } else {
-            $updateData['end_date'] = null;
-        }
-
-        $batch->update($updateData);
-        
-        // Update batch status based on new dates
-        $batch->updateStatusBasedOnDates();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Batch updated successfully'
-        ]);
-    }
-
-    public function toggleStatus($id)
-    {
-        // Authentication is handled by middleware
-
-        $batch = StudentBatch::find($id);
-        if (!$batch) {
-            return response()->json(['error' => 'Batch not found'], 404);
-        }
-
-        $newStatus = $batch->batch_status === 'closed' ? 'available' : 'closed';
-        $batch->update(['batch_status' => $newStatus]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Batch status updated successfully',
-            'new_status' => $newStatus
-        ]);
-    }
-
-    public function approveBatch($id)
-    {
-        // Authentication is handled by middleware
-
-        $batch = StudentBatch::find($id);
-        if (!$batch) {
-            return response()->json(['error' => 'Batch not found'], 404);
-        }
-
-        if ($batch->batch_status !== 'pending') {
-            return response()->json(['error' => 'Only pending batches can be approved'], 400);
-        }
-
-        $batch->update(['batch_status' => 'available']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Batch approved successfully',
-            'new_status' => 'available'
-        ]);
-    }
-
-    public function students($id)
-    {
-        // Authentication is handled by middleware
-
-        $batch = StudentBatch::find($id);
-        if (!$batch) {
-            return response()->json(['error' => 'Batch not found'], 404);
-        }
-
-        $enrollments = $batch->enrollments()
-            ->with(['user', 'student', 'program', 'package'])
-            ->get()
-            ->map(function ($enrollment) {
-                $studentName = '';
-                $studentEmail = '';
-                
-                // Get student name and email from user or student relationship
-                if ($enrollment->user) {
-                    $studentName = trim(($enrollment->user->user_firstname ?? '') . ' ' . ($enrollment->user->user_lastname ?? ''));
-                    $studentEmail = $enrollment->user->email ?? '';
-                } elseif ($enrollment->student) {
-                    $studentName = trim(($enrollment->student->firstname ?? '') . ' ' . ($enrollment->student->lastname ?? ''));
-                    $studentEmail = $enrollment->student->email ?? '';
-                }
-                
-                // Determine if student is pending or current based on batch access
-                $isPending = !$enrollment->batch_access_granted;
-                $isCurrent = $enrollment->batch_access_granted;
-
-                return [
-                    'user_id' => $enrollment->user_id,
-                    'enrollment_id' => $enrollment->enrollment_id,
-                    'student_id' => $enrollment->student_id,
-                    'name' => $studentName ?: 'N/A',
-                    'email' => $studentEmail ?: 'N/A',
-                    'enrollment_date' => $enrollment->created_at,
-                    'enrollment_status' => $enrollment->enrollment_status,
-                    'payment_status' => $enrollment->payment_status,
-                    'program_name' => $enrollment->program->program_name ?? 'N/A',
-                    'package_name' => $enrollment->package->package_name ?? 'N/A',
-                    'amount' => $enrollment->package->price ?? 0,
-                    'is_pending' => $isPending,
-                    'is_current' => $isCurrent
-                ];
-            });
-
-        // Separate pending and current students
-        $pendingStudents = $enrollments->filter(function ($student) {
-            return $student['is_pending'];
-        })->values();
-
-        $currentStudents = $enrollments->filter(function ($student) {
-            return $student['is_current'];
-        })->values();
-
-        // Get available students (those who have enrollments but not in this batch or have no enrollment)
-        $enrolledUserIds = $enrollments->pluck('user_id')->filter()->toArray();
-        $enrolledStudentIds = $enrollments->pluck('student_id')->filter()->toArray();
-        
-        // Get students who could potentially be added to this batch
-        $availableStudents = Enrollment::with(['user', 'student'])
-            ->where('program_id', $batch->program_id)
-            ->where(function($query) use ($id) {
-                $query->where('batch_id', '!=', $id)
-                      ->orWhereNull('batch_id');
-            })
-            ->get()
-            ->map(function ($enrollment) {
-                $studentName = '';
-                $studentEmail = '';
-                
-                if ($enrollment->user) {
-                    $studentName = trim(($enrollment->user->user_firstname ?? '') . ' ' . ($enrollment->user->user_lastname ?? ''));
-                    $studentEmail = $enrollment->user->email ?? '';
-                } elseif ($enrollment->student) {
-                    $studentName = trim(($enrollment->student->firstname ?? '') . ' ' . ($enrollment->student->lastname ?? ''));
-                    $studentEmail = $enrollment->student->email ?? '';
-                }
-
-                return [
-                    'user_id' => $enrollment->user_id,
-                    'enrollment_id' => $enrollment->enrollment_id,
-                    'student_id' => $enrollment->student_id,
-                    'name' => $studentName ?: 'N/A',
-                    'email' => $studentEmail ?: 'N/A',
-                    'enrollment_status' => $enrollment->enrollment_status,
-                    'payment_status' => $enrollment->payment_status,
-                ];
-            })
-            ->filter(function ($student) use ($enrolledUserIds, $enrolledStudentIds) {
-                // Exclude students already in this batch
-                return !in_array($student['user_id'], $enrolledUserIds) && 
-                       !in_array($student['student_id'], $enrolledStudentIds);
-            })
-            ->values();
-
-        return response()->json([
-            'success' => true,
-            'current_students' => $currentStudents,
-            'pending_students' => $pendingStudents,
-            'available_students' => $availableStudents,
-            'total_current' => $currentStudents->count(),
-            'total_pending' => $pendingStudents->count(),
-            'total_available' => $availableStudents->count()
-        ]);
-    }
-
-    /**
-     * Get batches by program for AJAX requests (used in registration forms)
-     */
-    public function getBatchesByProgram(Request $request)
-    {
-        // Authentication is handled by middleware
-        
-        $programId = $request->get('program_id');
-        
-        if (!$programId) {
-            return response()->json([]);
-        }
-
-        // Update batch statuses first
-        $this->updateBatchStatuses();
-
-        $batches = StudentBatch::where('program_id', $programId)
-            ->whereIn('batch_status', ['available', 'ongoing']) // Include ongoing batches
-            ->where(function($query) {
-                // Allow registration if deadline hasn't passed OR if batch is ongoing but still accepting
-                $query->where('registration_deadline', '>=', now())
-                      ->orWhere('batch_status', 'ongoing');
-            })
-            ->with('program')
-            ->orderBy('start_date', 'asc')
-            ->get()
-            ->map(function ($batch) {
-                $isOngoing = $batch->batch_status === 'ongoing';
-                $daysStarted = $isOngoing ? now()->diffInDays($batch->start_date) : 0;
-                
-                return [
-                    'batch_id' => $batch->batch_id,
-                    'batch_name' => $batch->batch_name,
-                    'program_name' => $batch->program->program_name ?? 'N/A',
-                    'max_capacity' => $batch->max_capacity,
-                    'current_capacity' => $batch->current_capacity,
-                    'batch_status' => $batch->batch_status,
-                    'registration_deadline' => $batch->registration_deadline ? $batch->registration_deadline->format('M d, Y') : 'Open',
-                    'start_date' => $batch->start_date->format('M d, Y'),
-                    'end_date' => $batch->end_date ? $batch->end_date->format('M d, Y') : null,
-                    'description' => $batch->description,
-                    'status' => $batch->batch_status === 'available' ? 'active' : ($isOngoing ? 'ongoing' : 'inactive'),
-                    'schedule' => $isOngoing ? 'Ongoing - Started ' . $batch->start_date->format('M d, Y') : 'Live Classes - ' . $batch->start_date->format('M d, Y'),
-                    'is_ongoing' => $isOngoing,
-                    'days_started' => $daysStarted,
-                    'has_available_slots' => $batch->hasAvailableSlots(),
-                    'available_slots' => $batch->available_slots
-                ];
-            })
-            ->filter(function($batch) {
-                // Only show batches that have available slots
-                return $batch['has_available_slots'];
-            })
-            ->values();
-
-        return response()->json($batches);
-    }
-
-    /**
-     * Update batch statuses based on current date
-     */
-    private function updateBatchStatuses()
-    {
-        $batches = StudentBatch::whereIn('batch_status', ['pending', 'available', 'ongoing'])
-            ->get();
-        
-        foreach ($batches as $batch) {
-            $batch->updateStatusBasedOnDates();
-        }
-    }
-
-    /**
-     * Update batch details
-     */
-    public function updateBatch(Request $request, $id)
-    {
-        // Authentication is handled by middleware
-        
-        $request->validate([
-            'batch_name' => 'required|string|max:255',
-            'program_id' => 'required|exists:programs,program_id',
-            'max_capacity' => 'required|integer|min:1',
-            'registration_deadline' => 'required|date',
-            'start_date' => 'required|date|after:registration_deadline',
-            'description' => 'nullable|string'
-        ]);
-
-        $batch = StudentBatch::findOrFail($id);
-        
-        $batch->update([
-            'batch_name' => $request->batch_name,
-            'program_id' => $request->program_id,
-            'max_capacity' => $request->max_capacity,
-            'registration_deadline' => Carbon::parse($request->registration_deadline),
-            'start_date' => Carbon::parse($request->start_date),
-            'description' => $request->description
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Batch updated successfully',
-            'batch' => $batch->load('program')
-        ]);
-    }
-
-    /**
-     * Delete a batch
-     */
-    public function deleteBatch($id)
-    {
-        // Authentication is handled by middleware
-        
-        $batch = StudentBatch::findOrFail($id);
-        
-        // Check if batch has enrolled students
-        if ($batch->current_capacity > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete batch with enrolled students'
-            ], 400);
-        }
-        
-        $batchName = $batch->batch_name;
-        $batch->delete();
-        
-        return response()->json([
-            'success' => true,
-            'message' => "Batch '{$batchName}' deleted successfully"
-        ]);
-    }
-
-    /**
-     * Add students to batch
-     */
-    public function addStudentsToBatch(Request $request, $id)
-    {
-        // Authentication is handled by middleware
-        
-        $request->validate([
-            'student_ids' => 'required|array',
-            'student_ids.*' => 'exists:users,user_id'
-        ]);
-
-        $batch = StudentBatch::findOrFail($id);
-        $studentIds = $request->student_ids;
-        
-        // Check capacity
-        $newEnrollmentCount = count($studentIds);
-        if ($batch->current_capacity + $newEnrollmentCount > $batch->max_capacity) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Not enough capacity in batch. Available slots: ' . ($batch->max_capacity - $batch->current_capacity)
-            ], 400);
-        }
-
-        $enrolled = 0;
-        foreach ($studentIds as $studentId) {
-            // Check if student is already enrolled in this batch
-            $existingEnrollment = Enrollment::where('user_id', $studentId)
-                ->where('batch_id', $id)
-                ->first();
-                
-            if (!$existingEnrollment) {
-                Enrollment::create([
-                    'user_id' => $studentId,
-                    'program_id' => $batch->program_id,
-                    'batch_id' => $id,
-                    'enrollment_status' => 'active',
-                    'enrollment_date' => now()
-                ]);
-                $enrolled++;
-            }
-        }
-
-        // Update batch capacity
-        $batch->increment('current_capacity', $enrolled);
-
-        return response()->json([
-            'success' => true,
-            'message' => "{$enrolled} students enrolled successfully",
-            'enrolled_count' => $enrolled
-        ]);
-    }
-
-    /**
-     * Remove student from batch
-     */
-    public function removeStudentFromBatch($batchId, $studentId)
-    {
-        // Authentication is handled by middleware
-        
-        $enrollment = Enrollment::where('batch_id', $batchId)
-            ->where('user_id', $studentId)
-            ->first();
-            
-        if (!$enrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Student not found in this batch'
-            ], 404);
-        }
-
-        $enrollment->delete();
-        
-        // Update batch capacity
-        $batch = StudentBatch::findOrFail($batchId);
-        $batch->decrement('current_capacity');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Student removed from batch successfully'
-        ]);
-    }
-
-    /**
-     * Export batch enrollment details
-     */
-    public function exportBatchEnrollments($id)
-    {
-        // Authentication is handled by middleware
-        
-        $batch = StudentBatch::with(['program', 'enrollments.user'])->findOrFail($id);
-        
-        $enrollments = $batch->enrollments->map(function ($enrollment) {
-            $user = $enrollment->user;
-            return [
-                'Student Name' => $user ? $user->user_firstname . ' ' . $user->user_lastname : 'N/A',
-                'Email' => $user ? $user->email : 'N/A',
-                'Enrollment Date' => $enrollment->enrollment_date ? $enrollment->enrollment_date->format('Y-m-d') : 'N/A',
-                'Status' => $enrollment->enrollment_status ?? 'N/A'
+        try {
+            // Get all necessary data for the batch enrollment interface
+            $data = [
+                'students' => Student::with('user')->get(),
+                'programs' => Program::where('is_archived', false)->get(),
+                'packages' => Package::all(),
+                'modules' => Module::with('courses')->get(),
+                'courses' => Course::where('is_active', true)->get(),
+                'batches' => StudentBatch::whereIn('batch_status', ['available', 'ongoing', 'pending'])->get(),
+                'enrollments' => Enrollment::with(['student', 'program', 'package'])
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(20),
+                'recentEnrollments' => Enrollment::with(['student', 'program'])
+                    ->orderBy('created_at', 'desc')
+                    ->take(10)
+                    ->get()
             ];
-        });
 
-        $filename = 'batch_' . $batch->batch_id . '_enrollments_' . date('Y-m-d') . '.csv';
-        
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
+            return view('admin.batch-enrollment.index', $data);
+        } catch (\Exception $e) {
+            Log::error('Batch enrollment index error: ' . $e->getMessage());
+            return back()->with('error', 'Unable to load batch enrollment data.');
+        }
+    }
 
-        $callback = function() use ($enrollments) {
-            $file = fopen('php://output', 'w');
-            
-            // Add CSV headers
-            if ($enrollments->isNotEmpty()) {
-                fputcsv($file, array_keys($enrollments->first()));
-                
-                // Add data rows
-                foreach ($enrollments as $enrollment) {
-                    fputcsv($file, $enrollment);
+    /**
+     * Enroll multiple students into programs/courses/modules
+     */
+    public function batchEnroll(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'exists:students,student_id',
+            'program_id' => 'required|exists:programs,program_id',
+            'package_id' => 'required|exists:packages,package_id',
+            'enrollment_type' => 'required|in:Full,Modular',
+            'learning_mode' => 'required|in:Synchronous,Asynchronous',
+            'batch_id' => 'nullable|exists:student_batches,batch_id',
+            'selected_modules' => 'nullable|array',
+            'selected_courses' => 'nullable|array',
+            'start_date' => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $enrolledStudents = [];
+            $failedStudents = [];
+
+            foreach ($request->student_ids as $studentId) {
+                try {
+                    $student = Student::where('student_id', $studentId)->first();
+                    
+                    if (!$student) {
+                        $failedStudents[] = [
+                            'student_id' => $studentId,
+                            'reason' => 'Student not found'
+                        ];
+                        continue;
+                    }
+
+                    // Check if already enrolled in this program
+                    $existingEnrollment = Enrollment::where('student_id', $studentId)
+                        ->where('program_id', $request->program_id)
+                        ->first();
+
+                    if ($existingEnrollment) {
+                        $failedStudents[] = [
+                            'student_id' => $studentId,
+                            'student_name' => $student->user->user_firstname . ' ' . $student->user->user_lastname,
+                            'reason' => 'Already enrolled in this program'
+                        ];
+                        continue;
+                    }
+
+                    // Create enrollment
+                    $enrollmentData = [
+                        'student_id' => $studentId,
+                        'user_id' => $student->user_id,
+                        'program_id' => $request->program_id,
+                        'package_id' => $request->package_id,
+                        'enrollment_type' => $request->enrollment_type,
+                        'learning_mode' => $request->learning_mode,
+                        'enrollment_status' => 'approved', // Admin enrollments are auto-approved
+                        'payment_status' => 'pending',
+                        'batch_access_granted' => true,
+                        'individual_start_date' => $request->start_date ? $request->start_date : now(),
+                    ];
+
+                    if ($request->batch_id) {
+                        $enrollmentData['batch_id'] = $request->batch_id;
+                    }
+
+                    $enrollment = Enrollment::create($enrollmentData);
+
+                    $enrolledStudents[] = [
+                        'student_id' => $studentId,
+                        'student_name' => $student->user->user_firstname . ' ' . $student->user->user_lastname,
+                        'enrollment_id' => $enrollment->enrollment_id
+                    ];
+
+                    Log::info('Batch enrollment created', [
+                        'student_id' => $studentId,
+                        'program_id' => $request->program_id,
+                        'enrollment_id' => $enrollment->enrollment_id
+                    ]);
+
+                } catch (\Exception $e) {
+                    Log::error('Individual enrollment failed', [
+                        'student_id' => $studentId,
+                        'error' => $e->getMessage()
+                    ]);
+                    
+                    $failedStudents[] = [
+                        'student_id' => $studentId,
+                        'reason' => 'Database error: ' . $e->getMessage()
+                    ];
                 }
             }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Batch enrollment completed',
+                'enrolled_count' => count($enrolledStudents),
+                'failed_count' => count($failedStudents),
+                'enrolled_students' => $enrolledStudents,
+                'failed_students' => $failedStudents
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Batch enrollment failed: ' . $e->getMessage());
             
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+            return response()->json([
+                'success' => false,
+                'message' => 'Batch enrollment failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Get available students for batch assignment
+     * Add additional enrollments to existing student
      */
-    public function getAvailableStudents($batchId)
+    public function addEnrollment(Request $request)
     {
-        // Authentication is handled by middleware
-        
-        $batch = StudentBatch::findOrFail($batchId);
-        
-        // Get students who are not already enrolled in this batch
-        $enrolledStudentIds = Enrollment::where('batch_id', $batchId)->pluck('user_id');
-        
-        $availableStudents = User::where('role', 'student')
-            ->whereNotIn('user_id', $enrolledStudentIds)
-            ->select('user_id', 'user_firstname', 'user_lastname', 'email')
-            ->orderBy('user_firstname')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'students' => $availableStudents
+        $validator = Validator::make($request->all(), [
+            'student_id' => 'required|exists:students,student_id',
+            'program_id' => 'required|exists:programs,program_id',
+            'package_id' => 'required|exists:packages,package_id',
+            'enrollment_type' => 'required|in:Full,Modular',
+            'learning_mode' => 'required|in:Synchronous,Asynchronous',
+            'batch_id' => 'nullable|exists:student_batches,batch_id',
+            'selected_modules' => 'nullable|array',
+            'selected_courses' => 'nullable|array',
         ]);
-    }
 
-
-
-    /**
-     * Add student from available list to batch
-     */
-    public function addStudentToBatch(Request $request, $batchId, $enrollmentId)
-    {
-        $enrollment = Enrollment::find($enrollmentId);
-        if (!$enrollment) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Enrollment not found'
-            ], 404);
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $batch = StudentBatch::find($batchId);
-        if (!$batch) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Batch not found'
-            ], 404);
-        }
+        try {
+            $student = Student::where('student_id', $request->student_id)->first();
 
-        // Check if already in this batch
-        if ($enrollment->batch_id == $batchId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Student already in this batch'
-            ], 400);
-        }
+            // Check if already enrolled in this program
+            $existingEnrollment = Enrollment::where('student_id', $request->student_id)
+                ->where('program_id', $request->program_id)
+                ->first();
 
-        // Get target type from request (current or pending)
-        $requestData = $request->json()->all();
-        $targetType = $requestData['target_type'] ?? 'pending';
-
-        // Set status based on target type
-        if ($targetType === 'current') {
-            // Check capacity first
-            $currentCount = Enrollment::where('batch_id', $batchId)
-                ->where('batch_access_granted', true)
-                ->count();
-
-            if ($currentCount >= $batch->max_capacity) {
+            if ($existingEnrollment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Batch is at maximum capacity'
+                    'message' => 'Student is already enrolled in this program'
                 ], 400);
             }
 
-            // Add to batch as current student (grant batch access)
-            $enrollment->update([
-                'batch_id' => $batchId,
-                'batch_access_granted' => true
+            $enrollmentData = [
+                'student_id' => $request->student_id,
+                'user_id' => $student->user_id,
+                'program_id' => $request->program_id,
+                'package_id' => $request->package_id,
+                'enrollment_type' => $request->enrollment_type,
+                'learning_mode' => $request->learning_mode,
+                'enrollment_status' => 'approved',
+                'payment_status' => 'pending',
+                'batch_access_granted' => true,
+                'individual_start_date' => now(),
+            ];
+
+            if ($request->batch_id) {
+                $enrollmentData['batch_id'] = $request->batch_id;
+            }
+
+            $enrollment = Enrollment::create($enrollmentData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Additional enrollment created successfully',
+                'enrollment' => $enrollment
             ]);
 
-            // Update batch capacity
-            $newCurrentCount = Enrollment::where('batch_id', $batchId)
-                ->where('batch_access_granted', true)
-                ->count();
-            $batch->update(['current_capacity' => $newCurrentCount]);
+        } catch (\Exception $e) {
+            Log::error('Add enrollment failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create enrollment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
-            $message = 'Student added to batch as current student (granted dashboard access)';
-        } else {
-            // Add to batch as pending student
-            $enrollment->update([
-                'batch_id' => $batchId,
-                'batch_access_granted' => false
+    /**
+     * Get student enrollment details
+     */
+    public function getStudentEnrollments($studentId)
+    {
+        try {
+            $student = Student::with('user')->where('student_id', $studentId)->first();
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found'
+                ], 404);
+            }
+
+            $enrollments = Enrollment::with(['program', 'package', 'batch'])
+                ->where('student_id', $studentId)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'student' => $student,
+                'enrollments' => $enrollments
             ]);
 
-            $message = 'Student added to batch as pending student';
+        } catch (\Exception $e) {
+            Log::error('Get student enrollments failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch student enrollments'
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => $message
-        ]);
     }
 
     /**
-     * Move student from pending to current (grants dashboard access without changing enrollment/payment status)
+     * Export enrollment details
      */
-    public function moveStudentToCurrent(Request $request, $batchId, $enrollmentId)
+    public function exportEnrollments(Request $request)
     {
-        $enrollment = Enrollment::find($enrollmentId);
-        if (!$enrollment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Enrollment not found'
-            ], 404);
+        try {
+            $query = Enrollment::with(['student.user', 'program', 'package', 'batch']);
+            
+            // Apply filters if provided
+            if ($request->program_id) {
+                $query->where('program_id', $request->program_id);
+            }
+            
+            if ($request->enrollment_status) {
+                $query->where('enrollment_status', $request->enrollment_status);
+            }
+            
+            if ($request->enrollment_type) {
+                $query->where('enrollment_type', $request->enrollment_type);
+            }
+
+            if ($request->date_from) {
+                $query->where('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->date_to) {
+                $query->where('created_at', '<=', $request->date_to);
+            }
+
+            $enrollments = $query->get();
+
+            // Prepare CSV data
+            $csvData = [];
+            $csvData[] = [
+                'Enrollment ID',
+                'Student ID', 
+                'Student Name',
+                'Email',
+                'Program Name',
+                'Package Name',
+                'Enrollment Type',
+                'Learning Mode',
+                'Enrollment Status',
+                'Payment Status',
+                'Batch Name',
+                'Start Date',
+                'Created At'
+            ];
+
+            foreach ($enrollments as $enrollment) {
+                $csvData[] = [
+                    $enrollment->enrollment_id,
+                    $enrollment->student_id,
+                    $enrollment->student && $enrollment->student->user ? 
+                        $enrollment->student->user->user_firstname . ' ' . $enrollment->student->user->user_lastname : 'N/A',
+                    $enrollment->student && $enrollment->student->user ? $enrollment->student->user->user_email : 'N/A',
+                    $enrollment->program ? $enrollment->program->program_name : 'N/A',
+                    $enrollment->package ? $enrollment->package->package_name : 'N/A',
+                    $enrollment->enrollment_type,
+                    $enrollment->learning_mode,
+                    $enrollment->enrollment_status,
+                    $enrollment->payment_status,
+                    $enrollment->batch ? $enrollment->batch->batch_name : 'N/A',
+                    $enrollment->individual_start_date,
+                    $enrollment->created_at->format('Y-m-d H:i:s')
+                ];
+            }
+
+            // Generate CSV
+            $filename = 'enrollments_export_' . date('Y-m-d_H-i-s') . '.csv';
+            
+            return response()->streamDownload(function () use ($csvData) {
+                $file = fopen('php://output', 'w');
+                foreach ($csvData as $row) {
+                    fputcsv($file, $row);
+                }
+                fclose($file);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Export enrollments failed: ' . $e->getMessage());
+            
+            return back()->with('error', 'Failed to export enrollments: ' . $e->getMessage());
         }
-
-        $batch = StudentBatch::find($batchId);
-        if (!$batch) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Batch not found'
-            ], 404);
-        }
-
-        // Check capacity first - count only current students with batch access
-        $currentCount = Enrollment::where('batch_id', $batchId)
-            ->where('batch_access_granted', true)
-            ->count();
-
-        if ($currentCount >= $batch->max_capacity) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Batch is at maximum capacity'
-            ], 400);
-        }
-
-        // Grant batch access without changing enrollment/payment status
-        $enrollment->update([
-            'batch_id' => $batchId,
-            'batch_access_granted' => true
-        ]);
-
-        // Update batch capacity based on batch access
-        $newCurrentCount = Enrollment::where('batch_id', $batchId)
-            ->where('batch_access_granted', true)
-            ->count();
-        $batch->update(['current_capacity' => $newCurrentCount]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Student moved to current (granted dashboard access with status notification)'
-        ]);
     }
 
     /**
-     * Move student from current to pending (removes dashboard access but keeps in batch)
+     * Get modules for a specific program
      */
-    public function moveStudentToPending(Request $request, $batchId, $enrollmentId)
+    public function getProgramModules($programId)
     {
-        $enrollment = Enrollment::find($enrollmentId);
-        if (!$enrollment) {
+        try {
+            $modules = Module::with('courses')
+                ->where('program_id', $programId)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'modules' => $modules
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Enrollment not found'
-            ], 404);
+                'message' => 'Failed to fetch modules'
+            ], 500);
         }
-
-        // Remove batch access without changing enrollment/payment status
-        $enrollment->update([
-            'batch_access_granted' => false
-        ]);
-
-        // Update batch capacity
-        $batch = StudentBatch::find($batchId);
-        if ($batch) {
-            $newCurrentCount = Enrollment::where('batch_id', $batchId)
-                ->where('batch_access_granted', true)
-                ->count();
-            $batch->update(['current_capacity' => $newCurrentCount]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Student moved to pending (dashboard access removed)'
-        ]);
     }
 
     /**
-     * Remove student from batch completely (moves back to available)
+     * Get courses for a specific module
      */
-    public function removeStudentFromBatchCompletely(Request $request, $batchId, $enrollmentId)
+    public function getModuleCourses($moduleId)
     {
-        $enrollment = Enrollment::find($enrollmentId);
-        if (!$enrollment) {
+        try {
+            $courses = Course::where('module_id', $moduleId)
+                ->where('is_active', true)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'courses' => $courses
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Enrollment not found'
-            ], 404);
+                'message' => 'Failed to fetch courses'
+            ], 500);
         }
-
-        // Remove from batch by setting batch_id to null
-        $enrollment->update([
-            'batch_id' => null
-        ]);
-
-        // Update batch capacity
-        $batch = StudentBatch::find($batchId);
-        if ($batch) {
-            $newCurrentCount = Enrollment::where('batch_id', $batchId)
-                ->where('enrollment_status', 'approved')
-                ->where('payment_status', 'paid')
-                ->count();
-            $batch->update(['current_capacity' => $newCurrentCount]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Student removed from batch and moved to available students'
-        ]);
     }
 }

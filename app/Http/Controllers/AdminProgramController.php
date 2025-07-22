@@ -453,17 +453,19 @@ class AdminProgramController extends Controller
             $activeEnrollments = DB::table('enrollments')
                 ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
                 ->where('programs.is_archived', false)
-                ->where('enrollments.status', 'active')
+                ->where('enrollments.enrollment_status', 'approved')
                 ->count();
 
-            $pendingEnrollments = DB::table('registrations')
-                ->where('status', 'pending')
+            $pendingEnrollments = DB::table('enrollments')
+                ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->where('programs.is_archived', false)
+                ->where('enrollments.enrollment_status', 'pending')
                 ->count();
 
             $completedCourses = DB::table('enrollments')
                 ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
                 ->where('programs.is_archived', false)
-                ->where('enrollments.status', 'completed')
+                ->where('enrollments.payment_status', 'paid')
                 ->count();
 
             return view('admin.admin-student-enrollment.admin-enrollments', compact(
@@ -474,7 +476,7 @@ class AdminProgramController extends Controller
             ) + [
                 'approvedStudents' => Student::whereNotNull('date_approved')->get(),
                 'programs' => Program::where('is_archived', false)->get(),
-                'batches' => Batch::where('is_active', true)->get(),
+                'batches' => \App\Models\StudentBatch::whereIn('batch_status', ['available', 'ongoing'])->get(),
                 'courses' => Course::where('is_archived', false)->get()
             ]);
         } catch (\Exception $e) {
