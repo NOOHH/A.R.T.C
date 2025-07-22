@@ -744,9 +744,7 @@ class StudentRegistrationController extends Controller
     public function showRegistrationForm(Request $request)
     {
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
-        $packages = Package::where('status', 'active')
-                          ->where('package_type', 'full')
-                          ->get();
+        $packages = Package::where('package_type', 'full')->get();
         
         // Auto-generate default package if none exist
         if ($packages->isEmpty()) {
@@ -755,9 +753,7 @@ class StudentRegistrationController extends Controller
                 'description' => 'Complete full program package with all courses included',
                 'amount' => 0.00,
                 'package_type' => 'full',
-                'selection_type' => 'full',
-                'selection_mode' => 'complete',
-                'status' => 'active'
+                'created_by_admin_id' => 1
             ]);
             $packages = collect([$defaultPackage]);
             \Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);

@@ -269,9 +269,7 @@ Route::get('/enrollment/modular', function () {
             'description' => 'Flexible modular package allowing course-by-course enrollment',
             'amount' => 0.00,
             'package_type' => 'modular',
-            'selection_type' => 'module',
-            'selection_mode' => 'modules',
-            'status' => 'active'
+            'created_by_admin_id' => 1
         ]);
         $packages = collect([$defaultPackage]);
         \Log::info('Auto-generated default modular package', ['package_id' => $defaultPackage->package_id]);
