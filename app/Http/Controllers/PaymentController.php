@@ -25,7 +25,7 @@ class PaymentController extends Controller
     {
         try {
             $request->validate([
-                'payment_method_id' => 'required|exists:payment_methods,id',
+                'payment_method_id' => 'required|exists:payment_methods,payment_method_id',
                 'amount' => 'required|numeric|min:1',
                 'student_id' => 'required'
             ]);
@@ -166,28 +166,55 @@ class PaymentController extends Controller
         try {
             $request->validate([
                 'payment_proof' => 'required|image|mimes:jpeg,jpg,png|max:5120',
-                'payment_method_id' => 'required|exists:payment_methods,id',
-                'student_id' => 'required'
+                'payment_method_id' => 'required|exists:payment_methods,payment_method_id',
+                'enrollment_id' => 'required|exists:enrollments,enrollment_id',
+                'reference_number' => 'nullable|string|max:255'
             ]);
 
+            // Get enrollment details
+            $enrollment = \App\Models\Enrollment::findOrFail($request->enrollment_id);
+            
+            // Get payment method details
+            $paymentMethod = \App\Models\PaymentMethod::findOrFail($request->payment_method_id);
+
             $file = $request->file('payment_proof');
-            $filename = 'payment_proof_' . $request->student_id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = 'payment_proof_' . $enrollment->enrollment_id . '_' . time() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('payment_proofs', $filename, 'public');
 
-            // Here you would typically create a payment record for admin verification
+            // Create payment record for admin verification
+            $payment = \App\Models\Payment::create([
+                'enrollment_id' => $enrollment->enrollment_id,
+                'student_id' => $enrollment->student_id,
+                'program_id' => $enrollment->program_id,
+                'package_id' => $enrollment->package_id,
+                'payment_method' => strtolower($paymentMethod->type),
+                'amount' => $enrollment->package ? $enrollment->package->amount : 0,
+                'payment_status' => 'pending',
+                'reference_number' => $request->reference_number,
+                'payment_details' => json_encode([
+                    'payment_method_name' => $paymentMethod->name,
+                    'payment_proof_path' => $path,
+                    'reference_number' => $request->reference_number,
+                    'uploaded_at' => now()->toISOString()
+                ]),
+                'notes' => 'Payment proof uploaded by student - awaiting admin verification'
+            ]);
+
+            // Update enrollment payment status
+            $enrollment->update(['payment_status' => 'pending']);
             
             return response()->json([
                 'success' => true,
                 'message' => 'Payment proof uploaded successfully. Your payment will be verified within 24 hours.',
-                'file_path' => $path
+                'payment_id' => $payment->payment_id
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Payment proof upload error', ['error' => $e->getMessage()]);
+            \Log::error('Payment proof upload error', ['error' => $e->getMessage(), 'request' => $request->all()]);
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to upload payment proof. Please try again.'
-            ]);
+            ], 500);
         }
     }
 

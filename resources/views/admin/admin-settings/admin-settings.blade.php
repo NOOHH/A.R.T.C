@@ -1033,62 +1033,33 @@
                             <div class="card-body">
                                 <form id="sidebarCustomizationForm" method="POST" action="{{ route('admin.settings.sidebar') }}">
                                     @csrf
-                                    
-                                    <div class="alert alert-info mb-3">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Combined Sidebar Settings:</strong> These settings will apply to both the sidebar navigation and footer sections.
+                                    <div class="mb-3">
+                                        <label class="form-label">Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_background_color" value="{{ $settings['sidebar']['background_color'] ?? '#2d1b69' }}">
                                     </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Background Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_background_color" value="{{ $settings['sidebar']['background_color'] ?? '#2d1b69' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Gradient Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_gradient_color" value="{{ $settings['sidebar']['gradient_color'] ?? '#1a1340' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Text Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_text_color" value="{{ $settings['sidebar']['text_color'] ?? '#ffffff' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Navigation Hover Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_hover_color" value="{{ $settings['sidebar']['hover_color'] ?? '#a91d3a' }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Active Background Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_active_bg_color" value="{{ $settings['sidebar']['active_bg_color'] ?? '#a91d3a' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Active Text Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_active_text_color" value="{{ $settings['sidebar']['active_text_color'] ?? '#ffffff' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Footer Background Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_footer_bg_color" value="{{ $settings['sidebar']['footer_bg_color'] ?? '#2d1b69' }}">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Footer Text Color</label>
-                                                <input type="color" class="form-control form-control-color" name="sidebar_footer_text_color" value="{{ $settings['sidebar']['footer_text_color'] ?? '#ffffff' }}">
-                                            </div>
-                                        </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Gradient Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_gradient_color" value="{{ $settings['sidebar']['gradient_color'] ?? '#1a1340' }}">
                                     </div>
-                                    
-                                    <div class="d-flex gap-2 mt-3">
-                                        <button type="button" class="btn btn-outline-primary" onclick="previewSidebarColors()">
-                                            <i class="fas fa-eye me-2"></i>Preview Changes
-                                        </button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Save All Sidebar Settings
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary" onclick="resetSidebarColors()">
-                                            <i class="fas fa-undo me-2"></i>Reset to Default
-                                        </button>
+                                    <div class="mb-3">
+                                        <label class="form-label">Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_text_color" value="{{ $settings['sidebar']['text_color'] ?? '#ffffff' }}">
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Hover Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_hover_color" value="{{ $settings['sidebar']['hover_color'] ?? '#a91d3a' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Active Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_active_bg_color" value="{{ $settings['sidebar']['active_bg_color'] ?? '#a91d3a' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Active Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_active_text_color" value="{{ $settings['sidebar']['active_text_color'] ?? '#ffffff' }}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Save Sidebar Settings
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -1096,28 +1067,30 @@
                     
                     <div class="col-md-6">
                         <div class="card shadow-sm">
-                            <div class="card-header bg-success text-white">
+                            <div class="card-header bg-dark text-white">
                                 <h5 class="card-title mb-0">
-                                    <i class="fas fa-eye me-2"></i>Live Preview
+                                    <i class="fas fa-align-left me-2"></i>Sidebar Footer
                                 </h5>
                             </div>
-                            <div class="card-body p-0">
-                                <div class="sidebar-preview" id="sidebarPreview">
-                                    <div class="preview-sidebar" style="background: var(--sidebar-bg, linear-gradient(180deg, #2d1b69 0%, #1a1340 100%)); color: var(--sidebar-text, rgba(255, 255, 255, 0.8)); height: 300px; padding: 15px;">
-                                        <div class="preview-nav-item" style="padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer;" onmouseover="this.style.background='var(--sidebar-hover, rgba(255,255,255,0.1))'" onmouseout="this.style.background='transparent'">
-                                            <i class="fas fa-home me-2"></i>Dashboard
-                                        </div>
-                                        <div class="preview-nav-item active" style="padding: 10px; border-radius: 8px; margin-bottom: 5px; background: var(--sidebar-active-bg, linear-gradient(135deg, #a91d3a, #d4336b)); color: var(--sidebar-active-text, #ffffff);">
-                                            <i class="fas fa-cog me-2"></i>Settings
-                                        </div>
-                                        <div class="preview-nav-item" style="padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer;" onmouseover="this.style.background='var(--sidebar-hover, rgba(255,255,255,0.1))'" onmouseout="this.style.background='transparent'">
-                                            <i class="fas fa-users me-2"></i>Users
-                                        </div>
-                                        <div class="preview-footer" style="position: absolute; bottom: 0; left: 0; right: 0; background: var(--sidebar-footer-bg, linear-gradient(180deg, #2d1b69 0%, #1a1340 100%)); color: var(--sidebar-footer-text, rgba(255, 255, 255, 0.8)); padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                                            <small><i class="fas fa-user me-2"></i>Footer Content</small>
-                                        </div>
+                            <div class="card-body">
+                                <form id="sidebarFooterCustomizationForm" method="POST" action="{{ route('admin.settings.sidebar') }}">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label">Footer Background Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_footer_bg_color" value="{{ $settings['sidebar']['footer_bg_color'] ?? '#2d1b69' }}">
                                     </div>
-                                </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Footer Text Color</label>
+                                        <input type="color" class="form-control form-control-color" name="sidebar_footer_text_color" value="{{ $settings['sidebar']['footer_text_color'] ?? '#ffffff' }}">
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Note:</strong> The sidebar footer will automatically sync with the main sidebar colors when you save the settings.
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary">
+                                        <i class="fas fa-save me-2"></i>Save Footer Settings
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -1204,6 +1177,71 @@
             {{-- Payment Methods Tab --}}
             <div class="tab-pane fade" id="payment-methods" role="tabpanel">
                 <div class="row g-4">
+                    {{-- Terms and Conditions Section --}}
+                    <div class="col-12">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-file-contract me-2"></i>Payment Terms and Conditions
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">Configure the terms and conditions that students must accept before making payments.</p>
+                                
+                                <form id="paymentTermsForm">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="paymentTermsContent" class="form-label">Payment Terms and Conditions <span class="text-danger">*</span></label>
+                                                <textarea class="form-control" id="paymentTermsContent" name="payment_terms_content" rows="10" 
+                                                          placeholder="Enter the terms and conditions for payments...">{{ \App\Models\AdminSetting::getValue('payment_terms_content', 'By submitting this payment, you agree to the following terms and conditions:
+
+1. All payments are final and non-refundable once processed.
+2. Payment confirmation may take 1-3 business days to process.
+3. Please ensure all payment details are accurate before submission.
+4. Fraudulent payment submissions will result in account suspension.
+5. Contact support if you encounter any payment issues.
+
+Please read and understand these terms before proceeding with your payment.') }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="paymentAbortTermsContent" class="form-label">Payment Abort Terms <span class="text-danger">*</span></label>
+                                                <textarea class="form-control" id="paymentAbortTermsContent" name="payment_abort_terms_content" rows="10" 
+                                                          placeholder="Enter the terms shown when students abort payments...">{{ \App\Models\AdminSetting::getValue('payment_abort_terms_content', 'Are you sure you want to abort this payment?
+
+By aborting this payment:
+- Your enrollment will be cancelled
+- All submitted information will be permanently deleted
+- You will need to start the enrollment process again
+- No refund will be processed for any partial payments
+
+If you are experiencing technical difficulties, please contact our support team instead of aborting the payment.
+
+This action cannot be undone.') }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="enablePaymentTerms" name="enable_payment_terms" 
+                                                   {{ \App\Models\AdminSetting::getValue('enable_payment_terms', '1') === '1' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="enablePaymentTerms">
+                                                <strong>Require students to accept terms before payment</strong>
+                                            </label>
+                                        </div>
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="fas fa-save me-2"></i>Save Terms and Conditions
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-12">
                         <div class="card shadow-sm">
                             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
@@ -1334,6 +1372,27 @@
                                 <label class="form-check-label" for="remove_qr_code">
                                     Remove current QR code
                                 </label>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Fields Configuration Section -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gear-fill me-2"></i>Dynamic Payment Fields Configuration
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewPaymentField()">
+                                    <i class="bi bi-plus-circle"></i> Add Field
+                                </button>
+                            </div>
+                            <p class="text-muted small">Configure custom fields that students need to fill when using this payment method.</p>
+                            
+                            <!-- Dynamic Fields Container -->
+                            <div id="dynamicFieldsContainer" class="border rounded p-3 bg-light">
+                                <div class="text-center text-muted py-3" id="noFieldsMessage">
+                                    <i class="bi bi-info-circle"></i>
+                                    No custom fields configured. Click "Add Field" to create dynamic fields for this payment method.
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -1640,6 +1699,15 @@ document
         referralSettingsForm.addEventListener('submit', function(e) {
             e.preventDefault();
             saveReferralSettings();
+        });
+    }
+
+    // Save payment terms settings
+    const paymentTermsForm = document.getElementById('paymentTermsForm');
+    if (paymentTermsForm) {
+        paymentTermsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            savePaymentTermsSettings();
         });
     }
 
@@ -2817,6 +2885,51 @@ function saveReferralSettings() {
     });
 }
 
+function savePaymentTermsSettings() {
+    const form = document.getElementById('paymentTermsForm');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Get form values
+    const paymentTermsContent = document.getElementById('paymentTermsContent').value;
+    const paymentAbortTermsContent = document.getElementById('paymentAbortTermsContent').value;
+    const enablePaymentTerms = document.getElementById('enablePaymentTerms').checked;
+    
+    // Show loading state
+    const originalContent = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    // Prepare data
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('payment_terms_content', paymentTermsContent);
+    formData.append('payment_abort_terms_content', paymentAbortTermsContent);
+    formData.append('enable_payment_terms', enablePaymentTerms ? '1' : '0');
+
+    fetch('/admin/settings/payment-terms', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Payment terms saved:', data);
+        if (data.success) {
+            showAlert('Payment terms and conditions saved successfully!', 'success');
+        } else {
+            showAlert(data.error || 'Error saving payment terms', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving payment terms:', error);
+        showAlert('Error saving payment terms: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalContent;
+    });
+}
+
 function addSystemFields() {
     const container = document.getElementById('requirementsContainer');
     
@@ -3221,6 +3334,9 @@ function openAddPaymentMethodModal() {
     document.getElementById('currentQrCode').style.display = 'none';
     document.getElementById('removeQrCodeSection').style.display = 'none';
     
+    // Clear dynamic fields
+    clearDynamicFields();
+    
     // Use Bootstrap 5 vanilla JavaScript instead of jQuery
     const modal = new bootstrap.Modal(document.getElementById('paymentMethodModal'));
     modal.show();
@@ -3258,6 +3374,9 @@ function editPaymentMethod(id) {
         removeQrCodeSection.style.display = 'none';
     }
 
+    // Load dynamic fields for this payment method
+    loadDynamicFields(id);
+
     // Use Bootstrap 5 vanilla JavaScript instead of jQuery
     const modal = new bootstrap.Modal(document.getElementById('paymentMethodModal'));
     modal.show();
@@ -3267,9 +3386,46 @@ function savePaymentMethod() {
     const form = document.getElementById('paymentMethodForm');
     const formData = new FormData(form);
     
+    // Collect dynamic fields data
+    const dynamicFieldsData = [];
+    const fieldElements = document.querySelectorAll('.dynamic-field-item');
+    
+    fieldElements.forEach(fieldElement => {
+        const fieldId = fieldElement.getAttribute('data-field-id');
+        const fieldData = {
+            label: fieldElement.querySelector(`input[name="fields[${fieldId}][label]"]`)?.value || '',
+            type: fieldElement.querySelector(`select[name="fields[${fieldId}][type]"]`)?.value || '',
+            placeholder: fieldElement.querySelector(`input[name="fields[${fieldId}][placeholder]"]`)?.value || '',
+            order: parseInt(fieldElement.querySelector(`input[name="fields[${fieldId}][order]"]`)?.value) || 1,
+            required: fieldElement.querySelector(`input[name="fields[${fieldId}][required]"]`)?.checked || false,
+            validation_sensitive: fieldElement.querySelector(`input[name="fields[${fieldId}][validation_sensitive]"]`)?.checked || false
+        };
+        
+        // Handle select options
+        if (fieldData.type === 'select') {
+            const optionInputs = fieldElement.querySelectorAll(`input[name="fields[${fieldId}][options][]"]`);
+            fieldData.options = Array.from(optionInputs).map(input => input.value).filter(val => val.trim() !== '');
+        }
+        
+        // Handle file upload settings
+        if (fieldData.type === 'file') {
+            fieldData.allowed_types = fieldElement.querySelector(`input[name="fields[${fieldId}][allowed_types]"]`)?.value || 'jpg,png,pdf';
+            fieldData.max_size = parseInt(fieldElement.querySelector(`input[name="fields[${fieldId}][max_size]"]`)?.value) || 5;
+        }
+        
+        // Only add fields that have a label and type
+        if (fieldData.label && fieldData.type) {
+            dynamicFieldsData.push(fieldData);
+        }
+    });
+    
+    // Add dynamic fields to form data
+    formData.append('dynamic_fields', JSON.stringify(dynamicFieldsData));
+    
     const url = editingPaymentMethodId ? 
         `/admin/settings/payment-methods/${editingPaymentMethodId}` : 
-        '/debug/payment-method'; // Temporarily use debug endpoint
+        '/admin/settings/payment-methods/';
+    
     const method = editingPaymentMethodId ? 'PUT' : 'POST';
 
     // Add CSRF token
@@ -3319,19 +3475,7 @@ function savePaymentMethod() {
             modal.hide();
             loadPaymentMethods();
         } else {
-            let errorMessage = data.error || data.message || 'Failed to save payment method';
-            
-            // If there are validation details, show them
-            if (data.details && typeof data.details === 'object') {
-                console.error('Validation errors:', data.details);
-                const errors = Object.values(data.details).flat();
-                if (errors.length > 0) {
-                    errorMessage += ':\n' + errors.join('\n');
-                }
-            }
-            
-            console.error('Payment method save error:', data);
-            showAlert(errorMessage, 'danger');
+            showAlert(data.error || data.message || 'Failed to save payment method', 'danger');
         }
     })
     .catch(error => {
@@ -3396,6 +3540,275 @@ function updatePaymentMethodOrder() {
     .catch(error => {
         console.error('Error updating order:', error);
     });
+}
+
+// Dynamic Payment Fields Management
+let fieldCounter = 0;
+let currentDynamicFields = [];
+
+function addNewPaymentField() {
+    fieldCounter++;
+    const fieldId = `field_${fieldCounter}`;
+    
+    const fieldHtml = `
+        <div class="dynamic-field-item border rounded p-3 mb-3 bg-white" data-field-id="${fieldId}">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h6 class="mb-0 text-primary">
+                    <i class="bi bi-input-cursor"></i> Payment Field #${fieldCounter}
+                </h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePaymentField('${fieldId}')">
+                    <i class="bi bi-trash"></i> Remove
+                </button>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Field Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="fields[${fieldId}][label]" 
+                               placeholder="e.g., Reference Number, Account Name" required>
+                        <small class="text-muted">This will be shown to students</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Field Type <span class="text-danger">*</span></label>
+                        <select class="form-control" name="fields[${fieldId}][type]" onchange="handleFieldTypeChange('${fieldId}', this.value)" required>
+                            <option value="">Select Type</option>
+                            <option value="text">Text Input</option>
+                            <option value="number">Number</option>
+                            <option value="email">Email</option>
+                            <option value="tel">Phone Number</option>
+                            <option value="date">Date</option>
+                            <option value="textarea">Long Text (Textarea)</option>
+                            <option value="select">Dropdown/Select</option>
+                            <option value="file">File Upload</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Placeholder Text</label>
+                        <input type="text" class="form-control" name="fields[${fieldId}][placeholder]" 
+                               placeholder="Hint text for students">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Field Order</label>
+                        <input type="number" class="form-control" name="fields[${fieldId}][order]" 
+                               value="${fieldCounter}" min="1">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Options for select fields -->
+            <div class="select-options-section" id="selectOptions_${fieldId}" style="display: none;">
+                <div class="mb-3">
+                    <label class="form-label">Dropdown Options</label>
+                    <div class="options-container" id="optionsContainer_${fieldId}">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="fields[${fieldId}][options][]" placeholder="Option 1">
+                            <button type="button" class="btn btn-outline-success" onclick="addSelectOption('${fieldId}')">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File upload settings -->
+            <div class="file-settings-section" id="fileSettings_${fieldId}" style="display: none;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Allowed File Types</label>
+                            <input type="text" class="form-control" name="fields[${fieldId}][allowed_types]" 
+                                   placeholder="e.g., jpg,png,pdf" value="jpg,png,pdf">
+                            <small class="text-muted">Comma-separated file extensions</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Max File Size (MB)</label>
+                            <input type="number" class="form-control" name="fields[${fieldId}][max_size]" 
+                                   value="5" min="1" max="50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="fields[${fieldId}][required]" 
+                               id="required_${fieldId}" checked>
+                        <label class="form-check-label" for="required_${fieldId}">
+                            Required Field
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="fields[${fieldId}][validation_sensitive]" 
+                               id="validation_${fieldId}">
+                        <label class="form-check-label" for="validation_${fieldId}">
+                            Include in Payment Validation
+                        </label>
+                        <small class="text-muted d-block">If checked, this field can be marked for redo when rejecting payments</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Hide the "no fields" message
+    document.getElementById('noFieldsMessage').style.display = 'none';
+    
+    // Add the field to the container
+    document.getElementById('dynamicFieldsContainer').insertAdjacentHTML('beforeend', fieldHtml);
+    
+    // Add to tracking array
+    currentDynamicFields.push(fieldId);
+}
+
+function removePaymentField(fieldId) {
+    if (confirm('Are you sure you want to remove this field?')) {
+        const fieldElement = document.querySelector(`[data-field-id="${fieldId}"]`);
+        if (fieldElement) {
+            fieldElement.remove();
+        }
+        
+        // Remove from tracking array
+        currentDynamicFields = currentDynamicFields.filter(id => id !== fieldId);
+        
+        // Show "no fields" message if no fields left
+        if (currentDynamicFields.length === 0) {
+            document.getElementById('noFieldsMessage').style.display = 'block';
+        }
+    }
+}
+
+function handleFieldTypeChange(fieldId, fieldType) {
+    const selectOptionsSection = document.getElementById(`selectOptions_${fieldId}`);
+    const fileSettingsSection = document.getElementById(`fileSettings_${fieldId}`);
+    
+    // Hide all optional sections first
+    selectOptionsSection.style.display = 'none';
+    fileSettingsSection.style.display = 'none';
+    
+    // Show relevant section based on field type
+    if (fieldType === 'select') {
+        selectOptionsSection.style.display = 'block';
+    } else if (fieldType === 'file') {
+        fileSettingsSection.style.display = 'block';
+    }
+}
+
+function addSelectOption(fieldId) {
+    const container = document.getElementById(`optionsContainer_${fieldId}`);
+    const optionCount = container.children.length + 1;
+    
+    const optionHtml = `
+        <div class="input-group mb-2">
+            <input type="text" class="form-control" name="fields[${fieldId}][options][]" placeholder="Option ${optionCount}">
+            <button type="button" class="btn btn-outline-danger" onclick="removeSelectOption(this)">
+                <i class="bi bi-dash"></i>
+            </button>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', optionHtml);
+}
+
+function removeSelectOption(button) {
+    button.closest('.input-group').remove();
+}
+
+function loadDynamicFields(paymentMethodId) {
+    if (!paymentMethodId) {
+        clearDynamicFields();
+        return;
+    }
+    
+    fetch(`/admin/settings/payment-methods/${paymentMethodId}/fields`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.fields) {
+                populateDynamicFields(data.fields);
+            } else {
+                clearDynamicFields();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dynamic fields:', error);
+            clearDynamicFields();
+        });
+}
+
+function populateDynamicFields(fields) {
+    clearDynamicFields();
+    
+    if (fields && fields.length > 0) {
+        fields.forEach(field => {
+            addNewPaymentField();
+            const currentFieldId = `field_${fieldCounter}`;
+            
+            // Populate field data
+            const fieldContainer = document.querySelector(`[data-field-id="${currentFieldId}"]`);
+            if (fieldContainer) {
+                fieldContainer.querySelector(`input[name="fields[${currentFieldId}][label]"]`).value = field.label || '';
+                fieldContainer.querySelector(`select[name="fields[${currentFieldId}][type]"]`).value = field.type || '';
+                fieldContainer.querySelector(`input[name="fields[${currentFieldId}][placeholder]"]`).value = field.placeholder || '';
+                fieldContainer.querySelector(`input[name="fields[${currentFieldId}][order]"]`).value = field.order || fieldCounter;
+                fieldContainer.querySelector(`input[name="fields[${currentFieldId}][required]"]`).checked = field.required || false;
+                fieldContainer.querySelector(`input[name="fields[${currentFieldId}][validation_sensitive]"]`).checked = field.validation_sensitive || false;
+                
+                // Handle field type specific data
+                handleFieldTypeChange(currentFieldId, field.type);
+                
+                if (field.type === 'select' && field.options) {
+                    const optionsContainer = document.getElementById(`optionsContainer_${currentFieldId}`);
+                    optionsContainer.innerHTML = '';
+                    field.options.forEach((option, index) => {
+                        const optionHtml = `
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" name="fields[${currentFieldId}][options][]" 
+                                       value="${option}" placeholder="Option ${index + 1}">
+                                <button type="button" class="btn btn-outline-danger" onclick="removeSelectOption(this)">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                            </div>
+                        `;
+                        optionsContainer.insertAdjacentHTML('beforeend', optionHtml);
+                    });
+                }
+                
+                if (field.type === 'file') {
+                    if (field.allowed_types) {
+                        fieldContainer.querySelector(`input[name="fields[${currentFieldId}][allowed_types]"]`).value = field.allowed_types;
+                    }
+                    if (field.max_size) {
+                        fieldContainer.querySelector(`input[name="fields[${currentFieldId}][max_size]"]`).value = field.max_size;
+                    }
+                }
+            }
+        });
+    }
+}
+
+function clearDynamicFields() {
+    document.getElementById('dynamicFieldsContainer').innerHTML = `
+        <div class="text-center text-muted py-3" id="noFieldsMessage">
+            <i class="bi bi-info-circle"></i>
+            No custom fields configured. Click "Add Field" to create dynamic fields for this payment method.
+        </div>
+    `;
+    currentDynamicFields = [];
+    fieldCounter = 0;
 }
 
 // Education Level Management Functions
@@ -3913,112 +4326,14 @@ function applySidebarColors() {
     const sidebarFooterBg = document.querySelector('input[name="sidebar_footer_bg_color"]').value;
     const sidebarFooterText = document.querySelector('input[name="sidebar_footer_text_color"]').value;
     
-    // Apply CSS variables to both sidebar nav and footer
+    // Apply CSS variables
     document.documentElement.style.setProperty('--sidebar-bg', `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`);
     document.documentElement.style.setProperty('--sidebar-text', sidebarText);
-    document.documentElement.style.setProperty('--sidebar-hover', `rgba(255, 255, 255, 0.1)`);
+    document.documentElement.style.setProperty('--sidebar-hover', sidebarHover);
     document.documentElement.style.setProperty('--sidebar-active-bg', `linear-gradient(135deg, ${sidebarActiveBg}, ${sidebarActiveBg})`);
     document.documentElement.style.setProperty('--sidebar-active-text', sidebarActiveText);
     document.documentElement.style.setProperty('--sidebar-footer-bg', `linear-gradient(180deg, ${sidebarFooterBg} 0%, ${sidebarFooterBg} 100%)`);
     document.documentElement.style.setProperty('--sidebar-footer-text', sidebarFooterText);
-    
-    // Apply to actual sidebar elements if they exist
-    const sidebar = document.querySelector('.modern-sidebar, .sidebar');
-    const sidebarNav = document.querySelector('.sidebar-nav');
-    const sidebarFooter = document.querySelector('.sidebar-footer');
-    
-    if (sidebar) {
-        sidebar.style.background = `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`;
-        sidebar.style.color = sidebarText;
-    }
-    
-    if (sidebarNav) {
-        sidebarNav.style.background = `linear-gradient(180deg, ${sidebarBg} 0%, ${sidebarGradient} 100%)`;
-        
-        // Update nav links
-        sidebarNav.querySelectorAll('.nav-link').forEach(link => {
-            if (!link.classList.contains('active')) {
-                link.style.color = sidebarText;
-            }
-        });
-        
-        // Update active nav links
-        sidebarNav.querySelectorAll('.nav-link.active').forEach(link => {
-            link.style.background = `linear-gradient(135deg, ${sidebarActiveBg}, ${sidebarActiveBg})`;
-            link.style.color = sidebarActiveText;
-        });
-    }
-    
-    if (sidebarFooter) {
-        sidebarFooter.style.background = `linear-gradient(180deg, ${sidebarFooterBg} 0%, ${sidebarFooterBg} 100%)`;
-        sidebarFooter.style.color = sidebarFooterText;
-    }
-}
-
-function previewSidebarColors() {
-    applySidebarColors();
-    
-    // Show success message
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
-    alertDiv.innerHTML = `
-        <i class="fas fa-check-circle me-2"></i>
-        <strong>Preview Applied!</strong> Colors have been applied to the live sidebar. Save to make changes permanent.
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const form = document.getElementById('sidebarCustomizationForm');
-    form.insertBefore(alertDiv, form.firstChild);
-    
-    // Auto-dismiss after 3 seconds
-    setTimeout(() => {
-        if (alertDiv && alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 3000);
-}
-
-function resetSidebarColors() {
-    const defaultColors = {
-        sidebar_background_color: '#2d1b69',
-        sidebar_gradient_color: '#1a1340',
-        sidebar_text_color: '#ffffff',
-        sidebar_hover_color: '#a91d3a',
-        sidebar_active_bg_color: '#a91d3a',
-        sidebar_active_text_color: '#ffffff',
-        sidebar_footer_bg_color: '#2d1b69',
-        sidebar_footer_text_color: '#ffffff'
-    };
-    
-    // Reset form inputs
-    Object.keys(defaultColors).forEach(colorName => {
-        const input = document.querySelector(`input[name="${colorName}"]`);
-        if (input) {
-            input.value = defaultColors[colorName];
-        }
-    });
-    
-    // Apply default colors immediately
-    applySidebarColors();
-    
-    // Show reset message
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-info alert-dismissible fade show mt-2';
-    alertDiv.innerHTML = `
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>Colors Reset!</strong> Default sidebar colors have been restored. Don't forget to save!
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const form = document.getElementById('sidebarCustomizationForm');
-    form.insertBefore(alertDiv, form.firstChild);
-    
-    // Auto-dismiss after 3 seconds
-    setTimeout(() => {
-        if (alertDiv && alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 3000);
 }
 
 // Add event listeners for sidebar color changes

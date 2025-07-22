@@ -1427,7 +1427,7 @@ class AdminSettingsController extends Controller
                 'description' => 'nullable|string',
                 'instructions' => 'nullable|string',
                 'qr_code' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
-                'is_enabled' => 'nullable|in:0,1,true,false'
+                'is_enabled' => 'nullable|in:0,1,true,false,on,off'
             ]);
 
             $qrCodePath = null;
@@ -1777,6 +1777,40 @@ class AdminSettingsController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to update meeting whitelist: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updatePaymentTerms(Request $request)
+    {
+        try {
+            $request->validate([
+                'payment_terms' => 'nullable|string',
+                'abort_terms' => 'nullable|string'
+            ]);
+
+            // Get current settings
+            $settings = $this->getCurrentSettings();
+            
+            // Update payment terms settings
+            $settings['payment_terms'] = [
+                'payment_terms' => $request->input('payment_terms', ''),
+                'abort_terms' => $request->input('abort_terms', ''),
+                'updated_at' => now()->toISOString()
+            ];
+
+            // Save the updated settings
+            $this->saveSettings($settings);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment terms updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating payment terms: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update payment terms: ' . $e->getMessage()
             ], 500);
         }
     }

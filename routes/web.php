@@ -428,6 +428,8 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     // Payment routes
     Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
     Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
+    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
+    Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
 });
 
 /*
@@ -575,6 +577,7 @@ Route::get('/payment/success', [PaymentController::class, 'paymentSuccess'])->na
 Route::get('/payment/failure', [PaymentController::class, 'paymentFailure'])->name('payment.failure');
 Route::get('/payment/cancel', [PaymentController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof'])->name('payment.upload-proof');
+Route::post('/student/payment/upload-proof', [PaymentController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
 // Admin dashboard and admin routes with middleware
@@ -591,6 +594,19 @@ Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'
      ->name('admin.registration.reject');
 Route::post('/admin/registration/{id}/reject-with-reason', [AdminController::class, 'rejectWithReason'])
      ->name('admin.registration.reject.reason');
+Route::post('/admin/registration/{id}/reject-with-fields', [AdminController::class, 'rejectWithFields'])
+     ->name('admin.registration.reject.fields');
+Route::post('/admin/registration/{id}/approve-resubmission', [AdminController::class, 'approveResubmission'])
+     ->name('admin.registration.approve.resubmission');
+// Registration actions
+Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
+     ->name('admin.registration.approve');
+Route::post('/admin/registration/{id}/reject', [AdminController::class, 'rejectRegistration'])
+     ->name('admin.registration.reject');
+Route::post('/admin/registration/{id}/update-rejection', [AdminController::class, 'updateRejection'])
+     ->name('admin.registration.update.rejection');
+Route::get('/admin/registration/{id}/original-data', [AdminController::class, 'getOriginalRegistrationData'])
+     ->name('admin.registration.original.data');
 
 // Get registration details
 Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
@@ -601,6 +617,8 @@ Route::get('/admin-student-registration', [AdminController::class, 'studentRegis
      ->name('admin.student.registration');
 Route::get('/admin-student-registration/pending', [AdminController::class, 'studentRegistration'])
      ->name('admin.student.registration.pending');
+Route::get('/admin-student-registration/rejected', [AdminController::class, 'studentRegistrationRejected'])
+     ->name('admin.student.registration.rejected');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
 
@@ -623,6 +641,8 @@ Route::post('/admin/enrollment/assign', [AdminController::class, 'assignEnrollme
 // Payment management routes
 Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
      ->name('admin.student.registration.payment.pending');
+Route::get('/admin-student-registration/payment/rejected', [AdminController::class, 'paymentRejected'])
+     ->name('admin.student.registration.payment.rejected');
 Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
      ->name('admin.student.registration.payment.history');
 
@@ -630,9 +650,13 @@ Route::get('/admin-student-registration/payment/history', [AdminController::clas
 Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
      ->name('admin.enrollment.mark-paid');
 
-// View one student registration’s details
+// View one student registration's details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
      ->name('admin.student.registration.view');
+
+// Add this route for payment details by enrollment ID
+Route::get('/admin/enrollment/{id}/payment-details', [AdminController::class, 'getPaymentDetailsByEnrollment'])
+     ->name('admin.enrollment.payment-details');
 
 /*
 |--------------------------------------------------------------------------
@@ -643,7 +667,7 @@ Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'sh
 Route::get('/admin/programs', [AdminProgramController::class, 'index'])
      ->name('admin.programs.index');
 
-// Show “Add New Program” form
+// Show "Add New Program" form
 Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])
      ->name('admin.programs.create');
 
@@ -720,6 +744,10 @@ Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'a
 // Batch store modules
 Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
      ->name('admin.modules.batch-store');
+
+// Show course content upload page
+Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])
+     ->name('admin.modules.course-content-upload');
 
 // Store course content
 Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
@@ -922,6 +950,10 @@ Route::post('/admin/settings/buttons', [AdminSettingsController::class, 'updateB
 // Update login page settings
 Route::post('/admin/settings/login', [AdminSettingsController::class, 'updateLogin'])
      ->name('admin.settings.update.login');
+
+// Update payment terms settings
+Route::post('/admin/settings/payment-terms', [AdminSettingsController::class, 'updatePaymentTerms'])
+     ->name('admin.settings.update.payment.terms');
 
 // Global Logo routes
 Route::post('/admin/settings/global-logo', [AdminSettingsController::class, 'updateGlobalLogo'])
@@ -2000,8 +2032,12 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::get('/payments/pending', [\App\Http\Controllers\Admin\PaymentController::class, 'pending'])->name('admin.payments.pending');
     Route::get('/payments/history', [\App\Http\Controllers\Admin\PaymentController::class, 'history'])->name('admin.payments.history');
     Route::get('/payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('admin.payments.show');
+    Route::get('/payments/{id}/details', [\App\Http\Controllers\Admin\PaymentController::class, 'details'])->name('admin.payments.details');
+    Route::get('/payments/{id}/original-data', [\App\Http\Controllers\Admin\PaymentController::class, 'originalData'])->name('admin.payments.original-data');
     Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\PaymentController::class, 'approve'])->name('admin.payments.approve');
+    Route::post('/payments/{id}/approve-resubmission', [\App\Http\Controllers\Admin\PaymentController::class, 'approveResubmission'])->name('admin.payments.approve-resubmission');
     Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\PaymentController::class, 'reject'])->name('admin.payments.reject');
+    Route::post('/payments/{id}/update-rejection', [\App\Http\Controllers\Admin\PaymentController::class, 'updateRejection'])->name('admin.payments.update-rejection');
     Route::get('/payments/{id}/download-proof', [\App\Http\Controllers\Admin\PaymentController::class, 'downloadProof'])->name('admin.payments.download-proof');
     Route::get('/payments/stats', [\App\Http\Controllers\Admin\PaymentController::class, 'getStats'])->name('admin.payments.stats');
     

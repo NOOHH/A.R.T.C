@@ -73,6 +73,19 @@
                             <i class="bi bi-credit-card"></i> Payment Pending
                         </a>
                     @else
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-danger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-x-circle"></i> Rejected
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('admin.student.registration.rejected') }}">
+                                    <i class="bi bi-person-x me-2"></i>Registration Rejected
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.student.registration.payment.rejected') }}">
+                                    <i class="bi bi-credit-card-2-front-fill me-2"></i>Payment Rejected
+                                </a></li>
+                            </ul>
+                        </div>
                         <a href="{{ route('admin.student.registration.payment.pending') }}" class="btn btn-outline-warning">
                             <i class="bi bi-credit-card"></i> Payment Pending
                         </a>
@@ -82,6 +95,157 @@
                     @endif
                 </div>
             </div>
+
+            {{-- Registration Rejected Table --}}
+            @if(!isset($history) || !$history)
+                @php
+                    $rejectedRegistrations = \App\Models\Registration::where('status', 'rejected')->orderBy('rejected_at', 'desc')->get();
+                @endphp
+                @if($rejectedRegistrations->count() > 0)
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center bg-danger text-white">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Students with Rejected Registration
+                        </h6>
+                        <div>
+                            <small>Total: {{ $rejectedRegistrations->count() }}</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th>Email</th>
+                                        <th>Program</th>
+                                        <th>Package</th>
+                                        <th>Rejected Date</th>
+                                        <th>Rejection Reason</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($rejectedRegistrations as $registration)
+                                    <tr>
+                                        <td>
+                                            {{ ($registration->firstname ?? '') }} 
+                                            {{ ($registration->middlename ?? '') }}
+                                            {{ ($registration->lastname ?? '') }}
+                                        </td>
+                                        <td>
+                                            @if(isset($registration->user) && $registration->user)
+                                                {{ $registration->user->email ?? 'N/A' }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                        <td>{{ $registration->program_name ?? 'N/A' }}</td>
+                                        <td>{{ $registration->package_name ?? 'N/A' }}</td>
+                                        <td>{{ $registration->rejected_at ? \Carbon\Carbon::parse($registration->rejected_at)->format('M d, Y') : 'N/A' }}</td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 200px;" title="{{ $registration->rejection_reason }}">
+                                                {{ $registration->rejection_reason ?? 'No reason provided' }}
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-danger">Rejected</span></td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="viewRejectedRegistrationDetails('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-warning" 
+                                                        onclick="editRejectedFields('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-pencil"></i> Edit Rejection
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Registration Resubmission Table --}}
+                @php
+                    $resubmittedRegistrations = \App\Models\Registration::where('status', 'resubmitted')->orderBy('resubmitted_at', 'desc')->get();
+                @endphp
+                @if($resubmittedRegistrations->count() > 0)
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center bg-warning text-dark">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="bi bi-arrow-repeat me-2"></i>Students with Pending Registration Resubmission
+                        </h6>
+                        <div>
+                            <small>Total: {{ $resubmittedRegistrations->count() }}</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th>Email</th>
+                                        <th>Program</th>
+                                        <th>Package</th>
+                                        <th>Resubmitted Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($resubmittedRegistrations as $registration)
+                                    <tr>
+                                        <td>
+                                            {{ ($registration->firstname ?? '') }} 
+                                            {{ ($registration->middlename ?? '') }}
+                                            {{ ($registration->lastname ?? '') }}
+                                        </td>
+                                        <td>
+                                            @if(isset($registration->user) && $registration->user)
+                                                {{ $registration->user->email ?? 'N/A' }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                        <td>{{ $registration->program_name ?? 'N/A' }}</td>
+                                        <td>{{ $registration->package_name ?? 'N/A' }}</td>
+                                        <td>{{ $registration->resubmitted_at ? \Carbon\Carbon::parse($registration->resubmitted_at)->format('M d, Y') : 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">Previous Rejected</span>
+                                            <span class="badge bg-info">Pending</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="viewResubmissionComparison('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-success" 
+                                                        onclick="approveResubmission('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger" 
+                                                        onclick="rejectResubmission('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            @endif
 
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -274,7 +438,7 @@
 
     <!-- Rejection Reason Modal -->
     <div class="modal fade" id="rejectReasonModal" tabindex="-1" aria-labelledby="rejectReasonModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form id="rejectReasonForm" method="POST">
                     @csrf
@@ -283,17 +447,98 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="rejectionReason" class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Mark the fields that need to be corrected by the student. These fields will be highlighted in red when the student views their registration.
+                        </div>
+                        
+                        <!-- Registration details will be loaded here -->
+                        <div id="rejectionFieldsContainer">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label for="rejectionReason" class="form-label">General Notes/Comments <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="rejectionReason" name="reason" rows="4" 
-                                      placeholder="Please provide a clear reason for rejecting this registration..." required></textarea>
-                            <div class="form-text">This message will be sent to the student via email.</div>
+                                      placeholder="Please provide clear instructions for what needs to be corrected..." required></textarea>
+                            <div class="form-text">This message will be sent to the student along with the marked fields.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-danger">
                             <i class="bi bi-x-circle"></i> Reject Registration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resubmission Comparison Modal -->
+    <div class="modal fade" id="resubmissionComparisonModal" tabindex="-1" aria-labelledby="resubmissionComparisonModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xxl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resubmissionComparisonModalLabel">Registration Resubmission Comparison</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> Previous Rejected Information</h6>
+                            <div id="previousRegistrationData" class="border p-3 bg-light">
+                                <!-- Previous data will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success"><i class="bi bi-arrow-clockwise"></i> New Resubmitted Information</h6>
+                            <div id="newRegistrationData" class="border p-3">
+                                <!-- New data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="approveResubmissionBtn">
+                        <i class="bi bi-check-circle"></i> Approve Resubmission
+                    </button>
+                    <button type="button" class="btn btn-danger" id="rejectResubmissionBtn">
+                        <i class="bi bi-x-circle"></i> Reject Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Rejected Fields Modal -->
+    <div class="modal fade" id="editRejectedFieldsModal" tabindex="-1" aria-labelledby="editRejectedFieldsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="editRejectedFieldsForm" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editRejectedFieldsModalLabel">Edit Rejection Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="editRejectionFieldsContainer">
+                            <!-- Fields will be loaded here -->
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label for="editRejectionReason" class="form-label">Updated Notes/Comments</label>
+                            <textarea class="form-control" id="editRejectionReason" name="reason" rows="4"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Update Rejection
                         </button>
                     </div>
                 </form>
@@ -573,13 +818,252 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     };
 
-    // Global function for rejecting registration
+    // Global function for rejecting registration with field marking
     window.rejectRegistration = function(registrationId) {
         const rejectForm = document.getElementById('rejectReasonForm');
-        rejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject-with-reason`;
+        rejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject`;
+        
+        // Load registration fields for marking
+        loadRegistrationFieldsForRejection(registrationId);
+        
         registrationModal.hide();
-        rejectReasonModal.show();
+        const rejectModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
+        rejectModal.show();
     };
+
+    // Load registration fields for rejection marking
+    function loadRegistrationFieldsForRejection(registrationId) {
+        const container = document.getElementById('rejectionFieldsContainer');
+        container.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+        
+        fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                let fieldsHtml = '<div class="row">';
+                
+                // Personal Information Fields
+                fieldsHtml += `
+                    <div class="col-md-6">
+                        <h6 class="text-primary"><i class="bi bi-person"></i> Personal Information</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="firstname" id="reject_firstname">
+                            <label class="form-check-label" for="reject_firstname">First Name: ${data.firstname || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="middlename" id="reject_middlename">
+                            <label class="form-check-label" for="reject_middlename">Middle Name: ${data.middlename || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="lastname" id="reject_lastname">
+                            <label class="form-check-label" for="reject_lastname">Last Name: ${data.lastname || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="contact_number" id="reject_contact">
+                            <label class="form-check-label" for="reject_contact">Contact Number: ${data.contact_number || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="gender" id="reject_gender">
+                            <label class="form-check-label" for="reject_gender">Gender: ${data.gender || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="birthdate" id="reject_birthdate">
+                            <label class="form-check-label" for="reject_birthdate">Birthdate: ${data.birthdate || 'N/A'}</label>
+                        </div>
+                    </div>
+                `;
+                
+                // Address and Documents
+                fieldsHtml += `
+                    <div class="col-md-6">
+                        <h6 class="text-info"><i class="bi bi-geo-alt"></i> Address Information</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="street_address" id="reject_address">
+                            <label class="form-check-label" for="reject_address">Address: ${data.street_address || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="city" id="reject_city">
+                            <label class="form-check-label" for="reject_city">City: ${data.city || 'N/A'}</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="zipcode" id="reject_zipcode">
+                            <label class="form-check-label" for="reject_zipcode">ZIP Code: ${data.zipcode || 'N/A'}</label>
+                        </div>
+                        
+                        <h6 class="text-warning mt-3"><i class="bi bi-file-earmark-text"></i> Documents</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="PSA" id="reject_psa">
+                            <label class="form-check-label" for="reject_psa">PSA Birth Certificate</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="TOR" id="reject_tor">
+                            <label class="form-check-label" for="reject_tor">Transcript of Records</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="good_moral" id="reject_good_moral">
+                            <label class="form-check-label" for="reject_good_moral">Good Moral Character</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="Course_Cert" id="reject_course_cert">
+                            <label class="form-check-label" for="reject_course_cert">Course Certificate</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="photo_2x2" id="reject_photo">
+                            <label class="form-check-label" for="reject_photo">2x2 Photo</label>
+                        </div>
+                    </div>
+                `;
+                
+                fieldsHtml += '</div>';
+                container.innerHTML = fieldsHtml;
+            })
+            .catch(error => {
+                console.error('Error loading fields:', error);
+                container.innerHTML = '<div class="alert alert-danger">Failed to load registration fields.</div>';
+            });
+    }
+
+    // View rejected registration details
+    window.viewRejectedRegistrationDetails = function(registrationId) {
+        viewRegistrationDetails(registrationId);
+    };
+
+    // View resubmission comparison
+    window.viewResubmissionComparison = function(registrationId) {
+        const modal = new bootstrap.Modal(document.getElementById('resubmissionComparisonModal'));
+        
+        // Load both original and new data
+        Promise.all([
+            fetch(`${baseUrl}/admin/registration/${registrationId}/original-data`),
+            fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+        ])
+        .then(responses => Promise.all(responses.map(r => r.json())))
+        .then(([originalData, newData]) => {
+            displayComparisonData(originalData, newData, registrationId);
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error loading comparison data:', error);
+            alert('Failed to load comparison data');
+        });
+    };
+
+    // Display comparison data
+    function displayComparisonData(originalData, newData, registrationId) {
+        const previousContainer = document.getElementById('previousRegistrationData');
+        const newContainer = document.getElementById('newRegistrationData');
+        
+        // Helper function to create field display
+        function createFieldDisplay(label, value, isRejected = false) {
+            const className = isRejected ? 'bg-danger text-white p-2 rounded mb-2' : 'mb-2';
+            return `<div class="${className}"><strong>${label}:</strong> ${value || 'N/A'}</div>`;
+        }
+        
+        // Get rejected fields
+        const rejectedFields = originalData.rejected_fields ? JSON.parse(originalData.rejected_fields) : [];
+        
+        // Display previous data with rejected fields highlighted
+        let previousHtml = `
+            <h6 class="text-danger mb-3">Rejection Reason:</h6>
+            <div class="alert alert-danger">${originalData.rejection_reason}</div>
+            <h6 class="mb-3">Previous Information:</h6>
+        `;
+        previousHtml += createFieldDisplay('Name', `${originalData.firstname} ${originalData.middlename} ${originalData.lastname}`, rejectedFields.includes('firstname') || rejectedFields.includes('lastname'));
+        previousHtml += createFieldDisplay('Contact', originalData.contact_number, rejectedFields.includes('contact_number'));
+        previousHtml += createFieldDisplay('Address', originalData.street_address, rejectedFields.includes('street_address'));
+        previousHtml += createFieldDisplay('City', originalData.city, rejectedFields.includes('city'));
+        
+        // Display new data
+        let newHtml = '<h6 class="mb-3">New Information:</h6>';
+        newHtml += createFieldDisplay('Name', `${newData.firstname} ${newData.middlename} ${newData.lastname}`);
+        newHtml += createFieldDisplay('Contact', newData.contact_number);
+        newHtml += createFieldDisplay('Address', newData.street_address);
+        newHtml += createFieldDisplay('City', newData.city);
+        
+        previousContainer.innerHTML = previousHtml;
+        newContainer.innerHTML = newHtml;
+        
+        // Setup buttons
+        document.getElementById('approveResubmissionBtn').onclick = () => approveResubmission(registrationId);
+        document.getElementById('rejectResubmissionBtn').onclick = () => rejectResubmission(registrationId);
+    }
+
+    // Approve resubmission
+    window.approveResubmission = function(registrationId) {
+        if (confirm('Are you sure you want to approve this resubmission?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `${baseUrl}/admin/registration/${registrationId}/approve-resubmission`;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = token;
+            
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    // Reject resubmission
+    window.rejectResubmission = function(registrationId) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('resubmissionComparisonModal'));
+        modal.hide();
+        rejectRegistration(registrationId);
+    };
+
+    // Edit rejected fields
+    window.editRejectedFields = function(registrationId) {
+        const modal = new bootstrap.Modal(document.getElementById('editRejectedFieldsModal'));
+        const form = document.getElementById('editRejectedFieldsForm');
+        form.action = `${baseUrl}/admin/registration/${registrationId}/update-rejection`;
+        
+        // Load current rejection data
+        fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editRejectionReason').value = data.rejection_reason || '';
+                loadEditableRejectionFields(registrationId, data.rejected_fields);
+                modal.show();
+            });
+    };
+
+    function loadEditableRejectionFields(registrationId, currentRejectedFields) {
+        const container = document.getElementById('editRejectionFieldsContainer');
+        const rejectedFields = currentRejectedFields ? JSON.parse(currentRejectedFields) : [];
+        
+        // Similar to loadRegistrationFieldsForRejection but with current selections
+        fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                let fieldsHtml = '<div class="row">';
+                
+                // Create checkboxes with current selections
+                const fields = [
+                    { name: 'firstname', label: 'First Name', value: data.firstname },
+                    { name: 'lastname', label: 'Last Name', value: data.lastname },
+                    { name: 'contact_number', label: 'Contact Number', value: data.contact_number },
+                    { name: 'street_address', label: 'Address', value: data.street_address },
+                    { name: 'PSA', label: 'PSA Birth Certificate', value: 'Document' },
+                    { name: 'TOR', label: 'Transcript of Records', value: 'Document' }
+                ];
+                
+                fieldsHtml += '<div class="col-12"><h6>Select fields to mark as needing correction:</h6>';
+                
+                fields.forEach(field => {
+                    const isChecked = rejectedFields.includes(field.name) ? 'checked' : '';
+                    fieldsHtml += `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="${field.name}" id="edit_${field.name}" ${isChecked}>
+                            <label class="form-check-label" for="edit_${field.name}">${field.label}: ${field.value || 'N/A'}</label>
+                        </div>
+                    `;
+                });
+                
+                fieldsHtml += '</div></div>';
+                container.innerHTML = fieldsHtml;
+            });
+    }
 
     // Global function for undoing approval
     window.undoApproval = function(registrationId) {

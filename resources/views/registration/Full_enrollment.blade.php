@@ -1222,10 +1222,20 @@
         
         console.log('Names after fallback check:', firstName, lastName);
         
+        // Only require names if we're on the actual form step
+        const isOnFormStep = isUserLoggedIn ? (currentStep === 3) : (currentStep === 5);
+        
         if (!firstName || !lastName) {
-            showErrorModal('Please enter your first name and last name in the form before uploading documents.');
-            // DON'T clear the file input here - let user keep their selection
-            return;
+            if (!isOnFormStep) {
+                console.log('File upload triggered but not on form step - allowing without name validation');
+                // Continue without name validation if we're not on the actual form step
+                firstName = 'temp_user';
+                lastName = 'temp_user';
+            } else {
+                showErrorModal('Please enter your first name and last name in the form before uploading documents.');
+                // DON'T clear the file input here - let user keep their selection
+                return;
+            }
         }
         
         // Show loading indicator

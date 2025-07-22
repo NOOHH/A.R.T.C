@@ -419,13 +419,24 @@
     }
     
     .modal-backdrop {
-        z-index: 1050 !important;
+        z-index: 1040 !important;
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw !important;
         height: 100vh !important;
         background-color: rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* Prevent backdrop persistence issues */
+    body.modal-open {
+        padding-right: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Ensure modal content is above backdrop */
+    .modal-dialog {
+        z-index: 1060 !important;
     }
     
     .modal.show {
@@ -944,6 +955,35 @@ function testPaymentModal() {
     showPaymentModal(999, 'Test Course DEBUG');
 }
 
+// Emergency cleanup function for stuck backdrops
+window.emergencyCleanup = function() {
+    console.log('🚨 EMERGENCY CLEANUP - Removing all modal elements and backdrops');
+    
+    // Close all modals
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        
+        // Dispose Bootstrap instances
+        const instance = bootstrap.Modal.getInstance(modal);
+        if (instance) {
+            instance.dispose();
+        }
+    });
+    
+    // Remove all backdrops
+    removeAllBackdrops();
+    
+    // Reset page state
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    document.body.classList.remove('modal-open');
+    
+    console.log('✅ Emergency cleanup completed');
+    alert('Emergency cleanup completed! Page should be interactive again.');
+};
+
 // Load meetings data on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadMeetingsData();
@@ -1135,23 +1175,34 @@ function showStatusModal(status, courseName, enrollmentId = null) {
         
     } catch (error) {
         console.error('Error showing status modal:', error);
-        // Fallback method
+        // Fallback method - avoid creating manual backdrops
         statusModalElement.style.display = 'block';
         statusModalElement.classList.add('show');
-        document.body.classList.add('modal-open');
+        statusModalElement.style.zIndex = '1055';
         
-        // Create backdrop manually if needed
-        if (!document.querySelector('.modal-backdrop')) {
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.style.zIndex = '1050';
-            backdrop.onclick = function() {
-                statusModalElement.style.display = 'none';
-                statusModalElement.classList.remove('show');
-                document.body.classList.remove('modal-open');
-                this.remove();
-            };
-            document.body.appendChild(backdrop);
+        // Focus the modal for accessibility
+        statusModalElement.focus();
+        
+        // Add simple click-outside-to-close
+        const closeModal = () => {
+            statusModalElement.style.display = 'none';
+            statusModalElement.classList.remove('show');
+            removeAllBackdrops();
+        };
+        
+        // Add escape key listener
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Add close button functionality
+        const closeBtn = statusModalElement.querySelector('.btn-close, [data-bs-dismiss="modal"]');
+        if (closeBtn) {
+            closeBtn.onclick = closeModal;
         }
     }
 }
@@ -1165,6 +1216,9 @@ let paymentModalInstance = null;
 // Initialize modal on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing modals...');
+    
+    // Clean up any existing stuck backdrops first
+    removeAllBackdrops();
     
     // Wait for Bootstrap to be fully loaded
     const initModals = () => {
@@ -1201,6 +1255,8 @@ document.addEventListener('DOMContentLoaded', function() {
             paymentModal.addEventListener('hidden.bs.modal', function() {
                 console.log('Payment modal hidden');
                 resetPaymentModal();
+                // Force remove any stuck backdrops
+                removeAllBackdrops();
             });
             
             // Ensure close buttons work
@@ -1210,6 +1266,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (paymentModalInstance) {
                         paymentModalInstance.hide();
                     }
+                    // Force remove backdrops after a delay
+                    setTimeout(removeAllBackdrops, 100);
                 });
             });
             
@@ -1227,6 +1285,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             statusModal.addEventListener('hidden.bs.modal', function() {
                 console.log('Status modal hidden');
+                // Force remove any stuck backdrops
+                removeAllBackdrops();
             });
             
             // Ensure close buttons work
@@ -1237,6 +1297,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (modalInstance) {
                         modalInstance.hide();
                     }
+                    // Force remove backdrops after a delay
+                    setTimeout(removeAllBackdrops, 100);
                 });
             });
             
@@ -1251,6 +1313,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (paymentModalInstance) {
                     paymentModalInstance.hide();
                 }
+                setTimeout(removeAllBackdrops, 100);
             }
             
             // Status modal backdrop
@@ -1260,6 +1323,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modalInstance) {
                     modalInstance.hide();
                 }
+                setTimeout(removeAllBackdrops, 100);
             }
         });
         
@@ -1282,9 +1346,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         paymentModal.style.display = 'none';
                         paymentModal.classList.remove('show');
                         document.body.classList.remove('modal-open');
-                        const backdrop = document.querySelector('.modal-backdrop');
-                        if (backdrop) backdrop.remove();
+                        removeAllBackdrops();
                     }
+                    setTimeout(removeAllBackdrops, 100);
                 }
                 
                 // Check for status modal
@@ -1299,9 +1363,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         statusModal.style.display = 'none';
                         statusModal.classList.remove('show');
                         document.body.classList.remove('modal-open');
-                        const backdrop = document.querySelector('.modal-backdrop');
-                        if (backdrop) backdrop.remove();
+                        removeAllBackdrops();
                     }
+                    setTimeout(removeAllBackdrops, 100);
                 }
             }
         }, true); // Use capture phase to ensure it runs first
@@ -1312,6 +1376,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start initialization
     initModals();
 });
+
+// Function to forcefully remove all modal backdrops
+function removeAllBackdrops() {
+    console.log('Removing all modal backdrops...');
+    
+    // Remove all modal-backdrop elements
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+        console.log('Removing backdrop:', backdrop);
+        backdrop.remove();
+    });
+    
+    // Ensure body classes are cleaned up
+    document.body.classList.remove('modal-open');
+    document.body.style.paddingRight = '';
+    document.body.style.overflow = '';
+    
+    console.log(`Removed ${backdrops.length} backdrop(s)`);
+}
 
 function resetPaymentModal() {
     goToStep1();
@@ -1324,6 +1407,9 @@ function resetPaymentModal() {
     if (form) {
         form.reset();
     }
+    
+    // Force clean modal state
+    removeAllBackdrops();
 }
 
 function showPaymentModal(enrollmentId, courseName) {
@@ -1387,26 +1473,35 @@ function showPaymentModal(enrollmentId, courseName) {
         console.log('Payment modal show() called successfully');
     } catch (error) {
         console.error('Error showing payment modal:', error);
-        // Fallback manual show
+        // Fallback manual show - avoid creating persistent backdrops
         paymentModalElement.style.display = 'block';
         paymentModalElement.classList.add('show');
-        document.body.classList.add('modal-open');
+        paymentModalElement.style.zIndex = '1055';
         
-        // Add manual backdrop
-        if (!document.querySelector('.modal-backdrop')) {
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.style.zIndex = '1050';
-            backdrop.addEventListener('click', function(e) {
-                if (confirm('Close payment modal?')) {
-                    paymentModalElement.style.display = 'none';
-                    paymentModalElement.classList.remove('show');
-                    document.body.classList.remove('modal-open');
-                    this.remove();
-                    resetPaymentModal();
-                }
-            });
-            document.body.appendChild(backdrop);
+        // Focus the modal for accessibility
+        paymentModalElement.focus();
+        
+        // Add simple close functionality
+        const closeModal = () => {
+            paymentModalElement.style.display = 'none';
+            paymentModalElement.classList.remove('show');
+            resetPaymentModal();
+            removeAllBackdrops();
+        };
+        
+        // Add escape key listener
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Add close button functionality
+        const closeBtn = paymentModalElement.querySelector('.btn-close, [data-bs-dismiss="modal"]');
+        if (closeBtn) {
+            closeBtn.onclick = closeModal;
         }
     }
 }
@@ -1736,5 +1831,21 @@ async function submitPayment() {
         submitBtn.disabled = false;
     }
 }
+</script>
+<script>
+// Global: Always clean up backdrops when any modal is hidden
+if (typeof bootstrap !== 'undefined') {
+    document.addEventListener('hidden.bs.modal', function() {
+        setTimeout(removeAllBackdrops, 100);
+    });
+}
+// Failsafe: Remove all backdrops on any click if no modal is open
+// (prevents UI lockout in edge cases)
+document.addEventListener('click', function() {
+    const anyModalOpen = document.querySelector('.modal.show');
+    if (!anyModalOpen) {
+        removeAllBackdrops();
+    }
+});
 </script>
 @endsection

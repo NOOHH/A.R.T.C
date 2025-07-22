@@ -75,6 +75,11 @@ class Enrollment extends Model
         return $this->belongsTo(EducationLevel::class, 'education_level_id', 'id');
     }
 
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'enrollment_id', 'enrollment_id');
+    }
+
     /**
      * Get the courses enrolled through this enrollment
      */

@@ -345,6 +345,111 @@ class AdminController extends Controller
         }
     }
 
+    public function rejectWithFields(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000',
+                'rejected_fields' => 'array'
+            ]);
+
+            $registration = Registration::findOrFail($id);
+            
+            // Store the current submission as original before updating
+            $originalSubmission = $registration->toArray();
+            
+            // Store the rejection reason and fields
+            $registration->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->reason,
+                'rejected_fields' => json_encode($request->rejected_fields ?? []),
+                'rejected_by' => auth()->guard('admin')->user()->admin_id,
+                'rejected_at' => now(),
+                'original_submission' => json_encode($originalSubmission)
+            ]);
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Registration rejected with marked fields.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Rejection failed: ' . $e->getMessage());
+        }
+    }
+
+    public function approveResubmission(Request $request, $id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            if ($registration->status !== 'resubmitted') {
+                return redirect()->back()->with('error', 'Registration is not in resubmitted status.');
+            }
+
+            // Update to approved and clear rejection data
+            $registration->update([
+                'status' => 'approved',
+                'rejection_reason' => null,
+                'rejected_fields' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'resubmitted_at' => null
+            ]);
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Registration resubmission approved successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Approval failed: ' . $e->getMessage());
+        }
+    }
+
+    public function updateRejection(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000',
+                'rejected_fields' => 'array'
+            ]);
+
+            $registration = Registration::findOrFail($id);
+            
+            $registration->update([
+                'rejection_reason' => $request->reason,
+                'rejected_fields' => json_encode($request->rejected_fields ?? []),
+                'rejected_by' => auth()->guard('admin')->user()->admin_id,
+                'rejected_at' => now()
+            ]);
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Rejection details updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Update failed: ' . $e->getMessage());
+        }
+    }
+
+    public function getOriginalRegistrationData($id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            if (!$registration->original_submission) {
+                return response()->json(['error' => 'No original data found.'], 404);
+            }
+
+            $originalData = json_decode($registration->original_submission, true);
+            $originalData['rejection_reason'] = $registration->rejection_reason;
+            $originalData['rejected_fields'] = $registration->rejected_fields;
+
+            return response()->json($originalData);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to load original data.'], 404);
+        }
+    }
+
     public function getStudentDetailsJson($id)
     {
         try {
@@ -685,12 +790,45 @@ class AdminController extends Controller
         ]);
     }
 
+    public function studentRegistrationRejected()
+    {
+        $registrations = Registration::with(['user', 'package', 'program', 'plan'])
+                                   ->where('status', 'rejected')
+                                   ->orderBy('rejected_at', 'desc')
+                                   ->get();
+        return view('admin.admin-student-registration.admin-student-registration-rejected', [
+            'registrations' => $registrations,
+            'type' => 'rejected'
+        ]);
+    }
+
+    public function paymentRejected()
+    {
+        $payments = Payment::with([
+            'enrollment.registration.user', 
+            'enrollment.student', 
+            'enrollment.program', 
+            'enrollment.package',
+            'registration' // Direct registration relationship
+        ])
+        ->where('payment_status', 'rejected')
+        ->orderBy('rejected_at', 'desc')
+        ->get();
+        return view('admin.admin-student-registration.admin-payment-rejected', [
+            'payments' => $payments,
+            'type' => 'rejected'
+        ]);
+    }
+
     public function paymentPending()
     {
-        // Get enrollments with pending payments - include both user and student relationships
-        // Filter out enrollments without proper user/student data to prevent ghost records
-        $enrollments = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'enrollmentCourses.course'])
+        // Get enrollments with pending payments that haven't submitted payment proof yet
+        // Exclude enrollments that already have payments with payment_details (those show in approval table)
+        $enrollments = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'enrollmentCourses.course', 'payment'])
                                 ->where('payment_status', 'pending')
+                                ->whereDoesntHave('payment', function($query) {
+                                    $query->whereNotNull('payment_details');
+                                })
                                 ->where(function($query) {
                                     // Only include enrollments that have either user_id or student_id
                                     $query->whereNotNull('user_id')
@@ -824,7 +962,68 @@ class AdminController extends Controller
 
         return view('admin.admin-student-registration.admin-payment-pending', [
             'enrollments' => $enrollments,
+            'pendingApprovals' => $this->getPaymentPendingApprovals(),
         ]);
+    }
+
+    public function getPaymentPendingApprovals()
+    {
+        // Get enrollments with submitted payment proofs that need admin approval
+        $pendingApprovals = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'payment'])
+                                     ->whereHas('payment', function($query) {
+                                         $query->whereNotNull('payment_details')
+                                               ->where('payment_status', 'pending');
+                                     })
+                                     ->where(function($query) {
+                                         // Only include enrollments that have either user_id or student_id
+                                         $query->whereNotNull('user_id')
+                                               ->orWhereNotNull('student_id');
+                                     })
+                                     ->whereHas('program') // Must have a valid program
+                                     ->whereHas('package') // Must have a valid package
+                                     ->orderBy('created_at', 'desc')
+                                     ->get()
+                                     ->unique('enrollment_id')
+                                     ->filter(function ($enrollment) {
+                                         // Additional filtering to ensure we have valid data
+                                         $hasValidUser = $enrollment->user && 
+                                                        ($enrollment->user->user_firstname || $enrollment->user->user_lastname);
+                                         $hasValidStudent = $enrollment->student && 
+                                                           ($enrollment->student->firstname || $enrollment->student->lastname);
+                                         
+                                         return $hasValidUser || $hasValidStudent;
+                                     })
+                                     ->map(function ($enrollment) {
+                                         // Determine student name from either user or student relationship
+                                         $studentName = 'N/A';
+                                         $studentEmail = 'N/A';
+                                         
+                                         if ($enrollment->user) {
+                                             $firstName = $enrollment->user->user_firstname ?? '';
+                                             $lastName = $enrollment->user->user_lastname ?? '';
+                                             $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
+                                             $studentEmail = $enrollment->user->email ?? 'N/A';
+                                         } elseif ($enrollment->student) {
+                                             $firstName = $enrollment->student->firstname ?? '';
+                                             $lastName = $enrollment->student->lastname ?? '';
+                                             $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
+                                             $studentEmail = $enrollment->student->email ?? 'N/A';
+                                         }
+                                         
+                                         $enrollment->student_name = $studentName;
+                                         $enrollment->student_email = $studentEmail;
+                                         
+                                         // Add payment submission details
+                                         if ($enrollment->payment) {
+                                             $enrollment->payment_submitted_at = $enrollment->payment->created_at;
+                                             $enrollment->payment_method = $enrollment->payment->payment_method ?? 'Not specified';
+                                             $enrollment->payment_amount = $enrollment->payment->amount ?? 0;
+                                         }
+                                         
+                                         return $enrollment;
+                                     });
+
+        return $pendingApprovals;
     }
 
     public function paymentHistory()
@@ -1070,6 +1269,174 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Error updating payment status: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    // Payment rejection methods
+    public function rejectPaymentWithFields(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000',
+                'rejected_fields' => 'array'
+            ]);
+
+            // Find the payment record
+            $payment = Payment::where('enrollment_id', $id)->firstOrFail();
+            
+            // Store the current payment data as original before updating
+            $originalPaymentData = $payment->toArray();
+            
+            // Store the rejection reason and fields
+            $payment->update([
+                'payment_status' => 'rejected',
+                'rejection_reason' => $request->reason,
+                'rejected_fields' => json_encode($request->rejected_fields ?? []),
+                'rejected_by' => auth()->guard('admin')->user()->admin_id ?? 1,
+                'rejected_at' => now(),
+                'original_payment_data' => json_encode($originalPaymentData)
+            ]);
+
+            return redirect()
+                ->route('admin.student.registration.payment.pending')
+                ->with('success', 'Payment rejected with marked fields.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Payment rejection failed: ' . $e->getMessage());
+        }
+    }
+
+    public function approvePaymentResubmission(Request $request, $id)
+    {
+        try {
+            $payment = Payment::findOrFail($id);
+            
+            if ($payment->payment_status !== 'resubmitted') {
+                return redirect()->back()->with('error', 'Payment is not in resubmitted status.');
+            }
+
+            // Update to paid and clear rejection data
+            $payment->update([
+                'payment_status' => 'paid',
+                'rejection_reason' => null,
+                'rejected_fields' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'resubmitted_at' => null,
+                'verified_by' => auth()->guard('admin')->user()->admin_id ?? 1,
+                'verified_at' => now()
+            ]);
+
+            // Also update the enrollment payment status
+            if ($payment->enrollment) {
+                $payment->enrollment->update(['payment_status' => 'paid']);
+            }
+
+            return redirect()
+                ->route('admin.student.registration.payment.pending')
+                ->with('success', 'Payment resubmission approved successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Payment approval failed: ' . $e->getMessage());
+        }
+    }
+
+    public function updatePaymentRejection(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000',
+                'rejected_fields' => 'array'
+            ]);
+
+            $payment = Payment::findOrFail($id);
+            
+            $payment->update([
+                'rejection_reason' => $request->reason,
+                'rejected_fields' => json_encode($request->rejected_fields ?? []),
+                'rejected_by' => auth()->guard('admin')->user()->admin_id ?? 1,
+                'rejected_at' => now()
+            ]);
+
+            return redirect()
+                ->route('admin.student.registration.payment.pending')
+                ->with('success', 'Payment rejection details updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Update failed: ' . $e->getMessage());
+        }
+    }
+
+    public function getPaymentDetailsJson($id)
+    {
+        try {
+            $payment = Payment::with(['enrollment.program', 'enrollment.package'])->findOrFail($id);
+            
+            $paymentDetails = json_decode($payment->payment_details, true) ?? [];
+            
+            return response()->json([
+                'payment_id' => $payment->payment_id,
+                'enrollment_id' => $payment->enrollment_id,
+                'student_id' => $payment->student_id,
+                'amount' => $payment->amount,
+                'payment_method' => $payment->payment_method,
+                'payment_status' => $payment->payment_status,
+                'reference_number' => $payment->reference_number,
+                'rejection_reason' => $payment->rejection_reason,
+                'rejected_fields' => $payment->rejected_fields,
+                'payment_details' => $paymentDetails,
+                'program_name' => $payment->enrollment->program->program_name ?? 'N/A',
+                'package_name' => $payment->enrollment->package->package_name ?? 'N/A'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Payment not found or database error.'], 404);
+        }
+    }
+
+    public function getOriginalPaymentData($id)
+    {
+        try {
+            $payment = Payment::findOrFail($id);
+            
+            if (!$payment->original_payment_data) {
+                return response()->json(['error' => 'No original payment data found.'], 404);
+            }
+
+            $originalData = json_decode($payment->original_payment_data, true);
+            $originalData['rejection_reason'] = $payment->rejection_reason;
+            $originalData['rejected_fields'] = $payment->rejected_fields;
+
+            return response()->json($originalData);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to load original payment data.'], 404);
+        }
+    }
+
+    public function getEnrollmentPaymentDetails($id)
+    {
+        try {
+            $enrollment = Enrollment::with(['program', 'package'])->findOrFail($id);
+            $payment = Payment::where('enrollment_id', $id)->first();
+            
+            $data = [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'program_name' => $enrollment->program->program_name ?? 'N/A',
+                'package_name' => $enrollment->package->package_name ?? 'N/A',
+                'amount' => $enrollment->package->amount ?? 0,
+            ];
+
+            if ($payment) {
+                $paymentDetails = json_decode($payment->payment_details, true) ?? [];
+                $data = array_merge($data, [
+                    'payment_method' => $payment->payment_method,
+                    'reference_number' => $payment->reference_number,
+                    'payment_details' => $paymentDetails
+                ]);
+            }
+
+            return response()->json($data);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Enrollment not found or database error.'], 404);
         }
     }
 
@@ -1382,5 +1749,72 @@ class AdminController extends Controller
     {
         // In a real application, this would delete from database
         return response()->json(['message' => 'FAQ deleted successfully']);
+    }
+
+    // New: Get payment details by enrollment ID
+    public function getPaymentDetailsByEnrollment($enrollmentId)
+    {
+        try {
+            $payment = Payment::where('enrollment_id', $enrollmentId)->first();
+            if (!$payment) {
+                return response()->json(['error' => 'Payment not found for this enrollment.'], 404);
+            }
+            
+            // Parse payment details if JSON
+            $paymentDetails = $payment->payment_details;
+            if (is_string($paymentDetails)) {
+                $paymentDetails = json_decode($paymentDetails, true);
+            }
+            
+            $response = [
+                'payment_id' => $payment->payment_id,
+                'enrollment_id' => $payment->enrollment_id,
+                'student_id' => $payment->student_id,
+                'amount' => $payment->amount,
+                'payment_method' => $payment->payment_method,
+                'payment_status' => $payment->payment_status,
+                'reference_number' => $payment->reference_number ?? ($paymentDetails['reference_number'] ?? null),
+                'payment_proof_path' => $paymentDetails['payment_proof_path'] ?? null,
+                'payment_proof_url' => isset($paymentDetails['payment_proof_path']) 
+                    ? asset('storage/' . $paymentDetails['payment_proof_path']) 
+                    : null,
+                'created_at' => $payment->created_at,
+                'notes' => $payment->notes
+            ];
+            
+            return response()->json($response);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error loading payment details: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Reject registration method
+    public function rejectRegistration(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string',
+                'rejected_fields' => 'nullable|array'
+            ]);
+
+            $registration = Registration::findOrFail($id);
+            $registration->status = 'rejected';
+            $registration->rejection_reason = $request->input('reason');
+            $registration->rejected_fields = json_encode($request->input('rejected_fields', []));
+            $registration->rejected_at = now();
+            $registration->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration rejected successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting registration: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

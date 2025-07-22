@@ -103,9 +103,9 @@
         <button type="button" class="add-course-btn" id="showAddCourseModal">
             <i class="bi bi-journal-plus"></i> Add New Course
         </button>
-        <a href="{{ route('admin.modules.course-content-upload') }}" class="batch-upload-btn">
+        <button type="button" class="batch-upload-btn" id="showBatchModal">
             <i class="bi bi-upload"></i> Add Course Content
-        </a>
+        </button>
         <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
             <i class="bi bi-archive"></i> View Archived
         </a>
@@ -852,71 +852,9 @@ function loadModuleContentInViewer(moduleId) {
                     <div class="content-display">
                         <h4>Module Overview</h4>
                         <p><strong>Description:</strong> ${data.module.module_description || 'No description available'}</p>
-                        <p><strong>Type:</strong> ${data.module.type || 'module'}</p>
-                        <p><strong>Learning Mode:</strong> ${data.module.learning_mode || 'Not set'}</p>
+                        <p><strong>Type:</strong> ${data.module.type || 'Standard'}</p>
                         <p><strong>Order:</strong> ${data.module.module_order || 'Not set'}</p>
-                `;
-                
-                // Add attachment section if module has an attachment
-                if (data.module.attachment) {
-                    const attachmentUrl = `/storage/${data.module.attachment}`;
-                    const fileName = data.module.attachment.split('/').pop();
-                    const fileExtension = fileName.split('.').pop().toLowerCase();
-                    
-                    contentHtml += `
-                        <div class="mt-4">
-                            <h5>📎 Module Attachment</h5>
-                            <div class="attachment-preview border rounded p-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span><strong>File:</strong> ${fileName}</span>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="${attachmentUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                            <i class="bi bi-eye"></i> View
-                                        </a>
-                                        <a href="${attachmentUrl}" download class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
-                                    </div>
-                                </div>
-                    `;
-                    
-                    // Show PDF preview if it's a PDF file
-                    if (fileExtension === 'pdf') {
-                        contentHtml += `
-                                <div class="pdf-preview mt-3">
-                                    <iframe src="${attachmentUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=85" 
-                                            style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 5px;"
-                                            allowfullscreen>
-                                        <p>PDF preview not available. <a href="${attachmentUrl}" target="_blank">View in new tab</a></p>
-                                    </iframe>
-                                </div>
-                        `;
-                    } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-                        // Show image preview
-                        contentHtml += `
-                                <div class="image-preview mt-3">
-                                    <img src="${attachmentUrl}" alt="${fileName}" 
-                                         style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;">
-                                </div>
-                        `;
-                    } else {
-                        // Show file info for other types
-                        contentHtml += `
-                                <div class="file-info mt-3">
-                                    <p class="text-muted">
-                                        <i class="bi bi-file-earmark"></i> ${fileExtension.toUpperCase()} file - Click "View" to open
-                                    </p>
-                                </div>
-                        `;
-                    }
-                    
-                    contentHtml += `
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                contentHtml += `
+                        
                         <h5 class="mt-4">Courses (${data.courses?.length || 0})</h5>
                         <div class="courses-preview">
                 `;
@@ -924,12 +862,9 @@ function loadModuleContentInViewer(moduleId) {
                 if (data.courses && data.courses.length > 0) {
                     data.courses.forEach(course => {
                         contentHtml += `
-                            <div class="course-preview-item border-bottom pb-2 mb-2">
+                            <div class="course-preview-item">
                                 <h6>${course.course_name}</h6>
-                                <p class="text-muted mb-1">${course.course_description || 'No description'}</p>
-                                <small class="text-info">
-                                    <i class="bi bi-file-text"></i> ${course.content_items_count || 0} content items
-                                </small>
+                                <p class="text-muted">${course.course_description || 'No description'}</p>
                             </div>
                         `;
                     });
@@ -1662,31 +1597,51 @@ function showAddCourseModal(moduleId, moduleName = '') {
 }
 
 function showAddContentModal(moduleId, courseId, courseName = '') {
-    // Instead of showing a modal, redirect to the dedicated upload page with pre-selected values
-    const baseUrl = '{{ route("admin.modules.course-content-upload") }}';
-    let url = baseUrl;
+    const modal = document.getElementById('batchModalBg');
+    const form = document.getElementById('courseContentForm');
     
-    if (moduleId && courseId) {
-        // Get program info and redirect with query parameters
-        fetch(`/admin/modules/by-program?module_id=${moduleId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.program_id) {
-                    url += `?program_id=${data.program_id}&module_id=${moduleId}&course_id=${courseId}`;
-                } else {
-                    url += `?module_id=${moduleId}&course_id=${courseId}`;
-                }
-                window.location.href = url;
-            })
-            .catch(error => {
-                console.error('Error loading module info:', error);
-                // Fallback: redirect with module and course info only
-                url += `?module_id=${moduleId}&course_id=${courseId}`;
-                window.location.href = url;
-            });
+    if (modal && form) {
+        // Pre-fill the selections if provided
+        if (moduleId && courseId) {
+            // Get program info and pre-fill the form
+            fetch(`/admin/modules/by-program?module_id=${moduleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.program_id) {
+                        const programSelect = document.getElementById('contentProgramSelect');
+                        const moduleSelect = document.getElementById('contentModuleSelect');
+                        const courseSelect = document.getElementById('contentCourseSelect');
+                        
+                        if (programSelect) {
+                            programSelect.value = data.program_id;
+                            // Load modules for this program
+                            loadModulesForProgram(data.program_id, 'contentModuleSelect');
+                            
+                            // Set the module and then load courses
+                            setTimeout(() => {
+                                if (moduleSelect) {
+                                    moduleSelect.value = moduleId;
+                                    loadCoursesForModule(moduleId, 'contentCourseSelect');
+                                    
+                                    // Set the course after loading
+                                    setTimeout(() => {
+                                        if (courseSelect) {
+                                            courseSelect.value = courseId;
+                                        }
+                                    }, 500);
+                                }
+                            }, 500);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading module info:', error);
+                });
+        }
+        
+        modal.classList.add('show');
     } else {
-        // No specific course selected, just redirect to the upload page
-        window.location.href = url;
+        console.error('Add content modal or form not found');
     }
 }
 
@@ -2402,29 +2357,28 @@ function setupModalEventListeners() {
     }
 
     // Batch Modal
-    // Batch modal event listeners - REMOVED (now redirects to dedicated page)
-    // const showBatchModal = document.getElementById('showBatchModal');
-    // const batchModalBg = document.getElementById('batchModalBg');
-    // const closeBatchModal = document.getElementById('closeBatchModal');
-    // const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
+    const showBatchModal = document.getElementById('showBatchModal');
+    const batchModalBg = document.getElementById('batchModalBg');
+    const closeBatchModal = document.getElementById('closeBatchModal');
+    const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
 
-    // if (showBatchModal) {
-    //     showBatchModal.addEventListener('click', function() {
-    //         batchModalBg.classList.add('show');
-    //     });
-    // }
+    if (showBatchModal) {
+        showBatchModal.addEventListener('click', function() {
+            batchModalBg.classList.add('show');
+        });
+    }
 
-    // if (closeBatchModal) {
-    //     closeBatchModal.addEventListener('click', function() {
-    //         batchModalBg.classList.remove('show');
-    //     });
-    // }
+    if (closeBatchModal) {
+        closeBatchModal.addEventListener('click', function() {
+            batchModalBg.classList.remove('show');
+        });
+    }
 
-    // if (closeBatchModalBtn) {
-    //     closeBatchModalBtn.addEventListener('click', function() {
-    //         batchModalBg.classList.remove('show');
-    //     });
-    // }
+    if (closeBatchModalBtn) {
+        closeBatchModalBtn.addEventListener('click', function() {
+            batchModalBg.classList.remove('show');
+        });
+    }
 
     // Edit Content Modal
     const editContentModalBg = document.getElementById('editContentModalBg');
@@ -2883,38 +2837,6 @@ function submitModuleForm(form) {
     const formData = new FormData(form);
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
-    const attachmentInput = form.querySelector('input[name="attachment"]');
-    
-    // Enhanced file validation
-    if (attachmentInput && attachmentInput.files.length > 0) {
-        const file = attachmentInput.files[0];
-        console.log('Module attachment file:', {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            extension: file.name.split('.').pop().toLowerCase()
-        });
-        
-        // Client-side validation
-        const maxSize = 104857600; // 100MB in bytes
-        if (file.size > maxSize) {
-            alert('File is too large. Maximum size allowed is 100MB.');
-            return;
-        }
-        
-        const allowedExtensions = ['pdf', 'doc', 'docx', 'zip', 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
-        const fileExtension = file.name.split('.').pop().toLowerCase();
-        
-        if (!allowedExtensions.includes(fileExtension)) {
-            alert('Invalid file type. Allowed types: PDF, DOC, DOCX, ZIP, Images, Videos');
-            return;
-        }
-        
-        // PDF specific validation
-        if (fileExtension === 'pdf' && file.type !== 'application/pdf') {
-            console.warn('PDF file detected but MIME type is:', file.type);
-        }
-    }
     
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
@@ -2923,30 +2845,10 @@ function submitModuleForm(form) {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => {
-        console.log('Response status:', response.status);
-        console.log('Response headers:', [...response.headers.entries()]);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return response.json();
-        } else {
-            // If it's not JSON, return the text to see what we got
-            return response.text().then(text => {
-                console.error('Expected JSON but got:', text.substring(0, 200));
-                throw new Error('Server returned HTML instead of JSON');
-            });
-        }
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
             // Close modal and refresh page
@@ -3005,41 +2907,6 @@ function submitCourseContentForm(form) {
   const formData = new FormData(form);
   const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
-  const attachmentInput = form.querySelector('input[type="file"]');
-  
-  // Enhanced file validation
-  if (attachmentInput && attachmentInput.files.length > 0) {
-    const file = attachmentInput.files[0];
-    console.log('File selected for upload:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: new Date(file.lastModified),
-      extension: file.name.split('.').pop().toLowerCase()
-    });
-    
-    // Client-side validation
-    const maxSize = 52428800; // 50MB in bytes
-    if (file.size > maxSize) {
-      alert('File is too large. Maximum size allowed is 50MB.');
-      return;
-    }
-    
-    const allowedExtensions = ['pdf', 'doc', 'docx', 'zip', 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
-    const fileExtension = file.name.split('.').pop().toLowerCase();
-    
-    if (!allowedExtensions.includes(fileExtension)) {
-      alert('Invalid file type. Allowed types: PDF, DOC, DOCX, ZIP, Images, Videos');
-      return;
-    }
-    
-    // Additional MIME type validation for PDFs
-    if (fileExtension === 'pdf' && file.type !== 'application/pdf') {
-      console.warn('PDF file detected but MIME type is:', file.type);
-      // Allow it but log the warning
-    }
-  }
-  
   submitBtn.disabled = true;
   submitBtn.textContent = 'Adding…';
 
@@ -3065,33 +2932,21 @@ function submitCourseContentForm(form) {
     body: formData,
     headers: {
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
+      'Accept': 'application/json'
     }
   })
   .then(async response => {
     const text = await response.text();
     console.log('Raw server response:', text);
-    console.log('Response status:', response.status);
-    console.log('Response headers:', [...response.headers.entries()]);
 
     if (!response.ok) {
       // server returned 500/422/etc with HTML or JSON
       let errorMsg = text;
-      
-      // Check if it's HTML (DOCTYPE indicates HTML page)
-      if (text.startsWith('<!DOCTYPE') || text.includes('<html>')) {
-        console.error('Server returned HTML page instead of JSON:', text.substring(0, 200));
-        throw new Error(`Server error (${response.status}): Server returned HTML page instead of JSON. This usually indicates a server-side error or routing issue.`);
-      }
-      
       try {
         // maybe it's JSON with a message?
         const json = JSON.parse(text);
         errorMsg = json.message || JSON.stringify(json.errors || json);
-      } catch {
-        // It's not JSON either
-      }
+      } catch {}
       throw new Error(`Server error (${response.status}): ${errorMsg}`);
     }
 
@@ -3099,8 +2954,7 @@ function submitCourseContentForm(form) {
     try {
       return JSON.parse(text);
     } catch (err) {
-      console.error('Response was not valid JSON:', text);
-      throw new Error('Invalid JSON from server: ' + text.substring(0, 200));
+      throw new Error('Invalid JSON from server: ' + text);
     }
   })
   .then(data => {
@@ -3291,9 +3145,8 @@ function showModuleCourses(moduleId, moduleName) {
 
                 <div class="form-group">
                     <label for="attachment">Attachment</label>
-                    <input type="file" id="attachment" name="attachment" class="form-control" 
-                           accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB)</small>
+                    <input type="file" id="attachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
+                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
                 </div>
 
                 <!-- Content-specific fields will be populated by JavaScript -->
@@ -3419,9 +3272,8 @@ function showModuleCourses(moduleId, moduleName) {
 
                 <div class="form-group">
                     <label for="contentAttachment">Attachment</label>
-                    <input type="file" id="contentAttachment" name="attachment" class="form-control" 
-                           accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 50MB)</small>
+                    <input type="file" id="contentAttachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
+                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
                 </div>
 
             </div>

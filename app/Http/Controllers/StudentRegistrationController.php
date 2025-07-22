@@ -1896,6 +1896,12 @@ class StudentRegistrationController extends Controller
             'passport_photo' => 'passport_photo',
             'medical_certificate' => 'medical_certificate',
             'ama_namin' => 'ama_namin', // Custom field from education levels
+            // Add common attachment field names
+            'attachment' => 'attachment_path',
+            'attachments' => 'attachment_path',
+            'attachment_path' => 'attachment_path',
+            'file_attachment' => 'attachment_path',
+            'form_attachment' => 'attachment_path',
         ];
 
         $normalizedFieldName = strtolower($fieldName);
@@ -1916,7 +1922,8 @@ class StudentRegistrationController extends Controller
         $registrationColumns = [
             'good_moral', 'PSA', 'Course_Cert', 'TOR', 'Cert_of_Grad', 
             'valid_id', 'birth_certificate', 'diploma_certificate', 
-            'medical_certificate', 'passport_photo', 'photo_2x2', 'ama_namin'
+            'medical_certificate', 'passport_photo', 'photo_2x2', 'ama_namin',
+            'attachment_path' // Add the attachment_path column
         ];
 
         if (in_array($normalizedFieldName, $registrationColumns)) {

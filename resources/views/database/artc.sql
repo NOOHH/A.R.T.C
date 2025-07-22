@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 22, 2025 at 06:58 AM
+-- Generation Time: Jul 22, 2025 at 05:53 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -85,13 +85,13 @@ CREATE TABLE `admin_settings` (
 
 INSERT INTO `admin_settings` (`setting_id`, `setting_key`, `setting_value`, `setting_description`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'ai_quiz_enabled', 'true', 'Enable or disable AI Quiz Generator feature for professors', 1, '2025-07-07 07:17:23', '2025-07-07 07:17:23'),
-(2, 'meeting_creation_enabled', '0', 'Enable or disable meeting creation for professors', 1, '2025-07-18 12:52:43', '2025-07-18 07:47:52'),
+(2, 'meeting_creation_enabled', '0', 'Enable or disable meeting creation for professors', 1, '2025-07-18 12:52:43', '2025-07-21 23:24:06'),
 (100, 'referral_enabled', '1', 'Enable/disable referral code field in registration', 1, NULL, NULL),
 (101, 'referral_required', '0', 'Make referral code required in registration', 1, NULL, NULL),
-(102, 'grading_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 07:48:16'),
+(102, 'grading_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-21 23:24:23'),
 (103, 'upload_videos_enabled', 'true', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 05:00:49'),
-(104, 'attendance_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 07:48:16'),
-(106, 'meeting_whitelist_professors', '', NULL, 1, '2025-07-18 05:49:04', '2025-07-18 07:48:23'),
+(104, 'attendance_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-21 23:24:18'),
+(106, 'meeting_whitelist_professors', '', NULL, 1, '2025-07-18 05:49:04', '2025-07-21 23:23:58'),
 (108, 'view_programs_enabled', 'false', NULL, 1, '2025-07-18 06:14:52', '2025-07-18 07:28:40');
 
 -- --------------------------------------------------------
@@ -309,7 +309,8 @@ INSERT INTO `content_items` (`id`, `content_title`, `content_description`, `cour
 (21, '42342', '34ewrweraq', 23, 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-19 12:41:54', '2025-07-19 12:41:54', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (22, 'bann', 'yes', 23, 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-19 13:09:36', '2025-07-19 13:09:36', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (23, 'CCC', 'ccc', 24, 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-20 01:10:10', '2025-07-20 01:17:57', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(24, '2345234', '234234', 27, 'lesson', '{\"video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-21 05:23:27', '2025-07-21 05:23:27', 0, 0, NULL, NULL, NULL, NULL, NULL);
+(24, '2345234', '234234', 27, 'lesson', '{\"video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-21 05:23:27', '2025-07-21 05:23:27', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(25, 'c', 'c', 28, 'lesson', NULL, NULL, 'content/1753171780_Copy_of_MATH_1_-_Algebra_and_Trigonometry.pdf', NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, NULL, '2025-07-22 00:09:40', '2025-07-22 00:09:40', 0, 0, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -365,7 +366,8 @@ INSERT INTO `courses` (`subject_id`, `subject_name`, `subject_description`, `mod
 (23, 'Banana Dev', 'yes', 50, 100.00, 1, 0, 0, 1, NULL, '2025-07-19 10:08:02', '2025-07-20 01:00:35', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (24, 'BBB', 'BBB', 54, 99.00, 1, 0, 0, 1, NULL, '2025-07-20 01:09:31', '2025-07-20 01:21:13', 1, 0, NULL, NULL, NULL, NULL, NULL),
 (25, 'yeas', 'fsfasdfas', 54, 11.00, 2, 0, 0, 1, NULL, '2025-07-20 01:55:29', '2025-07-20 01:55:29', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(27, 'asdwar', 'asdfasefa', 55, 100.00, 1, 0, 0, 1, NULL, '2025-07-21 05:23:05', '2025-07-21 05:23:05', 0, 0, NULL, NULL, NULL, NULL, NULL);
+(27, 'asdwar', 'asdfasefa', 55, 100.00, 1, 0, 0, 1, NULL, '2025-07-21 05:23:05', '2025-07-21 05:23:05', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(28, 'x', 'x', 58, 100.00, 1, 0, 0, 1, NULL, '2025-07-22 00:09:22', '2025-07-22 00:09:22', 0, 0, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -508,7 +510,9 @@ CREATE TABLE `enrollments` (
 --
 
 INSERT INTO `enrollments` (`enrollment_id`, `registration_id`, `student_id`, `user_id`, `program_id`, `package_id`, `enrollment_type`, `learning_mode`, `batch_id`, `individual_start_date`, `individual_end_date`, `enrollment_status`, `payment_status`, `batch_access_granted`, `created_at`, `updated_at`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `photo_2x2`, `diploma_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `passport_photo`, `medical_certificate`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `tor`, `good_moral`, `psa`) VALUES
-(152, 1753045080, '2025-07-00009', 165, 36, 18, 'Modular', 'Synchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-21 13:42:05', '2025-07-21 13:42:39', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(152, 1753045080, '2025-07-00009', 165, 36, 18, 'Modular', 'Synchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-21 13:42:05', '2025-07-22 07:02:52', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(153, 1753045081, '2025-07-00010', 166, 35, 18, 'Full', 'Synchronous', 7, NULL, NULL, 'approved', 'paid', 0, '2025-07-21 21:03:55', '2025-07-21 23:57:19', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(154, 1753045082, '2025-07-00011', 167, 32, 18, 'Full', 'Synchronous', NULL, NULL, NULL, 'approved', 'pending', 0, '2025-07-22 07:05:21', '2025-07-22 07:08:22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -774,7 +778,10 @@ INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `progr
 (54, 'AAA', 'aaa', 33, 7, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-20 01:05:38', '2025-07-20 13:10:26', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (55, 'yess', 'aaaaa', 35, 7, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-21 05:22:55', '2025-07-21 05:22:55', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (56, 'modddd', '111', 35, 7, 'Synchronous', 'module', '[]', NULL, 'content/1753104250_Copy of MATH 1 - Algebra and Trigonometry.pdf', NULL, NULL, '2025-07-21 05:24:10', '2025-07-21 05:24:10', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(57, 'image', '1', 32, 8, 'Synchronous', 'module', '[]', NULL, 'content/1753127351_Copy of MATH 1 - Algebra and Trigonometry.pdf', NULL, NULL, '2025-07-21 11:49:11', '2025-07-21 11:49:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+(57, 'image', '1', 32, 8, 'Synchronous', 'module', '[]', NULL, 'content/1753127351_Copy of MATH 1 - Algebra and Trigonometry.pdf', NULL, NULL, '2025-07-21 11:49:11', '2025-07-21 11:49:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(58, 'z', 'z', 32, 8, 'Synchronous', 'module', '[]', NULL, 'content/1753171749_Copy of MATH 1 - Algebra and Trigonometry.pdf', NULL, NULL, '2025-07-22 00:09:09', '2025-07-22 00:09:09', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(59, 'asd', 'asd', 35, 7, 'Synchronous', 'module', '[]', NULL, 'content/1753182885_Copy of MATH 1 - Algebra and Trigonometry.pdf', NULL, NULL, '2025-07-22 03:14:45', '2025-07-22 03:14:45', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(60, 'sertsfas', 'asedfasdf', 35, 7, 'Synchronous', 'module', '[]', NULL, 'content/1753184406_Copy of MATH 1 - Algebra and Trigonometry.pdf', NULL, NULL, '2025-07-22 03:40:06', '2025-07-22 03:40:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -916,7 +923,9 @@ CREATE TABLE `payments` (
   `rejection_reason` text DEFAULT NULL,
   `rejected_by` bigint(20) UNSIGNED DEFAULT NULL,
   `rejected_at` timestamp NULL DEFAULT NULL,
+  `rejected_fields` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`rejected_fields`)),
   `resubmitted_at` timestamp NULL DEFAULT NULL,
+  `resubmission_count` int(11) DEFAULT 0,
   `payment_details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_details`)),
   `verified_by` bigint(20) UNSIGNED DEFAULT NULL,
   `verified_at` timestamp NULL DEFAULT NULL,
@@ -931,8 +940,9 @@ CREATE TABLE `payments` (
 -- Dumping data for table `payments`
 --
 
-INSERT INTO `payments` (`payment_id`, `enrollment_id`, `student_id`, `program_id`, `package_id`, `payment_method`, `amount`, `payment_status`, `rejection_reason`, `rejected_by`, `rejected_at`, `resubmitted_at`, `payment_details`, `verified_by`, `verified_at`, `receipt_number`, `reference_number`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 152, '2025-07-00009', 36, 18, 'gcash', 2500.00, 'pending', NULL, NULL, NULL, NULL, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_152_1753139606.png\\\",\\\"reference_number\\\":\\\"2637412734512\\\",\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-21T23:13:27.150227Z\\\"}\"', NULL, NULL, NULL, NULL, 'Payment proof uploaded by student', '2025-07-21 15:13:27', '2025-07-21 15:13:27');
+INSERT INTO `payments` (`payment_id`, `enrollment_id`, `student_id`, `program_id`, `package_id`, `payment_method`, `amount`, `payment_status`, `rejection_reason`, `rejected_by`, `rejected_at`, `rejected_fields`, `resubmitted_at`, `resubmission_count`, `payment_details`, `verified_by`, `verified_at`, `receipt_number`, `reference_number`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 152, '2025-07-00009', 36, 18, 'gcash', 2500.00, 'rejected', 'Invalid reference number and unclear payment proof image', 1, '2025-07-22 14:28:44', '[\"reference_number\", \"payment_proof\"]', NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_152_1753139606.png\\\",\\\"reference_number\\\":\\\"2637412734512\\\",\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-21T23:13:27.150227Z\\\"}\"', NULL, NULL, NULL, NULL, 'Payment proof uploaded by student', '2025-07-21 15:13:27', '2025-07-21 15:13:27'),
+(2, 152, '2025-07-00009', 36, 18, 'bank_transfer', 2500.00, 'pending', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"reference_number\\\":\\\"BT123456789\\\",\\\"payment_method_name\\\":\\\"Bank Transfer\\\",\\\"payment_proof_path\\\":\\\"payments\\\\\\/sample_bank_receipt.jpg\\\",\\\"uploaded_at\\\":\\\"2025-07-22T15:37:25.582700Z\\\"}\"', NULL, NULL, NULL, NULL, 'Payment proof submitted by student - awaiting approval', '2025-07-22 07:37:25', '2025-07-22 07:37:25');
 
 -- --------------------------------------------------------
 
@@ -964,7 +974,9 @@ CREATE TABLE `payment_history` (
 INSERT INTO `payment_history` (`payment_history_id`, `enrollment_id`, `user_id`, `student_id`, `program_id`, `package_id`, `amount`, `payment_status`, `payment_method`, `payment_notes`, `payment_date`, `processed_by_admin_id`, `created_at`, `updated_at`) VALUES
 (21, 132, NULL, '2025-07-00001', 33, 21, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-18 12:02:04', 1, '2025-07-18 12:02:04', '2025-07-18 12:02:04'),
 (24, 138, NULL, '2025-07-00004', 33, 19, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-19 08:17:21', 1, '2025-07-19 08:17:21', '2025-07-19 08:17:21'),
-(27, 146, 163, '2025-07-00009', 34, 18, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-20 12:37:00', 1, '2025-07-20 12:37:00', '2025-07-20 12:37:00');
+(27, 146, 163, '2025-07-00009', 34, 18, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-20 12:37:00', 1, '2025-07-20 12:37:00', '2025-07-20 12:37:00'),
+(28, 153, 166, '2025-07-00010', 35, 18, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-21 23:57:19', 1, '2025-07-21 23:57:19', '2025-07-21 23:57:19'),
+(29, 152, 165, '2025-07-00009', 36, 18, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-22 07:02:52', 1, '2025-07-22 07:02:52', '2025-07-22 07:02:52');
 
 -- --------------------------------------------------------
 
@@ -992,33 +1004,33 @@ CREATE TABLE `payment_methods` (
 --
 
 INSERT INTO `payment_methods` (`payment_method_id`, `method_name`, `method_type`, `description`, `qr_code_path`, `instructions`, `dynamic_fields`, `is_enabled`, `sort_order`, `created_by_admin_id`, `created_at`, `updated_at`) VALUES
-(1, 'GCash', 'gcash', 'Pay via GCash mobile wallet', NULL, 'Send payment to GCash number and upload receipt', NULL, 1, 1, 1, '2025-07-14 13:05:09', '2025-07-14 13:05:09'),
-(11, 'GCash', 'gcash', 'Mobile payment via GCash', NULL, NULL, NULL, 1, 0, 0, NULL, NULL),
-(12, 'Maya (PayMaya)', 'maya', 'Mobile payment via Maya', NULL, NULL, NULL, 1, 0, 0, NULL, NULL),
-(13, 'Bank Transfer', 'bank_transfer', 'Direct bank transfer', NULL, NULL, NULL, 1, 0, 0, NULL, NULL),
-(14, 'Cash Payment', 'cash', 'Cash payment at office', NULL, NULL, NULL, 1, 0, 0, NULL, NULL);
+(11, 'GCash', 'gcash', 'Mobile payment via GCash', 'payment_qr_codes/2B4tBsCsUZHFeHztpE0iVg7y5YLeWnCMGGFZfYH6.png', NULL, NULL, 1, 0, 0, NULL, '2025-07-22 04:59:48');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `payment_terms`
+-- Table structure for table `payment_method_fields`
 --
 
-CREATE TABLE `payment_terms` (
-  `id` int(11) NOT NULL,
-  `term_name` varchar(100) NOT NULL,
-  `content` longtext DEFAULT NULL,
-  `is_active` tinyint(1) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE `payment_method_fields` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `payment_method_id` bigint(20) UNSIGNED NOT NULL,
+  `field_name` varchar(255) NOT NULL,
+  `field_label` varchar(255) NOT NULL,
+  `field_type` enum('text','number','date','file','textarea','select') NOT NULL,
+  `field_options` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`field_options`)),
+  `is_required` tinyint(1) NOT NULL DEFAULT 1,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `payment_terms`
+-- Dumping data for table `payment_method_fields`
 --
 
-INSERT INTO `payment_terms` (`id`, `term_name`, `content`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'General Payment Terms', '\r\n    <h3>Payment Terms and Conditions</h3>\r\n    <p>Please read the following terms carefully before making payment:</p>\r\n    <ul>\r\n        <li>All payments are non-refundable once enrollment is confirmed</li>\r\n        <li>Payment must be completed within 7 days of application submission</li>\r\n        <li>For installment payments, contact the admissions office</li>\r\n        <li>Payment confirmation is required for enrollment processing</li>\r\n    </ul>\r\n    ', 1, '2025-07-22 04:26:53', '2025-07-22 04:26:53');
+INSERT INTO `payment_method_fields` (`id`, `payment_method_id`, `field_name`, `field_label`, `field_type`, `field_options`, `is_required`, `sort_order`, `created_at`, `updated_at`) VALUES
+(18, 11, 'gcash_reference_number', 'Gcash Reference Number', 'number', NULL, 0, 0, '2025-07-21 23:21:19', '2025-07-21 23:21:19');
 
 -- --------------------------------------------------------
 
@@ -1361,22 +1373,6 @@ INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `packag
 -- --------------------------------------------------------
 
 --
--- Table structure for table `registration_modules`
---
-
-CREATE TABLE `registration_modules` (
-  `id` bigint(20) UNSIGNED NOT NULL,
-  `registration_id` int(10) UNSIGNED NOT NULL,
-  `module_id` int(11) NOT NULL,
-  `subject_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `package_id` int(11) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `students`
 --
 
@@ -1481,7 +1477,9 @@ INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `las
 ('2025-07-00006', 160, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-19 18:42:06', '2025-07-19 10:42:06', '2025-07-19 10:42:06', 'vince03handsome@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00007', 162, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-19 20:13:47', '2025-07-19 12:13:47', '2025-07-19 12:13:47', 'vmdelavega03@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00008', 161, 'Vince', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-21', '2025-07-19 13:00:16', '2025-07-19 13:00:16', '2025-07-19 13:00:16', 'vince03handsome1q1@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00009', 165, 'alex', NULL, 'butas', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753134125_sample1.png', NULL, '2025-07-21', '2025-07-21 13:42:39', '2025-07-21 13:42:39', '2025-07-21 13:42:39', 'yorushetzu@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+('2025-07-00009', 165, 'alex', NULL, 'butas', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753134125_sample1.png', NULL, '2025-07-21', '2025-07-21 13:42:39', '2025-07-21 13:42:39', '2025-07-21 13:42:39', 'yorushetzu@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('2025-07-00010', 166, 'Bryan Christian', NULL, 'Justimbaste', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-22 05:03:55', '2025-07-21 21:03:55', '2025-07-21 21:03:55', 'bmjustimbaste2003@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('2025-07-00011', 167, 'Bryan Christian', NULL, 'Justimbaste', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-22 15:05:21', '2025-07-22 07:05:21', '2025-07-22 07:05:21', 'bryan.justimbaste@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1511,7 +1509,7 @@ CREATE TABLE `student_batches` (
 --
 
 INSERT INTO `student_batches` (`batch_id`, `batch_name`, `program_id`, `professor_id`, `max_capacity`, `current_capacity`, `batch_status`, `registration_deadline`, `start_date`, `end_date`, `description`, `created_by`, `created_at`, `updated_at`) VALUES
-(7, 'Batch 1', 35, 8, 10, 3, 'ongoing', '2025-08-15', '2025-07-15', NULL, NULL, NULL, '2025-07-09 12:12:00', '2025-07-21 05:22:04'),
+(7, 'Batch 1', 35, 8, 10, 1, 'ongoing', '2025-08-15', '2025-07-15', NULL, NULL, NULL, '2025-07-09 12:12:00', '2025-07-21 23:57:19'),
 (8, 'Batch 1', 32, 8, 10, 0, 'available', '2025-07-15', '2025-07-29', NULL, NULL, NULL, '2025-07-11 01:49:36', '2025-07-20 11:39:17'),
 (9, 'Batch Mech 1', 35, NULL, 10, 0, 'available', '2025-07-16', '2025-07-23', '2025-07-31', NULL, NULL, '2025-07-20 10:32:30', '2025-07-20 10:32:30'),
 (12, 'Civil Engineer 1', 36, NULL, 30, 1, 'available', '2025-08-20', '2025-08-10', '2026-04-10', NULL, 1, '2025-07-20 13:02:05', '2025-07-20 13:28:41'),
@@ -1558,13 +1556,13 @@ CREATE TABLE `ui_settings` (
 --
 
 INSERT INTO `ui_settings` (`id`, `section`, `setting_key`, `setting_value`, `setting_type`, `created_at`, `updated_at`) VALUES
-(1, 'navbar', 'header_bg', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-14 23:18:10'),
-(2, 'navbar', 'header_text', '#d23232', 'color', '2025-07-03 08:17:32', '2025-07-15 23:47:43'),
+(1, 'navbar', 'header_bg', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-22 05:25:15'),
+(2, 'navbar', 'header_text', '#d23737', 'color', '2025-07-03 08:17:32', '2025-07-22 05:25:15'),
 (3, 'navbar', 'header_border', '#e0e0e0', 'color', '2025-07-03 08:17:32', '2025-07-14 23:18:10'),
 (4, 'navbar', 'search_bg', '#f8f9fa', 'color', '2025-07-03 08:17:32', '2025-07-03 08:37:56'),
-(5, 'navbar', 'sidebar_bg', '#0f87ff', 'color', '2025-07-03 08:17:32', '2025-07-15 23:47:43'),
+(5, 'navbar', 'sidebar_bg', '#343a40', 'color', '2025-07-03 08:17:32', '2025-07-22 02:57:33'),
 (6, 'navbar', 'sidebar_text', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-03 08:37:56'),
-(7, 'navbar', 'active_link_bg', '#007bff', 'color', '2025-07-03 08:17:32', '2025-07-14 23:18:10'),
+(7, 'navbar', 'active_link_bg', '#007bff', 'color', '2025-07-03 08:17:32', '2025-07-22 02:59:14'),
 (8, 'navbar', 'active_link_text', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-03 08:17:32'),
 (9, 'navbar', 'hover_bg', '#c8147d', 'color', '2025-07-03 08:17:32', '2025-07-04 01:45:15'),
 (10, 'navbar', 'hover_text', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-03 08:17:32'),
@@ -1575,7 +1573,7 @@ INSERT INTO `ui_settings` (`id`, `section`, `setting_key`, `setting_value`, `set
 (15, 'global', 'logo_url', 'http://localhost/images/ARTC_logo.png', 'file', '2025-07-03 08:37:56', '2025-07-03 08:37:56'),
 (16, 'global', 'favicon_url', 'http://localhost/favicon.ico', 'file', '2025-07-03 08:37:56', '2025-07-03 08:37:56'),
 (17, 'global', 'site_title', 'A.R.T.C', 'text', '2025-07-03 08:37:56', '2025-07-03 08:37:56'),
-(18, 'footer', 'footer_bg_color', '#467db4', 'color', '2025-07-06 08:54:51', '2025-07-15 23:47:44'),
+(18, 'footer', 'footer_bg_color', '#ff1fe1', 'color', '2025-07-06 08:54:51', '2025-07-22 05:24:08'),
 (19, 'footer', 'footer_text_color', '#ffffff', 'color', '2025-07-06 08:54:51', '2025-07-06 08:54:51'),
 (20, 'footer', 'footer_text', '© Copyright Ascendo Review and Training Center. All Rights Reserved.', 'text', '2025-07-06 08:54:51', '2025-07-06 08:54:51'),
 (21, 'footer', 'footer_link_color', '#adb5bd', 'color', '2025-07-06 08:54:51', '2025-07-15 23:47:44'),
@@ -1630,7 +1628,9 @@ INSERT INTO `users` (`user_id`, `admin_id`, `directors_id`, `is_online`, `last_s
 (160, 1, 1, 0, NULL, 'vince03handsome@gmail.com', 'Vince', 'Dela Vega', '$2y$10$Du8QNUf642.PP6Vwy4ZYc.6sMuQpPuWFeST2/huKvMGwLozeCsEJa', 'student', NULL, '2025-07-19 10:42:05', '2025-07-19 10:42:05'),
 (161, 1, NULL, 0, NULL, 'vince03handsome1q1@gmail.com', 'Vince', 'Dela Vega', '$2y$10$bLLmOygKuFFLx7EXcQ4hkuxr2D07gxBIRkIAxt76dlfkKigSZI4RO', 'student', 145, '2025-07-19 12:09:56', '2025-07-19 12:27:22'),
 (162, 1, 1, 0, NULL, 'vmdelavega03@gmail.com', 'Vince', 'Dela Vega', '$2y$10$EA6wkRVO60WXsA5dcS6wae0XbY4ntv2PpXjMnOLbQ9Bwyf6Qxslh2', 'student', NULL, '2025-07-19 12:13:47', '2025-07-19 12:13:47'),
-(165, 1, NULL, 0, NULL, 'yorushetzu@gmail.com', 'alex', 'butas', '$2y$10$OdDEBGgvgDk5oHo6KMXE3eTiNPjyfr87Ow6kMoUJljsTKjPUqSUaW', 'student', 152, '2025-07-21 13:42:05', '2025-07-21 13:42:05');
+(165, 1, NULL, 0, NULL, 'yorushetzu@gmail.com', 'alex', 'butas', '$2y$10$OdDEBGgvgDk5oHo6KMXE3eTiNPjyfr87Ow6kMoUJljsTKjPUqSUaW', 'student', 152, '2025-07-21 13:42:05', '2025-07-21 13:42:05'),
+(166, 1, 1, 0, NULL, 'bmjustimbaste2003@gmail.com', 'Bryan Christian', 'Justimbaste', '$2y$10$ZC3pLLmxgMuRtjCyhpeOiuu81BTYf.mnpS7WAN7dZVewdHLWmcNtW', 'student', NULL, '2025-07-21 21:03:55', '2025-07-21 21:03:55'),
+(167, 1, 1, 0, NULL, 'bryan.justimbaste@gmail.com', 'Bryan Christian', 'Justimbaste', '$2y$10$j56OVHrlY5UJhhPPyY.Z7uxzb53fF1Kv21b5RqfbZxr6lVMgaiZ3y', 'student', NULL, '2025-07-22 07:05:21', '2025-07-22 07:05:21');
 
 --
 -- Indexes for dumped tables
@@ -1888,10 +1888,11 @@ ALTER TABLE `payment_methods`
   ADD PRIMARY KEY (`payment_method_id`);
 
 --
--- Indexes for table `payment_terms`
+-- Indexes for table `payment_method_fields`
 --
-ALTER TABLE `payment_terms`
-  ADD PRIMARY KEY (`id`);
+ALTER TABLE `payment_method_fields`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `payment_method_fields_payment_method_id_foreign` (`payment_method_id`);
 
 --
 -- Indexes for table `personal_access_tokens`
@@ -2061,13 +2062,13 @@ ALTER TABLE `class_meetings`
 -- AUTO_INCREMENT for table `content_items`
 --
 ALTER TABLE `content_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `courses`
 --
 ALTER TABLE `courses`
-  MODIFY `subject_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `subject_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `deadlines`
@@ -2097,7 +2098,7 @@ ALTER TABLE `education_levels`
 -- AUTO_INCREMENT for table `enrollments`
 --
 ALTER TABLE `enrollments`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=155;
 
 --
 -- AUTO_INCREMENT for table `enrollment_courses`
@@ -2145,7 +2146,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT for table `module_completions`
@@ -2175,13 +2176,13 @@ ALTER TABLE `package_modules`
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `payment_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `payment_history`
 --
 ALTER TABLE `payment_history`
-  MODIFY `payment_history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `payment_history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `payment_methods`
@@ -2190,10 +2191,10 @@ ALTER TABLE `payment_methods`
   MODIFY `payment_method_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT for table `payment_terms`
+-- AUTO_INCREMENT for table `payment_method_fields`
 --
-ALTER TABLE `payment_terms`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+ALTER TABLE `payment_method_fields`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `personal_access_tokens`
@@ -2253,7 +2254,7 @@ ALTER TABLE `referrals`
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
-  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1753045081;
+  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1753045083;
 
 --
 -- AUTO_INCREMENT for table `student_batches`
@@ -2271,7 +2272,7 @@ ALTER TABLE `ui_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=168;
 
 --
 -- Constraints for dumped tables
@@ -2311,6 +2312,12 @@ ALTER TABLE `payment_history`
   ADD CONSTRAINT `payment_history_ibfk_1` FOREIGN KEY (`enrollment_id`) REFERENCES `enrollments` (`enrollment_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `payment_history_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `payment_history_ibfk_3` FOREIGN KEY (`processed_by_admin_id`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `payment_method_fields`
+--
+ALTER TABLE `payment_method_fields`
+  ADD CONSTRAINT `payment_method_fields_payment_method_id_foreign` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_methods` (`payment_method_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `professor_batch`

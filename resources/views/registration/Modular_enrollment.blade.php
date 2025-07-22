@@ -1023,21 +1023,65 @@
             grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
             return;
         }
-        let html = '';
-        programs.forEach(program => {
-            html += `
-                <div class="col-md-6 mb-4">
-                    <div class="card selection-card h-100 ${program.program_id == selectedProgramId ? 'selected' : ''}" onclick="selectProgram(${program.program_id})">
-                        <div class="card-body">
-                            <h4 class="card-title">${program.program_name}</h4>
-                            <p class="card-text">${program.program_description || 'No description available.'}</p>
-                            <div id="modules-for-program-${program.program_id}"></div>
+        
+        // Clear existing content
+        const carouselInner = document.querySelector('#programCarousel .carousel-inner');
+        carouselInner.innerHTML = '';
+        
+        // Group programs into chunks for carousel slides (2 programs per slide)
+        const chunkSize = 2;
+        const programChunks = [];
+        for (let i = 0; i < programs.length; i += chunkSize) {
+            programChunks.push(programs.slice(i, i + chunkSize));
+        }
+        
+        // Create carousel slides
+        programChunks.forEach((chunk, index) => {
+            const isActive = index === 0 ? 'active' : '';
+            let slideHtml = `<div class="carousel-item ${isActive}">
+                <div class="row justify-content-center">`;
+                
+            chunk.forEach(program => {
+                slideHtml += `
+                    <div class="col-md-5 mb-4">
+                        <div class="card selection-card h-100 ${program.program_id == selectedProgramId ? 'selected' : ''}" 
+                             onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
+                            <div class="card-body">
+                                <h4 class="card-title">${program.program_name}</h4>
+                                <p class="card-text">${program.program_description || 'No description available.'}</p>
+                                <div id="modules-for-program-${program.program_id}"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            });
+            
+            slideHtml += `</div></div>`;
+            carouselInner.innerHTML += slideHtml;
         });
-        grid.innerHTML = `<div class="row">${html}</div>`;
+        
+        // Update carousel indicators if there are multiple slides
+        const indicatorsContainer = document.querySelector('#programCarousel .carousel-indicators');
+        if (programChunks.length > 1) {
+            indicatorsContainer.innerHTML = '';
+            programChunks.forEach((chunk, index) => {
+                const isActive = index === 0 ? 'active' : '';
+                indicatorsContainer.innerHTML += `
+                    <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${index}" 
+                            class="${isActive}" aria-label="Slide ${index + 1}"></button>
+                `;
+            });
+            indicatorsContainer.style.display = 'block';
+            
+            // Show/hide carousel controls
+            document.querySelector('#programCarousel .carousel-control-prev').style.display = 'block';
+            document.querySelector('#programCarousel .carousel-control-next').style.display = 'block';
+        } else {
+            indicatorsContainer.style.display = 'none';
+            document.querySelector('#programCarousel .carousel-control-prev').style.display = 'none';
+            document.querySelector('#programCarousel .carousel-control-next').style.display = 'none';
+        }
+        
         // Optionally, fetch and display modules for each program
         programs.forEach(program => {
             fetch(`/api/programs/${program.program_id}/modules`)
@@ -1047,9 +1091,12 @@
                         const modulesDiv = document.getElementById(`modules-for-program-${program.program_id}`);
                         if (modulesDiv) {
                             let modulesHtml = '<ul class="small text-muted">';
-                            data.modules.forEach(module => {
+                            data.modules.slice(0, 3).forEach(module => { // Show only first 3 modules
                                 modulesHtml += `<li>${module.module_name}</li>`;
                             });
+                            if (data.modules.length > 3) {
+                                modulesHtml += `<li class="text-muted">...and ${data.modules.length - 3} more</li>`;
+                            }
                             modulesHtml += '</ul>';
                             modulesDiv.innerHTML = modulesHtml;
                         }
@@ -2648,10 +2695,20 @@ function handleFileUpload(inputElement) {
     
     console.log('Found names for OCR validation:', firstName, lastName);
     
+    // Only require names if we're on the actual form step
+    const isOnFormStep = isUserLoggedIn ? (currentStep === 6) : (currentStep === 7);
+    
     if (!firstName || !lastName) {
-        showErrorModal('Please enter your first name and last name in the form before uploading documents.');
-        inputElement.value = '';
-        return;
+        if (!isOnFormStep) {
+            console.log('File upload triggered but not on form step - allowing without name validation');
+            // Continue without name validation if we're not on the actual form step
+            firstName = 'temp_user';
+            lastName = 'temp_user';
+        } else {
+            showErrorModal('Please enter your first name and last name in the form before uploading documents.');
+            inputElement.value = '';
+            return;
+        }
     }
     
     // Show loading indicator
