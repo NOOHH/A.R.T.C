@@ -271,14 +271,15 @@ class StudentRegistrationController extends Controller
                 
                 Log::info('Created new user', ['user_id' => $user->user_id]);
                 
-                // Set complete session for future requests
-                session([
-                    'user_id' => $user->user_id,
-                    'user_name' => $user->user_name,
-                    'user_email' => $user->user_email,
-                    'user_role' => 'student',
-                    'logged_in' => true
-                ]);
+                // DON'T auto-login - let user manually login after registration
+                // session([
+                //     'user_id' => $user->user_id,
+                //     'user_name' => $user->user_name,
+                //     'user_email' => $user->user_email,
+                //     'user_role' => 'student',
+                //     'logged_in' => true
+                // ]);
+                Log::info('User created but not auto-logged in - user must manually login');
             }
 
             if (!$user || !$user->user_id) {
@@ -708,7 +709,25 @@ class StudentRegistrationController extends Controller
     public function showRegistrationForm(Request $request)
     {
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
-        $packages = Package::all();
+        $packages = Package::where('is_active', true)
+                          ->where('package_type', 'full')
+                          ->get();
+        
+        // Auto-generate default package if none exist
+        if ($packages->isEmpty()) {
+            $defaultPackage = Package::create([
+                'package_name' => 'Standard Full Program',
+                'description' => 'Complete full program package with all courses included',
+                'amount' => 0.00,
+                'package_type' => 'full',
+                'selection_type' => 'full',
+                'selection_mode' => 'complete',
+                'is_active' => true,
+                'status' => 'active'
+            ]);
+            $packages = collect([$defaultPackage]);
+            \Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
+        }
         
         // Get requirements for "full" program
         $formRequirements = FormRequirement::active()

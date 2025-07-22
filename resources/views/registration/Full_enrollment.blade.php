@@ -229,6 +229,15 @@
         // Learning mode selection complete - batch selection will be handled in Step 4
         console.log('Learning mode selected:', mode);
         
+        // Update batch visibility immediately if on form step
+        const batchContainer = document.getElementById('batchSelectionContainer');
+        if (batchContainer) {
+            const programSelect = document.querySelector('select[name="program_id"]');
+            if (programSelect && programSelect.value) {
+                loadBatchesForProgram(programSelect.value);
+            }
+        }
+        
         // Enable next button with proper styling
         const nextBtn = document.getElementById('learningModeNextBtn');
         if (nextBtn) {
@@ -579,9 +588,11 @@
         const selectedProgramId = programId || (programSelect ? programSelect.value : null);
         
         // Only show batches for synchronous mode and when a program is selected
-        if (!selectedProgramId /* || learningMode !== 'synchronous' */) {
-            // Remove the learningMode check if you want to always show
-            batchContainer.style.display = 'none';
+        if (!selectedProgramId || learningMode !== 'synchronous') {
+            if (batchContainer) {
+                batchContainer.style.display = 'none';
+                console.log('Batch container hidden - asynchronous mode or no program selected');
+            }
             return;
         }
         
