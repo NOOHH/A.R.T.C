@@ -119,6 +119,80 @@ class StudentRegistrationController extends Controller
                 $rules['password'] = 'required|confirmed|min:8';
             }
 
+            // Add education level file validation rules - SIMILAR TO MODULAR ENROLLMENT
+            $selectedEducationLevel = $request->input('education_level');
+            Log::info('Full enrollment - Selected education level for file validation', ['education_level' => $selectedEducationLevel]);
+            
+            if ($selectedEducationLevel) {
+                // Find the education level in database
+                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                
+                if (!$educationLevel) {
+                    Log::warning('Full enrollment - Education level not found', ['education_level' => $selectedEducationLevel]);
+                } else {
+                    Log::info('Full enrollment - Education level found', [
+                        'id' => $educationLevel->id,
+                        'name' => $educationLevel->level_name,
+                        'has_file_requirements' => !empty($educationLevel->file_requirements)
+                    ]);
+                    
+                    if ($educationLevel->file_requirements) {
+                        $fileRequirements = is_string($educationLevel->file_requirements) 
+                            ? json_decode($educationLevel->file_requirements, true) 
+                            : $educationLevel->file_requirements;
+                        
+                        if (is_array($fileRequirements)) {
+                            Log::info('Full enrollment - Processing file requirements', ['count' => count($fileRequirements)]);
+                            
+                            foreach ($fileRequirements as $requirement) {
+                                // Check if the requirement is available for full enrollment
+                                $availableForFull = isset($requirement['available_full_plan']) && $requirement['available_full_plan'];
+                                if (!$availableForFull) {
+                                    // Fall back to modular plan check for compatibility
+                                    $availableForFull = isset($requirement['available_modular_plan']) && $requirement['available_modular_plan'];
+                                }
+                                
+                                if ($availableForFull) {
+                                    $fieldName = $requirement['field_name'] ?? $requirement['document_type'];
+                                    
+                                    if ($fieldName) {
+                                        // Normalize field name to match form field names
+                                        $normalizedFieldName = strtolower($fieldName);
+                                        
+                                        // Check if the file is uploaded
+                                        $hasFile = $request->hasFile($normalizedFieldName);
+                                        $isRequired = isset($requirement['is_required']) && $requirement['is_required'];
+                                        
+                                        if ($isRequired) {
+                                            // If file is required, always add validation rule
+                                            $rules[$normalizedFieldName] = 'required|file|max:10240'; // 10MB max
+                                            Log::info('Full enrollment - Added required file rule', [
+                                                'field' => $normalizedFieldName,
+                                                'original_field' => $fieldName,
+                                                'has_file' => $hasFile,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                        } elseif ($hasFile) {
+                                            // If file is optional but uploaded, validate format
+                                            $rules[$normalizedFieldName] = 'file|max:10240'; // 10MB max
+                                            Log::info('Full enrollment - Added optional file rule', [
+                                                'field' => $normalizedFieldName,
+                                                'original_field' => $fieldName,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Log::warning('Full enrollment - File requirements is not valid array', ['raw_data' => $educationLevel->file_requirements]);
+                        }
+                    } else {
+                        Log::info('Full enrollment - No file requirements for this education level', ['education_level' => $selectedEducationLevel]);
+                    }
+                }
+            }
+
             // Add dynamic form field validation only for active fields
             foreach ($formRequirements as $field) {
                 // Skip sections as they don't need validation
@@ -146,6 +220,41 @@ class StudentRegistrationController extends Controller
             }
 
             DB::beginTransaction();
+
+            // DUPLICATE PREVENTION: Check for recent registration with same data
+            try {
+                $duplicateCheck = Registration::where('email', $request->email ?? $request->user_email)
+                    ->where('program_id', $request->program_id)
+                    ->where('package_id', $request->package_id)
+                    ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                    ->first();
+                    
+                if ($duplicateCheck) {
+                    DB::rollBack();
+                    Log::warning('Duplicate registration attempt prevented', [
+                        'email' => $request->email ?? $request->user_email,
+                        'program_id' => $request->program_id,
+                        'package_id' => $request->package_id,
+                        'recent_registration_id' => $duplicateCheck->registration_id
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Registration already completed successfully!',
+                        'redirect' => '/registration/success',
+                        'data' => [
+                            'registration_id' => $duplicateCheck->registration_id,
+                            'user_id' => $duplicateCheck->user_id
+                        ]
+                    ]);
+                }
+            } catch (\Exception $duplicateCheckError) {
+                Log::warning('Duplicate check failed, proceeding with registration', [
+                    'error' => $duplicateCheckError->getMessage(),
+                    'email' => $request->email ?? $request->user_email
+                ]);
+                // Continue with normal registration if duplicate check fails
+            }
 
             // Create or get user
             $user = null;
@@ -197,14 +306,15 @@ class StudentRegistrationController extends Controller
                 
                 Log::info('Created new user', ['user_id' => $user->user_id]);
                 
-                // Set complete session for future requests
-                session([
-                    'user_id' => $user->user_id,
-                    'user_name' => $user->user_name,
-                    'user_email' => $user->user_email,
-                    'user_role' => 'student',
-                    'logged_in' => true
-                ]);
+                // DON'T auto-login - let user manually login after registration
+                // session([
+                //     'user_id' => $user->user_id,
+                //     'user_name' => $user->user_name,
+                //     'user_email' => $user->user_email,
+                //     'user_role' => 'student',
+                //     'logged_in' => true
+                // ]);
+                Log::info('User created but not auto-logged in - user must manually login');
             }
 
             if (!$user || !$user->user_id) {
@@ -352,6 +462,82 @@ class StudentRegistrationController extends Controller
                 } catch (\Exception $e) {
                     Log::warning("Error processing field {$fieldName}: " . $e->getMessage());
                     // Continue processing other fields
+                }
+            }
+
+            // ADDITIONAL FILE PROCESSING: Handle education level files directly (similar to modular enrollment)
+            if ($selectedEducationLevel) {
+                $educationLevel = \App\Models\EducationLevel::where('level_name', $selectedEducationLevel)->first();
+                
+                if ($educationLevel && $educationLevel->file_requirements) {
+                    $fileRequirements = is_string($educationLevel->file_requirements) 
+                        ? json_decode($educationLevel->file_requirements, true) 
+                        : $educationLevel->file_requirements;
+                    
+                    if (is_array($fileRequirements)) {
+                        Log::info('Full enrollment - Processing education level files directly', ['count' => count($fileRequirements)]);
+                        
+                        foreach ($fileRequirements as $requirement) {
+                            // Check if the requirement is available for full enrollment
+                            $availableForFull = isset($requirement['available_full_plan']) && $requirement['available_full_plan'];
+                            if (!$availableForFull) {
+                                // Fall back to modular plan check for compatibility
+                                $availableForFull = isset($requirement['available_modular_plan']) && $requirement['available_modular_plan'];
+                            }
+                            
+                            if ($availableForFull) {
+                                $fieldName = $requirement['field_name'] ?? $requirement['document_type'];
+                                
+                                if ($fieldName) {
+                                    // Normalize field name to match form field names
+                                    $normalizedFieldName = strtolower($fieldName);
+                                    
+                                    // Check if the file is uploaded
+                                    if ($request->hasFile($normalizedFieldName)) {
+                                        try {
+                                            $uploadedFile = $request->file($normalizedFieldName);
+                                            
+                                            // Validate file type (only allow pdf, png, jpeg, jpg, images)
+                                            $allowedMimes = ['pdf', 'png', 'jpeg', 'jpg'];
+                                            $fileExtension = strtolower($uploadedFile->getClientOriginalExtension());
+                                            
+                                            if (!in_array($fileExtension, $allowedMimes)) {
+                                                throw new \Exception("Invalid file type for {$normalizedFieldName}. Only PDF, PNG, JPEG files are allowed.");
+                                            }
+                                            
+                                            // Validate file size (max 10MB)
+                                            if ($uploadedFile->getSize() > 10485760) { // 10MB in bytes
+                                                throw new \Exception("File size for {$normalizedFieldName} exceeds 10MB limit.");
+                                            }
+                                            
+                                            // Use helper method to get the correct database column name
+                                            $dbColumnName = $this->mapFileFieldToColumn($normalizedFieldName);
+                                            
+                                            // Store the file with a unique name to prevent conflicts
+                                            $fileName = time() . '_' . uniqid() . '_' . $uploadedFile->getClientOriginalName();
+                                            $path = $uploadedFile->storeAs('uploads/education_requirements', $fileName, 'public');
+                                            
+                                            // Save the file path to the database
+                                            $registration->{$dbColumnName} = $path;
+                                            
+                                            Log::info("Education level file uploaded successfully", [
+                                                'field_name' => $normalizedFieldName,
+                                                'db_column' => $dbColumnName,
+                                                'file_path' => $path,
+                                                'file_size' => $uploadedFile->getSize(),
+                                                'file_type' => $fileExtension,
+                                                'education_level' => $selectedEducationLevel
+                                            ]);
+                                            
+                                        } catch (\Exception $e) {
+                                            Log::error("Error processing education level file {$normalizedFieldName}: " . $e->getMessage());
+                                            throw $e; // Re-throw to be caught by the main try-catch
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -558,7 +744,20 @@ class StudentRegistrationController extends Controller
     public function showRegistrationForm(Request $request)
     {
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
-        $packages = Package::all();
+        $packages = Package::where('package_type', 'full')->get();
+        
+        // Auto-generate default package if none exist
+        if ($packages->isEmpty()) {
+            $defaultPackage = Package::create([
+                'package_name' => 'Standard Full Program',
+                'description' => 'Complete full program package with all courses included',
+                'amount' => 0.00,
+                'package_type' => 'full',
+                'created_by_admin_id' => 1
+            ]);
+            $packages = collect([$defaultPackage]);
+            \Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
+        }
         
         // Get requirements for "full" program
         $formRequirements = FormRequirement::active()
@@ -809,6 +1008,43 @@ class StudentRegistrationController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            // DUPLICATE PREVENTION: Check for recent registration with same data
+            try {
+                $userEmail = $request->email ?? $request->user_email;
+                $duplicateCheck = Registration::where('email', $userEmail)
+                    ->where('program_id', $request->program_id)
+                    ->where('package_id', $request->package_id)
+                    ->where('enrollment_type', 'Modular')
+                    ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                    ->first();
+                    
+                if ($duplicateCheck) {
+                    DB::rollBack();
+                    Log::warning('Duplicate modular registration attempt prevented', [
+                        'email' => $userEmail,
+                        'program_id' => $request->program_id,
+                        'package_id' => $request->package_id,
+                        'recent_registration_id' => $duplicateCheck->registration_id
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Registration already completed successfully!',
+                        'redirect' => '/registration/success',
+                        'data' => [
+                            'registration_id' => $duplicateCheck->registration_id,
+                            'user_id' => $duplicateCheck->user_id
+                        ]
+                    ]);
+                }
+            } catch (\Exception $duplicateCheckError) {
+                Log::warning('Duplicate check failed, proceeding with registration', [
+                    'error' => $duplicateCheckError->getMessage(),
+                    'email' => $request->email ?? $request->user_email
+                ]);
+                // Continue with normal registration if duplicate check fails
+            }
 
             Log::info('=== MODULAR ENROLLMENT DETAILED DEBUG ===', [
                 'request_method' => $request->method(),

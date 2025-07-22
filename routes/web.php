@@ -262,6 +262,19 @@ Route::get('/enrollment/modular', function () {
         ->where('package_type', 'modular')
         ->get();
     
+    // Auto-generate default modular package if none exist
+    if ($packages->isEmpty()) {
+        $defaultPackage = Package::create([
+            'package_name' => 'Standard Modular Package',
+            'description' => 'Flexible modular package allowing course-by-course enrollment',
+            'amount' => 0.00,
+            'package_type' => 'modular',
+            'created_by_admin_id' => 1
+        ]);
+        $packages = collect([$defaultPackage]);
+        \Log::info('Auto-generated default modular package', ['package_id' => $defaultPackage->package_id]);
+    }
+    
     $programId = request('program_id');
     
     // Get form requirements for modular enrollment

@@ -113,7 +113,7 @@
                 <!-- Universal Search Component (accessible to all users) -->
                 <div class="navbar-nav me-auto">
                     <div class="nav-item" style="min-width: 300px;">
-                        @include('components.universal-search')
+                       
                     </div>
                 </div>
                 
@@ -185,14 +185,7 @@
                             </ul>
                         @endif
                     </li>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url('/login') }}">
-                                    <i class="bi bi-box-arrow-in-right"></i> Login
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url('/enrollment') }}">
-                                    <i class="bi bi-person-plus-fill"></i> Sign Up
-                                </a></li>
-                            </ul>
+
                         @endif
                     </li>
                 </ul>
@@ -225,6 +218,7 @@
     </main>
 
     <!-- Only keep the new custom footer below, remove the old duplicate footer -->
+     @unless (View::hasSection('hide_footer'))
     <footer class="custom-footer mt-5">
         <div class="container">
             <div class="footer-top d-flex justify-content-between align-items-center flex-wrap py-4">
@@ -278,7 +272,7 @@
             </div>
         </div>
     </footer>
-
+ @endunless
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
