@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Program;
+use App\Models\Package;
+use App\Models\Enrollment;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AdminStudentListController extends Controller
 {
@@ -53,12 +57,142 @@ class AdminStudentListController extends Controller
     }
 
     /**
-     * Export students to CSV
+     * Get students for batch enrollment (AJAX)
+     */
+    public function getStudentsForBatchEnrollment(Request $request)
+    {
+        $students = Student::with(['user', 'enrollments.program'])
+            ->where('is_archived', false)
+            ->whereNotNull('date_approved') // Only approved students
+            
+            // Search filter
+            ->when($request->filled('search'), function($q) use ($request) {
+                $search = $request->search;
+                $q->where(function($q2) use ($search) {
+                    $q2->where('firstname', 'like', "%{$search}%")
+                       ->orWhere('lastname',  'like', "%{$search}%")
+                       ->orWhere('student_id','like', "%{$search}%")
+                       ->orWhere('email',      'like', "%{$search}%");
+                });
+            })
+            
+            ->orderBy('lastname')
+            ->get()
+            ->map(function($student) {
+                $enrolledPrograms = $student->enrollments->pluck('program.program_name')->toArray();
+                return [
+                    'student_id' => $student->student_id,
+                    'user_id' => $student->user_id,
+                    'name' => trim($student->firstname . ' ' . $student->lastname),
+                    'email' => $student->email ?? ($student->user->email ?? ''),
+                    'enrolled_programs' => $enrolledPrograms,
+                    'enrollment_count' => count($enrolledPrograms)
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'students' => $students
+        ]);
+    }
+
+    /**
+     * Batch enroll multiple students to programs
+     */
+    public function batchEnrollStudents(Request $request)
+    {
+        $request->validate([
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'required|string',
+            'program_id' => 'required|exists:programs,program_id',
+            'package_id' => 'required|exists:packages,package_id',
+            'enrollment_type' => 'required|in:full,modular',
+            'learning_mode' => 'required|in:online,face-to-face,hybrid',
+            'batch_id' => 'nullable|exists:student_batches,batch_id'
+        ]);
+
+        $results = [
+            'successful' => [],
+            'failed' => [],
+            'duplicates' => []
+        ];
+
+        DB::beginTransaction();
+        
+        try {
+            foreach ($request->student_ids as $studentId) {
+                $student = Student::where('student_id', $studentId)->first();
+                
+                if (!$student) {
+                    $results['failed'][] = "Student ID {$studentId} not found";
+                    continue;
+                }
+
+                // Check for duplicate enrollment
+                $existingEnrollment = Enrollment::where('student_id', $studentId)
+                    ->where('program_id', $request->program_id)
+                    ->first();
+
+                if ($existingEnrollment) {
+                    $results['duplicates'][] = "{$student->firstname} {$student->lastname} ({$studentId}) - Already enrolled";
+                    continue;
+                }
+
+                // Create enrollment
+                $enrollment = Enrollment::create([
+                    'student_id' => $studentId,
+                    'user_id' => $student->user_id,
+                    'program_id' => $request->program_id,
+                    'package_id' => $request->package_id,
+                    'batch_id' => $request->batch_id,
+                    'enrollment_type' => $request->enrollment_type,
+                    'learning_mode' => $request->learning_mode,
+                    'enrollment_status' => 'approved', // Auto-approve admin enrollments
+                    'payment_status' => 'pending',
+                    'enrollment_date' => now()
+                ]);
+
+                $results['successful'][] = "{$student->firstname} {$student->lastname} ({$studentId}) - Enrolled successfully";
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Batch enrollment completed',
+                'results' => $results,
+                'summary' => [
+                    'total_processed' => count($request->student_ids),
+                    'successful' => count($results['successful']),
+                    'failed' => count($results['failed']),
+                    'duplicates' => count($results['duplicates'])
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Batch enrollment failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export students to CSV with applied filters
      */
     public function export(Request $request)
     {
         $students = Student::with(['user', 'program', 'enrollment.batch', 'enrollments.program', 'enrollments.package'])
             ->where('is_archived', false)
+
+            // Apply program filter
+            ->when($request->filled('program_id'), function($q) use ($request) {
+                $q->whereHas('program', function($q2) use ($request) {
+                    $q2->where('programs.program_id', $request->program_id);
+                });
+            })
 
             // Apply search filter
             ->when($request->filled('search'), function($q) use ($request) {
@@ -78,7 +212,26 @@ class AdminStudentListController extends Controller
             ->orderBy('lastname')
             ->get();
 
-        $filename = 'students_export_' . date('Y-m-d_H-i-s') . '.csv';
+        // Generate filename with filter info
+        $filterInfo = [];
+        if ($request->filled('program_id')) {
+            $program = Program::find($request->program_id);
+            if ($program) {
+                $filterInfo[] = 'program_' . str_replace(' ', '_', strtolower($program->program_name));
+            }
+        }
+        if ($request->filled('status')) {
+            $filterInfo[] = $request->status;
+        }
+        if ($request->filled('search')) {
+            $filterInfo[] = 'search_' . str_replace(' ', '_', strtolower($request->search));
+        }
+
+        $filename = 'students_export';
+        if (!empty($filterInfo)) {
+            $filename .= '_' . implode('_', $filterInfo);
+        }
+        $filename .= '_' . date('Y-m-d_H-i-s') . '.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -107,12 +260,18 @@ class AdminStudentListController extends Controller
                 'Start Date',
                 'Date Approved',
                 'Status',
+                'All Enrollments',
+                'Total Enrollments',
                 'Is Archived'
             ]);
 
             // Add data rows
             foreach ($students as $student) {
                 $enrollment = $student->enrollments->first();
+                $allEnrollments = $student->enrollments->map(function($enroll) {
+                    return ($enroll->program->program_name ?? 'N/A') . ' (' . ($enroll->package->package_name ?? 'N/A') . ')';
+                })->implode('; ');
+
                 fputcsv($file, [
                     $student->student_id ?? '',
                     $student->firstname ?? '',
@@ -132,6 +291,8 @@ class AdminStudentListController extends Controller
                     $student->Start_Date ?? '',
                     $student->date_approved ? $student->date_approved->format('Y-m-d H:i:s') : '',
                     $student->date_approved ? 'Approved' : 'Pending',
+                    $allEnrollments,
+                    $student->enrollments->count(),
                     $student->is_archived ? 'Yes' : 'No'
                 ]);
             }

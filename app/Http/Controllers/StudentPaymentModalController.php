@@ -175,7 +175,7 @@ class StudentPaymentModalController extends Controller
     }
 
     /**
-     * Get enrollment payment details
+     * Get enrollment payment details with proper amount calculation
      */
     public function getEnrollmentPaymentDetails($enrollmentId)
     {
@@ -190,7 +190,7 @@ class StudentPaymentModalController extends Controller
                 ], 404);
             }
 
-            $enrollment = Enrollment::with(['program', 'package'])
+            $enrollment = Enrollment::with(['program', 'package', 'additionalCourses'])
                 ->where('enrollment_id', $enrollmentId)
                 ->where(function($query) use ($userId, $student) {
                     $query->where('user_id', $userId)
@@ -205,9 +205,36 @@ class StudentPaymentModalController extends Controller
                 ], 403);
             }
 
-            $amount = 0;
+            // Calculate total amount: base package price + additional courses
+            $baseAmount = 0;
             if ($enrollment->package) {
-                $amount = $enrollment->package->package_price ?? $enrollment->package->price ?? 0;
+                $baseAmount = $enrollment->package->package_price ?? $enrollment->package->price ?? 0;
+            }
+
+            // Add additional courses cost if any
+            $additionalCoursesAmount = 0;
+            if ($enrollment->additionalCourses && $enrollment->additionalCourses->count() > 0) {
+                $additionalCoursesAmount = $enrollment->additionalCourses->sum('price');
+            }
+
+            $totalAmount = $baseAmount + $additionalCoursesAmount;
+
+            // Get package and additional courses breakdown
+            $packageBreakdown = [
+                'base_package' => [
+                    'name' => $enrollment->package->package_name ?? 'N/A',
+                    'price' => $baseAmount
+                ]
+            ];
+
+            $additionalCoursesBreakdown = [];
+            if ($enrollment->additionalCourses && $enrollment->additionalCourses->count() > 0) {
+                $additionalCoursesBreakdown = $enrollment->additionalCourses->map(function($course) {
+                    return [
+                        'name' => $course->course_name,
+                        'price' => $course->price ?? 0
+                    ];
+                })->toArray();
             }
 
             return response()->json([
@@ -216,7 +243,11 @@ class StudentPaymentModalController extends Controller
                     'enrollment_id' => $enrollment->enrollment_id,
                     'program_name' => $enrollment->program->program_name ?? 'N/A',
                     'package_name' => $enrollment->package->package_name ?? 'N/A',
-                    'amount' => $amount,
+                    'amount' => $totalAmount,
+                    'base_amount' => $baseAmount,
+                    'additional_courses_amount' => $additionalCoursesAmount,
+                    'package_breakdown' => $packageBreakdown,
+                    'additional_courses_breakdown' => $additionalCoursesBreakdown,
                     'enrollment_status' => $enrollment->enrollment_status,
                     'payment_status' => $enrollment->payment_status
                 ]

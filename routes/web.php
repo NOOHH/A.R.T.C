@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +43,7 @@ use App\Http\Controllers\ProgramController;
 // routes/web.php
 
 use App\Http\Controllers\Api\ReferralController;
+use App\Http\Controllers\StudentPaymentModalController;
 
 Route::get(
     '/student/module/{module}/course/{course}/content-items',
@@ -590,7 +591,7 @@ Route::get('/payment/success', [PaymentController::class, 'paymentSuccess'])->na
 Route::get('/payment/failure', [PaymentController::class, 'paymentFailure'])->name('payment.failure');
 Route::get('/payment/cancel', [PaymentController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof'])->name('payment.upload-proof');
-Route::post('/student/payment/upload-proof', [PaymentController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
+Route::post('/student/payment/upload-proof', [StudentPaymentModalController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
 // Admin dashboard and admin routes with middleware
@@ -1441,6 +1442,14 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.export');
     Route::delete('/quiz-generator/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'delete'])
          ->name('quiz-generator.delete');
+    
+    // Quiz generator AJAX routes
+    Route::get('/quiz-generator/modules/{programId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModulesByProgram'])
+         ->name('quiz-generator.modules');
+    Route::get('/quiz-generator/courses/{moduleId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getCoursesByModule'])
+         ->name('quiz-generator.courses');
+    Route::get('/quiz-generator/contents/{courseId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getContentByCourse'])
+         ->name('quiz-generator.contents');
     Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
          ->name('grading.update');
     Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
