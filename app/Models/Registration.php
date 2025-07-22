@@ -79,18 +79,6 @@ class Registration extends Model
         'monthly_income',
         // Custom education level file fields
         'ama_namin',
-        // File upload fields
-        'school_id',
-        'diploma', 
-        'TOR',
-        'psa_birth_certificate',
-        'form_137',
-        // Rejection system fields
-        'rejection_reason',
-        'rejected_fields',
-        'rejected_at',
-        'can_resubmit',
-        'resubmitted_at',
     ];
 
     // Explicitly guard against batch_id assignment - it should never be in registrations table
@@ -102,10 +90,6 @@ class Registration extends Model
         'dynamic_fields' => 'array',
         'selected_modules' => 'array', // Cast JSON field to array
         'selected_courses' => 'array', // Cast JSON field to array for course selections
-        'rejected_fields' => 'array', // Cast JSON field to array for rejection details
-        'rejected_at' => 'datetime',
-        'resubmitted_at' => 'datetime',
-        'can_resubmit' => 'boolean',
     ];
 
     // Get display name for registration mode from dynamic fields

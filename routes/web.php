@@ -4,134 +4,19 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-
-// TEST ROUTE: Same pattern as working module store
-Route::post('/test-upload-v2', function (Request $request) {
-    Log::info('ðŸ§ª TEST UPLOAD V2 ROUTE HIT');
-    
-    // Same validation pattern as working module store
-    $request->validate([
-        'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg,avi,mov|max:102400',
-    ]);
-
-    $attachmentPath = null;
-    
-    // ENHANCED FILE UPLOAD DEBUGGING (exact same as working module store)
-    Log::info("=== FILE UPLOAD DEBUG START ===");
-    Log::info("Request method: " . $request->method());
-    Log::info("Request content type: " . $request->header("Content-Type"));
-    Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
-    Log::info("Request files count: " . count($request->files->all()));
-    Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
-    
-    // Check all files in request
-    foreach ($request->files->all() as $key => $file) {
-        if ($file instanceof \Illuminate\Http\UploadedFile) {
-            Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
-        } else {
-            Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
-        }
-    }
-    
-    // Check specific attachment
-    $attachmentFile = $request->file("attachment");
-    if ($attachmentFile) {
-        Log::info("Attachment file details: " . json_encode([
-            "name" => $attachmentFile->getClientOriginalName(),
-            "size" => $attachmentFile->getSize(),
-            "mime" => $attachmentFile->getMimeType(),
-            "error" => $attachmentFile->getError(),
-            "is_valid" => $attachmentFile->isValid(),
-            "tmp_name" => $attachmentFile->getRealPath()
-        ]));
-    } else {
-        Log::info("No attachment file found");
-    }
-    Log::info("=== FILE UPLOAD DEBUG END ===");
-    
-    if ($request->hasFile('attachment')) {
-        $file = $request->file('attachment');
-        if ($file && $file->isValid() && $file->getError() === UPLOAD_ERR_OK) {
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $attachmentPath = $file->storeAs('content', $filename, 'public');
-            Log::info('File uploaded successfully', ['path' => $attachmentPath]);
-        } else if ($file) {
-            Log::error('File upload error', [
-                'error' => $file->getError(),
-                'original_name' => $file->getClientOriginalName(),
-                'size' => $file->getSize()
-            ]);
-        }
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Test upload V2 completed',
-        'attachment_path' => $attachmentPath
-    ]);
-})->name('test.upload.v2');
-Route::post('/test-upload', function (Request $request) {
-    Log::info('ðŸ§ª TEST UPLOAD ROUTE HIT', [
-        'method' => $request->method(),
-        'has_files' => count($request->files->all()) > 0,
-        'all_files' => array_keys($request->files->all()),
-        'has_attachment' => $request->hasFile('attachment')
-    ]);
-    
-    if ($request->hasFile('attachment')) {
-        $file = $request->file('attachment');
-        Log::info('ðŸ§ª TEST FILE DETECTED', [
-            'name' => $file->getClientOriginalName(),
-            'size' => $file->getSize(),
-            'valid' => $file->isValid(),
-            'error' => $file->getError(),
-            'temp_path' => $file->getRealPath(),
-            'temp_exists' => file_exists($file->getRealPath())
-        ]);
-        
-        $filename = time() . '_test_' . $file->getClientOriginalName();
-        $path = $file->storeAs('content', $filename, 'public');
-        
-        Log::info('ðŸ§ª TEST FILE STORAGE RESULT', [
-            'storeAs_result' => $path,
-            'result_type' => gettype($path),
-            'file_saved' => file_exists(storage_path('app/public/content/' . $filename)),
-            'full_path' => storage_path('app/public/content/' . $filename)
-        ]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Test upload successful',
-            'path' => $path,
-            'file_exists' => file_exists(storage_path('app/public/content/' . $filename)),
-            'url' => asset('storage/' . $path)
-        ]);
-    }
-    
-    return response()->json([
-        'success' => false,
-        'message' => 'No file detected',
-        'debug' => [
-            'files_count' => count($request->files->all()),
-            'file_keys' => array_keys($request->files->all())
-        ]
-    ]);
-})->name('test.upload');
-
 // Admin: Delete a meeting for a professor
 Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UnifiedLoginController;
 use App\Http\Controllers\StudentDashboardController;
-use App\Http\Controllers\StudentAnalyticsController;
 use App\Http\Controllers\StudentRegistrationController;
 use App\Http\Controllers\AdminProgramController;
 use App\Http\Controllers\AdminModuleController;
 use App\Http\Controllers\AdminCourseController;
 use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
-use App\Http\Controllers\AdminPackageController;    // â† NEW
+use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
@@ -179,9 +64,9 @@ Route::middleware(['web','check.session','role.dashboard']) // whatever guards y
 Route::get('/test-db', function () {
     try {
         DB::connection()->getPdo();
-        return "âœ… Connected to DB successfully!";
+        return "✅ Connected to DB successfully!";
     } catch (\Exception $e) {
-        return "âŒ DB connection failed: " . $e->getMessage();
+        return "❌ DB connection failed: " . $e->getMessage();
     }
 });
 
@@ -236,7 +121,7 @@ Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(funct
     Route::get('/create', [BatchEnrollmentController::class, 'create'])->name('admin.batches.create');
     Route::post('/', [BatchEnrollmentController::class, 'store'])->name('admin.batches.store');
     Route::get('/{id}', [BatchEnrollmentController::class, 'show'])->name('admin.batches.show');
-    Route::put('/{id}', [BatchEnrollmentController::class, 'updateBatch'])->name('admin.batches.update');
+    Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
     Route::post('/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
     Route::post('/{id}/approve', [BatchEnrollmentController::class, 'approveBatch'])->name('admin.batches.approve');
     Route::get('/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
@@ -472,7 +357,6 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
-    Route::get('/student/analytics', [StudentAnalyticsController::class, 'index'])->name('student.analytics');
     
     // Test route for debugging student settings
     Route::get('/test-student-settings', function () {
@@ -554,15 +438,6 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
 // Student register POST
 Route::post('/student/register', [StudentRegistrationController::class, 'store'])
      ->name('student.register');
-
-// Simplified registration route using profile.php approach
-Route::post('/student/register-simple', [App\Http\Controllers\SimpleRegistrationController::class, 'store'])
-     ->name('student.register.simple');
-
-// Test route for simplified registration form
-Route::get('/registration/simple-test', function () {
-    return view('registration.simple_test');
-})->name('registration.simple.test');
 
 // Account creation POST (separate from full registration)
 Route::post('/student/account/create', [StudentRegistrationController::class, 'handleAccountCreation'])
@@ -702,13 +577,6 @@ Route::get('/payment/cancel', [PaymentController::class, 'paymentCancel'])->name
 Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof'])->name('payment.upload-proof');
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
-// Student Payment Modal routes
-Route::middleware(['student.auth'])->group(function () {
-    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentModalController::class, 'getPaymentMethods'])->name('student.payment.methods');
-    Route::post('/student/payment/upload-proof', [App\Http\Controllers\StudentPaymentModalController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
-    Route::get('/student/payment/enrollment/{enrollmentId}/details', [App\Http\Controllers\StudentPaymentModalController::class, 'getEnrollmentPaymentDetails'])->name('student.payment.enrollment.details');
-});
-
 // Admin dashboard and admin routes with middleware
 Route::middleware(['check.session', 'role.dashboard'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
@@ -724,20 +592,6 @@ Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'
 Route::post('/admin/registration/{id}/reject-with-reason', [AdminController::class, 'rejectWithReason'])
      ->name('admin.registration.reject.reason');
 
-// Enhanced rejection with field-level marking
-Route::post('/admin/registration/{id}/reject-fields', [AdminController::class, 'rejectWithFields'])
-     ->name('admin.registration.reject.fields');
-Route::post('/admin/registration/{id}/approve-resubmission', [AdminController::class, 'approveResubmission'])
-     ->name('admin.registration.approve.resubmission');
-Route::post('/admin/registration/{id}/reset-status', [AdminController::class, 'resetRegistrationStatus'])
-     ->name('admin.registration.reset.status');
-
-// Payment rejection routes
-Route::post('/admin/payment/{id}/reject-fields', [AdminController::class, 'rejectPaymentWithFields'])
-     ->name('admin.payment.reject.fields');
-Route::post('/admin/payment/{id}/approve-resubmission', [AdminController::class, 'approvePaymentResubmission'])
-     ->name('admin.payment.approve.resubmission');
-
 // Get registration details
 Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
      ->name('admin.registration.details');
@@ -747,8 +601,6 @@ Route::get('/admin-student-registration', [AdminController::class, 'studentRegis
      ->name('admin.student.registration');
 Route::get('/admin-student-registration/pending', [AdminController::class, 'studentRegistration'])
      ->name('admin.student.registration.pending');
-Route::get('/admin-student-registration/rejected', [AdminController::class, 'rejectedRegistrations'])
-     ->name('admin.student.registration.rejected');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
 
@@ -771,8 +623,6 @@ Route::post('/admin/enrollment/assign', [AdminController::class, 'assignEnrollme
 // Payment management routes
 Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
      ->name('admin.student.registration.payment.pending');
-Route::get('/admin-student-registration/payment/rejected', [AdminController::class, 'rejectedPayments'])
-     ->name('admin.student.registration.payment.rejected');
 Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
      ->name('admin.student.registration.payment.history');
 
@@ -780,7 +630,7 @@ Route::get('/admin-student-registration/payment/history', [AdminController::clas
 Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
      ->name('admin.enrollment.mark-paid');
 
-// View one student registration's details
+// View one student registration’s details
 Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
      ->name('admin.student.registration.view');
 
@@ -793,7 +643,7 @@ Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'sh
 Route::get('/admin/programs', [AdminProgramController::class, 'index'])
      ->name('admin.programs.index');
 
-// Show "Add New Program" form
+// Show “Add New Program” form
 Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])
      ->name('admin.programs.create');
 
@@ -871,121 +721,18 @@ Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'a
 Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
      ->name('admin.modules.batch-store');
 
-// Direct Upload Test Page
-Route::get('/admin/modules/direct-test', function() {
-    return view('direct_upload_test');
-})->name('admin.modules.direct-test');
-
 // Store course content
 Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
      ->name('admin.modules.course-content-store');
-
-// Course content upload page (dedicated page)
-Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])
-     ->name('admin.modules.course-content-upload');
-
-// Test course content endpoint
-Route::post('/admin/modules/test-course-content', function(Request $request) {
-    return response()->json([
-        'success' => true,
-        'message' => 'Test endpoint working!',
-        'received_data' => $request->all(),
-        'has_file' => $request->hasFile('attachment'),
-        'timestamp' => now()->toISOString()
-    ]);
-})->name('admin.modules.test-course-content');
 
 // Test upload route
 Route::get('/test-upload', function() {
     return view('test_upload_form');
 });
 
-// CSRF token route for testing
-Route::get('/csrf-token', function() {
-    return response()->json(['csrf_token' => csrf_token()]);
-});
-
 // Test endpoint
 Route::get('/test-endpoint', function() {
     return response()->json(['message' => 'Test endpoint working', 'time' => now()]);
-});
-
-// Simple attachment path test route
-Route::post('/test-attachment-save', function(Request $request) {
-    try {
-        Log::info('=== SIMPLE ATTACHMENT TEST START ===', [
-            'has_file' => $request->hasFile('attachment'),
-            'all_files' => array_keys($request->files->all())
-        ]);
-        
-        if (!$request->hasFile('attachment')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No file provided',
-                'debug' => ['files' => $request->files->all()]
-            ]);
-        }
-        
-        $file = $request->file('attachment');
-        $filename = time() . '_' . $file->getClientOriginalName();
-        
-        // Store file
-        $attachmentPath = $file->storeAs('content', $filename, 'public');
-        
-        Log::info('File stored', [
-            'attachment_path' => $attachmentPath,
-            'file_exists' => file_exists(storage_path('app/public/' . $attachmentPath))
-        ]);
-        
-        // Get a valid course for testing
-        $course = \App\Models\Course::first();
-        if (!$course) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No courses found in database'
-            ]);
-        }
-        
-        // Create content item
-        $contentItem = \App\Models\ContentItem::create([
-            'content_title' => 'Test Attachment Save',
-            'content_description' => 'Testing attachment path saving',
-            'course_id' => $course->subject_id,
-            'content_type' => 'document',
-            'attachment_path' => $attachmentPath,
-            'is_active' => true,
-            'is_required' => false
-        ]);
-        
-        Log::info('ContentItem created', [
-            'id' => $contentItem->id,
-            'attachment_path_saved' => $contentItem->attachment_path,
-            'fresh_attachment_path' => $contentItem->fresh()->attachment_path
-        ]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Attachment saved successfully',
-            'data' => [
-                'content_id' => $contentItem->id,
-                'attachment_path' => $contentItem->attachment_path,
-                'file_exists' => file_exists(storage_path('app/public/' . $attachmentPath)),
-                'public_url' => asset('storage/' . $attachmentPath)
-            ]
-        ]);
-        
-    } catch (\Exception $e) {
-        Log::error('Attachment test failed', [
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Test failed: ' . $e->getMessage()
-        ], 500);
-    }
 });
 
 // Toggle archive status
@@ -1003,10 +750,6 @@ Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived']
 // Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
      ->name('admin.modules.destroy');
-
-// Delete a module by ID (used by admin interface)
-Route::delete('/admin/modules/{id}', [AdminModuleController::class, 'destroyById'])
-     ->name('admin.modules.destroy-by-id');
 
 // Get modules by program (AJAX)
 Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
@@ -1040,39 +783,11 @@ Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 
 Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
      ->name('admin.modules.archive');
 
-// Admin override settings (legacy - keeping for compatibility)
+// Admin override settings
 Route::get   ('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
      ->name('admin.modules.get-override');
 Route::patch ('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
      ->name('admin.modules.update-override');
-
-// Override Settings Routes
-Route::get('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'getOverrideSettings'])
-     ->name('admin.modules.get-override-settings');
-Route::post('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'saveOverrideSettings'])
-     ->name('admin.modules.save-override-settings');
-
-// New Admin Override System Routes
-Route::middleware(['admin.auth'])->prefix('admin/overrides')->group(function () {
-    Route::get('/status/{type}/{id}', [App\Http\Controllers\AdminOverrideController::class, 'getStatus'])
-         ->name('admin.overrides.status');
-    Route::get('/prerequisites', [App\Http\Controllers\AdminOverrideController::class, 'getPrerequisites'])
-         ->name('admin.overrides.prerequisites');
-    Route::post('/clear-schedule', [App\Http\Controllers\AdminOverrideController::class, 'clearSchedule'])
-         ->name('admin.overrides.clear-schedule');
-    Route::post('/toggle-lock', [App\Http\Controllers\AdminOverrideController::class, 'toggleLock'])
-         ->name('admin.overrides.toggle-lock');
-    Route::post('/set-schedule', [App\Http\Controllers\AdminOverrideController::class, 'setSchedule'])
-         ->name('admin.overrides.set-schedule');
-    Route::post('/set-prerequisite', [App\Http\Controllers\AdminOverrideController::class, 'setPrerequisite'])
-         ->name('admin.overrides.set-prerequisite');
-    Route::post('/bulk-lock', [App\Http\Controllers\AdminOverrideController::class, 'bulkLock'])
-         ->name('admin.overrides.bulk-lock');
-    Route::post('/bulk-unlock', [App\Http\Controllers\AdminOverrideController::class, 'bulkUnlock'])
-         ->name('admin.overrides.bulk-unlock');
-    Route::get('/list/{programId}', [App\Http\Controllers\AdminOverrideController::class, 'getItemOverrides'])
-         ->name('admin.overrides.list');
-});
 
 // Admin side API routes
 Route::get('admin/programs/{program}/batches',   [AdminModuleController::class, 'getBatchesForProgram']);
@@ -1372,9 +1087,6 @@ Route::get('/admin/analytics/subject/{id}', [AdminAnalyticsController::class, 'g
 Route::get('/admin/analytics/export', [AdminAnalyticsController::class, 'export'])
      ->name('admin.analytics.export');
 
-Route::get('/admin/analytics/export-complete', [AdminAnalyticsController::class, 'exportComplete'])
-     ->name('admin.analytics.export-complete');
-
 Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 'generateSubjectReport'])
      ->name('admin.analytics.subject-report');
 
@@ -1648,10 +1360,6 @@ Route::middleware(['professor.auth'])
          ->name('meetings.start');
     Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
          ->name('meetings.finish');
-    
-    // Calendar route
-    Route::get('/calendar', [ProfessorDashboardController::class, 'calendar'])
-         ->name('calendar');
     
     // Additional professor routes for meetings/settings
     Route::get('/settings', [ProfessorDashboardController::class, 'settings'])
@@ -2114,18 +1822,18 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
         // 1. Check if module exists
         $module = \App\Models\Module::find($moduleId);
         if (!$module) {
-            echo "<p style='color: red;'>âŒ Module {$moduleId} not found!</p>";
+            echo "<p style='color: red;'>❌ Module {$moduleId} not found!</p>";
             return;
         }
-        echo "<p style='color: green;'>âœ… Module found: {$module->module_name}</p>";
+        echo "<p style='color: green;'>✅ Module found: {$module->module_name}</p>";
         
         // 2. Check courses linked to this module
         $courses = \App\Models\Course::where('module_id', $moduleId)->get();
         echo "<h3>Courses for this module:</h3>";
         if ($courses->isEmpty()) {
-            echo "<p style='color: red;'>âŒ No courses found for module {$moduleId}</p>";
+            echo "<p style='color: red;'>❌ No courses found for module {$moduleId}</p>";
         } else {
-            echo "<p style='color: green;'>âœ… Found " . $courses->count() . " courses:</p>";
+            echo "<p style='color: green;'>✅ Found " . $courses->count() . " courses:</p>";
             foreach ($courses as $course) {
                 echo "<ul>";
                 echo "<li>Course ID: {$course->subject_id} - {$course->subject_name}</li>";
@@ -2134,7 +1842,7 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
                 $lessons = \App\Models\Lesson::where('course_id', $course->subject_id)->get();
                 echo "<li>Lessons (" . $lessons->count() . "):</li>";
                 if ($lessons->isEmpty()) {
-                    echo "<ul><li style='color: orange;'>âš ï¸ No lessons found</li></ul>";
+                    echo "<ul><li style='color: orange;'>⚠️ No lessons found</li></ul>";
                 } else {
                     echo "<ul>";
                     foreach ($lessons as $lesson) {
@@ -2145,7 +1853,7 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
                         echo "<ul>";
                         echo "<li>Content Items (" . $contentItems->count() . "):</li>";
                         if ($contentItems->isEmpty()) {
-                            echo "<ul><li style='color: orange;'>âš ï¸ No content items found</li></ul>";
+                            echo "<ul><li style='color: orange;'>⚠️ No content items found</li></ul>";
                         } else {
                             echo "<ul>";
                             foreach ($contentItems as $item) {
@@ -2199,7 +1907,7 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
         echo "<pre>" . json_encode($result->getData(), JSON_PRETTY_PRINT) . "</pre>";
         
     } catch (\Exception $e) {
-        echo "<p style='color: red;'>âŒ Error: " . $e->getMessage() . "</p>";
+        echo "<p style='color: red;'>❌ Error: " . $e->getMessage() . "</p>";
         echo "<pre>" . $e->getTraceAsString() . "</pre>";
     }
 })->name('test.module.content');
@@ -2260,54 +1968,3 @@ Route::prefix('test-api/test')->group(function () {
     Route::get('/course-access', [\App\Http\Controllers\CourseTestController::class, 'testCourseAccess']);
     Route::get('/course-enrollment', [\App\Http\Controllers\CourseTestController::class, 'testCreateCourseEnrollment']);
 });
-
-// Certificate Management Route
-Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates');
-
-// Certificate viewing and downloading
-Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
-Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');
-
-// Test upload page for debugging
-Route::get('/test-upload', function() {
-    return view('test-upload');
-});
-
-Route::get('/test-direct-upload', function() {
-    return view('test-direct-upload');
-});
-
-Route::post('/test-upload', function(\Illuminate\Http\Request $request) {
-    if ($request->hasFile('attachment')) {
-        $file = $request->file('attachment');
-        $path = $file->storeAs('content', time() . '_' . $file->getClientOriginalName(), 'public');
-        return ['success' => true, 'path' => $path, 'file_exists' => file_exists(storage_path('app/public/' . $path))];
-    }
-    return ['success' => false, 'message' => 'No file detected'];
-});
-
-// Admin Payment Management Routes
-Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
-    // Payment management
-    Route::get('/payments/pending', [\App\Http\Controllers\Admin\PaymentController::class, 'pending'])->name('admin.payments.pending');
-    Route::get('/payments/history', [\App\Http\Controllers\Admin\PaymentController::class, 'history'])->name('admin.payments.history');
-    Route::get('/payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('admin.payments.show');
-    Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\PaymentController::class, 'approve'])->name('admin.payments.approve');
-    Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\PaymentController::class, 'reject'])->name('admin.payments.reject');
-    Route::get('/payments/{id}/download-proof', [\App\Http\Controllers\Admin\PaymentController::class, 'downloadProof'])->name('admin.payments.download-proof');
-    Route::get('/payments/stats', [\App\Http\Controllers\Admin\PaymentController::class, 'getStats'])->name('admin.payments.stats');
-    
-    // Payment method field management
-    Route::get('/payment-methods/settings', function() {
-        return view('admin.payment-methods.settings');
-    })->name('admin.payment-methods.settings');
-    
-    Route::get('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'apiIndex']);
-    Route::post('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'store']);
-    Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
-    Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
-});
-
-// Payment Method Field Configuration (for admin dynamic fields)
-Route::get('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'getPaymentMethodFields']);
-Route::post('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'savePaymentMethodFields']);

@@ -654,20 +654,20 @@ class RegistrationController extends Controller
                 'extracted_text_preview' => substr($extractedText, 0, 200)
             ]);
 
-            // Enhanced name validation with better cursive text handling
+            // Validate name against document with error handling - made less strict
             try {
                 $nameValid = $this->ocrService->validateUserName($extractedText, $firstName, $lastName);
                 
-                // Additional lenient checks for difficult documents
+                // If strict validation fails, try a more lenient approach
                 if (!$nameValid) {
-                    // Check if at least one name appears with some flexibility
-                    $firstNameExists = $this->flexibleNameSearch($extractedText, $firstName);
-                    $lastNameExists = $this->flexibleNameSearch($extractedText, $lastName);
+                    // Check if at least one name appears in the document
+                    $firstNameExists = stripos($extractedText, $firstName) !== false;
+                    $lastNameExists = stripos($extractedText, $lastName) !== false;
                     
-                    // Accept if at least one name is found with reasonable confidence
+                    // Accept if at least one name is found
                     if ($firstNameExists || $lastNameExists) {
                         $nameValid = true;
-                        Log::info('Name validation passed with flexible search', [
+                        Log::info('Name validation passed with lenient check', [
                             'first_name_found' => $firstNameExists,
                             'last_name_found' => $lastNameExists
                         ]);
@@ -675,8 +675,7 @@ class RegistrationController extends Controller
                 }
             } catch (\Exception $e) {
                 Log::warning('Name validation failed with error', ['error' => $e->getMessage()]);
-                // For problematic documents, skip strict name validation
-                $nameValid = true;
+                $nameValid = true; // Skip validation if there's an error
             }
             
             // Enhanced document type validation with error handling
@@ -696,12 +695,12 @@ class RegistrationController extends Controller
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Name validation failed. The document does not appear to contain your full name. Please ensure the document is clear and contains your complete name, or try uploading a different image.'
+                    'message' => 'Name validation failed. The document does not appear to contain your full name. Please ensure the document is clear and contains your complete name.'
                 ], 400);
             }
 
-            // Check document type validation with more lenient approach
-            if (!$documentValidation['valid'] && $documentValidation['confidence'] < 0.5) {
+            // Check document type validation
+            if (!$documentValidation['valid'] && $documentValidation['confidence'] < 1) {
                 Log::warning('Document type validation failed', [
                     'field_name' => $fieldName,
                     'confidence' => $documentValidation['confidence'],
@@ -715,25 +714,9 @@ class RegistrationController extends Controller
                 ], 400);
             }
 
-            // Get enhanced program suggestions with better error handling
+            // Get program suggestions with error handling
             try {
                 $suggestions = $this->ocrService->suggestPrograms($extractedText);
-                
-                // Validate suggestions format for frontend
-                $validatedSuggestions = [];
-                foreach ($suggestions as $suggestion) {
-                    if (isset($suggestion['program_id']) && isset($suggestion['program_name'])) {
-                        $validatedSuggestions[] = [
-                            'program_id' => $suggestion['program_id'],
-                            'program_name' => $suggestion['program_name'],
-                            'program_description' => $suggestion['program_description'] ?? '',
-                            'score' => $suggestion['score'] ?? 1,
-                            'matching_keywords' => $suggestion['matching_keywords'] ?? []
-                        ];
-                    }
-                }
-                $suggestions = $validatedSuggestions;
-                
             } catch (\Exception $e) {
                 Log::warning('Program suggestions failed', ['error' => $e->getMessage()]);
                 $suggestions = [];
@@ -745,23 +728,6 @@ class RegistrationController extends Controller
             } catch (\Exception $e) {
                 Log::warning('Certificate level analysis failed', ['error' => $e->getMessage()]);
                 $certificateLevel = null;
-            }
-            
-            // Store file in dynamic columns using DynamicColumnHandler
-            try {
-                $dynamicColumnHandler = new \App\Services\DynamicColumnHandler();
-                $columnName = $dynamicColumnHandler->storeFileInTables(
-                    $fieldName, 
-                    $permanentPath, 
-                    session('user_id'),
-                    session('registration_id'),
-                    session('student_id')
-                );
-                
-                Log::info('File stored in dynamic columns', ['column_name' => $columnName]);
-            } catch (\Exception $e) {
-                Log::warning('Dynamic column storage failed', ['error' => $e->getMessage()]);
-                // Continue even if dynamic storage fails
             }
             
             Log::info('OCR validation completed successfully', [
@@ -860,51 +826,5 @@ class RegistrationController extends Controller
             Log::warning('Extract name failed', ['error' => $e->getMessage()]);
             return 'N/A';
         }
-    }
-    
-    /**
-     * Flexible name search for difficult OCR texts
-     */
-    private function flexibleNameSearch($text, $name)
-    {
-        $text = strtolower($text);
-        $name = strtolower(trim($name));
-        
-        if (strlen($name) < 2) {
-            return false;
-        }
-        
-        // Direct substring search
-        if (stripos($text, $name) !== false) {
-            return true;
-        }
-        
-        // Split text into words and check each word
-        $words = preg_split('/\s+/', $text);
-        foreach ($words as $word) {
-            // Clean word
-            $word = preg_replace('/[^a-z]/', '', strtolower($word));
-            
-            if (strlen($word) >= 3 && strlen($name) >= 3) {
-                // Calculate similarity
-                $similarity = 0;
-                similar_text($name, $word, $similarity);
-                
-                // Accept if similarity is high enough
-                if ($similarity > 75) {
-                    return true;
-                }
-                
-                // Use Levenshtein distance for typo tolerance
-                $distance = levenshtein($name, $word);
-                $threshold = max(1, strlen($name) * 0.3); // Allow 30% errors
-                
-                if ($distance <= $threshold) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
     }
 }

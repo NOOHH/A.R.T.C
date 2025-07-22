@@ -26,8 +26,8 @@ class BatchEnrollController extends Controller
             'batch_name' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,program_id',
             'max_capacity' => 'required|integer|min:1',
-            'registration_deadline' => 'required|date',
-            'start_date' => 'required|date', // Removed after:registration_deadline for flexibility
+            'registration_deadline' => 'required|date|after:today',
+            'start_date' => 'required|date|after:registration_deadline',
             'description' => 'nullable|string'
         ]);
 

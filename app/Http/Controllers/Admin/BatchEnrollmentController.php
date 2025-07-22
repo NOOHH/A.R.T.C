@@ -50,7 +50,7 @@ class BatchEnrollmentController extends Controller
             'professor_ids' => 'nullable|array',
             'professor_ids.*' => 'exists:professors,professor_id',
             'max_capacity' => 'required|integer|min:1',
-            'registration_deadline' => 'nullable|date',
+            'enrollment_deadline' => 'nullable|date',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
             'batch_description' => 'nullable|string',
@@ -81,7 +81,7 @@ class BatchEnrollmentController extends Controller
             'max_capacity' => $request->max_capacity,
             'current_capacity' => 0,
             'batch_status' => $status,
-            'registration_deadline' => $request->registration_deadline ? \Carbon\Carbon::parse($request->registration_deadline) : null,
+            'registration_deadline' => $request->enrollment_deadline ? \Carbon\Carbon::parse($request->enrollment_deadline) : null,
             'start_date' => $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null,
             'end_date' => $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null,
             'description' => $request->batch_description,
@@ -410,12 +410,8 @@ class BatchEnrollmentController extends Controller
             'program_id' => 'required|exists:programs,program_id',
             'max_capacity' => 'required|integer|min:1',
             'registration_deadline' => 'required|date',
-            'start_date' => 'required|date', // Removed after:registration_deadline for flexibility
-            'description' => 'nullable|string',
-            'batch_status' => 'nullable|in:pending,available,ongoing,completed,closed',
-            'end_date' => 'nullable|date|after:start_date',
-            'professor_ids' => 'nullable|array',
-            'professor_ids.*' => 'exists:professors,professor_id'
+            'start_date' => 'required|date|after:registration_deadline',
+            'description' => 'nullable|string'
         ]);
 
         $batch = StudentBatch::findOrFail($id);
@@ -426,20 +422,13 @@ class BatchEnrollmentController extends Controller
             'max_capacity' => $request->max_capacity,
             'registration_deadline' => Carbon::parse($request->registration_deadline),
             'start_date' => Carbon::parse($request->start_date),
-            'end_date' => $request->end_date ? Carbon::parse($request->end_date) : null,
-            'description' => $request->description,
-            'batch_status' => $request->batch_status ?? $batch->batch_status
+            'description' => $request->description
         ]);
-
-        // Handle professor assignments
-        if ($request->has('professor_ids')) {
-            $batch->professors()->sync($request->professor_ids ?? []);
-        }
 
         return response()->json([
             'success' => true,
             'message' => 'Batch updated successfully',
-            'batch' => $batch->load('program', 'professors')
+            'batch' => $batch->load('program')
         ]);
     }
 

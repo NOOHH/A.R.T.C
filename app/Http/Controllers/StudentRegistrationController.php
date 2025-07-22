@@ -16,8 +16,6 @@ use App\Models\Program;
 use App\Models\Package;
 use App\Models\FormRequirement;
 use App\Models\StudentBatch;
-use App\Services\BatchCreationService;
-use Illuminate\Support\Facades\Mail;
 
 class StudentRegistrationController extends Controller
 {
@@ -129,31 +127,12 @@ class StudentRegistrationController extends Controller
                 }
                 
                 if ($field->is_required) {
+                    $rules[$field->field_name] = 'required';
                     if ($field->field_type === 'file') {
-                        // Allow both file uploads and string paths (for pre-uploaded OCR files)
-                        $rules[$field->field_name] = 'required';
-                        // Don't add file validation here since we might have paths instead of files
-                    } else {
-                        $rules[$field->field_name] = 'required';
+                        $rules[$field->field_name] .= '|file|max:10240'; // 10MB max
                     }
                 }
             }
-            
-            // Add validation rules for common file fields that might be sent as paths
-            $commonFileFields = [
-                'valid_id' => 'nullable|string|max:500',
-                'birth_certificate' => 'nullable|string|max:500', 
-                'good_moral' => 'nullable|string|max:500',
-                'diploma' => 'nullable|string|max:500',
-                'tor' => 'nullable|string|max:500',
-                'school_id' => 'nullable|string|max:500',
-                'diploma_certificate' => 'nullable|string|max:500',
-                'certificate_of_good_moral_character' => 'nullable|string|max:500',
-                'psa_birth_certificate' => 'nullable|string|max:500'
-            ];
-            
-            // Add these validation rules
-            $rules = array_merge($rules, $commonFileFields);
 
             // Validate request
             $validator = Validator::make($request->all(), $rules);
@@ -335,18 +314,6 @@ class StudentRegistrationController extends Controller
                                         'file_path' => $validatedFilePath
                                     ]);
                                 }
-                            } else {
-                                // Check for direct field name (OCR validation saves with field name directly)
-                                if ($request->has($fieldName)) {
-                                    $directFilePath = $request->input($fieldName);
-                                    if ($directFilePath && is_string($directFilePath) && !empty($directFilePath)) {
-                                        $registration->{$fieldName} = $directFilePath;
-                                        Log::info("Using direct file path for field {$fieldName}", [
-                                            'field_name' => $fieldName,
-                                            'file_path' => $directFilePath
-                                        ]);
-                                    }
-                                }
                             }
                             
                         } elseif ($field->field_type === 'module_selection' && $request->has($fieldName)) {
@@ -385,27 +352,6 @@ class StudentRegistrationController extends Controller
                 } catch (\Exception $e) {
                     Log::warning("Error processing field {$fieldName}: " . $e->getMessage());
                     // Continue processing other fields
-                }
-            }
-
-            // Additional: Handle pre-uploaded file paths sent with correct database field names
-            $commonFileFields = [
-                'valid_id', 'birth_certificate', 'good_moral', 'diploma', 'tor', 
-                'school_id', 'diploma_certificate', 'certificate_of_good_moral_character', 
-                'psa_birth_certificate'
-            ];
-            
-            foreach ($commonFileFields as $dbFieldName) {
-                // Check if this field was sent in the request and the column exists
-                if ($request->has($dbFieldName) && FormRequirement::columnExists($dbFieldName)) {
-                    $filePath = $request->input($dbFieldName);
-                    if ($filePath && is_string($filePath) && !empty(trim($filePath))) {
-                        $registration->{$dbFieldName} = trim($filePath);
-                        Log::info("Added pre-uploaded file path for {$dbFieldName}", [
-                            'field_name' => $dbFieldName,
-                            'file_path' => trim($filePath)
-                        ]);
-                    }
                 }
             }
 
@@ -478,37 +424,10 @@ class StudentRegistrationController extends Controller
                 
                 // Check if the column exists in the students table and if we have data for it
                 try {
-                    if (FormRequirement::columnExists($fieldName, 'students')) {
-                        if ($field->field_type === 'file') {
-                            // Handle file uploads - check multiple possible sources
-                            $filePath = null;
-                            
-                            // 1. Check if registration has the file path
-                            if (isset($registration->{$fieldName}) && !empty($registration->{$fieldName})) {
-                                $filePath = $registration->{$fieldName};
-                                Log::info("Found file path in registration for {$fieldName}", ['path' => $filePath]);
-                            }
-                            
-                            // 2. Check for validated file path from OCR (fieldname_path format)
-                            elseif ($request->has($fieldName . '_path')) {
-                                $filePath = $request->input($fieldName . '_path');
-                                Log::info("Found validated file path for {$fieldName}", ['path' => $filePath]);
-                            }
-                            
-                            // 3. Check if we have an actual file upload
-                            elseif ($request->hasFile($fieldName)) {
-                                $uploadedFile = $request->file($fieldName);
-                                $fileName = time() . '_' . uniqid() . '_' . $uploadedFile->getClientOriginalName();
-                                $filePath = $uploadedFile->storeAs('uploads/students', $fileName, 'public');
-                                Log::info("Uploaded new file for {$fieldName}", ['path' => $filePath]);
-                            }
-                            
-                            // Store the file path if we found one
-                            if ($filePath) {
-                                $studentData[$fieldName] = $filePath;
-                                Log::info("Set file path for student field {$fieldName}", ['path' => $filePath]);
-                            }
-                            
+                    if (FormRequirement::columnExists($fieldName, 'students') && $request->has($fieldName)) {
+                        if ($field->field_type === 'file' && $request->hasFile($fieldName)) {
+                            // Handle file uploads - store same file path as registration
+                            $studentData[$fieldName] = $registration->{$fieldName} ?? null;
                         } elseif ($field->field_type === 'module_selection' && $request->has($fieldName)) {
                             // Handle module selection
                             $selectedModules = $request->input($fieldName, []);
@@ -530,31 +449,6 @@ class StudentRegistrationController extends Controller
                     }
                 } catch (\Exception $e) {
                     Log::warning("Error processing student field {$fieldName}: " . $e->getMessage());
-                }
-            }
-            
-            // ADDITIONAL: Copy common file fields from registration to student
-            $commonFileFields = ['good_moral', 'PSA', 'Course_Cert', 'TOR', 'Cert_of_Grad', 'photo_2x2', 
-                               'valid_id', 'birth_certificate', 'diploma_certificate', 'medical_certificate', 
-                               'passport_photo', 'diploma', 'transcript_of_records', 'certificate_of_good_moral_character', 
-                               'psa_birth_certificate', 'transcript_records', 'moral_certificate', 'birth_cert', 
-                               'id_photo', 'barangay_clearance', 'police_clearance', 'nbi_clearance'];
-            
-            foreach ($commonFileFields as $fileField) {
-                try {
-                    // Check if field exists in both tables and registration has data
-                    if (FormRequirement::columnExists($fileField, 'students') && 
-                        FormRequirement::columnExists($fileField, 'registrations') &&
-                        isset($registration->{$fileField}) && !empty($registration->{$fileField})) {
-                        
-                        $studentData[$fileField] = $registration->{$fileField};
-                        Log::info("Copied file field from registration to student", [
-                            'field' => $fileField,
-                            'path' => $registration->{$fileField}
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    Log::warning("Error copying file field {$fileField}: " . $e->getMessage());
                 }
             }
             
@@ -586,65 +480,10 @@ class StudentRegistrationController extends Controller
                 'batch_access_granted' => false, // Default to false, admin will grant access
             ];
             
-            // Handle batch assignment and automatic batch creation
-            $batchId = null;
-            $learningMode = strtolower($request->learning_mode);
-            
-            if ($learningMode === 'synchronous') {
-                $batchService = new BatchCreationService();
-                
-                // Check if a specific batch was selected
-                if ($request->batch_id) {
-                    $selectedBatch = StudentBatch::find($request->batch_id);
-                    
-                    if ($selectedBatch && $selectedBatch->current_capacity < $selectedBatch->max_capacity) {
-                        // Use the selected batch
-                        $batchId = $selectedBatch->batch_id;
-                        $selectedBatch->increment('current_capacity');
-                        
-                        Log::info('Assigned student to existing selected batch', [
-                            'batch_id' => $batchId,
-                            'batch_name' => $selectedBatch->batch_name,
-                            'new_capacity' => $selectedBatch->current_capacity + 1
-                        ]);
-                    } else {
-                        // Selected batch is full or doesn't exist, create new one
-                        $newBatch = $batchService->createPendingBatch($request->program_id);
-                        $batchId = $newBatch->batch_id;
-                        $newBatch->increment('current_capacity');
-                        
-                        Log::info('Selected batch was full, created new batch', [
-                            'original_batch_id' => $request->batch_id,
-                            'new_batch_id' => $batchId,
-                            'new_batch_name' => $newBatch->batch_name
-                        ]);
-                    }
-                } else {
-                    // No specific batch selected, find or create one
-                    $batch = $batchService->findOrCreateBatch($request->program_id, $learningMode);
-                    
-                    if ($batch) {
-                        $batchId = $batch->batch_id;
-                        $batch->increment('current_capacity');
-                        
-                        Log::info('Auto-assigned student to batch', [
-                            'batch_id' => $batchId,
-                            'batch_name' => $batch->batch_name,
-                            'new_capacity' => $batch->current_capacity + 1
-                        ]);
-                    }
-                }
-                
-                // Include batch_id in enrollment data
-                if ($batchId) {
-                    $enrollmentData['batch_id'] = $batchId;
-                }
-            }
-            
-            // Legacy support: Include batch_id if it was selected during registration
-            if ($request->batch_id && !isset($enrollmentData['batch_id'])) {
+            // Include batch_id if it was selected during registration
+            if ($request->batch_id) {
                 $enrollmentData['batch_id'] = $request->batch_id;
-                Log::info('Creating enrollment with legacy batch_id during registration', [
+                Log::info('Creating enrollment with batch_id during registration', [
                     'batch_id' => $request->batch_id,
                     'registration_id' => $registration->registration_id
                 ]);
@@ -1171,7 +1010,7 @@ class StudentRegistrationController extends Controller
                 } else {
                     // Check if referral code is from a professor
                     $professor = \App\Models\Professor::where('referral_code', $validated['referral_code'])
-                        ->where('professor_archived', false)
+                        ->where('is_archived', false)
                         ->first();
                     
                     if ($professor) {
@@ -1813,18 +1652,6 @@ class StudentRegistrationController extends Controller
             // In a real application, send email here
             // Mail::to($email)->send(new EnrollmentOTPMail($otpCode));
 
-            // Send OTP via email (implement your email sending logic here)
-            try {
-                \Mail::to($email)->send(new \App\Mail\EnrollmentOTPMail($otpCode));
-            } catch (\Exception $mailEx) {
-                \Log::error('Failed to send OTP email', [
-                    'error' => $mailEx->getMessage(),
-                    'email' => $email,
-                    'otp' => $otpCode
-                ]);
-                // Optionally, you can return a response here or continue for debug
-            }
-
             return response()->json([
                 'success' => true,
                 'message' => 'OTP sent successfully',
@@ -1928,7 +1755,7 @@ class StudentRegistrationController extends Controller
 
             // Check if referral code exists in professors table
             $professor = \App\Models\Professor::where('referral_code', $referralCode)
-                ->where('professor_archived', false)
+                ->where('is_active', true)
                 ->first();
 
             if ($professor) {
@@ -1942,7 +1769,7 @@ class StudentRegistrationController extends Controller
 
             // Check if referral code exists in directors table
             $director = \App\Models\Director::where('referral_code', $referralCode)
-                ->where('directors_archived', false)
+                ->where('is_active', true)
                 ->first();
 
             if ($director) {

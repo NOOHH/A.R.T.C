@@ -192,10 +192,6 @@
                                         <i class="bi bi-clock"></i>
                                         <span>Pending</span>
                                     </a>
-                                    <a href="{{ route('admin.student.registration.rejected') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.rejected') active @endif">
-                                        <i class="bi bi-x-circle text-danger"></i>
-                                        <span>Registration Rejected</span>
-                                    </a>
                                     <a href="{{ route('admin.student.registration.history') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.history') active @endif">
                                         <i class="bi bi-archive"></i>
                                         <span>History</span>
@@ -203,10 +199,6 @@
                                     <a href="{{ route('admin.student.registration.payment.pending') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.pending') active @endif">
                                         <i class="bi bi-credit-card"></i>
                                         <span>Payment Pending</span>
-                                    </a>
-                                    <a href="{{ route('admin.student.registration.payment.rejected') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.rejected') active @endif">
-                                        <i class="bi bi-x-circle text-warning"></i>
-                                        <span>Payment Rejected</span>
                                     </a>
                                     <a href="{{ route('admin.student.registration.payment.history') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.payment.history') active @endif">
                                         <i class="bi bi-receipt"></i>

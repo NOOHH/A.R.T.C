@@ -13,7 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        //
+        Schema::table('existing_tables', function (Blueprint $table) {
+            //
+        });
     }
 
     /**
@@ -23,6 +25,8 @@ return new class extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('existing_tables', function (Blueprint $table) {
+            //
+        });
     }
 };

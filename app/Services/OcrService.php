@@ -375,144 +375,40 @@ class OcrService
     }
 
     /**
-     * Enhanced validation for user names with better cursive text handling
+     * Validate if user's name appears in the document
      */
     public function validateUserName($ocrText, $firstName, $lastName)
     {
         $text = strtolower($ocrText);
-        $firstName = strtolower(trim($firstName));
-        $lastName = strtolower(trim($lastName));
+        $firstName = strtolower($firstName);
+        $lastName = strtolower($lastName);
         
-        Log::info('Name validation attempt', [
-            'text_length' => strlen($text),
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'text_preview' => substr($text, 0, 200)
-        ]);
-        
-        // If either name is too short, be more lenient
-        if (strlen($firstName) < 3 || strlen($lastName) < 3) {
-            Log::info('Short name detected, using lenient validation');
-        }
-        
-        // Clean and normalize text for better matching
-        $cleanText = $this->cleanTextForNameValidation($text);
-        $cleanFirstName = $this->cleanTextForNameValidation($firstName);
-        $cleanLastName = $this->cleanTextForNameValidation($lastName);
-        
-        // 1. Check for exact matches and common variations
+        // Check for exact matches and allow some variations
         $patterns = [
-            $cleanFirstName . ' ' . $cleanLastName,
-            $cleanLastName . ' ' . $cleanFirstName,
-            $cleanFirstName . ', ' . $cleanLastName,
-            $cleanLastName . ', ' . $cleanFirstName,
-            $cleanFirstName . ',' . $cleanLastName,
-            $cleanLastName . ',' . $cleanFirstName,
+            $firstName . ' ' . $lastName,
+            $lastName . ' ' . $firstName,
+            $firstName . ', ' . $lastName,
+            $lastName . ', ' . $firstName,
         ];
         
         foreach ($patterns as $pattern) {
-            if (strpos($cleanText, $pattern) !== false) {
-                Log::info('Name validation successful - exact pattern match', ['pattern' => $pattern]);
+            if (strpos($text, $pattern) !== false) {
                 return true;
             }
         }
         
-        // 2. Check if both names appear anywhere in the text (more lenient)
-        $firstNameFound = strpos($cleanText, $cleanFirstName) !== false;
-        $lastNameFound = strpos($cleanText, $cleanLastName) !== false;
+        // Allow small typos using Levenshtein distance
+        $fullName = $firstName . ' ' . $lastName;
+        $words = explode(' ', $text);
         
-        if ($firstNameFound && $lastNameFound) {
-            Log::info('Name validation successful - both names found separately');
-            return true;
-        }
-        
-        // 3. Check for partial matches with Levenshtein distance (handles OCR errors)
-        $words = preg_split('/\s+/', $cleanText);
-        $fullName = $cleanFirstName . ' ' . $cleanLastName;
-        
-        foreach ($words as $i => $word) {
-            if (isset($words[$i + 1])) {
-                $nameCandidate = $word . ' ' . $words[$i + 1];
-                $distance = levenshtein($fullName, $nameCandidate);
-                $threshold = max(2, strlen($fullName) * 0.3); // Allow 30% character difference
-                
-                if ($distance <= $threshold) {
-                    Log::info('Name validation successful - fuzzy match', [
-                        'candidate' => $nameCandidate,
-                        'distance' => $distance,
-                        'threshold' => $threshold
-                    ]);
-                    return true;
-                }
+        for ($i = 0; $i < count($words) - 1; $i++) {
+            $nameCandidate = $words[$i] . ' ' . $words[$i + 1];
+            if (levenshtein($fullName, $nameCandidate) <= 2) {
+                return true;
             }
         }
-        
-        // 4. Try individual name matching with fuzzy logic
-        foreach ($words as $word) {
-            // Check first name similarity
-            if (strlen($word) >= 3) {
-                $firstDistance = levenshtein($cleanFirstName, $word);
-                $firstThreshold = max(1, strlen($cleanFirstName) * 0.4);
-                
-                if ($firstDistance <= $firstThreshold) {
-                    $firstNameFuzzyFound = true;
-                }
-                
-                // Check last name similarity
-                $lastDistance = levenshtein($cleanLastName, $word);
-                $lastThreshold = max(1, strlen($cleanLastName) * 0.4);
-                
-                if ($lastDistance <= $lastThreshold) {
-                    $lastNameFuzzyFound = true;
-                }
-            }
-        }
-        
-        if (isset($firstNameFuzzyFound) && isset($lastNameFuzzyFound)) {
-            Log::info('Name validation successful - both names found with fuzzy matching');
-            return true;
-        }
-        
-        // 5. Check if at least one name is found with good confidence (very lenient for difficult documents)
-        if ($firstNameFound || $lastNameFound) {
-            Log::info('Name validation successful - at least one name found (lenient mode)');
-            return true;
-        }
-        
-        Log::warning('Name validation failed - no matches found', [
-            'first_name_found' => $firstNameFound,
-            'last_name_found' => $lastNameFound,
-            'cleaned_text_preview' => substr($cleanText, 0, 100)
-        ]);
         
         return false;
-    }
-    
-    /**
-     * Clean text for better name validation
-     */
-    private function cleanTextForNameValidation($text)
-    {
-        // Remove extra whitespace and normalize
-        $text = preg_replace('/\s+/', ' ', $text);
-        
-        // Remove common OCR artifacts
-        $text = str_replace(['|', '_', '~', '^', '`'], '', $text);
-        
-        // Fix common cursive OCR errors
-        $corrections = [
-            'rn' => 'm',    // 'rn' often misread as 'm' in cursive
-            'nn' => 'm',    // 'nn' often misread as 'm'
-            'uu' => 'w',    // 'uu' often misread as 'w'
-            'ii' => 'u',    // 'ii' often misread as 'u'
-            'ri' => 'n',    // 'ri' often misread as 'n'
-        ];
-        
-        foreach ($corrections as $wrong => $correct) {
-            $text = str_replace($wrong, $correct, $text);
-        }
-        
-        return trim($text);
     }
 
     /**
@@ -730,18 +626,15 @@ class OcrService
     }
 
     /**
-     * Enhanced program suggestion with better matching and fallback handling
+     * Suggest programs based on OCR extracted keywords
      */
     public function suggestPrograms($ocrText)
     {
         $keywords = $this->extractKeywords($ocrText);
         
         if (empty($keywords)) {
-            Log::info('No keywords extracted from OCR text', ['text_preview' => substr($ocrText, 0, 200)]);
             return [];
         }
-        
-        Log::info('Extracted keywords for program suggestion', ['keywords' => $keywords]);
         
         $programs = Program::where('is_archived', 0)->get();
         $modules = Module::where('is_archived', 0)->get()->groupBy('program_id');
@@ -750,17 +643,14 @@ class OcrService
         
         foreach ($programs as $program) {
             $score = 0;
-            $matchingKeywords = [];
             
             // Check program name and description
             foreach ($keywords as $keyword) {
                 if (stripos($program->program_name, $keyword) !== false) {
                     $score += 3; // Higher weight for program name matches
-                    $matchingKeywords[] = $keyword;
                 }
                 if ($program->program_description && stripos($program->program_description, $keyword) !== false) {
                     $score += 2;
-                    $matchingKeywords[] = $keyword;
                 }
             }
             
@@ -770,11 +660,9 @@ class OcrService
                     foreach ($keywords as $keyword) {
                         if (stripos($module->module_name, $keyword) !== false) {
                             $score += 1;
-                            $matchingKeywords[] = $keyword;
                         }
                         if ($module->module_description && stripos($module->module_description, $keyword) !== false) {
                             $score += 1;
-                            $matchingKeywords[] = $keyword;
                         }
                     }
                 }
@@ -782,11 +670,24 @@ class OcrService
             
             if ($score > 0) {
                 $suggestions[] = [
-                    'program_id' => $program->program_id,
-                    'program_name' => $program->program_name,
-                    'program_description' => $program->program_description,
+                    'program' => $program,
                     'score' => $score,
-                    'matching_keywords' => array_unique($matchingKeywords)
+                    'matching_keywords' => array_filter($keywords, function($keyword) use ($program, $modules) {
+                        $match = stripos($program->program_name, $keyword) !== false ||
+                                ($program->program_description && stripos($program->program_description, $keyword) !== false);
+                        
+                        if (!$match && isset($modules[$program->program_id])) {
+                            foreach ($modules[$program->program_id] as $module) {
+                                if (stripos($module->module_name, $keyword) !== false ||
+                                    ($module->module_description && stripos($module->module_description, $keyword) !== false)) {
+                                    $match = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        return $match;
+                    })
                 ];
             }
         }
@@ -796,84 +697,7 @@ class OcrService
             return $b['score'] - $a['score'];
         });
         
-        $topSuggestions = array_slice($suggestions, 0, 5); // Return top 5 suggestions
-        
-        Log::info('Program suggestions generated', [
-            'total_suggestions' => count($suggestions),
-            'top_suggestions' => count($topSuggestions),
-            'top_programs' => array_column($topSuggestions, 'program_name')
-        ]);
-        
-        // If no exact matches found, try to find related programs
-        if (empty($topSuggestions)) {
-            Log::info('No direct matches found, looking for related programs');
-            $topSuggestions = $this->findRelatedPrograms($keywords, $programs);
-        }
-        
-        // If still no matches, provide a helpful message but don't return empty
-        if (empty($topSuggestions)) {
-            Log::info('No related programs found for keywords', ['keywords' => $keywords]);
-            // Return empty array - the frontend will handle this case
-            return [];
-        }
-        
-        return $topSuggestions;
-    }
-    
-    /**
-     * Find related programs when no direct matches are found
-     */
-    private function findRelatedPrograms($keywords, $programs)
-    {
-        $relatedSuggestions = [];
-        
-        // Define broad category mappings
-        $categoryMappings = [
-            'science' => ['engineering', 'computer', 'technology', 'math', 'physics'],
-            'medical' => ['nursing', 'healthcare', 'medicine', 'health'],
-            'engineering' => ['engineer', 'technology', 'technical', 'mechanical', 'civil', 'electrical'],
-            'business' => ['management', 'administration', 'finance', 'accounting'],
-            'education' => ['teaching', 'teacher', 'education', 'academic'],
-        ];
-        
-        foreach ($keywords as $keyword) {
-            $keyword = strtolower($keyword);
-            
-            foreach ($categoryMappings as $category => $relatedTerms) {
-                if (in_array($keyword, $relatedTerms) || stripos($keyword, $category) !== false) {
-                    // Find programs that might be related to this category
-                    foreach ($programs as $program) {
-                        $programName = strtolower($program->program_name);
-                        foreach ($relatedTerms as $term) {
-                            if (stripos($programName, $term) !== false) {
-                                $relatedSuggestions[] = [
-                                    'program_id' => $program->program_id,
-                                    'program_name' => $program->program_name,
-                                    'program_description' => $program->program_description,
-                                    'score' => 1, // Lower score for related matches
-                                    'matching_keywords' => [$keyword],
-                                    'is_related' => true
-                                ];
-                                break 2; // Break out of both loops for this program
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Remove duplicates and limit results
-        $uniqueSuggestions = [];
-        $seenPrograms = [];
-        
-        foreach ($relatedSuggestions as $suggestion) {
-            if (!in_array($suggestion['program_id'], $seenPrograms)) {
-                $uniqueSuggestions[] = $suggestion;
-                $seenPrograms[] = $suggestion['program_id'];
-            }
-        }
-        
-        return array_slice($uniqueSuggestions, 0, 3);
+        return array_slice($suggestions, 0, 3); // Return top 3 suggestions
     }
 
 

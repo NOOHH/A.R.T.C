@@ -85,6 +85,18 @@
                 display: block; /* Show only on mobile when sidebar is active */
             }
         }
+        .modern-sidebar, .sidebar-content {
+            overflow-y: hidden !important;
+            overflow-x: hidden !important;
+        }
+        .modern-sidebar {
+            width: 240px;
+            transform: translateX(0);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .modern-sidebar.collapsed {
+            transform: translateX(-180px);
+        }
     </style>
 </head>
 <body>
@@ -161,18 +173,18 @@
                         </div>
 
                         {{-- Meetings --}}
-                        <li class="@if(Route::currentRouteName() === 'student.meetings') active @endif">
-                            <a href="{{ route('student.meetings') }}" class="sidebar-link">
-                                <span class="icon">🎥Meetings
+                        <div class="nav-item">
+                            <a href="{{ route('student.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'student.meetings') active @endif">
+                                <i class="bi bi-camera-video"></i>
+                                <span>Meetings</span>
                             </a>
-                        </li>
+                        </div>
 
                         {{-- My Programs --}}
                         <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'student.course')) active show @endif">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#programsMenu">
                                 <i class="bi bi-journal-bookmark"></i>
                                 <span>My Programs</span>
-                                <i class="bi bi-chevron-down dropdown-arrow"></i>
                             </a>
                             <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'student.course')) show @endif" id="programsMenu">
                                 <div class="submenu">

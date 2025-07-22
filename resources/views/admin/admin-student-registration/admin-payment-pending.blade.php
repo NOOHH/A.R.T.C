@@ -62,9 +62,6 @@
                                                         onclick="showViewDetailsModal({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-danger" onclick="showRejectPaymentModal({{ $enrollment->enrollment_id }})">
-                                                    <i class="bi bi-x-circle"></i> Reject
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -156,11 +153,6 @@ function showViewDetailsModal(enrollmentId) {
     new bootstrap.Modal(document.getElementById('viewDetailsModal')).show();
 }
 
-function showRejectPaymentModal(enrollmentId) {
-    currentEnrollmentId = enrollmentId;
-    new bootstrap.Modal(document.getElementById('rejectPaymentModal')).show();
-}
-
 function loadPaymentDetails(enrollmentId) {
     const paymentDetails = document.getElementById('paymentDetails');
     paymentDetails.innerHTML = `
@@ -201,50 +193,6 @@ function loadPaymentDetails(enrollmentId) {
             console.error('Error:', error);
             paymentDetails.innerHTML = `<div class="alert alert-danger">Error loading payment details</div>`;
         });
-}
-
-function generateFilesList(registration) {
-    const fileFields = {
-        'school_id': 'School ID',
-        'diploma': 'Diploma/Certificate', 
-        'tor': 'Transcript of Records',
-        'psa_birth_certificate': 'PSA Birth Certificate',
-        'form_137': 'Form 137',
-        'good_moral': 'Good Moral Certificate',
-        'birth_certificate': 'Birth Certificate',
-        'valid_id': 'Valid ID'
-    };
-    
-    let filesHtml = '<div class="row">';
-    let hasFiles = false;
-    
-    Object.keys(fileFields).forEach(fieldKey => {
-        if (registration[fieldKey]) {
-            hasFiles = true;
-            const fileName = registration[fieldKey].split('/').pop(); // Get filename from path
-            filesHtml += `
-                <div class="col-md-6 mb-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-file-earmark-pdf me-2 text-danger" style="font-size: 1.2rem;"></i>
-                        <div>
-                            <strong>${fileFields[fieldKey]}:</strong><br>
-                            <a href="/storage/${registration[fieldKey]}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye me-1"></i> View File
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    });
-    
-    filesHtml += '</div>';
-    
-    if (!hasFiles) {
-        filesHtml = '<p class="text-muted">No documents uploaded yet.</p>';
-    }
-    
-    return filesHtml;
 }
 
 function loadEnrollmentDetails(enrollmentId) {
@@ -311,21 +259,9 @@ function loadEnrollmentDetails(enrollmentId) {
                                         <p><strong>Payment Method:</strong> ${data.payment_method || 'N/A'}</p>
                                     </div>
                                     <div class="col-md-4">
-                                        <p><strong>Enrollment Date:</strong> ${new Date(data.created_at).toLocaleDateString()}</p>
+                                        <p><strong>Enrollment Date:</strong> ${data.enrollment_date}</p>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Uploaded Documents</h6>
-                            </div>
-                            <div class="card-body">
-                                ${generateFilesList(data.registration || {})}
                             </div>
                         </div>
                     </div>

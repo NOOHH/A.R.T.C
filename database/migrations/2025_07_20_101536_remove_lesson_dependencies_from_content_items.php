@@ -14,10 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('content_items', function (Blueprint $table) {
-            // Drop lesson_id column if it exists
-            if (Schema::hasColumn('content_items', 'lesson_id')) {
-                $table->dropColumn('lesson_id');
-            }
+            //
         });
     }
 
@@ -29,8 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('content_items', function (Blueprint $table) {
-            // Add lesson_id column back if needed
-            $table->unsignedBigInteger('lesson_id')->nullable();
+            //
         });
     }
 };

@@ -24,7 +24,6 @@ class StudentPaymentModalController extends Controller
     {
         try {
             $paymentMethods = PaymentMethod::where('is_enabled', true)
-                ->with('fields') // Include payment method fields
                 ->orderBy('sort_order')
                 ->get(['payment_method_id', 'method_name', 'method_type', 'description', 'qr_code_path', 'instructions']);
 

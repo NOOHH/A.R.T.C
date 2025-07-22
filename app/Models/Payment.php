@@ -24,22 +24,12 @@ class Payment extends Model
         'verified_by',
         'verified_at',
         'notes',
-        // Rejection system fields
-        'rejection_reason',
-        'rejected_fields',
-        'rejected_at',
-        'can_resubmit',
-        'resubmitted_at',
     ];
 
     protected $casts = [
         'payment_details' => 'array',
         'verified_at' => 'datetime',
         'amount' => 'decimal:2',
-        'rejected_fields' => 'array',
-        'rejected_at' => 'datetime',
-        'resubmitted_at' => 'datetime',
-        'can_resubmit' => 'boolean',
     ];
 
     // Relationships

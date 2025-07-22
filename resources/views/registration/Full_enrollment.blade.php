@@ -33,80 +33,6 @@
     <!-- Critical JavaScript functions for immediate availability -->
     <script>
         
-    // GLOBAL FILE INPUT PROTECTION: Prevent InvalidStateError by blocking unsafe value assignments
-    (function() {
-        const originalValueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
-        const originalValueSetter = originalValueDescriptor.set;
-        
-        Object.defineProperty(HTMLInputElement.prototype, 'value', {
-            get: originalValueDescriptor.get,
-            set: function(val) {
-                if (this.type === 'file' && val !== '') {
-                    console.warn('🚫 BLOCKED: Attempted to set file input value to non-empty string:', val);
-                    console.trace('Stack trace for blocked file input assignment:');
-                    return; // Block the dangerous assignment
-                }
-                return originalValueSetter.call(this, val);
-            },
-            configurable: true,
-            enumerable: true
-        });
-        
-        console.log('✅ Global file input protection enabled');
-    })();
-    
-    // File upload utility functions
-    function getFileInputElement(fieldName) {
-        return document.getElementById(fieldName) || document.querySelector(`input[name="${fieldName}"]`);
-    }
-    
-    function safelyClearFileInput(fieldName) {
-        const fileInput = getFileInputElement(fieldName);
-        if (!fileInput || fileInput.type !== 'file') return;
-        
-        try {
-            // Method 1: Create new file input element
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.id = fileInput.id;
-            newInput.name = fileInput.name;
-            newInput.className = fileInput.className;
-            
-            // Copy all attributes except value-related ones
-            Array.from(fileInput.attributes).forEach(attr => {
-                if (!['value', 'defaultvalue'].includes(attr.name.toLowerCase())) {
-                    newInput.setAttribute(attr.name, attr.value);
-                }
-            });
-            
-            // Copy data attributes
-            Object.keys(fileInput.dataset).forEach(key => {
-                newInput.dataset[key] = fileInput.dataset[key];
-            });
-            
-            // Re-attach event listeners
-            if (fileInput.hasAttribute('onchange')) {
-                newInput.setAttribute('onchange', fileInput.getAttribute('onchange'));
-            }
-            
-            // Replace old input
-            fileInput.parentNode.replaceChild(newInput, fileInput);
-            console.log('✅ File input safely cleared via replacement');
-            
-        } catch (e) {
-            console.warn('⚠️ Could not replace file input, trying form reset:', e);
-            try {
-                const form = fileInput.closest('form');
-                if (form) {
-                    // Reset only this specific input
-                    fileInput.value = '';
-                }
-            } catch (resetError) {
-                console.warn('⚠️ All clear methods failed:', resetError);
-            }
-        }
-    }
-        
     // User authentication state - check both Laravel session and PHP session (MOVED TO TOP)
     @php
         $userLoggedIn = session('user_id') || (isset($_SESSION['user_id']) && !empty($_SESSION['user_id']));
@@ -1219,32 +1145,6 @@
 
     // Enhanced file upload with OCR validation
     function handleFileUpload(inputElement) {
-        // CRITICAL SAFETY: Prevent any code from setting file input value to non-empty string
-        const originalValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-        const safeValueSetter = function(val) {
-            if (this.type === 'file' && val !== '') {
-                console.warn('⚠️ Blocked attempt to set file input value to:', val);
-                return; // Block the assignment
-            }
-            return originalValueSetter.call(this, val);
-        };
-        
-        // Temporarily override the value setter for ALL file inputs during this operation
-        Object.defineProperty(HTMLInputElement.prototype, 'value', {
-            set: safeValueSetter,
-            get: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').get,
-            configurable: true
-        });
-        
-        // Restore original after a delay to allow the operation to complete
-        setTimeout(() => {
-            Object.defineProperty(HTMLInputElement.prototype, 'value', {
-                set: originalValueSetter,
-                get: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').get,
-                configurable: true
-            });
-        }, 5000);
-
         const fieldName = inputElement.name;
         const file = inputElement.files[0];
         
@@ -1252,38 +1152,6 @@
         
         console.log('=== File Upload Started ===');
         console.log('Field:', fieldName, 'File:', file.name);
-        
-        // CRITICAL SAFETY: Wrap inputElement to prevent any accidental .value assignments
-        const safeInputElement = {
-            ...inputElement,
-            value: '', // Always return empty string for value property
-            files: inputElement.files,
-            name: inputElement.name,
-            id: inputElement.id,
-            type: inputElement.type,
-            classList: inputElement.classList,
-            style: inputElement.style,
-            closest: inputElement.closest.bind(inputElement),
-            parentNode: inputElement.parentNode
-        };
-        // Override the dangerous value setter
-        Object.defineProperty(safeInputElement, 'value', {
-            get: () => '',
-            set: (val) => {
-                if (val !== '') {
-                    console.warn('⚠️ Attempted to set file input value to non-empty string. Ignoring for safety.');
-                    return;
-                }
-                // Only allow setting to empty string
-                try {
-                    inputElement.value = '';
-                } catch (e) {
-                    console.warn('⚠️ Could not clear file input value:', e);
-                }
-            },
-            enumerable: true,
-            configurable: false
-        });
         
         // CRITICAL FIX: Store original file reference to prevent losing it
         const originalFileName = file.name;
@@ -1399,100 +1267,27 @@
                 console.log('✅ File validation successful');
                 showSuccessModal('Document validated successfully!');
                 
-                try {
-                    // CRITICAL FIX: Store the file path for form submission
-                    if (data.file_path) {
-                    // Always create/update hidden input inside the form with mapped database field name
+                // CRITICAL FIX: Store the file path for form submission
+                if (data.file_path) {
+                    // Always create/update hidden input inside the form
                     let form = inputElement.closest('form');
-                    
-                    // Map OCR field names to database field names
-                    const fieldMapping = {
-                        'school_id': 'school_id',
-                        'diploma': 'diploma', 
-                        'good_moral': 'good_moral',
-                        'birth_certificate': 'birth_certificate',
-                        'tor': 'tor',
-                        'valid_id': 'valid_id',
-                        'id': 'valid_id',
-                        'psa': 'psa_birth_certificate',
-                        'form_137': 'form_137'
-                    };
-                    
-                    const dbFieldName = fieldMapping[fieldName] || fieldName;
-                    
-                    // Create hidden input with the correct database field name
-                    let hiddenFileInput = form.querySelector(`input[name="${dbFieldName}"]`);
+                    let hiddenFileInput = form.querySelector(`input[name="${fieldName}_path"]`);
                     if (!hiddenFileInput) {
                         hiddenFileInput = document.createElement('input');
                         hiddenFileInput.type = 'hidden';
-                        hiddenFileInput.name = dbFieldName; // Use database field name
-                        hiddenFileInput.id = fieldName + '_file_path'; // Keep original ID for reference
+                        hiddenFileInput.name = fieldName + '_path';
                         form.appendChild(hiddenFileInput);
                     }
                     hiddenFileInput.value = data.file_path;
-                    console.log('✅ Stored file path for', fieldName, 'as', dbFieldName, ':', data.file_path);
-                    
-                    // CRITICAL FIX: Hide the original file input and show custom file display
-                    // Hide the original file input completely
-                    inputElement.style.display = 'none';
-                    
-                    // Create or update custom file display
-                    let customFileDisplay = document.getElementById('custom-' + fieldName);
-                    if (!customFileDisplay) {
-                        customFileDisplay = document.createElement('div');
-                        customFileDisplay.id = 'custom-' + fieldName;
-                        customFileDisplay.className = 'custom-file-display';
-                        inputElement.parentNode.appendChild(customFileDisplay);
-                    }
-                    
-                    customFileDisplay.innerHTML = `
-                        <div class="uploaded-file-container p-3 border rounded bg-success bg-opacity-10 border-success">
-                            <div class="d-flex align-items-center">
-                                <div class="file-icon me-3">
-                                    <i class="bi bi-file-earmark-check" style="font-size:2rem;"></i>
-                                </div>
-                                <div class="file-info flex-grow-1">
-                                    <div class="file-name fw-bold">${originalFileName}</div>
-                                    <div class="file-size text-muted small">${(originalFileSize/1024).toFixed(1)} KB</div>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="replaceFileInput('${fieldName}')">
-                                    <i class="bi bi-arrow-repeat"></i> Replace
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                    console.log('✅ Stored file path for', fieldName, ':', data.file_path);
                 }
                 
-                // FIXED: Handle program suggestions with better validation and fallback
+                // FIXED: Handle program suggestions
                 if (data.suggestions && data.suggestions.length > 0) {
                     console.log('✅ Found program suggestions:', data.suggestions);
                     showProgramSuggestions(data.suggestions);
                 } else {
-                    console.log('ℹ️ No program suggestions found');
-                    // Show helpful message when no suggestions are found
-                    const programSelect = document.getElementById('programSelect');
-                    if (programSelect) {
-                        // Clear any existing suggestions first
-                        const existingSuggestions = programSelect.querySelectorAll('.suggestion-option, .suggestion-header, .no-suggestions-message');
-                        existingSuggestions.forEach(option => option.remove());
-                        
-                        // Add informative message
-                        const noSuggestionsOption = document.createElement('option');
-                        noSuggestionsOption.disabled = true;
-                        noSuggestionsOption.textContent = '--- No specific program match found ---';
-                        noSuggestionsOption.className = 'no-suggestions-message';
-                        noSuggestionsOption.style.fontStyle = 'italic';
-                        noSuggestionsOption.style.color = '#6c757d';
-                        
-                        if (programSelect.children.length > 0) {
-                            programSelect.insertBefore(noSuggestionsOption, programSelect.children[1]);
-                        } else {
-                            programSelect.appendChild(noSuggestionsOption);
-                        }
-                        
-                        // Show informative modal
-                        showInfoModal('📋 No specific program match found for your uploaded document. Please manually select a program from the dropdown list, or contact us if you need assistance choosing the right program.');
-                    }
+                    console.log('No program suggestions found');
                 }
                 
                 // Handle education level detection
@@ -1504,11 +1299,6 @@
                 // Add success styling to the input
                 inputElement.classList.add('is-valid');
                 inputElement.classList.remove('is-invalid');
-                
-                } catch (styleError) {
-                    console.error('❌ Error during file upload styling:', styleError);
-                    // Continue anyway - this is not critical
-                }
                 
             } else {
                 console.error('❌ File validation failed:', data);
@@ -1538,7 +1328,7 @@
         console.log('=== File Upload Process Initiated ===');
     }
 
-    // Show program suggestions in dropdown - ENHANCED VERSION WITH DUPLICATE PREVENTION
+    // Show program suggestions in dropdown - ENHANCED VERSION
     function showProgramSuggestions(suggestions) {
         console.log('=== Showing Program Suggestions ===');
         console.log('Suggestions received:', suggestions);
@@ -1549,24 +1339,15 @@
             return;
         }
         
-        // Clear existing suggestions AND header to prevent duplicates
-        const existingSuggestions = programSelect.querySelectorAll('.suggestion-option, .suggestion-header');
+        // Clear existing suggestions
+        const existingSuggestions = programSelect.querySelectorAll('.suggestion-option');
         existingSuggestions.forEach(option => {
-            console.log('Removing existing suggestion/header:', option.textContent);
+            console.log('Removing existing suggestion:', option.textContent);
             option.remove();
         });
         
-        // Filter out suggestions that don't exist or are invalid
-        const validSuggestions = suggestions.filter(suggestion => {
-            const hasValidData = suggestion && (suggestion.program_name || suggestion.name) && (suggestion.program_id || suggestion.id);
-            if (!hasValidData) {
-                console.warn('Invalid suggestion filtered out:', suggestion);
-            }
-            return hasValidData;
-        });
-        
-        // Check if we have valid suggestions
-        if (validSuggestions.length > 0) {
+        // Add suggestion header if suggestions exist
+        if (suggestions.length > 0) {
             console.log('Adding suggestions header and options...');
             
             // Create and add header option
@@ -1584,8 +1365,8 @@
                 programSelect.appendChild(headerOption);
             }
             
-            // Add each valid suggestion
-            validSuggestions.forEach((suggestion, index) => {
+            // Add each suggestion
+            suggestions.forEach((suggestion, index) => {
                 const suggestionOption = document.createElement('option');
                 suggestionOption.value = suggestion.program_id || suggestion.id;
                 suggestionOption.textContent = `⭐ ${suggestion.program_name || suggestion.name}`;
@@ -1610,7 +1391,7 @@
             programSelect.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
             
             // Show notification modal
-            showInfoModal(`🎯 Great! We found ${validSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
+            showInfoModal(`🎯 Great! We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
             
             // Auto-scroll to the program select field
             setTimeout(() => {
@@ -1630,38 +1411,7 @@
             
             console.log('✅ Program suggestions added successfully');
         } else {
-            console.log('ℹ️ No program suggestions to display');
-            
-            // Clear any existing suggestions to prevent confusion
-            const programSelect = document.getElementById('programSelect');
-            if (programSelect) {
-                const existingSuggestions = programSelect.querySelectorAll('.suggestion-option, .suggestion-header, .no-suggestions-message');
-                existingSuggestions.forEach(option => option.remove());
-                
-                // Add informative message
-                const noSuggestionsOption = document.createElement('option');
-                noSuggestionsOption.disabled = true;
-                noSuggestionsOption.textContent = '--- Unfortunately, no program applicable for your certificate ---';
-                noSuggestionsOption.className = 'no-suggestions-message';
-                noSuggestionsOption.style.fontStyle = 'italic';
-                noSuggestionsOption.style.color = '#dc3545';
-                
-                if (programSelect.children.length > 0) {
-                    programSelect.insertBefore(noSuggestionsOption, programSelect.children[1]);
-                } else {
-                    programSelect.appendChild(noSuggestionsOption);
-                }
-                
-                // Add helpful message option
-                const helpOption = document.createElement('option');
-                helpOption.disabled = true;
-                helpOption.textContent = '--- Please select manually or contact us for assistance ---';
-                helpOption.className = 'no-suggestions-message';
-                helpOption.style.fontStyle = 'italic';
-                helpOption.style.color = '#6c757d';
-                
-                programSelect.insertBefore(helpOption, noSuggestionsOption.nextSibling);
-            }
+            console.log('No suggestions to display');
         }
     }
 
@@ -1931,123 +1681,17 @@
     }
 
     function removeUploadedFile(fieldName) {
-    console.log('🗑️ Removing uploaded file for:', fieldName);
-    let protectionActive = true;
-
-    try {
-        // Map OCR field names → DB field names
-        const fieldMapping = {
-            school_id: 'school_id',
-            diploma: 'diploma',
-            good_moral: 'good_moral',
-            birth_certificate: 'birth_certificate',
-            tor: 'tor',
-            valid_id: 'valid_id',
-            id: 'valid_id',
-            psa: 'psa_birth_certificate',
-            form_137: 'form_137'
-        };
-        const dbFieldName = fieldMapping[fieldName] || fieldName;
-
-        // Remove the hidden input that stores the file path
+        // Remove hidden input and uploaded info
         const form = document.getElementById('enrollmentForm');
-        const hiddenInput = form.querySelector(`input[name='${dbFieldName}']`);
-        if (hiddenInput) {
-            hiddenInput.remove();
-            console.log('✅ Removed hidden file path input for:', dbFieldName);
-        }
-
-        // Hide custom display
-        const customFileDisplay = document.getElementById('custom-' + fieldName);
-        if (customFileDisplay) {
-            customFileDisplay.style.display = 'none';
-            console.log('✅ Hidden custom file display');
-        }
-
-        // Restore the native <input type="file">
-        const oldInput = document.getElementById(fieldName);
-        if (oldInput) {
-            // Create a fresh input element to avoid the InvalidStateError
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.id = oldInput.id;
-            newInput.name = oldInput.name;
-            newInput.className = oldInput.className;
-            newInput.accept = oldInput.accept;
-            newInput.required = oldInput.required;
-            newInput.onchange = () => handleFileUpload(newInput);
-
-            oldInput.parentNode.replaceChild(newInput, oldInput);
-            console.log('✅ Replaced file input with a clean one');
-        }
-    } catch (error) {
-        console.error('❌ Error in removeUploadedFile:', error);
-    } finally {
-        protectionActive = false;
-    }
-}
-
-    // Add this function to allow replacing the file
-    function replaceFileInput(fieldName) {
-        const customFileDisplay = document.getElementById('custom-' + fieldName);
-        const form = customFileDisplay.closest('form');
-        // Remove the custom display
-        if (customFileDisplay) customFileDisplay.remove();
-        // Show the original file input
-        const fileInput = form.querySelector(`input[type='file'][name='${fieldName}']`);
-        if (fileInput) fileInput.style.display = '';
-        // Remove the hidden input with the file path
-        const hiddenInput = form.querySelector(`input[type='hidden'][name='${fieldName}']`);
+        const hiddenInput = form.querySelector(`input[name='${fieldName}_path']`);
         if (hiddenInput) hiddenInput.remove();
-        // Clear the file input value
-        if (fileInput) fileInput.value = '';
+        const uploadedInfo = document.getElementById('uploaded-' + fieldName);
+        if (uploadedInfo) uploadedInfo.style.display = 'none';
     }
 
     </script>
     
     <style>
-    /* Custom File Display Styles */
-    .custom-file-display {
-        margin-top: 0.5rem;
-        animation: fadeIn 0.3s ease-in;
-    }
-    
-    .uploaded-file-container {
-        transition: all 0.3s ease;
-        border: 2px dashed #198754 !important;
-        background: linear-gradient(135deg, #d1e7dd 0%, #f8f9fa 100%) !important;
-    }
-    
-    .uploaded-file-container:hover {
-        box-shadow: 0 4px 8px rgba(25, 135, 84, 0.15);
-        transform: translateY(-1px);
-    }
-    
-    .file-icon i {
-        animation: bounceIn 0.6s ease;
-    }
-    
-    .file-name {
-        color: #198754 !important;
-        font-size: 0.95rem;
-    }
-    
-    .file-details {
-        font-size: 0.85rem;
-        margin-top: 2px;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes bounceIn {
-        0% { transform: scale(0); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
-    }
-    
     /* Referral Code Field Styles */
     .referral-input-group {
         display: flex;
@@ -3341,14 +2985,11 @@
     // Submit form via AJAX to prevent page refresh
     const finalFormData = new FormData(form);
     
-    // Files are now automatically included since hidden inputs use correct database field names
-    console.log('📂 FILES INCLUDED AUTOMATICALLY WITH CORRECT DATABASE FIELD NAMES');
-    
     // Ensure CSRF token is present
     const csrfToken = form.querySelector('[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (csrfToken && !finalFormData.has('_token')) {
         finalFormData.append('_token', csrfToken);
-        console.log('🔑 CSRF token added:', csrfToken.substring(0, 10) + '...');
+        console.log('�️ CSRF token added:', csrfToken.substring(0, 10) + '...');
     }
     
     console.log('�🚀 SUBMITTING FORM VIA AJAX');
