@@ -613,7 +613,7 @@ class StudentController extends Controller
         // Initialize required variables for the view
         $enrollmentType = $request->get('type', 'full');
         $programs = \App\Models\Program::where('is_active', true)->get();
-        $packages = \App\Models\Package::where('is_active', true)
+        $packages = \App\Models\Package::where('status', 'active')
                                         ->where('package_type', 'full')
                                         ->get();
         
@@ -626,7 +626,6 @@ class StudentController extends Controller
                 'package_type' => 'full',
                 'selection_type' => 'full',
                 'selection_mode' => 'complete',
-                'is_active' => true,
                 'status' => 'active'
             ]);
             $packages = collect([$defaultPackage]);

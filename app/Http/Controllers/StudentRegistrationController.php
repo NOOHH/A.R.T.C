@@ -222,30 +222,38 @@ class StudentRegistrationController extends Controller
             DB::beginTransaction();
 
             // DUPLICATE PREVENTION: Check for recent registration with same data
-            $duplicateCheck = Registration::where('email', $request->email ?? $request->user_email)
-                ->where('program_id', $request->program_id)
-                ->where('package_id', $request->package_id)
-                ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
-                ->first();
-                
-            if ($duplicateCheck) {
-                DB::rollBack();
-                Log::warning('Duplicate registration attempt prevented', [
-                    'email' => $request->email ?? $request->user_email,
-                    'program_id' => $request->program_id,
-                    'package_id' => $request->package_id,
-                    'recent_registration_id' => $duplicateCheck->registration_id
+            try {
+                $duplicateCheck = Registration::where('email', $request->email ?? $request->user_email)
+                    ->where('program_id', $request->program_id)
+                    ->where('package_id', $request->package_id)
+                    ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                    ->first();
+                    
+                if ($duplicateCheck) {
+                    DB::rollBack();
+                    Log::warning('Duplicate registration attempt prevented', [
+                        'email' => $request->email ?? $request->user_email,
+                        'program_id' => $request->program_id,
+                        'package_id' => $request->package_id,
+                        'recent_registration_id' => $duplicateCheck->registration_id
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Registration already completed successfully!',
+                        'redirect' => '/registration/success',
+                        'data' => [
+                            'registration_id' => $duplicateCheck->registration_id,
+                            'user_id' => $duplicateCheck->user_id
+                        ]
+                    ]);
+                }
+            } catch (\Exception $duplicateCheckError) {
+                Log::warning('Duplicate check failed, proceeding with registration', [
+                    'error' => $duplicateCheckError->getMessage(),
+                    'email' => $request->email ?? $request->user_email
                 ]);
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Registration already completed successfully!',
-                    'redirect' => '/registration/success',
-                    'data' => [
-                        'registration_id' => $duplicateCheck->registration_id,
-                        'user_id' => $duplicateCheck->user_id
-                    ]
-                ]);
+                // Continue with normal registration if duplicate check fails
             }
 
             // Create or get user
@@ -736,7 +744,7 @@ class StudentRegistrationController extends Controller
     public function showRegistrationForm(Request $request)
     {
         $enrollmentType = 'full'; // Set to full since this is the full enrollment route
-        $packages = Package::where('is_active', true)
+        $packages = Package::where('status', 'active')
                           ->where('package_type', 'full')
                           ->get();
         
@@ -749,7 +757,6 @@ class StudentRegistrationController extends Controller
                 'package_type' => 'full',
                 'selection_type' => 'full',
                 'selection_mode' => 'complete',
-                'is_active' => true,
                 'status' => 'active'
             ]);
             $packages = collect([$defaultPackage]);
@@ -1007,32 +1014,40 @@ class StudentRegistrationController extends Controller
             DB::beginTransaction();
 
             // DUPLICATE PREVENTION: Check for recent registration with same data
-            $userEmail = $request->email ?? $request->user_email;
-            $duplicateCheck = Registration::where('email', $userEmail)
-                ->where('program_id', $request->program_id)
-                ->where('package_id', $request->package_id)
-                ->where('enrollment_type', 'Modular')
-                ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
-                ->first();
-                
-            if ($duplicateCheck) {
-                DB::rollBack();
-                Log::warning('Duplicate modular registration attempt prevented', [
-                    'email' => $userEmail,
-                    'program_id' => $request->program_id,
-                    'package_id' => $request->package_id,
-                    'recent_registration_id' => $duplicateCheck->registration_id
+            try {
+                $userEmail = $request->email ?? $request->user_email;
+                $duplicateCheck = Registration::where('email', $userEmail)
+                    ->where('program_id', $request->program_id)
+                    ->where('package_id', $request->package_id)
+                    ->where('enrollment_type', 'Modular')
+                    ->where('created_at', '>=', now()->subMinutes(5)) // Within last 5 minutes
+                    ->first();
+                    
+                if ($duplicateCheck) {
+                    DB::rollBack();
+                    Log::warning('Duplicate modular registration attempt prevented', [
+                        'email' => $userEmail,
+                        'program_id' => $request->program_id,
+                        'package_id' => $request->package_id,
+                        'recent_registration_id' => $duplicateCheck->registration_id
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Registration already completed successfully!',
+                        'redirect' => '/registration/success',
+                        'data' => [
+                            'registration_id' => $duplicateCheck->registration_id,
+                            'user_id' => $duplicateCheck->user_id
+                        ]
+                    ]);
+                }
+            } catch (\Exception $duplicateCheckError) {
+                Log::warning('Duplicate check failed, proceeding with registration', [
+                    'error' => $duplicateCheckError->getMessage(),
+                    'email' => $request->email ?? $request->user_email
                 ]);
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Registration already completed successfully!',
-                    'redirect' => '/registration/success',
-                    'data' => [
-                        'registration_id' => $duplicateCheck->registration_id,
-                        'user_id' => $duplicateCheck->user_id
-                    ]
-                ]);
+                // Continue with normal registration if duplicate check fails
             }
 
             Log::info('=== MODULAR ENROLLMENT DETAILED DEBUG ===', [

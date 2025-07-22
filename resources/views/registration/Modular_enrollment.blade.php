@@ -2590,8 +2590,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const coursesModal = document.getElementById('coursesModal');
     if (coursesModal) {
         coursesModal.addEventListener('show.bs.modal', function () {
-            // Remove aria-hidden when modal is opening
+            // Remove aria-hidden when modal is opening and handle focus
             coursesModal.removeAttribute('aria-hidden');
+            // Ensure focus is properly managed
+            setTimeout(() => {
+                const focusableElements = coursesModal.querySelectorAll('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])');
+                if (focusableElements.length > 0) {
+                    focusableElements[0].focus();
+                }
+            }, 150);
         });
         
         coursesModal.addEventListener('hidden.bs.modal', function () {
@@ -2603,8 +2610,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const termsModal = document.getElementById('termsModal');
     if (termsModal) {
         termsModal.addEventListener('show.bs.modal', function () {
-            // Remove aria-hidden when modal is opening
+            // Remove aria-hidden when modal is opening and handle focus
             termsModal.removeAttribute('aria-hidden');
+            // Ensure focus is properly managed
+            setTimeout(() => {
+                const focusableElements = termsModal.querySelectorAll('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])');
+                if (focusableElements.length > 0) {
+                    focusableElements[0].focus();
+                }
+            }, 150);
         });
         
         termsModal.addEventListener('hidden.bs.modal', function () {

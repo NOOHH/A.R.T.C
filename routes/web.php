@@ -271,7 +271,6 @@ Route::get('/enrollment/modular', function () {
             'package_type' => 'modular',
             'selection_type' => 'module',
             'selection_mode' => 'modules',
-            'is_active' => true,
             'status' => 'active'
         ]);
         $packages = collect([$defaultPackage]);
