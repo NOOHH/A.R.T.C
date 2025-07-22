@@ -18,6 +18,23 @@ class StudentPaymentModalController extends Controller
     }
 
     /**
+     * Map payment method types to valid enum values for payments table
+     */
+    private function mapPaymentMethodType($methodType)
+    {
+        $mapping = [
+            'credit_card' => 'credit_card',
+            'gcash' => 'gcash',
+            'maya' => 'gcash', // Map maya to gcash as they're both e-wallets
+            'bank_transfer' => 'bank_transfer',
+            'cash' => 'bank_transfer', // Map cash to bank_transfer for now
+            'other' => 'bank_transfer', // Map other to bank_transfer as fallback
+        ];
+
+        return $mapping[$methodType] ?? 'bank_transfer'; // Default fallback
+    }
+
+    /**
      * Get enabled payment methods for student
      */
     public function getPaymentMethods()
@@ -85,13 +102,30 @@ class StudentPaymentModalController extends Controller
             // Get payment method details
             $paymentMethod = PaymentMethod::find($request->payment_method_id);
 
+            if (!$paymentMethod) {
+                Log::error('Payment method not found', [
+                    'payment_method_id' => $request->payment_method_id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invalid payment method selected'
+                ], 400);
+            }
+
+            Log::info('Processing payment proof upload', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'payment_method_type' => $paymentMethod->method_type,
+                'mapped_payment_method' => $this->mapPaymentMethodType($paymentMethod->method_type),
+                'amount' => $request->amount
+            ]);
+
             // Create payment record
             $payment = Payment::create([
                 'enrollment_id' => $enrollment->enrollment_id,
                 'student_id' => $student->student_id,
                 'program_id' => $enrollment->program_id,
                 'package_id' => $enrollment->package_id,
-                'payment_method' => $paymentMethod->method_type,
+                'payment_method' => $this->mapPaymentMethodType($paymentMethod->method_type),
                 'amount' => $request->amount,
                 'payment_status' => 'pending',
                 'payment_details' => json_encode([
