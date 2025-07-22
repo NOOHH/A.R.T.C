@@ -474,10 +474,11 @@ class AdminProgramController extends Controller
                 'pendingEnrollments',
                 'completedCourses'
             ) + [
-                'approvedStudents' => Student::whereNotNull('date_approved')->get(),
+                'approvedStudents' => Student::with('user')->get(),
                 'programs' => Program::where('is_archived', false)->get(),
+                'packages' => \App\Models\Package::all(),
                 'batches' => \App\Models\StudentBatch::whereIn('batch_status', ['available', 'ongoing'])->get(),
-                'courses' => Course::where('is_archived', false)->get()
+                'courses' => Course::where('is_active', true)->get()
             ]);
         } catch (\Exception $e) {
             Log::error('Enrollment management error: ' . $e->getMessage());
@@ -490,6 +491,7 @@ class AdminProgramController extends Controller
                 'completedCourses' => 0,
                 'approvedStudents' => collect(),
                 'programs' => collect(),
+                'packages' => collect(),
                 'batches' => collect(),
                 'courses' => collect()
             ]);

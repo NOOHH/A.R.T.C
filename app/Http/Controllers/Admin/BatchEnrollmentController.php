@@ -414,4 +414,155 @@ class BatchEnrollmentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get recent enrollments for dashboard
+     */
+    public function getRecentEnrollments()
+    {
+        try {
+            $enrollments = Enrollment::with(['student.user', 'program', 'package'])
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get()
+                ->map(function($enrollment) {
+                    return [
+                        'enrollment_id' => $enrollment->enrollment_id,
+                        'student_id' => $enrollment->student_id,
+                        'student_name' => $enrollment->student && $enrollment->student->user ? 
+                            $enrollment->student->user->user_firstname . ' ' . $enrollment->student->user->user_lastname : null,
+                        'program_name' => $enrollment->program ? $enrollment->program->program_name : null,
+                        'package_name' => $enrollment->package ? $enrollment->package->package_name : null,
+                        'enrollment_type' => $enrollment->enrollment_type,
+                        'learning_mode' => $enrollment->learning_mode,
+                        'enrollment_status' => $enrollment->enrollment_status,
+                        'payment_status' => $enrollment->payment_status,
+                        'created_at' => $enrollment->created_at
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'enrollments' => $enrollments
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Get recent enrollments failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch recent enrollments'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all enrollments for detailed view
+     */
+    public function getAllEnrollments()
+    {
+        try {
+            $enrollments = Enrollment::with(['student.user', 'program', 'package', 'batch'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($enrollment) {
+                    return [
+                        'enrollment_id' => $enrollment->enrollment_id,
+                        'student_id' => $enrollment->student_id,
+                        'student_name' => $enrollment->student && $enrollment->student->user ? 
+                            $enrollment->student->user->user_firstname . ' ' . $enrollment->student->user->user_lastname : null,
+                        'program_name' => $enrollment->program ? $enrollment->program->program_name : null,
+                        'package_name' => $enrollment->package ? $enrollment->package->package_name : null,
+                        'enrollment_type' => $enrollment->enrollment_type,
+                        'learning_mode' => $enrollment->learning_mode,
+                        'enrollment_status' => $enrollment->enrollment_status,
+                        'payment_status' => $enrollment->payment_status,
+                        'batch_name' => $enrollment->batch ? $enrollment->batch->batch_name : null,
+                        'created_at' => $enrollment->created_at
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'enrollments' => $enrollments
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Get all enrollments failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch enrollments'
+            ], 500);
+        }
+    }
+
+    /**
+     * Quick enroll a single student
+     */
+    public function quickEnroll(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'student_id' => 'required|exists:students,student_id',
+            'program_id' => 'required|exists:programs,program_id',
+            'package_id' => 'required|exists:packages,package_id',
+            'enrollment_type' => 'required|in:Full,Modular',
+            'learning_mode' => 'required|in:Synchronous,Asynchronous',
+            'batch_id' => 'nullable|exists:student_batches,batch_id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $student = Student::where('student_id', $request->student_id)->first();
+
+            // Check if already enrolled in this program
+            $existingEnrollment = Enrollment::where('student_id', $request->student_id)
+                ->where('program_id', $request->program_id)
+                ->first();
+
+            if ($existingEnrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student is already enrolled in this program'
+                ], 400);
+            }
+
+            $enrollmentData = [
+                'student_id' => $request->student_id,
+                'user_id' => $student->user_id,
+                'program_id' => $request->program_id,
+                'package_id' => $request->package_id,
+                'enrollment_type' => $request->enrollment_type,
+                'learning_mode' => $request->learning_mode,
+                'enrollment_status' => 'approved',
+                'payment_status' => 'pending',
+                'batch_access_granted' => true,
+                'individual_start_date' => now(),
+            ];
+
+            if ($request->batch_id) {
+                $enrollmentData['batch_id'] = $request->batch_id;
+            }
+
+            $enrollment = Enrollment::create($enrollmentData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Student enrolled successfully',
+                'enrollment' => $enrollment
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Quick enroll failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to enroll student: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

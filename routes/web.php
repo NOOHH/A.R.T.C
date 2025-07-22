@@ -19,6 +19,7 @@ use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\Admin\EducationLevelController;
+use App\Http\Controllers\Admin\BatchEnrollmentController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
@@ -698,7 +699,16 @@ Route::post('/admin/programs/assign', [AdminProgramController::class, 'assignPro
 
 // Enrollment management page
 Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])
-     ->name('admin.enrollments.index');
+->name('admin.enrollments.index');
+
+// Batch Enrollment Routes
+Route::get('/admin/enrollments/recent', [Admin\BatchEnrollmentController::class, 'getRecentEnrollments']);
+Route::get('/admin/enrollments/all', [Admin\BatchEnrollmentController::class, 'getAllEnrollments']);
+Route::post('/admin/enrollments/quick-enroll', [Admin\BatchEnrollmentController::class, 'quickEnroll']);
+Route::post('/admin/enrollments/batch-enroll', [Admin\BatchEnrollmentController::class, 'batchEnroll']);
+Route::post('/admin/enrollments/add-enrollment', [Admin\BatchEnrollmentController::class, 'addEnrollment']);
+Route::get('/admin/enrollments/export', [Admin\BatchEnrollmentController::class, 'exportEnrollments']);
+Route::get('/admin/students/{studentId}/enrollments', [Admin\BatchEnrollmentController::class, 'getStudentEnrollments']);
 
 
 /*

@@ -25,6 +25,8 @@ class Enrollment extends Model
         'payment_status',
         'batch_id',
         'batch_access_granted',
+        'individual_start_date',
+        'individual_end_date',
         'education_level_id',
         'inherited_registration_data',
         'inheritance_metadata',
@@ -36,6 +38,8 @@ class Enrollment extends Model
     protected $casts = [
         'inherited_registration_data' => 'array',
         'inheritance_metadata' => 'array',
+        'individual_start_date' => 'datetime',
+        'individual_end_date' => 'datetime',
         'education_level_started_at' => 'datetime',
         'education_level_completed_at' => 'datetime',
     ];
