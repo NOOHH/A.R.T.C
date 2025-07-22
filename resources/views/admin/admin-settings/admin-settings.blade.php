@@ -1187,7 +1187,7 @@
                                     <i class="fas fa-plus me-1"></i>Add Payment Method
                                 </button>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body text">
                                 <p class="text-muted mb-4">Manage payment methods available to students. Enable/disable methods and upload QR codes for digital payment options.</p>
                                 
                                 <div class="table-responsive">
@@ -1218,7 +1218,7 @@
                                         <strong>Tips:</strong>
                                         <ul class="mb-0 mt-2">
                                             <li>Drag rows to reorder payment methods as they appear to students</li>
-                                            <li>Upload QR codes for digital payment methods (GCash, Maya, etc.)</li>
+                                            <li>Upload QR codes for digital payment methods (GCash, Maya)</li>
                                             <li>Only enabled payment methods will be visible to students</li>
                                             <li>Provide clear instructions for each payment method</li>
                                         </ul>
@@ -1429,8 +1429,7 @@
                 </div>
             </div>
         </div>
-    </div>
-
+        
     <div class="row g-4 mb-4">
         <div class="col-md-6 mx-auto">
             <div class="card shadow-sm border-primary">
@@ -1448,6 +1447,8 @@
             </div>
         </div>
     </div>
+    </div>
+
 @endsection
 @push('scripts')
 <script>

@@ -21,22 +21,7 @@
         border-bottom: 2px solid #e9ecef;
     }
     
-/* Default background for inactive sub-tabs */
-#studentSubTabs .nav-link {
-    color: white;
-    background-color: #6c757d; /* Gray as default for inactive */
-    border-radius: 5px;
-    margin-right: 5px;
-    transition: all 0.3s ease;
-}
 
-#adminSubTabs .nav-link {
-    color: white;
-    background-color: #6c757d; /* Gray as default for inactive */
-    border-radius: 5px;
-    margin-right: 5px;
-    transition: all 0.3s ease;
-}
 
 
     .settings-tabs .nav-link {
@@ -595,4 +580,41 @@
 .registration-mode-selection .mode-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+
+/* ── One rule to style every nav‑tab and nav‑pill ── */
+.nav-tabs  .nav-link,
+.nav-pills .nav-link {
+  background:    #033194;      /* inactive bg */
+  color:         #6c757d;      /* inactive text */
+  border:        1px solid transparent;
+  border-radius: 25px;
+  margin-right:  0.5rem;
+  padding:       0.5rem 1.5rem;
+  transition:    all 0.2s ease;
+}
+
+.nav-tabs  .nav-link:hover,
+.nav-pills .nav-link:hover {
+  background: #e9ecef;
+  color:      #495057;
+}
+
+.nav-tabs  .nav-link.active,
+.nav-pills .nav-link.active {
+  background:   #007bff;       /* your brand/active color */
+  color:        #fff;
+  border-color: #007bff;
+}
+.badge-success {
+  background-color: var(--bs-success)     /* Bootstrap’s green */ 
+                 !important;
+  color:            #212529               /* or whatever dark color you like */ 
+                 !important;
+}
+.badge-info {
+  background-color: var(--bs-info) !important;
+  color:            #212529       !important;
 }

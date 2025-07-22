@@ -1,9 +1,122 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+
+// TEST ROUTE: Same pattern as working module store
+Route::post('/test-upload-v2', function (Request $request) {
+    Log::info('ðŸ§ª TEST UPLOAD V2 ROUTE HIT');
+    
+    // Same validation pattern as working module store
+    $request->validate([
+        'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg,avi,mov|max:102400',
+    ]);
+
+    $attachmentPath = null;
+    
+    // ENHANCED FILE UPLOAD DEBUGGING (exact same as working module store)
+    Log::info("=== FILE UPLOAD DEBUG START ===");
+    Log::info("Request method: " . $request->method());
+    Log::info("Request content type: " . $request->header("Content-Type"));
+    Log::info("Request has files: " . (count($request->files->all()) > 0 ? "YES" : "NO"));
+    Log::info("Request files count: " . count($request->files->all()));
+    Log::info("Request attachment check: " . ($request->hasFile("attachment") ? "YES" : "NO"));
+    
+    // Check all files in request
+    foreach ($request->files->all() as $key => $file) {
+        if ($file instanceof \Illuminate\Http\UploadedFile) {
+            Log::info("File found - Key: {$key}, Name: " . $file->getClientOriginalName() . ", Size: " . $file->getSize());
+        } else {
+            Log::info("Non-file found - Key: {$key}, Type: " . gettype($file));
+        }
+    }
+    
+    // Check specific attachment
+    $attachmentFile = $request->file("attachment");
+    if ($attachmentFile) {
+        Log::info("Attachment file details: " . json_encode([
+            "name" => $attachmentFile->getClientOriginalName(),
+            "size" => $attachmentFile->getSize(),
+            "mime" => $attachmentFile->getMimeType(),
+            "error" => $attachmentFile->getError(),
+            "is_valid" => $attachmentFile->isValid(),
+            "tmp_name" => $attachmentFile->getRealPath()
+        ]));
+    } else {
+        Log::info("No attachment file found");
+    }
+    Log::info("=== FILE UPLOAD DEBUG END ===");
+    
+    if ($request->hasFile('attachment')) {
+        $file = $request->file('attachment');
+        if ($file && $file->isValid() && $file->getError() === UPLOAD_ERR_OK) {
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $attachmentPath = $file->storeAs('content', $filename, 'public');
+            Log::info('File uploaded successfully', ['path' => $attachmentPath]);
+        } else if ($file) {
+            Log::error('File upload error', [
+                'error' => $file->getError(),
+                'original_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize()
+            ]);
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Test upload V2 completed',
+        'attachment_path' => $attachmentPath
+    ]);
+})->name('test.upload.v2');
+Route::post('/test-upload', function (Request $request) {
+    Log::info('ðŸ§ª TEST UPLOAD ROUTE HIT', [
+        'method' => $request->method(),
+        'has_files' => count($request->files->all()) > 0,
+        'all_files' => array_keys($request->files->all()),
+        'has_attachment' => $request->hasFile('attachment')
+    ]);
+    
+    if ($request->hasFile('attachment')) {
+        $file = $request->file('attachment');
+        Log::info('ðŸ§ª TEST FILE DETECTED', [
+            'name' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+            'valid' => $file->isValid(),
+            'error' => $file->getError(),
+            'temp_path' => $file->getRealPath(),
+            'temp_exists' => file_exists($file->getRealPath())
+        ]);
+        
+        $filename = time() . '_test_' . $file->getClientOriginalName();
+        $path = $file->storeAs('content', $filename, 'public');
+        
+        Log::info('ðŸ§ª TEST FILE STORAGE RESULT', [
+            'storeAs_result' => $path,
+            'result_type' => gettype($path),
+            'file_saved' => file_exists(storage_path('app/public/content/' . $filename)),
+            'full_path' => storage_path('app/public/content/' . $filename)
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Test upload successful',
+            'path' => $path,
+            'file_exists' => file_exists(storage_path('app/public/content/' . $filename)),
+            'url' => asset('storage/' . $path)
+        ]);
+    }
+    
+    return response()->json([
+        'success' => false,
+        'message' => 'No file detected',
+        'debug' => [
+            'files_count' => count($request->files->all()),
+            'file_keys' => array_keys($request->files->all())
+        ]
+    ]);
+})->name('test.upload');
 
 // Admin: Delete a meeting for a professor
 Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
@@ -18,7 +131,7 @@ use App\Http\Controllers\AdminModuleController;
 use App\Http\Controllers\AdminCourseController;
 use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
-use App\Http\Controllers\AdminPackageController;    // ← NEW
+use App\Http\Controllers\AdminPackageController;    // â† NEW
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
@@ -66,9 +179,9 @@ Route::middleware(['web','check.session','role.dashboard']) // whatever guards y
 Route::get('/test-db', function () {
     try {
         DB::connection()->getPdo();
-        return "✅ Connected to DB successfully!";
+        return "âœ… Connected to DB successfully!";
     } catch (\Exception $e) {
-        return "❌ DB connection failed: " . $e->getMessage();
+        return "âŒ DB connection failed: " . $e->getMessage();
     }
 });
 
@@ -758,9 +871,18 @@ Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'a
 Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
      ->name('admin.modules.batch-store');
 
+// Direct Upload Test Page
+Route::get('/admin/modules/direct-test', function() {
+    return view('direct_upload_test');
+})->name('admin.modules.direct-test');
+
 // Store course content
 Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
      ->name('admin.modules.course-content-store');
+
+// Course content upload page (dedicated page)
+Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])
+     ->name('admin.modules.course-content-upload');
 
 // Test course content endpoint
 Route::post('/admin/modules/test-course-content', function(Request $request) {
@@ -778,9 +900,92 @@ Route::get('/test-upload', function() {
     return view('test_upload_form');
 });
 
+// CSRF token route for testing
+Route::get('/csrf-token', function() {
+    return response()->json(['csrf_token' => csrf_token()]);
+});
+
 // Test endpoint
 Route::get('/test-endpoint', function() {
     return response()->json(['message' => 'Test endpoint working', 'time' => now()]);
+});
+
+// Simple attachment path test route
+Route::post('/test-attachment-save', function(Request $request) {
+    try {
+        Log::info('=== SIMPLE ATTACHMENT TEST START ===', [
+            'has_file' => $request->hasFile('attachment'),
+            'all_files' => array_keys($request->files->all())
+        ]);
+        
+        if (!$request->hasFile('attachment')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No file provided',
+                'debug' => ['files' => $request->files->all()]
+            ]);
+        }
+        
+        $file = $request->file('attachment');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        
+        // Store file
+        $attachmentPath = $file->storeAs('content', $filename, 'public');
+        
+        Log::info('File stored', [
+            'attachment_path' => $attachmentPath,
+            'file_exists' => file_exists(storage_path('app/public/' . $attachmentPath))
+        ]);
+        
+        // Get a valid course for testing
+        $course = \App\Models\Course::first();
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No courses found in database'
+            ]);
+        }
+        
+        // Create content item
+        $contentItem = \App\Models\ContentItem::create([
+            'content_title' => 'Test Attachment Save',
+            'content_description' => 'Testing attachment path saving',
+            'course_id' => $course->subject_id,
+            'content_type' => 'document',
+            'attachment_path' => $attachmentPath,
+            'is_active' => true,
+            'is_required' => false
+        ]);
+        
+        Log::info('ContentItem created', [
+            'id' => $contentItem->id,
+            'attachment_path_saved' => $contentItem->attachment_path,
+            'fresh_attachment_path' => $contentItem->fresh()->attachment_path
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Attachment saved successfully',
+            'data' => [
+                'content_id' => $contentItem->id,
+                'attachment_path' => $contentItem->attachment_path,
+                'file_exists' => file_exists(storage_path('app/public/' . $attachmentPath)),
+                'public_url' => asset('storage/' . $attachmentPath)
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Attachment test failed', [
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Test failed: ' . $e->getMessage()
+        ], 500);
+    }
 });
 
 // Toggle archive status
@@ -798,6 +1003,10 @@ Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived']
 // Delete a module (used only by archived modules view)
 Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])
      ->name('admin.modules.destroy');
+
+// Delete a module by ID (used by admin interface)
+Route::delete('/admin/modules/{id}', [AdminModuleController::class, 'destroyById'])
+     ->name('admin.modules.destroy-by-id');
 
 // Get modules by program (AJAX)
 Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])
@@ -836,6 +1045,12 @@ Route::get   ('/admin/modules/{id}/override', [AdminModuleController::class, 'ge
      ->name('admin.modules.get-override');
 Route::patch ('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
      ->name('admin.modules.update-override');
+
+// Override Settings Routes
+Route::get('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'getOverrideSettings'])
+     ->name('admin.modules.get-override-settings');
+Route::post('/admin/modules/{id}/override-settings', [AdminModuleController::class, 'saveOverrideSettings'])
+     ->name('admin.modules.save-override-settings');
 
 // New Admin Override System Routes
 Route::middleware(['admin.auth'])->prefix('admin/overrides')->group(function () {
@@ -1431,8 +1646,12 @@ Route::middleware(['professor.auth'])
          ->name('meetings.reports');
     Route::post('/meetings/{meeting}/start', [\App\Http\Controllers\ProfessorMeetingController::class, 'start'])
          ->name('meetings.start');
-    Route::post('/meetings/{meeting}/finish', [\AppHttp\Controllers\ProfessorMeetingController::class, 'finish'])
+    Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
          ->name('meetings.finish');
+    
+    // Calendar route
+    Route::get('/calendar', [ProfessorDashboardController::class, 'calendar'])
+         ->name('calendar');
     
     // Additional professor routes for meetings/settings
     Route::get('/settings', [ProfessorDashboardController::class, 'settings'])
@@ -1895,18 +2114,18 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
         // 1. Check if module exists
         $module = \App\Models\Module::find($moduleId);
         if (!$module) {
-            echo "<p style='color: red;'>❌ Module {$moduleId} not found!</p>";
+            echo "<p style='color: red;'>âŒ Module {$moduleId} not found!</p>";
             return;
         }
-        echo "<p style='color: green;'>✅ Module found: {$module->module_name}</p>";
+        echo "<p style='color: green;'>âœ… Module found: {$module->module_name}</p>";
         
         // 2. Check courses linked to this module
         $courses = \App\Models\Course::where('module_id', $moduleId)->get();
         echo "<h3>Courses for this module:</h3>";
         if ($courses->isEmpty()) {
-            echo "<p style='color: red;'>❌ No courses found for module {$moduleId}</p>";
+            echo "<p style='color: red;'>âŒ No courses found for module {$moduleId}</p>";
         } else {
-            echo "<p style='color: green;'>✅ Found " . $courses->count() . " courses:</p>";
+            echo "<p style='color: green;'>âœ… Found " . $courses->count() . " courses:</p>";
             foreach ($courses as $course) {
                 echo "<ul>";
                 echo "<li>Course ID: {$course->subject_id} - {$course->subject_name}</li>";
@@ -1915,7 +2134,7 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
                 $lessons = \App\Models\Lesson::where('course_id', $course->subject_id)->get();
                 echo "<li>Lessons (" . $lessons->count() . "):</li>";
                 if ($lessons->isEmpty()) {
-                    echo "<ul><li style='color: orange;'>⚠️ No lessons found</li></ul>";
+                    echo "<ul><li style='color: orange;'>âš ï¸ No lessons found</li></ul>";
                 } else {
                     echo "<ul>";
                     foreach ($lessons as $lesson) {
@@ -1926,7 +2145,7 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
                         echo "<ul>";
                         echo "<li>Content Items (" . $contentItems->count() . "):</li>";
                         if ($contentItems->isEmpty()) {
-                            echo "<ul><li style='color: orange;'>⚠️ No content items found</li></ul>";
+                            echo "<ul><li style='color: orange;'>âš ï¸ No content items found</li></ul>";
                         } else {
                             echo "<ul>";
                             foreach ($contentItems as $item) {
@@ -1980,7 +2199,7 @@ Route::get('/test-module-content/{moduleId?}', function($moduleId = 45) {
         echo "<pre>" . json_encode($result->getData(), JSON_PRETTY_PRINT) . "</pre>";
         
     } catch (\Exception $e) {
-        echo "<p style='color: red;'>❌ Error: " . $e->getMessage() . "</p>";
+        echo "<p style='color: red;'>âŒ Error: " . $e->getMessage() . "</p>";
         echo "<pre>" . $e->getTraceAsString() . "</pre>";
     }
 })->name('test.module.content');
@@ -2048,6 +2267,24 @@ Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::
 // Certificate viewing and downloading
 Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
 Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');
+
+// Test upload page for debugging
+Route::get('/test-upload', function() {
+    return view('test-upload');
+});
+
+Route::get('/test-direct-upload', function() {
+    return view('test-direct-upload');
+});
+
+Route::post('/test-upload', function(\Illuminate\Http\Request $request) {
+    if ($request->hasFile('attachment')) {
+        $file = $request->file('attachment');
+        $path = $file->storeAs('content', time() . '_' . $file->getClientOriginalName(), 'public');
+        return ['success' => true, 'path' => $path, 'file_exists' => file_exists(storage_path('app/public/' . $path))];
+    }
+    return ['success' => false, 'message' => 'No file detected'];
+});
 
 // Admin Payment Management Routes
 Route::middleware(['admin.auth'])->prefix('admin')->group(function () {

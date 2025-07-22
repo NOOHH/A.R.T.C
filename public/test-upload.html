@@ -1,47 +1,35 @@
-<!-- Test Upload Form to verify file upload is working -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>File Upload Test</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta charset="UTF-8">
+  <title>Test File Upload</title>
 </head>
 <body>
-    <h2>Test File Upload</h2>
-    <form action="{{ route('admin.modules.course-content-store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        <input type="hidden" name="program_id" value="33">
-        <input type="hidden" name="module_id" value="54">
-        <input type="hidden" name="course_id" value="24">
-        <input type="hidden" name="content_type" value="lesson">
-        <input type="hidden" name="content_title" value="Test Upload">
-        <input type="hidden" name="content_description" value="Testing file upload">
-        
-        <div>
-            <label for="attachment">Choose File:</label>
-            <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx">
-        </div>
-        
-        <div style="margin-top: 10px;">
-            <button type="submit">Upload Test</button>
-        </div>
-    </form>
-    
-    <script>
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const formData = new FormData(this);
-            console.log('Form submission test:');
-            for (let [key, value] of formData.entries()) {
-                if (value instanceof File) {
-                    console.log(key + ':', {
-                        name: value.name,
-                        size: value.size,
-                        type: value.type
-                    });
-                } else {
-                    console.log(key + ':', value);
-                }
-            }
-        });
-    </script>
+  <h2>Test Course Content File Upload</h2>
+  <form action="/admin/modules/course-content-store" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+    <div>
+      <label>Program ID: <input type="text" name="program_id" value="1" required></label>
+    </div>
+    <div>
+      <label>Module ID: <input type="text" name="module_id" value="1" required></label>
+    </div>
+    <div>
+      <label>Course ID: <input type="text" name="course_id" value="1" required></label>
+    </div>
+    <div>
+      <label>Content Type: <input type="text" name="content_type" value="lesson" required></label>
+    </div>
+    <div>
+      <label>Content Title: <input type="text" name="content_title" value="Test Upload" required></label>
+    </div>
+    <div>
+      <label>Attachment: <input type="file" name="attachment" required></label>
+    </div>
+    <div>
+      <button type="submit">Upload</button>
+    </div>
+  </form>
+  <p>Check your Laravel log for debug output after submitting.</p>
 </body>
 </html>

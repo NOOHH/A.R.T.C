@@ -508,11 +508,7 @@ body, html {
   overflow-y: auto;
   position: relative;
   flex-direction: column;
-}
-
-/* Fix for admin content scrolling */
-.content-wrapper {
-  flex: 1;
+    flex: 1;
   padding: 20px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -520,6 +516,8 @@ body, html {
   scrollbar-width: thin;
   scrollbar-color: rgba(45, 27, 105, 0.3) transparent;
 }
+
+
 
 .content-wrapper::-webkit-scrollbar {
   width: 8px;
