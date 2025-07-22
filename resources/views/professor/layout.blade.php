@@ -4,149 +4,183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Professor Dashboard') - {{ config('app.name', 'A.R.T.C') }}</title>
+    <title>@yield('title', 'Professor Dashboard')</title>
     
-    <!-- Bootstrap CSS -->
+    @php
+        // Get user info for global variables
+        $user = Auth::user();
+        
+        // If Laravel Auth user is not available, fallback to session data
+        if (!$user) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            // Create a fake user object from session data for consistency
+            $sessionUser = (object) [
+                'id' => $_SESSION['user_id'] ?? session('user_id'),
+                'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
+                'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
+            ];
+            
+            // Only use session user if we have valid session data
+            if ($sessionUser->id) {
+                $user = $sessionUser;
+            }
+        }
+    @endphp
+
+    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = @json(optional($user)->id);
+        window.myName = @json(optional($user)->name ?? 'Guest');
+        window.isAuthenticated = @json((bool) $user);
+        window.userRole = @json(optional($user)->role ?? 'guest');
+        window.csrfToken = @json(csrf_token());
+        
+        // Global chat state
+        window.currentChatType = null;
+        window.currentChatUser = null;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        var currentChatType = window.currentChatType;
+        var currentChatUser = window.currentChatUser;
+        
+        console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+    </script>
+    
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
+    <!-- Admin CSS (reused for consistency) -->
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
+
+    {{-- Global UI Styles --}}
+    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
+
+    {{-- Chat CSS + any overrides --}}
     @stack('styles')
     
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .navbar-brand {
-            font-weight: bold;
-        }
-        .main-content {
-            padding: 20px 0;
-        }
-        /* Fix dropdown button styling */
-        .dropdown-item button {
-            width: 100%;
-            text-align: left;
-            background: none;
-            border: none;
-            padding: 0.375rem 1rem;
-            color: inherit;
-        }
-        .dropdown-item button:hover {
-            background-color: var(--bs-dropdown-link-hover-bg);
-        }
+    .logout-btn {
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1.5rem;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .logout-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+    
+    .logout-btn i {
+        margin-right: 0.75rem;
+        width: 1.2rem;
+        text-align: center;
+    }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('professor.dashboard') }}">
-                <i class="fas fa-chalkboard-teacher me-2"></i>A.R.T.C Professor Portal
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+<div class="admin-container">
+    <!-- Top Header -->
+    <header class="main-header">
+        <div class="header-left">
+            <!-- Hamburger Menu Button -->
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="bi bi-list"></i>
             </button>
             
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('professor.dashboard') ? 'active' : '' }}" href="{{ route('professor.dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('professor.meetings*') ? 'active' : '' }}" href="{{ route('professor.meetings') }}">
-                            <i class="fas fa-calendar-alt me-1"></i>Meetings
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {{ request()->routeIs('professor.students*') ? 'active' : '' }}" href="#" id="studentsDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-users me-1"></i>Students
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('professor.students.index') }}"><i class="bi bi-person-lines-fill me-2"></i>All Students</a></li>
-                            <li><a class="dropdown-item" href="{{ route('professor.students.batches') }}"><i class="bi bi-collection me-2"></i>My Batches</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('professor.programs*') ? 'active' : '' }}" href="{{ route('professor.programs') }}">
-                            <i class="fas fa-book me-1"></i>My Programs
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {{ request()->routeIs('professor.assignments*') ? 'active' : '' }}" href="#" id="assignmentsDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-tasks me-1"></i>Assignments
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('professor.grading') }}"><i class="bi bi-list-task me-2"></i>View All</a></li>
-                            <li><a class="dropdown-item" href="{{ route('professor.assignments.create') }}"><i class="bi bi-plus-circle me-2"></i>Create New</a></li>
-                        </ul>
-                    </li>
-                    @php
-                        $attendanceEnabled = \App\Models\AdminSetting::where('setting_key', 'attendance_enabled')->value('setting_value') !== 'false';
-                    @endphp
-                    @if($attendanceEnabled)
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('professor.attendance*') ? 'active' : '' }}" href="{{ route('professor.attendance') }}">
-                            <i class="fas fa-user-check me-1"></i>Attendance
-                        </a>
-                    </li>
-                    @endif
-                    {{--
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('professor.calendar*') ? 'active' : '' }}" href="{{ route('professor.calendar') }}">
-                            <i class="fas fa-calendar me-1"></i>Calendar
-                        </a>
-                    </li>
-                    --}}
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('professor.settings*') ? 'active' : '' }}" href="{{ route('professor.settings') }}">
-                            <i class="fas fa-cog me-1"></i>Settings
-                        </a>
-                    </li>
-                </ul>
-                
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i>{{ session('user_name', 'Professor') }}
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('professor.profile') }}"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item" onclick="return confirm('Are you sure you want to logout?')">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+            <!-- Brand Logo and Text -->
+            <div class="brand-container">
+                <img src="{{ asset('images/logo.png') }}" alt="A.R.T.C" class="brand-logo">
+                <span class="brand-text">Professor Dashboard</span>
             </div>
         </div>
-    </nav>
+
+        <div class="header-center">
+            <!-- Global Search -->
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search students, meetings, programs...">
+                    <div class="search-results-dropdown" id="searchResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Notifications -->
+            <div class="header-item notification-dropdown">
+                <button class="btn notification-btn" data-bs-toggle="dropdown">
+                    <i class="bi bi-bell"></i>
+                    <span class="notification-badge" id="notificationCount">0</span>
+                </button>
+                <div class="dropdown-menu notification-menu">
+                    <div class="notification-header">
+                        <h6>Notifications</h6>
+                        <button class="btn btn-link mark-all-read">Mark all as read</button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="notification-item">
+                            <i class="bi bi-info-circle text-primary"></i>
+                            <div class="notification-content">
+                                <p>Welcome to the Professor Dashboard!</p>
+                                <small class="text-muted">Just now</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <div class="header-item profile-dropdown">
+                <button class="btn profile-btn" data-bs-toggle="dropdown">
+                    <span class="profile-name">{{ session('user_name', 'Professor') }}</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="dropdown-menu profile-menu">
+                    <a class="dropdown-item" href="{{ route('professor.profile') }}">
+                        <i class="bi bi-person me-2"></i>My Profile
+                    </a>
+                    <a class="dropdown-item" href="{{ route('professor.settings') }}">
+                        <i class="bi bi-gear me-2"></i>Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ route('logout') }}">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Profile Icon -->
+        <div class="profile-icon">👤</div>
+    </header>
 
     <!-- Main Content -->
-    <main class="main-content">
-        @yield('content')
-    </main>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    @stack('scripts')
-
-    <!-- Include Global Chat Component -->
-    @include('components.global-chat')
-</body>
-</html>
+    <div class="main-content">
+        <div class="main-wrapper">
+            <div class="content-below-search">
+                <!-- Sidebar Overlay -->
+                <div class="sidebar-overlay" id="sidebarOverlay"></div>
+                
+                <!-- Modern Sliding Sidebar -->
+                <aside class="modern-sidebar" id="modernSidebar">
                     <div class="sidebar-content">
                         <nav class="sidebar-nav">
                             <!-- Dashboard -->

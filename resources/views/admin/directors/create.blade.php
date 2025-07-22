@@ -15,7 +15,7 @@
 
             <div class="card shadow">
                 <div class="card-body">
-                    <form method="POST" action="{{ route('admin.directors.store') }}">
+                    <form method="POST" action="{{ route('admin.directors.store') }}" autocomplete="off">
                         @csrf
                         
                         <div class="row">
@@ -34,7 +34,7 @@
                                 <div class="mb-3">
                                     <label for="directors_email" class="form-label">Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control @error('directors_email') is-invalid @enderror" 
-                                           id="directors_email" name="directors_email" value="{{ old('directors_email') }}" required>
+                                           id="directors_email" name="directors_email" value="{{ old('directors_email') }}" required autocomplete="off">
                                     @error('directors_email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -47,7 +47,7 @@
                                 <div class="mb-3">
                                     <label for="directors_password" class="form-label">Password <span class="text-danger">*</span></label>
                                     <input type="password" class="form-control @error('directors_password') is-invalid @enderror" 
-                                           id="directors_password" name="directors_password" required>
+                                           id="directors_password" name="directors_password" required autocomplete="new-password">
                                     @error('directors_password')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -66,6 +66,28 @@
                                     </div>
                                     <div class="form-text">Leave empty to auto-generate based on name (e.g., DIR01NAME)</div>
                                     @error('referral_code')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="program_access" class="form-label">Assign Programs <span class="text-danger">*</span></label>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="selectAllPrograms" onclick="toggleAllPrograms(this)">
+                                        <label class="form-check-label" for="selectAllPrograms">Select All Programs</label>
+                                    </div>
+                                    <select class="form-select" id="program_access" name="program_access[]" multiple required>
+                                        <option value="all">All Programs</option>
+                                        @foreach($programs as $program)
+                                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple programs, or select 'All Programs'.</div>
+                                    @error('program_access')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -122,5 +144,12 @@ document.getElementById('directors_name').addEventListener('input', function() {
         setTimeout(generateReferralCode, 500); // Small delay for better UX
     }
 });
+
+function toggleAllPrograms(checkbox) {
+    const select = document.getElementById('program_access');
+    for (let i = 0; i < select.options.length; i++) {
+        select.options[i].selected = checkbox.checked;
+    }
+}
 </script>
 @endpush

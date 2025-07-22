@@ -150,10 +150,23 @@
                         </div>
 
                         <!-- Today's Meetings -->
+                        @php
+                            // Build sets of meeting IDs for each tab to avoid overlap
+                            $currentIds = $currentMeetings->pluck('meeting_id')->toArray();
+                            $todayMeetingsFiltered = $todayMeetings->reject(function($meeting) use ($currentIds) {
+                                return in_array($meeting->meeting_id, $currentIds);
+                            });
+                            $upcomingMeetingsFiltered = $upcomingMeetings->reject(function($meeting) use ($currentIds) {
+                                return in_array($meeting->meeting_id, $currentIds);
+                            });
+                            $finishedMeetingsFiltered = $finishedMeetings->reject(function($meeting) use ($currentIds) {
+                                return in_array($meeting->meeting_id, $currentIds);
+                            });
+                        @endphp
                         <div class="tab-pane fade" id="today" role="tabpanel">
-                            @if($todayMeetings->count() > 0)
+                            @if($todayMeetingsFiltered->count() > 0)
                                 <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
-                                    @foreach($todayMeetings as $meeting)
+                                    @foreach($todayMeetingsFiltered as $meeting)
                                         <div class="meeting-card card border-info flex-shrink-0" style="min-width:320px;max-width:340px;">
                                             <div class="card-header bg-info text-white">
                                                 <h6 class="mb-0">{{ $meeting->title }}</h6>
@@ -196,9 +209,9 @@
 
                         <!-- Upcoming Meetings -->
                         <div class="tab-pane fade" id="upcoming" role="tabpanel">
-                            @if($upcomingMeetings->count() > 0)
+                            @if($upcomingMeetingsFiltered->count() > 0)
                                 <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
-                                    @foreach($upcomingMeetings as $meeting)
+                                    @foreach($upcomingMeetingsFiltered as $meeting)
                                         <div class="meeting-card card border-primary flex-shrink-0" style="min-width:320px;max-width:340px;">
                                             <div class="card-header bg-primary text-white">
                                                 <h6 class="mb-0">{{ $meeting->title }}</h6>
@@ -240,9 +253,9 @@
 
                         <!-- Finished Meetings -->
                         <div class="tab-pane fade" id="finished" role="tabpanel">
-                            @if($finishedMeetings->count() > 0)
+                            @if($finishedMeetingsFiltered->count() > 0)
                                 <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
-                                    @foreach($finishedMeetings as $meeting)
+                                    @foreach($finishedMeetingsFiltered as $meeting)
                                         <div class="meeting-card card border-success flex-shrink-0" style="min-width:320px;max-width:340px;">
                                             <div class="card-header bg-success text-white">
                                                 <h6 class="mb-0">{{ $meeting->title }}</h6>
