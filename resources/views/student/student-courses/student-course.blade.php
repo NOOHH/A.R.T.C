@@ -14,10 +14,10 @@
     
     <script>
         // Global variables for user authentication and chat functionality
-        window.myId = @json(auth()->check() ? auth()->user()->id : null);
-        window.myName = @json(auth()->check() ? auth()->user()->name : null);
-        window.isAuthenticated = @json(auth()->check());
-        window.userRole = @json(auth()->check() ? auth()->user()->role : null);
+        window.myId = {!! json_encode(session('user_id') ?? (auth()->check() ? auth()->user()->id : null)) !!};
+        window.myName = {!! json_encode(session('user_name') ?? (auth()->check() ? auth()->user()->name : null)) !!};
+        window.isAuthenticated = {!! json_encode(session('user_id') ? true : (auth()->check())) !!};
+        window.userRole = {!! json_encode(session('user_role') ?? (auth()->check() ? auth()->user()->role : null)) !!};
         // Initialize global variables
         var myId = window.myId;
         var myName = window.myName;

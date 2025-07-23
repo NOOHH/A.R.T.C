@@ -627,7 +627,7 @@ function rejectPaymentAgain(paymentId) {
 
 function undoPaymentApproval(paymentId) {
     if (confirm('Are you sure you want to undo this payment rejection? This will return the payment to pending approval.')) {
-        fetch(`/admin/payment/${paymentId}/undo-approval`, {
+        fetch(`/admin/payments/${paymentId}/approve`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -636,11 +636,11 @@ function undoPaymentApproval(paymentId) {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.success || data.status === 'success') {
                 alert('Payment rejection undone successfully! Payment is now pending approval.');
                 location.reload();
             } else {
-                alert('Error undoing payment rejection: ' + data.message);
+                alert('Error undoing payment rejection: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {

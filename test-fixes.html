@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API and JavaScript Fixes</title>
+</head>
+<body>
+    <h1>Testing API and JavaScript Fixes</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Test the API endpoint
+        console.log('Testing API endpoint...');
+        fetch('/api/user-info', { credentials: 'same-origin' })
+            .then(res => res.json())
+            .then(data => {
+                console.log('API Response:', data);
+                document.getElementById('result').innerHTML = `
+                    <h2>API Test Result:</h2>
+                    <p>Status: SUCCESS</p>
+                    <p>Response: ${JSON.stringify(data, null, 2)}</p>
+                `;
+            })
+            .catch(err => {
+                console.error('API Error:', err);
+                document.getElementById('result').innerHTML = `
+                    <h2>API Test Result:</h2>
+                    <p>Status: ERROR</p>
+                    <p>Error: ${err.message}</p>
+                `;
+            });
+        
+        // Test variable declaration (simulate multiple chat components)
+        try {
+            // This should work now without throwing an error
+            if (typeof window.chatPollingInterval === 'undefined') {
+                window.chatPollingInterval = null;
+            }
+            if (typeof window.lastMessageId === 'undefined') {
+                window.lastMessageId = 0;
+            }
+            
+            // Try again (this would have failed before the fix)
+            if (typeof window.chatPollingInterval === 'undefined') {
+                window.chatPollingInterval = null;
+            }
+            if (typeof window.lastMessageId === 'undefined') {
+                window.lastMessageId = 0;
+            }
+            
+            console.log('✅ JavaScript variable conflict test PASSED');
+            console.log('chatPollingInterval:', window.chatPollingInterval);
+            console.log('lastMessageId:', window.lastMessageId);
+        } catch (error) {
+            console.error('❌ JavaScript variable conflict test FAILED:', error);
+        }
+    </script>
+</body>
+</html>

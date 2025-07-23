@@ -34,7 +34,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('auth:sanctum')->get('/user-info', function () {
+Route::middleware(['web'])->get('/user-info', function () {
     $user = Auth::user();
     return response()->json([
         'id' => $user?->id,

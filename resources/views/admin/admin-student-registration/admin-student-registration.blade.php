@@ -1092,6 +1092,30 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     };
 
+    // Global function for undoing rejection
+    window.undoRejection = function(registrationId) {
+        showConfirmModal(
+            'Confirm Undo Rejection',
+            'Are you sure you want to undo this rejection? This will set the registration back to pending status.',
+            'Yes, Undo',
+            'btn-warning',
+            function() {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `${baseUrl}/admin/registration/${registrationId}/undo-rejection`;
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = token;
+                
+                form.appendChild(csrfInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        );
+    };
+
     // Handle rejection form submission
     document.getElementById('rejectReasonForm').addEventListener('submit', function(e) {
         const reasonTextarea = document.getElementById('rejectionReason');

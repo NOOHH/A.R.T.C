@@ -553,28 +553,32 @@ if (typeof myId !== 'undefined' && !myId && isAuthenticated) {
 }
 
 // ─────── REAL-TIME CHAT FUNCTIONALITY ───────
-let chatPollingInterval = null;
-let lastMessageId = 0;
+if (typeof window.chatPollingInterval === 'undefined') {
+    window.chatPollingInterval = null;
+}
+if (typeof window.lastMessageId === 'undefined') {
+    window.lastMessageId = 0;
+}
 
 function startRealTimeChat() {
     if (currentChatUser && currentChatUser.id) {
-        chatPollingInterval = setInterval(() => {
+        window.chatPollingInterval = setInterval(() => {
             checkForNewMessages(currentChatUser.id);
         }, 3000); // Check every 3 seconds
     }
 }
 
 function stopRealTimeChat() {
-    if (chatPollingInterval) {
-        clearInterval(chatPollingInterval);
-        chatPollingInterval = null;
+    if (window.chatPollingInterval) {
+        clearInterval(window.chatPollingInterval);
+        window.chatPollingInterval = null;
     }
 }
 
 function checkForNewMessages(userId) {
     if (!userId) return;
     
-    fetch(`/api/chat/session/messages?with=${userId}&after=${lastMessageId}`, {
+    fetch(`/api/chat/session/messages?with=${userId}&after=${window.lastMessageId}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
