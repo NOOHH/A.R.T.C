@@ -2878,14 +2878,21 @@
     console.log('  Form submit button:', document.getElementById('submitButton'));
     console.log('  jQuery available:', typeof $ !== 'undefined');
     
-    // Check if we're on the correct step
-    const finalStep = isUserLoggedIn ? 4 : 5;
-    if (currentStep !== finalStep) {
-        console.error(`❌ FORM SUBMISSION BLOCKED: Not on step ${finalStep}, current step is:`, currentStep);
-        event.preventDefault();
-        showFormErrors(['Please complete all previous steps before submitting.']);
-        return false;
-    }
+// Logged‑in → submit on step 3, guests → submit on step 5
+const finalStep = isUserLoggedIn ? 3 : 5;
+
+if (currentStep !== finalStep) {
+  console.error(
+    `❌ FORM SUBMISSION BLOCKED: Not on step ${finalStep}, current step is:`,
+    currentStep
+  );
+  event.preventDefault();
+  showFormErrors(['Please complete all previous steps before submitting.']);
+  return false;
+}
+
+
+
     
     console.log('✅ Step validation passed');
     
