@@ -665,7 +665,7 @@ class AdminController extends Controller
                 'transaction_date' => $payment->created_at ? $payment->created_at->format('M d, Y g:i A') : 'N/A',
                 'notes' => $payment->notes ?? '',
                 'enrollment_date' => $enrollment->created_at ? $enrollment->created_at->format('M d, Y g:i A') : 'N/A',
-            ];
+            ]);
             return response()->json($response);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error loading enrollment details: ' . $e->getMessage()], 500);

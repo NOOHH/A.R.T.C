@@ -343,11 +343,12 @@
     .certificate-pending {
         padding: 20px;
     }
+    /*
         font-size: 3rem;
         margin-bottom: 10px;
         opacity: 0.5;
     }
-    
+    */
     /* Module icons */
     .course-thumbnail::before {
         content: '📚';
