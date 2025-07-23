@@ -280,13 +280,18 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="professor_ids" class="form-label">Assigned Professor(s) (Optional)</label>
-                        <select class="form-control" id="professor_ids" name="professor_ids[]" multiple>
+                        <label class="form-label">Assigned Professor(s) (Optional)</label>
+                        <div class="professor-selection-container border rounded p-3" style="max-height: 200px; overflow-y: auto;">
                             @foreach($professors as $professor)
-                                <option value="{{ $professor->professor_id }}">{{ $professor->professor_name }}</option>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="professor_{{ $professor->professor_id }}" name="professor_ids[]" value="{{ $professor->professor_id }}">
+                                    <label class="form-check-label" for="professor_{{ $professor->professor_id }}">
+                                        {{ $professor->professor_name }} ({{ $professor->professor_email }})
+                                    </label>
+                                </div>
                             @endforeach
-                        </select>
-                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
+                        </div>
+                        <div class="form-text">Select one or more professors to assign to this batch.</div>
                     </div>
                     <div class="mb-3">
                         <label for="max_capacity" class="form-label">Maximum Capacity</label>
@@ -359,15 +364,18 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_professor_ids{{ $batch->batch_id }}" class="form-label">Assigned Professor(s) (Optional)</label>
-                        <select class="form-control" id="edit_professor_ids{{ $batch->batch_id }}" name="professor_ids[]" multiple>
+                        <label class="form-label">Assigned Professor(s) (Optional)</label>
+                        <div class="professor-selection-container border rounded p-3" style="max-height: 200px; overflow-y: auto;">
                             @foreach($professors as $professor)
-                                <option value="{{ $professor->professor_id }}" {{ in_array($professor->professor_id, $batch->professors->pluck('professor_id')->toArray()) ? 'selected' : '' }}>
-                                    {{ $professor->professor_name }}
-                                </option>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_professor_{{ $batch->batch_id }}_{{ $professor->professor_id }}" name="professor_ids[]" value="{{ $professor->professor_id }}" {{ in_array($professor->professor_id, $batch->professors->pluck('professor_id')->toArray()) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="edit_professor_{{ $batch->batch_id }}_{{ $professor->professor_id }}">
+                                        {{ $professor->professor_name }} ({{ $professor->professor_email }})
+                                    </label>
+                                </div>
                             @endforeach
-                        </select>
-                        <div class="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</div>
+                        </div>
+                        <div class="form-text">Select one or more professors to assign to this batch.</div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_max_capacity{{ $batch->batch_id }}" class="form-label">Maximum Capacity</label>

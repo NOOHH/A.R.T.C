@@ -207,7 +207,7 @@ class StudentPaymentModalController extends Controller
 
             $amount = 0;
             if ($enrollment->package) {
-                $amount = $enrollment->package->package_price ?? $enrollment->package->price ?? 0;
+                $amount = $enrollment->package->amount ?? 0;
             }
 
             return response()->json([

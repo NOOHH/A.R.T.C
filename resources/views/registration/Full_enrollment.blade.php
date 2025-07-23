@@ -96,7 +96,7 @@
             window.location.href = "{{ route('login') }}";
             return;
         } else {
-            // Continue to step 2 (packages)
+            // Continue to step 2 (packages) - transition from step-content-1 to step-content-2
             console.log('Continuing to package selection');
             animateStepTransition('step-content-1', 'step-content-2');
             currentStep = 2;
@@ -259,7 +259,7 @@
 
         if (currentStep === 1) {
             if (isUserLoggedIn) {
-                // For logged-in users, step 1 is package selection
+                // For logged-in users, step 1 is package selection (step-content-2)
                 const packageInput = document.querySelector('input[name="package_id"]');
                 const sessionPackageId = sessionStorage.getItem('selectedPackageId');
                 console.log('Checking package selection:', {
@@ -278,7 +278,7 @@
                 }
                 
                 console.log('Logged-in user: transitioning from step 1 (packages) to step 2 (learning mode)');
-                animateStepTransition('step-content-1','step-content-2');
+                animateStepTransition('step-content-2','step-content-3');
                 currentStep = 2;
                 updateStepper(currentStep);
             } else {
@@ -288,7 +288,7 @@
             }
         } else if (currentStep === 2) {
             if (isUserLoggedIn) {
-                // For logged-in users, step 2 is learning mode selection
+                // For logged-in users, step 2 is learning mode selection (step-content-3)
                 const learningModeValue = document.getElementById('learning_mode')?.value;
                 console.log('Learning mode value:', learningModeValue);
                 
@@ -298,7 +298,7 @@
                 }
                 
                 console.log('Logged-in user: transitioning from step 2 (learning mode) to step 3 (form)');
-                animateStepTransition('step-content-2', 'step-content-3');
+                animateStepTransition('step-content-3', 'step-content-4');
                 currentStep = 3;
                 updateStepper(currentStep);
                 setTimeout(() => {
@@ -2091,79 +2091,75 @@
         </div>
 
     <!-- Step 4: Account Registration (only for non-logged users) -->
-    <div class="step-content" id="step-content-4">
-        <div class="account-step-card">
-            <div class="step-header">
-                <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
-                <p>Please provide your account information to continue.</p>
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="user_firstname">First Name</label>
-                    <input type="text" id="user_firstname" name="user_firstname" class="form-control" required>
-                    <div id="user_firstnameError" class="error-message" style="display: none;"></div>
+    @if(!$userLoggedIn)
+        <div class="step-content" id="step-content-4">
+            <div class="account-step-card">
+                <div class="step-header">
+                    <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
+                    <p>Please provide your account information to continue.</p>
                 </div>
-                <div class="form-group">
-                    <label for="user_lastname">Last Name</label>
-                    <input type="text" id="user_lastname" name="user_lastname" class="form-control" required>
-                    <div id="user_lastnameError" class="error-message" style="display: none;"></div>
-                </div>
-                <div class="form-group" style="grid-column: 1 / span 2;">
-                    <label for="user_email">Email Address</label>
-                    <div class="email-input-group">
-                        <input type="email" id="user_email" name="email" class="form-control" required>
-                        <button type="button" id="sendOtpBtn" class="btn-otp" onclick="sendEnrollmentOTP()">
-                            <i class="fas fa-paper-plane"></i> Send OTP
-                        </button>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="user_firstname">First Name</label>
+                        <input type="text" id="user_firstname" name="user_firstname" class="form-control" required>
+                        <div id="user_firstnameError" class="error-message" style="display: none;"></div>
                     </div>
-                    <div id="emailError" class="error-message" style="display: none;"></div>
-                </div>
-
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" class="form-control" required>
-                    <div id="passwordError" class="error-message" style="display: none;"></div>
-                </div>
-                <div class="form-group">
-                    <label for="password_confirmation">Confirm Password</label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
-                    <div id="passwordMatchError" class="error-message" style="display: none;"></div>
-                </div>
-                
-                @if(DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1')
-                <div class="form-group" style="grid-column: 1 / span 2;">
-                    <label for="referral_code">Referral Code @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') <span class="text-danger">*</span> @endif</label>
-                    <div class="referral-input-group">
-                        <input type="text" id="referral_code" name="referral_code" class="form-control" 
-                               placeholder="Enter referral code (e.g., PROF01JDOE or DIR01SMITH)"
-                               @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') required @endif>
-                        <button type="button" id="validateReferralBtn" class="btn-validate-referral" onclick="validateReferralCode()">
-                            <i class="fas fa-check"></i> Validate
-                        </button>
+                    <div class="form-group">
+                        <label for="user_lastname">Last Name</label>
+                        <input type="text" id="user_lastname" name="user_lastname" class="form-control" required>
+                        <div id="user_lastnameError" class="error-message" style="display: none;"></div>
                     </div>
-                    <div id="referralCodeError" class="error-message" style="display: none;"></div>
-                    <div id="referralCodeSuccess" class="success-message" style="display: none;"></div>
-                    <div class="form-text">@if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') Required: @endif Enter the referral code provided by your professor or director</div>
+                    <div class="form-group" style="grid-column: 1 / span 2;">
+                        <label for="user_email">Email Address</label>
+                        <div class="email-input-group">
+                            <input type="email" id="user_email" name="email" class="form-control" required>
+                            <button type="button" id="sendOtpBtn" class="btn-otp" onclick="sendEnrollmentOTP()">
+                                <i class="fas fa-paper-plane"></i> Send OTP
+                            </button>
+                        </div>
+                        <div id="emailError" class="error-message" style="display: none;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                        <div id="passwordError" class="error-message" style="display: none;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password_confirmation">Confirm Password</label>
+                        <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
+                        <div id="passwordMatchError" class="error-message" style="display: none;"></div>
+                    </div>
+                    @if(DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1')
+                    <div class="form-group" style="grid-column: 1 / span 2;">
+                        <label for="referral_code">Referral Code @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') <span class="text-danger">*</span> @endif</label>
+                        <div class="referral-input-group">
+                            <input type="text" id="referral_code" name="referral_code" class="form-control" 
+                                   placeholder="Enter referral code (e.g., PROF01JDOE or DIR01SMITH)"
+                                   @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') required @endif>
+                            <button type="button" id="validateReferralBtn" class="btn-validate-referral" onclick="validateReferralCode()">
+                                <i class="fas fa-check"></i> Validate
+                            </button>
+                        </div>
+                        <div id="referralCodeError" class="error-message" style="display: none;"></div>
+                        <div id="referralCodeSuccess" class="success-message" style="display: none;"></div>
+                        <div class="form-text">@if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') Required: @endif Enter the referral code provided by your professor or director</div>
+                    </div>
+                    @endif
                 </div>
-                @endif
-            </div>
-
-            <div class="login-prompt">
-                <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
-            </div>
-
-            <div class="form-navigation">
-                <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
-                    <i class="bi bi-arrow-left me-2"></i> Back
-                </button>
-                <button type="button" onclick="nextStep()" id="step4NextBtn" disabled class="btn btn-primary btn-lg">
-                    Next <i class="bi bi-arrow-right ms-2"></i>
-                </button>
+                <div class="login-prompt">
+                    <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
+                </div>
+                <div class="form-navigation">
+                    <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-left me-2"></i> Back
+                    </button>
+                    <button type="button" onclick="nextStep()" id="step4NextBtn" disabled class="btn btn-primary btn-lg">
+                        Next <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
 
     <!-- Step 4/5: Student Registration - Dynamic ID based on login status -->
     <div class="step-content" id="{{ $userLoggedIn ? 'step-content-4' : 'step-content-5' }}">
@@ -2493,20 +2489,23 @@
         });
         
         if (isUserLoggedIn) {
-            // For logged-in users: start with step 1 (packages)
-            console.log('Logged-in user: Showing package selection (step-content-1)');
-            const packageStep = document.getElementById('step-content-1');
+            // For logged-in users: show package selection (step-content-2)
+            console.log('Logged-in user: Showing package selection (step-content-2)');
+            const packageStep = document.getElementById('step-content-2');
             if (packageStep) {
                 packageStep.classList.add('active');
                 console.log('Package selection step activated');
             }
             
             // Hide account check step for logged-in users
-            const accountCheckStep = document.getElementById('step-content-0'); // If it exists
+            const accountCheckStep = document.getElementById('step-content-1');
             if (accountCheckStep) {
                 accountCheckStep.style.display = 'none';
                 console.log('Account check step hidden for logged-in user');
             }
+            
+            // Set current step to 1 since for logged-in users, package selection is their first step
+            currentStep = 1;
             
             // Prefill user data if form fields are already available
             setTimeout(() => {
@@ -2883,7 +2882,7 @@
     console.log('  jQuery available:', typeof $ !== 'undefined');
     
     // Check if we're on the correct step
-    const finalStep = isUserLoggedIn ? 4 : 5;
+    const finalStep = isUserLoggedIn ? 3 : 4;
     if (currentStep !== finalStep) {
         console.error(`❌ FORM SUBMISSION BLOCKED: Not on step ${finalStep}, current step is:`, currentStep);
         event.preventDefault();
@@ -2904,6 +2903,11 @@
         // block submission and show errors
         event.preventDefault();
         showFormErrors(errors);
+        // Re-enable submit button so user can try again
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Complete Registration';
+        }
         return false;
     }
     
