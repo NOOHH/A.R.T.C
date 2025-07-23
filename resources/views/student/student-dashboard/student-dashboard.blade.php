@@ -692,7 +692,19 @@
             @forelse($deadlines as $deadline)
                 <div class="deadline-item" style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
                     <div style="flex: 1;">
-                        <div style="font-weight: 600; color: #2c3e50;">{{ $deadline->title }}</div>
+                        <div style="font-weight: 600; color: #2c3e50;">
+                            @if($deadline->type === 'assignment')
+                                <i class="bi bi-pencil-square text-warning me-1"></i>
+                            @elseif($deadline->type === 'quiz')
+                                <i class="bi bi-question-circle text-primary me-1"></i>
+                            @endif
+                            {{ $deadline->title }}
+                            @if($deadline->type === 'assignment')
+                                <span class="badge bg-warning text-dark ms-2">Assignment</span>
+                            @elseif($deadline->type === 'quiz')
+                                <span class="badge bg-primary ms-2">Quiz</span>
+                            @endif
+                        </div>
                         <div style="font-size: 0.85rem; color: #7f8c8d;">{{ $deadline->description }}</div>
                         <div style="font-size: 0.8rem; color: #e74c3c;">
                             <i class="bi bi-clock"></i> Due: {{ \Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A') }}
@@ -778,7 +790,16 @@
                     <div style="font-size: 0.8rem; color: #7f8c8d;">
                         <i class="bi bi-clock"></i> {{ $announcement->created_at->diffForHumans() }}
                     </div>
+                </div><div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+                    <div class="flex-grow-1">
+                        <h1 class="course-title mb-1">{{ $program->program_name ?? 'Course' }}</h1>
+                        <p class="course-subtitle mb-0">{{ $program->description ?? 'Learn at your own pace with interactive modules and assignments.' }}</p>
+                    </div>
+                    <a href="{{ route('student.dashboard') }}" class="btn btn-secondary mt-3 mt-md-0">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
                 </div>
+                
             @empty
                 <div style="padding: 20px;">
                     <p style="margin-bottom: 0;">Welcome to your student dashboard! Here you can access your courses, track your progress, and stay updated with important announcements.</p>
@@ -787,52 +808,7 @@
         </div>
     </div>
 
-    <!-- Certificate Section -->
-    <div class="dashboard-card certificate-card">
-        <div class="card-header">
-            <h2><i class="bi bi-award me-2"></i>My Certificate</h2>
-        </div>
-        <div class="certificate-content" style="padding: 20px;">
-            @php
-                // Check if student has approved enrollments
-                $hasApprovedEnrollment = false;
-                if(session('user_id')) {
-                    $approvedEnrollment = \App\Models\Enrollment::where('user_id', session('user_id'))
-                        ->where('enrollment_status', 'approved')
-                        ->first();
-                    $hasApprovedEnrollment = !is_null($approvedEnrollment);
-                }
-            @endphp
-            
-            @if($hasApprovedEnrollment)
-                <div class="certificate-available">
-                    <div class="text-center mb-3">
-                        <i class="bi bi-award-fill" style="font-size: 3rem; color: #28a745;"></i>
-                    </div>
-                    <div class="text-center mb-3">
-                        <h5 class="text-success">Certificate Available!</h5>
-                        <p class="text-muted mb-3">Congratulations! Your enrollment has been approved and your certificate is ready.</p>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('certificate.show') }}" target="_blank" class="btn btn-success">
-                            <i class="bi bi-eye me-2"></i>View Certificate
-                        </a>
-                        <a href="{{ route('certificate.download') }}" class="btn btn-primary">
-                            <i class="bi bi-download me-2"></i>Download Certificate
-                        </a>
-                    </div>
-                </div>
-            @else
-                <div class="certificate-pending text-center">
-                    <div class="mb-3">
-                        <i class="bi bi-hourglass-split" style="font-size: 3rem; color: #6c757d;"></i>
-                    </div>
-                    <h6 class="text-muted">Certificate Not Yet Available</h6>
-                    <p class="small text-muted">Your certificate will be available once your enrollment is approved and completed. Please contact your administrator if you have any questions.</p>
-                </div>
-            @endif
-        </div>
-    </div>
+
 </div>
 
 <!-- Status Modal -->

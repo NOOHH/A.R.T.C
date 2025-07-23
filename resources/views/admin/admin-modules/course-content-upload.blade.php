@@ -102,6 +102,11 @@
     background: #f0f2ff;
 }
 
+.file-upload-area-hover {
+    border-color: #5a67d8;
+    background: #f0f2ff;
+}
+
 .file-upload-icon {
     font-size: 3rem;
     color: #667eea;
@@ -297,7 +302,6 @@
                             <option value="">-- Select Type --</option>
                             <option value="lesson">📚 Lesson</option>
                             <option value="assignment">📝 Assignment</option>
-                            <option value="quiz">❓ Quiz</option>
                             <option value="video">🎥 Video</option>
                             <option value="document">📄 Document</option>
                         </select>
@@ -313,6 +317,12 @@
                     </div>
                 </div>
             </div>
+            <!-- Assignment Due Date (only for assignments) -->
+            <div class="form-group" id="assignmentDueDateGroup" style="display:none;">
+                <label for="assignmentDueDate" class="form-label">Assignment Due Date <span class="required">*</span></label>
+                <input type="datetime-local" id="assignmentDueDate" name="due_date" class="form-control">
+                <small class="form-text text-muted">Set the deadline for this assignment. Students cannot submit after this date/time.</small>
+            </div>
             <div class="form-group">
                 <label for="contentDescription" class="form-label">Content Description</label>
                 <textarea id="contentDescription" name="content_description" class="form-control" 
@@ -320,23 +330,36 @@
             </div>
         </div>
 
+        <!-- Allow student submission toggle, hidden by default -->
+        <div class="form-group" id="studentSubmissionToggle" style="display:none;">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="1" id="enableSubmission" name="enable_submission">
+                <label class="form-check-label" for="enableSubmission">
+                    Allow student submission (students can upload their work for this assignment)
+                </label>
+            </div>
+        </div>
+
         <div class="form-section">
             <h3 class="section-title">
                 <i class="bi bi-paperclip"></i>
-                File Upload
+                File Upload or Content Link
             </h3>
-            <div class="file-upload-area" onclick="document.getElementById('attachment').click();">
+            <div class="form-group">
+                <label for="contentLink" class="form-label">Content Link (URL)</label>
+                <input type="url" id="contentLink" name="content_link" class="form-control" placeholder="Paste a link to content (optional)">
+            </div>
+            <div class="file-upload-area" id="fileUploadArea">
                 <div class="file-upload-icon">
                     <i class="bi bi-cloud-arrow-up"></i>
                 </div>
                 <p><strong>Click to upload</strong> or drag and drop</p>
                 <div class="file-info">
                     Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos<br>
-                    Maximum file size: 100MB
+                    Maximum file size: 100MB each
                 </div>
-                <input type="file" id="attachment" name="attachment" class="file-input" required 
-                       accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov">
-                <div class="selected-file" id="selectedFile">
+                <input type="file" id="attachment" name="attachment[]" class="file-input" multiple accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov">
+                <div class="selected-file" id="selectedFile" style="display:none">
                     <i class="bi bi-file-check"></i>
                     <span id="fileName"></span>
                     <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile()">
@@ -366,35 +389,54 @@ const fileNameSpan = document.getElementById('fileName');
 const submitBtn = document.getElementById('submitBtn');
 const progressBar = document.getElementById('progressBar');
 const progressFill = document.getElementById('progressFill');
+const fileUploadArea = document.getElementById('fileUploadArea');
+const contentLinkInput = document.getElementById('contentLink');
+const contentTypeSelect = document.getElementById('contentType');
+const studentSubmissionToggle = document.getElementById('studentSubmissionToggle');
+const assignmentDueDateGroup = document.getElementById('assignmentDueDateGroup');
+const assignmentDueDateInput = document.getElementById('assignmentDueDate');
 
-// File selection handler
+// File selection handler (multiple files)
 fileInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        fileNameSpan.textContent = `${file.name} (${formatFileSize(file.size)})`;
-        selectedFileDiv.style.display = 'block';
-        validateFile(file);
-    }
+    displaySelectedFiles();
 });
 
-// File validation
+function displaySelectedFiles() {
+    const files = fileInput.files;
+    if (files && files.length > 0) {
+        let names = [];
+        let valid = true;
+        for (let i = 0; i < files.length; i++) {
+            if (!validateFile(files[i])) {
+                valid = false;
+                break;
+            }
+            names.push(`${files[i].name} (${formatFileSize(files[i].size)})`);
+        }
+        if (valid) {
+            fileNameSpan.textContent = names.join(', ');
+            selectedFileDiv.style.display = 'block';
+        } else {
+            clearFile();
+        }
+    } else {
+        selectedFileDiv.style.display = 'none';
+    }
+}
+
+// File validation (multiple files)
 function validateFile(file) {
     const maxSize = 100 * 1024 * 1024; // 100MB
     const allowedTypes = ['pdf', 'doc', 'docx', 'zip', 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
     const extension = file.name.split('.').pop().toLowerCase();
-    
     if (file.size > maxSize) {
         alert('File is too large. Maximum size allowed is 100MB.');
-        clearFile();
         return false;
     }
-    
     if (!allowedTypes.includes(extension)) {
         alert('Invalid file type. Please select a supported file format.');
-        clearFile();
         return false;
     }
-    
     return true;
 }
 
@@ -403,6 +445,27 @@ function clearFile() {
     fileInput.value = '';
     selectedFileDiv.style.display = 'none';
 }
+
+// Drag and drop support
+fileUploadArea.addEventListener('click', function() {
+    fileInput.click();
+});
+fileUploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    fileUploadArea.classList.add('file-upload-area-hover');
+});
+fileUploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    fileUploadArea.classList.remove('file-upload-area-hover');
+});
+fileUploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    fileUploadArea.classList.remove('file-upload-area-hover');
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        displaySelectedFiles();
+    }
+});
 
 // Format file size
 function formatFileSize(bytes) {
@@ -438,6 +501,20 @@ document.addEventListener('DOMContentLoaded', function() {
         nonModalProgramSelect.value = preselectProgramId;
         populateModules(preselectProgramId, preselectModuleId, preselectCourseId);
     }
+
+    // Show/hide student submission toggle based on content type
+    contentTypeSelect.addEventListener('change', function() {
+        if (this.value === 'assignment') {
+            studentSubmissionToggle.style.display = 'block';
+            assignmentDueDateGroup.style.display = 'block';
+            assignmentDueDateInput.setAttribute('required', 'required');
+        } else {
+            studentSubmissionToggle.style.display = 'none';
+            document.getElementById('enableSubmission').checked = false;
+            assignmentDueDateGroup.style.display = 'none';
+            assignmentDueDateInput.removeAttribute('required');
+        }
+    });
 });
 
 nonModalProgramSelect.addEventListener('change', function() {
@@ -542,13 +619,18 @@ function populateCourses(moduleId, courseToSelect) {
 // Enhanced form submission
 document.getElementById('nonModalContentForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    const formData = new FormData(this);
-    const file = fileInput.files[0];
-    
-    // Validate form
-    if (!file || !validateFile(file)) {
+    const files = fileInput.files;
+    const link = contentLinkInput.value.trim();
+    if ((!files || files.length === 0) && !link) {
+        alert('Please upload at least one file or provide a content link.');
         return;
+    }
+    if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+            if (!validateFile(files[i])) {
+                return;
+            }
+        }
     }
     
     // Update UI for upload
@@ -569,7 +651,7 @@ document.getElementById('nonModalContentForm').addEventListener('submit', functi
     // Submit form
     fetch(this.action, {
         method: 'POST',
-        body: formData,
+        body: new FormData(this),
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',

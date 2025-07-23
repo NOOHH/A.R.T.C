@@ -691,12 +691,18 @@
 
             <!-- Main Content -->
             <main class="main-content">
-                <!-- Course Header -->
-                <div class="course-header">
-                    <h1 class="course-title">{{ $program->program_name ?? 'Course' }}</h1>
-                    <p class="course-subtitle">{{ $program->description ?? 'Learn at your own pace with interactive modules and assignments.' }}</p>
+                <div class="container-fluid p-0">
+                    <!-- Course Header -->
+                    <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+                        <div class="flex-grow-1">
+                            <h1 class="course-title mb-1">{{ $program->program_name ?? 'Course' }}</h1>
+                            <p class="course-subtitle mb-0">{{ $program->description ?? 'Learn at your own pace with interactive modules and assignments.' }}</p>
+                        </div>
+                        <a href="{{ route('student.dashboard') }}" class="btn btn-secondary mt-3 mt-md-0">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
                 </div>
-
                 <!-- Course Layout -->
                 <div class="course-layout">
                     <!-- Modules Panel -->
@@ -775,31 +781,32 @@
     </div>
 
     <!-- Assignment Submission Modal -->
-    <div class="modal fade" id="assignmentModal" tabindex="-1">
+    <div class="modal fade" id="submissionModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Submit Assignment</h5>
+                    <h5 class="modal-title">Submit Your Work</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="assignmentForm" enctype="multipart/form-data">
+                    <form id="submissionForm" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" id="assignmentId" name="assignment_id">
+                        <input type="hidden" id="submissionContentId" name="content_id">
                         <div class="mb-3">
-                            <label for="submissionFile" class="form-label">Upload File</label>
-                            <input type="file" class="form-control" id="submissionFile" name="submission_file" required>
-                            <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, PPT, PPTX (Max: 10MB)</small>
+                            <label for="submissionFiles" class="form-label">Upload Files</label>
+                            <input type="file" class="form-control" id="submissionFiles" name="files[]" multiple required>
+                            <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
                         </div>
                         <div class="mb-3">
                             <label for="submissionNotes" class="form-label">Notes (Optional)</label>
                             <textarea class="form-control" id="submissionNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission..."></textarea>
                         </div>
                     </form>
+                    <div id="previousSubmissions" class="mb-3"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitAssignment()">Submit Assignment</button>
+                    <button type="button" class="btn btn-primary" id="submitWorkBtn">Submit</button>
                 </div>
             </div>
         </div>
@@ -1049,7 +1056,12 @@
                 const icon = getContentIcon(item.content_type || item.type);
                 const hasAttachment = item.attachment_path && item.attachment_path.trim() !== '';
                 console.log('Item has attachment:', hasAttachment, 'Path:', item.attachment_path);
-                html += `
+
+                // Determine if it's an assignment or requires submission
+                const isAssignment = item.content_type === 'assignment' || item.enable_submission === true;
+                const isQuiz = item.content_type === 'quiz';
+
+                let itemHtml = `
                     <div class="content-item" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
                         <div class="item-header">
                             <div class="item-icon ${icon.class}">
@@ -1065,6 +1077,15 @@
                         </div>
                     </div>
                 `;
+
+                if (isAssignment || isQuiz) {
+                    itemHtml += `
+
+                        </div>
+                    `;
+                }
+
+                html += itemHtml;
             });
             html += '</div>';
             
@@ -1106,7 +1127,7 @@
                     break;
                 case 'assignment':
                     console.log('Opening as assignment content');
-                    openAssignmentContent(contentId);
+                    openAssignmentViewer(contentId);
                     break;
                 case 'document':
                 case 'pdf':
@@ -1118,6 +1139,147 @@
                     openGenericContent(contentId);
                     break;
             }
+        }
+
+        // Assignment content viewer (not modal)
+        function openAssignmentViewer(contentId) {
+            const viewer = document.getElementById('content-viewer');
+            // Show loading spinner
+            viewer.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading assignment...</span>
+                    </div>
+                </div>
+            `;
+            fetch(`/student/content/${contentId}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.content) {
+                    let content = data.content;
+                    let html = `<div class="assignment-container">
+                <div class="assignment-header mb-3">
+                    <h4>${content.content_title || 'Assignment'}</h4>
+                    ${content.content_description ? `<p class="mb-2">${content.content_description}</p>` : ''}
+                    ${content.due_date ? `<div><strong>Due:</strong> <span id='assignmentDueDateDisplay'>${content.due_date}</span></div>` : ''}
+                </div>`;
+                    // Show attachments if any
+                    if (content.attachment_path) {
+                        let files = [];
+                        try { files = JSON.parse(content.attachment_path); } catch (e) { files = [content.attachment_path]; }
+                        if (Array.isArray(files)) {
+                            html += '<div class="mb-3"><strong>Attachments:</strong><ul>';
+                            files.forEach(f => {
+                                const isPdf = f.toLowerCase().endsWith('.pdf');
+                                html += `<li><a href="/storage/${f}" target="_blank">${f.split('/').pop()}</a>`;
+                                if (isPdf) {
+                                    html += `<div class="pdf-viewer-container mt-2"><iframe src="/storage/${f}#toolbar=1&navpanes=1&scrollbar=1" class="document-viewer" frameborder="0" style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 0.5rem;"></iframe></div>`;
+                                }
+                                html += `</li>`;
+                            });
+                            html += '</ul></div>';
+                        }
+                    }
+                    // Assignment instructions
+                    if (content.content_data && content.content_data.assignment_instructions) {
+                        html += `<div class="mb-3"><strong>Instructions:</strong><div>${content.content_data.assignment_instructions}</div></div>`;
+                    }
+                    // Deadline enforcement logic
+                    let deadlinePassed = false;
+                    if (content.due_date) {
+                        const dueDate = new Date(content.due_date);
+                        const now = new Date();
+                        if (now > dueDate) {
+                            deadlinePassed = true;
+                        }
+                    }
+                    if (deadlinePassed) {
+                        html += `<div class='alert alert-danger mt-4'><strong>The deadline for this assignment has passed. You can no longer submit.</strong></div>`;
+                    } else {
+                        // Submission form
+                        html += `<div class="assignment-actions">
+                    <form id="assignmentSubmitForm" enctype="multipart/form-data">
+                        <input type="hidden" name="content_id" value="${content.id}">
+                        <div class="mb-3">
+                            <label for="assignmentFiles" class="form-label">Upload Files</label>
+                            <input type="file" class="form-control" id="assignmentFiles" name="files[]" multiple required>
+                            <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="assignmentNotes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit Assignment</button>
+                    </form>
+                    <div id="assignmentSubmissionStatus" class="mt-3"></div>
+                    <div id="previousAssignmentSubmissions" class="mt-3"></div>
+                </div>`;
+                    }
+                    html += `</div>`;
+                    viewer.innerHTML = html;
+                    // Fetch and display previous submissions
+                    fetch(`/student/content/${content.id}/submissions`, {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.submissions && data.submissions.length > 0) {
+                            let html = '<div class="alert alert-info"><strong>Previous Submissions:</strong><ul>';
+                            data.submissions.forEach(sub => {
+                                let files = sub.files || [];
+                                if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
+                                html += `<li>${sub.submitted_at}: `;
+                                files.forEach(f => {
+                                    html += `<a href="/storage/${f.file_path || f}" target="_blank">${(f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File'))}</a> `;
+                                });
+                                html += '</li>';
+                            });
+                            html += '</ul></div>';
+                            document.getElementById('previousAssignmentSubmissions').innerHTML = html;
+                        }
+                    });
+                    // Handle form submission if not past deadline
+                    if (!deadlinePassed) {
+                        document.getElementById('assignmentSubmitForm').addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            const formData = new FormData(this);
+                            const statusDiv = document.getElementById('assignmentSubmissionStatus');
+                            statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+                            fetch('/student/assignment/submit', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    statusDiv.innerHTML = '<span class="text-success">Submission successful!</span>';
+                                    this.reset();
+                                } else {
+                                    statusDiv.innerHTML = `<span class="text-danger">${data.message || 'Error submitting your work.'}</span>`;
+                                }
+                            })
+                            .catch(error => {
+                                statusDiv.innerHTML = '<span class="text-danger">Error submitting your work.</span>';
+                            });
+                        });
+                    }
+                } else {
+                    viewer.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle text-warning"></i><h4>Assignment Not Available</h4><p>Unable to load assignment details.</p></div>`;
+                }
+            });
         }
 
         // Open video content
@@ -1148,13 +1310,6 @@
                 console.error('Error loading video:', error);
                 alert('Error loading video content');
             });
-        }
-
-        // Open assignment content
-        function openAssignmentContent(contentId) {
-            document.getElementById('assignmentId').value = contentId;
-            const assignmentModal = new bootstrap.Modal(document.getElementById('assignmentModal'));
-            assignmentModal.show();
         }
 
         // Open document content
@@ -1417,6 +1572,65 @@
                     </div>
                 `;
             }
+        }
+
+        document.getElementById('submitWorkBtn').addEventListener('click', function() {
+            const form = document.getElementById('submissionForm');
+            const formData = new FormData(form);
+            const submitBtn = this;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            fetch('/student/assignment/submit', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Submission successful!');
+                    bootstrap.Modal.getInstance(document.getElementById('submissionModal')).hide();
+                    form.reset();
+                } else {
+                    alert(data.message || 'Error submitting your work.');
+                }
+            })
+            .catch(error => {
+                alert('Error submitting your work.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            });
+        });
+
+        function markContentDone(contentId, btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Marking...';
+            fetch(`/student/content/${contentId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    btn.outerHTML = '<span class="badge bg-success ms-2">Completed</span>';
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark as Done';
+                    alert(data.message || 'Error marking as done');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark as Done';
+                alert('Error marking as done');
+            });
         }
     </script>
 

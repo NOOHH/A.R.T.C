@@ -1095,15 +1095,33 @@ class AdminModuleController extends Controller
         }
 
         // Add detailed logging before validation
+        $fileInfo = 'No file';
+        if ($request->hasFile('attachment')) {
+            $files = $request->file('attachment');
+            if (is_array($files)) {
+                $fileInfo = [];
+                foreach ($files as $file) {
+                    $fileInfo[] = [
+                        'original_name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType(),
+                        'error' => $file->getError(),
+                        'is_valid' => $file->isValid()
+                    ];
+                }
+            } else {
+                $fileInfo = [
+                    'original_name' => $files->getClientOriginalName(),
+                    'size' => $files->getSize(),
+                    'mime_type' => $files->getMimeType(),
+                    'error' => $files->getError(),
+                    'is_valid' => $files->isValid()
+                ];
+            }
+        }
         \Log::info('Course content store request received', [
             'has_file' => $request->hasFile('attachment'),
-            'file_info' => $request->hasFile('attachment') ? [
-                'original_name' => $request->file('attachment')->getClientOriginalName(),
-                'size' => $request->file('attachment')->getSize(),
-                'mime_type' => $request->file('attachment')->getMimeType(),
-                'error' => $request->file('attachment')->getError(),
-                'is_valid' => $request->file('attachment')->isValid()
-            ] : 'No file',
+            'file_info' => $fileInfo,
             'request_data_size' => count($request->all()),
             'php_limits' => [
                 'upload_max_filesize' => ini_get('upload_max_filesize'),
@@ -1114,155 +1132,58 @@ class AdminModuleController extends Controller
         ]);
 
         try {
-            // Custom file validation before Laravel validation
+            $attachmentPaths = [];
+            // Handle file upload if present (multiple files)
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                
-                \Log::info('File upload details', [
-                    'file_error' => $file->getError(),
-                    'file_size' => $file->getSize(),
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_mime' => $file->getMimeType(),
-                    'file_temp_path' => $file->getRealPath(),
-                    'is_valid' => $file->isValid()
-                ]);
-                
-                if (!$file->isValid()) {
-                    $errorMessages = [
-                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit: ' . ini_get('upload_max_filesize') . ')',
-                        UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
-                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
-                        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
-                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
-                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-                        UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
-                    ];
-                    
-                    $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error (code: ' . $file->getError() . ')';
-                    
-                    \Log::error('File upload validation failed', [
-                        'error_code' => $file->getError(),
-                        'error_message' => $errorMessage,
-                        'file_size' => $file->getSize(),
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_mime' => $file->getMimeType()
-                    ]);
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'File upload failed',
-                        'errors' => ['attachment' => [$errorMessage]],
-                        'debug_info' => [
-                            'file_error_code' => $file->getError(),
+                $files = $request->file('attachment');
+                if (!is_array($files)) {
+                    $files = [$files];
+                }
+                foreach ($files as $file) {
+                    // Check file upload errors
+                    if ($file->getError() !== UPLOAD_ERR_OK) {
+                        $errorMessages = [
+                            UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit)',
+                            UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
+                            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
+                            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                            UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+                        ];
+                        $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error';
+                        \Log::error('File upload error', [
+                            'error_code' => $file->getError(),
+                            'error_message' => $errorMessage,
                             'file_size' => $file->getSize(),
-                            'server_limit' => ini_get('upload_max_filesize')
-                        ]
-                    ], 422);
+                            'file_name' => $file->getClientOriginalName()
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'The attachment failed to upload',
+                            'errors' => ['attachment' => [$errorMessage]]
+                        ], 422);
+                    }
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $attachmentPath = $file->storeAs('content', $filename, 'public');
+                    if (!$attachmentPath) {
+                        \Log::error('File storage failed', [
+                            'file_name' => $file->getClientOriginalName(),
+                            'file_size' => $file->getSize()
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'The attachment failed to upload',
+                            'errors' => ['attachment' => ['Failed to store file on server']]
+                        ], 422);
+                    }
+                    $attachmentPaths[] = $attachmentPath;
                 }
-            }
-
-            // Temporarily simplify validation to isolate the issue
-            $validationRules = [
-                'program_id' => 'required|exists:programs,program_id',
-                'module_id' => 'required|exists:modules,modules_id',
-                'course_id' => 'required|exists:courses,subject_id',
-                'content_type' => 'required|in:lesson,quiz,test,assignment,pdf,link,video,document',
-                'content_title' => 'required|string|max:255',
-                'content_description' => 'nullable|string',
-                'enable_submission' => 'nullable|boolean',
-                'allowed_file_types' => 'nullable|string',
-                'max_file_size' => 'nullable|integer|min:1|max:100',
-                'submission_instructions' => 'nullable|string',
-                'content_url' => 'nullable|url'
-            ];
-            
-            // Only add file validation if file is present
-            if ($request->hasFile('attachment')) {
-                $validationRules['attachment'] = 'file|max:51200'; // 50MB limit only
-            }
-            
-            \Log::info('Applying validation rules', [
-                'rules' => $validationRules,
-                'has_file_rule' => isset($validationRules['attachment'])
-            ]);
-
-            $request->validate($validationRules);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed', [
-                'errors' => $e->errors(),
-                'request_data' => $request->except(['attachment']),
-                'files' => $request->hasFile('attachment') ? 'Has file' : 'No file',
-                'validator_messages' => $e->validator->errors()->toArray()
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-                'validation_details' => [
-                    'received_fields' => array_keys($request->all()),
-                    'required_fields' => ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'],
-                    'validation_messages' => $e->validator->errors()->toArray()
-                ]
-            ], 422);
-        }
-
-        try {
-            $attachmentPath = null;
-            
-            // Handle file upload if present
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                
-                // Check file upload errors
-                if ($file->getError() !== UPLOAD_ERR_OK) {
-                    $errorMessages = [
-                        UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds server upload limit)',
-                        UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds form limit)',
-                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
-                        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
-                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server',
-                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-                        UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
-                    ];
-                    
-                    $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error';
-                    
-                    \Log::error('File upload error', [
-                        'error_code' => $file->getError(),
-                        'error_message' => $errorMessage,
-                        'file_size' => $file->getSize(),
-                        'file_name' => $file->getClientOriginalName()
-                    ]);
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'The attachment failed to upload',
-                        'errors' => ['attachment' => [$errorMessage]]
-                    ], 422);
-                }
-                
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $attachmentPath = $file->storeAs('content', $filename, 'public');
-                
-                if (!$attachmentPath) {
-                    \Log::error('File storage failed', [
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_size' => $file->getSize()
-                    ]);
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'The attachment failed to upload',
-                        'errors' => ['attachment' => ['Failed to store file on server']]
-                    ], 422);
-                }
-                
-                \Log::info('File uploaded successfully', ['path' => $attachmentPath]);
+                \Log::info('Files uploaded successfully', ['paths' => $attachmentPaths]);
             }
 
             // Get the course to find the lesson
             $course = Course::findOrFail($request->course_id);
-            
             // Find or create lesson for this course
             $lesson = \App\Models\Lesson::firstOrCreate([
                 'course_id' => $course->subject_id,
@@ -1278,7 +1199,6 @@ class AdminModuleController extends Controller
             // Prepare content-specific data
             $contentData = [];
             $contentType = $request->content_type;
-            
             switch ($contentType) {
                 case 'lesson':
                     $contentData = [
@@ -1317,7 +1237,7 @@ class AdminModuleController extends Controller
                 'course_id' => $course->subject_id,
                 'content_type' => $contentType,
                 'content_data' => $contentData,
-                'attachment_path' => $attachmentPath,
+                'attachment_path' => !empty($attachmentPaths) ? json_encode($attachmentPaths) : null,
                 'max_points' => $request->input('max_points', 0),
                 'due_date' => $request->input('due_date'),
                 'time_limit' => $request->input('time_limit'),
@@ -1335,6 +1255,23 @@ class AdminModuleController extends Controller
                 'content_item' => $contentItem
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->except(['attachment']),
+                'files' => $request->hasFile('attachment') ? 'Has file' : 'No file',
+                'validator_messages' => $e->validator->errors()->toArray()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+                'validation_details' => [
+                    'received_fields' => array_keys($request->all()),
+                    'required_fields' => ['program_id', 'module_id', 'course_id', 'content_type', 'content_title'],
+                    'validation_messages' => $e->validator->errors()->toArray()
+                ]
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Error creating course content: ' . $e->getMessage(), [
                 'request' => $request->all(),

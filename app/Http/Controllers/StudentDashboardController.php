@@ -233,14 +233,38 @@ class StudentDashboardController extends Controller
         if ($student) {
             // Get deadlines for this student from all enrolled programs
             $enrolledProgramIds = $enrollments->pluck('program_id')->toArray();
-            
+            // Get all active course_ids the student is enrolled in (via enrollment_courses)
+            $enrolledCourseIds = \App\Models\EnrollmentCourse::whereHas('enrollment', function($q) use ($student) {
+                $q->where('student_id', $student->student_id);
+            })->where('is_active', true)->pluck('course_id')->toArray();
+
             $deadlines = \App\Models\Deadline::where('student_id', $student->student_id)
                 ->orWhereIn('program_id', $enrolledProgramIds)
                 ->where('due_date', '>=', now())
                 ->orderBy('due_date', 'asc')
                 ->limit(5)
                 ->get();
-            
+
+            // Add assignment deadlines from content_items (use course_id)
+            $assignmentDeadlines = \App\Models\ContentItem::where('content_type', 'assignment')
+                ->where('enable_submission', true)
+                ->whereIn('course_id', $enrolledCourseIds)
+                ->where('due_date', '>=', now())
+                ->get()
+                ->map(function($item) {
+                    return (object) [
+                        'title' => $item->content_title,
+                        'description' => $item->content_description,
+                        'due_date' => $item->due_date,
+                        'type' => 'assignment',
+                        'reference_id' => $item->id,
+                        'status' => 'pending',
+                    ];
+                });
+
+            // Merge and sort deadlines
+            $deadlines = $deadlines->concat($assignmentDeadlines)->sortBy('due_date')->values();
+
             // Get announcements for this student from all enrolled programs
             $announcements = \App\Models\Announcement::whereIn('program_id', $enrolledProgramIds)
                 ->orderBy('created_at', 'desc')
@@ -1385,81 +1409,36 @@ class StudentDashboardController extends Controller
         try {
             $student = Student::where('user_id', session('user_id'))->firstOrFail();
             $content = ContentItem::findOrFail($request->content_id);
-            
             // Validate the request
             $request->validate([
                 'content_id' => 'required|exists:content_items,id',
-                'file' => 'required|file|max:' . ($content->max_file_size ?: 10240), // Default 10MB in KB
+                'files' => 'required', // We'll validate each file below
                 'notes' => 'nullable|string|max:1000'
             ]);
-
-            // Check if multiple submissions are allowed
-            if (!$content->allow_multiple_submissions) {
-                $existingSubmission = \App\Models\StudentSubmission::where('student_id', $student->student_id)
-                    ->where('content_id', $content->id)
-                    ->first();
-                
-                if ($existingSubmission) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'You have already submitted this assignment. Multiple submissions are not allowed.'
-                    ], 400);
-                }
+            $files = $request->file('files');
+            if (!is_array($files)) {
+                $files = [$files];
             }
-
-            // Validate file type if restrictions are set
-            if ($content->allowed_file_types) {
-                $allowedTypes = $this->getAllowedMimeTypes($content->allowed_file_types);
-                $fileMimeType = $request->file('file')->getMimeType();
-                $fileExtension = strtolower($request->file('file')->getClientOriginalExtension());
-                
-                if (!in_array($fileMimeType, $allowedTypes) && !$this->isAllowedExtension($fileExtension, $content->allowed_file_types)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'File type not allowed. Please check the allowed file types.'
-                    ], 400);
-                }
+            foreach ($files as $file) {
+                $originalName = $file->getClientOriginalName();
+                $extension = $file->getClientOriginalExtension();
+                $filename = 'submission_' . $student->student_id . '_' . $content->id . '_' . time() . '_' . uniqid() . '.' . $extension;
+                $filePath = $file->storeAs('submissions', $filename, 'public');
+                \App\Models\StudentSubmission::create([
+                    'student_id' => $student->student_id,
+                    'content_id' => $content->id,
+                    'file_path' => $filePath,
+                    'original_filename' => $originalName,
+                    'file_type' => $file->getMimeType(),
+                    'file_size' => $file->getSize(),
+                    'submission_notes' => $request->notes,
+                    'status' => 'submitted',
+                    'submitted_at' => now(),
+                ]);
             }
-
-            // Store the file
-            $file = $request->file('file');
-            $originalName = $file->getClientOriginalName();
-            $extension = $file->getClientOriginalExtension();
-            $filename = 'submission_' . $student->student_id . '_' . $content->id . '_' . time() . '.' . $extension;
-            $filePath = $file->storeAs('submissions', $filename, 'public');
-
-            // Create submission record
-            $submission = \App\Models\StudentSubmission::create([
-                'student_id' => $student->student_id,
-                'content_id' => $content->id,
-                'file_path' => $filePath,
-                'original_filename' => $originalName,
-                'file_type' => $file->getMimeType(),
-                'file_size' => $file->getSize(),
-                'submission_notes' => $request->notes,
-                'status' => 'submitted',
-                'submitted_at' => now()
-            ]);
-
-            Log::info('Assignment submitted successfully', [
-                'student_id' => $student->student_id,
-                'content_id' => $content->id,
-                'submission_id' => $submission->id
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Assignment submitted successfully!',
-                'submission_id' => $submission->id
-            ]);
-
+            return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
-            Log::error('Assignment submission error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while submitting your assignment: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Error submitting assignment: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1595,6 +1574,45 @@ class StudentDashboardController extends Controller
                 'success' => false,
                 'message' => 'Error loading content: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function getAssignmentSubmissions($moduleId)
+    {
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+        $submissions = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+            ->where('module_id', $moduleId)
+            ->orderBy('submitted_at', 'desc')
+            ->get();
+        foreach ($submissions as $sub) {
+            $sub->files = is_string($sub->files) ? json_decode($sub->files, true) : $sub->files;
+        }
+        return response()->json(['success' => true, 'submissions' => $submissions]);
+    }
+
+    public function markContentDone($contentId)
+    {
+        try {
+            $student = \App\Models\Student::where('user_id', session('user_id'))->firstOrFail();
+            $content = \App\Models\ContentItem::findOrFail($contentId);
+            // Prevent duplicate completions
+            $exists = \App\Models\StudentContentCompletion::where('student_id', $student->student_id)
+                ->where('content_id', $contentId)
+                ->exists();
+            if ($exists) {
+                return response()->json(['success' => true, 'message' => 'Already marked as done.']);
+            }
+            \App\Models\StudentContentCompletion::create([
+                'student_id' => $student->student_id,
+                'content_id' => $contentId,
+                'completed_at' => now(),
+            ]);
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

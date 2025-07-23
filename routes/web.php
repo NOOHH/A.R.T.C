@@ -431,6 +431,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/submit-assignment', [StudentDashboardController::class, 'submitAssignmentFile'])->name('student.submit-assignment');
     Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
     Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
+    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getAssignmentSubmissions']);
     
     // Quiz routes
     Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
@@ -452,6 +453,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
     Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
     Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
+    Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
 });
 
 /*
