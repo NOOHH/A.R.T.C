@@ -418,7 +418,7 @@
                     <div class="form-group" style="grid-column: 1 / span 2;">
                         <label for="user_email">Email Address</label>
                         <div class="email-input-group">
-                            <input type="email" id="user_email" name="email" class="form-control" required>
+                            <input type="email" id="user_email" name="user_email" class="form-control" required>
                             <button type="button" id="sendOtpBtn" class="btn-otp" onclick="sendEnrollmentOTP()">
                                 <i class="fas fa-paper-plane"></i> Send OTP
                             </button>
@@ -749,23 +749,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-                <h6>1. Enrollment Agreement</h6>
-                <p>By enrolling in this program, you agree to follow all institutional policies and procedures.</p>
-                
-                <h6>2. Payment Terms</h6>
-                <p>All fees must be paid according to the schedule provided. Late payments may result in suspension of access to course materials.</p>
-                
-                <h6>3. Academic Integrity</h6>
-                <p>Students are expected to maintain the highest standards of academic honesty and integrity.</p>
-                
-                <h6>4. Course Completion</h6>
-                <p>Students must complete all required modules and assessments to receive certification.</p>
-                
-                <h6>5. Refund Policy</h6>
-                <p>Refunds are available according to the institutional refund policy. Please contact administration for details.</p>
-                
-                <h6>6. Data Privacy</h6>
-                <p>Your personal information will be handled according to our privacy policy and applicable data protection laws.</p>
+{!! nl2br(e(\App\Models\AdminSetting::getValue('modular_enrollment_terms', 'By registering for this modular program, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.'))) !!}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

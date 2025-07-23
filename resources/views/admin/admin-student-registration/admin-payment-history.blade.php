@@ -101,10 +101,12 @@
                                                         onclick="viewPaymentDetails({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
+                                                @if($enrollment->payment)
                                                 <button type="button" class="btn btn-sm btn-secondary" 
-                                                        onclick="undoPaymentApproval({{ $enrollment->enrollment_id }})">
+                                                        onclick="undoPaymentApproval({{ $enrollment->payment->payment_id }})">
                                                     <i class="bi bi-arrow-counterclockwise"></i> Undo
                                                 </button>
+                                                @endif
                                                 @if($enrollment->payment_status === 'failed')
                                                     <button type="button" class="btn btn-sm btn-warning" 
                                                             onclick="retryPayment({{ $enrollment->enrollment_id }})">
@@ -321,20 +323,23 @@ function retryPayment(enrollmentId) {
 
 function undoPaymentApproval(paymentId) {
     if (confirm('Are you sure you want to undo this payment approval? This will return the payment to pending approval.')) {
-        fetch(`/admin/payment/${paymentId}/undo-approval`, {
+        const baseUrl = window.location.origin;
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch(`${baseUrl}/admin/payments/${paymentId}/approve`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': token
             }
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.success || data.status === 'success') {
                 alert('Payment approval undone successfully! Payment is now pending approval.');
                 location.reload();
             } else {
-                alert('Error undoing payment approval: ' + data.message);
+                alert('Error undoing payment approval: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {

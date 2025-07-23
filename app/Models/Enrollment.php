@@ -31,6 +31,13 @@ class Enrollment extends Model
         'progression_stage',
         'education_level_started_at',
         'education_level_completed_at',
+        // Rejection tracking fields
+        'rejected_at',
+        'rejection_reason',
+        'rejected_fields',
+        'rejected_by',
+        'resubmitted_at',
+        'resubmission_count',
     ];
 
     protected $casts = [
@@ -38,6 +45,9 @@ class Enrollment extends Model
         'inheritance_metadata' => 'array',
         'education_level_started_at' => 'datetime',
         'education_level_completed_at' => 'datetime',
+        'rejected_fields' => 'array',
+        'rejected_at' => 'datetime',
+        'resubmitted_at' => 'datetime',
     ];
 
     public function student()

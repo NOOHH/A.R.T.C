@@ -248,6 +248,136 @@
                     </div>
                 </div>
                 @endif
+            @else
+                @php
+                    $approvedRegistrations = $registrations->where('status', 'approved');
+                @endphp
+                @if($approvedRegistrations->count() > 0)
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="bi bi-person-check-fill me-2"></i>Students with Approved Registration
+                        </h6>
+                        <div>
+                            <small class="text-muted">Total: {{ $approvedRegistrations->count() }}</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th>Email</th>
+                                        <th>Program</th>
+                                        <th>Package</th>
+                                        <th>Course</th>
+                                        <th>Plan Type</th>
+                                        <th>Registration Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($approvedRegistrations as $registration)
+                                    <tr>
+                                        <td>
+                                            {{ ($registration->firstname ?? ($registration->student->firstname ?? '')) }} 
+                                            {{ ($registration->middlename ?? ($registration->student->middlename ?? '')) }}
+                                            {{ ($registration->lastname ?? ($registration->student->lastname ?? '')) }}
+                                        </td>
+                                        <td>
+                                            @if(isset($registration->user) && $registration->user)
+                                                {{ $registration->user->email ?? 'N/A' }}
+                                            @elseif(isset($registration->email))
+                                                {{ $registration->email }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                        <td>{{ $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A') }}</td>
+                                        <td>{{ $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A') }}</td>
+                                        <td>
+                                            @if($registration->enrollment_type === 'modular' || $registration->enrollment_type === 'Modular')
+                                                @php
+                                                    $selectedCourses = [];
+                                                    if (isset($registration->selected_courses) && is_string($registration->selected_courses)) {
+                                                        $selectedCourses = json_decode($registration->selected_courses, true) ?? [];
+                                                    } elseif (isset($registration->selected_courses) && is_array($registration->selected_courses)) {
+                                                        $selectedCourses = $registration->selected_courses;
+                                                    }
+                                                    
+                                                    $selectedModules = [];
+                                                    if (isset($registration->selected_modules) && is_string($registration->selected_modules)) {
+                                                        $selectedModules = json_decode($registration->selected_modules, true) ?? [];
+                                                    } elseif (isset($registration->selected_modules) && is_array($registration->selected_modules)) {
+                                                        $selectedModules = $registration->selected_modules;
+                                                    }
+                                                @endphp
+                                                
+                                                @if(!empty($selectedCourses))
+                                                    @php
+                                                        $courseNames = [];
+                                                        foreach($selectedCourses as $courseId) {
+                                                            $course = \App\Models\Course::find($courseId);
+                                                            if ($course) {
+                                                                $courseNames[] = $course->course_name ?? $course->subject_name ?? "Course #{$courseId}";
+                                                            } else {
+                                                                $courseNames[] = "Course #{$courseId}";
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    <div class="small">
+                                                        <strong>Selected Courses:</strong><br>
+                                                        {{ implode(', ', $courseNames) }}
+                                                    </div>
+                                                @elseif(!empty($selectedModules))
+                                                    @php
+                                                        $moduleNames = [];
+                                                        foreach($selectedModules as $moduleData) {
+                                                            $moduleId = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+                                                            if ($moduleId) {
+                                                                $module = \App\Models\Module::find($moduleId);
+                                                                if ($module) {
+                                                                    $moduleNames[] = $module->module_name ?? "Module #{$moduleId}";
+                                                                } else {
+                                                                    $moduleNames[] = "Module #{$moduleId}";
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    <div class="small">
+                                                        <strong>Selected Modules:</strong><br>
+                                                        {{ implode(', ', $moduleNames) }}
+                                                    </div>
+                                                @else
+                                                    <span class="text-warning">No Course/Module Selected</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">N/A ({{ ucfirst($registration->enrollment_type ?? 'N/A') }})</span>
+                                            @endif
+                                        </td>
+                                        <td>{{ $registration->plan_name ?? ($registration->enrollment_type ? ucfirst($registration->enrollment_type) : 'N/A') }}</td>
+                                        <td>{{ $registration->created_at ? \Carbon\Carbon::parse($registration->created_at)->format('M d, Y') : 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-success">{{ ucfirst($registration->status) }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-info" 
+                                                        onclick="viewRegistrationDetails('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
             @endif
 
             <div class="card shadow mb-4">
@@ -559,7 +689,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const rejectReasonModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
     const baseUrl = window.location.origin;
     const token = document.querySelector('meta[name="csrf-token"]').content;
-    const isHistory = {{ (isset($history) && $history) ? 'true' : 'false' }};
+    const isHistory = '{{ isset($history) && $history ? "true" : "false" }}' === 'true';
 
     function na(value) {
         return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
@@ -1072,22 +1202,35 @@ document.addEventListener('DOMContentLoaded', function() {
     window.undoApproval = function(registrationId) {
         showConfirmModal(
             'Confirm Undo Approval', 
-            'Are you sure you want to undo this approval? This will set the registration back to pending status.',
+            'Are you sure you want to undo this approval? This will set the registration back to pending status. Please provide a reason for undoing approval.',
             'Yes, Undo',
             'btn-warning',
             function() {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `${baseUrl}/admin/student/${registrationId}/undo-approval`;
-                
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = token;
-                
-                form.appendChild(csrfInput);
-                document.body.appendChild(form);
-                form.submit();
+                const reason = prompt('Please provide a reason for undoing this approval:');
+                if (!reason || !reason.trim()) {
+                    alert('Undo reason is required.');
+                    return;
+                }
+                fetch(`/admin/registrations/${registrationId}/undo-approval`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify({ undo_reason: reason })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Registration approval undone successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error undoing registration approval: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    alert('Error undoing registration approval');
+                });
             }
         );
     };

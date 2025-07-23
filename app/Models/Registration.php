@@ -26,6 +26,7 @@ class Registration extends Model
         'plan_name',
         'enrollment_type',
         'learning_mode',
+        'referral_code', // Add referral_code field
         'student_school',
         'school_name', // New dynamic field
         'street_address',
@@ -79,6 +80,12 @@ class Registration extends Model
         'monthly_income',
         // Custom education level file fields
         'ama_namin',
+        // Rejection tracking fields
+        'rejected_at',
+        'rejection_reason',
+        'rejected_fields',
+        'resubmitted_at',
+        'resubmission_count',
     ];
 
     // Explicitly guard against batch_id assignment - it should never be in registrations table
@@ -90,6 +97,9 @@ class Registration extends Model
         'dynamic_fields' => 'array',
         'selected_modules' => 'array', // Cast JSON field to array
         'selected_courses' => 'array', // Cast JSON field to array for course selections
+        'rejected_fields' => 'array', // Cast JSON field to array for rejection tracking
+        'rejected_at' => 'datetime',
+        'resubmitted_at' => 'datetime',
     ];
 
     // Get display name for registration mode from dynamic fields

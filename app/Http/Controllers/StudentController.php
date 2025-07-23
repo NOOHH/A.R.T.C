@@ -699,13 +699,12 @@ class StudentController extends Controller
                 ], 401);
             }
 
-            // Find the enrollment that belongs to the current user and is rejected
+            // First, check if the enrollment exists with basic fields
             $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
                 ->where('user_id', $userId)
-                ->whereIn('status', ['rejected', 'rejected_registration'])
                 ->first();
 
-            // If not found in Enrollment, check Registration (for deleted/migrated enrollments)
+            // If enrollment not found, check Registration table
             if (!$enrollment) {
                 $registration = \App\Models\Registration::where('registration_id', $id)
                     ->where('user_id', $userId)
@@ -713,15 +712,15 @@ class StudentController extends Controller
                     ->first();
                 if ($registration) {
                     $data = [
-                        'registration_id' => $registration->registration_id,
-                        'program_name' => $registration->program_name ?? 'Unknown Program',
-                        'package_name' => $registration->package_name ?? 'Unknown Package',
-                        'learning_mode' => $registration->learning_mode,
-                        'rejected_fields' => $registration->rejected_fields,
-                        'rejection_reason' => $registration->rejection_reason,
+                        'registration_id' => $registration->getAttribute('registration_id'),
+                        'program_name' => $registration->getAttribute('program_name') ?? 'Unknown Program',
+                        'package_name' => $registration->getAttribute('package_name') ?? 'Unknown Package',
+                        'learning_mode' => $registration->getAttribute('learning_mode') ?? 'synchronous',
+                        'rejected_fields' => $registration->getAttribute('rejected_fields') ?? [],
+                        'rejection_reason' => $registration->getAttribute('rejection_reason') ?? 'No reason provided',
                         'rejected_by_name' => 'Administrator',
-                        'rejected_at' => $registration->rejected_at,
-                        'status' => $registration->status
+                        'rejected_at' => $registration->getAttribute('rejected_at') ?? $registration->getAttribute('updated_at'),
+                        'status' => $registration->getAttribute('status')
                     ];
                     return response()->json([
                         'success' => true,
@@ -733,29 +732,76 @@ class StudentController extends Controller
             if (!$enrollment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Rejected enrollment or registration not found'
+                    'message' => 'Enrollment or registration not found'
+                ], 404);
+            }
+
+            // Check if enrollment is actually rejected using either field name
+            $enrollmentStatus = $enrollment->getAttribute('enrollment_status') ?? $enrollment->getAttribute('status') ?? 'pending';
+            
+            // For debugging purposes, also check if this is a recent enrollment that might be rejected but not properly marked
+            if (!in_array($enrollmentStatus, ['rejected', 'rejected_registration'])) {
+                // Check if there's a related registration that's rejected
+                $relatedRegistration = null;
+                $registrationId = $enrollment->getAttribute('registration_id');
+                if ($registrationId) {
+                    $relatedRegistration = \App\Models\Registration::where('registration_id', $registrationId)
+                        ->where('status', 'rejected')
+                        ->first();
+                }
+                
+                if ($relatedRegistration) {
+                    // Return registration data if the related registration is rejected
+                    $data = [
+                        'enrollment_id' => $enrollment->getAttribute('enrollment_id'),
+                        'program_name' => $relatedRegistration->getAttribute('program_name') ?? 'Unknown Program',
+                        'package_name' => $relatedRegistration->getAttribute('package_name') ?? 'Unknown Package',
+                        'learning_mode' => $relatedRegistration->getAttribute('learning_mode') ?? 'synchronous',
+                        'rejected_fields' => $relatedRegistration->getAttribute('rejected_fields') ?? [],
+                        'rejection_reason' => $relatedRegistration->getAttribute('rejection_reason') ?? 'No reason provided',
+                        'rejected_by_name' => 'Administrator',
+                        'rejected_at' => $relatedRegistration->getAttribute('rejected_at') ?? $relatedRegistration->getAttribute('updated_at'),
+                        'status' => 'rejected',
+                        'source' => 'related_registration'
+                    ];
+                    return response()->json([
+                        'success' => true,
+                        'data' => $data
+                    ]);
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This enrollment is not rejected (status: ' . $enrollmentStatus . ')',
+                    'debug' => [
+                        'enrollment_status' => $enrollmentStatus,
+                        'has_related_registration' => !is_null($registrationId),
+                        'related_registration_id' => $registrationId
+                    ]
                 ], 404);
             }
 
             // Get additional details
-            $program = \App\Models\Program::find($enrollment->program_id);
-            $package = \App\Models\Package::find($enrollment->package_id);
+            $program = \App\Models\Program::find($enrollment->getAttribute('program_id'));
+            $package = \App\Models\Package::find($enrollment->getAttribute('package_id'));
             $rejectedBy = null;
             
-            if ($enrollment->rejected_by) {
-                $rejectedBy = \App\Models\Admin::find($enrollment->rejected_by);
+            $rejectedById = $enrollment->getAttribute('rejected_by');
+            if ($rejectedById) {
+                $rejectedBy = \App\Models\Admin::find($rejectedById);
             }
 
             $data = [
-                'enrollment_id' => $enrollment->enrollment_id,
-                'program_name' => $program ? $program->program_name : 'Unknown Program',
-                'package_name' => $package ? $package->package_name : 'Unknown Package',
-                'learning_mode' => $enrollment->learning_mode,
-                'rejected_fields' => $enrollment->rejected_fields,
-                'rejection_reason' => $enrollment->rejection_reason,
-                'rejected_by_name' => $rejectedBy ? $rejectedBy->admin_firstname . ' ' . $rejectedBy->admin_lastname : 'Administrator',
-                'rejected_at' => $enrollment->rejected_at,
-                'status' => $enrollment->status
+                'enrollment_id' => $enrollment->getAttribute('enrollment_id'),
+                'program_name' => $program ? $program->getAttribute('program_name') : 'Unknown Program',
+                'package_name' => $package ? $package->getAttribute('package_name') : 'Unknown Package',
+                'learning_mode' => $enrollment->getAttribute('learning_mode') ?? 'synchronous',
+                'rejected_fields' => $enrollment->getAttribute('rejected_fields') ?? [],
+                'rejection_reason' => $enrollment->getAttribute('rejection_reason') ?? 'No reason provided',
+                'rejected_by_name' => $rejectedBy ? ($rejectedBy->getAttribute('admin_firstname') . ' ' . $rejectedBy->getAttribute('admin_lastname')) : 'Administrator',
+                'rejected_at' => $enrollment->getAttribute('rejected_at') ?? $enrollment->getAttribute('updated_at'),
+                'status' => $enrollmentStatus,
+                'source' => 'enrollment'
             ];
 
             return response()->json([
@@ -764,10 +810,16 @@ class StudentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting rejection details: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Error getting rejection details: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
-                'message' => 'Internal server error'
+                'message' => 'Internal server error',
+                'debug' => config('app.debug') ? [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ] : null
             ], 500);
         }
     }
@@ -809,9 +861,16 @@ class StudentController extends Controller
 
             // Get rejected fields
             $rejectedFields = [];
-            if ($enrollment->rejected_fields) {
+            $rejectedFieldsData = $enrollment->getAttribute('rejected_fields');
+            if ($rejectedFieldsData) {
                 try {
-                    $rejectedFields = json_decode($enrollment->rejected_fields, true) ?: [];
+                    // If it's already an array (from model casting), use it directly
+                    if (is_array($rejectedFieldsData)) {
+                        $rejectedFields = $rejectedFieldsData;
+                    } else {
+                        // If it's a string, decode it
+                        $rejectedFields = json_decode($rejectedFieldsData, true) ?: [];
+                    }
                 } catch (\Exception $e) {
                     $rejectedFields = [];
                 }
@@ -856,7 +915,7 @@ class StudentController extends Controller
             // Find the enrollment
             $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
                 ->where('user_id', $userId)
-                ->where('status', 'rejected')
+                ->where('enrollment_status', 'rejected')
                 ->first();
 
             if (!$enrollment) {
@@ -868,9 +927,16 @@ class StudentController extends Controller
 
             // Get rejected fields
             $rejectedFields = [];
-            if ($enrollment->rejected_fields) {
+            $rejectedFieldsData = $enrollment->getAttribute('rejected_fields');
+            if ($rejectedFieldsData) {
                 try {
-                    $rejectedFields = json_decode($enrollment->rejected_fields, true) ?: [];
+                    // If it's already an array (from model casting), use it directly
+                    if (is_array($rejectedFieldsData)) {
+                        $rejectedFields = $rejectedFieldsData;
+                    } else {
+                        // If it's a string, decode it
+                        $rejectedFields = json_decode($rejectedFieldsData, true) ?: [];
+                    }
                 } catch (\Exception $e) {
                     $rejectedFields = [];
                 }

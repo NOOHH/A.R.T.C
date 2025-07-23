@@ -1049,8 +1049,8 @@
             
             const step4Fields = {
                 'user_firstname': 'firstname',
-                'user_lastname': 'lastname', 
-                'user_email': 'email'
+                'user_lastname': 'lastname',
+                'email': 'email'
             };
             
             Object.keys(step4Fields).forEach(step4Field => {
@@ -2458,10 +2458,7 @@
         <div class="modal-content" style="max-width: 600px;">
             <h3>Terms and Conditions</h3>
             <div style="max-height: 320px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem;">
-                <p>
-                    By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.
-                </p>
-                <!-- Add more actual terms here if you want -->
+                {!! nl2br(e(\App\Models\AdminSetting::getValue('full_enrollment_terms', 'By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.'))) !!}
             </div>
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button onclick="acceptTerms()" class="btn btn-primary">Accept</button>
@@ -2882,7 +2879,7 @@
     console.log('  jQuery available:', typeof $ !== 'undefined');
     
     // Check if we're on the correct step
-    const finalStep = isUserLoggedIn ? 3 : 4;
+    const finalStep = isUserLoggedIn ? 4 : 5;
     if (currentStep !== finalStep) {
         console.error(`❌ FORM SUBMISSION BLOCKED: Not on step ${finalStep}, current step is:`, currentStep);
         event.preventDefault();

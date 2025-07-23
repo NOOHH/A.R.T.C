@@ -454,6 +454,46 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
 });
 
+// Test routes for debugging rejection details
+Route::get('/test-rejection-details', function () {
+    return view('test-rejection-details');
+});
+
+Route::get('/test-database-structure', function () {
+    try {
+        $enrollmentColumns = \Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM enrollments");
+        $registrationColumns = \Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM registrations");
+        
+        // Check specific enrollment ID 1753045091
+        $enrollment = \Illuminate\Support\Facades\DB::select("SELECT * FROM enrollments WHERE enrollment_id = 1753045091");
+        $registration = \Illuminate\Support\Facades\DB::select("SELECT * FROM registrations WHERE registration_id = 1753045091");
+        
+        return response()->json([
+            'success' => true,
+            'enrollment_columns' => $enrollmentColumns,
+            'registration_columns' => $registrationColumns,
+            'enrollment_1753045091' => $enrollment,
+            'registration_1753045091' => $registration
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+
+Route::get('/test-session-info', function () {
+    return response()->json([
+        'success' => true,
+        'session_data' => [
+            'user_id' => session('user_id'),
+            'user_email' => session('user_email'),
+            'all_session' => session()->all()
+        ]
+    ]);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Student Actions
@@ -488,6 +528,14 @@ Route::get('/test-registration-fixes', function() {
         'programs' => \App\Models\Program::where('is_archived', false)->get(), 
         'packages' => \App\Models\Package::all()
     ]); 
+});
+
+Route::get('/test-registration-terms', function() { 
+    return view('registration-fixes-test'); 
+});
+
+Route::get('/test-all-fixes', function() { 
+    return view('all-fixes-test'); 
 });
 
 // Check if email exists

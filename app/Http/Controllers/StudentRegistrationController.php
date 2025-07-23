@@ -1339,6 +1339,7 @@ class StudentRegistrationController extends Controller
                 'learning_mode' => $validated['learning_mode'],
                 'enrollment_type' => $validated['enrollment_type'],
                 'education_level' => $validated['education_level'],
+                'referral_code' => $validated['referral_code'] ?? '', // Store referral_code as direct field
                 'selected_modules' => $validated['selected_modules'], // Store full module data
                 'selected_courses' => json_encode($selectedCourses), // Store extracted course IDs
                 'Start_Date' => $validated['Start_Date'], // Match the actual column name in database

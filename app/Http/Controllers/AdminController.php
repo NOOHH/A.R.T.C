@@ -198,73 +198,38 @@ class AdminController extends Controller
 
                 $studentId = $yearMonth . '-' . str_pad($nextSeq, 5, '0', STR_PAD_LEFT);
 
-                // Create the Student record
                 $student = Student::create([
-                    'student_id'               => $studentId,
-                    'user_id'                  => $user?->user_id,
-                    'firstname'                => $registration->firstname,
-                    'middlename'               => $registration->middlename,
-                    'lastname'                 => $registration->lastname,
-                    'student_school'           => $registration->student_school,
-                    'street_address'           => $registration->street_address,
-                    'state_province'           => $registration->state_province,
-                    'city'                     => $registration->city,
-                    'zipcode'                  => $registration->zipcode,
-                    'contact_number'           => $registration->contact_number,
-                    'emergency_contact_number' => $registration->emergency_contact_number,
-                    'good_moral'               => $registration->good_moral,
-                    'PSA'                      => $registration->PSA,
-                    'Course_Cert'              => $registration->Course_Cert,
-                    'TOR'                      => $registration->TOR,
-                    'Cert_of_Grad'             => $registration->Cert_of_Grad,
-                    'Undergraduate'            => $registration->Undergraduate,
-                    'Graduate'                 => $registration->Graduate,
-                    'photo_2x2'                => $registration->photo_2x2,
-                    'Start_Date'               => $registration->Start_Date,
-                    'date_approved'            => $now,
-                    'email'                    => $user?->email,
+                    'student_id' => $studentId,
+                    'user_id' => $user->user_id,
+                    'firstname' => $registration->firstname,
+                    'middlename' => $registration->middlename,
+                    'lastname' => $registration->lastname,
+                    'email' => $user->email ?? '',
+                    'package_id' => $registration->package_id,
+                    'package_name' => $registration->package_name,
+                    'program_id' => $registration->program_id,
+                    'program_name' => $registration->program_name,
+                    'enrollment_type' => $registration->enrollment_type,
+                    'learning_mode' => $registration->learning_mode,
+                    'education_level' => $registration->education_level,
+                    'status' => 'approved',
+                    'date_approved' => now()
                 ]);
             }
 
             // Find existing enrollment for this registration (created during registration process)
             $enrollment = Enrollment::where('registration_id', $registration->registration_id)->first();
-            
-            // Get batch_id from session if it was stored during registration
             $batchId = session('selected_batch_id');
-            
             if ($enrollment) {
-                // Update enrollment with student_id and user_id now that student is approved
                 $enrollment->student_id = $student->student_id;
                 $enrollment->user_id = $user?->user_id;
                 $enrollment->enrollment_status = 'approved';
-                
-                // Include batch_id if it was selected during registration
                 if ($batchId) {
                     $enrollment->batch_id = $batchId;
                     Log::info('Setting batch_id on existing enrollment', ['batch_id' => $batchId, 'enrollment_id' => $enrollment->enrollment_id]);
                 }
-                
                 $enrollment->save();
-                
-                // Update batch capacity if batch is assigned and payment is also completed
-                if ($enrollment->batch_id && $enrollment->payment_status === 'paid') {
-                    $batch = \App\Models\StudentBatch::find($enrollment->batch_id);
-                    if ($batch) {
-                        // Recalculate actual capacity based on approved and paid enrollments
-                        $actualCapacity = \App\Models\Enrollment::where('batch_id', $batch->batch_id)
-                            ->where('enrollment_status', 'approved')
-                            ->where('payment_status', 'paid')
-                            ->count();
-                        
-                        $batch->update(['current_capacity' => $actualCapacity]);
-                        Log::info('Updated batch capacity', ['batch_id' => $batch->batch_id, 'new_capacity' => $actualCapacity]);
-                    }
-                }
-                
-                // Process referral if both enrollment and payment are approved/paid
-                \App\Helpers\ReferralCodeGenerator::processPendingReferral($enrollment->enrollment_id);
             } else {
-                // Fallback: Create enrollment record if it doesn't exist
                 $enrollmentData = [
                     'student_id' => $student->student_id,
                     'user_id' => $user?->user_id,
@@ -275,24 +240,22 @@ class AdminController extends Controller
                     'enrollment_status' => 'approved',
                     'payment_status' => 'pending',
                 ];
-                
-                // Include batch_id if it was selected during registration
                 if ($batchId) {
                     $enrollmentData['batch_id'] = $batchId;
                     Log::info('Creating new enrollment with batch_id', ['batch_id' => $batchId, 'student_id' => $student->student_id]);
                 }
-                
                 Enrollment::create($enrollmentData);
             }
-            
-            // Clear the batch selection from session after using it
             if ($batchId) {
                 session()->forget('selected_batch_id');
                 Log::info('Cleared batch_id from session after enrollment creation');
             }
 
-            // Remove from pending
-            $registration->delete();
+            // Update registration status instead of deleting
+            $registration->status = 'approved';
+            $registration->approved_at = now();
+            $registration->approved_by = auth()->guard('admin')->user()->admin_id ?? null;
+            $registration->save();
 
             DB::commit();
 
@@ -782,35 +745,10 @@ class AdminController extends Controller
 
     public function studentRegistrationHistory()
     {
-        // Get approved registrations (students) with their enrollment details
-        $registrations = Student::with(['user', 'enrollments.program', 'enrollments.package', 'enrollments.registration'])
-                                ->whereNotNull('date_approved')
-                                ->get()
-                                ->map(function ($student) {
-                                    // Transform student data to match registration structure
-                                    $enrollment = $student->enrollments->first();
-                                    
-                                    return (object) [
-                                        'registration_id' => $student->student_id, // Use student_id as identifier for history
-                                        'firstname' => $student->firstname,
-                                        'middlename' => $student->middlename,
-                                        'lastname' => $student->lastname,
-                                        'user' => $student->user,
-                                        'email' => $student->email ?? ($student->user->email ?? 'N/A'),
-                                        'program_name' => $enrollment->program->program_name ?? 'N/A',
-                                        'package_name' => $enrollment->package->package_name ?? 'N/A',
-                                        'plan_name' => $enrollment->enrollment_type ?? 'Full',
-                                        'enrollment_type' => $enrollment->enrollment_type ?? 'Full',
-                                        'selected_courses' => $enrollment->registration->selected_courses ?? null,
-                                        'selected_modules' => $enrollment->registration->selected_modules ?? null,
-                                        'status' => 'approved',
-                                        'created_at' => $student->date_approved ?? $student->created_at,
-                                        'student' => $student, // Include original student object
-                                        'program' => $enrollment->program ?? null,
-                                        'package' => $enrollment->package ?? null,
-                                    ];
-                                });
-        
+        $registrations = Registration::with(['user', 'package', 'program', 'plan'])
+                                   ->where('status', 'approved')
+                                   ->orderBy('approved_at', 'desc')
+                                   ->get();
         return view('admin.admin-student-registration.admin-student-registration', [
             'registrations' => $registrations,
             'history'       => true,
@@ -1829,37 +1767,20 @@ class AdminController extends Controller
     public function undoRegistrationApproval(Request $request, $id)
     {
         try {
-            $request->validate([
-                'undo_reason' => 'required|string',
-                'fields_to_redo' => 'nullable|array'
-            ]);
-
             $registration = Registration::findOrFail($id);
-            
             if ($registration->status !== 'approved') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only approved registrations can be undone.'
-                ], 400);
+                return redirect()->back()->with('error', 'Only approved registrations can be undone.');
             }
-            
             $registration->status = 'pending';
-            $registration->undo_reason = $request->input('undo_reason');
+            $registration->approved_at = null;
+            $registration->approved_by = null;
+            $registration->undo_reason = $request->input('undo_reason', null);
             $registration->undone_at = now();
-            $registration->undone_by = session('admin_id');
-            $registration->fields_to_redo = json_encode($request->input('fields_to_redo', []));
+            $registration->undone_by = auth()->guard('admin')->user()->admin_id ?? null;
             $registration->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Registration approval undone successfully. Student moved back to pending status.'
-            ]);
-
+            return redirect()->back()->with('success', 'Registration approval undone successfully. Student moved back to pending status.');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error undoing registration approval: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Error undoing registration approval: ' . $e->getMessage());
         }
     }
 

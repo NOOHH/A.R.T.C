@@ -182,7 +182,7 @@ class StudentPaymentController extends Controller
                     'enrollment_id' => $enrollment->enrollment_id,
                     'program_name' => $enrollment->program->program_name ?? 'N/A',
                     'package_name' => $enrollment->package->package_name ?? 'N/A',
-                    'amount' => $enrollment->package->package_price ?? 0,
+                    'amount' => $enrollment->package->amount ?? $enrollment->package->price ?? 0,
                     'enrollment_type' => $enrollment->enrollment_type,
                     'learning_mode' => $enrollment->learning_mode,
                     'payment_status' => $enrollment->payment_status
