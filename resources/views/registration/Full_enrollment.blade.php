@@ -91,6 +91,12 @@
     function selectAccountOption(hasAccount) {
         console.log('Account option selected:', hasAccount ? 'has account' : 'no account');
         
+        // If user is already logged in, they shouldn't be at this step
+        if (isUserLoggedIn) {
+            console.log('User is already logged in, ignoring account selection');
+            return;
+        }
+        
         if (hasAccount) {
             // Redirect to login page
             window.location.href = "{{ route('login') }}";

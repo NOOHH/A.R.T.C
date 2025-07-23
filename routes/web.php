@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -967,6 +967,24 @@ Route::post('/admin/settings/login', [AdminSettingsController::class, 'updateLog
 // Update payment terms settings
 Route::post('/admin/settings/payment-terms', [AdminSettingsController::class, 'updatePaymentTerms'])
      ->name('admin.settings.update.payment.terms');
+
+// Update terms and conditions settings
+Route::post('/admin/settings/terms-conditions', [AdminSettingsController::class, 'updateTermsConditions'])
+     ->name('admin.settings.update.terms.conditions');
+
+// Registration management routes
+Route::post('/admin/registrations/{id}/approve', [AdminController::class, 'approveRegistration'])
+     ->name('admin.registrations.approve');
+Route::post('/admin/registrations/{id}/undo-approval', [AdminController::class, 'undoRegistrationApproval'])
+     ->name('admin.registrations.undo-approval');
+
+// Payment management routes
+Route::post('/admin/payments/{id}/mark-paid', [AdminController::class, 'markPaymentAsPaid'])
+     ->name('admin.payments.mark-paid');
+Route::get('/admin/payments/{id}/details', [AdminController::class, 'viewPaymentDetails'])
+     ->name('admin.payments.details');
+Route::post('/admin/payments/{id}/reject', [AdminController::class, 'rejectPayment'])
+     ->name('admin.payments.reject');
 
 // Global Logo routes
 Route::post('/admin/settings/global-logo', [AdminSettingsController::class, 'updateGlobalLogo'])

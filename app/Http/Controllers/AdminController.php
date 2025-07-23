@@ -1817,4 +1817,227 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
+    // Approve registration method
+    public function approveRegistration(Request $request, $id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            // Store original data for undo functionality
+            $registration->original_submission = json_encode([
+                'status' => $registration->status,
+                'approved_at' => $registration->approved_at,
+                'approved_by' => session('admin_id')
+            ]);
+            
+            $registration->status = 'approved';
+            $registration->approved_at = now();
+            $registration->approved_by = session('admin_id');
+            $registration->save();
+
+            // Create student record if not exists
+            $this->createStudentFromRegistration($registration);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration approved successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving registration: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Undo registration approval - move back to pending with comment
+    public function undoRegistrationApproval(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'undo_reason' => 'required|string',
+                'fields_to_redo' => 'nullable|array'
+            ]);
+
+            $registration = Registration::findOrFail($id);
+            
+            if ($registration->status !== 'approved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only approved registrations can be undone.'
+                ], 400);
+            }
+            
+            $registration->status = 'pending';
+            $registration->undo_reason = $request->input('undo_reason');
+            $registration->undone_at = now();
+            $registration->undone_by = session('admin_id');
+            $registration->fields_to_redo = json_encode($request->input('fields_to_redo', []));
+            $registration->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration approval undone successfully. Student moved back to pending status.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error undoing registration approval: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Mark payment as paid
+    public function markPaymentAsPaid(Request $request, $id)
+    {
+        try {
+            $payment = Payment::findOrFail($id);
+            
+            $payment->payment_status = 'paid';
+            $payment->verified_by = session('admin_id');
+            $payment->verified_at = now();
+            $payment->notes = $request->input('notes', 'Marked as paid by administrator');
+            $payment->save();
+
+            // Update enrollment payment status
+            if ($payment->enrollment_id) {
+                $enrollment = Enrollment::find($payment->enrollment_id);
+                if ($enrollment) {
+                    $enrollment->payment_status = 'paid';
+                    $enrollment->save();
+                }
+            }
+
+            // Create payment history record
+            PaymentHistory::create([
+                'enrollment_id' => $payment->enrollment_id,
+                'user_id' => $payment->enrollment->user_id ?? null,
+                'student_id' => $payment->student_id,
+                'program_id' => $payment->program_id,
+                'package_id' => $payment->package_id,
+                'amount' => $payment->amount,
+                'payment_status' => 'paid',
+                'payment_method' => 'manual',
+                'payment_notes' => 'Payment marked as paid by administrator',
+                'payment_date' => now(),
+                'processed_by_admin_id' => session('admin_id')
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment marked as paid successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error marking payment as paid: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // View payment details
+    public function viewPaymentDetails($id)
+    {
+        try {
+            $payment = Payment::with(['enrollment.user', 'enrollment.student', 'enrollment.program', 'enrollment.package'])
+                             ->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'payment' => $payment
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving payment details: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Reject payment
+    public function rejectPayment(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'rejection_reason' => 'required|string',
+                'rejected_fields' => 'nullable|array'
+            ]);
+
+            $payment = Payment::findOrFail($id);
+            
+            $payment->payment_status = 'rejected';
+            $payment->rejection_reason = $request->input('rejection_reason');
+            $payment->rejected_fields = json_encode($request->input('rejected_fields', []));
+            $payment->rejected_by = session('admin_id');
+            $payment->rejected_at = now();
+            $payment->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment rejected successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting payment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Helper method to create student from registration
+    private function createStudentFromRegistration($registration)
+    {
+        // Check if student already exists
+        $existingStudent = Student::where('user_id', $registration->user_id)->first();
+        
+        if (!$existingStudent) {
+            // Create student record
+            $studentId = $this->generateStudentId();
+            
+            Student::create([
+                'student_id' => $studentId,
+                'user_id' => $registration->user_id,
+                'firstname' => $registration->firstname,
+                'middlename' => $registration->middlename,
+                'lastname' => $registration->lastname,
+                'email' => $registration->user->email ?? '',
+                'package_id' => $registration->package_id,
+                'package_name' => $registration->package_name,
+                'program_id' => $registration->program_id,
+                'program_name' => $registration->program_name,
+                'enrollment_type' => $registration->enrollment_type,
+                'learning_mode' => $registration->learning_mode,
+                'education_level' => $registration->education_level,
+                'status' => 'approved',
+                'date_approved' => now()
+            ]);
+        }
+    }
+
+    // Helper method to generate student ID
+    private function generateStudentId()
+    {
+        $year = date('Y');
+        $month = date('m');
+        
+        // Get the last student ID for this year and month
+        $lastStudent = Student::where('student_id', 'LIKE', "{$year}-{$month}-%")
+                             ->orderBy('student_id', 'desc')
+                             ->first();
+        
+        if ($lastStudent) {
+            $lastNumber = (int) substr($lastStudent->student_id, -5);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+        
+        return sprintf('%s-%s-%05d', $year, $month, $newNumber);
+    }
 }

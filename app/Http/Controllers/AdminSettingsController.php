@@ -1814,4 +1814,38 @@ class AdminSettingsController extends Controller
             ], 500);
         }
     }
+
+    public function updateTermsConditions(Request $request)
+    {
+        try {
+            $request->validate([
+                'terms_and_conditions' => 'nullable|string',
+                'privacy_policy' => 'nullable|string'
+            ]);
+
+            // Get current settings
+            $settings = $this->getCurrentSettings();
+            
+            // Update terms and conditions settings
+            $settings['terms_conditions'] = [
+                'terms_and_conditions' => $request->input('terms_and_conditions', ''),
+                'privacy_policy' => $request->input('privacy_policy', ''),
+                'updated_at' => now()->toISOString()
+            ];
+
+            // Save the updated settings
+            $this->saveSettings($settings);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Terms and conditions updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating terms and conditions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update terms and conditions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
