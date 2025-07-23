@@ -1400,6 +1400,17 @@ Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAs
 Route::post('/admin/enrollment/{id}/approve', [AdminController::class, 'approveEnrollment'])
      ->name('admin.enrollment.approve');
 
+// Payment history details for modal
+Route::get('/admin/payment-history/{id}/details', [App\Http\Controllers\AdminController::class, 'getPaymentHistoryDetailsJson'])->name('admin.payment-history.details');
+
+// ... existing code ...
+Route::post('/admin/enrollment/{enrollmentId}/undo-payment', [App\Http\Controllers\AdminController::class, 'undoPendingPayment'])->name('admin.enrollment.undo-payment');
+// ... existing code ...
+
+// ... existing code ...
+Route::post('/admin/payment-history/{paymentHistoryId}/undo', [App\Http\Controllers\AdminController::class, 'undoPaymentHistory'])->name('admin.payment-history.undo');
+// ... existing code ...
+
 }); // End of admin middleware group
 
 /*

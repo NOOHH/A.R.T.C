@@ -36,7 +36,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Payment Transaction History</h6>
                 </div>
                 <div class="card-body">
-                    @if($enrollments->count() > 0)
+                    @if($paymentHistory->count() > 0)
                         <div class="table-responsive">
                             <table class="table table-bordered" width="100%" cellspacing="0">
                                 <thead>
@@ -46,72 +46,54 @@
                                         <th>Program</th>
                                         <th>Package</th>
                                         <th>Amount</th>
-                                        <th>Enrollment Date</th>
                                         <th>Payment Date</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($enrollments as $enrollment)
+                                    @foreach($paymentHistory as $payment)
                                     <tr>
                                         <td>
-                                            @if($enrollment->student && $enrollment->student->user)
-                                                {{ $enrollment->student->user->user_name ?? ($enrollment->student->firstname . ' ' . $enrollment->student->lastname) }}
-                                            @elseif($enrollment->user)
-                                                {{ $enrollment->user->user_name }}
-                                            @elseif($enrollment->student)
-                                                {{ $enrollment->student->firstname ?? 'N/A' }} {{ $enrollment->student->lastname ?? '' }}
+                                            @if($payment->enrollment && $payment->enrollment->student)
+                                                {{ $payment->enrollment->student->firstname ?? 'N/A' }} {{ $payment->enrollment->student->lastname ?? '' }}
                                             @else
                                                 N/A
                                             @endif
                                         </td>
                                         <td>
-                                            @if($enrollment->student && $enrollment->student->user)
-                                                {{ $enrollment->student->user->user_email ?? $enrollment->student->email }}
-                                            @elseif($enrollment->user)
-                                                {{ $enrollment->user->user_email }}
-                                            @elseif($enrollment->student)
-                                                {{ $enrollment->student->email ?? 'N/A' }}
+                                            @if($payment->enrollment && $payment->enrollment->student)
+                                                {{ $payment->enrollment->student->email ?? 'N/A' }}
                                             @else
                                                 N/A
                                             @endif
                                         </td>
-                                        <td>{{ $enrollment->program->program_name ?? 'N/A' }}</td>
-                                        <td>{{ $enrollment->package->package_name ?? 'N/A' }}</td>
-                                        <td>₱{{ number_format($enrollment->package->package_price ?? $enrollment->package->amount ?? 0, 2) }}</td>
-                                        <td>{{ $enrollment->created_at->format('M d, Y h:i A') }}</td>
-                                        <td>{{ $enrollment->updated_at->format('M d, Y h:i A') }}</td>
+                                        <td>{{ $payment->enrollment && $payment->enrollment->program ? $payment->enrollment->program->program_name : 'N/A' }}</td>
+                                        <td>{{ $payment->enrollment && $payment->enrollment->package ? $payment->enrollment->package->package_name : 'N/A' }}</td>
+                                        <td>₱{{ number_format($payment->amount ?? 0, 2) }}</td>
+                                        <td>{{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y h:i A') : 'N/A' }}</td>
                                         <td>
-                                            @if($enrollment->payment_status === 'paid')
-                                                <span class="badge bg-success">Paid</span>
-                                            @elseif($enrollment->payment_status === 'completed')
-                                                <span class="badge bg-success">Completed</span>
-                                            @elseif($enrollment->payment_status === 'failed')
+                                            @if($payment->payment_status === 'paid' || $payment->payment_status === 'completed')
+                                                <span class="badge bg-success">{{ ucfirst($payment->payment_status) }}</span>
+                                            @elseif($payment->payment_status === 'failed')
                                                 <span class="badge bg-danger">Failed</span>
-                                            @elseif($enrollment->payment_status === 'cancelled')
+                                            @elseif($payment->payment_status === 'cancelled')
                                                 <span class="badge bg-secondary">Cancelled</span>
                                             @else
-                                                <span class="badge bg-warning text-dark">{{ ucfirst($enrollment->payment_status) }}</span>
+                                                <span class="badge bg-warning text-dark">{{ ucfirst($payment->payment_status) }}</span>
                                             @endif
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-info" 
-                                                        onclick="viewPaymentDetails({{ $enrollment->enrollment_id }})">
+                                                        onclick="viewPaymentDetails({{ $payment->payment_history_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
-                                                @if($enrollment->payment)
-                                                <button type="button" class="btn btn-sm btn-secondary" 
-                                                        onclick="undoPaymentApproval({{ $enrollment->payment->payment_id }})">
+                                                @if($payment->payment_status === 'paid' || $payment->payment_status === 'completed')
+                                                <button type="button" class="btn btn-sm btn-warning" 
+                                                        onclick="undoPaymentHistory({{ $payment->payment_history_id }})">
                                                     <i class="bi bi-arrow-counterclockwise"></i> Undo
                                                 </button>
-                                                @endif
-                                                @if($enrollment->payment_status === 'failed')
-                                                    <button type="button" class="btn btn-sm btn-warning" 
-                                                            onclick="retryPayment({{ $enrollment->enrollment_id }})">
-                                                        <i class="bi bi-arrow-clockwise"></i> Retry
-                                                    </button>
                                                 @endif
                                             </div>
                                         </td>
@@ -153,12 +135,37 @@
     </div>
 </div>
 
+<!-- Undo Payment History Modal -->
+<div class="modal fade" id="undoPaymentHistoryModal" tabindex="-1" aria-labelledby="undoPaymentHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="undoPaymentHistoryForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="undoPaymentHistoryModalLabel">Undo Payment History</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="undoHistoryReason" class="form-label">Reason for undoing <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="undoHistoryReason" name="reason" rows="3" required placeholder="Enter reason..."></textarea>
+          </div>
+          <input type="hidden" id="undoPaymentHistoryId" name="payment_history_id" value="">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Undo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function viewPaymentDetails(enrollmentId) {
+function viewPaymentDetails(paymentHistoryId) {
     const modal = new bootstrap.Modal(document.getElementById('paymentDetailsModal'));
     const contentDiv = document.getElementById('payment-details-content');
     const baseUrl = window.location.origin;
@@ -167,8 +174,8 @@ function viewPaymentDetails(enrollmentId) {
     contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading payment details...</p></div>';
     modal.show();
     
-    // Fetch enrollment/payment details
-    fetch(`${baseUrl}/admin/student/enrollment/${enrollmentId}/details`)
+    // Fetch payment history details
+    fetch(`${baseUrl}/admin/payment-history/${paymentHistoryId}/details`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to fetch payment details');
@@ -179,7 +186,6 @@ function viewPaymentDetails(enrollmentId) {
             function na(value) {
                 return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
             }
-            
             // Build the payment details content
             let content = `
                 <div class="row">
@@ -197,13 +203,8 @@ function viewPaymentDetails(enrollmentId) {
                                     <div class="col-sm-4"><strong>Email:</strong></div>
                                     <div class="col-sm-8">${na(data.email)}</div>
                                 </div>
-                                <div class="row mb-2">
-                                    <div class="col-sm-4"><strong>Phone:</strong></div>
-                                    <div class="col-sm-8">${na(data.contact_number)}</div>
-                                </div>
                             </div>
                         </div>
-                        
                         <div class="card mb-3">
                             <div class="card-header bg-success text-white">
                                 <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Program Details</h6>
@@ -217,14 +218,9 @@ function viewPaymentDetails(enrollmentId) {
                                     <div class="col-sm-4"><strong>Package:</strong></div>
                                     <div class="col-sm-8">${na(data.package_name)}</div>
                                 </div>
-                                <div class="row mb-2">
-                                    <div class="col-sm-4"><strong>Enrollment Type:</strong></div>
-                                    <div class="col-sm-8">${na(data.enrollment_type)}</div>
-                                </div>
                             </div>
                         </div>
                     </div>
-                    
                     <div class="col-md-6">
                         <div class="card mb-3">
                             <div class="card-header bg-warning text-dark">
@@ -257,16 +253,11 @@ function viewPaymentDetails(enrollmentId) {
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="card mb-3">
                             <div class="card-header bg-info text-white">
                                 <h6 class="mb-0"><i class="bi bi-clock"></i> Timeline</h6>
                             </div>
                             <div class="card-body">
-                                <div class="row mb-2">
-                                    <div class="col-sm-4"><strong>Enrolled:</strong></div>
-                                    <div class="col-sm-8">${na(data.enrollment_date)}</div>
-                                </div>
                                 <div class="row mb-2">
                                     <div class="col-sm-4"><strong>Payment Date:</strong></div>
                                     <div class="col-sm-8">${na(data.payment_date)}</div>
@@ -280,7 +271,6 @@ function viewPaymentDetails(enrollmentId) {
                     </div>
                 </div>
             `;
-            
             contentDiv.innerHTML = content;
         })
         .catch(error => {
@@ -347,6 +337,51 @@ function undoPaymentApproval(paymentId) {
         });
     }
 }
+
+function undoPaymentHistory(paymentHistoryId) {
+    document.getElementById('undoPaymentHistoryId').value = paymentHistoryId;
+    document.getElementById('undoHistoryReason').value = '';
+    new bootstrap.Modal(document.getElementById('undoPaymentHistoryModal')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var undoForm = document.getElementById('undoPaymentHistoryForm');
+    if (undoForm) {
+        undoForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const paymentHistoryId = document.getElementById('undoPaymentHistoryId').value;
+            const reason = document.getElementById('undoHistoryReason').value.trim();
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            if (!reason) {
+                alert('A reason is required.');
+                return;
+            }
+
+            fetch(`/admin/payment-history/${paymentHistoryId}/undo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('undoPaymentHistoryModal')).hide();
+                    alert('Payment history undone and removed successfully!');
+                    location.reload();
+                } else {
+                    alert('Error undoing payment history: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error undoing payment history');
+            });
+        });
+    }
+});
 
 // Fix aria-hidden accessibility issue
 document.addEventListener('DOMContentLoaded', function() {

@@ -60,6 +60,18 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0 text-gray-800">
                     {{ (isset($history) && $history) ? 'Student Registration History' : 'Student Registration Pending' }}
@@ -679,6 +691,21 @@
         </div>
     </div>
 
+    <!-- Document Image Preview Modal -->
+    <div class="modal fade" id="documentImageModal" tabindex="-1" aria-labelledby="documentImageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="documentImageModalLabel">Document Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center" id="documentImageModalBody">
+                    <!-- Image or PDF will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('scripts')
@@ -699,10 +726,35 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!filename || filename === 'N/A') {
             return `<span class="text-muted">Not uploaded</span>`;
         }
-        return `<a href="${baseUrl}/storage/documents/${filename}" target="_blank" class="text-primary">
-                    <i class="bi bi-file-earmark-arrow-down"></i> View ${label}
-                </a>`;
+        const ext = filename.split('.').pop().toLowerCase();
+        const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
+        const isPdf = ext === 'pdf';
+        let viewBtn = '';
+        if (isImage || isPdf) {
+            viewBtn = `<button type="button" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1" onclick="showDocumentPreview('${filename}','${label}')"><i class="bi bi-eye"></i> View</button>`;
+        } else {
+            viewBtn = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1"><i class="bi bi-eye"></i> View</a>`;
+        }
+        return viewBtn;
     }
+
+    // Add the showDocumentPreview function:
+    window.showDocumentPreview = function(filename, label) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const modal = new bootstrap.Modal(document.getElementById('documentImageModal'));
+        const modalBody = document.getElementById('documentImageModalBody');
+        let content = '';
+        if (["jpg","jpeg","png","gif","webp"].includes(ext)) {
+            content = `<img src="${baseUrl}/storage/documents/${filename}" alt="${label}" class="img-fluid" style="max-height:70vh;">`;
+        } else if (ext === 'pdf') {
+            content = `<iframe src="${baseUrl}/storage/documents/${filename}" style="width:100%;height:70vh;" frameborder="0"></iframe>`;
+        } else {
+            content = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank">Download ${label}</a>`;
+        }
+        modalBody.innerHTML = content;
+        document.getElementById('documentImageModalLabel').textContent = label + ' Preview';
+        modal.show();
+    };
 
     // Global function for viewing registration details
     window.viewRegistrationDetails = function(registrationId) {
@@ -807,10 +859,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="col-sm-8">${na(data.package_name)}</div>
                                 </div>
                                 <div class="row mb-2">
-                                    <div class="col-sm-4"><strong>Plan:</strong></div>
-                                    <div class="col-sm-8">${na(data.plan_name)}</div>
-                                </div>
-                                <div class="row mb-2">
                                     <div class="col-sm-4"><strong>Plan Type:</strong></div>
                                     <div class="col-sm-8">${na(data.plan_type || data.enrollment_type)}</div>
                                 </div>`;
@@ -876,6 +924,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="row mb-2">
                                     <div class="col-sm-4"><strong>Certificate of Graduation:</strong></div>
                                     <div class="col-sm-8">${formatDocumentLink(data.Cert_of_Grad, 'Certificate of Graduation')}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Valid ID:</strong></div>
+                                    <div class="col-sm-8">${formatDocumentLink(data.valid_id, 'Valid ID')}</div>
                                 </div>
                             </div>
                         </div>
@@ -1201,16 +1253,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Global function for undoing approval
     window.undoApproval = function(registrationId) {
         showConfirmModal(
-            'Confirm Undo Approval', 
+            'Confirm Undo Approval',
             'Are you sure you want to undo this approval? This will set the registration back to pending status. Please provide a reason for undoing approval.',
             'Yes, Undo',
             'btn-warning',
-            function() {
-                const reason = prompt('Please provide a reason for undoing this approval:');
-                if (!reason || !reason.trim()) {
-                    alert('Undo reason is required.');
-                    return;
-                }
+            function(reason) {
                 fetch(`/admin/registrations/${registrationId}/undo-approval`, {
                     method: 'POST',
                     headers: {
@@ -1229,9 +1276,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(error => {
-                    alert('Error undoing registration approval');
+                    alert('Error undoing registration approval: ' + (error && error.message ? error.message : 'Unknown error'));
                 });
-            }
+            },
+            { reason: true }
         );
     };
 
@@ -1271,7 +1319,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Function to show confirmation modal
-    window.showConfirmModal = function(title, message, confirmText, confirmClass, onConfirm) {
+    window.showConfirmModal = function(title, message, confirmText, confirmClass, onConfirm, options = {}) {
         // Create modal if it doesn't exist
         let confirmModal = document.getElementById('confirmActionModal');
         if (!confirmModal) {
@@ -1285,6 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="modal-body">
                                 <p id="confirmActionModalMessage"></p>
+                                <div id="confirmActionModalExtra"></div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -1301,7 +1350,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update modal content
         document.getElementById('confirmActionModalTitle').textContent = title;
         document.getElementById('confirmActionModalMessage').textContent = message;
-        
+        const extraDiv = document.getElementById('confirmActionModalExtra');
+        extraDiv.innerHTML = '';
+        if (options.reason) {
+            extraDiv.innerHTML = `<label for='undoReasonInput' class='form-label mt-2'>Reason <span class='text-danger'>*</span></label><textarea id='undoReasonInput' class='form-control' rows='3' required placeholder='Please provide a reason...'></textarea><div class='invalid-feedback'>Reason is required.</div>`;
+        }
+
         const confirmBtn = document.getElementById('confirmActionBtn');
         confirmBtn.textContent = confirmText;
         confirmBtn.className = `btn ${confirmClass}`;
@@ -1311,9 +1365,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const newConfirmBtn = document.getElementById('confirmActionBtn');
         
         newConfirmBtn.addEventListener('click', function() {
+            if (options.reason) {
+                const reasonInput = document.getElementById('undoReasonInput');
+                if (!reasonInput.value.trim()) {
+                    reasonInput.classList.add('is-invalid');
+                    reasonInput.focus();
+                    return;
+                } else {
+                    reasonInput.classList.remove('is-invalid');
+                }
+            }
+            onConfirm();
             const modal = bootstrap.Modal.getInstance(confirmModal);
             modal.hide();
-            onConfirm();
         });
 
         // Show the modal

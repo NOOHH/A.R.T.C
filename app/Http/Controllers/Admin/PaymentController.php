@@ -51,7 +51,11 @@ class PaymentController extends Controller
         $payment->verified_at = Carbon::now();
         $payment->save();
 
-        return redirect()->route('admin.payments.pending')->with('success', 'Payment approved successfully.');
+        // Always return JSON for now
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment approved successfully.'
+        ]);
     }
 
     /**

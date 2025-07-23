@@ -159,6 +159,8 @@ class AdminController extends Controller
                 'photo_2x2' => $registration->photo_2x2,
                 'birth_certificate' => $registration->birth_certificate,
                 'diploma_certificate' => $registration->diploma_certificate,
+                'Cert_of_Grad' => $registration->Cert_of_Grad,
+                'valid_id' => $registration->valid_id,
                 'created_at' => $registration->created_at->format('M d, Y H:i')
             ]);
         } catch (\Exception $e) {
@@ -504,11 +506,17 @@ class AdminController extends Controller
 
             DB::commit();
 
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Student approval has been undone. Student moved back to pending registrations.']);
+            }
             return redirect()
                 ->route('admin.student.registration.pending')
                 ->with('success', 'Student approval has been undone. Student moved back to pending registrations.');
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Undo approval failed: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()
                              ->with('error', 'Undo approval failed: ' . $e->getMessage());
         }
@@ -518,7 +526,13 @@ class AdminController extends Controller
     {
         try {
             $enrollment = Enrollment::with(['student.user', 'program', 'package', 'payment'])
-                                  ->findOrFail($id);
+                                  ->find($id);
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Enrollment not found.'
+                ], 404);
+            }
             $studentName = '';
             $email = '';
             $contactNumber = 'N/A';
@@ -555,17 +569,17 @@ class AdminController extends Controller
                     }
                 }
             }
-            
             // Get payment details from payments table (for pending payments)
-            $payment = Payment::where('enrollment_id', $enrollment->enrollment_id)
-                             ->orderBy('created_at', 'desc')
-                             ->first();
-            
+            $payment = $enrollment->payment ?? null;
+            if (!$payment) {
+                $payment = Payment::where('enrollment_id', $enrollment->enrollment_id)
+                                 ->orderBy('created_at', 'desc')
+                                 ->first();
+            }
             // Get payment history (for completed/processed payments)
-            $paymentHistory = PaymentHistory::where('enrollment_id', $enrollment->enrollment_id)
+            $paymentHistory = $enrollment->enrollment_id ? PaymentHistory::where('enrollment_id', $enrollment->enrollment_id)
                                            ->orderBy('created_at', 'desc')
-                                           ->get();
-            
+                                           ->get() : collect();
             // Determine current payment status and details
             $paymentStatus = $enrollment->payment_status ?? 'pending';
             $paymentMethod = 'N/A';
@@ -574,24 +588,21 @@ class AdminController extends Controller
             $referenceNumber = 'N/A';
             $transactionId = 'N/A';
             $paymentNotes = '';
-            
             // Get amount from package or enrollment
             if ($enrollment->package && isset($enrollment->package->price)) {
                 $paymentAmount = $enrollment->package->price;
             } elseif ($enrollment->package && isset($enrollment->package->amount)) {
                 $paymentAmount = $enrollment->package->amount;
             }
-            
             if ($payment) {
                 // Use data from payments table for pending payments
                 $paymentStatus = $payment->payment_status ?? $paymentStatus;
                 $paymentMethod = $payment->payment_method ?? 'N/A';
-                if ($payment->amount > 0) {
+                if (isset($payment->amount) && $payment->amount > 0) {
                     $paymentAmount = $payment->amount;
                 }
-                $paymentDate = $payment->created_at;
+                $paymentDate = $payment->created_at ?? null;
                 $paymentNotes = $payment->notes ?? '';
-                
                 // Extract payment details if JSON
                 if ($payment->payment_details) {
                     $details = is_string($payment->payment_details) ? json_decode($payment->payment_details, true) : $payment->payment_details;
@@ -601,37 +612,37 @@ class AdminController extends Controller
                     }
                 }
             }
-            
             // If there's payment history, get the latest one for display
             $latestHistory = $paymentHistory->first();
             if ($latestHistory && in_array($latestHistory->payment_status, ['completed', 'verified', 'approved'])) {
                 $paymentStatus = $latestHistory->payment_status;
                 $paymentMethod = $latestHistory->payment_method ?? $paymentMethod;
                 $paymentAmount = $latestHistory->amount ?? $paymentAmount;
-                $paymentDate = $latestHistory->payment_date ?? $latestHistory->created_at;
+                $paymentDate = $latestHistory->payment_date ?? $latestHistory->created_at ?? $paymentDate;
                 $paymentNotes = $latestHistory->payment_notes ?? $paymentNotes;
             }
-            
             return response()->json([
-                'enrollment_id' => $enrollment->enrollment_id,
-                'student_name' => $studentName ?: 'N/A',
-                'email' => $email ?: 'N/A',
-                'contact_number' => $contactNumber ?: 'N/A',
+                'student_name' => $studentName,
+                'email' => $email,
+                'contact_number' => $contactNumber,
                 'program_name' => $enrollment->program->program_name ?? 'N/A',
                 'package_name' => $enrollment->package->package_name ?? 'N/A',
-                'amount' => $payment->amount ?? $enrollment->package->amount ?? $enrollment->package->price ?? 0,
-                'enrollment_status' => $enrollment->enrollment_status ?? 'N/A',
-                'payment_status' => $payment->payment_status ?? $enrollment->payment_status ?? 'pending',
-                'payment_method' => $payment->payment_method ?? 'N/A',
-                'reference_number' => $payment->reference_number ?? ($paymentDetails['reference_number'] ?? 'N/A'),
-                'payment_proof' => isset($paymentDetails['payment_proof_path']) ? asset('storage/' . $paymentDetails['payment_proof_path']) : null,
-                'transaction_date' => $payment->created_at ? $payment->created_at->format('M d, Y g:i A') : 'N/A',
-                'notes' => $payment->notes ?? '',
-                'enrollment_date' => $enrollment->created_at ? $enrollment->created_at->format('M d, Y g:i A') : 'N/A',
+                'enrollment_type' => $enrollment->enrollment_type ?? 'N/A',
+                'amount' => $paymentAmount,
+                'payment_status' => $paymentStatus,
+                'payment_method' => $paymentMethod,
+                'reference_number' => $referenceNumber,
+                'transaction_id' => $transactionId,
+                'enrollment_date' => $enrollment->created_at ?? null,
+                'payment_date' => $paymentDate,
+                'updated_at' => $enrollment->updated_at ?? null,
+                'payment_notes' => $paymentNotes,
             ]);
-            return response()->json($response);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error loading enrollment details: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading enrollment details: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -944,143 +955,37 @@ class AdminController extends Controller
 
     public function paymentHistory()
     {
-        // Get all enrollments with completed payments (paid status)
-        // Include detailed enrollment information and prevent duplicates
-        $enrollments = Enrollment::with(['user', 'student', 'program', 'package', 'registration', 'enrollmentCourses.course'])
-                                ->where('payment_status', 'paid')
-                                ->where(function($query) {
-                                    // Only include enrollments that have either user_id or student_id
-                                    $query->whereNotNull('user_id')
-                                          ->orWhereNotNull('student_id');
-                                })
-                                ->whereHas('program') // Must have a valid program
-                                ->whereHas('package') // Must have a valid package
-                                ->orderBy('updated_at', 'desc')
-                                ->get()
-                                ->unique('enrollment_id') // Remove duplicate enrollments
-                                ->filter(function ($enrollment) {
-                                    // Additional filtering to ensure we have valid data
-                                    $hasValidUser = $enrollment->user && 
-                                                   ($enrollment->user->user_firstname || $enrollment->user->user_lastname);
-                                    $hasValidStudent = $enrollment->student && 
-                                                      ($enrollment->student->firstname || $enrollment->student->lastname);
-                                    
-                                    return $hasValidUser || $hasValidStudent;
-                                })
-                                ->map(function ($enrollment) {
-                                    // Determine student name from either user or student relationship
-                                    $studentName = 'N/A';
-                                    $studentEmail = 'N/A';
-                                    
-                                    if ($enrollment->user) {
-                                        $firstName = $enrollment->user->user_firstname ?? '';
-                                        $lastName = $enrollment->user->user_lastname ?? '';
-                                        $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
-                                        $studentEmail = $enrollment->user->email ?? 'N/A';
-                                    } elseif ($enrollment->student) {
-                                        $firstName = $enrollment->student->firstname ?? '';
-                                        $lastName = $enrollment->student->lastname ?? '';
-                                        $studentName = trim($firstName . ' ' . $lastName) ?: 'N/A';
-                                        $studentEmail = $enrollment->student->email ?? 'N/A';
-                                    }
-                                    
-                                    $enrollment->student_name = $studentName;
-                                    $enrollment->student_email = $studentEmail;
-                                    
-                                    // Get enrolled courses/modules details and plan information
-                                    $enrolledItems = [];
-                                    $planDetails = [];
-                                    
-                                    // Check for specific course enrollments
-                                    if ($enrollment->enrollmentCourses && $enrollment->enrollmentCourses->count() > 0) {
-                                        foreach ($enrollment->enrollmentCourses as $courseEnrollment) {
-                                            if ($courseEnrollment->course) {
-                                                $enrolledItems[] = [
-                                                    'type' => 'Course',
-                                                    'name' => $courseEnrollment->course->subject_name ?? 'Unknown Course',
-                                                    'id' => $courseEnrollment->course->subject_id ?? 'N/A'
-                                                ];
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Check for modular enrollment based on registration
-                                    if ($enrollment->registration && $enrollment->registration->selected_modules) {
-                                        $selectedModules = is_string($enrollment->registration->selected_modules) 
-                                            ? json_decode($enrollment->registration->selected_modules, true) 
-                                            : $enrollment->registration->selected_modules;
-                                            
-                                        if (is_array($selectedModules) && !empty($selectedModules)) {
-                                            // Flatten the array in case it's nested
-                                            $moduleIds = [];
-                                            foreach ($selectedModules as $module) {
-                                                if (is_array($module) && isset($module['modules_id'])) {
-                                                    $moduleIds[] = $module['modules_id'];
-                                                } elseif (is_numeric($module)) {
-                                                    $moduleIds[] = $module;
-                                                }
-                                            }
-                                            
-                                            if (!empty($moduleIds)) {
-                                                $modules = \App\Models\Module::whereIn('modules_id', $moduleIds)->get();
-                                                foreach ($modules as $module) {
-                                                    $enrolledItems[] = [
-                                                        'type' => 'Module',
-                                                        'name' => $module->module_name ?? 'Unknown Module',
-                                                        'id' => $module->modules_id ?? 'N/A'
-                                                    ];
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    // If no specific courses/modules, show program-level enrollment
-                                    if (empty($enrolledItems) && $enrollment->program) {
-                                        $enrolledItems[] = [
-                                            'type' => 'Full Program',
-                                            'name' => $enrollment->program->program_name ?? 'Unknown Program',
-                                            'id' => $enrollment->program->program_id ?? 'N/A'
-                                        ];
-                                    }
-                                    
-                                    // Add plan details
-                                    if ($enrollment->package) {
-                                        $planDetails[] = [
-                                            'type' => 'Package',
-                                            'name' => $enrollment->package->package_name ?? 'Unknown Package',
-                                            'type_label' => $enrollment->package->package_type ?? 'Unknown',
-                                            'amount' => $enrollment->package->amount ?? 0
-                                        ];
-                                    }
-                                    
-                                    if ($enrollment->registration) {
-                                        $planDetails[] = [
-                                            'type' => 'Learning Mode',
-                                            'name' => ucfirst($enrollment->registration->learning_mode ?? $enrollment->learning_mode ?? 'Not specified'),
-                                            'enrollment_type' => ucfirst($enrollment->enrollment_type ?? 'Not specified')
-                                        ];
-                                    }
-                                    
-                                    $enrollment->enrolled_items = $enrolledItems;
-                                    $enrollment->plan_details = $planDetails;
-                                    $enrollment->enrollment_details = count($enrolledItems) > 0 
-                                        ? implode(', ', array_map(function($item) { return $item['type'] . ': ' . $item['name']; }, $enrolledItems))
-                                        : 'No specific enrollment details available';
-                                    
-                                    $enrollment->plan_summary = count($planDetails) > 0
-                                        ? implode(' | ', array_map(function($plan) { 
-                                            if ($plan['type'] === 'Package') {
-                                                return $plan['name'] . ' (' . ucfirst($plan['type_label']) . ')';
-                                            }
-                                            return $plan['name'];
-                                        }, $planDetails))
-                                        : 'No plan details available';
-                                    
-                                    return $enrollment;
-                                });
-
+        $paymentHistory = \App\Models\PaymentHistory::with(['enrollment.student', 'enrollment.program', 'enrollment.package'])
+            ->orderBy('payment_date', 'desc')
+            ->get();
         return view('admin.admin-student-registration.admin-payment-history', [
-            'enrollments' => $enrollments,
+            'paymentHistory' => $paymentHistory
+        ]);
+    }
+
+    public function getPaymentHistoryDetailsJson($id)
+    {
+        $payment = \App\Models\PaymentHistory::with(['enrollment.student', 'enrollment.program', 'enrollment.package'])->find($id);
+        if (!$payment) {
+            return response()->json(['success' => false, 'message' => 'Payment history not found.'], 404);
+        }
+        $enrollment = $payment->enrollment;
+        $student = $enrollment && $enrollment->student ? $enrollment->student : null;
+        $program = $enrollment && $enrollment->program ? $enrollment->program : null;
+        $package = $enrollment && $enrollment->package ? $enrollment->package : null;
+        return response()->json([
+            'student_name' => $student ? trim(($student->firstname ?? '') . ' ' . ($student->middlename ?? '') . ' ' . ($student->lastname ?? '')) : 'N/A',
+            'email' => $student ? ($student->email ?? 'N/A') : 'N/A',
+            'program_name' => $program ? $program->program_name : 'N/A',
+            'package_name' => $package ? $package->package_name : 'N/A',
+            'amount' => $payment->amount,
+            'payment_status' => $payment->payment_status,
+            'payment_method' => $payment->payment_method,
+            'reference_number' => $payment->reference_number,
+            'transaction_id' => $payment->transaction_id,
+            'payment_date' => $payment->payment_date,
+            'notes' => $payment->payment_notes,
+            'updated_at' => $payment->updated_at,
         ]);
     }
 
@@ -1703,29 +1608,27 @@ class AdminController extends Controller
     // Reject registration method
     public function rejectRegistration(Request $request, $id)
     {
+        $request->validate([
+            'reason'          => 'required|string',
+            'rejected_fields' => 'nullable|array',
+        ]);
+    
         try {
-            $request->validate([
-                'reason' => 'required|string',
-                'rejected_fields' => 'nullable|array'
-            ]);
-
             $registration = Registration::findOrFail($id);
-            $registration->status = 'rejected';
-            $registration->rejection_reason = $request->input('reason');
-            $registration->rejected_fields = json_encode($request->input('rejected_fields', []));
-            $registration->rejected_at = now();
-            $registration->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Registration rejected successfully.'
+            $registration->update([
+                'status'           => 'rejected',
+                'rejection_reason' => $request->reason,
+                'rejected_fields'  => json_encode($request->input('rejected_fields', [])),
+                'rejected_at'      => now(),
             ]);
-
+    
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Registration rejected successfully.');
+    
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error rejecting registration: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                ->with('error', 'Rejection failed: ' . $e->getMessage());
         }
     }
 
@@ -1769,6 +1672,9 @@ class AdminController extends Controller
         try {
             $registration = Registration::findOrFail($id);
             if ($registration->status !== 'approved') {
+                if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Only approved registrations can be undone.'], 400);
+                }
                 return redirect()->back()->with('error', 'Only approved registrations can be undone.');
             }
             $registration->status = 'pending';
@@ -1778,8 +1684,14 @@ class AdminController extends Controller
             $registration->undone_at = now();
             $registration->undone_by = auth()->guard('admin')->user()->admin_id ?? null;
             $registration->save();
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Registration approval undone successfully. Student moved back to pending status.']);
+            }
             return redirect()->back()->with('success', 'Registration approval undone successfully. Student moved back to pending status.');
         } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Error undoing registration approval: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Error undoing registration approval: ' . $e->getMessage());
         }
     }
@@ -1933,5 +1845,59 @@ class AdminController extends Controller
         }
         
         return sprintf('%s-%s-%05d', $year, $month, $newNumber);
+    }
+
+    public function undoPendingPayment(Request $request, $enrollmentId)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000'
+            ]);
+            $enrollment = Enrollment::findOrFail($enrollmentId);
+            $payment = Payment::where('enrollment_id', $enrollmentId)->first();
+            if (!$payment) {
+                return response()->json(['success' => false, 'message' => 'No payment record found for this enrollment.'], 404);
+            }
+            $payment->payment_status = 'rejected';
+            $payment->rejection_reason = $request->input('reason');
+            $payment->rejected_at = now();
+            $payment->rejected_by = auth()->guard('admin')->user()->admin_id ?? 1;
+            $payment->save();
+            $enrollment->payment_status = 'rejected';
+            $enrollment->save();
+            return response()->json(['success' => true, 'message' => 'Payment has been undone and moved back to pending.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error undoing payment: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function undoPaymentHistory(Request $request, $paymentHistoryId)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:1000'
+            ]);
+            $paymentHistory = PaymentHistory::findOrFail($paymentHistoryId);
+            $enrollmentId = $paymentHistory->enrollment_id;
+            // Delete the payment history record
+            $paymentHistory->delete();
+            // Also update the related Payment and Enrollment if they exist
+            $payment = Payment::where('enrollment_id', $enrollmentId)->first();
+            if ($payment) {
+                $payment->payment_status = 'pending';
+                $payment->rejection_reason = $request->input('reason');
+                $payment->rejected_at = now();
+                $payment->rejected_by = auth()->guard('admin')->user()->admin_id ?? 1;
+                $payment->save();
+            }
+            $enrollment = Enrollment::find($enrollmentId);
+            if ($enrollment) {
+                $enrollment->payment_status = 'pending';
+                $enrollment->save();
+            }
+            return response()->json(['success' => true, 'message' => 'Payment history undone and removed successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error undoing payment history: ' . $e->getMessage()], 500);
+        }
     }
 }

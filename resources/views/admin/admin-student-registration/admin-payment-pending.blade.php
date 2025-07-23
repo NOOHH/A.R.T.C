@@ -310,9 +310,9 @@
                                                         onclick="showViewDetailsModal({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-danger" 
-                                                        onclick="rejectPayment({{ $enrollment->enrollment_id }})">
-                                                    <i class="bi bi-x-circle"></i> Reject
+                                                <button type="button" class="btn btn-sm btn-warning" 
+                                                        onclick="undoPendingPayment({{ $enrollment->enrollment_id }})">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Undo
                                                 </button>
                                             </div>
                                         </td>
@@ -499,6 +499,31 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Undo Payment Modal -->
+<div class="modal fade" id="undoPaymentModal" tabindex="-1" aria-labelledby="undoPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="undoPaymentForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="undoPaymentModalLabel">Undo Payment Rejection</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="undoReason" class="form-label">Reason for undoing rejection <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="undoReason" name="reason" rows="3" required placeholder="Enter reason..."></textarea>
+          </div>
+          <input type="hidden" id="undoPaymentId" name="payment_id" value="">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Undo Rejection</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1012,27 +1037,72 @@ function rejectPaymentSubmission(paymentId) {
 }
 
 function undoPaymentApproval(paymentId) {
-    if (confirm('Are you sure you want to undo this payment rejection? This will return the payment to pending approval.')) {
-        fetch(`/admin/payment/${paymentId}/undo-approval`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Payment rejection undone successfully! Payment is now pending approval.');
-                location.reload();
-            } else {
-                alert('Error undoing payment rejection: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Error undoing payment rejection');
-        });
+    document.getElementById('undoPaymentId').value = paymentId;
+    document.getElementById('undoReason').value = '';
+    new bootstrap.Modal(document.getElementById('undoPaymentModal')).show();
+}
+
+document.getElementById('undoPaymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const paymentId = document.getElementById('undoPaymentId').value;
+    const reason = document.getElementById('undoReason').value.trim();
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    if (!reason) {
+        alert('A reason is required.');
+        return;
     }
+
+    fetch(`/admin/payment/${paymentId}/undo-approval`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token
+        },
+        body: JSON.stringify({ reason })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('undoPaymentModal')).hide();
+            alert('Payment rejection undone successfully! Payment is now pending approval.');
+            location.reload();
+        } else {
+            alert('Error undoing payment rejection: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error undoing payment rejection');
+    });
+});
+
+function undoPendingPayment(enrollmentId) {
+    const reason = prompt('Please provide a reason for undoing this payment (rejection reason):');
+    if (!reason || !reason.trim()) {
+        alert('A rejection reason is required.');
+        return;
+    }
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch(`/admin/enrollment/${enrollmentId}/undo-payment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token
+        },
+        body: JSON.stringify({ reason })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment has been undone and moved back to pending.');
+            location.reload();
+        } else {
+            alert('Error undoing payment: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error undoing payment');
+    });
 }
 </script>
 @endsection
