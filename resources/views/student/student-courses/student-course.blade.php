@@ -522,6 +522,32 @@
             border-radius: 0.5rem;
         }
 
+        .pdf-viewer-container {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .file-preview {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .content-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .content-grid {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            }
+        }
+
         /* Loading and Empty States */
         .loading-spinner {
             display: flex;
@@ -985,6 +1011,7 @@
             })
             .then(data => {
                 console.log('Course content loaded:', data);
+                console.log('Content items:', data.content_items || data.content || []);
                 displayCourseContent(data.content_items || data.content || []);
             })
             .catch(error => {
@@ -1002,6 +1029,7 @@
 
         // Display course content
         function displayCourseContent(content) {
+            console.log('Displaying course content:', content);
             const viewer = document.getElementById('content-viewer');
             
             if (!content || content.length === 0) {
@@ -1017,7 +1045,10 @@
 
             let html = '<div class="content-grid">';
             content.forEach(item => {
+                console.log('Processing content item:', item);
                 const icon = getContentIcon(item.content_type || item.type);
+                const hasAttachment = item.attachment_path && item.attachment_path.trim() !== '';
+                console.log('Item has attachment:', hasAttachment, 'Path:', item.attachment_path);
                 html += `
                     <div class="content-item" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
                         <div class="item-header">
@@ -1029,6 +1060,7 @@
                         ${(item.content_description || item.description) ? `<p class=\"item-description\">${item.content_description || item.description}</p>` : ''}
                         <div class="mt-2">
                             <span class="badge bg-primary">${item.content_type || item.type || 'Content'}</span>
+                            ${hasAttachment ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-paperclip\"></i> Attachment</span>` : ''}
                             ${item.duration ? `<span class=\"badge bg-secondary ms-1\">${item.duration}</span>` : ''}
                         </div>
                     </div>
@@ -1058,7 +1090,7 @@
 
         // Open content item
         function openContent(contentId, contentType) {
-            console.log('Opening content:', contentId, contentType);
+            console.log('Opening content:', contentId, 'Type:', contentType);
             currentContent = contentId;
             
             // Update active content
@@ -1069,16 +1101,20 @@
             // Handle different content types
             switch (contentType?.toLowerCase()) {
                 case 'video':
+                    console.log('Opening as video content');
                     openVideoContent(contentId);
                     break;
                 case 'assignment':
+                    console.log('Opening as assignment content');
                     openAssignmentContent(contentId);
                     break;
                 case 'document':
                 case 'pdf':
+                    console.log('Opening as document content');
                     openDocumentContent(contentId);
                     break;
                 default:
+                    console.log('Opening as generic content');
                     openGenericContent(contentId);
                     break;
             }
@@ -1096,9 +1132,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.content && data.content.file_path) {
-                    document.getElementById('videoModalTitle').textContent = data.content.title || 'Video Content';
-                    document.getElementById('videoSource').src = data.content.file_path;
+                if (data.content && (data.content.attachment_path || data.content.content_url)) {
+                    document.getElementById('videoModalTitle').textContent = data.content.content_title || 'Video Content';
+                    const videoSrc = data.content.content_url || `/storage/${data.content.attachment_path}`;
+                    document.getElementById('videoSource').src = videoSrc;
                     document.getElementById('videoPlayer').load();
                     
                     const videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
@@ -1147,21 +1184,73 @@
         // Display document viewer
         function displayDocumentViewer(content) {
             const viewer = document.getElementById('content-viewer');
+            
+            // Get the file URL - prioritize content_url, then attachment_path
+            let fileUrl = '';
+            if (content.content_url && content.content_url.trim() !== '') {
+                fileUrl = content.content_url;
+            } else if (content.attachment_path && content.attachment_path.trim() !== '') {
+                fileUrl = `/storage/${content.attachment_path}`;
+            } else {
+                viewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        <h4>No Document Available</h4>
+                        <p>No document file is attached to this content item.</p>
+                        <button class="btn btn-outline-primary" onclick="showContent()">
+                            <i class="bi bi-arrow-left"></i> Back to Content
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Determine if it's a PDF for embedded viewing
+            const isPdf = fileUrl.toLowerCase().includes('.pdf') || content.content_type === 'pdf';
+            const fileName = content.attachment_path ? content.attachment_path.split('/').pop() : 'document';
+            
             viewer.innerHTML = `
                 <div class="document-container">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4>${content.title || 'Document'}</h4>
+                        <div>
+                            <h4>${content.content_title || 'Document'}</h4>
+                            <small class="text-muted">${fileName}</small>
+                        </div>
                         <div>
                             <button class="btn btn-outline-primary me-2" onclick="showContent()">
                                 <i class="bi bi-arrow-left"></i> Back
                             </button>
-                            <a href="${content.file_path}" target="_blank" class="btn btn-primary">
+                            <a href="${fileUrl}" target="_blank" class="btn btn-primary">
                                 <i class="bi bi-download"></i> Download
                             </a>
                         </div>
                     </div>
-                    ${content.description ? `<p class="text-muted mb-3">${content.description}</p>` : ''}
-                    <iframe src="${content.file_path}" class="document-viewer" frameborder="0"></iframe>
+                    ${(content.content_description) ? `<p class="text-muted mb-3">${content.content_description}</p>` : ''}
+                    
+                    ${isPdf ? 
+                        `<div class="pdf-viewer-container">
+                            <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                    class="document-viewer" 
+                                    frameborder="0"
+                                    style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 0.5rem;">
+                                <p>Your browser does not support PDFs. 
+                                   <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
+                                </p>
+                            </iframe>
+                        </div>`
+                        :
+                        `<div class="file-preview">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                This file type cannot be previewed in the browser. Please download to view.
+                            </div>
+                            <div class="text-center p-4">
+                                <i class="bi bi-file-earmark text-primary" style="font-size: 4rem;"></i>
+                                <h5 class="mt-3">${fileName}</h5>
+                                <p class="text-muted">Click download to view this file</p>
+                            </div>
+                        </div>`
+                    }
                 </div>
             `;
         }
@@ -1179,16 +1268,60 @@
             .then(data => {
                 if (data.content) {
                     const viewer = document.getElementById('content-viewer');
+                    
+                    // Check if there's an attachment to display
+                    let attachmentSection = '';
+                    if (data.content.attachment_path && data.content.attachment_path.trim() !== '') {
+                        const fileUrl = `/storage/${data.content.attachment_path}`;
+                        const fileName = data.content.attachment_path.split('/').pop();
+                        const isPdf = fileUrl.toLowerCase().includes('.pdf');
+                        
+                        attachmentSection = `
+                            <div class="mt-4">
+                                <h5><i class="bi bi-paperclip me-2"></i>Attachment</h5>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <i class="bi bi-file-earmark-text text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">${fileName}</h6>
+                                        <small class="text-muted">${isPdf ? 'PDF Document' : 'Document'}</small>
+                                    </div>
+                                    <div>
+                                        ${isPdf ? `<button class="btn btn-outline-primary me-2" onclick="viewDocumentInline('${data.content.id}')">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>` : ''}
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                                ${isPdf ? `
+                                    <div id="inline-document-${data.content.id}" style="display: none;">
+                                        <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                style="width: 100%; height: 1000px; border: 1px solid #ddd; border-radius: 0.5rem;"
+                                                frameborder="0">
+                                            <p>Your browser does not support PDFs. 
+                                               <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
+                                            </p>
+                                        </iframe>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }
+                    
                     viewer.innerHTML = `
                         <div class="content-details">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h4>${data.content.title || 'Content'}</h4>
+                                <h4>${data.content.content_title || 'Content'}</h4>
                                 <button class="btn btn-outline-primary" onclick="showContent()">
                                     <i class="bi bi-arrow-left"></i> Back
                                 </button>
                             </div>
-                            ${data.content.description ? `<p>${data.content.description}</p>` : ''}
-                            ${data.content.content ? `<div class="content-body">${data.content.content}</div>` : ''}
+                            ${data.content.content_description ? `<p class="mb-3">${data.content.content_description}</p>` : ''}
+                            ${data.content.content_text ? `<div class="content-body mb-4">${data.content.content_text}</div>` : ''}
+                            ${attachmentSection}
                         </div>
                     `;
                 }
@@ -1197,6 +1330,18 @@
                 console.error('Error loading content:', error);
                 alert('Error loading content');
             });
+        }
+
+        // Helper function to toggle inline document view
+        function viewDocumentInline(contentId) {
+            const inlineDoc = document.getElementById(`inline-document-${contentId}`);
+            if (inlineDoc) {
+                if (inlineDoc.style.display === 'none') {
+                    inlineDoc.style.display = 'block';
+                } else {
+                    inlineDoc.style.display = 'none';
+                }
+            }
         }
 
         // Submit assignment
