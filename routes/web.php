@@ -372,6 +372,9 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
     
+    // Course route - moved inside middleware group for authentication
+    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
+    
     // Test route for debugging student settings
     Route::get('/test-student-settings', function () {
         // Find student with ID 2025-07-00001
@@ -404,7 +407,6 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/send-otp', [StudentController::class, 'sendOTP'])->name('student.send-otp');
     Route::post('/student/verify-email-otp', [StudentController::class, 'verifyEmailOTP'])->name('student.verify-email-otp');
     
-    Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     Route::get('/student/meetings', [\App\Http\Controllers\ClassMeetingController::class, 'studentMeetings'])->name('student.meetings');
     Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])
         ->name('student.meetings.upcoming');

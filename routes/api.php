@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 /*
 |-----------------------------------------------------------// Chat API routes (auth:sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -31,6 +32,16 @@ Route::middleware(['web'])->group(function () {
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::middleware('auth:sanctum')->get('/user-info', function () {
+    $user = Auth::user();
+    return response()->json([
+        'id' => $user?->id,
+        'name' => $user?->name,
+        'role' => $user?->role,
+        'isAuthenticated' => !!$user,
+    ]);
 });
 
 // Student progress tracking routes
