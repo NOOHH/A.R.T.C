@@ -444,6 +444,12 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
     Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
     Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
+    
+    // Rejected Registration Management Routes
+    Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
+    Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
+    Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
+    Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
 });
 
 /*
@@ -633,6 +639,8 @@ Route::get('/admin-student-registration/pending', [AdminController::class, 'stud
      ->name('admin.student.registration.pending');
 Route::get('/admin-student-registration/rejected', [AdminController::class, 'studentRegistrationRejected'])
      ->name('admin.student.registration.rejected');
+Route::get('/admin-student-registration/resubmitted', [AdminController::class, 'studentRegistrationResubmitted'])
+     ->name('admin.student.registration.resubmitted');
 Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
      ->name('admin.student.registration.history');
 
@@ -641,6 +649,12 @@ Route::get('/admin/student/{id}/details', [AdminController::class, 'getStudentDe
      ->name('admin.student.details');
 Route::post('/admin/student/{id}/undo-approval', [AdminController::class, 'undoApproval'])
      ->name('admin.student.undo.approval');
+
+// Rejected registration actions
+Route::post('/admin/registration/{id}/undo-rejection', [AdminController::class, 'undoRejection'])
+     ->name('admin.registration.undo.rejection');
+Route::post('/admin/registration/{id}/approve-rejected', [AdminController::class, 'approveRejectedRegistration'])
+     ->name('admin.registration.approve.rejected');
 
 // Enrollment details for payment history
 Route::get('/admin/student/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])

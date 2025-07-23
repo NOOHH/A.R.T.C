@@ -74,6 +74,9 @@
                                                     onclick="editRejectedPaymentFields({{ $payment->payment_id }})">
                                                 <i class="bi bi-pencil"></i> Edit Rejection
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-secondary" style="display:inline-block !important;" onclick="undoPaymentApproval({{ $payment->payment_id }})">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Undo
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -1006,6 +1009,30 @@ function rejectPaymentSubmission(paymentId) {
     
     loadPaymentFieldsForRejection(paymentId);
     new bootstrap.Modal(document.getElementById('rejectPaymentModal')).show();
+}
+
+function undoPaymentApproval(paymentId) {
+    if (confirm('Are you sure you want to undo this payment rejection? This will return the payment to pending approval.')) {
+        fetch(`/admin/payment/${paymentId}/undo-approval`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Payment rejection undone successfully! Payment is now pending approval.');
+                location.reload();
+            } else {
+                alert('Error undoing payment rejection: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error undoing payment rejection');
+        });
+    }
 }
 </script>
 @endsection

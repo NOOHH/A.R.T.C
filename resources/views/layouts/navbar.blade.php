@@ -179,7 +179,7 @@
                                 <li><a class="dropdown-item" href="{{ url('/login') }}">
                                     <i class="bi bi-box-arrow-in-right"></i> Login
                                 </a></li>
-                                <li><a class="dropdown-item" href="{{ url('/enrollment') }}">
+                                <li><a class="dropdown-item" href="{{ url('/signup') }}">
                                     <i class="bi bi-person-plus-fill"></i> Sign Up
                                 </a></li>
                             </ul>
