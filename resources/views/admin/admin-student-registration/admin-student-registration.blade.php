@@ -563,12 +563,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatDocumentLink(filename, label) {
-        if (!filename || filename === 'N/A') {
-            return `<span class="text-muted">Not uploaded</span>`;
+        if (!filename || filename === 'N/A' || filename === '' || filename === null) {
+            return `
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="text-muted">Not uploaded</span>
+                    <span class="badge bg-secondary">No File</span>
+                </div>
+            `;
         }
-        return `<a href="${baseUrl}/storage/documents/${filename}" target="_blank" class="text-primary">
-                    <i class="bi bi-file-earmark-arrow-down"></i> View ${label}
-                </a>`;
+        
+        // Determine the correct storage path
+        let filePath = '';
+        if (filename.startsWith('http')) {
+            filePath = filename; // Already a full URL
+        } else if (filename.startsWith('storage/')) {
+            filePath = `${baseUrl}/${filename}`;
+        } else if (filename.startsWith('uploads/')) {
+            filePath = `${baseUrl}/storage/${filename}`;
+        } else {
+            // Try multiple possible paths
+            filePath = `${baseUrl}/storage/uploads/education_requirements/${filename}`;
+        }
+        
+        return `
+            <div class="d-flex align-items-center justify-content-between">
+                <a href="${filePath}" target="_blank" class="text-primary me-2">
+                    <i class="bi bi-file-earmark-arrow-down"></i> ${label}
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewDocument('${filePath}', '${label}')">
+                    <i class="bi bi-eye"></i> View
+                </button>
+            </div>
+        `;
     }
 
     // Global function for viewing registration details
@@ -1150,9 +1176,108 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = new bootstrap.Modal(confirmModal);
         modal.show();
     };
+
+    // Document viewer function
+    window.viewDocument = function(filePath, documentName) {
+        if (!filePath || filePath === 'null' || filePath === '') {
+            alert('Document not available');
+            return;
+        }
+
+        // Create or update document viewer modal
+        let documentModal = document.getElementById('documentViewerModal');
+        if (!documentModal) {
+            const modalHtml = `
+                <div class="modal fade" id="documentViewerModal" tabindex="-1" aria-labelledby="documentViewerModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="documentViewerModalLabel">Document Viewer</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-0" id="documentViewerBody">
+                                <div class="text-center p-4">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading document...</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a id="documentDownloadLink" href="#" target="_blank" class="btn btn-primary">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            documentModal = document.getElementById('documentViewerModal');
+        }
+
+        // Update modal title and download link
+        document.getElementById('documentViewerModalLabel').textContent = `${documentName} - Document Viewer`;
+        document.getElementById('documentDownloadLink').href = filePath;
+
+        // Get file extension
+        const fileExtension = filePath.split('.').pop().toLowerCase();
+        const viewerBody = document.getElementById('documentViewerBody');
+
+        // Show modal first
+        const modal = new bootstrap.Modal(documentModal);
+        modal.show();
+
+        // Load document content based on file type
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+            // Image file
+            viewerBody.innerHTML = `
+                <div class="text-center p-3">
+                    <img src="${filePath}" class="img-fluid" style="max-height: 70vh; max-width: 100%;" 
+                         alt="${documentName}" onload="this.style.opacity=1" style="opacity:0; transition: opacity 0.3s;"
+                         onerror="this.parentElement.innerHTML='<div class=&quot;alert alert-danger&quot;><i class=&quot;bi bi-exclamation-triangle&quot;></i> Failed to load image. The file may be corrupted or moved.</div>'">
+                </div>
+            `;
+        } else if (fileExtension === 'pdf') {
+            // PDF file
+            viewerBody.innerHTML = `
+                <div class="pdf-viewer-container" style="height: 70vh;">
+                    <iframe src="${filePath}" 
+                            width="100%" 
+                            height="100%" 
+                            style="border: none;"
+                            onload="console.log('PDF loaded successfully')"
+                            onerror="this.parentElement.innerHTML='<div class=&quot;alert alert-warning p-4&quot;><i class=&quot;bi bi-file-earmark-pdf&quot;></i> PDF preview not available. <a href=&quot;${filePath}&quot; target=&quot;_blank&quot; class=&quot;btn btn-primary btn-sm ms-2&quot;>Open in new tab</a></div>'">
+                    </iframe>
+                    <div class="pdf-fallback text-center p-4" style="display: none;">
+                        <i class="bi bi-file-earmark-pdf" style="font-size: 4rem; color: #dc3545;"></i>
+                        <h5 class="mt-3">PDF Preview Not Available</h5>
+                        <p class="text-muted">Your browser doesn't support PDF preview.</p>
+                        <a href="${filePath}" target="_blank" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-up-right"></i> Open in New Tab
+                        </a>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Other file types
+            viewerBody.innerHTML = `
+                <div class="text-center p-5">
+                    <i class="bi bi-file-earmark" style="font-size: 4rem; color: #6c757d;"></i>
+                    <h5 class="mt-3">Preview Not Available</h5>
+                    <p class="text-muted">This file type (${fileExtension.toUpperCase()}) cannot be previewed.</p>
+                    <a href="${filePath}" target="_blank" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up-right"></i> Open in New Tab
+                    </a>
+                </div>
+            `;
+        }
+    };
 });
 </script>
 
 <!-- Confirmation Modal Template (will be created dynamically) -->
+<!-- Document Viewer Modal Template (will be created dynamically) -->
 
 @endsection

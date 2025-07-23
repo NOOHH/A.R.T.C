@@ -260,6 +260,10 @@
                                         <i class="bi bi-puzzle"></i>
                                         <span>Manage Modules</span>
                                     </a>
+                                    <a href="{{ route('admin.submissions.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.submissions.index') active @endif">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                        <span>Assignment Submissions</span>
+                                    </a>
                                     @if($isAdmin)
                                     <a href="{{ route('admin.packages.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.packages.index') active @endif">
                                         <i class="bi bi-box-seam"></i>

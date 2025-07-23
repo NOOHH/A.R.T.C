@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -917,6 +917,14 @@ Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGen
 Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
      ->name('admin.quiz-generator.generate');
 
+// Assignment Submissions Management
+Route::get('/admin/submissions', [AdminController::class, 'viewAssignmentSubmissions'])
+     ->name('admin.submissions.index');
+Route::post('/admin/submissions/{submission}/grade', [AdminController::class, 'gradeSubmission'])
+     ->name('admin.submissions.grade');
+Route::get('/admin/submissions/{submission}/download', [AdminController::class, 'downloadSubmission'])
+     ->name('admin.submissions.download');
+
 // Chat routes
 Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
 Route::get('/admin/chat/room/{roomId}', [AdminController::class, 'chatRoom'])->name('admin.chat.room');
@@ -1432,15 +1440,15 @@ Route::middleware(['professor.auth'])
     
     // AI Quiz Generator
     Route::get('/quiz-generator', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'index'])
-         ->name('quiz-generator');
+         ->name('professor.quiz-generator');
     Route::post('/quiz-generator/generate', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'generate'])
-         ->name('quiz-generator.generate');
+         ->name('professor.quiz-generator.generate');
     Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'preview'])
-         ->name('quiz-generator.preview');
+         ->name('professor.quiz-generator.preview');
     Route::get('/quiz-generator/export/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'export'])
-         ->name('quiz-generator.export');
+         ->name('professor.quiz-generator.export');
     Route::delete('/quiz-generator/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'delete'])
-         ->name('quiz-generator.delete');
+         ->name('professor.quiz-generator.delete');
     Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
          ->name('grading.update');
     Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])

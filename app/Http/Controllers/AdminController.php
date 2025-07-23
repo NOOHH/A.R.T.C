@@ -16,6 +16,7 @@ use App\Models\Module;
 use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\PaymentHistory;
+use App\Models\StudentSubmission;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -1815,6 +1816,105 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Error rejecting registration: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * View student assignment submissions
+     */
+    public function viewAssignmentSubmissions(Request $request)
+    {
+        try {
+            $query = StudentSubmission::with(['student', 'contentItem', 'gradedBy'])
+                                    ->orderBy('submitted_at', 'desc');
+            
+            // Filter by status if provided
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+            
+            // Filter by program if provided
+            if ($request->has('program_id') && $request->program_id) {
+                $query->whereHas('student.enrollments.program', function($q) use ($request) {
+                    $q->where('program_id', $request->program_id);
+                });
+            }
+            
+            // Filter by date range if provided
+            if ($request->has('date_from') && $request->date_from) {
+                $query->whereDate('submitted_at', '>=', $request->date_from);
+            }
+            if ($request->has('date_to') && $request->date_to) {
+                $query->whereDate('submitted_at', '<=', $request->date_to);
+            }
+            
+            $submissions = $query->paginate(20);
+            
+            // Get programs for filter dropdown
+            $programs = Program::where('is_archived', false)->get();
+            
+            return view('admin.submissions.index', compact('submissions', 'programs'));
+            
+        } catch (\Exception $e) {
+            Log::error('Error viewing assignment submissions: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error loading submissions: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Grade an assignment submission
+     */
+    public function gradeSubmission(Request $request, $submissionId)
+    {
+        try {
+            $request->validate([
+                'grade' => 'required|numeric|min:0|max:100',
+                'feedback' => 'nullable|string|max:2000'
+            ]);
+            
+            $submission = StudentSubmission::findOrFail($submissionId);
+            
+            $submission->update([
+                'grade' => $request->grade,
+                'feedback' => $request->feedback,
+                'status' => 'graded',
+                'graded_at' => now(),
+                'graded_by' => session('user_id')
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Assignment graded successfully!'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error grading submission: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error grading submission: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download assignment submission file
+     */
+    public function downloadSubmission($submissionId)
+    {
+        try {
+            $submission = StudentSubmission::findOrFail($submissionId);
+            
+            $filePath = storage_path('app/public/' . $submission->file_path);
+            
+            if (!file_exists($filePath)) {
+                return redirect()->back()->with('error', 'File not found.');
+            }
+            
+            return response()->download($filePath, $submission->original_filename);
+            
+        } catch (\Exception $e) {
+            Log::error('Error downloading submission: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error downloading file: ' . $e->getMessage());
         }
     }
 }
