@@ -148,22 +148,35 @@ class ProfessorMeetingController extends Controller
             return back()->withErrors(['batch_ids' => 'Some selected batches do not belong to the selected programs.']);
         }
 
-        // Create meetings for each selected batch
+        // Create or update meetings for each selected batch
         $createdMeetings = [];
         
         DB::transaction(function () use ($request, $professorId, $requestedBatchIds, &$createdMeetings) {
             foreach ($requestedBatchIds as $batchId) {
-                $meeting = ClassMeeting::create([
-                    'professor_id' => $professorId,
-                    'batch_id' => $batchId,
-                    'title' => $request->meeting_title,
-                    'meeting_date' => $request->meeting_date,
-                    'meeting_url' => $request->meeting_link,
-                    'description' => $request->description,
-                    'status' => 'scheduled',
-                    'created_by' => auth()->id() ?? 1 // Default to admin ID 1 if no auth user
-                ]);
-                
+                $meeting = \App\Models\ClassMeeting::where('professor_id', $professorId)
+                    ->where('batch_id', $batchId)
+                    ->where('meeting_date', $request->meeting_date)
+                    ->where('title', $request->meeting_title)
+                    ->first();
+                if ($meeting) {
+                    $meeting->update([
+                        'meeting_url' => $request->meeting_link,
+                        'description' => $request->description,
+                        'status' => 'scheduled',
+                        'created_by' => auth()->id() ?? 1
+                    ]);
+                } else {
+                    $meeting = \App\Models\ClassMeeting::create([
+                        'professor_id' => $professorId,
+                        'batch_id' => $batchId,
+                        'title' => $request->meeting_title,
+                        'meeting_date' => $request->meeting_date,
+                        'meeting_url' => $request->meeting_link,
+                        'description' => $request->description,
+                        'status' => 'scheduled',
+                        'created_by' => auth()->id() ?? 1
+                    ]);
+                }
                 $createdMeetings[] = $meeting;
             }
         });

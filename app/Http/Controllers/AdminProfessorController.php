@@ -350,19 +350,33 @@ class AdminProfessorController extends Controller
             return back()->withErrors(['batch_ids' => 'Some selected batches are not assigned to this professor.']);
         }
 
-        // Create meetings for each selected batch
+        // Create or update meetings for each selected batch
         $createdMeetings = [];
         foreach ($request->batch_ids as $batchId) {
-            $meeting = ClassMeeting::create([
-                'batch_id' => $batchId,
-                'professor_id' => $professor_id,
-                'title' => $request->meeting_title,
-                'description' => $request->description,
-                'meeting_date' => $request->meeting_date,
-                'meeting_url' => $request->meeting_link,
-                'status' => 'scheduled',
-                'created_by' => session('admin_id') ?? session('user_id')
-            ]);
+            $meeting = \App\Models\ClassMeeting::where('professor_id', $professor_id)
+                ->where('batch_id', $batchId)
+                ->where('meeting_date', $request->meeting_date)
+                ->where('title', $request->meeting_title)
+                ->first();
+            if ($meeting) {
+                $meeting->update([
+                    'meeting_url' => $request->meeting_link,
+                    'description' => $request->description,
+                    'status' => 'scheduled',
+                    'created_by' => session('admin_id') ?? session('user_id')
+                ]);
+            } else {
+                $meeting = \App\Models\ClassMeeting::create([
+                    'batch_id' => $batchId,
+                    'professor_id' => $professor_id,
+                    'title' => $request->meeting_title,
+                    'description' => $request->description,
+                    'meeting_date' => $request->meeting_date,
+                    'meeting_url' => $request->meeting_link,
+                    'status' => 'scheduled',
+                    'created_by' => session('admin_id') ?? session('user_id')
+                ]);
+            }
             $createdMeetings[] = $meeting;
         }
 

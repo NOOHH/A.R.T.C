@@ -10,6 +10,9 @@ use App\Models\Student;
 use App\Models\Deadline;
 use App\Models\Announcement;
 use App\Models\AdminSetting;
+use App\Models\Module;
+use App\Models\Course;
+use App\Models\CourseContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +46,53 @@ class QuizGeneratorController extends Controller
         return view('professor.quiz-generator', compact('assignedPrograms', 'quizzes'));
     }
 
+    /**
+     * Get modules for selected program (AJAX)
+     */
+    public function getModulesByProgram($programId)
+    {
+        $modules = Module::where('program_id', $programId)
+                        ->where('is_archived', false)
+                        ->orderBy('module_name')
+                        ->get(['module_id', 'module_name']);
+
+        return response()->json([
+            'success' => true,
+            'modules' => $modules
+        ]);
+    }
+
+    /**
+     * Get courses for selected module (AJAX)
+     */
+    public function getCoursesByModule($moduleId)
+    {
+        $courses = Course::where('module_id', $moduleId)
+                        ->where('is_archived', false)
+                        ->orderBy('course_name')
+                        ->get(['course_id', 'course_name']);
+
+        return response()->json([
+            'success' => true,
+            'courses' => $courses
+        ]);
+    }
+
+    /**
+     * Get content for selected course (AJAX)
+     */
+    public function getContentByCourse($courseId)
+    {
+        $contents = CourseContent::where('course_id', $courseId)
+                                ->orderBy('content_title')
+                                ->get(['content_id', 'content_title']);
+
+        return response()->json([
+            'success' => true,
+            'contents' => $contents
+        ]);
+    }
+
     public function generate(Request $request)
     {
         // Check if AI Quiz feature is enabled
@@ -54,9 +104,11 @@ class QuizGeneratorController extends Controller
 
         $request->validate([
             'program_id' => 'required|exists:programs,program_id',
+            'module_id' => 'required|exists:modules,module_id',
+            'course_id' => 'required|exists:courses,course_id',
+            'content_id' => 'required|exists:course_contents,content_id',
             'document' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240', // 10MB max
             'num_questions' => 'required|integer|min:5|max:50',
-            'difficulty' => 'required|in:easy,medium,hard',
             'quiz_type' => 'required|in:multiple_choice,true_false,mixed',
             'quiz_title' => 'required|string|max:255',
             'instructions' => 'nullable|string|max:1000',
@@ -78,7 +130,7 @@ class QuizGeneratorController extends Controller
             $generatedQuestions = $this->generateQuestionsFromText(
                 $extractedText,
                 $request->num_questions,
-                $request->difficulty,
+                'medium', // Default difficulty removed from UI but set to medium
                 $request->quiz_type
             );
 
@@ -86,9 +138,12 @@ class QuizGeneratorController extends Controller
             $quiz = Quiz::create([
                 'professor_id' => $professor->professor_id,
                 'program_id' => $request->program_id,
+                'module_id' => $request->module_id,
+                'course_id' => $request->course_id,
+                'content_id' => $request->content_id,
                 'quiz_title' => $request->quiz_title,
                 'instructions' => $request->instructions,
-                'difficulty' => $request->difficulty,
+                'difficulty' => 'medium', // Default difficulty
                 'total_questions' => count($generatedQuestions),
                 'time_limit' => 60, // Default 60 minutes
                 'document_path' => $documentPath,
@@ -98,11 +153,25 @@ class QuizGeneratorController extends Controller
 
             // Save questions
             foreach ($generatedQuestions as $questionData) {
+                $options = [];
+                
+                if (isset($questionData['options'])) {
+                    $options = $questionData['options'];
+                } else {
+                    // Handle CSV format
+                    $options = [
+                        'A' => $questionData['option_a'] ?? '',
+                        'B' => $questionData['option_b'] ?? '',
+                        'C' => $questionData['option_c'] ?? '',
+                        'D' => $questionData['option_d'] ?? ''
+                    ];
+                }
+                
                 QuizQuestion::create([
                     'quiz_id' => $quiz->quiz_id,
                     'question_text' => $questionData['question'],
-                    'question_type' => $questionData['type'],
-                    'options' => json_encode($questionData['options']),
+                    'question_type' => $questionData['type'] ?? 'multiple_choice',
+                    'options' => json_encode($options),
                     'correct_answer' => $questionData['correct_answer'],
                     'points' => $questionData['points'] ?? 1,
                 ]);
@@ -129,14 +198,7 @@ class QuizGeneratorController extends Controller
                 return file_get_contents($tempPath);
                 
             case 'csv':
-                $content = '';
-                if (($handle = fopen($tempPath, "r")) !== FALSE) {
-                    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                        $content .= implode(' ', $data) . "\n";
-                    }
-                    fclose($handle);
-                }
-                return $content;
+                return $this->processCSVQuestions($tempPath);
                 
             case 'pdf':
                 // For PDF, you might want to use a library like spatie/pdf-to-text
@@ -154,8 +216,43 @@ class QuizGeneratorController extends Controller
         }
     }
 
+    /**
+     * Process CSV file containing quiz questions
+     */
+    private function processCSVQuestions($filePath)
+    {
+        $questions = [];
+        
+        if (($handle = fopen($filePath, "r")) !== FALSE) {
+            $header = fgetcsv($handle); // Skip header row
+            
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                if (count($data) >= 6) { // Ensure minimum columns
+                    $questions[] = [
+                        'question' => $data[0] ?? '',
+                        'option_a' => $data[1] ?? '',
+                        'option_b' => $data[2] ?? '',
+                        'option_c' => $data[3] ?? '',
+                        'option_d' => $data[4] ?? '',
+                        'correct_answer' => strtoupper($data[5] ?? 'A'),
+                        'type' => 'multiple_choice'
+                    ];
+                }
+            }
+            fclose($handle);
+        }
+        
+        return json_encode(['csv_questions' => $questions]);
+    }
+
     private function generateQuestionsFromText($text, $numQuestions, $difficulty, $quizType)
     {
+        // Check if text contains CSV questions data
+        $csvData = json_decode($text, true);
+        if (isset($csvData['csv_questions'])) {
+            return $csvData['csv_questions']; // Return CSV questions as-is for editing
+        }
+        
         // This is a simplified AI-like question generation
         // In a real implementation, you would integrate with OpenAI, Google AI, or similar services
         

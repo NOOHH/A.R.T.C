@@ -45,14 +45,37 @@
                     <form method="POST" action="{{ route('professor.quiz-generator.generate') }}" enctype="multipart/form-data" id="quizForm">
                         @csrf
                         
-                        <div class="mb-3">
-                            <label for="program_id" class="form-label">Select Program</label>
-                            <select name="program_id" id="program_id" class="form-select" required>
-                                <option value="">Choose a program...</option>
-                                @foreach($assignedPrograms as $program)
-                                    <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                                @endforeach
-                            </select>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="program_id" class="form-label">Program</label>
+                                <select name="program_id" id="program_id" class="form-select" required>
+                                    <option value="">Select Program</option>
+                                    @foreach($assignedPrograms as $program)
+                                        <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="module_id" class="form-label">Module</label>
+                                <select name="module_id" id="module_id" class="form-select" required disabled>
+                                    <option value="">Select Module</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="course_id" class="form-label">Course</label>
+                                <select name="course_id" id="course_id" class="form-select" required disabled>
+                                    <option value="">Select Course</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="content_id" class="form-label">Course Content</label>
+                                <select name="content_id" id="content_id" class="form-select" required disabled>
+                                    <option value="">Select Content</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -65,24 +88,19 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label for="num_questions" class="form-label">Number of Questions</label>
                                 <select name="num_questions" id="num_questions" class="form-select" required>
                                     <option value="5">5 Questions</option>
                                     <option value="10" selected>10 Questions</option>
                                     <option value="15">15 Questions</option>
                                     <option value="20">20 Questions</option>
+                                    <option value="25">25 Questions</option>
+                                    <option value="30">30 Questions</option>
+                                    <option value="50">50 Questions</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <label for="difficulty" class="form-label">Difficulty Level</label>
-                                <select name="difficulty" id="difficulty" class="form-select" required>
-                                    <option value="easy">Easy</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="hard">Hard</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label for="quiz_type" class="form-label">Question Type</label>
                                 <select name="quiz_type" id="quiz_type" class="form-select" required>
                                     <option value="multiple_choice" selected>Multiple Choice</option>
@@ -412,6 +430,91 @@ document.getElementById('quizForm').addEventListener('submit', function(e) {
         
         showQuizPreview(mockQuizData);
     }, 3000);
+});
+
+// Cascading dropdowns for course content
+document.addEventListener('DOMContentLoaded', function() {
+    const programSelect = document.getElementById('program_id');
+    const moduleSelect = document.getElementById('module_id');
+    const courseSelect = document.getElementById('course_id');
+    const contentSelect = document.getElementById('content_id');
+
+    // Program change handler
+    programSelect.addEventListener('change', function() {
+        const programId = this.value;
+        
+        // Reset dependent dropdowns
+        moduleSelect.innerHTML = '<option value="">Select Module</option>';
+        courseSelect.innerHTML = '<option value="">Select Course</option>';
+        contentSelect.innerHTML = '<option value="">Select Content</option>';
+        
+        moduleSelect.disabled = true;
+        courseSelect.disabled = true;
+        contentSelect.disabled = true;
+
+        if (programId) {
+            fetch(`/quiz-generator/modules/${programId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.modules.forEach(module => {
+                            moduleSelect.innerHTML += `<option value="${module.module_id}">${module.module_name}</option>`;
+                        });
+                        moduleSelect.disabled = false;
+                    }
+                })
+                .catch(error => console.error('Error loading modules:', error));
+        }
+    });
+
+    // Module change handler
+    moduleSelect.addEventListener('change', function() {
+        const moduleId = this.value;
+        
+        // Reset dependent dropdowns
+        courseSelect.innerHTML = '<option value="">Select Course</option>';
+        contentSelect.innerHTML = '<option value="">Select Content</option>';
+        
+        courseSelect.disabled = true;
+        contentSelect.disabled = true;
+
+        if (moduleId) {
+            fetch(`/quiz-generator/courses/${moduleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.courses.forEach(course => {
+                            courseSelect.innerHTML += `<option value="${course.course_id}">${course.course_name}</option>`;
+                        });
+                        courseSelect.disabled = false;
+                    }
+                })
+                .catch(error => console.error('Error loading courses:', error));
+        }
+    });
+
+    // Course change handler
+    courseSelect.addEventListener('change', function() {
+        const courseId = this.value;
+        
+        // Reset dependent dropdown
+        contentSelect.innerHTML = '<option value="">Select Content</option>';
+        contentSelect.disabled = true;
+
+        if (courseId) {
+            fetch(`/quiz-generator/contents/${courseId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.contents.forEach(content => {
+                            contentSelect.innerHTML += `<option value="${content.content_id}">${content.content_title}</option>`;
+                        });
+                        contentSelect.disabled = false;
+                    }
+                })
+                .catch(error => console.error('Error loading contents:', error));
+        }
+    });
 });
 </script>
 @endsection

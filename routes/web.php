@@ -43,6 +43,7 @@ use App\Http\Controllers\ProgramController;
 // routes/web.php
 
 use App\Http\Controllers\Api\ReferralController;
+use App\Http\Controllers\StudentPaymentModalController;
 
 Route::get(
     '/student/module/{module}/course/{course}/content-items',
@@ -590,7 +591,7 @@ Route::get('/payment/success', [PaymentController::class, 'paymentSuccess'])->na
 Route::get('/payment/failure', [PaymentController::class, 'paymentFailure'])->name('payment.failure');
 Route::get('/payment/cancel', [PaymentController::class, 'paymentCancel'])->name('payment.cancel');
 Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof'])->name('payment.upload-proof');
-Route::post('/student/payment/upload-proof', [PaymentController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
+Route::post('/student/payment/upload-proof', [StudentPaymentModalController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
 // Admin dashboard and admin routes with middleware
@@ -1459,6 +1460,14 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.export');
     Route::delete('/quiz-generator/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'delete'])
          ->name('quiz-generator.delete');
+    
+    // Quiz generator AJAX routes
+    Route::get('/quiz-generator/modules/{programId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModulesByProgram'])
+         ->name('quiz-generator.modules');
+    Route::get('/quiz-generator/courses/{moduleId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getCoursesByModule'])
+         ->name('quiz-generator.courses');
+    Route::get('/quiz-generator/contents/{courseId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getContentByCourse'])
+         ->name('quiz-generator.contents');
     Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
          ->name('grading.update');
     Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
@@ -2082,36 +2091,3 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
     Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
 });
-
-// Debug route for payment method testing
-Route::post('/debug/payment-method', function(\Illuminate\Http\Request $request) {
-    \Log::info('Debug payment method request', [
-        'all_data' => $request->all(),
-        'method_name' => $request->input('method_name'),
-        'method_type' => $request->input('method_type'),
-        'description' => $request->input('description'),
-        'instructions' => $request->input('instructions'),
-        'is_enabled' => $request->input('is_enabled'),
-        'has_qr_file' => $request->hasFile('qr_code'),
-        'qr_file_info' => $request->hasFile('qr_code') ? [
-            'name' => $request->file('qr_code')->getClientOriginalName(),
-            'size' => $request->file('qr_code')->getSize(),
-            'mime_type' => $request->file('qr_code')->getMimeType(),
-            'is_valid' => $request->file('qr_code')->isValid()
-        ] : null
-    ]);
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Debug data logged',
-        'data' => [
-            'method_name' => $request->input('method_name'),
-            'method_type' => $request->input('method_type'),
-            'has_file' => $request->hasFile('qr_code')
-        ]
-    ]);
-});
-
-// Payment Method Field Configuration (for admin dynamic fields)
-Route::get('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'getPaymentMethodFields']);
-Route::post('/admin/payment-method/{id}/fields', [App\Http\Controllers\AdminController::class, 'savePaymentMethodFields']);

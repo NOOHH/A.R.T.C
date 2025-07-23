@@ -141,31 +141,21 @@
                                             <div class="tab-content" id="pills-tabContent-{{ $program->program_id }}-{{ $batch->batch_id }}">
                                                 @php
                                                     $batchMeetings = $meetings->where('batch_id', $batch->batch_id);
-                                                    // Current: today, started (actual_start_time set), not ended
-                                                    $currentMeetings = $batchMeetings->filter(function($meeting) {
-                                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-                                                        return $meetingDate->isToday() && $meeting->actual_start_time && !$meeting->actual_end_time;
+                                                    // Current: status ongoing
+                                                    $currentMeetings = $batchMeetings->where('status', 'ongoing');
+                                                    $currentIds = $currentMeetings->pluck('meeting_id')->toArray();
+                                                    // Today's: meeting_date is today, not in current
+                                                    $todayMeetings = $batchMeetings->filter(function($meeting) use ($currentIds) {
+                                                        return \Carbon\Carbon::parse($meeting->meeting_date)->isToday() && !in_array($meeting->meeting_id, $currentIds);
                                                     });
-
-                                                    // Remove current from pool for other categories
-                                                    $nonCurrentMeetings = $batchMeetings->reject(function($meeting) use ($currentMeetings) {
-                                                        return $currentMeetings->contains('meeting_id', $meeting->meeting_id);
+                                                    // Upcoming: meeting_date in future and not completed, not in current
+                                                    $upcomingMeetings = $batchMeetings->filter(function($meeting) use ($currentIds) {
+                                                        return \Carbon\Carbon::parse($meeting->meeting_date)->isFuture() && $meeting->status != 'completed' && !in_array($meeting->meeting_id, $currentIds);
                                                     });
-
-                                                    // Today's: today, not started (actual_start_time null), not in current
-                                                    $todayMeetings = $nonCurrentMeetings->filter(function($meeting) {
-                                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-                                                        return $meetingDate->isToday() && !$meeting->actual_start_time;
+                                                    // Finished: status completed, not in current
+                                                    $finishedMeetings = $batchMeetings->where('status', 'completed')->reject(function($meeting) use ($currentIds) {
+                                                        return in_array($meeting->meeting_id, $currentIds);
                                                     });
-
-                                                    // Upcoming: future, not started
-                                                    $upcomingMeetings = $nonCurrentMeetings->filter(function($meeting) {
-                                                        $meetingDate = \Carbon\Carbon::parse($meeting->meeting_date);
-                                                        return $meetingDate->isAfter(\Carbon\Carbon::today()) && !$meeting->actual_start_time;
-                                                    });
-
-                                                    // Finished: completed status
-                                                    $finishedMeetings = $batchMeetings->where('status', 'completed');
                                                 @endphp
                                                 
                                                 <!-- Current Meetings -->
@@ -243,7 +233,7 @@
                                                 <!-- Upcoming Meetings -->
                                                 <div class="tab-pane fade" id="pills-upcoming-{{ $program->program_id }}-{{ $batch->batch_id }}" role="tabpanel">
                                                     <div class="meeting-carousel">
-                                                        @forelse($batch->upcomingMeetings as $meeting)
+                                                        @forelse($upcomingMeetings as $meeting)
                                                             <div class="meeting-card">
                                                                 <div class="card">
                                                                     <div class="card-body">
@@ -275,7 +265,7 @@
                                                 <!-- Finished Meetings -->
                                                 <div class="tab-pane fade" id="pills-finished-{{ $program->program_id }}-{{ $batch->batch_id }}" role="tabpanel">
                                                     <div class="meeting-carousel">
-                                                        @forelse($batch->finishedMeetings as $meeting)
+                                                        @forelse($finishedMeetings as $meeting)
                                                             <div class="meeting-card">
                                                                 <div class="card">
                                                                     <div class="card-body">

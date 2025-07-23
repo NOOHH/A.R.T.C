@@ -3050,6 +3050,26 @@ function addSystemFields() {
     // Define system fields
     const systemFields = [
         {
+            field_name: 'firstname',
+            field_label: 'First Name',
+            field_type: 'text',
+            is_required: true,
+            is_active: true,
+            program_type: 'both',
+            field_options: [],
+            is_system: true
+        },
+        {
+            field_name: 'lastname',
+            field_label: 'Last Name',
+            field_type: 'text',
+            is_required: true,
+            is_active: true,
+            program_type: 'both',
+            field_options: [],
+            is_system: true
+        },
+        {
             field_name: 'education_level',
             field_label: 'Education Level',
             field_type: 'select',

@@ -1250,7 +1250,19 @@ function removeStudent(batchId, enrollmentId) {
 }
 
 function exportStudentList(batchId) {
-    window.open(`{{ url('admin/batches') }}/${batchId}/export`, '_blank');
+    const filterParams = new URLSearchParams();
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput && searchInput.value) {
+        filterParams.append('search', searchInput.value);
+    }
+
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter && statusFilter.value) {
+        filterParams.append('status', statusFilter.value);
+    }
+
+    const url = `/admin/students/export?batch_id=${batchId}&${filterParams.toString()}`;
+    window.location.href = url;
 }
 
 // Helper functions

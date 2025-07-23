@@ -2250,125 +2250,329 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
         
         @if($isUserLoggedIn)
         console.log('User is logged in, skipping account data collection');
-        @endif
+    }
+
+    // Package, program, modules, learning mode (steps 1-4)
+    const packageId = document.getElementById('package_id')?.value || '';
+    const programId = document.getElementById('program_id')?.value || '';
+    const selectedModules = document.getElementById('selected_modules')?.value || '';
+    const learningMode = document.getElementById('learning_mode')?.value || '';
+    const educationLevel = document.getElementById('educationLevel')?.value || ''; // Get education level
+
+    console.log('🔍 FORM DATA DEBUG:', {
+        packageId, 
+        programId, 
+        selectedModules, 
+        learningMode,
+        educationLevel,
+        hasPackageId: !!packageId,
+        hasProgramId: !!programId,
+        hasEducationLevel: !!educationLevel
+    });
+
+    // Final form hidden fields
+    const form = document.getElementById('modularEnrollmentForm');
+    if (!form) {
+        console.error('❌ Form not found: modularEnrollmentForm');
+        return;
+    }
+
+    // Set or create hidden fields for account info (only for non-logged-in users)
+    if (!isUserLoggedIn) {
+        setOrCreateHidden(form, 'user_firstname', userFirstname);
+        setOrCreateHidden(form, 'user_lastname', userLastname);
+        setOrCreateHidden(form, 'email', userEmail);
+        setOrCreateHidden(form, 'password', password);
+        setOrCreateHidden(form, 'password_confirmation', passwordConfirmation);
+        setOrCreateHidden(form, 'referral_code', referralCode);
         
-        console.log('🔍 FORM DATA DEBUG:', {
-            selectedPackageId,
-            selectedProgramId,
-            selectedModules,
-            selectedLearningMode
-        });
+        // Also populate the dynamic form fields if they exist
+        const firstnameField = form.querySelector('input[name="firstname"]');
+        if (firstnameField) {
+            firstnameField.value = userFirstname;
+            console.log('✅ Populated firstname field with:', userFirstname);
+        } else {
+            console.log('⚠️ No firstname field found in form');
+        }
         
-        // Update form data before submission
-        copyStepperDataToFinalForm();
+        const lastnameField = form.querySelector('input[name="lastname"]');
+        if (lastnameField) {
+            lastnameField.value = userLastname;
+            console.log('✅ Populated lastname field with:', userLastname);
+        } else {
+            console.log('⚠️ No lastname field found in form');
+        }
         
-        // Validate required fields
-        const requiredFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode'];
-        const missingFields = [];
+        // Also try alternate field names (first_name, last_name)
+        const firstNameField = form.querySelector('input[name="first_name"]');
+        if (firstNameField) {
+            firstNameField.value = userFirstname;
+            console.log('✅ Populated first_name field with:', userFirstname);
+        }
         
-        requiredFields.forEach(field => {
-            const input = document.querySelector(`input[name="${field}"]`);
-            if (!input || !input.value) {
-                missingFields.push(field);
-            }
-        });
+        const lastNameField = form.querySelector('input[name="last_name"]');
+        if (lastNameField) {
+            lastNameField.value = userLastname;
+            console.log('✅ Populated last_name field with:', userLastname);
+        }
         
-        if (missingFields.length > 0) {
-            alert('Missing required fields: ' + missingFields.join(', '));
+        // Debug: Show all available name-related fields in the form
+        const allNameFields = form.querySelectorAll('input[name*="name"], input[name*="Name"]');
+        console.log('🔍 All name-related fields found in form:', Array.from(allNameFields).map(f => f.name));
+    }
+    
+    // Set or create hidden fields for stepper selections - CRITICAL: These must have valid database IDs
+    setOrCreateHidden(form, 'package_id', packageId);
+    setOrCreateHidden(form, 'program_id', programId);
+    setOrCreateHidden(form, 'selected_modules', selectedModules);
+    setOrCreateHidden(form, 'learning_mode', learningMode);
+    setOrCreateHidden(form, 'education_level', educationLevel); // Ensure education_level is set
+    
+    // Handle start date - set to today if empty
+    const startDateInput = form.querySelector('input[name="Start_Date"]');
+    if (startDateInput && (!startDateInput.value || startDateInput.value.trim() === '')) {
+        const today = new Date().toISOString().split('T')[0];
+        startDateInput.value = today;
+        console.log('📅 Set Start_Date to today:', today);
+    }
+}
+
+function setOrCreateHidden(form, name, value) {
+    let input = form.querySelector(`input[name="${name}"]`);
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        form.appendChild(input);
+        console.log(`✅ Created hidden input: ${name}`);
+    }
+    input.value = value;
+    console.log(`🔧 Set ${name} = ${value} (type: ${typeof value})`);
+    
+    // Validate critical fields
+    if ((name === 'package_id' || name === 'program_id') && (!value || value === '')) {
+        console.error(`❌ CRITICAL: ${name} is empty! This will cause validation to fail.`);
+    }
+}
+
+// Hook into step navigation and form submission
+function nextStep() {
+    if (currentStep < totalSteps) {
+        // Copy data when leaving account registration step
+        if (!isUserLoggedIn && currentStep === 6) {
+            // For non-logged-in users: step 6 is account registration
+            copyStepperDataToFinalForm();
+        } else if (isUserLoggedIn && currentStep === 5) {
+            // For logged-in users: copy data when leaving step 5 (learning mode)
+            copyStepperDataToFinalForm();
+        }
+        
+        // Handle step transitions based on new structure
+        if (currentStep === 1) {
+            // This should not be reached since step 1 uses selectAccountOption
+            console.log('Step 1 should use selectAccountOption');
             return;
+        } else if (isUserLoggedIn && currentStep === 5) {
+            // Skip from step 5 (learning mode) directly to step 6 (form) for logged-in users
+            currentStep = 6;
+        } else if (!isUserLoggedIn && currentStep === 6) {
+            // For non-logged-in users, go from step 6 (account) to step 7 (form)
+            currentStep = 7;
+            copyStepperDataToFinalForm(); // Copy account data to final form
+        } else {
+            // Normal progression
+            currentStep++;
         }
         
-        // Force-set Start_Date if not set
-        let startDateInput = document.querySelector('input[name="Start_Date"]');
-        if (!startDateInput || !startDateInput.value) {
-            if (!startDateInput) {
-                startDateInput = document.createElement('input');
-                startDateInput.type = 'hidden';
-                startDateInput.name = 'Start_Date';
-                this.appendChild(startDateInput);
+        // Copy data when moving to final step
+        if ((isUserLoggedIn && currentStep === 6) || (!isUserLoggedIn && currentStep === 7)) {
+            copyStepperDataToFinalForm();
+        }
+        
+        updateStepper();
+        loadStepContent();
+    }
+}
+
+// Also copy data right before form submission (in case user edits fields in step 6)
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('modularEnrollmentForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default submission
+            
+            // DUPLICATE PREVENTION: Check if form is already being submitted
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton && submitButton.disabled) {
+                console.warn('⚠️ Form submission blocked - already submitted');
+                return;
             }
-            // Set to a future date (tomorrow + some months based on learning mode)
-            const futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + (selectedLearningMode === 'synchronous' ? 30 : 1));
-            startDateInput.value = futureDate.toISOString().split('T')[0];
-            console.log('📅 Force-set Start_Date in FormData to:', startDateInput.value);
-        }
-        
-        // Create FormData object for submission
-        const formData = new FormData(this);
-        
-        // Log complete FormData contents
-        console.log('📋 Complete FormData being submitted:');
-        for (let pair of formData.entries()) {
-            console.log(`${pair[0]}: ${pair[1]}`);
-        }
-        
-        // Check for file fields
-        const fileFields = [];
-        for (let pair of formData.entries()) {
-            if (pair[1] instanceof File) {
-                fileFields.push(pair[0]);
-            }
-        }
-        console.log('📎 File fields found:', fileFields);
-        
-        // Validate all critical fields are present
-        const criticalFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
-        let allCriticalFieldsPresent = true;
-        
-        criticalFields.forEach(field => {
-            if (!formData.get(field)) {
-                console.error(`❌ Missing critical field: ${field}`);
-                allCriticalFieldsPresent = false;
-            }
-        });
-        
-        if (!allCriticalFieldsPresent) {
-            alert('Some required information is missing. Please go back and complete all steps.');
-            return;
-        }
-        
-        console.log('✅ All critical fields validated');
-        console.log('🚀 Submitting to:', this.action);
-        
-        // Submit the form
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => {
-            console.log('Server response status:', response.status);
-            console.log('Server response headers:');
-            for (let [key, value] of response.headers.entries()) {
-                console.log(`${key}: ${value}`);
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
             }
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Copy all stepper data to the form
+            copyStepperDataToFinalForm();
+            
+            // Validate that required data is present
+            const requiredFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
+            
+            // Add account fields to validation only for non-logged-in users
+            if (!isUserLoggedIn) {
+                requiredFields.push('user_firstname', 'user_lastname', 'email');
             }
             
-            return response.json();
-        })
-        .then(data => {
-            console.log('Server response data:', data);
+            const missingFields = [];
+            const invalidFields = [];
             
-            if (data.success) {
-                alert('Registration successful! Your enrollment is pending admin approval.');
-                // Redirect to success page or dashboard
-                window.location.href = data.redirect || '/dashboard';
-            } else {
-                console.error('Validation errors:', data.errors);
-                console.error('Registration failed:', data.message);
-                
-                // Display validation errors
-                if (data.errors) {
-                    let errorMessage = 'Registration failed:\n';
-                    Object.keys(data.errors).forEach(field => {
-                        if (Array.isArray(data.errors[field])) {
-                            errorMessage += `${field}: ${data.errors[field].join(', ')}\n`;
+            requiredFields.forEach(field => {
+                const input = form.querySelector(`input[name="${field}"]`);
+                if (!input || !input.value.trim()) {
+                    missingFields.push(field);
+                } else {
+                    // Additional validation for database IDs
+                    if (field === 'program_id') {
+                        const programId = parseInt(input.value);
+                        if (isNaN(programId) || programId <= 0) {
+                            invalidFields.push(`program_id (${input.value}) is invalid`);
+                        }
+                    }
+                    if (field === 'package_id') {
+                        const packageId = parseInt(input.value);
+                        if (isNaN(packageId) || packageId <= 0) {
+                            invalidFields.push(`package_id (${input.value}) is invalid - must be a positive integer`);
+                        }
+                    }
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                alert('❌ Missing required fields: ' + missingFields.join(', '));
+                console.error('Missing required fields:', missingFields);
+                // Re-enable submit button on error
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Registration';
+                }
+                return;
+            }
+            
+            if (invalidFields.length > 0) {
+                alert('❌ Invalid database IDs: ' + invalidFields.join(', '));
+                console.error('Invalid database IDs:', invalidFields);
+                // Re-enable submit button on error
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Registration';
+                }
+                return;
+            }
+            
+            console.log('✅ All validation checks passed, submitting form...');
+            
+            // CRITICAL DEBUG: Log all form data before submission
+            console.log('=== FORM SUBMISSION DEBUG ===');
+            
+            // Submit via AJAX to handle the response properly
+            const formData = new FormData(form);
+            
+            // Double-check that Start_Date is not empty in FormData
+            if (!formData.get('Start_Date') || formData.get('Start_Date') === '') {
+                const today = new Date().toISOString().split('T')[0];
+                formData.set('Start_Date', today);
+                console.log('📅 Force-set Start_Date in FormData to:', today);
+            }
+            
+            // Debug: Log all form data (safely hiding passwords)
+            const formDataObject = {};
+            const fileFields = []; // Track file fields specifically
+            for (let [key, value] of formData.entries()) {
+                if (key === 'password' || key === 'password_confirmation') {
+                    formDataObject[key] = value ? '[HIDDEN - ' + value.length + ' chars]' : '[EMPTY]';
+                } else if (value instanceof File) {
+                    formDataObject[key] = `[FILE: ${value.name}, size: ${value.size} bytes]`;
+                    fileFields.push(key);
+                } else {
+                    formDataObject[key] = value;
+                }
+            }
+            console.log('📋 Complete FormData being submitted:', formDataObject);
+            console.log('📎 File fields found:', fileFields);
+            
+            // Validate critical fields one more time before submission
+            const criticalFields = ['package_id', 'program_id', 'selected_modules', 'learning_mode', 'education_level'];
+            const missingCriticalFields = [];
+            
+            criticalFields.forEach(field => {
+                const value = formData.get(field);
+                if (!value || value === '' || value === 'null' || value === 'undefined') {
+                    missingCriticalFields.push(field);
+                }
+            });
+            
+            if (missingCriticalFields.length > 0) {
+                console.error('❌ CRITICAL FIELDS MISSING OR EMPTY:', missingCriticalFields);
+                alert('Critical form fields are missing: ' + missingCriticalFields.join(', ') + '. Please refresh the page and try again.');
+                return;
+            }
+            
+            console.log('✅ All critical fields validated');
+            console.log('🚀 Submitting to:', form.action);
+            
+            // Ensure CSRF token is in the FormData
+            if (!formData.has('_token')) {
+                formData.append('_token', CSRF_TOKEN);
+            }
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Server response status:', response.status);
+                console.log('Server response headers:', Object.fromEntries(response.headers));
+                return response.json();
+            })
+            .then(data => {
+                console.log('Server response data:', data);
+                if (data.success) {
+                    alert('Registration completed successfully!');
+                    // Redirect to success page or login
+                    window.location.href = '/login?message=registration_success';
+                } else {
+                    // Enhanced error handling for validation errors
+                    let errorMessage = 'Registration failed';
+                    
+                    if (data.errors) {
+                        console.error('Validation errors:', data.errors);
+                        
+                        // Check for file-related errors specifically
+                        const fileErrors = [];
+                        const otherErrors = [];
+                        
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            const isFileField = field.includes('tor') || field.includes('psa') || field.includes('good_moral') || 
+                                              field.includes('certificate') || field.includes('transcript') || field.includes('diploma');
+                            
+                            if (isFileField) {
+                                fileErrors.push(`${field.replace(/_/g, ' ').toUpperCase()}: ${messages.join(', ')}`);
+                            } else {
+                                otherErrors.push(`${field}: ${messages.join(', ')}`);
+                            }
+                        }
+                        
+                        if (fileErrors.length > 0) {
+                            errorMessage += '\n\nMissing required files for your education level:\n' + fileErrors.join('\n');
+                            errorMessage += '\n\nPlease upload the required documents in the form above and try again.';
+                        }
+                        
+                        if (otherErrors.length > 0) {
+                            errorMessage += '\n\nOther errors:\n' + otherErrors.join('\n');
                         }
                     });
                     alert(errorMessage);
@@ -3144,5 +3348,91 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
+
+// Data persistence functions to maintain data when navigating between steps
+function saveFormData() {
+    if (!isUserLoggedIn) {
+        const formData = {
+            user_firstname: document.getElementById('user_firstname')?.value || '',
+            user_lastname: document.getElementById('user_lastname')?.value || '',
+            user_email: document.getElementById('user_email')?.value || '',
+            password: document.getElementById('password')?.value || '',
+            password_confirmation: document.getElementById('password_confirmation')?.value || '',
+            referral_code: document.getElementById('referral_code')?.value || ''
+        };
+        
+        // Save to sessionStorage
+        sessionStorage.setItem('enrollmentFormData', JSON.stringify(formData));
+        console.log('📱 Saved form data to session:', formData);
+    }
+}
+
+function restoreFormData() {
+    if (!isUserLoggedIn) {
+        const savedData = sessionStorage.getItem('enrollmentFormData');
+        if (savedData) {
+            try {
+                const formData = JSON.parse(savedData);
+                
+                // Restore account step fields
+                const firstnameField = document.getElementById('user_firstname');
+                const lastnameField = document.getElementById('user_lastname');
+                const emailField = document.getElementById('user_email');
+                const passwordField = document.getElementById('password');
+                const passwordConfirmField = document.getElementById('password_confirmation');
+                const referralField = document.getElementById('referral_code');
+                
+                if (firstnameField && formData.user_firstname) firstnameField.value = formData.user_firstname;
+                if (lastnameField && formData.user_lastname) lastnameField.value = formData.user_lastname;
+                if (emailField && formData.user_email) emailField.value = formData.user_email;
+                if (passwordField && formData.password) passwordField.value = formData.password;
+                if (passwordConfirmField && formData.password_confirmation) passwordConfirmField.value = formData.password_confirmation;
+                if (referralField && formData.referral_code) referralField.value = formData.referral_code;
+                
+                console.log('📱 Restored form data from session:', formData);
+                
+                // Re-validate the step
+                if (typeof validateStep6 === 'function') {
+                    validateStep6();
+                }
+            } catch (e) {
+                console.error('Error restoring form data:', e);
+            }
+        }
+    }
+}
+
+// Add event listeners to save data when fields change
+document.addEventListener('DOMContentLoaded', function() {
+    if (!isUserLoggedIn) {
+        // Restore data when page loads
+        restoreFormData();
+        
+        // Save data when fields change
+        const fieldsToWatch = ['user_firstname', 'user_lastname', 'user_email', 'password', 'password_confirmation', 'referral_code'];
+        fieldsToWatch.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', saveFormData);
+                field.addEventListener('change', saveFormData);
+            }
+        });
+    }
+});
+
+// Override the nextStep function to save data before navigation
+const originalNextStep = nextStep;
+nextStep = function() {
+    saveFormData(); // Save current form data
+    return originalNextStep.apply(this, arguments);
+};
+
+// Override the prevStep function to restore data after navigation
+const originalPrevStep = prevStep;
+prevStep = function() {
+    const result = originalPrevStep.apply(this, arguments);
+    setTimeout(restoreFormData, 100); // Restore data after step change
+    return result;
+};
 </style>
 @endpush

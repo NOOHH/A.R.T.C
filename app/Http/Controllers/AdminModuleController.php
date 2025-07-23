@@ -1868,4 +1868,16 @@ class AdminModuleController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Show the course content upload page
+     */
+    public function showCourseContentUploadPage(Request $request)
+    {
+        $programs = Program::where('is_archived', false)->get();
+        
+        return view('admin.admin-modules.course-content-upload', [
+            'programs' => $programs
+        ]);
+    }
 }
