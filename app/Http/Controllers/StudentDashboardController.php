@@ -1593,6 +1593,31 @@ class StudentDashboardController extends Controller
         return response()->json(['success' => true, 'submissions' => $submissions]);
     }
 
+    public function getSubmissionsByContent($contentId)
+    {
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+        
+        // Get the content item to find the module
+        $content = \App\Models\ContentItem::find($contentId);
+        if (!$content) {
+            return response()->json(['success' => false, 'message' => 'Content not found'], 404);
+        }
+        
+        $submissions = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+            ->where('module_id', $content->module_id)
+            ->orderBy('submitted_at', 'desc')
+            ->get();
+            
+        foreach ($submissions as $sub) {
+            $sub->files = is_string($sub->files) ? json_decode($sub->files, true) : $sub->files;
+        }
+        
+        return response()->json(['success' => true, 'submissions' => $submissions]);
+    }
+
     public function markContentDone($contentId)
     {
         try {

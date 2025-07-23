@@ -3,665 +3,287 @@
 @section('title', 'Analytics Dashboard')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link rel="stylesheet" href="{{ asset('css/admin/admin-analytics/admin-analytics.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-<style>
-:root {
-    --primary-color: #2c3e50;
-    --secondary-color: #34495e;
-    --accent-color: #3498db;
-    --success-color: #27ae60;
-    --warning-color: #f39c12;
-    --danger-color: #e74c3c;
-    --light-gray: #ecf0f1;
-    --dark-gray: #95a5a6;
-    --white: #ffffff;
-    --border-radius: 8px;
-    --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    --transition: all 0.3s ease;
-}
-
-.analytics-container {
-    background-color: #f8f9fa;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-.analytics-header {
-    background: var(--primary-color);
-    color: var(--white);
-    border-radius: var(--border-radius);
-    padding: 40px 30px;
-    margin-bottom: 30px;
-    text-align: center;
-    box-shadow: var(--box-shadow);
-}
-
-.analytics-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 10px;
-    color: var(--white);
-}
-
-.analytics-header .lead {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    font-weight: 300;
-}
-
-.analytics-nav {
-    background: var(--white);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    margin-bottom: 30px;
-    box-shadow: var(--box-shadow);
-}
-
-.nav-tabs {
-    border-bottom: 2px solid var(--light-gray);
-}
-
-.nav-tabs .nav-link {
-    border: none;
-    border-radius: 0;
-    color: var(--dark-gray);
-    font-weight: 600;
-    padding: 15px 25px;
-    transition: var(--transition);
-}
-
-.nav-tabs .nav-link.active {
-    background: var(--primary-color);
-    color: var(--white);
-    border-bottom: 3px solid var(--accent-color);
-}
-
-.nav-tabs .nav-link:hover {
-    background: var(--light-gray);
-    color: var(--primary-color);
-}
-
-.stat-card {
-    background: var(--white);
-    border-radius: var(--border-radius);
-    border: 1px solid #e9ecef;
-    box-shadow: var(--box-shadow);
-    transition: var(--transition);
-    overflow: hidden;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.stat-card .card-body {
-    padding: 25px;
-}
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: var(--border-radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    color: var(--white);
-    margin-bottom: 15px;
-}
-
-.stat-icon.primary { background: var(--primary-color); }
-.stat-icon.success { background: var(--success-color); }
-.stat-icon.warning { background: var(--warning-color); }
-.stat-icon.danger { background: var(--danger-color); }
-.stat-icon.info { background: var(--accent-color); }
-
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 0.95rem;
-    color: var(--dark-gray);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.metric-trend {
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-top: 8px;
-}
-
-.trend-up { color: var(--success-color); }
-.trend-down { color: var(--danger-color); }
-
-.chart-container {
-    background: var(--white);
-    border-radius: var(--border-radius);
-    padding: 25px;
-    box-shadow: var(--box-shadow);
-    margin-bottom: 25px;
-    border: 1px solid #e9ecef;
-}
-
-.chart-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--light-gray);
-}
-
-.filter-section {
-    background: var(--white);
-    border-radius: var(--border-radius);
-    padding: 25px;
-    box-shadow: var(--box-shadow);
-    margin-bottom: 30px;
-    border: 1px solid #e9ecef;
-}
-
-.form-control, .form-select {
-    border: 1px solid #ced4da;
-    border-radius: var(--border-radius);
-    padding: 10px 15px;
-    font-size: 0.95rem;
-    transition: var(--transition);
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-}
-
-.btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    border-radius: var(--border-radius);
-    padding: 10px 20px;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-.btn-primary:hover {
-    background: var(--secondary-color);
-    border-color: var(--secondary-color);
-    transform: translateY(-1px);
-}
-
-.btn-success {
-    background: var(--success-color);
-    border-color: var(--success-color);
-}
-
-.btn-warning {
-    background: var(--warning-color);
-    border-color: var(--warning-color);
-}
-
-.btn-info {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
-.export-panel {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 2px solid #dee2e6;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.export-panel:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-}
-
-.export-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.export-btn:hover {
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    color: white;
-}
-
-.export-btn:focus {
-    color: white;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.btn-success.dropdown-toggle {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    border: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-success.dropdown-toggle:hover {
-    background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
-    transform: translateY(-1px);
-}
-
-.dropdown-item:hover {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #495057;
-}
-
-.table-professional {
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    box-shadow: var(--box-shadow);
-    border: 1px solid #e9ecef;
-}
-
-.table-professional thead {
-    background: var(--primary-color);
-    color: var(--white);
-}
-
-.table-professional thead th {
-    border: none;
-    font-weight: 600;
-    font-size: 0.9rem;
-    padding: 15px 12px;
-    letter-spacing: 0.5px;
-}
-
-.table-professional tbody td {
-    border: none;
-    padding: 12px;
-    vertical-align: middle;
-    border-bottom: 1px solid #f8f9fa;
-    font-size: 0.9rem;
-}
-
-.table-professional tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-.progress-professional {
-    height: 6px;
-    border-radius: 3px;
-    background: #e9ecef;
-    overflow: hidden;
-}
-
-.progress-professional .progress-bar {
-    border-radius: 3px;
-    transition: width 0.6s ease;
-}
-
-.badge-professional {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.5em 0.75em;
-    border-radius: 4px;
-}
-
-.loading-spinner {
-    display: none;
-    text-align: center;
-    padding: 40px;
-    color: var(--dark-gray);
-}
-
-.board-passer-section {
-    background: var(--white);
-    border-radius: var(--border-radius);
-    padding: 25px;
-    box-shadow: var(--box-shadow);
-    margin-bottom: 25px;
-    border: 1px solid #e9ecef;
-}
-
-.upload-area {
-    border: 2px dashed var(--accent-color);
-    border-radius: var(--border-radius);
-    padding: 30px;
-    text-align: center;
-    background: #f8f9fa;
-    transition: var(--transition);
-}
-
-.upload-area:hover {
-    background: #e9ecef;
-}
-
-.section-divider {
-    border: 0;
-    height: 2px;
-    background: linear-gradient(to right, transparent, var(--light-gray), transparent);
-    margin: 40px 0;
-}
-
-@media (max-width: 768px) {
-    .analytics-header {
-        padding: 25px 20px;
-    }
-    
-    .analytics-header h1 {
-        font-size: 2rem;
-    }
-    
-    .stat-card {
-        margin-bottom: 20px;
-    }
-    
-    .chart-container {
-        padding: 20px;
-    }
-    
-    .filter-section {
-        padding: 20px;
-    }
-}
-
-@media (max-width: 576px) {
-    .stat-value {
-        font-size: 2rem;
-    }
-    
-    .analytics-header h1 {
-        font-size: 1.75rem;
-    }
-}
-</style>
 @endpush
 
 @section('content')
-<div class="analytics-dashboard">
-    <div class="container-fluid px-4">
-    <!-- Header -->
-    <div class="dashboard-header">
-        <div class="container">
-            <h1 class="display-4 fw-bold mb-0">
-                <i class="fas fa-chart-line me-3"></i>Analytics Dashboard
-            </h1>
-            <p class="mb-0 mt-2">Comprehensive Review Center Performance Analytics</p>
+<div class="container-fluid py-4">
+    <!-- Summary Cards Row (like the image) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <span class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-mortarboard fs-5"></i></span>
+                    </div>
+                    <div class="fw-bold fs-4" id="boardPassRate">--%</div>
+                    <div class="text-muted small">Board Pass Rate</div>
+                    <div class="text-success small" id="boardPassTrend"><i class="bi bi-arrow-up"></i> +5.2% from last period</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <span class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-people-fill fs-5"></i></span>
+                    </div>
+                    <div class="fw-bold fs-4" id="totalStudents">--</div>
+                    <div class="text-muted small">Total Students</div>
+                    <div class="text-success small" id="studentsTrend"><i class="bi bi-arrow-up"></i> +12% this month</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <span class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-bar-chart-line fs-5"></i></span>
+                    </div>
+                    <div class="fw-bold fs-4" id="avgQuizScore">--%</div>
+                    <div class="text-muted small">Avg Quiz Score</div>
+                    <div class="text-success small" id="quizScoreTrend"><i class="bi bi-arrow-up"></i> +3.1% improvement</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card shadow-sm text-center h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <span class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-clock-history fs-5"></i></span>
+                    </div>
+                    <div class="fw-bold fs-4" id="completionRate">--%</div>
+                    <div class="text-muted small">Completion Rate</div>
+                    <div class="text-success small" id="completionTrend"><i class="bi bi-arrow-up"></i> +7.8% this quarter</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Filters Section -->
-    <div class="filter-section">
-        <div class="row align-items-end">
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Year</label>
-                <select class="form-select" id="yearFilter">
-                    <option value="">All Years</option>
-                    @for($year = date('Y'); $year >= date('Y') - 5; $year--)
-                        <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
-                    @endfor
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Month</label>
-                <select class="form-select" id="monthFilter">
-                    <option value="">All Months</option>
-                    @for($month = 1; $month <= 12; $month++)
-                        <option value="{{ $month }}">{{ date('F', mktime(0, 0, 0, $month, 1)) }}</option>
-                    @endfor
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Program</label>
-                <select class="form-select" id="programFilter">
-                    <option value="">All Programs</option>
-                    <option value="full">Full Program</option>
-                    <option value="modular">Modular Program</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Batch</label>
-                <select class="form-select" id="batchFilter">
-                    <option value="">All Batches</option>
-                    <!-- Will be populated via AJAX -->
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-bold">Subject</label>
-                <select class="form-select" id="subjectFilter">
-                    <option value="">All Subjects</option>
-                    <!-- Will be populated via AJAX -->
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="button" class="btn export-btn w-100" onclick="applyFilters()">
-                    <i class="fas fa-filter me-2"></i>Apply Filters
-                </button>
-            </div>
-        </div>
-        
-        <!-- Export Options (Admin Only) -->
-        @if(isset($isAdmin) && $isAdmin)
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="export-panel">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h6 class="mb-2"><i class="fas fa-download me-2"></i>Data Export Options</h6>
-                            <p class="text-muted small mb-0">Export analytics data in various formats. Admin access only.</p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="btn-group">
-                                <button type="button" class="btn export-btn" onclick="exportData('pdf')" title="Export as PDF">
-                                    <i class="fas fa-file-pdf me-2"></i>PDF
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Year</label>
+                    <select class="form-select" id="yearFilter">
+                        <option value="">All Years</option>
+                        @for($year = date('Y'); $year >= date('Y') - 5; $year--)
+                            <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Month</label>
+                    <select class="form-select" id="monthFilter">
+                        <option value="">All Months</option>
+                        @for($month = 1; $month <= 12; $month++)
+                            <option value="{{ $month }}">{{ date('F', mktime(0, 0, 0, $month, 1)) }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Program</label>
+                    <select class="form-select" id="programFilter">
+                        <option value="">All Programs</option>
+                        <option value="full">Full Program</option>
+                        <option value="modular">Modular Program</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Batch</label>
+                    <select class="form-select" id="batchFilter">
+                        <option value="">All Batches</option>
+                        <!-- Will be populated via AJAX -->
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Subject</label>
+                    <select class="form-select" id="subjectFilter">
+                        <option value="">All Subjects</option>
+                        <!-- Will be populated via AJAX -->
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-primary w-100" onclick="applyFilters()">
+                        <i class="bi bi-funnel me-2"></i>Apply Filters
+                    </button>
+                </div>
+            </form>
+
+            <!-- Export Options (Admin Only) -->
+            @if(isset($isAdmin) && $isAdmin)
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card border border-primary shadow-sm">
+                        <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1"><i class="bi bi-download me-2"></i>Data Export Options</h6>
+                                <p class="text-muted small mb-0">Export analytics data in various formats. Admin access only.</p>
+                            </div>
+                            <div class="btn-group ms-auto">
+                                <button type="button" class="btn btn-outline-danger" onclick="exportData('pdf')" title="Export as PDF">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                                 </button>
-                                <button type="button" class="btn export-btn mx-1" onclick="exportData('excel')" title="Export as JSON">
-                                    <i class="fas fa-file-code me-2"></i>JSON
+                                <button type="button" class="btn btn-outline-secondary" onclick="exportData('excel')" title="Export as JSON">
+                                    <i class="bi bi-filetype-json me-1"></i>JSON
                                 </button>
-                                <button type="button" class="btn export-btn" onclick="exportData('csv')" title="Export as CSV">
-                                    <i class="fas fa-file-csv me-2"></i>CSV
+                                <button type="button" class="btn btn-outline-success" onclick="exportData('csv')" title="Export as CSV">
+                                    <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
                                 </button>
-                                <div class="btn-group ms-2">
+                                <div class="btn-group">
                                     <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-database me-2"></i>Complete Export
+                                        <i class="bi bi-database me-1"></i>Complete Export
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="#" onclick="exportCompleteData('csv')">
-                                            <i class="fas fa-file-csv me-2"></i>All Data (CSV)
+                                            <i class="bi bi-file-earmark-spreadsheet me-1"></i>All Data (CSV)
                                         </a></li>
                                         <li><a class="dropdown-item" href="#" onclick="exportCompleteData('json')">
-                                            <i class="fas fa-file-code me-2"></i>All Data (JSON)
+                                            <i class="bi bi-filetype-json me-1"></i>All Data (JSON)
                                         </a></li>
                                     </ul>
                                 </div>
-                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="refreshData()" title="Refresh Data">
-                                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                                <button type="button" class="btn btn-outline-primary" onclick="refreshData()" title="Refresh Data">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        @else
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Note:</strong> Data export functionality is restricted to administrators only.
+            @else
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> Data export functionality is restricted to administrators only.
+                    </div>
                 </div>
             </div>
+            @endif
         </div>
-        @endif
     </div>
 
     <!-- Referral Analytics Section (Admin Only) -->
     @if(isset($isAdmin) && $isAdmin)
-    <div class="referral-analytics-section">
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="upload-card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-share-alt me-2"></i>Referral Analytics
-                            </h5>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary" onclick="refreshReferralData()">
-                                    <i class="fas fa-sync-alt me-2"></i>Refresh
-                                </button>
-                                <button type="button" class="btn btn-success" onclick="exportReferralData()">
-                                    <i class="fas fa-download me-2"></i>Export
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-info">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Total Referrers</h6>
-                                        <h4 id="totalReferrers">--</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-success">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Total Referrals</h6>
-                                        <h4 id="totalReferrals">--</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-info">
-                                        <i class="fas fa-chart-line"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Active Referrers</h6>
-                                        <h4 id="activeReferrers">--</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Referral Performance Table -->
-                        <div class="mt-4">
-                            <h6 class="mb-3">Top Referrers</h6>
-                            <div class="table-responsive">
-                                <table class="table table-hover" id="referralTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Referrer</th>
-                                            <th>Type</th>
-                                            <th>Referral Code</th>
-                                            <th>Total Referrals</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="referralTableBody">
-                                        <tr>
-                                            <td colspan="4" class="text-center">Loading referral data...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-share me-2"></i>Referral Analytics</h5>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshReferralData()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="exportReferralData()">
+                    <i class="bi bi-download me-1"></i>Export
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-people-fill fs-2 text-info"></i></div>
+                            <h6 class="text-muted">Total Referrers</h6>
+                            <h4 id="totalReferrers">--</h4>
                         </div>
                     </div>
                 </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-person-plus-fill fs-2 text-success"></i></div>
+                            <h6 class="text-muted">Total Referrals</h6>
+                            <h4 id="totalReferrals">--</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-graph-up-arrow fs-2 text-primary"></i></div>
+                            <h6 class="text-muted">Active Referrers</h6>
+                            <h4 id="activeReferrers">--</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h6 class="mb-3">Top Referrers</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="referralTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Referrer</th>
+                            <th>Type</th>
+                            <th>Referral Code</th>
+                            <th>Total Referrals</th>
+                        </tr>
+                    </thead>
+                    <tbody id="referralTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center">Loading referral data...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
     @endif
 
     <!-- Board Passer Data Management -->
-    <div class="board-passer-section">
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="upload-card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-graduation-cap me-2"></i>Board Passer Data Management
-                            </h5>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                                    <i class="fas fa-upload me-2"></i>Upload CSV
-                                </button>
-                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
-                                    <i class="fas fa-plus me-2"></i>Manual Entry
-                                </button>
-                                <button type="button" class="btn btn-info" onclick="downloadTemplate()">
-                                    <i class="fas fa-download me-2"></i>Template
-                                </button>
-                            </div>
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-mortarboard me-2"></i>Board Passer Data Management</h5>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-upload me-1"></i>Upload CSV
+                </button>
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
+                    <i class="bi bi-plus-lg me-1"></i>Manual Entry
+                </button>
+                <button type="button" class="btn btn-outline-info" onclick="downloadTemplate()">
+                    <i class="bi bi-download me-1"></i>Template
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-check-circle-fill fs-2 text-success"></i></div>
+                            <h6 class="text-muted">Board Passers</h6>
+                            <h4 id="totalPassers">--</h4>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-success">
-                                        <i class="fas fa-check"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Board Passers</h6>
-                                        <h4 id="totalPassers">--</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-danger">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Non-Passers</h6>
-                                        <h4 id="totalNonPassers">--</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-primary">
-                                        <i class="fas fa-percentage"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Pass Rate</h6>
-                                        <h4 id="overallPassRate">--%</h4>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-mini">
-                                    <div class="stat-mini-icon bg-warning">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <div>
-                                        <h6>Last Updated</h6>
-                                        <small id="lastUpdated">--</small>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-x-circle-fill fs-2 text-danger"></i></div>
+                            <h6 class="text-muted">Non-Passers</h6>
+                            <h4 id="totalNonPassers">--</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-percent fs-2 text-primary"></i></div>
+                            <h6 class="text-muted">Pass Rate</h6>
+                            <h4 id="overallPassRate">--%</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-0 bg-light">
+                        <div class="card-body">
+                            <div class="mb-2"><i class="bi bi-clock-history fs-2 text-warning"></i></div>
+                            <h6 class="text-muted">Last Updated</h6>
+                            <small id="lastUpdated">--</small>
                         </div>
                     </div>
                 </div>
@@ -670,435 +292,336 @@
     </div>
 
     <!-- Loading Spinner -->
-    <div class="loading-spinner" id="loadingSpinner">
+    <div class="d-flex justify-content-center align-items-center my-4" id="loadingSpinner" style="display:none;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-2">Loading analytics data...</p>
+        <span class="ms-3">Loading analytics data...</span>
     </div>
 
-    <!-- Key Metrics Cards -->
-    <div class="row g-4 mb-4" id="metricsSection">
-        <div class="col-xl-3 col-md-6">
-            <div class="card stat-card h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div>
-                        <h6 class="card-title text-muted mb-1">Board Pass Rate</h6>
-                        <h3 class="mb-0 fw-bold" id="boardPassRate">--%</h3>
-                        <small class="metric-trend trend-up" id="boardPassTrend">
-                            <i class="fas fa-arrow-up"></i> +5.2% from last period
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6">
-            <div class="card stat-card h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div>
-                        <h6 class="card-title text-muted mb-1">Total Students</h6>
-                        <h3 class="mb-0 fw-bold" id="totalStudents">--</h3>
-                        <small class="metric-trend trend-up" id="studentsTrend">
-                            <i class="fas fa-arrow-up"></i> +12 this month
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6">
-            <div class="card stat-card h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div>
-                        <h6 class="card-title text-muted mb-1">Avg Quiz Score</h6>
-                        <h3 class="mb-0 fw-bold" id="avgQuizScore">--%</h3>
-                        <small class="metric-trend trend-up" id="quizScoreTrend">
-                            <i class="fas fa-arrow-up"></i> +3.1% improvement
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6">
-            <div class="card stat-card h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div>
-                        <h6 class="card-title text-muted mb-1">Completion Rate</h6>
-                        <h3 class="mb-0 fw-bold" id="completionRate">--%</h3>
-                        <small class="metric-trend trend-up" id="completionTrend">
-                            <i class="fas fa-arrow-up"></i> +7.8% this quarter
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-        <!-- Charts Section -->
-        <div class="row g-4 mb-4">
-            <!-- Board Pass Rate Trend -->
-            <div class="col-xl-8">
-                <div class="analytics-card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-line-chart me-2"></i>Board Pass Rate Trend
-                            </h5>
-                            <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-outline-primary active" onclick="changeChartPeriod('monthly')">Monthly</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="changeChartPeriod('quarterly')">Quarterly</button>
-                                <button type="button" class="btn btn-outline-primary" onclick="changeChartPeriod('yearly')">Yearly</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="boardPassChart" height="300"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Program Distribution -->
-            <div class="col-xl-4">
-                <div class="analytics-card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-pie-chart me-2"></i>Program Distribution
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="programDistributionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <!-- Quiz Performance by Subject -->
-            <div class="col-xl-6">
-                <div class="analytics-card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-bar-chart me-2"></i>Quiz Performance by Subject
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="subjectPerformanceChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Student Progress -->
-            <div class="col-xl-6">
-                <div class="analytics-card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-tasks me-2"></i>Student Progress Distribution
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="progressDistributionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detailed Analytics Tables -->
-        <div class="row g-4">
-            <!-- Top Performers -->
-            <div class="col-xl-6">
-                <div class="analytics-card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-trophy me-2"></i>Top Performers
-                            </h5>
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewAllStudents('top')">
-                                View All <i class="fas fa-arrow-right ms-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-modern mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Rank</th>
-                                        <th>Student</th>
-                                        <th>Program</th>
-                                        <th>Score</th>
-                                        <th>Progress</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="topPerformersTable">
-                                    <!-- Data will be populated via AJAX -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Bottom Performers -->
-            <div class="col-xl-6">
-                <div class="analytics-card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Students Needing Attention
-                            </h5>
-                            <button class="btn btn-sm btn-outline-warning" onclick="viewAllStudents('bottom')">
-                                View All <i class="fas fa-arrow-right ms-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-modern mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Student</th>
-                                        <th>Program</th>
-                                        <th>Score</th>
-                                        <th>Issues</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="bottomPerformersTable">
-                                    <!-- Data will be populated via AJAX -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    <!-- Batch Performance Analysis -->
-    <div class="row g-4 mt-4">
-        <div class="col-12">
-            <div class="chart-container">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">
-                        <i class="fas fa-layer-group me-2"></i>Batch Performance Analysis
-                    </h5>
+    <!-- Charts Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-8">
+            <div class="card shadow-sm h-100" style="min-height:260px;max-height:320px;">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Board Pass Rate Trend</h5>
                     <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-primary active" onclick="changeBatchView('overview')">Overview</button>
-                        <button type="button" class="btn btn-outline-primary" onclick="changeBatchView('comparison')">Comparison</button>
-                        <button type="button" class="btn btn-outline-primary" onclick="changeBatchView('detailed')">Detailed</button>
+                        <button type="button" class="btn btn-outline-primary active" onclick="changeChartPeriod('monthly')">Monthly</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="changeChartPeriod('quarterly')">Quarterly</button>
+                        <button type="button" class="btn btn-outline-primary" onclick="changeChartPeriod('yearly')">Yearly</button>
                     </div>
                 </div>
-                <div id="batchAnalysisContent">
-                    <canvas id="batchPerformanceChart" height="300"></canvas>
+                <div class="card-body p-2 overflow-auto" style="min-height:180px;max-height:240px;">
+                    <canvas id="boardPassChart" height="180" style="width:100%;max-width:100%;display:block;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card shadow-sm h-100" style="min-height:260px;max-height:320px;">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Program Distribution</h5>
+                </div>
+                <div class="card-body p-2 overflow-auto" style="min-height:180px;max-height:240px;">
+                    <canvas id="programDistributionChart" height="180" style="width:100%;max-width:100%;display:block;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-list-task me-2"></i>Student Progress Distribution</h5>
+                </div>
+                <div class="card-body p-2 overflow-auto" style="min-height:180px;max-height:240px;">
+                    <canvas id="progressDistributionChart" height="180" style="width:100%;max-width:100%;display:block;"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Subject-wise Performance -->
-    <div class="row g-4 mt-4">
-        <div class="col-12">
-            <div class="chart-container">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">
-                        <i class="fas fa-book me-2"></i>Subject-wise Performance Breakdown
-                    </h5>
-                    <button class="btn btn-sm btn-outline-info" onclick="generateSubjectReport()">
-                        Generate Report <i class="fas fa-file-alt ms-1"></i>
+    <!-- Recently Enrolled and Recent Payments -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Recently Enrolled</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Program</th>
+                                    <th>Enrollment Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentlyEnrolledTable">
+                                <!-- Data will be populated via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Recent Payments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Program</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentPaymentsTable">
+                                <!-- Data will be populated via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analytics Tables -->
+    <div class="row g-4">
+        <!-- Recently Completed Section (replaces Top Performers) -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h5 class="mb-0"><i class="bi bi-check2-circle me-2"></i>Recently Completed</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Program</th>
+                                    <th>Completion Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentlyCompletedTable">
+                                <!-- Data will be populated via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Students Needing Attention (unchanged) -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Students Needing Attention</h5>
+                    <button class="btn btn-sm btn-outline-warning" onclick="viewAllStudents('bottom')">
+                        View All <i class="bi bi-arrow-right ms-1"></i>
                     </button>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-modern">
-                        <thead>
-                            <tr>
-                                <th>Subject</th>
-                                <th>Total Students</th>
-                                <th>Avg Score</th>
-                                <th>Pass Rate</th>
-                                <th>Difficulty</th>
-                                <th>Trend</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="subjectBreakdownTable">
-                            <!-- Data will be populated via AJAX -->
-                        </tbody>
-                    </table>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Program</th>
+                                    <th>Score</th>
+                                    <th>Issues</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bottomPerformersTable">
+                                <!-- Data will be populated via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal for Detailed Student View -->
-<div class="modal fade" id="studentDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Student Performance Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="studentDetailContent">
-                <!-- Content will be loaded via AJAX -->
+    <!-- Batch Performance Analysis -->
+    <div class="card my-4" style="max-width:900px;margin:auto;min-height:180px;max-height:260px;">
+        <div class="card-header d-flex justify-content-between align-items-center bg-light">
+            <h5 class="fw-bold mb-0"><i class="bi bi-layers me-2"></i>Batch Performance Analysis</h5>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-primary active" onclick="changeBatchView('overview')">Overview</button>
+                <button type="button" class="btn btn-outline-primary" onclick="changeBatchView('comparison')">Comparison</button>
+                <button type="button" class="btn btn-outline-primary" onclick="changeBatchView('detailed')">Detailed</button>
             </div>
         </div>
+        <div class="card-body p-2 overflow-auto" style="min-height:120px;max-height:180px;">
+            <canvas id="batchPerformanceChart" height="120" style="width:100%;max-width:100%;display:block;"></canvas>
+        </div>
     </div>
-</div>
 
-<!-- CSV Upload Modal -->
-<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="uploadModalLabel">
-                    <i class="fas fa-upload me-2"></i>Upload Board Passer Data
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadForm" enctype="multipart/form-data">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="csvFile" class="form-label">CSV File</label>
-                        <input type="file" class="form-control" id="csvFile" name="csv_file" accept=".csv" required>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Upload a CSV file with columns: Student ID, Student Name, Program, Batch, Board Exam, Exam Date, Result (PASS/FAIL)
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="examYear" class="form-label">Exam Year</label>
-                        <select class="form-select" id="examYear" name="exam_year" required>
-                            <option value="">Select Year</option>
-                            @for($year = date('Y'); $year >= 2020; $year--)
-                                <option value="{{ $year }}">{{ $year }}</option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="boardExam" class="form-label">Board Exam Type</label>
-                        <select class="form-select" id="boardExam" name="board_exam" required>
-                            <option value="">Select Exam</option>
-                            <option value="CPA">CPA (Certified Public Accountant)</option>
-                            <option value="LET">LET (Licensure Examination for Teachers)</option>
-                            <option value="CE">CE (Civil Engineer)</option>
-                            <option value="ME">ME (Mechanical Engineer)</option>
-                            <option value="EE">EE (Electrical Engineer)</option>
-                            <option value="NURSE">Nursing Board Exam</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="otherExamDiv" style="display: none;">
-                        <label for="otherExam" class="form-label">Specify Other Exam</label>
-                        <input type="text" class="form-control" id="otherExam" name="other_exam">
-                    </div>
-                </form>
-                <div class="alert alert-info">
-                    <h6><i class="fas fa-file-download me-2"></i>CSV Format Requirements:</h6>
-                    <ul class="mb-0">
-                        <li>Student ID (required)</li>
-                        <li>Student Name (required)</li>
-                        <li>Program (optional - will match with existing data)</li>
-                        <li>Batch (optional - will match with existing data)</li>
-                        <li>Board Exam (required)</li>
-                        <li>Exam Date (YYYY-MM-DD format)</li>
-                        <li>Result (PASS or FAIL)</li>
-                    </ul>
+    <!-- Subject-wise Performance Breakdown REMOVED -->
+
+    <!-- Modals -->
+    <!-- Modal for Detailed Student View -->
+    <div class="modal fade" id="studentDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Student Performance Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="studentDetailContent">
+                    <!-- Content will be loaded via AJAX -->
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="uploadCSV()">
-                    <i class="fas fa-upload me-2"></i>Upload
-                </button>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- Manual Entry Modal -->
-<div class="modal fade" id="manualEntryModal" tabindex="-1" aria-labelledby="manualEntryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="manualEntryModalLabel">
-                    <i class="fas fa-plus me-2"></i>Manual Board Passer Entry
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="manualEntryForm">
-                    @csrf
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="studentSelect" class="form-label">Student</label>
-                                <select class="form-select" id="studentSelect" name="student_id" required>
-                                    <option value="">Search and select student...</option>
-                                </select>
+    <!-- CSV Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
+                        <i class="bi bi-upload me-2"></i>Upload Board Passer Data
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="csvFile" class="form-label">CSV File</label>
+                            <input type="file" class="form-control" id="csvFile" name="csv_file" accept=".csv" required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Upload a CSV file with columns: Student ID, Student Name, Program, Batch, Board Exam, Exam Date, Result (PASS/FAIL)
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="manualBoardExam" class="form-label">Board Exam</label>
-                                <select class="form-select" id="manualBoardExam" name="board_exam" required>
-                                    <option value="">Select Exam</option>
-                                    <option value="CPA">CPA (Certified Public Accountant)</option>
-                                    <option value="LET">LET (Licensure Examination for Teachers)</option>
-                                    <option value="CE">CE (Civil Engineer)</option>
-                                    <option value="ME">ME (Mechanical Engineer)</option>
-                                    <option value="EE">EE (Electrical Engineer)</option>
-                                    <option value="NURSE">Nursing Board Exam</option>
-                                    <option value="OTHER">Other</option>
-                                </select>
-                            </div>
+                        <div class="mb-3">
+                            <label for="examYear" class="form-label">Exam Year</label>
+                            <select class="form-select" id="examYear" name="exam_year" required>
+                                <option value="">Select Year</option>
+                                @for($year = date('Y'); $year >= 2020; $year--)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endfor
+                            </select>
                         </div>
+                        <div class="mb-3">
+                            <label for="boardExam" class="form-label">Board Exam Type</label>
+                            <select class="form-select" id="boardExam" name="board_exam" required>
+                                <option value="">Select Exam</option>
+                                <option value="CPA">CPA (Certified Public Accountant)</option>
+                                <option value="LET">LET (Licensure Examination for Teachers)</option>
+                                <option value="CE">CE (Civil Engineer)</option>
+                                <option value="ME">ME (Mechanical Engineer)</option>
+                                <option value="EE">EE (Electrical Engineer)</option>
+                                <option value="NURSE">Nursing Board Exam</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="otherExamDiv" style="display: none;">
+                            <label for="otherExam" class="form-label">Specify Other Exam</label>
+                            <input type="text" class="form-control" id="otherExam" name="other_exam">
+                        </div>
+                    </form>
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-file-earmark-arrow-down me-2"></i>CSV Format Requirements:</h6>
+                        <ul class="mb-0">
+                            <li>Student ID (required)</li>
+                            <li>Student Name (required)</li>
+                            <li>Program (optional - will match with existing data)</li>
+                            <li>Batch (optional - will match with existing data)</li>
+                            <li>Board Exam (required)</li>
+                            <li>Exam Date (YYYY-MM-DD format)</li>
+                            <li>Result (PASS or FAIL)</li>
+                        </ul>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="examDate" class="form-label">Exam Date</label>
-                                <input type="date" class="form-control" id="examDate" name="exam_date" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="result" class="form-label">Result</label>
-                                <select class="form-select" id="result" name="result" required>
-                                    <option value="">Select Result</option>
-                                    <option value="PASS">PASS</option>
-                                    <option value="FAIL">FAIL</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="notes" class="form-label">Notes (Optional)</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional notes about the exam result..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="saveManualEntry()">
-                    <i class="fas fa-save me-2"></i>Save Entry
-                </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="uploadCSV()">
+                        <i class="bi bi-upload me-2"></i>Upload
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Manual Entry Modal -->
+    <div class="modal fade" id="manualEntryModal" tabindex="-1" aria-labelledby="manualEntryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manualEntryModalLabel">
+                        <i class="bi bi-plus-lg me-2"></i>Manual Board Passer Entry
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="manualEntryForm">
+                        @csrf
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="studentSelect" class="form-label">Student</label>
+                                    <select class="form-select" id="studentSelect" name="student_id" required>
+                                        <option value="">Search and select student...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="manualBoardExam" class="form-label">Board Exam</label>
+                                    <select class="form-select" id="manualBoardExam" name="board_exam" required>
+                                        <option value="">Select Exam</option>
+                                        <option value="CPA">CPA (Certified Public Accountant)</option>
+                                        <option value="LET">LET (Licensure Examination for Teachers)</option>
+                                        <option value="CE">CE (Civil Engineer)</option>
+                                        <option value="ME">ME (Mechanical Engineer)</option>
+                                        <option value="EE">EE (Electrical Engineer)</option>
+                                        <option value="NURSE">Nursing Board Exam</option>
+                                        <option value="OTHER">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="examDate" class="form-label">Exam Date</label>
+                                    <input type="date" class="form-control" id="examDate" name="exam_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="result" class="form-label">Result</label>
+                                    <select class="form-select" id="result" name="result" required>
+                                        <option value="">Select Result</option>
+                                        <option value="PASS">PASS</option>
+                                        <option value="FAIL">FAIL</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional notes about the exam result..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveManualEntry()">
+                        <i class="bi bi-save me-2"></i>Save Entry
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
@@ -1236,7 +759,7 @@ function updateMetrics(metrics) {
     // Update trends
     updateTrend('boardPassTrend', metrics.boardPassTrend);
     updateTrend('studentsTrend', metrics.studentsTrend);
-    updateTrend('quizScoreTrend', metrics.quizScoreTrend);
+    updateTrend('quizScoreTrend', metrics.quizScoreTrend);    updateTrend('quizScoreTrend', metrics.quizScoreTrend);
     updateTrend('completionTrend', metrics.completionTrend);
 }
 
@@ -1244,9 +767,9 @@ function updateTrend(elementId, trend) {
     const element = document.getElementById(elementId);
     const isPositive = trend.value >= 0;
     
-    element.className = `metric-trend ${isPositive ? 'trend-up' : 'trend-down'}`;
+    element.className = `metric-trend ${isPositive ? 'text-success' : 'text-danger'}`;
     element.innerHTML = `
-        <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i> 
+        <i class="bi bi-arrow-${isPositive ? 'up' : 'down'}"></i> 
         ${isPositive ? '+' : ''}${trend.value}% ${trend.period}
     `;
 }
@@ -1256,22 +779,17 @@ function updateCharts(chartData) {
     boardPassChart.data.labels = chartData.boardPass.labels;
     boardPassChart.data.datasets[0].data = chartData.boardPass.data;
     boardPassChart.update();
-    
+
     // Update program distribution chart
     programChart.data.labels = chartData.programDistribution.labels;
     programChart.data.datasets[0].data = chartData.programDistribution.data;
     programChart.update();
-    
-    // Update subject performance chart
-    subjectChart.data.labels = chartData.subjectPerformance.labels;
-    subjectChart.data.datasets[0].data = chartData.subjectPerformance.data;
-    subjectChart.update();
-    
+
     // Update progress distribution chart
     progressChart.data.labels = chartData.progressDistribution.labels;
     progressChart.data.datasets[0].data = chartData.progressDistribution.data;
     progressChart.update();
-    
+
     // Update batch performance chart
     batchChart.data.labels = chartData.batchPerformance.labels;
     batchChart.data.datasets[0].data = chartData.batchPerformance.data;
@@ -1300,7 +818,7 @@ function updateTopPerformersTable(data) {
             <td>
                 <div class="d-flex align-items-center">
                     <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
-                        <i class="fas fa-user text-white"></i>
+                        <i class="bi bi-person text-white"></i>
                     </div>
                     <div>
                         <div class="fw-bold">${student.name}</div>
@@ -1331,7 +849,7 @@ function updateBottomPerformersTable(data) {
             <td>
                 <div class="d-flex align-items-center">
                     <div class="avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center me-2">
-                        <i class="fas fa-user text-white"></i>
+                        <i class="bi bi-person text-white"></i>
                     </div>
                     <div>
                         <div class="fw-bold">${student.name}</div>
@@ -1346,7 +864,7 @@ function updateBottomPerformersTable(data) {
             </td>
             <td>
                 <button class="btn btn-sm btn-outline-primary" onclick="viewStudentDetail(${student.id})">
-                    <i class="fas fa-eye"></i>
+                    <i class="bi bi-eye"></i>
                 </button>
             </td>
         `;
@@ -1361,7 +879,7 @@ function updateSubjectBreakdownTable(data) {
     data.forEach(subject => {
         const row = document.createElement('tr');
         const difficultyColor = subject.difficulty === 'Hard' ? 'danger' : subject.difficulty === 'Medium' ? 'warning' : 'success';
-        const trendIcon = subject.trend >= 0 ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger';
+        const trendIcon = subject.trend >= 0 ? 'bi bi-arrow-up text-success' : 'bi bi-arrow-down text-danger';
         
         row.innerHTML = `
             <td class="fw-bold">${subject.name}</td>
@@ -1374,10 +892,10 @@ function updateSubjectBreakdownTable(data) {
                 <small class="text-muted">${subject.passRate}%</small>
             </td>
             <td><span class="badge bg-${difficultyColor}">${subject.difficulty}</span></td>
-            <td><i class="fas ${trendIcon}"></i> ${Math.abs(subject.trend)}%</td>
+            <td><i class="${trendIcon}"></i> ${Math.abs(subject.trend)}%</td>
             <td>
                 <button class="btn btn-sm btn-outline-info" onclick="viewSubjectDetail(${subject.id})">
-                    <i class="fas fa-chart-bar"></i>
+                    <i class="bi bi-graph-bar"></i>
                 </button>
             </td>
         `;

@@ -1234,17 +1234,91 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.submissions && data.submissions.length > 0) {
-                            let html = '<div class="alert alert-info"><strong>Previous Submissions:</strong><ul>';
+                            let html = '<div class="mt-4"><h5><i class="bi bi-clock-history me-2"></i>Submission History</h5>';
                             data.submissions.forEach(sub => {
                                 let files = sub.files || [];
                                 if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
-                                html += `<li>${sub.submitted_at}: `;
-                                files.forEach(f => {
-                                    html += `<a href="/storage/${f.file_path || f}" target="_blank">${(f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File'))}</a> `;
-                                });
-                                html += '</li>';
+                                
+                                // Determine status badge class
+                                let statusClass = 'bg-secondary';
+                                let statusText = 'Submitted';
+                                if (sub.status === 'graded') {
+                                    statusClass = 'bg-success';
+                                    statusText = 'Graded';
+                                } else if (sub.status === 'reviewed') {
+                                    statusClass = 'bg-info';
+                                    statusText = 'Reviewed';
+                                }
+                                
+                                html += `<div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-1">
+                                                <i class="bi bi-file-earmark-text me-2"></i>
+                                                Submission ${new Date(sub.submitted_at).toLocaleDateString()}
+                                            </h6>
+                                            <span class="badge ${statusClass}">${statusText}</span>
+                                        </div>
+                                        <p class="text-muted small mb-2">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            Submitted: ${new Date(sub.submitted_at).toLocaleString()}
+                                        </p>`;
+                                
+                                // Show grade if available
+                                if (sub.grade !== null && sub.grade !== undefined && sub.status === 'graded') {
+                                    let gradeClass = 'text-success';
+                                    if (sub.grade < 70) gradeClass = 'text-danger';
+                                    else if (sub.grade < 80) gradeClass = 'text-warning';
+                                    
+                                    html += `<div class="alert alert-light border-start border-4 border-primary mb-2">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-award me-2 text-primary"></i>
+                                            <strong>Grade: <span class="${gradeClass}">${sub.grade}/100</span></strong>
+                                        </div>`;
+                                    
+                                    // Show feedback if available
+                                    if (sub.feedback) {
+                                        html += `<div class="mt-2">
+                                            <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
+                                            <div class="bg-white rounded p-2 mt-1 border">${sub.feedback}</div>
+                                        </div>`;
+                                    }
+                                    html += `</div>`;
+                                } else if (sub.status === 'reviewed' && sub.feedback) {
+                                    // Show feedback for reviewed submissions without grade
+                                    html += `<div class="alert alert-info border-start border-4 border-info mb-2">
+                                        <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
+                                        <div class="bg-white rounded p-2 mt-1 border">${sub.feedback}</div>
+                                        <small class="text-muted mt-1 d-block">This submission needs revision. Please review the feedback and resubmit.</small>
+                                    </div>`;
+                                }
+                                
+                                // Show files
+                                if (files.length > 0) {
+                                    html += `<div class="mb-2">
+                                        <strong><i class="bi bi-paperclip me-2"></i>Files:</strong>
+                                        <div class="mt-1">`;
+                                    files.forEach(f => {
+                                        const fileName = f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File');
+                                        const filePath = f.file_path || f.path || f;
+                                        html += `<a href="/storage/${filePath}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-1">
+                                            <i class="bi bi-download me-1"></i>${fileName}
+                                        </a>`;
+                                    });
+                                    html += `</div></div>`;
+                                }
+                                
+                                // Show submission comments if any
+                                if (sub.comments) {
+                                    html += `<div class="mb-2">
+                                        <strong><i class="bi bi-sticky me-2"></i>Your Notes:</strong>
+                                        <div class="text-muted">${sub.comments}</div>
+                                    </div>`;
+                                }
+                                
+                                html += `</div></div>`;
                             });
-                            html += '</ul></div>';
+                            html += '</div>';
                             document.getElementById('previousAssignmentSubmissions').innerHTML = html;
                         }
                     });

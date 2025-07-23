@@ -16,6 +16,7 @@ use App\Models\Module;
 use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\PaymentHistory;
+use App\Models\AssignmentSubmission;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -1898,6 +1899,102 @@ class AdminController extends Controller
             return response()->json(['success' => true, 'message' => 'Payment history undone and removed successfully.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error undoing payment history: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * View assignment submissions for admin grading
+     */
+    public function viewSubmissions(Request $request)
+    {
+        try {
+            // Get filter parameters
+            $programId = $request->get('program_id');
+            $moduleId = $request->get('module_id');
+            $status = $request->get('status');
+
+            // Build query for submissions with proper relationships
+            $query = AssignmentSubmission::with([
+                'student' => function($q) {
+                    $q->with('user');
+                }, 
+                'program', 
+                'module'
+            ])->orderBy('submitted_at', 'desc');
+
+            // Apply filters
+            if ($programId) {
+                $query->where('program_id', $programId);
+            }
+
+            if ($moduleId) {
+                $query->where('module_id', $moduleId);
+            }
+
+            if ($status) {
+                $query->where('status', $status);
+            }
+
+            // Get submissions with pagination
+            $submissions = $query->paginate(10);
+
+            // Get all programs and modules for filter dropdowns
+            $programs = Program::where('is_archived', false)
+                ->orderBy('program_name')
+                ->get();
+
+            $modules = Module::where('is_archived', false)
+                ->orderBy('module_name')
+                ->get();
+
+            return view('admin.admin-student-submissions.admin-submission', compact(
+                'submissions',
+                'programs',
+                'modules'
+            ));
+
+        } catch (\Exception $e) {
+            Log::error('Error loading admin submissions: ' . $e->getMessage());
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Error loading submissions: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Grade an assignment submission
+     */
+    public function gradeSubmission(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'grade' => 'required|numeric|min:0|max:100',
+                'feedback' => 'nullable|string|max:2000',
+                'status' => 'required|in:graded,reviewed'
+            ]);
+
+            $submission = AssignmentSubmission::findOrFail($id);
+
+            // Update submission with grade and feedback
+            $submission->update([
+                'grade' => $request->grade,
+                'feedback' => $request->feedback,
+                'status' => $request->status,
+                'graded_at' => now(),
+                'graded_by' => session('admin_id') ?? 1
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assignment graded successfully!',
+                'submission' => $submission
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error grading submission: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error grading submission: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -18,6 +18,20 @@ use Illuminate\Support\Facades\Log;
 
 class CertificateController extends Controller
 {
+    /**
+     * Display a listing of certificates for admin
+     */
+    public function index()
+    {
+        // Get all completed enrollments for certificate generation
+        $completedEnrollments = Enrollment::with(['student.user', 'program'])
+            ->where('status', 'completed')
+            ->orderBy('completed_at', 'desc')
+            ->paginate(15);
+
+        return view('admin.certificates.index', compact('completedEnrollments'));
+    }
+
     // Display certificate in browser
     public function show(Request $request)
     {

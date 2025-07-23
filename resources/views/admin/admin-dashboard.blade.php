@@ -99,6 +99,18 @@
                     <div class="description">Create and edit programs</div>
                 </a>
                 
+                <a href="{{ route('admin.submissions') }}" class="module-action-card">
+                    <span class="icon">📋</span>
+                    <div class="title">Assignment Submissions</div>
+                    <div class="description">Review and grade student work</div>
+                </a>
+                
+                <a href="{{ route('admin.certificates') }}" class="module-action-card">
+                    <span class="icon">🏆</span>
+                    <div class="title">Certificates</div>
+                    <div class="description">Generate student certificates</div>
+                </a>
+                
                 <a href="{{ route('admin.enrollments.index') }}" class="module-action-card">
                     <span class="icon">📝</span>
                     <div class="title">Enrollment Management</div>

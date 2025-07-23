@@ -431,7 +431,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/submit-assignment', [StudentDashboardController::class, 'submitAssignmentFile'])->name('student.submit-assignment');
     Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
     Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
-    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getAssignmentSubmissions']);
+    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
     
     // Quiz routes
     Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
@@ -1410,6 +1410,28 @@ Route::post('/admin/enrollment/{enrollmentId}/undo-payment', [App\Http\Controlle
 // ... existing code ...
 Route::post('/admin/payment-history/{paymentHistoryId}/undo', [App\Http\Controllers\AdminController::class, 'undoPaymentHistory'])->name('admin.payment-history.undo');
 // ... existing code ...
+
+/*
+|--------------------------------------------------------------------------
+| Admin Assignment Submissions
+|--------------------------------------------------------------------------
+*/
+// View assignment submissions
+Route::get('/admin/submissions', [AdminController::class, 'viewSubmissions'])
+     ->name('admin.submissions');
+
+// Grade assignment submission
+Route::post('/admin/submissions/{id}/grade', [AdminController::class, 'gradeSubmission'])
+     ->name('admin.submissions.grade');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Certificates
+|--------------------------------------------------------------------------
+*/
+// View certificates
+Route::get('/admin/certificates', [CertificateController::class, 'index'])
+     ->name('admin.certificates');
 
 }); // End of admin middleware group
 
