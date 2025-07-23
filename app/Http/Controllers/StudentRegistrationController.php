@@ -654,6 +654,38 @@ class StudentRegistrationController extends Controller
             
             // Also create an immediate enrollment record with the batch_id
             // This ensures batch_id is preserved even if the session is cleared
+            $batchId = $request->batch_id;
+            if (!$batchId && strtolower($request->learning_mode) === 'synchronous') {
+                // No batch selected, check if any available batch exists for this program
+                $existingBatch = StudentBatch::where('program_id', $request->program_id)
+                    ->where('batch_status', 'available')
+                    ->whereColumn('current_capacity', '<', 'max_capacity')
+                    ->orderBy('start_date', 'asc')
+                    ->first();
+                if ($existingBatch) {
+                    $batchId = $existingBatch->batch_id;
+                    $existingBatch->increment('current_capacity');
+                } else {
+                    // Create a new batch for this program
+                    $program = Program::find($request->program_id);
+                    $batchName = $program ? ($program->program_name . ' Batch ' . date('Ymd-His')) : ('Batch ' . date('Ymd-His'));
+                    $startDate = now()->addDays(14);
+                    $endDate = (clone $startDate)->addMonths(8);
+                    $newBatch = StudentBatch::create([
+                        'batch_name' => $batchName,
+                        'program_id' => $request->program_id,
+                        'max_capacity' => 10,
+                        'current_capacity' => 1,
+                        'batch_status' => 'available',
+                        'registration_deadline' => now()->addDays(7),
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'description' => 'Auto-created batch for program enrollment',
+                        'created_by' => null,
+                    ]);
+                    $batchId = $newBatch->batch_id;
+                }
+            }
             $enrollmentData = [
                 'registration_id' => $registration->registration_id,
                 'user_id' => $user?->user_id, // Add user_id
@@ -665,16 +697,13 @@ class StudentRegistrationController extends Controller
                 'payment_status' => 'pending',
                 'batch_access_granted' => false, // Default to false, admin will grant access
             ];
-            
-            // Include batch_id if it was selected during registration
-            if ($request->batch_id) {
-                $enrollmentData['batch_id'] = $request->batch_id;
+            if ($batchId) {
+                $enrollmentData['batch_id'] = $batchId;
                 Log::info('Creating enrollment with batch_id during registration', [
-                    'batch_id' => $request->batch_id,
+                    'batch_id' => $batchId,
                     'registration_id' => $registration->registration_id
                 ]);
             }
-            
             Enrollment::create($enrollmentData);
             
             Log::info('Initial enrollment created during registration', [
