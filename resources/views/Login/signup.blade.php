@@ -235,15 +235,14 @@
 
         <form class="login-form" method="POST" action="{{ route('user.signup') }}" id="signupForm">
             @csrf
-            
-            <div class="input-row">
-                <div style="flex: 1; margin-right: 8px;">
+            <div class="row mb-3">
+                <div class="col-md-6">
                     <label for="first_name">First Name</label>
-                    <input type="text" id="first_name" name="first_name" placeholder="First Name" value="{{ old('first_name') }}" required>
+                    <input type="text" id="first_name" name="first_name" class="form-control" placeholder="First Name" value="{{ old('first_name') }}" required>
                 </div>
-                <div style="flex: 1; margin-left: 8px;">
+                <div class="col-md-6">
                     <label for="last_name">Last Name</label>
-                    <input type="text" id="last_name" name="last_name" placeholder="Last Name" value="{{ old('last_name') }}" required>
+                    <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Last Name" value="{{ old('last_name') }}" required>
                 </div>
             </div>
 

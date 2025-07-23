@@ -151,6 +151,70 @@ class StudentDashboardController extends Controller
             }
         }
         
+        // Check for rejected registrations that are not yet converted to enrollments
+        if (session('user_id')) {
+            $rejectedRegistrations = \App\Models\Registration::where('user_id', session('user_id'))
+                ->whereIn('status', ['rejected', 'resubmitted'])
+                ->with(['program', 'package'])
+                ->get();
+                
+            foreach ($rejectedRegistrations as $registration) {
+                if ($registration->program) {
+                    // Check if there's already an enrollment for this program
+                    $existingCourseIndex = null;
+                    foreach ($courses as $index => $course) {
+                        if ($course['id'] == $registration->program->program_id) {
+                            $existingCourseIndex = $index;
+                            break;
+                        }
+                    }
+                    
+                    // Determine button text based on registration status
+                    if ($registration->status === 'rejected') {
+                        $buttonText = 'Registration Rejected - Click to Edit';
+                        $buttonClass = 'resume-btn rejected';
+                        $buttonAction = '#';
+                    } elseif ($registration->status === 'resubmitted') {
+                        $buttonText = 'Registration Resubmitted - Pending Review';
+                        $buttonClass = 'resume-btn resubmitted';
+                        $buttonAction = '#';
+                    }
+                    
+                    $courseData = [
+                        'id' => $registration->program->program_id,
+                        'name' => $registration->program->program_name,
+                        'description' => $registration->program->program_description ?? 'No description available.',
+                        'progress' => 0, // No progress for rejected registrations
+                        'status' => 'registration_rejected',
+                        'learning_mode' => $registration->enrollment_type ?? 'Full',
+                        'enrollment_type' => $registration->enrollment_type,
+                        'package_name' => $registration->package->package_name ?? 'Unknown Package',
+                        'total_modules' => 0,
+                        'completed_modules' => 0,
+                        'enrollment_status' => $registration->status, // This will be 'rejected' or 'resubmitted'
+                        'payment_status' => 'pending',
+                        'button_text' => $buttonText,
+                        'button_class' => $buttonClass,
+                        'button_action' => $buttonAction,
+                        'batch_name' => null,
+                        'batch_dates' => null,
+                        'enrollment_id' => null,
+                        'registration_id' => $registration->registration_id, // Add registration ID for rejected handling
+                        'show_access_modal' => false,
+                        'batch_access_granted' => false,
+                    ];
+                    
+                    if ($existingCourseIndex !== null) {
+                        // Replace the existing course with rejected registration data (rejected takes priority)
+                        $courses[$existingCourseIndex] = $courseData;
+                    } else {
+                        // Add new course for rejected registration
+                        $courses[] = $courseData;
+                    }
+                }
+            }
+        }
+        
         // If no enrollments found, show empty state
         if (empty($courses)) {
             $courses = [];

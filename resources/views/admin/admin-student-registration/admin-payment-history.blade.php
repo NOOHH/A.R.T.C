@@ -101,6 +101,10 @@
                                                         onclick="viewPaymentDetails({{ $enrollment->enrollment_id }})">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
+                                                <button type="button" class="btn btn-sm btn-secondary" 
+                                                        onclick="undoPaymentApproval({{ $enrollment->enrollment_id }})">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Undo
+                                                </button>
                                                 @if($enrollment->payment_status === 'failed')
                                                     <button type="button" class="btn btn-sm btn-warning" 
                                                             onclick="retryPayment({{ $enrollment->enrollment_id }})">
@@ -311,6 +315,30 @@ function retryPayment(enrollmentId) {
         .catch(error => {
             console.error('Error:', error);
             alert('Error retrying payment');
+        });
+    }
+}
+
+function undoPaymentApproval(paymentId) {
+    if (confirm('Are you sure you want to undo this payment approval? This will return the payment to pending approval.')) {
+        fetch(`/admin/payment/${paymentId}/undo-approval`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Payment approval undone successfully! Payment is now pending approval.');
+                location.reload();
+            } else {
+                alert('Error undoing payment approval: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error undoing payment approval');
         });
     }
 }

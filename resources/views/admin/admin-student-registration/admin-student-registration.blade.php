@@ -160,6 +160,9 @@
                                                         onclick="editRejectedFields('{{ $registration->registration_id }}')">
                                                     <i class="bi bi-pencil"></i> Edit Rejection
                                                 </button>
+                                                <button type="button" class="btn btn-sm btn-secondary" style="display:inline-block !important;" onclick="undoRejection('{{ $registration->registration_id }}')">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Undo
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

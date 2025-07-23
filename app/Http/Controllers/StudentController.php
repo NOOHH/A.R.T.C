@@ -684,4 +684,385 @@ class StudentController extends Controller
         // For now, we'll just log it
         error_log("OTP for {$email}: {$otp}");
     }
+
+    /**
+     * Get rejection details for a specific enrollment
+     */
+    public function getRejectionDetails($id)
+    {
+        try {
+            $userId = session('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Find the enrollment that belongs to the current user and is rejected
+            $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
+                ->where('user_id', $userId)
+                ->whereIn('status', ['rejected', 'rejected_registration'])
+                ->first();
+
+            // If not found in Enrollment, check Registration (for deleted/migrated enrollments)
+            if (!$enrollment) {
+                $registration = \App\Models\Registration::where('registration_id', $id)
+                    ->where('user_id', $userId)
+                    ->where('status', 'rejected')
+                    ->first();
+                if ($registration) {
+                    $data = [
+                        'registration_id' => $registration->registration_id,
+                        'program_name' => $registration->program_name ?? 'Unknown Program',
+                        'package_name' => $registration->package_name ?? 'Unknown Package',
+                        'learning_mode' => $registration->learning_mode,
+                        'rejected_fields' => $registration->rejected_fields,
+                        'rejection_reason' => $registration->rejection_reason,
+                        'rejected_by_name' => 'Administrator',
+                        'rejected_at' => $registration->rejected_at,
+                        'status' => $registration->status
+                    ];
+                    return response()->json([
+                        'success' => true,
+                        'data' => $data
+                    ]);
+                }
+            }
+
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejected enrollment or registration not found'
+                ], 404);
+            }
+
+            // Get additional details
+            $program = \App\Models\Program::find($enrollment->program_id);
+            $package = \App\Models\Package::find($enrollment->package_id);
+            $rejectedBy = null;
+            
+            if ($enrollment->rejected_by) {
+                $rejectedBy = \App\Models\Admin::find($enrollment->rejected_by);
+            }
+
+            $data = [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'program_name' => $program ? $program->program_name : 'Unknown Program',
+                'package_name' => $package ? $package->package_name : 'Unknown Package',
+                'learning_mode' => $enrollment->learning_mode,
+                'rejected_fields' => $enrollment->rejected_fields,
+                'rejection_reason' => $enrollment->rejection_reason,
+                'rejected_by_name' => $rejectedBy ? $rejectedBy->admin_firstname . ' ' . $rejectedBy->admin_lastname : 'Administrator',
+                'rejected_at' => $enrollment->rejected_at,
+                'status' => $enrollment->status
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting rejection details: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get edit form for rejected registration
+     */
+    public function getEditForm($id)
+    {
+        try {
+            $userId = session('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Find the enrollment
+            $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
+                ->where('user_id', $userId)
+                ->where('status', 'rejected')
+                ->first();
+
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejected enrollment not found'
+                ], 404);
+            }
+
+            // Get user details
+            $user = \App\Models\User::find($userId);
+            
+            // Get form requirements based on education level
+            $formRequirements = \App\Models\FormRequirement::where('is_active', true)
+                ->orderBy('sort_order')
+                ->get();
+
+            // Get rejected fields
+            $rejectedFields = [];
+            if ($enrollment->rejected_fields) {
+                try {
+                    $rejectedFields = json_decode($enrollment->rejected_fields, true) ?: [];
+                } catch (\Exception $e) {
+                    $rejectedFields = [];
+                }
+            }
+
+            // Generate the form HTML
+            $html = view('student.components.edit-registration-form', [
+                'enrollment' => $enrollment,
+                'user' => $user,
+                'formRequirements' => $formRequirements,
+                'rejectedFields' => $rejectedFields
+            ])->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting edit form: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get rejected registration data for resubmission
+     */
+    public function getRejectedRegistration($id)
+    {
+        try {
+            $userId = session('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Find the enrollment
+            $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
+                ->where('user_id', $userId)
+                ->where('status', 'rejected')
+                ->first();
+
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejected enrollment not found'
+                ], 404);
+            }
+
+            // Get rejected fields
+            $rejectedFields = [];
+            if ($enrollment->rejected_fields) {
+                try {
+                    $rejectedFields = json_decode($enrollment->rejected_fields, true) ?: [];
+                } catch (\Exception $e) {
+                    $rejectedFields = [];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'enrollment' => $enrollment,
+                    'rejected_fields' => $rejectedFields
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting rejected registration: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Resubmit a rejected registration
+     */
+    public function resubmitRegistration(Request $request, $id)
+    {
+        try {
+            $userId = session('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Find the enrollment
+            $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
+                ->where('user_id', $userId)
+                ->where('status', 'rejected')
+                ->first();
+
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejected enrollment not found'
+                ], 404);
+            }
+
+            // Validate the request based on form requirements
+            $rules = [
+                'firstname' => 'required|string|max:255',
+                'lastname' => 'required|string|max:255',
+                'middlename' => 'nullable|string|max:255',
+                'email' => 'required|email|max:255',
+                'contact_number' => 'required|string|max:20',
+                'address' => 'required|string|max:500',
+                'education_level' => 'required|string'
+            ];
+
+            // Add file validation rules for uploads
+            $fileFields = $request->allFiles();
+            foreach ($fileFields as $fieldName => $file) {
+                $rules[$fieldName] = 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120'; // 5MB max
+            }
+
+            $validated = $request->validate($rules);
+
+            // Update the enrollment data
+            $updateData = [
+                'status' => 'resubmitted',
+                'rejected_fields' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+                'resubmitted_at' => now(),
+                'updated_at' => now()
+            ];
+
+            // Update basic fields
+            foreach (['firstname', 'lastname', 'middlename', 'email', 'contact_number', 'address', 'education_level'] as $field) {
+                if (isset($validated[$field])) {
+                    $updateData[$field] = $validated[$field];
+                }
+            }
+
+            // Handle file uploads
+            $uploadedFiles = [];
+            foreach ($fileFields as $fieldName => $file) {
+                if ($file && $file->isValid()) {
+                    // Delete old file if exists
+                    $oldFilePath = $enrollment->{$fieldName};
+                    if ($oldFilePath && Storage::exists($oldFilePath)) {
+                        Storage::delete($oldFilePath);
+                    }
+
+                    // Store new file
+                    $path = $file->store('enrollments/' . $id, 'public');
+                    $updateData[$fieldName] = $path;
+                    $uploadedFiles[$fieldName] = $path;
+                }
+            }
+
+            // Update the enrollment
+            $enrollment->update($updateData);
+
+            Log::info('Registration resubmitted', [
+                'enrollment_id' => $id,
+                'user_id' => $userId,
+                'uploaded_files' => $uploadedFiles
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration resubmitted successfully'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error resubmitting registration: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a rejected registration
+     */
+    public function deleteRegistration($id)
+    {
+        try {
+            $userId = session('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            // Find the enrollment
+            $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
+                ->where('user_id', $userId)
+                ->where('status', 'rejected')
+                ->first();
+
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejected enrollment not found'
+                ], 404);
+            }
+
+            // Delete associated files
+            $fileFields = [
+                'tor', 'psa_birth_certificate', 'good_moral_certificate', 
+                'certificate', 'transcript', 'diploma', 'photo', 
+                'marriage_certificate', 'profile_photo'
+            ];
+
+            foreach ($fileFields as $field) {
+                $filePath = $enrollment->{$field};
+                if ($filePath && Storage::exists($filePath)) {
+                    Storage::delete($filePath);
+                }
+            }
+
+            // Delete the enrollment
+            $enrollment->delete();
+
+            Log::info('Rejected registration deleted', [
+                'enrollment_id' => $id,
+                'user_id' => $userId
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting registration: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error'
+            ], 500);
+        }
+    }
 }

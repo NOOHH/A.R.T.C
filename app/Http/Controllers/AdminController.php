@@ -829,6 +829,80 @@ class AdminController extends Controller
         ]);
     }
 
+    public function studentRegistrationResubmitted()
+    {
+        $registrations = Registration::with(['user', 'package', 'program', 'plan'])
+                                   ->where('status', 'resubmitted')
+                                   ->orderBy('resubmitted_at', 'desc')
+                                   ->get();
+        return view('admin.admin-student-registration.admin-student-registration-resubmitted', [
+            'registrations' => $registrations,
+            'type' => 'resubmitted'
+        ]);
+    }
+
+    /**
+     * Approve a rejected registration (undo rejection)
+     */
+    public function undoRejection(Request $request, $id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            if ($registration->status !== 'rejected') {
+                return redirect()->back()->with('error', 'Registration is not rejected.');
+            }
+            
+            // Clear rejection data and set back to pending
+            $registration->update([
+                'status' => 'pending',
+                'rejected_fields' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+                'updated_at' => now()
+            ]);
+            
+            return redirect()->back()->with('success', 'Registration rejection undone successfully. Status changed to pending.');
+            
+        } catch (\Exception $e) {
+            Log::error('Error undoing rejection: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to undo rejection.');
+        }
+    }
+
+    /**
+     * Approve a rejected registration directly
+     */
+    public function approveRejectedRegistration(Request $request, $id)
+    {
+        try {
+            $registration = Registration::findOrFail($id);
+            
+            if ($registration->status !== 'rejected') {
+                return redirect()->back()->with('error', 'Registration is not rejected.');
+            }
+            
+            // Clear rejection data and approve directly
+            $registration->update([
+                'status' => 'approved',
+                'rejected_fields' => null,
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+                'approved_by' => auth()->guard('admin')->user()->admin_id,
+                'approved_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            return redirect()->back()->with('success', 'Registration approved successfully.');
+            
+        } catch (\Exception $e) {
+            Log::error('Error approving rejected registration: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to approve registration.');
+        }
+    }
+
     public function paymentRejected()
     {
         $payments = Payment::with([

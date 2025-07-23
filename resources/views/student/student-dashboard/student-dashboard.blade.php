@@ -617,6 +617,16 @@
                             @endif
                         </div>
                         
+                        <!-- Status Badge -->
+                        @if($course['enrollment_status'] === 'rejected')
+                            <span class="badge bg-danger" style="margin-top: 8px;">Rejected</span>
+                            @if(isset($course['rejection_reason']) && $course['rejection_reason'])
+                                <span class="text-danger" style="display:block; margin-top:4px;">Reason: {{ $course['rejection_reason'] }}</span>
+                            @endif
+                        @elseif($course['enrollment_status'] === 'pending')
+                            <span class="badge bg-warning text-dark" style="margin-top: 8px;">Pending Admin Approval</span>
+                        @endif
+                        
                         <!-- Batch Information -->
                         @if(isset($course['batch_name']) && $course['batch_name'])
                         <div class="batch-info" style="margin-top: 10px; padding: 8px 12px; background: #e8f5e8; border-radius: 6px; font-size: 0.9rem;">
@@ -642,7 +652,15 @@
                             <span>{{ $course['completed_modules'] ?? 0 }} / {{ $course['total_modules'] ?? 0 }} modules complete</span>
                         </div>
                     </div>
-                    @if($course['button_action'] === '#')
+                    @if($course['enrollment_status'] === 'rejected')
+                        <button class="{{ $course['button_class'] }}" onclick="showRejectedModal('{{ $course['name'] }}', {{ $course['registration_id'] ?? $course['enrollment_id'] ?? 'null' }})">
+                            {{ $course['button_text'] }}
+                        </button>
+                    @elseif($course['enrollment_status'] === 'resubmitted')
+                        <button class="{{ $course['button_class'] }}" onclick="showStatusModal('{{ $course['enrollment_status'] }}', '{{ $course['name'] }}', {{ $course['registration_id'] ?? $course['enrollment_id'] ?? 'null' }})" disabled>
+                            {{ $course['button_text'] }}
+                        </button>
+                    @elseif($course['button_action'] === '#')
                         <button class="{{ $course['button_class'] }}" onclick="showStatusModal('{{ $course['enrollment_status'] }}', '{{ $course['name'] }}', {{ $course['enrollment_id'] ?? 'null' }})" disabled>
                             {{ $course['button_text'] }}
                         </button>
@@ -947,6 +965,57 @@
     </div>
 </div>
 
+<!-- Rejected Registration Modal -->
+<div class="modal fade" id="rejectedModal" tabindex="-1" aria-labelledby="rejectedModalTitle" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectedModalTitle">Registration Rejected</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="rejectedModalBody">
+                <!-- Content will be filled by JavaScript -->
+                <div class="text-center">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading rejection details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editRegistrationBtn" onclick="editRejectedRegistration()" style="display: none;">
+                    <i class="bi bi-pencil-square me-2"></i>Edit & Resubmit
+                </button>
+                <button type="button" class="btn btn-danger" id="deleteRegistrationBtn" onclick="deleteRejectedRegistration()" style="display: none;">
+                    <i class="bi bi-trash me-2"></i>Delete Registration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Registration Modal -->
+<div class="modal fade" id="editRegistrationModal" tabindex="-1" aria-labelledby="editRegistrationModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRegistrationModalTitle">Edit Registration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="editRegistrationModalBody">
+                <!-- Dynamic edit form will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="resubmitBtn" onclick="resubmitRegistration()">
+                    <i class="bi bi-check2-circle me-2"></i>Resubmit Registration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Debug test function
 function testPaymentModal() {
@@ -992,11 +1061,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadMeetingsData() {
     fetch('{{ route("student.meetings.upcoming") }}')
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) {
+                document.getElementById('upcoming-meetings-list').innerHTML = 
+                    '<p style="text-align: center; color: #dc3545; padding: 20px;">Please <a href="/login">log in</a> to view your meetings.</p>';
+                throw new Error('HTTP 401: Unauthorized');
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            displayMeetings(data);
+            // Ensure data is an array
+            const meetings = Array.isArray(data) ? data : (data.meetings ? data.meetings : []);
+            displayMeetings(meetings);
         })
         .catch(error => {
+            if (error.message.includes('401')) return; // Already handled
             console.error('Error loading meetings:', error);
             document.getElementById('upcoming-meetings-list').innerHTML = 
                 '<p style="text-align: center; color: #6c757d; padding: 20px;">Unable to load meetings</p>';
@@ -1007,6 +1089,14 @@ function displayMeetings(meetings) {
     const currentMeetingsSection = document.getElementById('current-meetings-section');
     const currentMeetingsList = document.getElementById('current-meetings-list');
     const upcomingMeetingsList = document.getElementById('upcoming-meetings-list');
+    
+    // Ensure meetings is an array
+    if (!Array.isArray(meetings)) {
+        console.error('Meetings data is not an array:', meetings);
+        upcomingMeetingsList.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">No upcoming meetings</p>';
+        if (currentMeetingsSection) currentMeetingsSection.style.display = 'none';
+        return;
+    }
     
     let currentMeetings = [];
     let upcomingMeetings = [];
@@ -1206,6 +1296,408 @@ function showStatusModal(status, courseName, enrollmentId = null) {
             closeBtn.onclick = closeModal;
         }
     }
+}
+
+// Rejected Registration Modal Functions
+let currentRejectedEnrollmentId = null;
+let rejectedRegistrationData = null;
+
+function showRejectedModal(courseName, enrollmentId) {
+    console.log('showRejectedModal called with:', courseName, enrollmentId);
+    currentRejectedEnrollmentId = enrollmentId;
+    
+    // Ensure Bootstrap is available
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap is not available');
+        alert('Modal functionality is not available. Please refresh the page.');
+        return;
+    }
+    
+    const rejectedModalElement = document.getElementById('rejectedModal');
+    if (!rejectedModalElement) {
+        console.error('Rejected modal element not found');
+        return;
+    }
+    
+    const title = document.getElementById('rejectedModalTitle');
+    const body = document.getElementById('rejectedModalBody');
+    
+    title.textContent = `Registration Rejected - ${courseName}`;
+    
+    // Show loading state
+    body.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-danger" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading rejection details...</p>
+        </div>
+    `;
+    
+    // Show modal
+    const rejectedModalInstance = new bootstrap.Modal(rejectedModalElement, {
+        backdrop: true,
+        keyboard: true,
+        focus: true
+    });
+    
+    rejectedModalInstance.show();
+    
+    // Load rejection details
+    loadRejectionDetails(enrollmentId);
+}
+
+function loadRejectionDetails(enrollmentId) {
+    console.log('Loading rejection details for enrollment:', enrollmentId);
+    
+    fetch(`/student/enrollment/${enrollmentId}/rejection-details`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Rejection details loaded:', data);
+        if (data.success) {
+            rejectedRegistrationData = data.data;
+            displayRejectionDetails(data.data);
+        } else {
+            showRejectionError(data.message || 'Failed to load rejection details');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading rejection details:', error);
+        showRejectionError('Network error occurred while loading rejection details');
+    });
+}
+
+function displayRejectionDetails(data) {
+    const body = document.getElementById('rejectedModalBody');
+    const editBtn = document.getElementById('editRegistrationBtn');
+    const deleteBtn = document.getElementById('deleteRegistrationBtn');
+    
+    let rejectedFields = [];
+    if (data.rejected_fields) {
+        try {
+            rejectedFields = typeof data.rejected_fields === 'string' 
+                ? JSON.parse(data.rejected_fields) 
+                : data.rejected_fields;
+        } catch (e) {
+            console.error('Error parsing rejected fields:', e);
+            rejectedFields = [];
+        }
+    }
+    
+    let modalContent = `
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Your registration has been rejected</strong>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Rejection Details:</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Rejected By:</strong> ${data.rejected_by_name || 'Administrator'}</li>
+                    <li class="list-group-item"><strong>Rejected On:</strong> ${new Date(data.rejected_at).toLocaleDateString()}</li>
+                    <li class="list-group-item"><strong>Reason:</strong> ${data.rejection_reason || 'No specific reason provided'}</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Program Details:</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Program:</strong> ${data.program_name}</li>
+                    <li class="list-group-item"><strong>Package:</strong> ${data.package_name}</li>
+                    <li class="list-group-item"><strong>Learning Mode:</strong> ${data.learning_mode}</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    if (rejectedFields.length > 0) {
+        modalContent += `
+            <div class="mt-4">
+                <h6 class="text-danger">Fields that need correction:</h6>
+                <div class="alert alert-warning">
+                    <ul class="mb-0">
+                        ${rejectedFields.map(field => `<li><strong>${field.replace(/_/g, ' ').toUpperCase()}</strong>: ${field.includes('_') ? 'Please review and update this field' : field}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    modalContent += `
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle me-2"></i>What can you do?</h6>
+                <p class="mb-2">You have two options:</p>
+                <ul class="mb-0">
+                    <li><strong>Edit & Resubmit:</strong> Correct the issues and resubmit your registration</li>
+                    <li><strong>Delete Registration:</strong> Remove this registration completely (cannot be undone)</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    body.innerHTML = modalContent;
+    
+    // Show action buttons
+    editBtn.style.display = 'inline-block';
+    deleteBtn.style.display = 'inline-block';
+}
+
+function showRejectionError(message) {
+    const body = document.getElementById('rejectedModalBody');
+    body.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> ${message}
+        </div>
+        <p>Please contact support if this problem persists.</p>
+    `;
+}
+
+function editRejectedRegistration() {
+    console.log('Opening edit modal for registration:', currentRejectedEnrollmentId);
+    
+    if (!rejectedRegistrationData) {
+        alert('Registration data not loaded. Please try again.');
+        return;
+    }
+    
+    // Close rejected modal
+    const rejectedModal = bootstrap.Modal.getInstance(document.getElementById('rejectedModal'));
+    if (rejectedModal) {
+        rejectedModal.hide();
+    }
+    
+    // Load edit form
+    loadEditRegistrationForm();
+}
+
+function loadEditRegistrationForm() {
+    const editModal = document.getElementById('editRegistrationModal');
+    const editModalBody = document.getElementById('editRegistrationModalBody');
+    const editModalTitle = document.getElementById('editRegistrationModalTitle');
+    
+    editModalTitle.textContent = `Edit Registration - ${rejectedRegistrationData.program_name}`;
+    
+    // Show loading state
+    editModalBody.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading edit form...</p>
+        </div>
+    `;
+    
+    // Show edit modal
+    const editModalInstance = new bootstrap.Modal(editModal, {
+        backdrop: 'static',
+        keyboard: false,
+        focus: true
+    });
+    
+    editModalInstance.show();
+    
+    // Load the edit form
+    fetch(`/student/enrollment/${currentRejectedEnrollmentId}/edit-form`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            editModalBody.innerHTML = data.html;
+            // Initialize any form components if needed
+            initializeEditForm();
+        } else {
+            editModalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Error loading edit form: ${data.message}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading edit form:', error);
+        editModalBody.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Network error occurred while loading the edit form.
+            </div>
+        `;
+    });
+}
+
+function initializeEditForm() {
+    // Initialize file uploads, date pickers, etc.
+    console.log('Initializing edit form components...');
+    
+    // Add file change handlers
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function() {
+            validateFileUpload(this);
+        });
+    });
+    
+    // Add form validation
+    document.querySelectorAll('input[required], select[required]').forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+    });
+}
+
+function validateFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    // Validate file size (5MB max)
+    if (file.size > 5242880) {
+        alert('File size must be less than 5MB');
+        input.value = '';
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('Only JPG, PNG, and PDF files are allowed');
+        input.value = '';
+        return;
+    }
+}
+
+function validateField(field) {
+    const value = field.value.trim();
+    
+    if (field.hasAttribute('required') && !value) {
+        field.classList.add('is-invalid');
+        return false;
+    } else {
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+        return true;
+    }
+}
+
+function resubmitRegistration() {
+    console.log('Resubmitting registration for enrollment:', currentRejectedEnrollmentId);
+    
+    const form = document.getElementById('editRegistrationForm');
+    if (!form) {
+        alert('Form not found. Please try again.');
+        return;
+    }
+    
+    // Validate form
+    let isValid = true;
+    form.querySelectorAll('input[required], select[required]').forEach(field => {
+        if (!validateField(field)) {
+            isValid = false;
+        }
+    });
+    
+    if (!isValid) {
+        alert('Please fill in all required fields correctly.');
+        return;
+    }
+    
+    // Show loading state
+    const resubmitBtn = document.getElementById('resubmitBtn');
+    const originalText = resubmitBtn.innerHTML;
+    resubmitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Resubmitting...';
+    resubmitBtn.disabled = true;
+    
+    // Create FormData
+    const formData = new FormData(form);
+    formData.append('_method', 'PUT');
+    
+    // Submit form
+    fetch(`/student/enrollment/${currentRejectedEnrollmentId}/resubmit`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Registration resubmitted successfully! Your registration is now under review again.');
+            
+            // Close modal and refresh page
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editRegistrationModal'));
+            if (editModal) {
+                editModal.hide();
+            }
+            
+            // Refresh page after short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            
+        } else {
+            alert('Error resubmitting registration: ' + (data.message || 'Unknown error'));
+            resubmitBtn.innerHTML = originalText;
+            resubmitBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error resubmitting registration:', error);
+        alert('Network error occurred. Please try again.');
+        resubmitBtn.innerHTML = originalText;
+        resubmitBtn.disabled = false;
+    });
+}
+
+function deleteRejectedRegistration() {
+    if (!confirm('Are you sure you want to delete this registration? This action cannot be undone and you will need to register again from the beginning.')) {
+        return;
+    }
+    
+    console.log('Deleting registration for enrollment:', currentRejectedEnrollmentId);
+    
+    fetch(`/student/enrollment/${currentRejectedEnrollmentId}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Registration deleted successfully.');
+            
+            // Close modal and refresh page
+            const rejectedModal = bootstrap.Modal.getInstance(document.getElementById('rejectedModal'));
+            if (rejectedModal) {
+                rejectedModal.hide();
+            }
+            
+            // Refresh page after short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            
+        } else {
+            alert('Error deleting registration: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting registration:', error);
+        alert('Network error occurred. Please try again.');
+    });
 }
 
 // Payment Modal Variables
