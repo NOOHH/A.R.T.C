@@ -171,6 +171,15 @@
                                                 <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
                                                 <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
                                                 <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
+                                                @php
+                                                    $periodParts = [];
+                                                    if (!empty($package->access_period_years)) $periodParts[] = $package->access_period_years . ' Year' . ($package->access_period_years > 1 ? 's' : '');
+                                                    if (!empty($package->access_period_months)) $periodParts[] = $package->access_period_months . ' Month' . ($package->access_period_months > 1 ? 's' : '');
+                                                    if (!empty($package->access_period_days)) $periodParts[] = $package->access_period_days . ' Day' . ($package->access_period_days > 1 ? 's' : '');
+                                                @endphp
+                                                @if(count($periodParts) > 0)
+                                                    <li><span class="badge bg-info text-dark">Access Period: {{ implode(' ', $periodParts) }}</span></li>
+                                                @endif
                                             </ul>
                                         </div>
                                     </div>
@@ -627,9 +636,7 @@
                     <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program <span class="text-danger">*</span></label>
                     <select name="program_id" class="form-select" required id="programSelect" onchange="onProgramSelectionChange();">
                         <option value="">Select Program</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
+                        <!-- Options will be dynamically populated by JS using getAvailableProgramsForStudent() -->
                     </select>
                 </div>
                 <!-- Batch Selection (only for synchronous learning) -->
@@ -3338,6 +3345,175 @@ function autofillProgramInForm() {
 document.addEventListener('DOMContentLoaded', autofillProgramInForm);
 
 // Duplicate functions removed - using the enhanced OCR functions above
+
+window.studentEnrollments = @json($studentEnrollments ?? []);
+window.contentStructure = @json($contentStructure ?? []);
+// Filtering logic and UI update functions will be added here
+
+// --- Filtering Logic ---
+function getAvailableProgramsForStudent() {
+    const enrollments = window.studentEnrollments || { full: [], modular: {} };
+    const structure = window.contentStructure || [];
+    const availablePrograms = [];
+    structure.forEach(program => {
+        if (enrollments.full.includes(program.program_id)) return;
+        let modules = (program.modules || []).filter(module => {
+            if (enrollments.modular[program.program_id]?.modules.includes(module.module_id)) return false;
+            let courses = (module.courses || []).filter(course => {
+                if (enrollments.modular[program.program_id]?.courses[module.module_id]?.includes(course.course_id)) return false;
+                if (!course.content_count || course.content_count === 0) return false;
+                return true;
+            });
+            module.courses = courses;
+            return courses.length > 0;
+        });
+        if (modules.length > 0) {
+            availablePrograms.push({ ...program, modules });
+        }
+    });
+    return availablePrograms;
+}
+
+function updateProgramSelect(availablePrograms, selectedProgramId = null) {
+    const select = document.getElementById('programSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">Select Program</option>';
+    availablePrograms.forEach(program => {
+        const option = document.createElement('option');
+        option.value = program.program_id;
+        option.textContent = program.program_name;
+        if (selectedProgramId && program.program_id == selectedProgramId) option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+function updateModulesAndCoursesUI(programId) {
+    const availablePrograms = getAvailableProgramsForStudent();
+    const program = availablePrograms.find(p => p.program_id == programId);
+    // Update modules UI (example: update a <div id="modulesGrid">)
+    const modulesGrid = document.getElementById('modulesGrid');
+    if (modulesGrid) {
+        modulesGrid.innerHTML = '';
+        if (program && program.modules.length > 0) {
+            program.modules.forEach(module => {
+                let moduleHtml = `<div class='module-card'><h5>${module.module_name}</h5>`;
+                if (module.courses.length > 0) {
+                    moduleHtml += '<ul>';
+                    module.courses.forEach(course => {
+                        moduleHtml += `<li>${course.course_name} (${course.content_count} content)</li>`;
+                    });
+                    moduleHtml += '</ul>';
+                } else {
+                    moduleHtml += '<div class="text-muted">No available courses</div>';
+                }
+                moduleHtml += '</div>';
+                modulesGrid.innerHTML += moduleHtml;
+            });
+        } else {
+            modulesGrid.innerHTML = '<div class="alert alert-info">No available modules for this program.</div>';
+        }
+    }
+}
+
+// When a package is selected, update the program select and modules/courses UI
+function onPackageSelected(packageId, programId) {
+    const availablePrograms = getAvailableProgramsForStudent();
+    updateProgramSelect(availablePrograms, programId);
+    if (programId) {
+        document.getElementById('programSelect').dispatchEvent(new Event('change'));
+        updateModulesAndCoursesUI(programId);
+    }
+}
+
+// Patch the selectPackage function to call onPackageSelected
+const origSelectPackage = window.selectPackage;
+window.selectPackage = function(packageId, programId, moduleCount, selectionMode = 'modules', courseCount = 0) {
+    origSelectPackage(packageId, programId, moduleCount, selectionMode, courseCount);
+    onPackageSelected(packageId, programId);
+};
+
+// On program select change, update modules/courses UI
+const programSelect = document.getElementById('programSelect');
+if (programSelect) {
+    programSelect.addEventListener('change', function() {
+        updateModulesAndCoursesUI(this.value);
+    });
+}
+
+// On page load, filter and update program select
+window.addEventListener('DOMContentLoaded', function() {
+    const availablePrograms = getAvailableProgramsForStudent();
+    updateProgramSelect(availablePrograms);
+    // Optionally, update modules/courses UI for the first program
+    if (availablePrograms.length > 0) {
+        updateModulesAndCoursesUI(availablePrograms[0].program_id);
+    }
+});
+
+// Optionally, update modules/courses UI to use filtered data as well
+// ... (extend as needed for your UI)
+
+// Replace the displayPrograms and loadPrograms logic for the program card carousel:
+function displayPrograms() {
+    const programs = getAvailableProgramsForStudent();
+    const grid = document.getElementById('programsGrid');
+    if (!programs || programs.length === 0) {
+        grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
+        return;
+    }
+    // Clear existing content
+    const carouselInner = document.querySelector('#programCarousel .carousel-inner');
+    carouselInner.innerHTML = '';
+    // Group programs into chunks for carousel slides (2 programs per slide)
+    const chunkSize = 2;
+    const programChunks = [];
+    for (let i = 0; i < programs.length; i += chunkSize) {
+        programChunks.push(programs.slice(i, i + chunkSize));
+    }
+    // Create carousel slides
+    programChunks.forEach((chunk, index) => {
+        const isActive = index === 0 ? 'active' : '';
+        let slideHtml = `<div class="carousel-item ${isActive}"><div class="row justify-content-center">`;
+        chunk.forEach(program => {
+            slideHtml += `
+                <div class="col-md-5 mb-4">
+                    <div class="card selection-card h-100 ${program.program_id == selectedProgramId ? 'selected' : ''}" 
+                         onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
+                        <div class="card-body">
+                            <h4 class="card-title">${program.program_name}</h4>
+                            <p class="card-text">${program.program_description || 'No description available.'}</p>
+                            <div id="modules-for-program-${program.program_id}"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        slideHtml += `</div></div>`;
+        carouselInner.innerHTML += slideHtml;
+    });
+    // Update carousel indicators if there are multiple slides
+    const indicatorsContainer = document.querySelector('#programCarousel .carousel-indicators');
+    if (programChunks.length > 1) {
+        indicatorsContainer.innerHTML = '';
+        programChunks.forEach((chunk, index) => {
+            const isActive = index === 0 ? 'active' : '';
+            indicatorsContainer.innerHTML += `
+                <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${index}" 
+                        class="${isActive}" aria-label="Slide ${index + 1}"></button>
+            `;
+        });
+        indicatorsContainer.style.display = 'block';
+        document.querySelector('#programCarousel .carousel-control-prev').style.display = 'block';
+        document.querySelector('#programCarousel .carousel-control-next').style.display = 'block';
+    } else {
+        indicatorsContainer.style.display = 'none';
+        document.querySelector('#programCarousel .carousel-control-prev').style.display = 'none';
+        document.querySelector('#programCarousel .carousel-control-next').style.display = 'none';
+    }
+}
+// Call displayPrograms on page load and after package selection
+window.addEventListener('DOMContentLoaded', displayPrograms);
+window.displayPrograms = displayPrograms;
 </script>
 
 <style>

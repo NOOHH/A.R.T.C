@@ -836,7 +836,76 @@ class StudentRegistrationController extends Controller
         $planType = $enrollmentType === 'modular' ? 'general' : 'professional'; // Full enrollment -> professional, Modular -> general
         $educationLevels = \App\Models\EducationLevel::forPlan($planType)->get();
 
-        return view('registration.Full_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan', 'educationLevels'));
+        // After fetching $programs, $packages, etc.
+        $studentEnrollments = [
+            'full' => [], // Fill with program_ids for full-plan enrollments
+            'modular' => [], // Fill with structure: [program_id => ['modules' => [module_ids], 'courses' => [module_id => [course_ids]]]]
+        ];
+        if (session('user_id')) {
+            // Full-plan enrollments
+            $studentEnrollments['full'] = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->where('enrollment_type', 'Full')
+                ->pluck('program_id')->toArray();
+            // Modular enrollments
+            $modularEnrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->where('enrollment_type', 'Modular')
+                ->get();
+            foreach ($modularEnrollments as $enrollment) {
+                $programId = $enrollment->program_id;
+                $studentEnrollments['modular'][$programId] = [
+                    'modules' => [],
+                    'courses' => []
+                ];
+                // Get modules and courses from registration or enrollment
+                $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                    ->where('program_id', $programId)
+                    ->where('enrollment_type', 'Modular')
+                    ->first();
+                if ($registration && $registration->selected_modules) {
+                    $selectedModules = json_decode($registration->selected_modules, true);
+                    foreach ($selectedModules as $module) {
+                        $moduleId = $module['id'] ?? $module['module_id'] ?? null;
+                        if ($moduleId) {
+                            $studentEnrollments['modular'][$programId]['modules'][] = $moduleId;
+                            if (isset($module['selected_courses']) && is_array($module['selected_courses'])) {
+                                $studentEnrollments['modular'][$programId]['courses'][$moduleId] = $module['selected_courses'];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Build content structure for all programs/packages
+        $contentStructure = [];
+        foreach ($programs as $program) {
+            $programData = [
+                'program_id' => $program->program_id,
+                'program_name' => $program->program_name,
+                'modules' => []
+            ];
+            $modules = \App\Models\Module::where('program_id', $program->program_id)->where('is_archived', false)->get();
+            foreach ($modules as $module) {
+                $moduleData = [
+                    'module_id' => $module->modules_id,
+                    'module_name' => $module->module_name,
+                    'courses' => []
+                ];
+                $courses = \App\Models\Course::where('module_id', $module->modules_id)->where('is_active', true)->get();
+                foreach ($courses as $course) {
+                    $contentCount = \App\Models\ContentItem::where('parent_type', 'course')->where('parent_id', $course->subject_id)->count();
+                    $moduleData['courses'][] = [
+                        'course_id' => $course->subject_id,
+                        'course_name' => $course->subject_name,
+                        'content_count' => $contentCount
+                    ];
+                }
+                $programData['modules'][] = $moduleData;
+            }
+            $contentStructure[] = $programData;
+        }
+        return view('registration.Modular_enrollment', compact('enrollmentType', 'programs', 'packages', 'student', 'formRequirements', 'fullPlan', 'modularPlan', 'educationLevels'))
+            ->with('studentEnrollments', json_encode($studentEnrollments))
+            ->with('contentStructure', json_encode($contentStructure));
     }
 
 

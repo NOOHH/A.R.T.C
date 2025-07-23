@@ -2157,3 +2157,6 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
     Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
 });
+
+// Add this route for multi-program batch fetching
+Route::get('/admin/modules/batches', [App\Http\Controllers\AdminModuleController::class, 'getBatchesForPrograms']);

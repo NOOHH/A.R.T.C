@@ -500,6 +500,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Pre-selecting program ID:', preselectProgramId);
         nonModalProgramSelect.value = preselectProgramId;
         populateModules(preselectProgramId, preselectModuleId, preselectCourseId);
+    } else {
+        // If only one program, select it
+        if (nonModalProgramSelect.options.length === 2) { // 1 placeholder + 1 real
+            nonModalProgramSelect.selectedIndex = 1;
+            populateModules(nonModalProgramSelect.value);
+        }
     }
 
     // Show/hide student submission toggle based on content type
@@ -535,14 +541,13 @@ function removeLoadingState(element) {
     element.parentElement.classList.remove('select-loading');
 }
 
+// Enhance populateModules to auto-select if only one module
 function populateModules(programId, moduleToSelect, courseToSelect) {
     nonModalModuleSelect.innerHTML = '<option value="">Loading...</option>';
     nonModalModuleSelect.disabled = true;
     nonModalCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';
     nonModalCourseSelect.disabled = true;
-    
     addLoadingState(nonModalModuleSelect);
-    
     if (programId) {
         fetch('/admin/modules/by-program?program_id=' + programId)
             .then(response => response.json())
@@ -559,6 +564,9 @@ function populateModules(programId, moduleToSelect, courseToSelect) {
                     if (moduleToSelect) {
                         nonModalModuleSelect.value = moduleToSelect;
                         populateCourses(moduleToSelect, courseToSelect);
+                    } else if (data.modules.length === 1) {
+                        nonModalModuleSelect.selectedIndex = 1;
+                        populateCourses(nonModalModuleSelect.value);
                     }
                 } else {
                     nonModalModuleSelect.innerHTML = '<option value="">No modules available</option>';
@@ -577,12 +585,11 @@ function populateModules(programId, moduleToSelect, courseToSelect) {
     }
 }
 
+// Enhance populateCourses to auto-select if only one course
 function populateCourses(moduleId, courseToSelect) {
     nonModalCourseSelect.innerHTML = '<option value="">Loading...</option>';
     nonModalCourseSelect.disabled = true;
-    
     addLoadingState(nonModalCourseSelect);
-    
     if (moduleId) {
         fetch('/admin/modules/' + moduleId + '/courses')
             .then(response => response.json())
@@ -598,6 +605,8 @@ function populateCourses(moduleId, courseToSelect) {
                     nonModalCourseSelect.disabled = false;
                     if (courseToSelect) {
                         nonModalCourseSelect.value = courseToSelect;
+                    } else if (data.courses.length === 1) {
+                        nonModalCourseSelect.selectedIndex = 1;
                     }
                 } else {
                     nonModalCourseSelect.innerHTML = '<option value="">No courses available</option>';
