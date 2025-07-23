@@ -19,24 +19,18 @@
   --bs-gutter-x: 0;
   --bs-gutter-y: 0;
 }
-
+.sidebar-reopen-btn,
 /* Sidebar Toggle Button */
 .sidebar-toggle {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--navbar-bg, #634ab6);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
-  font-size: 1.2rem;
-  margin-right: 1rem;
+  flex: 0 0 auto !important;    /* don’t grow */
+  width: auto !important;        /* let its content size it */
+  min-width: 40px;               /* keep it at least 40px wide */
+  max-width: 40px;               /* never exceed 40px */
+  padding: 0.5rem;    
 }
-
+.modern-sidebar.collapsed + .sidebar-reopen-btn {
+  display: block;
+}
 .sidebar-toggle:hover {
   background: var(--navbar-hover, #a91d3a);
   transform: scale(1.05);
@@ -44,6 +38,7 @@
 
 .sidebar-toggle:active {
   transform: scale(0.95);
+  padding: 1.5rem;
 }
 
 /* Sidebar Overlay for Mobile */
@@ -495,4 +490,25 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Floating sidebar reopen button */
+.sidebar-reopen-btn {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 2000;
+  background: #fff;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 8px 10px;
+  cursor: pointer;
+  width: auto;
+  height: auto;
+  min-width: unset;
+  min-height: unset;
+  line-height: 1;
 }

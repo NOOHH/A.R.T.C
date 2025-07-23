@@ -480,6 +480,25 @@ class StudentDashboardController extends Controller
         // Variables for the view
         $progress = $progressPercentage;
 
+        // Prepare student programs data for sidebar component
+        $studentPrograms = [];
+        if ($student) {
+            $enrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->with(['program', 'package'])
+                ->where('enrollment_status', 'approved')
+                ->get();
+            
+            foreach ($enrollments as $enrollmentData) {
+                if ($enrollmentData->program) {
+                    $studentPrograms[] = [
+                        'program_id' => $enrollmentData->program->program_id,
+                        'program_name' => $enrollmentData->program->program_name,
+                        'package_name' => $enrollmentData->package ? $enrollmentData->package->package_name : 'No Package'
+                    ];
+                }
+            }
+        }
+
         return view('student.student-courses.student-course', compact(
             'user', 
             'course', 
@@ -491,7 +510,8 @@ class StudentDashboardController extends Controller
             'showAccessModal',
             'enrollment',
             'paymentStatus',
-            'enrollmentStatus'
+            'enrollmentStatus',
+            'studentPrograms'
         ));
     }
 

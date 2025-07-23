@@ -10,42 +10,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/student/student-navbar.css') }}">
-    
-    <script>
-        // Global variables for user authentication and chat functionality
-        window.myId = @json(auth()->check() ? auth()->user()->id : null);
-        window.myName = @json(auth()->check() ? auth()->user()->name : null);
-        window.isAuthenticated = @json(auth()->check());
-        window.userRole = @json(auth()->check() ? auth()->user()->role : null);
-        // Initialize global variables
-        var myId = window.myId;
-        var myName = window.myName;
-        var isAuthenticated = window.isAuthenticated;
-        var userRole = window.userRole;
-        function fetchAndSetUserInfo() {
-            fetch('/api/user-info', { credentials: 'same-origin' })
-                .then(res => res.json())
-                .then(data => {
-                    myId = data.id;
-                    myName = data.name;
-                    isAuthenticated = data.isAuthenticated;
-                    userRole = data.role;
-                    window.myId = myId;
-                    window.myName = myName;
-                    window.isAuthenticated = isAuthenticated;
-                    window.userRole = userRole;
-                    console.log('User info fetched from API:', { myId, myName, isAuthenticated, userRole });
-                })
-                .catch(err => {
-                    console.warn('Could not fetch user info from API:', err);
-                });
-        }
-        if (!myId || !isAuthenticated) {
-            fetchAndSetUserInfo();
-        }
-        console.log('Student Course Global variables initialized:', { myId, myName, isAuthenticated, userRole });
-    </script>
     
     <style>
         /* Custom Colors and Variables */
@@ -59,7 +23,7 @@
             --light-color: #f8f9fa;
             --dark-color: #212529;
             --sidebar-width: 250px;
-
+            --navbar-height: 60px;
         }
 
         /* Global Styles */
@@ -249,6 +213,13 @@
             opacity: 0.7;
         }
 
+        /* Navbar Styles */
+        .custom-navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: var(--navbar-height);
+            padding: 0 1.5rem;
+        }
 
         .page-title h4 {
             color: var(--dark-color);
@@ -287,7 +258,6 @@
             padding: 2rem;
             overflow-y: auto;
             background-color: #f5f7fa;
-            margin-left: -250px;
         }
 
         /* Course Layout Styles */
@@ -653,15 +623,15 @@
     </style>
 </head>
 <body>
-    @include('components.student-navbar')
     <!-- Main Wrapper -->
     <div class="main-wrapper">
         <!-- Include Sidebar Component -->
- 
+        @include('components.student-sidebar')
 
         <!-- Content Wrapper -->
         <div class="content-wrapper">
             <!-- Include Navbar Component -->
+            @include('components.student-navbar', ['pageTitle' => $program->program_name ?? 'Course'])
 
             <!-- Main Content -->
             <main class="main-content">
@@ -725,8 +695,6 @@
             </main>
         </div>
     </div>
-
-
 
     <!-- Video Modal -->
     <div class="modal fade" id="videoModal" tabindex="-1">
@@ -915,19 +883,19 @@
 
             let html = '<div class="courses-grid">';
             courses.forEach(course => {
-                const icon = getContentIcon(course.type || course.course_type || 'course');
+                const icon = getContentIcon(course.type || 'course');
                 html += `
-                    <div class="course-item" onclick="selectCourse('${course.course_id}')">
+                    <div class="course-item" onclick="selectCourse('${course.id}')">
                         <div class="item-header">
                             <div class="item-icon ${icon.class}">
                                 <i class="bi ${icon.icon}"></i>
                             </div>
-                            <h5 class="item-title">${course.course_name || course.name || 'Untitled Course'}</h5>
+                            <h5 class="item-title">${course.title || course.name || 'Untitled Course'}</h5>
                         </div>
-                        ${(course.course_description || course.description) ? `<p class=\"item-description\">${course.course_description || course.description}</p>` : ''}
+                        ${course.description ? `<p class="item-description">${course.description}</p>` : ''}
                         <div class="mt-2">
-                            <span class="badge bg-primary">${course.type || course.course_type || 'Course'}</span>
-                            ${course.duration ? `<span class=\"badge bg-secondary ms-1\">${course.duration}</span>` : ''}
+                            <span class="badge bg-primary">${course.type || 'Course'}</span>
+                            ${course.duration ? `<span class="badge bg-secondary ms-1">${course.duration}</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -952,11 +920,11 @@
             showContent();
 
             // Load course content
-            loadCourseContent(currentModule, courseId);
+            loadCourseContent(courseId);
         }
 
         // Load content for a course
-        function loadCourseContent(moduleId, courseId) {
+        function loadCourseContent(courseId) {
             const viewer = document.getElementById('content-viewer');
             
             // Show loading spinner
@@ -969,7 +937,7 @@
             `;
 
             // AJAX request to load course content
-            fetch(`/student/module/${moduleId}/course/${courseId}/content-items`, {
+            fetch(`/student/course/${courseId}/content`, {
                 method: 'GET',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -985,7 +953,7 @@
             })
             .then(data => {
                 console.log('Course content loaded:', data);
-                displayCourseContent(data.content_items || data.content || []);
+                displayCourseContent(data.content || []);
             })
             .catch(error => {
                 console.error('Error loading course content:', error);
@@ -994,7 +962,7 @@
                         <i class="bi bi-exclamation-triangle text-warning"></i>
                         <h4>Error Loading Content</h4>
                         <p>Unable to load course content. Please try again later.</p>
-                        <button class="btn btn-primary" onclick="loadCourseContent('${moduleId}', '${courseId}')">Retry</button>
+                        <button class="btn btn-primary" onclick="loadCourseContent('${courseId}')">Retry</button>
                     </div>
                 `;
             });
@@ -1017,19 +985,19 @@
 
             let html = '<div class="content-grid">';
             content.forEach(item => {
-                const icon = getContentIcon(item.content_type || item.type);
+                const icon = getContentIcon(item.type);
                 html += `
-                    <div class="content-item" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
+                    <div class="content-item" onclick="openContent('${item.id}', '${item.type}')">
                         <div class="item-header">
                             <div class="item-icon ${icon.class}">
                                 <i class="bi ${icon.icon}"></i>
                             </div>
-                            <h5 class="item-title">${item.content_title || item.title || 'Untitled Content'}</h5>
+                            <h5 class="item-title">${item.title || 'Untitled Content'}</h5>
                         </div>
-                        ${(item.content_description || item.description) ? `<p class=\"item-description\">${item.content_description || item.description}</p>` : ''}
+                        ${item.description ? `<p class="item-description">${item.description}</p>` : ''}
                         <div class="mt-2">
-                            <span class="badge bg-primary">${item.content_type || item.type || 'Content'}</span>
-                            ${item.duration ? `<span class=\"badge bg-secondary ms-1\">${item.duration}</span>` : ''}
+                            <span class="badge bg-primary">${item.type || 'Content'}</span>
+                            ${item.duration ? `<span class="badge bg-secondary ms-1">${item.duration}</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -1261,8 +1229,8 @@
             document.getElementById('contentTab').classList.add('active');
             document.getElementById('coursesTab').classList.remove('active');
             
-            if (currentModule && currentCourse) {
-                loadCourseContent(currentModule, currentCourse);
+            if (currentCourse) {
+                loadCourseContent(currentCourse);
             } else {
                 document.getElementById('content-viewer').innerHTML = `
                     <div class="empty-state">
@@ -1274,10 +1242,5 @@
             }
         }
     </script>
-
-    <!-- Logout Form (hidden) -->
-    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-        @csrf
-    </form>
 </body>
 </html>

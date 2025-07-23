@@ -102,174 +102,40 @@
 <body>
 <div class="student-container">
     <!-- Top Header -->
-    <header class="main-header">
-        <div class="header-left">
-            <!-- Hamburger Menu Button - Always visible -->
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class="bi bi-list"></i>
-            </button>
-            
-            <a href="{{ route('home') }}" class="brand-link">
-                <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
-                <div class="brand-text">Ascendo Review<br>and Training Center</div>
-            </a>
-        </div>
-        
-        <!-- Search Bar in Header -->
-        <div class="header-search">
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" placeholder="Search courses or topics">
-                <button class="search-btn">🔍</button>
-            </div>
-        </div>
-        
-        <div class="header-right">
-<span class="notification-icon chat-trigger"
-      data-bs-toggle="offcanvas"     {{-- ✅ correct attribute --}}
-      data-bs-target="#chatOffcanvas"
-      aria-label="Open chat"
-      role="button">
-    <i class="bi bi-chat-dots"></i>
-</span>
-            <span class="profile-icon">👤</span>
-        </div>
-    </header>
-
+@include('components.student-navbar')
     <!-- Main Container using Bootstrap Grid -->
     <div class="container-fluid p-0">
         <div class="row g-0">
             <!-- Sidebar Overlay for Mobile -->
             <div class="sidebar-overlay" id="sidebarOverlay"></div>
             
-            <!-- Modern Sliding Sidebar -->
-            <aside class="modern-sidebar col-lg-3 col-xl-2" id="modernSidebar">
-                <!-- Sidebar Header -->
-                <div class="sidebar-header">
-                    <div class="sidebar-brand">
-                        <i class="bi bi-mortarboard"></i>
-                        <span class="brand-title">Student Portal</span>
-                    </div>
-                    <button class="sidebar-close" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
-                </div>
-                
-                <!-- Sidebar Content -->
-                <div class="sidebar-content">
-                    <nav class="sidebar-nav">
-                        {{-- Dashboard --}}
-                        <div class="nav-item">
-                            <a href="{{ route('student.dashboard') }}" class="nav-link @if(Route::currentRouteName() === 'student.dashboard') active @endif">
-                                <i class="bi bi-speedometer2"></i>
-                                <span>Dashboard</span>
-                            </a>
-                        </div>
-
-                        {{-- Calendar --}}
-                        <div class="nav-item">
-                            <a href="{{ route('student.calendar') }}" class="nav-link @if(Route::currentRouteName() === 'student.calendar') active @endif">
-                                <i class="bi bi-calendar3"></i>
-                                <span>Calendar</span>
-                            </a>
-                        </div>
-
-                        {{-- Meetings --}}
-                        <div class="nav-item">
-                            <a href="{{ route('student.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'student.meetings') active @endif">
-                                <i class="bi bi-camera-video"></i>
-                                <span>Meetings</span>
-                            </a>
-                        </div>
-
-                        {{-- My Programs --}}
-                        <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'student.course')) active show @endif">
-                            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#programsMenu">
-                                <i class="bi bi-journal-bookmark"></i>
-                                <span>My Programs</span>
-                            </a>
-                            <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'student.course')) show @endif" id="programsMenu">
-                                <div class="submenu">
-                                    @php
-                                        // Get student's enrolled programs
-                                        $studentPrograms = [];
-                                        if (session('user_id')) {
-                                            $student = App\Models\Student::where('user_id', session('user_id'))->first();
-                                            
-                                            // Get enrollments - check both by student_id and user_id for flexibility
-                                            $enrollmentsQuery = App\Models\Enrollment::with(['program', 'package']);
-                                            
-                                            if ($student && isset($student->student_id)) {
-                                                // If student record exists, search by student_id
-                                                $enrollmentsQuery->where('student_id', $student->student_id);
-                                            } else {
-                                                // If no student record, search by user_id
-                                                $enrollmentsQuery->where('user_id', session('user_id'));
-                                            }
-                                            
-                                            $enrollments = $enrollmentsQuery->get();
-                                            
-                                            foreach ($enrollments as $enrollment) {
-                                                if ($enrollment->program && !$enrollment->program->is_archived) {
-                                                    $studentPrograms[] = [
-                                                        'program_id' => $enrollment->program->program_id,
-                                                        'program_name' => $enrollment->program->program_name,
-                                                        'package_name' => $enrollment->package ? $enrollment->package->package_name : 'Standard Package',
-                                                        'plan_name' => $enrollment->enrollment_type ?? 'Standard Plan',
-                                                        'learning_mode' => $enrollment->learning_mode ?? 'Synchronous',
-                                                    ];
-                                                }
-                                            }
-                                        }
-                                    @endphp
-                                    
-                                    @forelse($studentPrograms as $program)
-                                        <a href="{{ route('student.course', ['courseId' => $program['program_id']]) }}" 
-                                           class="submenu-link @if(request()->route('courseId') == $program['program_id']) active @endif">
-                                            <i class="bi bi-book"></i>
-                                            <span class="program-info">
-                                                <div class="program-name">{{ $program['program_name'] }}</div>
-                                                <small class="program-details">{{ $program['package_name'] }}</small>
-                                            </span>
-                                        </a>
-                                    @empty
-                                        <div class="submenu-link disabled">
-                                            <i class="bi bi-info-circle"></i>
-                                            <span>No programs available. Contact administrator.</span>
-                                        </div>
-                                    @endforelse
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-                </div>
-                
-                <!-- User Profile Section -->
-                <div class="user-profile">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            {{ strtoupper(substr(optional($user)->name ?? 'S', 0, 1)) }}
-                        </div>
-                        <div class="user-details">
-                            <h6>{{ optional($user)->name ?? 'Student' }}</h6>
-                            <span>Student</span>
-                        </div>
-                    </div>
-                    
-                    <nav class="sidebar-nav">
-                        <div class="nav-item">
-                            <a href="{{ route('student.settings') }}" class="nav-link @if(Route::currentRouteName() === 'student.settings') active @endif">
-                                <i class="bi bi-gear"></i>
-                                <span>Settings</span>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="#" class="nav-link" onclick="document.getElementById('logout-form').submit();">
-                                <i class="bi bi-box-arrow-right"></i>
-                                <span>Logout</span>
-                            </a>
-                        </div>
-                    </nav>
-                </div>
-            </aside>
+            @php
+                // Prepare student programs data for sidebar
+                $studentPrograms = [];
+                if ($user && $user->id) {
+                    try {
+                        $enrollments = \App\Models\Enrollment::where('user_id', $user->id)
+                            ->with(['program', 'package'])
+                            ->where('enrollment_status', 'approved')
+                            ->get();
+                        
+                        foreach ($enrollments as $enrollmentData) {
+                            if ($enrollmentData->program) {
+                                $studentPrograms[] = [
+                                    'program_id' => $enrollmentData->program->program_id,
+                                    'program_name' => $enrollmentData->program->program_name,
+                                    'package_name' => $enrollmentData->package ? $enrollmentData->package->package_name : 'No Package'
+                                ];
+                            }
+                        }
+                    } catch (Exception $e) {
+                        // Fallback if there's an error
+                        $studentPrograms = [];
+                    }
+                }
+            @endphp
+            
+   @include('components.student-sidebar', ['studentPrograms' => $studentPrograms, 'user' => $user ?? null])
 
             <!-- Main Content using Bootstrap Grid -->
             <main class="col-lg-9 col-xl-10 main-content">
@@ -303,6 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const sidebarClose = document.getElementById('sidebarClose');
     const contentWrapper = document.querySelector('.content-wrapper');
+    const sidebarReopenBtn = document.getElementById('sidebarReopenBtn');
 
     // Bootstrap 5 compatible toggle function
     function toggleSidebar() {
@@ -347,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebarToggle.addEventListener('click', function(e) {
             console.log('🎯 Sidebar toggle clicked');
             toggleSidebar();
+            setTimeout(updateSidebarReopenBtn, 300);
         });
     } else {
         console.error('❌ Sidebar toggle button not found');
@@ -372,6 +240,15 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Sidebar overlay not found');
     }
 
+    if (sidebarReopenBtn) {
+        sidebarReopenBtn.addEventListener('click', function() {
+            if (modernSidebar) {
+                modernSidebar.classList.remove('collapsed');
+                updateSidebarReopenBtn();
+            }
+        });
+    }
+
     // Handle window resize
     window.addEventListener('resize', function() {
         if (window.innerWidth >= 992) {
@@ -382,6 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 modernSidebar.classList.remove('collapsed');
             }
         }
+        updateSidebarReopenBtn();
     });
 
     // Handle dropdown animations with Bootstrap 5 integration
@@ -434,6 +312,17 @@ document.addEventListener('DOMContentLoaded', function() {
             modernSidebar.classList.remove('active');
         }
     }
+
+    function updateSidebarReopenBtn() {
+        if (window.innerWidth >= 992 && modernSidebar && modernSidebar.classList.contains('collapsed')) {
+            sidebarReopenBtn.style.display = 'block';
+        } else {
+            sidebarReopenBtn.style.display = 'none';
+        }
+    }
+
+    // Initial state
+    updateSidebarReopenBtn();
 });
 </script>
 
