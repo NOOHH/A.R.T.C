@@ -229,7 +229,7 @@
             </div>
 
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label for="num_questions" class="form-label">Number of Questions</label>
                         <select name="num_questions" id="num_questions" class="form-select" required>
@@ -241,18 +241,7 @@
                     </div>
                 </div>
                 
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="difficulty" class="form-label">Difficulty Level</label>
-                        <select name="difficulty" id="difficulty" class="form-select" required>
-                            <option value="easy">Easy</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="hard">Hard</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label for="quiz_type" class="form-label">Question Type</label>
                         <select name="quiz_type" id="quiz_type" class="form-select" required>

@@ -103,9 +103,9 @@
         <button type="button" class="add-course-btn" id="showAddCourseModal">
             <i class="bi bi-journal-plus"></i> Add New Course
         </button>
-        <button type="button" class="batch-upload-btn" id="showBatchModal">
+        <a href="{{ route('admin.modules.course-content-upload') }}" class="batch-upload-btn">
             <i class="bi bi-upload"></i> Add Course Content
-        </button>
+        </a>
         <a href="{{ route('admin.modules.archived') }}" class="view-archived-btn">
             <i class="bi bi-archive"></i> View Archived
         </a>
@@ -1403,9 +1403,9 @@ function displayCourses(moduleId, courses) {
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm btn-outline-light" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')">
+                        <a href="{{ route('admin.modules.course-content-upload') }}?module_id=${moduleId}&course_id=${course.subject_id}" class="btn btn-sm btn-outline-light">
                             <i class="bi bi-plus"></i> Add Content
-                        </button>
+                        </a>
                         <button class="btn btn-sm btn-outline-light" onclick="editCourse(${course.subject_id})">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -1445,9 +1445,9 @@ function loadCourseContent(moduleId, courseId) {
                 container.innerHTML = `
                     <div class="text-center p-3">
                         <p class="text-muted">No content items found.</p>
-                        <button class="btn btn-sm btn-primary" onclick="showAddContentModal(${moduleId}, ${courseId})">
+                        <a href="{{ route('admin.modules.course-content-upload') }}?module_id=${moduleId}&course_id=${courseId}" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus-circle"></i> Add Content
-                        </button>
+                        </a>
                     </div>
                 `;
             }
@@ -1466,9 +1466,9 @@ function displayCourseContent(moduleId, courseId, contentItems) {
         container.innerHTML = `
             <div class="text-center p-3">
                 <p class="text-muted">No content items found.</p>
-                <button class="btn btn-sm btn-primary" onclick="showAddContentModal(${moduleId}, ${courseId})">
+                <a href="{{ route('admin.modules.course-content-upload') }}?module_id=${moduleId}&course_id=${courseId}" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus-circle"></i> Add Content
-                </button>
+                </a>
             </div>
         `;
         return;
@@ -1596,54 +1596,7 @@ function showAddCourseModal(moduleId, moduleName = '') {
     }
 }
 
-function showAddContentModal(moduleId, courseId, courseName = '') {
-    const modal = document.getElementById('batchModalBg');
-    const form = document.getElementById('courseContentForm');
-    
-    if (modal && form) {
-        // Pre-fill the selections if provided
-        if (moduleId && courseId) {
-            // Get program info and pre-fill the form
-            fetch(`/admin/modules/by-program?module_id=${moduleId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.program_id) {
-                        const programSelect = document.getElementById('contentProgramSelect');
-                        const moduleSelect = document.getElementById('contentModuleSelect');
-                        const courseSelect = document.getElementById('contentCourseSelect');
-                        
-                        if (programSelect) {
-                            programSelect.value = data.program_id;
-                            // Load modules for this program
-                            loadModulesForProgram(data.program_id, 'contentModuleSelect');
-                            
-                            // Set the module and then load courses
-                            setTimeout(() => {
-                                if (moduleSelect) {
-                                    moduleSelect.value = moduleId;
-                                    loadCoursesForModule(moduleId, 'contentCourseSelect');
-                                    
-                                    // Set the course after loading
-                                    setTimeout(() => {
-                                        if (courseSelect) {
-                                            courseSelect.value = courseId;
-                                        }
-                                    }, 500);
-                                }
-                            }, 500);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading module info:', error);
-                });
-        }
-        
-        modal.classList.add('show');
-    } else {
-        console.error('Add content modal or form not found');
-    }
-}
+
 
 function editModule(moduleId) {
     // Implementation for editing module
@@ -2356,29 +2309,9 @@ function setupModalEventListeners() {
         });
     }
 
-    // Batch Modal
-    const showBatchModal = document.getElementById('showBatchModal');
-    const batchModalBg = document.getElementById('batchModalBg');
-    const closeBatchModal = document.getElementById('closeBatchModal');
-    const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
 
-    if (showBatchModal) {
-        showBatchModal.addEventListener('click', function() {
-            batchModalBg.classList.add('show');
-        });
-    }
 
-    if (closeBatchModal) {
-        closeBatchModal.addEventListener('click', function() {
-            batchModalBg.classList.remove('show');
-        });
-    }
 
-    if (closeBatchModalBtn) {
-        closeBatchModalBtn.addEventListener('click', function() {
-            batchModalBg.classList.remove('show');
-        });
-    }
 
     // Edit Content Modal
     const editContentModalBg = document.getElementById('editContentModalBg');
@@ -3168,123 +3101,8 @@ function showModuleCourses(moduleId, moduleName) {
     </div>
 </div>
 
-<!-- Add Course Content Modal -->
-<div class="modal-bg" id="batchModalBg">
-    <div class="modal">
-        <div class="modal-header">
-            <h3><i class="bi bi-upload"></i> Add Course Content</h3>
-            <button type="button" class="modal-close" id="closeBatchModal">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-        <form action="{{ route('admin.modules.course-content-store') }}" method="POST" enctype="multipart/form-data" id="courseContentForm">
-            <div class="modal-body">
-                @csrf
-                
-                <div class="form-group">
-                    <label for="contentProgramSelect">Program <span class="text-danger">*</span></label>
-                    <select id="contentProgramSelect" name="program_id" class="form-select" required>
-                        <option value="">-- Select Program --</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
 
-                <div class="form-group">
-                    <label for="contentModuleSelect">Module <span class="text-danger">*</span></label>
-                    <select id="contentModuleSelect" name="module_id" class="form-select" required disabled>
-                        <option value="">-- Select Module --</option>
-                    </select>
-                </div>
 
-                <div class="form-group">
-                    <label for="contentCourseSelect">Course <span class="text-danger">*</span></label>
-                    <select id="contentCourseSelect" name="course_id" class="form-select" required disabled>
-                        <option value="">-- Select Course --</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="contentTypeSelect">Content Type <span class="text-danger">*</span></label>
-                    <select id="contentTypeSelect" name="content_type" class="form-select" required>
-                        <option value="">-- Select Content Type --</option>
-                        <option value="lesson">Lesson</option>
-                        <option value="assignment">Assignment</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="contentTitle">Content Title <span class="text-danger">*</span></label>
-                    <input type="text" id="contentTitle" name="content_title" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="contentDescription">Content Description</label>
-                    <textarea id="contentDescription" name="content_description" class="form-control" rows="4"></textarea>
-                </div>
-
-                <!-- Dynamic content fields will be added here -->
-                <div id="dynamicContentFields"></div>
-
-                <!-- Submission Settings -->
-                <div class="form-group">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="enable_submission" name="enable_submission" value="1">
-                        <label class="form-check-label" for="enable_submission">
-                            <i class="bi bi-upload"></i> Enable Student Submissions
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="row" id="submission_options" style="display: none;">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="allowed_file_types">Allowed File Types</label>
-                            <select id="allowed_file_types" name="allowed_file_types" class="form-select">
-                                <option value="">All file types</option>
-                                <option value="image">Images (jpg, png, gif)</option>
-                                <option value="document">Documents (pdf, doc, docx)</option>
-                                <option value="pdf">PDF only</option>
-                                <option value="image,document">Images & Documents</option>
-                                <option value="custom">Custom (specify below)</option>
-                            </select>
-                            <input type="text" id="custom_file_types" name="custom_file_types" class="form-control mt-2" 
-                                   placeholder="e.g., pdf,docx,jpg,png" style="display: none;">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="max_file_size">Max File Size (MB)</label>
-                            <input type="number" id="max_file_size" name="max_file_size" class="form-control" 
-                                   min="1" max="100" value="10">
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="form-group">
-                            <label for="submission_instructions">Submission Instructions</label>
-                            <textarea id="submission_instructions" name="submission_instructions" 
-                                    class="form-control" rows="2" 
-                                    placeholder="Instructions for students on what to submit..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="contentAttachment">Attachment</label>
-                    <input type="file" id="contentAttachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
-                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
-                </div>
-
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="closeBatchModalBtn">Cancel</button>
-                <button type="submit" class="add-btn" id="submitContentBtn">Add Content</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <!-- Archive Confirmation Modal -->
 <div class="modal-bg confirmation-modal" id="archiveConfirmationModal">

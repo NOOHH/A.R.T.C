@@ -70,8 +70,7 @@
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        $isAdmin = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin')
-                 || (session('user_type') === 'admin');
+        $isAdmin = (session('user_type') === 'admin') || (session('user_role') === 'admin');
     @endphp
     
     <!-- Bootstrap & Icons -->
@@ -264,25 +263,21 @@
                                         <i class="bi bi-file-earmark-check"></i>
                                         <span>Assignment Submissions</span>
                                     </a>
-                                    @if($isAdmin)
                                     <a href="{{ route('admin.packages.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.packages.index') active @endif">
                                         <i class="bi bi-box-seam"></i>
                                         <span>Packages</span>
                                     </a>
-                                    @endif
                                 </div>
                             </div>
                         </div>
 
                         <!-- Analytics -->
-                        @if($isAdmin || session('user_type') === 'director')
                         <div class="nav-item">
                             <a href="{{ route('admin.analytics.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
                                 <i class="bi bi-graph-up"></i>
                                 <span>Analytics</span>
                             </a>
                         </div>
-                        @endif
                         
                         <!-- Chat Management -->
                         <div class="nav-item">
@@ -301,14 +296,12 @@
                         </div>
 
                         <!-- Settings -->
-                        @if($isAdmin)
                         <div class="nav-item">
                             <a href="{{ route('admin.settings.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.settings.index') active @endif">
                                 <i class="bi bi-gear"></i>
                                 <span>Settings</span>
                             </a>
                         </div>
-                        @endif
                     </nav>
 
                     <!-- Sidebar Footer (Bottom Section) -->

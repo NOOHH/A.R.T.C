@@ -937,7 +937,6 @@ class AdminModuleController extends Controller
             'document' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240',
             'quiz_title' => 'required|string|max:255',
             'num_questions' => 'required|integer|min:1|max:50',
-            'difficulty' => 'required|in:easy,medium,hard',
             'quiz_type' => 'required|in:multiple_choice,true_false,mixed',
             'time_limit' => 'required|integer|min:10|max:180',
         ]);
@@ -954,7 +953,7 @@ class AdminModuleController extends Controller
             $quiz->program_id = $request->program_id;
             $quiz->quiz_title = $request->quiz_title;
             $quiz->instructions = $request->quiz_description ?? 'AI Generated Quiz from ' . $file->getClientOriginalName();
-            $quiz->difficulty = $request->difficulty;
+            $quiz->difficulty = 'medium'; // Default difficulty
             $quiz->total_questions = $request->num_questions;
             $quiz->time_limit = $request->time_limit;
             $quiz->document_path = $documentPath;
