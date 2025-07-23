@@ -318,26 +318,6 @@
                     </div>
                 </div>
             </aside>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 <div class="content-wrapper">
                     @yield('content')
                 </div>
@@ -371,18 +351,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleSidebar() {
         if (window.innerWidth >= 768) {
             // Desktop: Toggle collapsed state
-            modernSidebar.classList.toggle('collapsed');
+            modernSidebar.classList.toggle('collapsed');    
             
-            // Update content wrapper margin
-            if (modernSidebar.classList.contains('collapsed')) {
-                if (contentWrapper) {
-                    contentWrapper.style.marginLeft = '70px';
-                }
-            } else {
-                if (contentWrapper) {
-                    contentWrapper.style.marginLeft = '280px';
-                }
-            }
+    if (modernSidebar.classList.contains('collapsed')) {
+        contentWrapper.style.marginLeft = '50px';
+    } else {
+        contentWrapper.style.marginLeft = '50px';
+    }
         } else {
             // Mobile: Toggle sidebar visibility
             if (modernSidebar) {
@@ -419,27 +394,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle window resize
     window.addEventListener('resize', function() {
-        if (window.innerWidth >= 768) {
-            closeSidebar();
-            // Reset content wrapper margin on resize
-            if (modernSidebar && modernSidebar.classList.contains('collapsed')) {
-                if (contentWrapper) {
-                    contentWrapper.style.marginLeft = '70px';
-                }
-            } else {
-                if (contentWrapper) {
-                    contentWrapper.style.marginLeft = '280px';
-                }
-            }
-        } else {
-            // Remove collapsed class on mobile
-            if (modernSidebar) {
-                modernSidebar.classList.remove('collapsed');
-            }
-            if (contentWrapper) {
-                contentWrapper.style.marginLeft = '0';
-            }
-        }
+           if (window.innerWidth >= 768 && contentWrapper) {
+        contentWrapper.style.marginLeft = modernSidebar.classList.contains('collapsed')
+            ? '70px'
+            : '50px';
+    }
     });
 
     // Sidebar dropdowns now use Bootstrap's native collapse behavior; no custom toggle logic needed
@@ -475,9 +434,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Initialize proper margins on page load
-    if (window.innerWidth >= 768) {
+    if (window.innerWidth >= 168) {
         if (contentWrapper) {
-            contentWrapper.style.marginLeft = '280px';
+            contentWrapper.style.marginLeft = '50px';
         }
     }
 });
