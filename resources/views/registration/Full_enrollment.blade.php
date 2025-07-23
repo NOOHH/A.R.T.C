@@ -96,7 +96,7 @@
             window.location.href = "{{ route('login') }}";
             return;
         } else {
-            // Continue to step 2 (packages)
+            // Continue to step 2 (packages) - transition from step-content-1 to step-content-2
             console.log('Continuing to package selection');
             animateStepTransition('step-content-1', 'step-content-2');
             currentStep = 2;
@@ -259,7 +259,7 @@
 
         if (currentStep === 1) {
             if (isUserLoggedIn) {
-                // For logged-in users, step 1 is package selection
+                // For logged-in users, step 1 is package selection (step-content-2)
                 const packageInput = document.querySelector('input[name="package_id"]');
                 const sessionPackageId = sessionStorage.getItem('selectedPackageId');
                 console.log('Checking package selection:', {
@@ -278,7 +278,7 @@
                 }
                 
                 console.log('Logged-in user: transitioning from step 1 (packages) to step 2 (learning mode)');
-                animateStepTransition('step-content-1','step-content-2');
+                animateStepTransition('step-content-2','step-content-3');
                 currentStep = 2;
                 updateStepper(currentStep);
             } else {
@@ -288,7 +288,7 @@
             }
         } else if (currentStep === 2) {
             if (isUserLoggedIn) {
-                // For logged-in users, step 2 is learning mode selection
+                // For logged-in users, step 2 is learning mode selection (step-content-3)
                 const learningModeValue = document.getElementById('learning_mode')?.value;
                 console.log('Learning mode value:', learningModeValue);
                 
@@ -298,7 +298,7 @@
                 }
                 
                 console.log('Logged-in user: transitioning from step 2 (learning mode) to step 3 (form)');
-                animateStepTransition('step-content-2', 'step-content-3');
+                animateStepTransition('step-content-3', 'step-content-4');
                 currentStep = 3;
                 updateStepper(currentStep);
                 setTimeout(() => {
@@ -2493,20 +2493,23 @@
         });
         
         if (isUserLoggedIn) {
-            // For logged-in users: start with step 1 (packages)
-            console.log('Logged-in user: Showing package selection (step-content-1)');
-            const packageStep = document.getElementById('step-content-1');
+            // For logged-in users: show package selection (step-content-2)
+            console.log('Logged-in user: Showing package selection (step-content-2)');
+            const packageStep = document.getElementById('step-content-2');
             if (packageStep) {
                 packageStep.classList.add('active');
                 console.log('Package selection step activated');
             }
             
             // Hide account check step for logged-in users
-            const accountCheckStep = document.getElementById('step-content-0'); // If it exists
+            const accountCheckStep = document.getElementById('step-content-1');
             if (accountCheckStep) {
                 accountCheckStep.style.display = 'none';
                 console.log('Account check step hidden for logged-in user');
             }
+            
+            // Set current step to 1 since for logged-in users, package selection is their first step
+            currentStep = 1;
             
             // Prefill user data if form fields are already available
             setTimeout(() => {

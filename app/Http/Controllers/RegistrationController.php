@@ -772,26 +772,37 @@ class RegistrationController extends Controller
     public function userPrefill(Request $request)
     {
         try {
+            // Check both Laravel session and PHP native session for user_id
+            $laravelUserId = session('user_id');
+            $phpSessionUserId = SessionManager::get('user_id');
+            $isLaravelLoggedIn = !empty($laravelUserId);
+            $isPhpSessionLoggedIn = SessionManager::isLoggedIn();
+            
             Log::info('UserPrefill called', [
-                'session_data' => session()->all(),
+                'laravel_session_data' => session()->all(),
                 'session_id' => session()->getId(),
-                'session_manager_logged_in' => SessionManager::isLoggedIn(),
-                'session_user_id' => SessionManager::get('user_id')
+                'laravel_user_id' => $laravelUserId,
+                'php_session_user_id' => $phpSessionUserId,
+                'laravel_logged_in' => $isLaravelLoggedIn,
+                'php_session_logged_in' => $isPhpSessionLoggedIn
             ]);
             
-            if (!SessionManager::isLoggedIn()) {
+            if (!$isLaravelLoggedIn && !$isPhpSessionLoggedIn) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Not logged in',
                     'data' => [],
                     'debug' => [
                         'session_id' => session()->getId(),
-                        'session_data' => session()->all()
+                        'laravel_session_data' => session()->all(),
+                        'laravel_user_id' => $laravelUserId,
+                        'php_session_user_id' => $phpSessionUserId
                     ]
                 ], 200); // Return 200 instead of 401 to prevent JS errors
             }
 
-            $userId = SessionManager::get('user_id');
+            // Use Laravel session first, fallback to PHP session
+            $userId = $laravelUserId ?: $phpSessionUserId;
             $user = User::findOrFail($userId);
 
             // NOTE: your User model fields are user_firstname / user_lastname, not firstname
