@@ -2219,6 +2219,40 @@ function copyStepperDataToFinalForm() {
         setOrCreateHidden(form, 'password', password);
         setOrCreateHidden(form, 'password_confirmation', passwordConfirmation);
         setOrCreateHidden(form, 'referral_code', referralCode);
+        
+        // Also populate the dynamic form fields if they exist
+        const firstnameField = form.querySelector('input[name="firstname"]');
+        if (firstnameField) {
+            firstnameField.value = userFirstname;
+            console.log('✅ Populated firstname field with:', userFirstname);
+        } else {
+            console.log('⚠️ No firstname field found in form');
+        }
+        
+        const lastnameField = form.querySelector('input[name="lastname"]');
+        if (lastnameField) {
+            lastnameField.value = userLastname;
+            console.log('✅ Populated lastname field with:', userLastname);
+        } else {
+            console.log('⚠️ No lastname field found in form');
+        }
+        
+        // Also try alternate field names (first_name, last_name)
+        const firstNameField = form.querySelector('input[name="first_name"]');
+        if (firstNameField) {
+            firstNameField.value = userFirstname;
+            console.log('✅ Populated first_name field with:', userFirstname);
+        }
+        
+        const lastNameField = form.querySelector('input[name="last_name"]');
+        if (lastNameField) {
+            lastNameField.value = userLastname;
+            console.log('✅ Populated last_name field with:', userLastname);
+        }
+        
+        // Debug: Show all available name-related fields in the form
+        const allNameFields = form.querySelectorAll('input[name*="name"], input[name*="Name"]');
+        console.log('🔍 All name-related fields found in form:', Array.from(allNameFields).map(f => f.name));
     }
     
     // Set or create hidden fields for stepper selections - CRITICAL: These must have valid database IDs
@@ -2258,19 +2292,39 @@ function setOrCreateHidden(form, name, value) {
 // Hook into step navigation and form submission
 function nextStep() {
     if (currentStep < totalSteps) {
-        // Copy data when leaving step 5 (account registration)
-        if (currentStep === 5) {
+        // Copy data when leaving account registration step
+        if (!isUserLoggedIn && currentStep === 6) {
+            // For non-logged-in users: step 6 is account registration
+            copyStepperDataToFinalForm();
+        } else if (isUserLoggedIn && currentStep === 5) {
+            // For logged-in users: copy data when leaving step 5 (learning mode)
             copyStepperDataToFinalForm();
         }
         
-        currentStep++;
+        // Handle step transitions based on new structure
+        if (currentStep === 1) {
+            // This should not be reached since step 1 uses selectAccountOption
+            console.log('Step 1 should use selectAccountOption');
+            return;
+        } else if (isUserLoggedIn && currentStep === 5) {
+            // Skip from step 5 (learning mode) directly to step 6 (form) for logged-in users
+            currentStep = 6;
+        } else if (!isUserLoggedIn && currentStep === 6) {
+            // For non-logged-in users, go from step 6 (account) to step 7 (form)
+            currentStep = 7;
+            copyStepperDataToFinalForm(); // Copy account data to final form
+        } else {
+            // Normal progression
+            currentStep++;
+        }
+        
+        // Copy data when moving to final step
+        if ((isUserLoggedIn && currentStep === 6) || (!isUserLoggedIn && currentStep === 7)) {
+            copyStepperDataToFinalForm();
+        }
+        
         updateStepper();
         loadStepContent();
-        
-        // If moving to final step, copy all data again
-        if (currentStep === 6) {
-            copyStepperDataToFinalForm();
-        }
     }
 }
 
@@ -3255,5 +3309,91 @@ document.addEventListener('DOMContentLoaded', autofillProgramInForm);
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
+
+// Data persistence functions to maintain data when navigating between steps
+function saveFormData() {
+    if (!isUserLoggedIn) {
+        const formData = {
+            user_firstname: document.getElementById('user_firstname')?.value || '',
+            user_lastname: document.getElementById('user_lastname')?.value || '',
+            user_email: document.getElementById('user_email')?.value || '',
+            password: document.getElementById('password')?.value || '',
+            password_confirmation: document.getElementById('password_confirmation')?.value || '',
+            referral_code: document.getElementById('referral_code')?.value || ''
+        };
+        
+        // Save to sessionStorage
+        sessionStorage.setItem('enrollmentFormData', JSON.stringify(formData));
+        console.log('📱 Saved form data to session:', formData);
+    }
+}
+
+function restoreFormData() {
+    if (!isUserLoggedIn) {
+        const savedData = sessionStorage.getItem('enrollmentFormData');
+        if (savedData) {
+            try {
+                const formData = JSON.parse(savedData);
+                
+                // Restore account step fields
+                const firstnameField = document.getElementById('user_firstname');
+                const lastnameField = document.getElementById('user_lastname');
+                const emailField = document.getElementById('user_email');
+                const passwordField = document.getElementById('password');
+                const passwordConfirmField = document.getElementById('password_confirmation');
+                const referralField = document.getElementById('referral_code');
+                
+                if (firstnameField && formData.user_firstname) firstnameField.value = formData.user_firstname;
+                if (lastnameField && formData.user_lastname) lastnameField.value = formData.user_lastname;
+                if (emailField && formData.user_email) emailField.value = formData.user_email;
+                if (passwordField && formData.password) passwordField.value = formData.password;
+                if (passwordConfirmField && formData.password_confirmation) passwordConfirmField.value = formData.password_confirmation;
+                if (referralField && formData.referral_code) referralField.value = formData.referral_code;
+                
+                console.log('📱 Restored form data from session:', formData);
+                
+                // Re-validate the step
+                if (typeof validateStep6 === 'function') {
+                    validateStep6();
+                }
+            } catch (e) {
+                console.error('Error restoring form data:', e);
+            }
+        }
+    }
+}
+
+// Add event listeners to save data when fields change
+document.addEventListener('DOMContentLoaded', function() {
+    if (!isUserLoggedIn) {
+        // Restore data when page loads
+        restoreFormData();
+        
+        // Save data when fields change
+        const fieldsToWatch = ['user_firstname', 'user_lastname', 'user_email', 'password', 'password_confirmation', 'referral_code'];
+        fieldsToWatch.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', saveFormData);
+                field.addEventListener('change', saveFormData);
+            }
+        });
+    }
+});
+
+// Override the nextStep function to save data before navigation
+const originalNextStep = nextStep;
+nextStep = function() {
+    saveFormData(); // Save current form data
+    return originalNextStep.apply(this, arguments);
+};
+
+// Override the prevStep function to restore data after navigation
+const originalPrevStep = prevStep;
+prevStep = function() {
+    const result = originalPrevStep.apply(this, arguments);
+    setTimeout(restoreFormData, 100); // Restore data after step change
+    return result;
+};
 </style>
 @endpush

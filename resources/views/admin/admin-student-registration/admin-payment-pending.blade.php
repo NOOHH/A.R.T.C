@@ -1007,7 +1007,5 @@ function rejectPaymentSubmission(paymentId) {
     loadPaymentFieldsForRejection(paymentId);
     new bootstrap.Modal(document.getElementById('rejectPaymentModal')).show();
 }
-    showViewDetailsModal(enrollmentId);
-}
 </script>
 @endsection
