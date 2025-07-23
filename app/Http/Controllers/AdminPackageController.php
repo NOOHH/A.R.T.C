@@ -79,6 +79,9 @@ class AdminPackageController extends Controller
         $package->module_count = $request->module_count;
         $package->price = $request->amount; // For compatibility
         $package->created_by_admin_id = Auth::user()->admin_id ?? 1;
+        $package->access_period_days = $request->access_period_days;
+        $package->access_period_months = $request->access_period_months;
+        $package->access_period_years = $request->access_period_years;
         $package->save();
 
         // Attach selected modules if any
@@ -122,6 +125,9 @@ class AdminPackageController extends Controller
         $package->program_id = $request->program_id;
         $package->module_count = $request->module_count;
         $package->price = $request->amount; // For compatibility
+        $package->access_period_days = $request->access_period_days;
+        $package->access_period_months = $request->access_period_months;
+        $package->access_period_years = $request->access_period_years;
         $package->save();
 
         // Sync selected modules
