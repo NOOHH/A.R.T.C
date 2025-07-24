@@ -941,58 +941,49 @@ class StudentDashboardController extends Controller
     {
         try {
             $request->validate([
-                'assignment_file' => 'required|file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:10240',
+                'files' => 'required',
+                'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
                 'module_id' => 'required|integer',
                 'comments' => 'nullable|string'
             ]);
-            
+
             $student = Student::where('user_id', session('user_id'))->first();
-            
             if (!$student) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Student not found.'
-                ]);
+                return response()->json(['success' => false, 'message' => 'Student not found.']);
             }
-            
+
             $moduleId = $request->input('module_id');
             $module = Module::find($moduleId);
-            
             if (!$module) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Module not found.'
-                ]);
+                return response()->json(['success' => false, 'message' => 'Module not found.']);
             }
-            
-            // Store the uploaded file
-            $file = $request->file('assignment_file');
-            $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('assignments', $fileName, 'public');
-            
-            // Create assignment submission record
+
+            $fileInfos = [];
+            foreach ($request->file('files') as $file) {
+                $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('assignments', $fileName, 'public');
+                $fileInfos[] = [
+                    'path' => $filePath,
+                    'type' => $file->getMimeType(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                ];
+            }
+
             \App\Models\AssignmentSubmission::create([
                 'student_id' => $student->student_id,
                 'module_id' => $moduleId,
-                'file_path' => $filePath,
-                'original_filename' => $file->getClientOriginalName(),
+                'program_id' => $module->program_id,
+                'files' => $fileInfos,
                 'comments' => $request->comments,
                 'submitted_at' => now(),
                 'status' => 'submitted'
             ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Assignment submitted successfully!'
-            ]);
-            
+
+            return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
-            Log::error('Assignment submission error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while submitting the assignment.'
-            ]);
+            \Log::error('Assignment submission error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'An error occurred while submitting the assignment.']);
         }
     }
     
