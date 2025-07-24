@@ -44,8 +44,13 @@ class ProfessorDashboardController extends Controller
         
         // Check if AI Quiz feature is enabled
         $aiQuizEnabled = AdminSetting::where('setting_key', 'ai_quiz_enabled')->value('setting_value') == 'true';
+
+        // Placeholder for upcoming meetings (set to 0 for now)
+        $upcomingMeetings = 0;
+        // Placeholder for pending assignments (set to 0 for now)
+        $pendingAssignments = 0;
         
-        return view('professor.dashboard', compact('professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules', 'aiQuizEnabled'));
+        return view('professor.dashboard', compact('professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules', 'aiQuizEnabled', 'upcomingMeetings', 'pendingAssignments'));
     }
 
     public function programs()

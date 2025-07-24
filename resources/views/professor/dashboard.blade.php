@@ -3,6 +3,73 @@
 @section('title', 'Dashboard')
 
 @section('content')
+<style>
+/* 0) Reset & full viewport */
+html, body, .admin-container, .main-wrapper {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 1) Fixed header */
+.main-header {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  z-index: 1000;
+  height: 56px; /* match your header height */
+}
+
+/* 2) Sidebar under header */
+.main-sidebar {
+  position: fixed;
+  top: 56px;      /* header height */
+  bottom: 0;
+  width: 250px;   /* default expanded width */
+  overflow-y: auto;
+  background: #343a40;
+  z-index: 999;
+  transition: width .3s ease;
+}
+
+/* 3) Main content flex container */
+.content-below-search {
+  display: flex;
+  height: calc(100% - 56px); /* fill below header */
+  margin-top: 56px;
+  margin-bottom: 5px;
+}
+
+/* 4) Scrollable page-content */
+.page-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* we'll scroll the inner wrapper */
+}
+
+/* 5) YOUR real scrolling area */
+.content-wrapper {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem;      /* your container-fluid padding */
+  background: #fff;
+}
+
+/* 6) Collapse sidebar toggling */
+body.sidebar-collapse .main-sidebar {
+  width: 60px !important;
+}
+body.sidebar-collapse .main-header {
+  left: 60px;
+  width: calc(100% - 60px);
+}
+body.sidebar-collapse .content-below-search {
+  margin-left: 60px;
+}
+
+</style>
 <div class="container-fluid">
     <!-- Stats Cards -->
     <div class="row mb-4">

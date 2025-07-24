@@ -1480,9 +1480,9 @@ Route::post('/professor/logout', [UnifiedLoginController::class, 'logout'])
 |--------------------------------------------------------------------------
 */
 Route::middleware(['professor.auth'])
-     ->prefix('professor')
-     ->name('professor.')
-     ->group(function () {
+    ->prefix('professor')
+    ->name('professor.')
+    ->group(function () {
 
     Route::get('/dashboard', [ProfessorDashboardController::class, 'index'])
          ->name('dashboard');

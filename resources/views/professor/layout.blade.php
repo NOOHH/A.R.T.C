@@ -98,8 +98,32 @@
         transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     </style>
+    <style>
+        /* Flex container for sidebar and main content */
+        .content-below-search {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+        /* Main content area fills height below header */
+        .page-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-height: 0;
+            height: calc(100vh - 68px);
+        }
+        /* Inner wrapper for page content padding and scrolling */
+        .content-wrapper {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            min-height: 0;
+        }
+    </style>
 </head>
-<body>
+<body style="overflow-x: hidden;">
 <div class="admin-container">
     <!-- Top Header -->
     <header class="main-header">
@@ -175,151 +199,108 @@
         <!-- Mobile Profile Icon -->
         <div class="profile-icon">👤</div>
     </header>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="main-wrapper">
-            <div class="content-below-search">
-                <!-- Sidebar Overlay -->
-                <div class="sidebar-overlay" id="sidebarOverlay"></div>
-                
-                <!-- Modern Sliding Sidebar -->
-                <aside class="modern-sidebar" id="modernSidebar">
-                    <div class="sidebar-content">
-                        <nav class="sidebar-nav">
-                            <!-- Dashboard -->
-                            <div class="nav-item">
-                                <a href="{{ route('professor.dashboard') }}" class="nav-link @if(Route::currentRouteName() === 'professor.dashboard') active @endif">
-                                    <i class="bi bi-speedometer2"></i>
-                                    <span>Dashboard</span>
-                                </a>
-                            </div>
-
-                            <!-- Meetings -->
-                            <div class="nav-item">
-                                <a href="{{ route('professor.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.meetings') active @endif">
-                                    <i class="bi bi-calendar-event"></i>
-                                    <span>Meetings</span>
-                                </a>
-                            </div>
-
-                            <!-- Students -->
-                            <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.students')) active @endif">
-                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#studentsMenu">
-                                    <i class="bi bi-people"></i>
-                                    <span>Students</span>
-                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                                </a>
-                                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.students')) show @endif" id="studentsMenu">
-                                    <div class="submenu">
-                                        <a href="{{ route('professor.students.index') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.students.index') active @endif">
-                                            <i class="bi bi-person-lines-fill"></i>
-                                            <span>All Students</span>
-                                        </a>
-                                        <a href="{{ route('professor.students.batches') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.students.batches') active @endif">
-                                            <i class="bi bi-collection"></i>
-                                            <span>My Batches</span>
-                                        </a>
-                                    </div>
+    <div class="main-wrapper">
+        <div class="content-below-search">
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <!-- Sidebar -->
+            <aside class="modern-sidebar" id="modernSidebar">
+                <div class="sidebar-content">
+                    <nav class="sidebar-nav">
+                        <!-- Dashboard -->
+                        <div class="nav-item">
+                            <a href="{{ route('professor.dashboard') }}" class="nav-link @if(Route::currentRouteName() === 'professor.dashboard') active @endif">
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </div>
+                        <!-- Meetings -->
+                        <div class="nav-item">
+                            <a href="{{ route('professor.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.meetings') active @endif">
+                                <i class="bi bi-calendar-event"></i>
+                                <span>Meetings</span>
+                            </a>
+                        </div>
+                        <!-- Students Dropdown -->
+                        <div class="nav-item">
+                            <a class="nav-link dropdown-toggle" href="#studentsMenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="studentsMenu">
+                                <i class="bi bi-people"></i>
+                                <span>Students</span>
+                                <i class="bi bi-chevron-down dropdown-arrow"></i>
+                            </a>
+                            <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.students')) show @endif" id="studentsMenu">
+                                <div class="submenu">
+                                    <a href="{{ route('professor.students.index') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.students.index') active @endif">
+                                        <i class="bi bi-person-lines-fill"></i>
+                                        <span>All Students</span>
+                                    </a>
+                                    <a href="{{ route('professor.students.batches') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.students.batches') active @endif">
+                                        <i class="bi bi-collection"></i>
+                                        <span>My Batches</span>
+                                    </a>
                                 </div>
                             </div>
-
-                            <!-- Programs -->
-                            <div class="nav-item">
-                                <a href="{{ route('professor.programs') }}" class="nav-link @if(Route::currentRouteName() === 'professor.programs') active @endif">
-                                    <i class="bi bi-book"></i>
-                                    <span>My Programs</span>
-                                </a>
-                            </div>
-
-                            <!-- Assignments -->
-                            <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.assignments')) active @endif">
-                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#assignmentsMenu">
-                                    <i class="bi bi-clipboard-check"></i>
-                                    <span>Assignments</span>
-                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                                </a>
-                                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.assignments')) show @endif" id="assignmentsMenu">
-                                    <div class="submenu">
-                                        <a href="{{ route('professor.grading') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.index') active @endif">
-                                            <i class="bi bi-list-task"></i>
-                                            <span>View All</span>
-                                        </a>
-                                        <a href="{{ route('professor.assignments.create') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.create') active @endif">
-                                            <i class="bi bi-plus-circle"></i>
-                                            <span>Create New</span>
-                                        </a>
-                                    </div>
+                        </div>
+                        <!-- Programs -->
+                        <div class="nav-item">
+                            <a href="{{ route('professor.programs') }}" class="nav-link @if(Route::currentRouteName() === 'professor.programs') active @endif">
+                                <i class="bi bi-book"></i>
+                                <span>My Programs</span>
+                            </a>
+                        </div>
+                        <!-- Assignments Dropdown -->
+                        <div class="nav-item">
+                            <a class="nav-link dropdown-toggle" href="#assignmentsMenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="assignmentsMenu">
+                                <i class="bi bi-clipboard-check"></i>
+                                <span>Assignments</span>
+                                <i class="bi bi-chevron-down dropdown-arrow"></i>
+                            </a>
+                            <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.assignments')) show @endif" id="assignmentsMenu">
+                                <div class="submenu">
+                                    <a href="{{ route('professor.grading') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.index') active @endif">
+                                        <i class="bi bi-list-task"></i>
+                                        <span>View All</span>
+                                    </a>
+                                    <a href="{{ route('professor.assignments.create') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.create') active @endif">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span>Create New</span>
+                                    </a>
                                 </div>
                             </div>
-
-                            @php
-                                $attendanceEnabled = \App\Models\AdminSetting::where('setting_key', 'attendance_enabled')->value('setting_value') !== 'false';
-                                $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
-                            @endphp
-                            @if($attendanceEnabled || $gradingEnabled)
-                            <!-- Reports -->
-                            <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'professor.reports')) active @endif">
-                                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#reportsMenu">
-                                    <i class="bi bi-graph-up"></i>
-                                    <span>Reports</span>
-                                    <i class="bi bi-chevron-down dropdown-arrow"></i>
-                                </a>
-                                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.reports')) show @endif" id="reportsMenu">
-                                    <div class="submenu">
-                                        @if($attendanceEnabled)
-                                        <a href="{{ route('professor.reports.attendance') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.reports.attendance') active @endif">
-                                            <i class="bi bi-calendar-check"></i>
-                                            <span>Attendance</span>
-                                        </a>
-                                        @endif
-                                        @if($gradingEnabled)
-                                        <a href="{{ route('professor.reports.grades') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.reports.grades') active @endif">
-                                            <i class="bi bi-award"></i>
-                                            <span>Grades</span>
-                                        </a>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-
-                            @endif
-
-                            <!-- Chat -->
-                            <div class="nav-item">
-                                <a href="{{ route('professor.chat') }}" class="nav-link @if(Route::currentRouteName() === 'professor.chat') active @endif">
-                                    <i class="bi bi-chat-dots"></i>
-                                    <span>Messages</span>
-                                </a>
-                            </div>
-
-                            <!-- Settings -->
-                            <div class="nav-item">
-                                <a href="{{ route('professor.settings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.settings') active @endif">
-                                    <i class="bi bi-gear"></i>
-                                    <span>Settings</span>
-                                </a>
-                            </div>
-
-                            <!-- Logout -->
-                            <div class="nav-item">
-                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="nav-link logout-btn" onclick="return confirm('Are you sure you want to logout?')">
-                                        <i class="bi bi-box-arrow-right"></i>
-                                        <span>Logout</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </nav>
-                    </div>
-                </aside>
-
-                <!-- Page Content -->
-                <main class="page-content">
+                        </div>
+                        <!-- Messages -->
+                        <div class="nav-item">
+                            <a href="{{ route('professor.chat') }}" class="nav-link @if(Route::currentRouteName() === 'professor.chat') active @endif">
+                                <i class="bi bi-chat-dots"></i>
+                                <span>Messages</span>
+                            </a>
+                        </div>
+                        <!-- Settings -->
+                        <div class="nav-item">
+                            <a href="{{ route('professor.settings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.settings') active @endif">
+                                <i class="bi bi-gear"></i>
+                                <span>Settings</span>
+                            </a>
+                        </div>
+                        <!-- Logout -->
+                        <div class="nav-item">
+                            <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="nav-link logout-btn" onclick="return confirm('Are you sure you want to logout?')">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </form>
+                        </div>
+                    </nav>
+                </div>
+            </aside>
+            <!-- Main Content -->
+            <main class="page-content">
+                <div class="content-wrapper">
                     @yield('content')
-                </main>
-            </div>
+                </div>
+            </main>
         </div>
     </div>
 </div>
@@ -351,20 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             overlay.classList.remove('active');
         });
     }
-
-    // Dropdown functionality
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    dropdownToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = this.getAttribute('data-bs-target');
-            const dropdown = document.querySelector(target);
-            if (dropdown) {
-                dropdown.classList.toggle('show');
-                this.classList.toggle('active');
-            }
-        });
-    });
+    // Removed custom dropdown JS, Bootstrap handles collapse
 });
 </script>
 

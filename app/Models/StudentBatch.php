@@ -47,6 +47,21 @@ class StudentBatch extends Model
         return $this->hasMany(Enrollment::class, 'batch_id', 'batch_id');
     }
 
+    /**
+     * Get all students enrolled in this batch (via enrollments)
+     */
+    public function students()
+    {
+        return $this->hasManyThrough(
+            Student::class,
+            Enrollment::class,
+            'batch_id', // Foreign key on enrollments table...
+            'student_id', // Foreign key on students table...
+            'batch_id', // Local key on student_batches table...
+            'student_id' // Local key on enrollments table...
+        );
+    }
+
     public function assignedProfessor()
     {
         return $this->belongsTo(Professor::class, 'professor_id', 'professor_id');
