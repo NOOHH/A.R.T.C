@@ -219,7 +219,16 @@ class StudentDashboardController extends Controller
         if (empty($courses)) {
             $courses = [];
         }
-        
+
+        // Prepare studentPrograms for sidebar
+        $studentPrograms = array_map(function($course) {
+            return [
+                'program_id' => $course['id'],
+                'program_name' => $course['name'],
+                'package_name' => $course['package_name'],
+            ];
+        }, $courses);
+
         // Log final courses array for debugging
         Log::info('Dashboard courses array', [
             'courses_count' => count($courses),
@@ -272,7 +281,7 @@ class StudentDashboardController extends Controller
                 ->get();
         }
 
-        return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements'));
+        return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms'));
     }
 
     public function calendar()

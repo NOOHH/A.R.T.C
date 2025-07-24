@@ -123,6 +123,42 @@
   background: rgba(45, 27, 105, 0.1);
 }
 
+/* Sidebar Toggle Button */
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: #2d1b69;
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: rgba(45, 27, 105, 0.1);
+  color: #1a0e42;
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.sidebar-toggle-btn i {
+  font-size: 1.1rem;
+}
+
+/* Mobile responsiveness for toggle button */
+@media (max-width: 991.98px) {
+  .sidebar-toggle-btn {
+    font-size: 1.1rem;
+    padding: 0.4rem;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 991px) {
   .main-header {

@@ -17,7 +17,7 @@
     }
     
     .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        
         color: white;
         padding: 25px;
         display: flex;
@@ -580,14 +580,6 @@
 @endpush
 
 @section('content')
-    <div class="container">
-        <h2>Payment Modal Debug Test</h2>
-        <p>This page tests the exact same payment modal code from the student dashboard.</p>
-        
-        <button class="btn btn-warning mb-3" onclick="testPaymentModal()" style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
-            🐛 Test Payment Modal
-        </button>
-    </div>
 
     <div class="dashboard-grid">
     <!-- My Programs Section -->

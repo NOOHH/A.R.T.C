@@ -1,52 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('student.student-dashboard.student-dashboard-layout')
+
+@php
+  $hideSidebar = true; // Hide sidebar on course page
+@endphp
+
+@section('title', ($program->program_name ?? 'Course') . ' - A.R.T.C')
+
+@section('head')
+  <!-- Course-specific styles -->
+  <link href="{{ asset('css/student/student-course.css') }}" rel="stylesheet">
+@endsection
+
+@section('content')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $program->program_name ?? 'Course' }} - A.R.T.C</title>
-    
-    <!-- Bootstrap 5.3.0 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/student/student-navbar.css') }}">
-    
+
+    @php
+        // Use the same authentication context as student dashboard layout
+        $user = null;
+        
+        // Get user data from Laravel session (priority 1)
+        if (session('user_id') && session('user_role') === 'student') {
+            $user = (object) [
+                'id' => session('user_id'),
+                'name' => session('user_name') ?? session('user_firstname') . ' ' . session('user_lastname'),
+                'role' => 'student',
+                'email' => session('user_email')
+            ];
+        }
+        
+        // If no valid student session, redirect to login
+        if (!$user) {
+            // Check if we have any session but wrong role
+            if (session('user_role') && session('user_role') !== 'student') {
+                session()->flush();
+                header('Location: ' . route('login') . '?error=access_denied');
+                exit;
+            }
+            
+            // No session at all
+            session()->flush();
+            header('Location: ' . route('login'));
+            exit;
+        }
+    @endphp
+
+    <!-- Course Header -->
+    <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+        <div class="flex-grow-1">
+@push('styles')
+    <!-- Course-specific styles -->
+    <link rel="stylesheet" href="{{ asset('css/student/student-course.css') }}">
+    <style>
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <!-- Global Variables for JavaScript -->
     <script>
-        // Global variables for user authentication and chat functionality
-        window.myId = {!! json_encode(session('user_id') ?? (auth()->check() ? auth()->user()->id : null)) !!};
-        window.myName = {!! json_encode(session('user_name') ?? (auth()->check() ? auth()->user()->name : null)) !!};
-        window.isAuthenticated = {!! json_encode(session('user_id') ? true : (auth()->check())) !!};
-        window.userRole = {!! json_encode(session('user_role') ?? (auth()->check() ? auth()->user()->role : null)) !!};
-        // Initialize global variables
+        // Global variables accessible throughout the page
+        window.myId = {{ $user ? $user->id : 'null' }};
+        window.myName = @json(optional($user)->name ?? 'Guest');
+        window.isAuthenticated = {{ $user ? 'true' : 'false' }};
+        window.userRole = @json(optional($user)->role ?? 'guest');
+        window.csrfToken = @json(csrf_token());
+        
+        // Make variables available without window prefix
         var myId = window.myId;
         var myName = window.myName;
         var isAuthenticated = window.isAuthenticated;
         var userRole = window.userRole;
-        function fetchAndSetUserInfo() {
-            fetch('/api/user-info', { credentials: 'same-origin' })
-                .then(res => res.json())
-                .then(data => {
-                    myId = data.id;
-                    myName = data.name;
-                    isAuthenticated = data.isAuthenticated;
-                    userRole = data.role;
-                    window.myId = myId;
-                    window.myName = myName;
-                    window.isAuthenticated = isAuthenticated;
-                    window.userRole = userRole;
-                    console.log('User info fetched from API:', { myId, myName, isAuthenticated, userRole });
-                })
-                .catch(err => {
-                    console.warn('Could not fetch user info from API:', err);
-                });
-        }
-        if (!myId || !isAuthenticated) {
-            fetchAndSetUserInfo();
-        }
+        var csrfToken = window.csrfToken;
+        
         console.log('Student Course Global variables initialized:', { myId, myName, isAuthenticated, userRole });
     </script>
+@endpush
+
+    <!-- Course Header -->
+    <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+        <div class="flex-grow-1">
+            <h1 class="course-title mb-1">{{ $program->program_name ?? 'Course' }}</h1>
+            <p class="course-subtitle mb-0">{{ $program->description ?? 'Learn at your own pace with interactive modules and assignments.' }}</p>
+        </div>
+        <a href="{{ route('student.dashboard') }}" class="btn btn-secondary mt-3 mt-md-0">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
     
+@push('styles')
     <style>
         /* Custom Colors and Variables */
         :root {
@@ -292,7 +350,7 @@
 
         /* Course Layout Styles */
         .course-header {
-            background: linear-gradient(135deg, var(--primary-color), #4c84ff);
+            background: rgb(1, 25, 78);
             color: white;
             padding: 2rem;
             border-radius: 1rem;
@@ -363,7 +421,7 @@
         }
 
         .module-button.active {
-            background-color: var(--primary-color);
+            background-color: black;
             color: white;
         }
 
@@ -660,7 +718,7 @@
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
 
         ::-webkit-scrollbar-track {
@@ -677,88 +735,59 @@
             background: #a8a8a8;
         }
     </style>
-</head>
-<body>
-    @include('components.student-navbar')
-    <!-- Main Wrapper -->
-    <div class="main-wrapper">
-        <!-- Include Sidebar Component -->
- 
+@endpush
 
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-            <!-- Include Navbar Component -->
-
-            <!-- Main Content -->
-            <main class="main-content">
-                <div class="container-fluid p-0">
-                    <!-- Course Header -->
-                    <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
-                        <div class="flex-grow-1">
-                            <h1 class="course-title mb-1">{{ $program->program_name ?? 'Course' }}</h1>
-                            <p class="course-subtitle mb-0">{{ $program->description ?? 'Learn at your own pace with interactive modules and assignments.' }}</p>
+    <!-- Course Layout -->
+    <div class="course-layout">
+        <!-- Modules Panel -->
+        <div class="modules-panel">
+            <div class="modules-header">
+                <i class="bi bi-list-nested me-2"></i>
+                Course Modules
+            </div>
+            <div class="modules-list">
+                @if(!empty($course['modules']))
+                    @foreach($course['modules'] as $mod)
+                        <div class="module-item">
+                            <button class="module-button" onclick="toggleModule('{{ $mod['id'] }}')">
+                                <i class="bi bi-folder me-2"></i>
+                                {{ $mod['name'] }}
+                            </button>
                         </div>
-                        <a href="{{ route('student.dashboard') }}" class="btn btn-secondary mt-3 mt-md-0">
-                            <i class="bi bi-arrow-left"></i> Back to Dashboard
-                        </a>
+                    @endforeach
+                @else
+                    <div class="empty-state">
+                        <i class="bi bi-folder-x"></i>
+                        <p>No modules available</p>
                     </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Content Panel -->
+        <div class="content-panel">
+            <div class="content-header">
+                <div class="content-tabs">
+                    <button class="tab-button active" id="coursesTab" onclick="showCourses()">
+                        <i class="bi bi-book me-1"></i>
+                        Courses
+                    </button>
+                    <button class="tab-button" id="contentTab" onclick="showContent()" style="display: none;">
+                        <i class="bi bi-file-earmark me-1"></i>
+                        Content
+                    </button>
                 </div>
-                <!-- Course Layout -->
-                <div class="course-layout">
-                    <!-- Modules Panel -->
-                    <div class="modules-panel">
-                        <div class="modules-header">
-                            <i class="bi bi-list-nested me-2"></i>
-                            Course Modules
-                        </div>
-                        <div class="modules-list">
-                            @if(!empty($course['modules']))
-                                @foreach($course['modules'] as $mod)
-                                    <div class="module-item">
-                                        <button class="module-button" onclick="toggleModule('{{ $mod['id'] }}')">
-                                            <i class="bi bi-folder me-2"></i>
-                                            {{ $mod['name'] }}
-                                        </button>
-                                    </div>
-                                @endforeach
-                            @else
-                                <div class="empty-state">
-                                    <i class="bi bi-folder-x"></i>
-                                    <p>No modules available</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Content Panel -->
-                    <div class="content-panel">
-                        <div class="content-header">
-                            <div class="content-tabs">
-                                <button class="tab-button active" id="coursesTab" onclick="showCourses()">
-                                    <i class="bi bi-book me-1"></i>
-                                    Courses
-                                </button>
-                                <button class="tab-button" id="contentTab" onclick="showContent()" style="display: none;">
-                                    <i class="bi bi-file-earmark me-1"></i>
-                                    Content
-                                </button>
-                            </div>
-                        </div>
-                        <div class="content-viewer" id="content-viewer">
-                            <!-- Default Welcome Message -->
-                            <div class="empty-state" id="welcome-message">
-                                <i class="bi bi-mortarboard"></i>
-                                <h3>Welcome to Your Course</h3>
-                                <p>Select a module from the left panel to view available courses and content.</p>
-                            </div>
-                        </div>
-                    </div>
+            </div>
+            <div class="content-viewer" id="content-viewer">
+                <!-- Default Welcome Message -->
+                <div class="empty-state" id="welcome-message">
+                    <i class="bi bi-mortarboard"></i>
+                    <h3>Welcome to Your Course</h3>
+                    <p>Select a module from the left panel to view available courses and content.</p>
                 </div>
-            </main>
+            </div>
         </div>
     </div>
-
-
 
     <!-- Video Modal -->
     <div class="modal fade" id="videoModal" tabindex="-1">
@@ -812,9 +841,10 @@
         </div>
     </div>
 
-    <!-- Bootstrap 5.3.0 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@endsection
 
+@push('scripts')
+    <!-- Course-specific JavaScript -->
     <script>
         // Global variables
         let currentModule = null;
@@ -1741,6 +1771,18 @@
             });
         });
 
+    </script>
+
+    <!-- Logout Form (hidden) -->
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
+
+    <!-- Bootstrap 5.3.0 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Move the markComplete function here and fix the CSRF token reference
         function markComplete(type, id, btn) {
             btn.disabled = true;
             btn.innerText = 'Marking...';
@@ -1750,24 +1792,27 @@
             let url = '';
             let payload = {};
             if (type === 'course') {
-                url = '/api/student/complete-course';
+                url = '/student/complete-course';
                 payload = { course_id: id };
             } else if (type === 'content') {
-                url = '/api/student/complete-content';
+                url = '/student/complete-content';
                 payload = { content_id: id };
             } else if (type === 'document') {
-                url = '/api/student/complete-content';
+                url = '/student/complete-content';
                 payload = { content_id: id };
             }
+
+            // Always get the CSRF token from meta if not present
+            let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
 
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-CSRF-TOKEN': token,
                 },
-                credentials: 'include', // changed from 'same-origin' to 'include'
+                credentials: 'include',
                 body: JSON.stringify(payload)
             })
             .then(res => res.json())
@@ -1794,10 +1839,4 @@
             });
         }
     </script>
-
-    <!-- Logout Form (hidden) -->
-    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-        @csrf
-    </form>
-</body>
-</html>
+@endpush

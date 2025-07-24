@@ -46,6 +46,7 @@ Route::middleware(['web'])->get('/user-info', function () {
 });
 
 // Student progress tracking routes
+// (leave these in web middleware if needed for session-based progress)
 Route::middleware(['web'])->group(function () {
     Route::post('/student/module-progress', function (Request $request) {
         try {
@@ -72,28 +73,17 @@ Route::middleware(['web'])->group(function () {
         }
     });
     
-    Route::post('/student/complete-module', function (Request $request) {
-        try {
-            $data = $request->validate([
-                'module_id' => 'required|integer',
-                'program_id' => 'required|integer',
-                'progress_percentage' => 'integer|min:0|max:100'
-            ]);
-            
-            // Here you could update module completion status in database
-            // For now, just return success
-            return response()->json([
-                'success' => true,
-                'message' => 'Module completed successfully',
-                'course_id' => $data['program_id']
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to complete module'
-            ], 500);
-        }
-    });
+    Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
+});
+
+// These should NOT be in a web middleware group:
+// Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
+// Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
+
+// Ensure session is available for completion routes
+Route::middleware(['web'])->group(function () {
+    Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
+    Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
 });
 
 // Programs list API route for navbar dropdown
@@ -444,12 +434,10 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
     Route::post('/packages/test-pivot-tables', [App\Http\Controllers\AdminPackageController::class, 'testPivotTables']);
 });
 
-Route::middleware(['web'])->group(function () {
-    Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
-    Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
-    Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
+Route::get('/debug-session', function () {
+    Log::info('DEBUG: /debug-session', [
+        'user_id' => session('user_id'),
+        'all_session' => session()->all()
+    ]);
+    return response()->json(['session' => session()->all()]);
 });
-
-// Student content completion API
-use App\Http\Controllers\StudentController;
-Route::post('/student/complete-content', [StudentController::class, 'completeContent']);
