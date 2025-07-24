@@ -1,0 +1,54 @@
+/* Ensure main content fills the available width */
+.main-content {
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+  background: #f5f7fa; /* or your desired background */
+  overflow-x: auto;
+}
+
+/* Remove any unwanted margin/padding from parent containers */
+.container-fluid, .row.g-0 {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* OVERRIDE: Hide sidebar and force main content full width on course page */
+body:not(.with-sidebar) .modern-sidebar,
+body:not(.with-sidebar) .sidebar-overlay,
+body:not(.with-sidebar) .sidebar-reopen-btn {
+  display: none !important;
+}
+
+body:not(.with-sidebar) .main-content {
+  width: 100% !important;
+  max-width: 100vw !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  background: #f5f7fa !important;
+  flex: 1 1 100% !important;
+}
+
+body:not(.with-sidebar) .content-wrapper {
+  margin-left: 0 !important;
+}
+
+/* Make content-wrapper take full screen on course page */
+body:not(.with-sidebar) .content-wrapper {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  min-width: 0 !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #f5f7fa !important;
+  padding: 0 !important;
+}
+
+/* Remove padding from .main-content if present */
+body:not(.with-sidebar) .main-content {
+  padding: 0 !important;
+}

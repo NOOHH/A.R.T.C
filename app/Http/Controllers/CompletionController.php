@@ -6,16 +6,25 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\CourseCompletion;
 use App\Models\ContentCompletion;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class CompletionController extends Controller
 {
     public function markCourseComplete(Request $request)
     {
+        Log::info('DEBUG: markCourseComplete session user_id', ['user_id' => session('user_id')]);
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        Log::info('DEBUG: markCourseComplete student lookup', ['student' => $student]);
         $request->validate([
             'course_id' => 'required|integer',
             'module_id' => 'nullable|integer',
         ]);
-        $studentId = Auth::id();
+        $userId = session('user_id');
+        $student = \App\Models\Student::where('user_id', $userId)->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.'], 401);
+        }
+        $studentId = $student->student_id;
         $courseId = $request->input('course_id');
         $moduleId = $request->input('module_id');
 
@@ -36,12 +45,20 @@ class CompletionController extends Controller
 
     public function markContentComplete(Request $request)
     {
+        Log::info('DEBUG: markContentComplete session user_id', ['user_id' => session('user_id')]);
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        Log::info('DEBUG: markContentComplete student lookup', ['student' => $student]);
         $request->validate([
             'content_id' => 'required|integer',
             'course_id' => 'nullable|integer',
             'module_id' => 'nullable|integer',
         ]);
-        $studentId = Auth::id();
+        $userId = session('user_id');
+        $student = \App\Models\Student::where('user_id', $userId)->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.'], 401);
+        }
+        $studentId = $student->student_id;
         $contentId = $request->input('content_id');
         $courseId = $request->input('course_id');
         $moduleId = $request->input('module_id');

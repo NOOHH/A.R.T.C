@@ -474,8 +474,8 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
     Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
     Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
-    Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
-    Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
+    Route::post('/student/complete-course', [\App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
+    Route::post('/student/complete-content', [\App\Http\Controllers\CompletionController::class, 'markContentComplete']);
     Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
     Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
     Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);

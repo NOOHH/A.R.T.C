@@ -51,6 +51,12 @@ class PaymentController extends Controller
         $payment->verified_at = Carbon::now();
         $payment->save();
 
+        // Also update the related enrollment's payment_status to 'paid'
+        if ($payment->enrollment) {
+            $payment->enrollment->payment_status = 'paid';
+            $payment->enrollment->save();
+        }
+
         // Always return JSON for now
         return response()->json([
             'success' => true,
@@ -195,6 +201,36 @@ class PaymentController extends Controller
             'success' => true,
             'message' => 'Payment rejection details updated successfully.'
         ]);
+    }
+
+    /**
+     * Undo payment approval (set payment and enrollment status back to pending)
+     */
+    public function undoApproval(Request $request, $id)
+    {
+        try {
+            $payment = Payment::findOrFail($id);
+            $payment->payment_status = 'pending';
+            $payment->verified_by = null;
+            $payment->verified_at = null;
+            $payment->save();
+
+            // Also update the related enrollment's payment_status to 'pending'
+            if ($payment->enrollment) {
+                $payment->enrollment->payment_status = 'pending';
+                $payment->enrollment->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment approval undone. Status set back to pending.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error undoing payment approval: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
