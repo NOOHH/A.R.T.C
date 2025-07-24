@@ -1767,7 +1767,7 @@
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 },
-                credentials: 'same-origin',
+                credentials: 'include', // changed from 'same-origin' to 'include'
                 body: JSON.stringify(payload)
             })
             .then(res => res.json())
