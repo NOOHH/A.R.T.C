@@ -1447,28 +1447,23 @@ class StudentRegistrationController extends Controller
                                 $module = \App\Models\Module::with('courses')->find($moduleId);
                                 if ($module && $module->courses) {
                                     foreach ($module->courses as $course) {
-                                        try {
-                                            EnrollmentCourse::create([
-                                                'enrollment_id' => $enrollment->enrollment_id,
-                                                'course_id' => $course->subject_id,
-                                                'module_id' => $moduleId,
-                                                'enrollment_type' => 'module',
-                                                'course_price' => 0,
-                                                'is_active' => true
-                                            ]);
-                                            Log::info('Full module course enrolled', [
-                                                'course_id' => $course->subject_id, 
-                                                'module_id' => $moduleId,
-                                                'enrollment_id' => $enrollment->enrollment_id
-                                            ]);
-                                        } catch (\Exception $e) {
-                                            Log::warning('Failed to create full module course enrollment', [
-                                                'course_id' => $course->subject_id,
-                                                'module_id' => $moduleId,
-                                                'enrollment_id' => $enrollment->enrollment_id,
-                                                'error' => $e->getMessage()
-                                            ]);
-                                        }
+                                        // Exclude course if it has no content items
+                                        if ($course->contentItems()->count() === 0) continue;
+                                        // If you track enrolled courses, exclude them here
+                                        $filteredCourses[] = [
+                                            'course_id' => $course->subject_id,
+                                            'course_name' => $course->subject_name,
+                                            'description' => $course->subject_description,
+                                            // Add more fields as needed
+                                        ];
+                                    }
+                                    if (count($filteredCourses) > 0) {
+                                        $filteredModules[] = [
+                                            'module_id' => $module->modules_id,
+                                            'module_name' => $module->module_name,
+                                            'description' => $module->module_description,
+                                            'courses' => $filteredCourses
+                                        ];
                                     }
                                 }
                             }
@@ -1531,6 +1526,7 @@ class StudentRegistrationController extends Controller
             // Validate the request data
             $validator = Validator::make($request->all(), [
                 'package_id' => 'required|exists:packages,package_id',
+                'program_id' => 'required|exists:programs,program_id',
                 'module_ids' => 'required|array',
                 'module_ids.*' => 'exists:modules,modules_id',
                 'learning_mode' => 'required|in:Face-to-Face,Online,Hybrid',
@@ -1583,9 +1579,9 @@ class StudentRegistrationController extends Controller
                 'user_id' => $user->user_id,
                 'firstname' => $accountData['firstName'],
                 'lastname' => $accountData['lastName'],
-                'program_id' => $package->program_id,
+                'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
-                'program_name' => $package->program->program_name ?? '',
+                'program_name' => Program::find($validated['program_id'])->program_name ?? '',
                 'package_name' => $package->package_name ?? '',
                 'learning_mode' => $validated['learning_mode'],
                 'enrollment_type' => 'Modular',
@@ -1613,7 +1609,7 @@ class StudentRegistrationController extends Controller
             $enrollment = Enrollment::create([
                 'user_id' => $user->user_id,
                 'student_id' => null, // Will be set when admin creates student record after approval
-                'program_id' => $package->program_id,
+                'program_id' => $validated['program_id'],
                 'package_id' => $validated['package_id'],
                 'learning_mode' => $enrollmentLearningMode, // Use mapped value
                 'enrollment_type' => 'Modular',
@@ -2214,6 +2210,109 @@ class StudentRegistrationController extends Controller
                 'message' => 'Failed to load package details'
             ], 500);
         }
+    }
+
+    /**
+     * Get available programs, modules, and courses for modular enrollment, filtered by student history.
+     */
+    public function getAvailableProgramsForModularEnrollment(Request $request)
+    {
+        \Log::info('API called by user', [
+            'auth_id' => auth()->id(),
+            'session_user_id' => session('user_id'),
+            'request_user' => auth()->user()
+        ]);
+
+        $userId = auth()->id() ?? session('user_id');
+        if (!$userId) {
+            return response()->json(['programs' => []]);
+        }
+
+        // 1. Full-plan exclusion
+        $fullEnrollments = \App\Models\Enrollment::where('user_id', $userId)
+            ->where('enrollment_type', 'Full')
+            ->pluck('program_id')
+            ->toArray();
+
+        // 2. Modular exclusion
+        $modularEnrollments = \App\Models\Enrollment::where('user_id', $userId)
+            ->where('enrollment_type', 'Modular')
+            ->get();
+
+        $enrolledModules = [];
+        foreach ($modularEnrollments as $enrollment) {
+            $modules = json_decode($enrollment->Modular_enrollment, true) ?? [];
+            foreach ($modules as $moduleId) {
+                $enrolledModules[$enrollment->program_id][] = $moduleId;
+            }
+        }
+
+        // Eager load contentItems for courses
+        $programs = \App\Models\Program::with(['modules.courses.contentItems'])
+            ->where('is_archived', false)
+            ->get();
+
+        // Debug: Log modules and courses for Mechanical Engineer before filtering
+        foreach ($programs as $program) {
+            if ($program->program_name === 'Mechanical Engineer') {
+                Log::info('Mechanical Engineer - Raw Modules and Courses', [
+                    'modules' => $program->modules->map(function($module) {
+                        return [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'courses' => $module->courses->map(function($course) {
+                                return [
+                                    'course_id' => $course->subject_id,
+                                    'course_name' => $course->subject_name,
+                                    'content_items_count' => $course->contentItems->count(),
+                                ];
+                            })
+                        ];
+                    })
+                ]);
+            }
+        }
+
+        $filteredPrograms = [];
+        foreach ($programs as $program) {
+            if (in_array($program->program_id, $fullEnrollments)) continue;
+
+            $filteredModules = [];
+            foreach ($program->modules as $module) {
+                if (isset($enrolledModules[$program->program_id]) && in_array($module->modules_id, $enrolledModules[$program->program_id])) {
+                    continue;
+                }
+
+                $filteredCourses = [];
+                foreach ($module->courses as $course) {
+                    // Use loaded relationship for contentItems
+                    if ($course->contentItems->count() === 0) continue;
+                    $filteredCourses[] = [
+                        'course_id' => $course->subject_id,
+                        'course_name' => $course->subject_name,
+                        'description' => $course->subject_description,
+                    ];
+                }
+                if (count($filteredCourses) > 0) {
+                    $filteredModules[] = [
+                        'module_id' => $module->modules_id,
+                        'module_name' => $module->module_name,
+                        'description' => $module->module_description,
+                        'courses' => $filteredCourses
+                    ];
+                }
+            }
+            if (count($filteredModules) > 0) {
+                $filteredPrograms[] = [
+                    'program_id' => $program->program_id,
+                    'program_name' => $program->program_name,
+                    'description' => $program->program_description,
+                    'modules' => $filteredModules
+                ];
+            }
+        }
+        Log::info('Filtered Programs for Modular Enrollment', ['programs' => $filteredPrograms]);
+        return response()->json(['programs' => $filteredPrograms]);
     }
 
 }

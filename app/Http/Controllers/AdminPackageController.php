@@ -64,7 +64,6 @@ class AdminPackageController extends Controller
             'description' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
             'package_type' => 'required|in:full,modular',
-            'program_id' => 'required|exists:programs,program_id',
             'module_count' => 'nullable|integer|min:1|max:50',
             'selected_modules' => 'nullable|array',
             'selected_modules.*' => 'exists:modules,modules_id',
@@ -75,10 +74,12 @@ class AdminPackageController extends Controller
         $package->description = $request->description;
         $package->amount = $request->amount;
         $package->package_type = $request->package_type;
-        $package->program_id = $request->program_id;
         $package->module_count = $request->module_count;
         $package->price = $request->amount; // For compatibility
         $package->created_by_admin_id = Auth::user()->admin_id ?? 1;
+        $package->access_period_days = $request->access_period_days;
+        $package->access_period_months = $request->access_period_months;
+        $package->access_period_years = $request->access_period_years;
         $package->save();
 
         // Attach selected modules if any
@@ -108,7 +109,6 @@ class AdminPackageController extends Controller
             'description' => 'nullable|string',
             'amount' => 'required|numeric|min:0',
             'package_type' => 'required|in:full,modular',
-            'program_id' => 'required|exists:programs,program_id',
             'module_count' => 'nullable|integer|min:1|max:50',
             'selected_modules' => 'nullable|array',
             'selected_modules.*' => 'exists:modules,modules_id',
@@ -119,9 +119,11 @@ class AdminPackageController extends Controller
         $package->description = $request->description;
         $package->amount = $request->amount;
         $package->package_type = $request->package_type;
-        $package->program_id = $request->program_id;
         $package->module_count = $request->module_count;
         $package->price = $request->amount; // For compatibility
+        $package->access_period_days = $request->access_period_days;
+        $package->access_period_months = $request->access_period_months;
+        $package->access_period_years = $request->access_period_years;
         $package->save();
 
         // Sync selected modules

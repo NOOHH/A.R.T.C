@@ -156,7 +156,7 @@
                             <div class="d-flex justify-content-center gap-4 flex-wrap">
                                 @foreach($packageChunk as $package)
                                     <div class="package-card-pro card p-4 mb-3"
-                                         onclick="selectPackage({{ $package->package_id }}, {{ $package->program_id }}, {{ $package->module_count ?? $package->modules_count ?? 3 }}, '{{ $package->selection_mode ?? 'modules' }}', {{ $package->course_count ?? 0 }})"
+                                         onclick="selectPackage({{ json_encode($package->package_id) }}, {{ json_encode($package->program_id) }}, {{ json_encode($package->module_count ?? $package->modules_count ?? 3) }}, {{ json_encode($package->selection_mode ?? 'modules') }}, {{ json_encode($package->course_count ?? 0) }})"
                                          data-package-id="{{ $package->package_id }}">
                                         <div class="card-body text-center">
                                             <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
@@ -171,6 +171,15 @@
                                                 <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
                                                 <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
                                                 <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
+                                                @php
+                                                    $periodParts = [];
+                                                    if (!empty($package->access_period_years)) $periodParts[] = $package->access_period_years . ' Year' . ($package->access_period_years > 1 ? 's' : '');
+                                                    if (!empty($package->access_period_months)) $periodParts[] = $package->access_period_months . ' Month' . ($package->access_period_months > 1 ? 's' : '');
+                                                    if (!empty($package->access_period_days)) $periodParts[] = $package->access_period_days . ' Day' . ($package->access_period_days > 1 ? 's' : '');
+                                                @endphp
+                                                @if(count($periodParts) > 0)
+                                                    <li><span class="badge bg-info text-dark">Access Period: {{ implode(' ', $periodParts) }}</span></li>
+                                                @endif
                                             </ul>
                                         </div>
                                     </div>
@@ -550,12 +559,25 @@
                                             <option value="">Select {{ $field->field_label ?: $field->field_name }}</option>
                                             @if($field->field_options)
                                                 @php
-                                                    $options = is_string($field->field_options) ? json_decode($field->field_options, true) : $field->field_options;
+                                                    $options = [];
+                                                    if (is_string($field->field_options)) {
+                                                        $decoded = json_decode($field->field_options, true);
+                                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                            $options = $decoded;
+                                                        } else {
+                                                            // fallback: treat as comma-separated string if not valid JSON
+                                                            $options = array_filter(array_map('trim', explode(',', $field->field_options)));
+                                                        }
+                                                    } elseif (is_array($field->field_options)) {
+                                                        $options = $field->field_options;
+                                                    }
                                                     $selectedValue = old($field->field_name, $student->{$field->field_name} ?? '');
                                                 @endphp
                                                 @if(is_array($options))
                                                     @foreach($options as $option)
-                                                        <option value="{{ $option }}" {{ $selectedValue == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                                        @if($option !== '')
+                                                            <option value="{{ $option }}" {{ $selectedValue == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                                        @endif
                                                     @endforeach
                                                 @endif
                                             @endif
@@ -627,9 +649,7 @@
                     <label for="programSelect" style="font-size:1.17rem;font-weight:700;"><i class="bi bi-book me-2"></i>Program <span class="text-danger">*</span></label>
                     <select name="program_id" class="form-select" required id="programSelect" onchange="onProgramSelectionChange();">
                         <option value="">Select Program</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
+                        <!-- Options will be dynamically populated by JS using getAvailableProgramsForStudent() -->
                     </select>
                 </div>
                 <!-- Batch Selection (only for synchronous learning) -->
@@ -776,6 +796,7 @@
     
     // Other form variables
     let selectedProgramId = null;
+    let selectedProgramIds = []; // Array for multi-selection support
     let selectedModules = [];
     let selectedLearningMode = null;
     let selectedAccountType = null;
@@ -939,6 +960,7 @@
                 loadPrograms();
                 break;
             case 3:
+                // Module selection step - load modules for selected program
                 loadModules();
                 break;
             case 5:
@@ -974,41 +996,99 @@
         // Add selection to clicked card
         event.target.closest('.selection-card').classList.add('selected');
         
-        // Store selection
+        // Store selection (backward compatibility)
         selectedProgramId = programId;
+        
+        // Also update multi-selection array for new functionality
+        selectedProgramIds = [programId];
         
         // Update hidden input
         document.getElementById('program_id').value = programId;
         
         // Enable next button
         document.getElementById('step2-next').disabled = false;
+        
+        console.log('Updated selectedProgramIds:', selectedProgramIds);
     }
     window.selectProgram = selectProgram;
     
-    // Load programs from the database using the /api/programs endpoint
+    // Multi-selection function for program selection
+    function toggleProgramSelection(programId) {
+        if (event) event.stopPropagation();
+        
+        // Toggle selection in array
+        const index = selectedProgramIds.indexOf(programId);
+        if (index > -1) {
+            selectedProgramIds.splice(index, 1);
+        } else {
+            selectedProgramIds.push(programId);
+        }
+        
+        // Update UI - card styling
+        const card = document.querySelector(`[onclick*="toggleProgramSelection(${programId})"]`);
+        if (card) {
+            if (selectedProgramIds.includes(programId)) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        }
+        
+        // Update checkbox
+        const checkbox = document.getElementById(`program_${programId}`);
+        if (checkbox) {
+            checkbox.checked = selectedProgramIds.includes(programId);
+        }
+        
+        // Update hidden input with comma-separated IDs
+        const hiddenInput = document.getElementById('program_id');
+        if (hiddenInput) {
+            hiddenInput.value = selectedProgramIds.join(',');
+        }
+        
+        // Enable/disable next button based on selection
+        const nextButton = document.getElementById('step2-next');
+        if (nextButton) {
+            nextButton.disabled = selectedProgramIds.length === 0;
+        }
+        
+        // Also update the first selected program for backward compatibility
+        selectedProgramId = selectedProgramIds.length > 0 ? selectedProgramIds[0] : null;
+        
+        console.log('Selected programs:', selectedProgramIds);
+    }
+    window.toggleProgramSelection = toggleProgramSelection;
+    
+    // Load programs from the database using the filtered API endpoint
     function loadPrograms() {
         const grid = document.getElementById('programsGrid');
         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading programs...</div>';
-        fetch('/api/programs', {
+        
+        // Fetch filtered programs based on student's current enrollments
+        fetch('/api/enrollment/available-programs', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': CSRF_TOKEN
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Content-Type': 'application/json'
             }
         })
         .then(response => response.json())
         .then(data => {
-            if (Array.isArray(data)) {
+            console.log('Available programs response:', data);
+            if (data.success && data.programs) {
+                window.availableProgramsForModular = data.programs;
+                displayPrograms(data.programs);
+            } else if (Array.isArray(data)) {
                 // Some endpoints return array directly
+                window.availableProgramsForModular = data;
                 displayPrograms(data);
-            } else if (data.success && (data.data || data.programs)) {
-                displayPrograms(data.data || data.programs);
             } else {
-                grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
+                grid.innerHTML = '<div class="alert alert-info">No programs available for enrollment.</div>';
             }
         })
         .catch(error => {
-            console.error('Error fetching programs:', error);
+            console.error('Error fetching available programs:', error);
             grid.innerHTML = '<div class="alert alert-danger">Error loading programs. Please try again.</div>';
         });
     }
@@ -1016,7 +1096,7 @@
     function displayPrograms(programs) {
         const grid = document.getElementById('programsGrid');
         if (!programs || programs.length === 0) {
-            grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
+            grid.innerHTML = '<div class="alert alert-info">No programs available for enrollment.</div>';
             return;
         }
         
@@ -1031,19 +1111,27 @@
             programChunks.push(programs.slice(i, i + chunkSize));
         }
         
-        // Create carousel slides
+        // Create carousel slides with multi-selection support
         programChunks.forEach((chunk, index) => {
             const isActive = index === 0 ? 'active' : '';
             let slideHtml = `<div class="carousel-item ${isActive}">
                 <div class="row justify-content-center">`;
                 
             chunk.forEach(program => {
+                const isSelected = selectedProgramIds.includes(program.program_id);
                 slideHtml += `
                     <div class="col-md-5 mb-4">
-                        <div class="card selection-card h-100 ${program.program_id == selectedProgramId ? 'selected' : ''}" 
-                             onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
-                            <div class="card-body">
-                                <h4 class="card-title">${program.program_name}</h4>
+                        <div class="card selection-card h-100 ${isSelected ? 'selected' : ''}" 
+                             onclick="toggleProgramSelection(${program.program_id})" style="cursor:pointer;">
+                            <div class="card-body text-center position-relative">
+                                <div class="form-check position-absolute" style="top: 10px; right: 15px;">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="program_${program.program_id}" 
+                                           ${isSelected ? 'checked' : ''}
+                                           onchange="toggleProgramSelection(${program.program_id})"
+                                           style="transform: scale(1.2);">
+                                </div>
+                                <h4 class="card-title mt-2">${program.program_name}</h4>
                                 <p class="card-text">${program.program_description || 'No description available.'}</p>
                                 <div id="modules-for-program-${program.program_id}"></div>
                             </div>
@@ -1105,25 +1193,95 @@
     function loadModules() {
         const grid = document.getElementById('modulesGrid');
         const limitSpan = document.getElementById('moduleLimit');
-        
         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading modules...</div>';
         limitSpan.textContent = packageModuleLimit;
         
-        fetch(`/get-program-modules?program_id=${selectedProgramId}`)
-            .then(response => response.json())
-            .then(data => {
-                console.log('Modules loaded:', data);
-                
-                if (data.success && data.modules) {
-                    displayModules(data.modules);
-                } else {
-                    grid.innerHTML = '<div class="alert alert-danger">Failed to load modules. Please try again.</div>';
+        // Collect modules from all selected programs
+        let allModules = [];
+        let modulesToFetch = [];
+        
+        if (selectedProgramIds.length > 0) {
+            selectedProgramIds.forEach(programId => {
+                const program = window.availableProgramsForModular.find(p => p.program_id == programId);
+                if (program) {
+                    if (program.modules && program.modules.length > 0) {
+                        // Modules are already loaded with the program
+                        const programModules = program.modules.map(module => ({
+                            ...module,
+                            program_name: program.program_name,
+                            program_id: program.program_id
+                        }));
+                        allModules = allModules.concat(programModules);
+                    } else {
+                        // Need to fetch modules separately
+                        modulesToFetch.push(program);
+                    }
                 }
-            })
-            .catch(error => {
-                console.error('Error loading modules:', error);
-                grid.innerHTML = '<div class="alert alert-danger">Error loading modules. Please try again.</div>';
             });
+        } else {
+            // Fallback to single selection for backward compatibility
+            const program = window.availableProgramsForModular.find(p => p.program_id == selectedProgramId);
+            if (program) {
+                if (program.modules && program.modules.length > 0) {
+                    allModules = program.modules.map(module => ({
+                        ...module,
+                        program_name: program.program_name,
+                        program_id: program.program_id
+                    }));
+                } else {
+                    modulesToFetch.push(program);
+                }
+            }
+        }
+        
+        // If we need to fetch modules separately, do it
+        if (modulesToFetch.length > 0) {
+            Promise.all(modulesToFetch.map(program => 
+                fetch(`/api/programs/${program.program_id}/modules`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.modules) {
+                            return data.modules.map(module => ({
+                                ...module,
+                                id: module.modules_id || module.id,
+                                name: module.module_name || module.name,
+                                description: module.module_description || module.description,
+                                program_name: program.program_name,
+                                program_id: program.program_id
+                            }));
+                        }
+                        return [];
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching modules for program ${program.program_id}:`, error);
+                        return [];
+                    })
+            )).then(moduleArrays => {
+                // Combine all fetched modules with already loaded ones
+                moduleArrays.forEach(modules => {
+                    allModules = allModules.concat(modules);
+                });
+                processAndDisplayModules(allModules);
+            });
+        } else {
+            processAndDisplayModules(allModules);
+        }
+    }
+    
+    function processAndDisplayModules(allModules) {
+        if (allModules.length === 0) {
+            const grid = document.getElementById('modulesGrid');
+            grid.innerHTML = '<div class="alert alert-info">No modules available for the selected program(s).</div>';
+            return;
+        }
+        
+        // Remove duplicates based on module_id
+        const uniqueModules = allModules.filter((module, index, self) => 
+            index === self.findIndex(m => (m.modules_id || m.id) === (module.modules_id || module.id))
+        );
+        
+        console.log('Loading modules:', uniqueModules);
+        displayModules(uniqueModules);
     }
     
     // Display modules
@@ -1157,6 +1315,7 @@
             slideModules.forEach(module => {
                 const moduleName = module.name || module.module_name || 'Unnamed Module';
                 const moduleDesc = module.description || module.module_description || 'No description available';
+                const programInfo = module.program_name ? `<small class="text-muted">From: ${module.program_name}</small><br>` : '';
                 
                 modulesHtml += `
                     <div class="col-md-6 mb-4">
@@ -1168,6 +1327,7 @@
                                                value="${module.id}" onchange="handleModuleSelection(this)">
                                         <label class="form-check-label module-title" for="module_${module.id}">${moduleName}</label>
                                     </div>
+                                    ${programInfo}
                                     <p class="card-text module-description">${moduleDesc}</p>
                                     <div class="module-meta">
                                         <span class="module-duration">
@@ -3338,6 +3498,183 @@ function autofillProgramInForm() {
 document.addEventListener('DOMContentLoaded', autofillProgramInForm);
 
 // Duplicate functions removed - using the enhanced OCR functions above
+
+try {
+    window.studentEnrollments = @json($studentEnrollments ?? []);
+} catch (e) {
+    console.error('Error parsing studentEnrollments JSON:', e);
+    window.studentEnrollments = [];
+}
+try {
+    window.contentStructure = @json($contentStructure ?? []);
+} catch (e) {
+    console.error('Error parsing contentStructure JSON:', e);
+    window.contentStructure = [];
+}
+// Ensure contentStructure is always an array
+if (window.contentStructure && !Array.isArray(window.contentStructure)) {
+    // Convert object to array if possible
+    window.contentStructure = Object.values(window.contentStructure);
+}
+console.log('contentStructure:', window.contentStructure);
+// Filtering logic and UI update functions will be added here
+
+// --- Filtering Logic ---
+// Fetch available programs for modular enrollment from backend API
+async function fetchAvailableProgramsForStudent() {
+    try {
+        const response = await fetch('/api/enrollment/available-programs');
+        if (!response.ok) throw new Error('Failed to fetch available programs');
+        const data = await response.json();
+        return data.programs || [];
+    } catch (error) {
+        console.error('Error fetching available programs:', error);
+        return [];
+    }
+}
+
+// Store available programs in a global variable
+window.availableProgramsForModular = [];
+
+// Update the program select dropdown
+function updateProgramSelect(availablePrograms, selectedProgramId = null) {
+    const select = document.getElementById('programSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">Select Program</option>';
+    availablePrograms.forEach(program => {
+        const option = document.createElement('option');
+        option.value = program.program_id;
+        option.textContent = program.program_name;
+        if (selectedProgramId && program.program_id == selectedProgramId) option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+// Update modules and courses UI for a selected program
+function updateModulesAndCoursesUI(programId) {
+    const program = window.availableProgramsForModular.find(p => p.program_id == programId);
+    const modulesGrid = document.getElementById('modulesGrid');
+    if (modulesGrid) {
+        modulesGrid.innerHTML = '';
+        if (program && program.modules.length > 0) {
+            program.modules.forEach(module => {
+                let moduleHtml = `<div class='module-card'><h5>${module.module_name}</h5>`;
+                if (module.courses.length > 0) {
+                    moduleHtml += '<ul>';
+                    module.courses.forEach(course => {
+                        moduleHtml += `<li>${course.course_name}</li>`;
+                    });
+                    moduleHtml += '</ul>';
+                } else {
+                    moduleHtml += '<div class="text-muted">No available courses</div>';
+                }
+                moduleHtml += '</div>';
+                modulesGrid.innerHTML += moduleHtml;
+            });
+        } else {
+            modulesGrid.innerHTML = '<div class="alert alert-info">No available modules for this program.</div>';
+        }
+    }
+}
+
+// When a package is selected, update the program select and modules/courses UI
+async function onPackageSelected(packageId, programId) {
+    if (!window.availableProgramsForModular.length) {
+        window.availableProgramsForModular = await fetchAvailableProgramsForStudent();
+    }
+    updateProgramSelect(window.availableProgramsForModular, programId);
+    if (programId) {
+        document.getElementById('programSelect').dispatchEvent(new Event('change'));
+        updateModulesAndCoursesUI(programId);
+    }
+}
+
+// Patch the selectPackage function to call onPackageSelected
+const origSelectPackage = window.selectPackage;
+window.selectPackage = async function(packageId, programId, moduleCount, selectionMode = 'modules', courseCount = 0) {
+    origSelectPackage(packageId, programId, moduleCount, selectionMode, courseCount);
+    await onPackageSelected(packageId, programId);
+};
+
+// On program select change, update modules/courses UI
+const programSelect = document.getElementById('programSelect');
+if (programSelect) {
+    programSelect.addEventListener('change', function() {
+        updateModulesAndCoursesUI(this.value);
+    });
+}
+
+// On page load, fetch and update program select
+window.addEventListener('DOMContentLoaded', async function() {
+    window.availableProgramsForModular = await fetchAvailableProgramsForStudent();
+    updateProgramSelect(window.availableProgramsForModular);
+    // Optionally, update modules/courses UI for the first program
+    if (window.availableProgramsForModular.length > 0) {
+        updateModulesAndCoursesUI(window.availableProgramsForModular[0].program_id);
+    }
+});
+
+// Replace the displayPrograms and loadPrograms logic for the program card carousel:
+async function displayPrograms() {
+    const programs = window.availableProgramsForModular.length ? window.availableProgramsForModular : await fetchAvailableProgramsForStudent();
+    window.availableProgramsForModular = programs;
+    const grid = document.getElementById('programsGrid');
+    if (!programs || programs.length === 0) {
+        grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
+        return;
+    }
+    // Clear existing content
+    const carouselInner = document.querySelector('#programCarousel .carousel-inner');
+    carouselInner.innerHTML = '';
+    // Group programs into chunks for carousel slides (2 programs per slide)
+    const chunkSize = 2;
+    const programChunks = [];
+    for (let i = 0; i < programs.length; i += chunkSize) {
+        programChunks.push(programs.slice(i, i + chunkSize));
+    }
+    // Create carousel slides
+    programChunks.forEach((chunk, index) => {
+        const isActive = index === 0 ? 'active' : '';
+        let slideHtml = `<div class="carousel-item ${isActive}"><div class="row justify-content-center">`;
+        chunk.forEach(program => {
+            slideHtml += `
+                <div class="col-md-5 mb-4">
+                    <div class="card selection-card h-100" 
+                         onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
+                        <div class="card-body">
+                            <h4 class="card-title">${program.program_name}</h4>
+                            <p class="card-text">${program.description || 'No description available.'}</p>
+                            <div id="modules-for-program-${program.program_id}"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        slideHtml += `</div></div>`;
+        carouselInner.innerHTML += slideHtml;
+    });
+    // Update carousel indicators if there are multiple slides
+    const indicatorsContainer = document.querySelector('#programCarousel .carousel-indicators');
+    if (programChunks.length > 1) {
+        indicatorsContainer.innerHTML = '';
+        programChunks.forEach((chunk, index) => {
+            const isActive = index === 0 ? 'active' : '';
+            indicatorsContainer.innerHTML += `
+                <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${index}" 
+                        class="${isActive}" aria-label="Slide ${index + 1}"></button>
+            `;
+        });
+        indicatorsContainer.style.display = 'block';
+        document.querySelector('#programCarousel .carousel-control-prev').style.display = 'block';
+        document.querySelector('#programCarousel .carousel-control-next').style.display = 'block';
+    } else {
+        indicatorsContainer.style.display = 'none';
+        document.querySelector('#programCarousel .carousel-control-prev').style.display = 'none';
+        document.querySelector('#programCarousel .carousel-control-next').style.display = 'none';
+    }
+}
+window.addEventListener('DOMContentLoaded', displayPrograms);
+window.displayPrograms = displayPrograms;
 </script>
 
 <style>

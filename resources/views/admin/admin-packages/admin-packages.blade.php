@@ -903,6 +903,17 @@
                                             <div class="text-center mb-3">
                                                 <h4 class="text-success fw-bold">₱{{ number_format($package->amount ?? 0, 2) }}</h4>
                                             </div>
+                                            @php
+                                                $periodParts = [];
+                                                if (!empty($package->access_period_years)) $periodParts[] = $package->access_period_years . ' Year' . ($package->access_period_years > 1 ? 's' : '');
+                                                if (!empty($package->access_period_months)) $periodParts[] = $package->access_period_months . ' Month' . ($package->access_period_months > 1 ? 's' : '');
+                                                if (!empty($package->access_period_days)) $periodParts[] = $package->access_period_days . ' Day' . ($package->access_period_days > 1 ? 's' : '');
+                                            @endphp
+                                            @if(count($periodParts) > 0)
+                                                <div class="text-center mb-2">
+                                                    <span class="badge bg-info text-dark">Access Period: {{ implode(' ', $periodParts) }}</span>
+                                                </div>
+                                            @endif
                                             
                                             <div class="d-grid gap-2">
                                                 <div class="btn-group" role="group">
@@ -958,7 +969,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="package_type" class="required">Package Type</label>
-                    <select id="package_type" name="package_type" required onchange="handlePackageTypeChange()">
+                    <select id="package_type" name="package_type" required>
                         <option value="">Select Package Type</option>
                         <option value="full">Full Enrollment</option>
                         <option value="modular">Modular Enrollment</option>
@@ -973,112 +984,30 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="package_period_days">Days</label>
-                    <input type="number" id="package_period_days" name="package_period_days" min="0" placeholder="0">
+                    <label for="access_period_days">Days</label>
+                    <input type="number" id="access_period_days" name="access_period_days" min="0" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label for="package_period_months">Months</label>
-                    <input type="number" id="package_period_months" name="package_period_months" min="0" placeholder="0">
+                    <label for="access_period_months">Months</label>
+                    <input type="number" id="access_period_months" name="access_period_months" min="0" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label for="package_period_years">Years</label>
-                    <input type="number" id="package_period_years" name="package_period_years" min="0" placeholder="0">
+                    <label for="access_period_years">Years</label>
+                    <input type="number" id="access_period_years" name="access_period_years" min="0" placeholder="0">
                 </div>
             </div>
             <small class="form-text text-muted mb-3">Set the access period for this package. The period starts after payment approval. Leave blank for unlimited access.</small>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="program_id" class="required">Program</label>
-                    <select id="program_id" name="program_id" required onchange="loadProgramData()">
-                        <option value="">Select Program</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <!-- Selection Mode -->
-                <div class="form-group" id="selectionModeGroup" style="display: none;">
-                    <label class="required">Count Based On</label>
-                    <div class="checkbox-group">
-                        <div class="checkbox-option">
-                            <input type="radio" id="selection_mode_modules" name="selection_mode" value="modules" checked onchange="handleSelectionModeChange()">
-                            <label for="selection_mode_modules">
-                                <i class="fas fa-layer-group me-2"></i>Module Count
-                            </label>
-                        </div>
-                        <div class="checkbox-option">
-                            <input type="radio" id="selection_mode_courses" name="selection_mode" value="courses" onchange="handleSelectionModeChange()">
-                            <label for="selection_mode_courses">
-                                <i class="fas fa-book me-2"></i>Course Count
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-            
-            <!-- Count Limits (Always visible for modular packages) -->
-            <div class="form-row" id="countLimitsGroup" style="display: none;">
-                <div class="form-group">
                     <label for="module_count">Maximum Modules (Optional)</label>
                     <input type="number" id="module_count" name="module_count" min="1" max="50" placeholder="Leave empty for unlimited">
-                    <small class="form-text text-muted">Set module limit regardless of selection mode</small>
+                    <small class="form-text text-muted">Set module limit (optional)</small>
                 </div>
-                
                 <div class="form-group">
                     <label for="course_count">Maximum Courses (Optional)</label>
                     <input type="number" id="course_count" name="course_count" min="1" max="50" placeholder="Leave empty for unlimited">
-                    <small class="form-text text-muted">Set course limit regardless of selection mode</small>
-                </div>
-            </div>
-            
-            <!-- Selection Type for Modular -->
-            <div class="form-group" id="selectionTypeGroup" style="display: none;">
-                <label for="selection_type" class="required">Selection Type</label>
-                <select id="selection_type" name="selection_type" onchange="handleSelectionTypeChange()">
-                    <option value="module">Module Level Selection</option>
-                    <option value="course">Course Level Selection</option>
-                    <option value="both">Both Module & Course Selection</option>
-                </select>
-            </div>
-            
-            <!-- Module Selection -->
-            <div class="selection-section" id="moduleSelection" style="display: none;">
-                <h4><i class="fas fa-layer-group me-2"></i>Select Modules</h4>
-                <div class="selection-info">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Choose specific modules for this package. If none selected, all modules will be available.
-                </div>
-                <div class="loading" id="moduleLoading" style="display: none;">
-                    <i class="fas fa-spinner"></i>Loading modules...
-                </div>
-                <div class="checkboxes-grid" id="moduleCheckboxes">
-                    <!-- Modules will be loaded here -->
-                </div>
-                <div class="selected-display" id="selectedModulesDisplay" style="display: none;">
-                    <h5>Selected Modules: <span id="selectedModulesCount">0</span></h5>
-                    <div id="selectedModulesList"></div>
-                </div>
-            </div>
-
-            <!-- Course Selection -->
-            <div class="selection-section" id="courseSelection" style="display: none;">
-                <h4><i class="fas fa-book me-2"></i>Select Courses</h4>
-                <div class="selection-info">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Choose specific courses for this package. Students will only access these courses.
-                </div>
-                <div class="loading" id="courseLoading" style="display: none;">
-                    <i class="fas fa-spinner"></i>Loading courses...
-                </div>
-                <div class="checkboxes-grid" id="courseCheckboxes">
-                    <!-- Courses will be loaded here -->
-                </div>
-                <div class="selected-display" id="selectedCoursesDisplay" style="display: none;">
-                    <h5>Selected Courses: <span id="selectedCoursesCount">0</span></h5>
-                    <div id="selectedCoursesList"></div>
+                    <small class="form-text text-muted">Set course limit (optional)</small>
                 </div>
             </div>
             
@@ -1118,7 +1047,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="edit_package_type" class="required">Package Type</label>
-                    <select id="edit_package_type" name="package_type" required onchange="handleEditPackageTypeChange()">
+                    <select id="edit_package_type" name="package_type" required>
                         <option value="full">Full Enrollment</option>
                         <option value="modular">Modular Enrollment</option>
                     </select>
@@ -1132,110 +1061,30 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="edit_package_period_days">Days</label>
-                    <input type="number" id="edit_package_period_days" name="package_period_days" min="0" placeholder="0">
+                    <label for="edit_access_period_days">Days</label>
+                    <input type="number" id="edit_access_period_days" name="access_period_days" min="0" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label for="edit_package_period_months">Months</label>
-                    <input type="number" id="edit_package_period_months" name="package_period_months" min="0" placeholder="0">
+                    <label for="edit_access_period_months">Months</label>
+                    <input type="number" id="edit_access_period_months" name="access_period_months" min="0" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label for="edit_package_period_years">Years</label>
-                    <input type="number" id="edit_package_period_years" name="package_period_years" min="0" placeholder="0">
+                    <label for="edit_access_period_years">Years</label>
+                    <input type="number" id="edit_access_period_years" name="access_period_years" min="0" placeholder="0">
                 </div>
             </div>
             <small class="form-text text-muted mb-3">Set the access period for this package. The period starts after payment approval. Leave blank for unlimited access.</small>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="edit_program_id" class="required">Program</label>
-                    <select id="edit_program_id" name="program_id" required onchange="loadEditProgramData()">
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <!-- Edit Selection Mode -->
-                <div class="form-group" id="editSelectionModeGroup" style="display: none;">
-                    <label class="required">Count Based On</label>
-                    <div class="checkbox-group">
-                        <div class="checkbox-option">
-                            <input type="radio" id="edit_selection_mode_modules" name="selection_mode" value="modules" checked onchange="handleEditSelectionModeChange()">
-                            <label for="edit_selection_mode_modules">
-                                <i class="fas fa-layer-group me-2"></i>Module Count
-                            </label>
-                        </div>
-                        <div class="checkbox-option">
-                            <input type="radio" id="edit_selection_mode_courses" name="selection_mode" value="courses" onchange="handleEditSelectionModeChange()">
-                            <label for="edit_selection_mode_courses">
-                                <i class="fas fa-book me-2"></i>Course Count
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-            
-            <!-- Edit Count Limits (Always visible for modular packages) -->
-            <div class="form-row" id="editCountLimitsGroup" style="display: none;">
-                <div class="form-group">
                     <label for="edit_module_count">Maximum Modules (Optional)</label>
                     <input type="number" id="edit_module_count" name="module_count" min="1" max="50" placeholder="Leave empty for unlimited">
-                    <small class="form-text text-muted">Set module limit regardless of selection mode</small>
+                    <small class="form-text text-muted">Set module limit (optional)</small>
                 </div>
-                
                 <div class="form-group">
                     <label for="edit_course_count">Maximum Courses (Optional)</label>
                     <input type="number" id="edit_course_count" name="course_count" min="1" max="50" placeholder="Leave empty for unlimited">
-                    <small class="form-text text-muted">Set course limit regardless of selection mode</small>
-                </div>
-            </div>
-            
-            <div class="form-group" id="editSelectionTypeGroup" style="display: none;">
-                <label for="edit_selection_type" class="required">Selection Type</label>
-                <select id="edit_selection_type" name="selection_type" onchange="handleEditSelectionTypeChange()">
-                    <option value="module">Module Level Selection</option>
-                    <option value="course">Course Level Selection</option>
-                    <option value="both">Both Module & Course Selection</option>
-                </select>
-            </div>
-            
-            <!-- Module Selection for Edit -->
-            <div class="selection-section" id="editModuleSelection" style="display: none;">
-                <h4><i class="fas fa-layer-group me-2"></i>Select Modules</h4>
-                <div class="selection-info">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Choose specific modules for this package.
-                </div>
-                <div class="loading" id="editModuleLoading" style="display: none;">
-                    <i class="fas fa-spinner"></i>Loading modules...
-                </div>
-                <div class="checkboxes-grid" id="editModuleCheckboxes">
-                    <!-- Modules will be loaded here -->
-                </div>
-                <div class="selected-display" id="editSelectedModulesDisplay" style="display: none;">
-                    <h5>Selected Modules: <span id="editSelectedModulesCount">0</span></h5>
-                    <div id="editSelectedModulesList"></div>
-                </div>
-            </div>
-
-            <!-- Course Selection for Edit -->
-            <div class="selection-section" id="editCourseSelection" style="display: none;">
-                <h4><i class="fas fa-book me-2"></i>Select Courses</h4>
-                <div class="selection-info">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Choose specific courses for this package.
-                </div>
-                <div class="loading" id="editCourseLoading" style="display: none;">
-                    <i class="fas fa-spinner"></i>Loading courses...
-                </div>
-                <div class="checkboxes-grid" id="editCourseCheckboxes">
-                    <!-- Courses will be loaded here -->
-                </div>
-                <div class="selected-display" id="editSelectedCoursesDisplay" style="display: none;">
-                    <h5>Selected Courses: <span id="editSelectedCoursesCount">0</span></h5>
-                    <div id="editSelectedCoursesList"></div>
+                    <small class="form-text text-muted">Set course limit (optional)</small>
                 </div>
             </div>
             
@@ -1672,6 +1521,9 @@ function editPackage(packageId) {
                 document.getElementById('edit_program_id').value = packageData.program_id || '';
                 document.getElementById('edit_module_count').value = packageData.module_count || '';
                 document.getElementById('edit_course_count').value = packageData.course_count || '';
+                document.getElementById('edit_access_period_days').value = packageData.access_period_days || '';
+                document.getElementById('edit_access_period_months').value = packageData.access_period_months || '';
+                document.getElementById('edit_access_period_years').value = packageData.access_period_years || '';
                 
                 // Set selection mode
                 const selectionMode = packageData.selection_mode || 'modules';

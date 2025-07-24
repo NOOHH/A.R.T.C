@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 /*
 |-----------------------------------------------------------// Chat API routes (auth:sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -356,6 +357,67 @@ Route::middleware('web')->group(function () {
 
             return response()->json(['success' => true, 'requirements' => $requirements]);
         } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    });
+    
+    // Get available programs for modular enrollment (with filtering)
+    Route::get('/enrollment/available-programs', function (Request $request) {
+        try {
+            // Get current session student info
+            $student = session('student');
+            $studentId = $student['id'] ?? null;
+            
+            // Start with base query for programs with modular packages
+            $query = \App\Models\Program::where('is_archived', false)
+                ->whereHas('packages', function($q) {
+                    $q->where('package_type', 'modular');
+                })
+                ->with(['modules' => function($q) {
+                    $q->where('is_archived', false)
+                      ->orderBy('module_order', 'asc')
+                      ->select('modules_id', 'module_name', 'module_description', 'program_id');
+                }, 'packages' => function($q) {
+                    $q->where('package_type', 'modular');
+                }]);
+            
+            // If we have a student, filter out programs they're already enrolled in
+            if ($studentId) {
+                // Exclude programs with full-plan enrollments
+                $query->whereNotExists(function($subQuery) use ($studentId) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('student_enrollments')
+                        ->whereColumn('student_enrollments.program_id', 'programs.program_id')
+                        ->where('student_enrollments.student_id', $studentId)
+                        ->where('student_enrollments.plan_id', 1); // Full plan
+                });
+                
+                // Exclude programs with existing modular enrollments
+                $query->whereNotExists(function($subQuery) use ($studentId) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('student_enrollments')
+                        ->whereColumn('student_enrollments.program_id', 'programs.program_id')
+                        ->where('student_enrollments.student_id', $studentId)
+                        ->where('student_enrollments.plan_id', 2); // Modular plan
+                });
+            }
+            
+            $programs = $query->select('program_id', 'program_name', 'program_description')
+                ->orderBy('program_name')
+                ->get();
+            
+            // Filter out programs with no modules
+            $programs = $programs->filter(function($program) {
+                return $program->modules && $program->modules->count() > 0;
+            });
+            
+            return response()->json([
+                'success' => true, 
+                'programs' => $programs->values()->toArray()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching available programs for modular enrollment: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     });

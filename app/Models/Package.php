@@ -24,6 +24,9 @@ class Package extends Model
         'price',
         'allowed_modules',
         'extra_module_price',
+        'access_period_days',
+        'access_period_months',
+        'access_period_years',
     ];
 
     protected $casts = [
