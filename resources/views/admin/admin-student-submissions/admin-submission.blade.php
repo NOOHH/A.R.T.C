@@ -1,16 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Student Assignment Submissions - A.R.T.C Admin</title>
-    
-    <!-- Bootstrap 5.3.0 CSS -->
+@extends('admin.admin-dashboard-layout')
+
+@section('title', 'Student Assignment Submissions - A.R.T.C Admin')
+
+@push('styles')
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
+
+    <!-- Your custom CSS -->
     <style>
         :root {
             --primary-color: #0d6efd;
@@ -347,8 +344,8 @@
             }
         }
     </style>
-</head>
-<body>
+@endpush
+@section('content')
     <div class="admin-header">
         <div class="container-fluid">
             <div class="row">
@@ -360,11 +357,6 @@
                                 Assignment Submissions
                             </h1>
                             <p class="mb-0 opacity-75">Review and grade student assignment submissions</p>
-                        </div>
-                        <div>
-                            <a href="{{ route('admin.dashboard') }}" class="btn btn-light">
-                                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -617,8 +609,8 @@
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap 5.3.0 JS -->
+@endsection
+@push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -708,5 +700,4 @@
             });
         }, 5000);
     </script>
-</body>
-</html>
+@endpush

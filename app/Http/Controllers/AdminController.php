@@ -1938,6 +1938,16 @@ class AdminController extends Controller
             // Get submissions with pagination
             $submissions = $query->paginate(10);
 
+            // Decode files JSON to array for each submission
+            foreach ($submissions as $submission) {
+                if (is_string($submission->files)) {
+                    $decoded = json_decode($submission->files, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $submission->files = $decoded;
+                    }
+                }
+            }
+
             // Get all programs and modules for filter dropdowns
             $programs = Program::where('is_archived', false)
                 ->orderBy('program_name')

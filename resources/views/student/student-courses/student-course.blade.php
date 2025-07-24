@@ -1198,37 +1198,14 @@
                     }
                     // Deadline enforcement logic
                     let deadlinePassed = false;
+                    let dueDateObj = null;
                     if (content.due_date) {
-                        const dueDate = new Date(content.due_date);
+                        dueDateObj = new Date(content.due_date);
                         const now = new Date();
-                        if (now > dueDate) {
+                        if (now > dueDateObj) {
                             deadlinePassed = true;
                         }
                     }
-                    if (deadlinePassed) {
-                        html += `<div class='alert alert-danger mt-4'><strong>The deadline for this assignment has passed. You can no longer submit.</strong></div>`;
-                    } else {
-                        // Submission form
-                        html += `<div class="assignment-actions">
-                    <form id="assignmentSubmitForm" enctype="multipart/form-data">
-                        <input type="hidden" name="content_id" value="${content.id}">
-                        <div class="mb-3">
-                            <label for="assignmentFiles" class="form-label">Upload Files</label>
-                            <input type="file" class="form-control" id="assignmentFiles" name="files[]" multiple required>
-                            <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
-                        </div>
-                        <div class="mb-3">
-                            <label for="assignmentNotes" class="form-label">Notes (Optional)</label>
-                            <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit Assignment</button>
-                    </form>
-                    <div id="assignmentSubmissionStatus" class="mt-3"></div>
-                    <div id="previousAssignmentSubmissions" class="mt-3"></div>
-                </div>`;
-                    }
-                    html += `</div>`;
-                    viewer.innerHTML = html;
                     // Fetch and display previous submissions
                     fetch(`/student/content/${content.id}/submissions`, {
                         method: 'GET',
@@ -1239,8 +1216,81 @@
                     })
                     .then(response => response.json())
                     .then(data => {
+                        let hasSubmission = false;
+                        let latest = null;
                         if (data.success && data.submissions && data.submissions.length > 0) {
-                            let html = '<div class="mt-4"><h5><i class="bi bi-clock-history me-2"></i>Submission History</h5>';
+                            hasSubmission = true;
+                            latest = data.submissions[0];
+                        }
+                        // Build status table if a submission exists
+                        if (hasSubmission) {
+                            let gradingStatus = (latest.status === 'graded') ? 'Graded' : (latest.status === 'reviewed' ? 'Needs revision' : 'Not graded');
+                            let submissionStatus = (latest.status === 'graded' || latest.status === 'reviewed') ? 'Submitted and reviewed' : 'Submitted for grading';
+                            let submittedAt = new Date(latest.submitted_at);
+                            let lastModified = submittedAt.toLocaleString();
+                            let timeRemaining = '';
+                            if (dueDateObj) {
+                                const diffMs = dueDateObj - submittedAt;
+                                if (diffMs > 0) {
+                                    const mins = Math.floor(diffMs / 60000);
+                                    timeRemaining = `Assignment was submitted ${Math.floor(mins/60)} hour ${mins%60} mins early`;
+                                } else {
+                                    const mins = Math.abs(Math.floor(diffMs / 60000));
+                                    timeRemaining = `Assignment was submitted ${Math.floor(mins/60)} hour ${mins%60} mins late`;
+                                }
+                            }
+                            html += `<table class="table table-bordered mt-4">
+                                <tr><th>Submission status</th><td class="bg-success bg-opacity-25">${submissionStatus}</td></tr>
+                                <tr><th>Grading status</th><td>${gradingStatus}</td></tr>
+                                <tr><th>Time remaining</th><td class="bg-success bg-opacity-25">${timeRemaining}</td></tr>
+                                <tr><th>Last modified</th><td>${lastModified}</td></tr>
+                                <tr><th>File submissions</th><td>`;
+                            let files = latest.files || [];
+                            if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
+                            files.forEach(f => {
+                                const fileName = f.original_name || f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File');
+                                const filePath = f.path || f.file_path || f;
+                                html += `<a href="/storage/${filePath}" target="_blank" class="text-danger">${fileName}</a><br/>`;
+                            });
+                            html += `</td></tr></table>`;
+                            // Show feedback if graded or reviewed
+                            if (latest.status === 'graded' && latest.feedback) {
+                                html += `<div class="alert alert-light border-start border-4 border-primary mb-2 mt-3">
+                                    <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
+                                    <div class="bg-white rounded p-2 mt-1 border">${latest.feedback}</div>
+                                </div>`;
+                            } else if (latest.status === 'reviewed' && latest.feedback) {
+                                html += `<div class="alert alert-info border-start border-4 border-info mb-2 mt-3">
+                                    <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
+                                    <div class="bg-white rounded p-2 mt-1 border">${latest.feedback}</div>
+                                    <small class="text-muted mt-1 d-block">This submission needs revision. Please review the feedback and resubmit.</small>
+                                </div>`;
+                            }
+                        }
+                        // Only show upload form if not deadlinePassed and no submission exists
+                        if (!deadlinePassed && !hasSubmission) {
+                            html += `<div class="assignment-actions">
+                        <form id="assignmentSubmitForm" enctype="multipart/form-data">
+                            <input type="hidden" name="content_id" value="${content.id}">
+                            <div class="mb-3">
+                                <label for="assignmentFiles" class="form-label">Upload Files</label>
+                                <input type="file" class="form-control" id="assignmentFiles" name="files[]" multiple required>
+                                <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="assignmentNotes" class="form-label">Notes (Optional)</label>
+                                <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Assignment</button>
+                        </form>
+                        <div id="assignmentSubmissionStatus" class="mt-3"></div>
+                        </div>`;
+                        }
+                        html += `<div id="previousAssignmentSubmissions" class="mt-3"></div>`;
+                        viewer.innerHTML = html;
+                        // Fetch and display submission history
+                        if (data.success && data.submissions && data.submissions.length > 0) {
+                            let html2 = '<div class="mt-4"><h5><i class="bi bi-clock-history me-2"></i>Submission History</h5>';
                             data.submissions.forEach(sub => {
                                 let files = sub.files || [];
                                 if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
@@ -1256,7 +1306,7 @@
                                     statusText = 'Reviewed';
                                 }
                                 
-                                html += `<div class="card mb-3">
+                                html2 += `<div class="card mb-3">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="card-title mb-1">
@@ -1276,7 +1326,7 @@
                                     if (sub.grade < 70) gradeClass = 'text-danger';
                                     else if (sub.grade < 80) gradeClass = 'text-warning';
                                     
-                                    html += `<div class="alert alert-light border-start border-4 border-primary mb-2">
+                                    html2 += `<div class="alert alert-light border-start border-4 border-primary mb-2">
                                         <div class="d-flex align-items-center mb-2">
                                             <i class="bi bi-award me-2 text-primary"></i>
                                             <strong>Grade: <span class="${gradeClass}">${sub.grade}/100</span></strong>
@@ -1284,15 +1334,15 @@
                                     
                                     // Show feedback if available
                                     if (sub.feedback) {
-                                        html += `<div class="mt-2">
+                                        html2 += `<div class="mt-2">
                                             <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
                                             <div class="bg-white rounded p-2 mt-1 border">${sub.feedback}</div>
                                         </div>`;
                                     }
-                                    html += `</div>`;
+                                    html2 += `</div>`;
                                 } else if (sub.status === 'reviewed' && sub.feedback) {
                                     // Show feedback for reviewed submissions without grade
-                                    html += `<div class="alert alert-info border-start border-4 border-info mb-2">
+                                    html2 += `<div class="alert alert-info border-start border-4 border-info mb-2">
                                         <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
                                         <div class="bg-white rounded p-2 mt-1 border">${sub.feedback}</div>
                                         <small class="text-muted mt-1 d-block">This submission needs revision. Please review the feedback and resubmit.</small>
@@ -1301,61 +1351,65 @@
                                 
                                 // Show files
                                 if (files.length > 0) {
-                                    html += `<div class="mb-2">
+                                    html2 += `<div class="mb-2">
                                         <strong><i class="bi bi-paperclip me-2"></i>Files:</strong>
                                         <div class="mt-1">`;
                                     files.forEach(f => {
                                         const fileName = f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File');
                                         const filePath = f.file_path || f.path || f;
-                                        html += `<a href="/storage/${filePath}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-1">
+                                        html2 += `<a href="/storage/${filePath}" target="_blank" class="btn btn-outline-primary btn-sm me-2 mb-1">
                                             <i class="bi bi-download me-1"></i>${fileName}
                                         </a>`;
                                     });
-                                    html += `</div></div>`;
+                                    html2 += `</div></div>`;
                                 }
                                 
                                 // Show submission comments if any
                                 if (sub.comments) {
-                                    html += `<div class="mb-2">
+                                    html2 += `<div class="mb-2">
                                         <strong><i class="bi bi-sticky me-2"></i>Your Notes:</strong>
                                         <div class="text-muted">${sub.comments}</div>
                                     </div>`;
                                 }
                                 
-                                html += `</div></div>`;
+                                html2 += `</div></div>`;
                             });
-                            html += '</div>';
-                            document.getElementById('previousAssignmentSubmissions').innerHTML = html;
+                            html2 += '</div>';
+                            document.getElementById('previousAssignmentSubmissions').innerHTML = html2;
+                        }
+                        // Add form handler if form exists
+                        const formElem = document.getElementById('assignmentSubmitForm');
+                        if (formElem) {
+                            formElem.addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                const formData = new FormData(this);
+                                if (currentModule) {
+                                    formData.append('module_id', currentModule);
+                                }
+                                const statusDiv = document.getElementById('assignmentSubmissionStatus');
+                                statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+                                fetch('/student/assignment/submit', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                    },
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        statusDiv.innerHTML = '<span class="text-success">Submission successful!</span>';
+                                        this.reset();
+                                    } else {
+                                        statusDiv.innerHTML = `<span class="text-danger">${data.message || 'Error submitting your work.'}</span>`;
+                                    }
+                                })
+                                .catch(error => {
+                                    statusDiv.innerHTML = '<span class="text-danger">Error submitting your work.</span>';
+                                });
+                            });
                         }
                     });
-                    // Handle form submission if not past deadline
-                    if (!deadlinePassed) {
-                        document.getElementById('assignmentSubmitForm').addEventListener('submit', function(e) {
-                            e.preventDefault();
-                            const formData = new FormData(this);
-                            const statusDiv = document.getElementById('assignmentSubmissionStatus');
-                            statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
-                            fetch('/student/assignment/submit', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                },
-                                body: formData
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    statusDiv.innerHTML = '<span class="text-success">Submission successful!</span>';
-                                    this.reset();
-                                } else {
-                                    statusDiv.innerHTML = `<span class="text-danger">${data.message || 'Error submitting your work.'}</span>`;
-                                }
-                            })
-                            .catch(error => {
-                                statusDiv.innerHTML = '<span class="text-danger">Error submitting your work.</span>';
-                            });
-                        });
-                    }
                 } else {
                     viewer.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle text-warning"></i><h4>Assignment Not Available</h4><p>Unable to load assignment details.</p></div>`;
                 }
