@@ -254,15 +254,16 @@ Route::get('/enrollment/full', [StudentRegistrationController::class, 'showRegis
 
 // Modular enrollment form (GET)
 Route::get('/enrollment/modular', function () {
-    $allPrograms = Program::where('is_archived', false)
-        ->whereHas('packages') // Only show programs that have packages
+    $allPrograms = Program::with(['modules.courses', 'packages' => function($q) { $q->where('package_type', 'modular'); }])
+        ->where('is_archived', false)
+        ->whereHas('packages', function($q) { $q->where('package_type', 'modular'); })
         ->get();
-    
+
     // Get only modular packages
     $packages = Package::with('program')
         ->where('package_type', 'modular')
         ->get();
-    
+
     // Auto-generate default modular package if none exist
     if ($packages->isEmpty()) {
         $defaultPackage = Package::create([
@@ -275,41 +276,60 @@ Route::get('/enrollment/modular', function () {
         $packages = collect([$defaultPackage]);
         \Log::info('Auto-generated default modular package', ['package_id' => $defaultPackage->package_id]);
     }
-    
+
     $programId = request('program_id');
-    
+
     // Get form requirements for modular enrollment
     $formRequirements = \App\Models\FormRequirement::active()
         ->forProgram('modular')
         ->ordered()
         ->get();
-    
+
     // Get education levels
     $educationLevels = \App\Models\EducationLevel::all();
-    
+
     // Get plan data with learning mode settings
     $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
     $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
-    
+
     // Get existing student data if user is logged in
     $student = null;
     $enrolledProgramIds = [];
-    
+
     if (session('user_id')) {
         $student = \App\Models\Student::where('user_id', session('user_id'))->first();
-        
-        // Get already enrolled program IDs to exclude them from the dropdown
         if ($student) {
             $enrolledProgramIds = $student->enrollments()->pluck('program_id')->toArray();
         }
     }
-    
+
     // Filter out programs the user is already enrolled in
     $programs = $allPrograms->reject(function ($program) use ($enrolledProgramIds) {
         return in_array($program->program_id, $enrolledProgramIds);
-    });
-    
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'educationLevels', 'student', 'fullPlan', 'modularPlan'));
+    })->values();
+
+    // Build contentStructure for JS (programs with modules and courses)
+    $contentStructure = $programs->map(function($program) {
+        return [
+            'program_id' => $program->program_id,
+            'program_name' => $program->program_name,
+            'modules' => $program->modules->map(function($module) {
+                return [
+                    'module_id' => $module->module_id,
+                    'module_name' => $module->module_name,
+                    'courses' => $module->courses->map(function($course) {
+                        return [
+                            'course_id' => $course->course_id,
+                            'course_name' => $course->course_name,
+                            'content_count' => $course->content_count ?? 0
+                        ];
+                    })->toArray()
+                ];
+            })->toArray()
+        ];
+    })->toArray();
+
+    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'educationLevels', 'student', 'fullPlan', 'modularPlan', 'contentStructure'));
 })->name('enrollment.modular');
 
 // Modular enrollment submission
@@ -317,9 +337,9 @@ Route::post('/enrollment/modular/submit', [StudentRegistrationController::class,
 Route::post('/enrollment/modular/store', [StudentRegistrationController::class, 'storeModular'])->name('enrollment.modular.store');
 
 // API endpoints for modular enrollment
-Route::get('/get-program-modules', [StudentRegistrationController::class, 'getProgramModules'])->name('get.program.modules');
-Route::get('/get-module-courses', [StudentRegistrationController::class, 'getModuleCourses'])->name('get.module.courses');
-Route::get('/get-program-batches', [StudentRegistrationController::class, 'getProgramBatches'])->name('get.program.batches');
+Route::middleware(['web'])->group(function () {
+    Route::get('/api/enrollment/available-programs', [StudentRegistrationController::class, 'getAvailableProgramsForModularEnrollment'])->name('api.enrollment.available-programs');
+});
 
 // Enrollment-specific OTP and validation routes
 Route::post('/enrollment/send-otp', [StudentRegistrationController::class, 'sendEnrollmentOTP'])->name('enrollment.send-otp');
@@ -2160,3 +2180,6 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
 
 // Add this route for multi-program batch fetching
 Route::get('/admin/modules/batches', [App\Http\Controllers\AdminModuleController::class, 'getBatchesForPrograms']);
+
+// Public route for module courses (for modular enrollment page AJAX)
+Route::get('/get-module-courses', [App\Http\Controllers\StudentRegistrationController::class, 'getModuleCourses']);

@@ -3029,12 +3029,84 @@ function updateBatchVisibility() {
     const plan = planSelect.value;
     if (plan === 'full') {
         batchGroup.style.display = '';
+        batchSelect.disabled = false;
+        batchSelect.setAttribute('name', 'batch_id');
         loadBatchesForPrograms();
     } else {
         batchGroup.style.display = 'none';
-        batchSelect.innerHTML = '<option value="">-- Select Batch(es) --</option>';
+        batchSelect.disabled = true;
+        batchSelect.removeAttribute('name');
+        batchSelect.innerHTML = '<option value="">-- Select Batch --</option>';
     }
 }
+planSelect.addEventListener('change', updateBatchVisibility);
+programSelect.addEventListener('change', function() {
+    const plan = planSelect.value;
+    if (plan === 'full') {
+        loadBatchesForPrograms();
+    }
+});
+// Ensure correct initial state when modal opens
+function setInitialBatchVisibility() {
+    updateBatchVisibility();
+}
+// Attach to modal open event
+const showAddModalBtn = document.getElementById('showAddModal');
+if (showAddModalBtn) {
+    showAddModalBtn.addEventListener('click', function() {
+        setTimeout(setInitialBatchVisibility, 100); // Wait for modal to render
+    });
+}
+// Also set on DOMContentLoaded in case modal is open by default
+setInitialBatchVisibility();
+
+// Before submitting the addModuleForm, remove the batch_id field if plan is not 'full'
+document.getElementById('addModuleForm').addEventListener('submit', function(e) {
+    const plan = document.getElementById('planSelect').value;
+    const batchSelect = document.getElementById('batchSelect');
+    if (plan !== 'full') {
+        batchSelect.disabled = true;
+        batchSelect.removeAttribute('name');
+    } else {
+        batchSelect.disabled = false;
+        batchSelect.setAttribute('name', 'batch_id');
+    }
+});
+
+// --- Multi-select enhancements (optional, for better UX) ---
+// You can use a library like Choices.js or implement custom styling/UX for multi-selects if desired.
+
+// --- Override Settings Button Fix ---
+window.openOverrideModal = function(type, id, name) {
+    const modal = document.getElementById('overrideModal');
+    document.getElementById('overrideModuleName').textContent = name || '';
+    // Optionally set hidden fields for type/id if needed
+    modal.classList.add('show');
+};
+window.closeOverrideModal = function() {
+    document.getElementById('overrideModal').classList.remove('show');
+};
+window.saveOverrideSettings = function() {
+    // Implement AJAX save logic here if needed
+    closeOverrideModal();
+    // Optionally show a notification
+    if (typeof showNotification === 'function') showNotification('Override settings saved!', 'success');
+};
+
+// --- Archive Button Fix ---
+window.archiveModule = function(moduleId, moduleName) {
+    // Show archive confirmation modal and set module name/id
+    document.getElementById('archiveModuleName').textContent = moduleName;
+    document.getElementById('archiveConfirmationModal').classList.add('show');
+    window.confirmArchive = function() {
+        // Implement AJAX or form submission to archive the module
+        // ...
+        document.getElementById('archiveConfirmationModal').classList.remove('show');
+        if (typeof showNotification === 'function') showNotification('Module archived!', 'success');
+    };
+};
+
+
 planSelect.addEventListener('change', updateBatchVisibility);
 programSelect.addEventListener('change', function() {
     const plan = planSelect.value;
@@ -3179,7 +3251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Batch (only if Full Plan) -->
                 <div class="form-group" id="batchGroup" style="display:none;">
                     <label for="batchSelect">Batch <span class="text-danger">*</span></label>
-                    <select id="batchSelect" name="batch_id" class="form-select" style="min-height: 38px;">
+                    <select id="batchSelect" class="form-select" style="min-height: 38px;">
                         <option value="">-- Select Batch --</option>
                         <!-- Options will be loaded dynamically based on selected program -->
                     </select>

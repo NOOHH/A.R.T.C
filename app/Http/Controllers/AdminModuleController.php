@@ -53,7 +53,7 @@ class AdminModuleController extends Controller
             'module_name' => 'required|string|max:255',
             'module_description' => 'nullable|string',
             'program_id' => 'required|exists:programs,program_id',
-            'batch_id' => 'required|exists:student_batches,batch_id',
+            'batch_id' => ($request->input('plan') === 'full') ? 'required|exists:student_batches,batch_id' : 'nullable|exists:student_batches,batch_id',
             'learning_mode' => 'required|in:Synchronous,Asynchronous',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg|max:102400',
             'content_type' => 'nullable|string|in:module,assignment,quiz,ai_quiz,test,link',
