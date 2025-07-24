@@ -950,18 +950,21 @@
             courses.forEach(course => {
                 const icon = getContentIcon(course.type || course.course_type || 'course');
                 html += `
-                    <div class="course-item" onclick="selectCourse('${course.course_id}')">
-                        <div class="item-header">
-                            <div class="item-icon ${icon.class}">
-                                <i class="bi ${icon.icon}"></i>
+                    <div class="course-item d-flex justify-content-between align-items-center" onclick="selectCourse('${course.course_id}')">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <div class="item-header">
+                                <div class="item-icon ${icon.class}">
+                                    <i class="bi ${icon.icon}"></i>
+                                </div>
+                                <h5 class="item-title">${course.course_name || course.name || 'Untitled Course'}</h5>
                             </div>
-                            <h5 class="item-title">${course.course_name || course.name || 'Untitled Course'}</h5>
+                            ${(course.course_description || course.description) ? `<p class=\"item-description\">${course.course_description || course.description}</p>` : ''}
+                            <div class="mt-2">
+                                <span class="badge bg-primary">${course.type || course.course_type || 'Course'}</span>
+                                ${course.duration ? `<span class=\"badge bg-secondary ms-1\">${course.duration}</span>` : ''}
+                            </div>
                         </div>
-                        ${(course.course_description || course.description) ? `<p class=\"item-description\">${course.course_description || course.description}</p>` : ''}
-                        <div class="mt-2">
-                            <span class="badge bg-primary">${course.type || course.course_type || 'Course'}</span>
-                            ${course.duration ? `<span class=\"badge bg-secondary ms-1\">${course.duration}</span>` : ''}
-                        </div>
+                        <button class="btn btn-success btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); markComplete('course', '${course.course_id}', this)">Mark Complete</button>
                     </div>
                 `;
             });
@@ -1062,19 +1065,22 @@
                 const isQuiz = item.content_type === 'quiz';
 
                 let itemHtml = `
-                    <div class="content-item" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
-                        <div class="item-header">
-                            <div class="item-icon ${icon.class}">
-                                <i class="bi ${icon.icon}"></i>
+                    <div class="content-item d-flex justify-content-between align-items-center" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <div class="item-header">
+                                <div class="item-icon ${icon.class}">
+                                    <i class="bi ${icon.icon}"></i>
+                                </div>
+                                <h5 class="item-title">${item.content_title || item.title || 'Untitled Content'}</h5>
                             </div>
-                            <h5 class="item-title">${item.content_title || item.title || 'Untitled Content'}</h5>
+                            ${(item.content_description || item.description) ? `<p class=\"item-description\">${item.content_description || item.description}</p>` : ''}
+                            <div class="mt-2">
+                                <span class="badge bg-primary">${item.content_type || item.type || 'Content'}</span>
+                                ${hasAttachment ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-paperclip\"></i> Attachment</span>` : ''}
+                                ${item.duration ? `<span class=\"badge bg-secondary ms-1\">${item.duration}</span>` : ''}
+                            </div>
                         </div>
-                        ${(item.content_description || item.description) ? `<p class=\"item-description\">${item.content_description || item.description}</p>` : ''}
-                        <div class="mt-2">
-                            <span class="badge bg-primary">${item.content_type || item.type || 'Content'}</span>
-                            ${hasAttachment ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-paperclip\"></i> Attachment</span>` : ''}
-                            ${item.duration ? `<span class=\"badge bg-secondary ms-1\">${item.duration}</span>` : ''}
-                        </div>
+                        <button class="btn btn-success btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); markComplete('content', '${item.id}', this)">Mark Complete</button>
                     </div>
                 `;
 
@@ -1452,6 +1458,7 @@
                             <a href="${fileUrl}" target="_blank" class="btn btn-primary">
                                 <i class="bi bi-download"></i> Download
                             </a>
+                            <button class="btn btn-success btn-sm ms-2 mark-complete-btn" onclick="markComplete('document', '${content.id}', this)">Mark Complete</button>
                         </div>
                     </div>
                     ${(content.content_description) ? `<p class="text-muted mb-3">${content.content_description}</p>` : ''}
@@ -1680,30 +1687,56 @@
             });
         });
 
-        function markContentDone(contentId, btn) {
+        function markComplete(type, id, btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Marking...';
-            fetch(`/student/content/${contentId}/complete`, {
+            btn.innerText = 'Marking...';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-secondary');
+
+            let url = '';
+            let payload = {};
+            if (type === 'course') {
+                url = '/api/student/complete-course';
+                payload = { course_id: id };
+            } else if (type === 'content') {
+                url = '/api/student/complete-content';
+                payload = { content_id: id };
+            } else if (type === 'document') {
+                url = '/api/student/complete-content';
+                payload = { content_id: id };
+            }
+
+            fetch(url, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                }
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    btn.outerHTML = '<span class="badge bg-success ms-2">Completed</span>';
+                    btn.innerText = 'Completed';
+                    btn.disabled = true;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-secondary');
                 } else {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark as Done';
-                    alert(data.message || 'Error marking as done');
+                    btn.innerText = 'Mark Complete';
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                    alert(data.message || 'Error marking as complete.');
                 }
             })
             .catch(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check2-circle"></i> Mark as Done';
-                alert('Error marking as done');
+                btn.innerText = 'Mark Complete';
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-success');
+                alert('Error marking as complete.');
             });
         }
     </script>

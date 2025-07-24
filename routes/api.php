@@ -443,3 +443,9 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
     Route::post('/packages/test-relationships', [App\Http\Controllers\AdminPackageController::class, 'testRelationships']);
     Route::post('/packages/test-pivot-tables', [App\Http\Controllers\AdminPackageController::class, 'testPivotTables']);
 });
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
+    Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
+    Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
+});
