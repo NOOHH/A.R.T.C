@@ -93,6 +93,10 @@
         width: 1.2rem;
         text-align: center;
     }
+    /* Smooth transition for sidebar width */
+    .modern-sidebar {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     </style>
 </head>
 <body>
@@ -330,13 +334,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('modernSidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    
+
     if (sidebarToggle && sidebar && overlay) {
         sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            // On mobile: toggle slide-in
+            if (window.innerWidth < 768) {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            } else {
+                // On desktop: toggle collapsed
+                sidebar.classList.toggle('collapsed');
+            }
         });
-        
         overlay.addEventListener('click', function() {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');

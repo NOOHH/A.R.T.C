@@ -13,18 +13,20 @@
     <link rel="stylesheet" href="{{ asset('css/student/student-navbar.css') }}">
     
     <script>
+        const apiBase = "{{ url('/api') }}";
+        const storageUrl = "{{ asset('storage') }}";
         // Global variables for user authentication and chat functionality
-        window.myId = {!! json_encode(session('user_id') ?? (auth()->check() ? auth()->user()->id : null)) !!};
-        window.myName = {!! json_encode(session('user_name') ?? (auth()->check() ? auth()->user()->name : null)) !!};
-        window.isAuthenticated = {!! json_encode(session('user_id') ? true : (auth()->check())) !!};
-        window.userRole = {!! json_encode(session('user_role') ?? (auth()->check() ? auth()->user()->role : null)) !!};
+        window.myId = @json(session('user_id') ?? (auth()->check() ? auth()->user()->id : null));
+        window.myName = @json(session('user_name') ?? (auth()->check() ? auth()->user()->name : null));
+        window.isAuthenticated = @json(session('user_id') ? true : auth()->check());
+        window.userRole = @json(session('user_role') ?? (auth()->check() ? auth()->user()->role : null));
         // Initialize global variables
         var myId = window.myId;
         var myName = window.myName;
         var isAuthenticated = window.isAuthenticated;
         var userRole = window.userRole;
         function fetchAndSetUserInfo() {
-            fetch('/api/user-info', { credentials: 'same-origin' })
+            fetch(apiBase + '/user-info', { credentials: 'same-origin' })
                 .then(res => res.json())
                 .then(data => {
                     myId = data.id;
@@ -45,6 +47,9 @@
             fetchAndSetUserInfo();
         }
         console.log('Student Course Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+
+        // Initialize assignment form state for assignment submission UI
+        window.assignmentFormState = window.assignmentFormState || {};
     </script>
     
     <style>
@@ -1218,76 +1223,65 @@
                     .then(data => {
                         let hasSubmission = false;
                         let latest = null;
+                        let isDraft = false;
+                        let showSubmissionForm = !!window.assignmentFormState[contentId];
                         if (data.success && data.submissions && data.submissions.length > 0) {
                             hasSubmission = true;
-                            latest = data.submissions[0];
+                            // Find draft if exists, else latest
+                            latest = data.submissions.find(s => s.status === 'draft') || data.submissions[0];
+                            isDraft = latest.status === 'draft';
+                            // Always show the draft/submission status view if any submission exists
+                            showSubmissionForm = true;
+                        } else {
+                            hasSubmission = false;
+                            latest = null;
+                            isDraft = false;
+                            showSubmissionForm = !!window.assignmentFormState[contentId];
                         }
-                        // Build status table if a submission exists
-                        if (hasSubmission) {
-                            let gradingStatus = (latest.status === 'graded') ? 'Graded' : (latest.status === 'reviewed' ? 'Needs revision' : 'Not graded');
-                            let submissionStatus = (latest.status === 'graded' || latest.status === 'reviewed') ? 'Submitted and reviewed' : 'Submitted for grading';
-                            let submittedAt = new Date(latest.submitted_at);
-                            let lastModified = submittedAt.toLocaleString();
-                            let timeRemaining = '';
-                            if (dueDateObj) {
-                                const diffMs = dueDateObj - submittedAt;
-                                if (diffMs > 0) {
-                                    const mins = Math.floor(diffMs / 60000);
-                                    timeRemaining = `Assignment was submitted ${Math.floor(mins/60)} hour ${mins%60} mins early`;
-                                } else {
-                                    const mins = Math.abs(Math.floor(diffMs / 60000));
-                                    timeRemaining = `Assignment was submitted ${Math.floor(mins/60)} hour ${mins%60} mins late`;
-                                }
-                            }
-                            html += `<table class="table table-bordered mt-4">
-                                <tr><th>Submission status</th><td class="bg-success bg-opacity-25">${submissionStatus}</td></tr>
-                                <tr><th>Grading status</th><td>${gradingStatus}</td></tr>
-                                <tr><th>Time remaining</th><td class="bg-success bg-opacity-25">${timeRemaining}</td></tr>
-                                <tr><th>Last modified</th><td>${lastModified}</td></tr>
-                                <tr><th>File submissions</th><td>`;
-                            let files = latest.files || [];
-                            if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
-                            files.forEach(f => {
-                                const fileName = f.original_name || f.original_filename || (typeof f === 'string' ? f.split('/').pop() : 'File');
-                                const filePath = f.path || f.file_path || f;
-                                html += `<a href="/storage/${filePath}" target="_blank" class="text-danger">${fileName}</a><br/>`;
-                            });
-                            html += `</td></tr></table>`;
-                            // Show feedback if graded or reviewed
-                            if (latest.status === 'graded' && latest.feedback) {
-                                html += `<div class="alert alert-light border-start border-4 border-primary mb-2 mt-3">
-                                    <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
-                                    <div class="bg-white rounded p-2 mt-1 border">${latest.feedback}</div>
-                                </div>`;
-                            } else if (latest.status === 'reviewed' && latest.feedback) {
-                                html += `<div class="alert alert-info border-start border-4 border-info mb-2 mt-3">
-                                    <strong><i class="bi bi-chat-text me-2"></i>Instructor Feedback:</strong>
-                                    <div class="bg-white rounded p-2 mt-1 border">${latest.feedback}</div>
-                                    <small class="text-muted mt-1 d-block">This submission needs revision. Please review the feedback and resubmit.</small>
-                                </div>`;
-                            }
+                        // Use global state for form visibility
+                        html += `<div id="assignmentSubmissionBlock">`;
+                        // If no submission and not showing form, show Add Submission button
+                        if (!hasSubmission && !showSubmissionForm) {
+                            html += `<button class="btn btn-primary" id="addSubmissionBtn">Add submission</button>`;
                         }
-                        // Only show upload form if not deadlinePassed and no submission exists
-                        if (!deadlinePassed && !hasSubmission) {
+                        // Show the form if a draft exists or Add Submission was clicked
+                        if (isDraft || showSubmissionForm) {
+                            let buttons = '<button type="button" class="btn btn-secondary" id="saveDraftBtn">Save changes</button>';
+                            if (isDraft) {
+                                buttons += '<button type="button" class="btn btn-primary" id="submitAssignmentBtn">Submit assignment</button>';
+                                buttons += '<button type="button" class="btn btn-danger" id="removeDraftBtn">Remove submission</button>';
+                            }
+                            buttons += '<button type="button" class="btn btn-outline-secondary" id="cancelSubmissionBtn">Cancel</button>';
                             html += `<div class="assignment-actions">
-                        <form id="assignmentSubmitForm" enctype="multipart/form-data">
-                            <input type="hidden" name="content_id" value="${content.id}">
-                            <div class="mb-3">
-                                <label for="assignmentFiles" class="form-label">Upload Files</label>
-                                <input type="file" class="form-control" id="assignmentFiles" name="files[]" multiple required>
-                                <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="assignmentNotes" class="form-label">Notes (Optional)</label>
-                                <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission..."></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Submit Assignment</button>
-                        </form>
-                        <div id="assignmentSubmissionStatus" class="mt-3"></div>
-                        </div>`;
+        <form id="assignmentDraftForm" enctype="multipart/form-data">
+            <input type="hidden" name="content_id" value="${content.id}">
+            <input type="hidden" name="module_id" value="${content.module_id}">
+            <input type="hidden" name="module_id" value="${parseInt(content.module_id || currentModule)}">
+            <div class="mb-3">
+                <label for="assignmentFiles" class="form-label">Upload Files</label>
+                <input type="file" class="form-control" id="assignmentFiles" name="files[]" multiple ${isDraft ? '' : 'required'}>
+                <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, ZIP, Images, Videos (Max: 100MB each)</small>
+            </div>
+            <div class="mb-3">
+                <label for="assignmentNotes" class="form-label">Notes (Optional)</label>
+                <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Add any additional notes about your submission...">${isDraft && latest.comments ? latest.comments : ''}</textarea>
+            </div>
+            <div class="d-flex gap-2">${buttons}</div>
+        </form>
+        <div id="assignmentSubmissionStatus" class="mt-3"></div>
+        </div>`;
                         }
                         html += `<div id="previousAssignmentSubmissions" class="mt-3"></div>`;
+
                         viewer.innerHTML = html;
+
+const addSubmissionBtn = document.getElementById('addSubmissionBtn');
+if (addSubmissionBtn) {
+    addSubmissionBtn.onclick = function() {
+        window.assignmentFormState[contentId] = true;
+        openAssignmentViewer(contentId);
+    };
+}
                         // Fetch and display submission history
                         if (data.success && data.submissions && data.submissions.length > 0) {
                             let html2 = '<div class="mt-4"><h5><i class="bi bi-clock-history me-2"></i>Submission History</h5>';
@@ -1378,36 +1372,84 @@
                             document.getElementById('previousAssignmentSubmissions').innerHTML = html2;
                         }
                         // Add form handler if form exists
-                        const formElem = document.getElementById('assignmentSubmitForm');
+                        const formElem = document.getElementById('assignmentDraftForm');
                         if (formElem) {
-                            formElem.addEventListener('submit', function(e) {
-                                e.preventDefault();
-                                const formData = new FormData(this);
-                                if (currentModule) {
+                            const saveDraftBtn = document.getElementById('saveDraftBtn');
+                            const submitAssignmentBtn = document.getElementById('submitAssignmentBtn');
+                            const removeDraftBtn = document.getElementById('removeDraftBtn');
+                            const cancelSubmissionBtn = document.getElementById('cancelSubmissionBtn');
+                            const statusDiv = document.getElementById('assignmentSubmissionStatus');
+                            if (saveDraftBtn) {
+                                saveDraftBtn.onclick = function() {
+                                    const formData = new FormData(formElem);
+                                    // Append the current module ID (ensure integer)
                                     formData.append('module_id', currentModule);
-                                }
-                                const statusDiv = document.getElementById('assignmentSubmissionStatus');
-                                statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
-                                fetch('/student/assignment/submit', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                    },
-                                    body: formData
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        statusDiv.innerHTML = '<span class="text-success">Submission successful!</span>';
-                                        this.reset();
-                                    } else {
-                                        statusDiv.innerHTML = `<span class="text-danger">${data.message || 'Error submitting your work.'}</span>`;
-                                    }
-                                })
-                                .catch(error => {
-                                    statusDiv.innerHTML = '<span class="text-danger">Error submitting your work.</span>';
-                                });
-                            });
+                                    statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving draft...';
+                                    fetch('/student/assignment/save-draft', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        credentials: 'include',
+                                        body: formData
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        statusDiv.innerHTML = data.success ? '<span class="text-success">Draft saved!</span>' : `<span class="text-danger">${data.message}</span>`;
+                                        if (data.success) {
+                                            setTimeout(() => openAssignmentViewer(contentId), 500); // Re-render to show draft state
+                                        }
+                                    })
+                                    .catch(err => {
+                                        statusDiv.innerHTML = '<span class="text-danger">Error saving draft.</span>';    
+                                    });
+                                };
+                            }
+                            if (submitAssignmentBtn) {
+                                submitAssignmentBtn.onclick = function() {
+                                    const formData = new FormData(formElem);
+                                    formData.append('module_id', content.module_id);
+                                    statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+                                    fetch('/student/assignment/submit', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        body: formData
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        statusDiv.innerHTML = data.success ? '<span class="text-success">Assignment submitted!</span>' : `<span class="text-danger">${data.message}</span>`;
+                                        if (data.success) setTimeout(() => openAssignmentViewer(contentId), 1000);
+                                    });
+                                };
+                            }
+                            if (removeDraftBtn) {
+                                removeDraftBtn.onclick = function() {
+                                    if (!confirm('Are you sure you want to remove this draft?')) return;
+                                    statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Removing...';
+                                    fetch('/student/assignment/remove-draft', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ module_id: content.module_id })
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        statusDiv.innerHTML = data.success ? '<span class="text-success">Draft removed!</span>' : `<span class="text-danger">${data.message}</span>`;
+                                        if (data.success) setTimeout(() => openAssignmentViewer(contentId), 1000);
+                                    });
+                                };
+                            }
+                            if (cancelSubmissionBtn) {
+                                cancelSubmissionBtn.onclick = function() {
+                                    // Hide the form and show Add Submission button again
+                                    window.assignmentFormState[contentId] = false;
+                                    openAssignmentViewer(contentId);
+                                };
+                            }
                         }
                     });
                 } else {
@@ -1430,7 +1472,7 @@
             .then(data => {
                 if (data.content && (data.content.attachment_path || data.content.content_url)) {
                     document.getElementById('videoModalTitle').textContent = data.content.content_title || 'Video Content';
-                    const videoSrc = data.content.content_url || `/storage/${data.content.attachment_path}`;
+                    const videoSrc = data.content.content_url || storageUrl + '/' + data.content.attachment_path;
                     document.getElementById('videoSource').src = videoSrc;
                     document.getElementById('videoPlayer').load();
                     
@@ -1479,7 +1521,7 @@
             if (content.content_url && content.content_url.trim() !== '') {
                 fileUrl = content.content_url;
             } else if (content.attachment_path && content.attachment_path.trim() !== '') {
-                fileUrl = `/storage/${content.attachment_path}`;
+                fileUrl = storageUrl + '/' + content.attachment_path;
             } else {
                 viewer.innerHTML = `
                     <div class="empty-state">
@@ -1562,7 +1604,7 @@
                     // Check if there's an attachment to display
                     let attachmentSection = '';
                     if (data.content.attachment_path && data.content.attachment_path.trim() !== '') {
-                        const fileUrl = `/storage/${data.content.attachment_path}`;
+                        const fileUrl = storageUrl + '/' + data.content.attachment_path;
                         const fileName = data.content.attachment_path.split('/').pop();
                         const isPdf = fileUrl.toLowerCase().includes('.pdf');
                         
@@ -1750,13 +1792,13 @@
             let url = '';
             let payload = {};
             if (type === 'course') {
-                url = '/api/student/complete-course';
+                url = apiBase + '/student/complete-course';
                 payload = { course_id: id };
             } else if (type === 'content') {
-                url = '/api/student/complete-content';
+                url = apiBase + '/student/complete-content';
                 payload = { content_id: id };
             } else if (type === 'document') {
-                url = '/api/student/complete-content';
+                url = apiBase + '/student/complete-content';
                 payload = { content_id: id };
             }
 

@@ -45,6 +45,7 @@ body, html {
   padding: 1rem 2rem;
   border-bottom: 1px solid rgba(45, 27, 105, 0.1);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 1000;
   gap: 2rem;
   position: relative;
@@ -237,7 +238,7 @@ body, html {
   left: 0;
   height: 100vh;
   transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 999;
   display: flex;
   flex-direction: column;
@@ -333,11 +334,13 @@ body, html {
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 0.5rem;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Navigation */
 .sidebar-nav {
   padding: 0 1rem;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex: 1;
   background: var(--sidebar-bg);
   background-attachment: local;
@@ -354,7 +357,7 @@ body, html {
   color: var(--sidebar-text);
   text-decoration: none;
   border-radius: 12px;
-  transition: all 0.3s ease;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s, color 0.3s, box-shadow 0.3s, transform 0.3s;
   font-size: 0.95rem;
   font-weight: 500;
   position: relative;
@@ -393,6 +396,7 @@ body, html {
 .nav-link i {
   margin-right: 12px;
   font-size: 1.1rem;
+  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 20px;
   text-align: center;
   color: inherit;
@@ -488,6 +492,7 @@ body, html {
   padding: 10px 16px;
   color: var(--sidebar-footer-text);
   background: none;
+  transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-footer .nav-link:hover {
@@ -585,10 +590,49 @@ body, html {
   padding: 0 0.5rem;
 }
 
+/* Default (expanded) state for sidebar text and arrow */
+.modern-sidebar .nav-link span,
+.modern-sidebar .nav-section-title span,
+.modern-sidebar .dropdown-arrow {
+  opacity: 1;
+  max-width: 200px;
+  transition: opacity 0.2s, max-width 0.2s;
+  overflow: hidden;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Collapsed state */
 .modern-sidebar.collapsed .nav-link span,
 .modern-sidebar.collapsed .nav-section-title span,
 .modern-sidebar.collapsed .dropdown-arrow {
-  display: none;
+  opacity: 0;
+  max-width: 0;
+  transition: opacity 0.2s, max-width 0.2s;
+  overflow: hidden;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* Icon alignment */
+.modern-sidebar .nav-link i {
+  min-width: 24px;
+  text-align: center;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Center icon when collapsed */
+.modern-sidebar.collapsed .nav-link {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hide dropdown arrow and ::after when collapsed */
+.modern-sidebar.collapsed .dropdown-arrow,
+.modern-sidebar.collapsed .nav-link.dropdown-toggle::after {
+  display: none !important;
 }
 
 .modern-sidebar.collapsed .nav-link {

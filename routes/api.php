@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\CompletionController;
 /*
 |-----------------------------------------------------------// Chat API routes (auth:sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -446,10 +447,6 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
 
 Route::middleware(['web'])->group(function () {
     Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
-    Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
+    Route::post('/student/complete-content', [CompletionController::class, 'markContentComplete']);
     Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
 });
-
-// Student content completion API
-use App\Http\Controllers\StudentController;
-Route::post('/student/complete-content', [StudentController::class, 'completeContent']);

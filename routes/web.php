@@ -477,6 +477,8 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/complete-course', [App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
     Route::post('/student/complete-content', [App\Http\Controllers\CompletionController::class, 'markContentComplete']);
     Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
+    Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
+    Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
 });
 
 // Test routes for debugging rejection details

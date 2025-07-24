@@ -935,13 +935,79 @@ class StudentDashboardController extends Controller
     }
     
     /**
-     * Submit assignment
+     * Save assignment as draft
+     */
+    public function saveAssignmentDraft(Request $request)
+    {
+        try {
+            $request->validate([
+                'files' => 'required',
+                'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
+                'module_id' => 'required|integer',
+                'comments' => 'nullable|string'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        $student = Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.']);
+        }
+
+        $moduleId = $request->input('module_id');
+        $module = Module::find($moduleId);
+        if (!$module) {
+            return response()->json(['success' => false, 'message' => 'Module not found.']);
+        }
+
+        $fileInfos = [];
+        foreach ($request->file('files') as $file) {
+            $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('assignments', $fileName, 'public');
+            $fileInfos[] = [
+                'path' => $filePath,
+                'type' => $file->getMimeType(),
+                'original_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+            ];
+        }
+
+        // Check if a draft exists
+        $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+            ->where('module_id', $moduleId)
+            ->where('status', 'draft')
+            ->first();
+        if ($draft) {
+            $draft->update([
+                'files' => $fileInfos,
+                'comments' => $request->comments,
+            ]);
+        } else {
+            \App\Models\AssignmentSubmission::create([
+                'student_id' => $student->student_id,
+                'module_id' => $moduleId,
+                'program_id' => $module->program_id,
+                'files' => $fileInfos,
+                'comments' => $request->comments,
+                'status' => 'draft',
+            ]);
+        }
+        return response()->json(['success' => true, 'message' => 'Draft saved successfully!']);
+    }
+
+    /**
+     * Submit assignment (from draft or new)
      */
     public function submitAssignment(Request $request)
     {
         try {
             $request->validate([
-                'files' => 'required',
+                'files' => 'sometimes|required',
                 'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
                 'module_id' => 'required|integer',
                 'comments' => 'nullable|string'
@@ -958,6 +1024,93 @@ class StudentDashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Module not found.']);
             }
 
+            // Check for draft
+            $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+                ->where('module_id', $moduleId)
+                ->where('status', 'draft')
+                ->first();
+            if ($draft) {
+                // Update draft to submitted
+                $fileInfos = $draft->files;
+                if ($request->hasFile('files')) {
+                    $fileInfos = [];
+                    foreach ($request->file('files') as $file) {
+                        $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
+                        $filePath = $file->storeAs('assignments', $fileName, 'public');
+                        $fileInfos[] = [
+                            'path' => $filePath,
+                            'type' => $file->getMimeType(),
+                            'original_name' => $file->getClientOriginalName(),
+                            'size' => $file->getSize(),
+                        ];
+                    }
+                }
+                $draft->update([
+                    'files' => $fileInfos,
+                    'comments' => $request->comments ?? $draft->comments,
+                    'submitted_at' => now(),
+                    'status' => 'submitted',
+                ]);
+                return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
+            }
+
+            // No draft, create new submission
+            $fileInfos = [];
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $file) {
+                    $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
+                    $filePath = $file->storeAs('assignments', $fileName, 'public');
+                    $fileInfos[] = [
+                        'path' => $filePath,
+                        'type' => $file->getMimeType(),
+                        'original_name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                    ];
+                }
+            }
+            \App\Models\AssignmentSubmission::create([
+                'student_id' => $student->student_id,
+                'module_id' => $moduleId,
+                'program_id' => $module->program_id,
+                'files' => $fileInfos,
+                'comments' => $request->comments,
+                'submitted_at' => now(),
+                'status' => 'submitted'
+            ]);
+            return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
+        } catch (\Exception $e) {
+            \Log::error('Assignment submission error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'An error occurred while submitting the assignment.']);
+        }
+    }
+
+    /**
+     * Edit assignment draft
+     */
+    public function editAssignmentDraft(Request $request)
+    {
+        $request->validate([
+            'files' => 'sometimes|required',
+            'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
+            'module_id' => 'required|integer',
+            'comments' => 'nullable|string'
+        ]);
+
+        $student = Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.']);
+        }
+
+        $moduleId = $request->input('module_id');
+        $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+            ->where('module_id', $moduleId)
+            ->where('status', 'draft')
+            ->first();
+        if (!$draft) {
+            return response()->json(['success' => false, 'message' => 'Draft not found.']);
+        }
+        $fileInfos = $draft->files;
+        if ($request->hasFile('files')) {
             $fileInfos = [];
             foreach ($request->file('files') as $file) {
                 $fileName = time() . '_' . $student->student_id . '_' . $file->getClientOriginalName();
@@ -969,22 +1122,36 @@ class StudentDashboardController extends Controller
                     'size' => $file->getSize(),
                 ];
             }
-
-            \App\Models\AssignmentSubmission::create([
-                'student_id' => $student->student_id,
-                'module_id' => $moduleId,
-                'program_id' => $module->program_id,
-                'files' => $fileInfos,
-                'comments' => $request->comments,
-                'submitted_at' => now(),
-                'status' => 'submitted'
-            ]);
-
-            return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
-        } catch (\Exception $e) {
-            \Log::error('Assignment submission error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'An error occurred while submitting the assignment.']);
         }
+        $draft->update([
+            'files' => $fileInfos,
+            'comments' => $request->comments ?? $draft->comments,
+        ]);
+        return response()->json(['success' => true, 'message' => 'Draft updated successfully!']);
+    }
+
+    /**
+     * Remove assignment draft
+     */
+    public function removeAssignmentDraft(Request $request)
+    {
+        $request->validate([
+            'module_id' => 'required|integer'
+        ]);
+        $student = Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.']);
+        }
+        $moduleId = $request->input('module_id');
+        $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+            ->where('module_id', $moduleId)
+            ->where('status', 'draft')
+            ->first();
+        if ($draft) {
+            $draft->delete();
+            return response()->json(['success' => true, 'message' => 'Draft removed successfully!']);
+        }
+        return response()->json(['success' => false, 'message' => 'Draft not found.']);
     }
     
     /**
