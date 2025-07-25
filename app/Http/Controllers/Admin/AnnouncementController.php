@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Announcement;
 use App\Models\Program;
-use App\Models\Batch;
+use App\Models\StudentBatch;
 use App\Models\Student;
 use App\Models\Professor;
 use App\Models\Director;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class AnnouncementController extends Controller
@@ -26,8 +27,9 @@ class AnnouncementController extends Controller
 
     public function create()
     {
-        $programs = Program::where('is_active', true)->get();
-        $batches = Batch::where('is_active', true)->get();
+        // Get all programs and batches for targeting, regardless of status
+        $programs = Program::orderBy('program_name')->get();
+        $batches = StudentBatch::orderBy('batch_name')->get();
         
         return view('admin.announcements.create', compact('programs', 'batches'));
     }
@@ -43,9 +45,9 @@ class AnnouncementController extends Controller
             'target_users' => 'nullable|array',
             'target_users.*' => 'in:students,professors,directors',
             'target_programs' => 'nullable|array',
-            'target_programs.*' => 'exists:programs,program_id',
+            'target_programs.*' => 'integer',
             'target_batches' => 'nullable|array',
-            'target_batches.*' => 'exists:batches,batch_id',
+            'target_batches.*' => 'integer',
             'target_plans' => 'nullable|array',
             'target_plans.*' => 'in:full,modular',
             'publish_date' => 'nullable|date|after_or_equal:today',
@@ -55,21 +57,31 @@ class AnnouncementController extends Controller
         ]);
 
         $announcement = new Announcement();
+        $announcement->admin_id = Auth::id(); // Add the admin who created it
         $announcement->title = $request->title;
         $announcement->content = $request->content;
         $announcement->description = $request->description;
         $announcement->type = $request->type;
         $announcement->target_scope = $request->target_scope;
         $announcement->video_link = $request->video_link;
-        $announcement->is_published = $request->has('is_published');
+        $announcement->is_published = filter_var($request->input('is_published', false), FILTER_VALIDATE_BOOLEAN);
         $announcement->is_active = true;
         
         // Handle targeting options
         if ($request->target_scope === 'specific') {
-            $announcement->target_users = $request->target_users ? json_encode($request->target_users) : null;
-            $announcement->target_programs = $request->target_programs ? json_encode($request->target_programs) : null;
-            $announcement->target_batches = $request->target_batches ? json_encode($request->target_batches) : null;
-            $announcement->target_plans = $request->target_plans ? json_encode($request->target_plans) : null;
+            Log::info('Creating announcement with specific targeting', [
+                'target_users' => $request->target_users,
+                'target_programs' => $request->target_programs,
+                'target_batches' => $request->target_batches,
+                'target_plans' => $request->target_plans
+            ]);
+            
+            $announcement->target_users = $request->target_users ?: null;
+            $announcement->target_programs = $request->target_programs ?: null;
+            $announcement->target_batches = $request->target_batches ?: null;
+            $announcement->target_plans = $request->target_plans ?: null;
+        } else {
+            Log::info('Creating announcement with all users targeting');
         }
         
         // Handle dates
@@ -100,8 +112,9 @@ class AnnouncementController extends Controller
     public function edit($id)
     {
         $announcement = Announcement::findOrFail($id);
-        $programs = Program::where('is_active', true)->get();
-        $batches = Batch::where('is_active', true)->get();
+        // Get all programs and batches for targeting, regardless of status
+        $programs = Program::orderBy('program_name')->get();
+        $batches = StudentBatch::orderBy('batch_name')->get();
         
         return view('admin.announcements.edit', compact('announcement', 'programs', 'batches'));
     }
@@ -119,7 +132,7 @@ class AnnouncementController extends Controller
             'target_programs' => 'nullable|array',
             'target_programs.*' => 'exists:programs,program_id',
             'target_batches' => 'nullable|array',
-            'target_batches.*' => 'exists:batches,batch_id',
+            'target_batches.*' => 'exists:student_batches,batch_id',
             'target_plans' => 'nullable|array',
             'target_plans.*' => 'in:full,modular',
             'publish_date' => 'nullable|date',
@@ -135,14 +148,14 @@ class AnnouncementController extends Controller
         $announcement->type = $request->type;
         $announcement->target_scope = $request->target_scope;
         $announcement->video_link = $request->video_link;
-        $announcement->is_published = $request->has('is_published');
+        $announcement->is_published = filter_var($request->input('is_published', false), FILTER_VALIDATE_BOOLEAN);
         
         // Handle targeting options
         if ($request->target_scope === 'specific') {
-            $announcement->target_users = $request->target_users ? json_encode($request->target_users) : null;
-            $announcement->target_programs = $request->target_programs ? json_encode($request->target_programs) : null;
-            $announcement->target_batches = $request->target_batches ? json_encode($request->target_batches) : null;
-            $announcement->target_plans = $request->target_plans ? json_encode($request->target_plans) : null;
+            $announcement->target_users = $request->target_users ?: null;
+            $announcement->target_programs = $request->target_programs ?: null;
+            $announcement->target_batches = $request->target_batches ?: null;
+            $announcement->target_plans = $request->target_plans ?: null;
         } else {
             $announcement->target_users = null;
             $announcement->target_programs = null;
@@ -243,7 +256,7 @@ class AnnouncementController extends Controller
             }
 
             if (!empty($targetBatches)) {
-                $stats['target_batches'] = Batch::whereIn('batch_id', $targetBatches)->pluck('batch_name')->toArray();
+                $stats['target_batches'] = StudentBatch::whereIn('batch_id', $targetBatches)->pluck('batch_name')->toArray();
             }
         }
 

@@ -705,7 +705,7 @@ class AdminController extends Controller
             // Validate basic fields
             $request->validate([
                 'program_id' => 'required|exists:programs,program_id', 
-                'batch_id' => 'required|exists:batches,batch_id',
+                'batch_id' => 'required|exists:student_batches,batch_id',
                 'enrollment_type' => 'required|in:modular,full,accelerated',
                 'learning_mode' => 'required|in:online,onsite,hybrid',
                 'course_id' => 'nullable|exists:courses,course_id'

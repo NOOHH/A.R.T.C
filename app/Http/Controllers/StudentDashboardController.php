@@ -2300,6 +2300,11 @@ class StudentDashboardController extends Controller
      */
     private function getTargetedAnnouncements($student, $enrolledProgramIds)
     {
+        Log::info('Getting targeted announcements for student', [
+            'student_id' => $student->student_id,
+            'enrolled_programs' => $enrolledProgramIds
+        ]);
+
         $query = \App\Models\Announcement::where('is_active', true)
             ->where('is_published', true)
             ->where(function($q) {
@@ -2319,56 +2324,113 @@ class StudentDashboardController extends Controller
             $mainQuery->orWhere(function($specificQuery) use ($student, $enrolledProgramIds) {
                 $specificQuery->where('target_scope', 'specific');
 
-                // Check if student is in target users
-                $specificQuery->where(function($userQuery) {
-                    $userQuery->whereJsonContains('target_users', 'students')
-                             ->orWhereNull('target_users');
-                });
+                // Use a hybrid approach that works with both properly formatted and malformed JSON
+                $specificQuery->where(function($hybridQuery) use ($student, $enrolledProgramIds) {
+                    $hybridQuery->where(function($properQuery) use ($student, $enrolledProgramIds) {
+                        // Proper JSON approach (for new data)
+                        $properQuery->where(function($userQuery) {
+                            $userQuery->whereNull('target_users')
+                                     ->orWhereJsonContains('target_users', 'students');
+                        });
 
-                // Check if student's programs are targeted
-                if (!empty($enrolledProgramIds)) {
-                    $specificQuery->where(function($programQuery) use ($enrolledProgramIds) {
-                        $programQuery->whereNull('target_programs');
-                        
-                        foreach ($enrolledProgramIds as $programId) {
-                            $programQuery->orWhereJsonContains('target_programs', $programId);
+                        if (!empty($enrolledProgramIds)) {
+                            $properQuery->where(function($programQuery) use ($enrolledProgramIds) {
+                                $programQuery->whereNull('target_programs');
+                                foreach ($enrolledProgramIds as $programId) {
+                                    $programQuery->orWhereJsonContains('target_programs', $programId);
+                                }
+                            });
+                        } else {
+                            $properQuery->whereNull('target_programs');
+                        }
+
+                        // Get student batch and plan info
+                        $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
+                        $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
+                        $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
+
+                        if (!empty($batchIds)) {
+                            $properQuery->where(function($batchQuery) use ($batchIds) {
+                                $batchQuery->whereNull('target_batches');
+                                foreach ($batchIds as $batchId) {
+                                    $batchQuery->orWhereJsonContains('target_batches', $batchId);
+                                }
+                            });
+                        } else {
+                            $properQuery->whereNull('target_batches');
+                        }
+
+                        if (!empty($enrollmentTypes)) {
+                            $properQuery->where(function($planQuery) use ($enrollmentTypes) {
+                                $planQuery->whereNull('target_plans');
+                                foreach ($enrollmentTypes as $type) {
+                                    $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
+                                    $planQuery->orWhereJsonContains('target_plans', $planType);
+                                }
+                            });
+                        } else {
+                            $properQuery->whereNull('target_plans');
+                        }
+                    })
+                    ->orWhere(function($legacyQuery) use ($student, $enrolledProgramIds) {
+                        // Legacy approach for malformed JSON (fallback)
+                        $legacyQuery->where(function($userQuery) {
+                            $userQuery->whereNull('target_users')
+                                     ->orWhere('target_users', 'LIKE', '%"students"%');
+                        });
+
+                        if (!empty($enrolledProgramIds)) {
+                            $legacyQuery->where(function($programQuery) use ($enrolledProgramIds) {
+                                $programQuery->whereNull('target_programs');
+                                foreach ($enrolledProgramIds as $programId) {
+                                    $programQuery->orWhere('target_programs', 'LIKE', '%"' . $programId . '"%');
+                                }
+                            });
+                        } else {
+                            $legacyQuery->whereNull('target_programs');
+                        }
+
+                        // Same batch and plan logic but with LIKE queries
+                        $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
+                        $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
+                        $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
+
+                        if (!empty($batchIds)) {
+                            $legacyQuery->where(function($batchQuery) use ($batchIds) {
+                                $batchQuery->whereNull('target_batches');
+                                foreach ($batchIds as $batchId) {
+                                    $batchQuery->orWhere('target_batches', 'LIKE', '%"' . $batchId . '"%');
+                                }
+                            });
+                        } else {
+                            $legacyQuery->whereNull('target_batches');
+                        }
+
+                        if (!empty($enrollmentTypes)) {
+                            $legacyQuery->where(function($planQuery) use ($enrollmentTypes) {
+                                $planQuery->whereNull('target_plans');
+                                foreach ($enrollmentTypes as $type) {
+                                    $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
+                                    $planQuery->orWhere('target_plans', 'LIKE', '%"' . $planType . '"%');
+                                }
+                            });
+                        } else {
+                            $legacyQuery->whereNull('target_plans');
                         }
                     });
-                }
-
-                // Check if student's enrollment type is targeted
-                if ($student) {
-                    $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
-                    $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
-                    
-                    if (!empty($enrollmentTypes)) {
-                        $specificQuery->where(function($planQuery) use ($enrollmentTypes) {
-                            $planQuery->whereNull('target_plans');
-                            
-                            foreach ($enrollmentTypes as $type) {
-                                $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
-                                $planQuery->orWhereJsonContains('target_plans', $planType);
-                            }
-                        });
-                    }
-
-                    // Check if student's batches are targeted
-                    $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
-                    if (!empty($batchIds)) {
-                        $specificQuery->where(function($batchQuery) use ($batchIds) {
-                            $batchQuery->whereNull('target_batches');
-                            
-                            foreach ($batchIds as $batchId) {
-                                $batchQuery->orWhereJsonContains('target_batches', $batchId);
-                            }
-                        });
-                    }
-                }
+                });
             });
         });
 
-        return $query->orderBy('created_at', 'desc')
-                    ->limit(5)
-                    ->get();
+        $results = $query->orderBy('created_at', 'desc')
+                        ->limit(5)
+                        ->get();
+
+        Log::info('Found announcements for student', [
+            'count' => $results->count(),
+            'announcement_ids' => $results->pluck('announcement_id')->toArray()
+        ]);
+
+        return $results;
     }
 }

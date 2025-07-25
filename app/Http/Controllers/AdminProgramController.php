@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Program;
 use App\Models\Student;
-use App\Models\Batch;
+use App\Models\StudentBatch;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -485,7 +485,7 @@ class AdminProgramController extends Controller
                 'approvedStudents' => Student::whereNotNull('date_approved')->get(),
                 'students' => Student::whereNotNull('date_approved')->get(), // Add for multiple selection
                 'programs' => Program::where('is_archived', false)->get(),
-                'batches' => Batch::where('is_active', true)->get(),
+                'batches' => StudentBatch::where('batch_status', 'available')->get(),
                 'courses' => Course::where('is_archived', false)->get()
             ]);
         } catch (\Exception $e) {

@@ -128,8 +128,8 @@ class Batch extends Model
     public function scopeAvailable($query)
     {
         return $query->where('batch_status', 'available')
-                    ->where('enrollment_deadline', '>', Carbon::now())
-                    ->whereRaw('(SELECT COUNT(*) FROM enrollments WHERE batch_id = batches.id) < batch_capacity');
+                    ->where('registration_deadline', '>', Carbon::now())
+                    ->whereRaw('(SELECT COUNT(*) FROM enrollments WHERE batch_id = student_batches.batch_id) < max_capacity');
     }
 
     /**

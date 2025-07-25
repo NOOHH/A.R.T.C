@@ -596,6 +596,33 @@
 
 @section('content')
 
+    <!-- Announcements Section -->
+    <div class="dashboard-card announcement-card">
+        <div class="card-header">
+            <h2>Announcements</h2>
+        </div>
+        <div class="announcement-content">
+            @forelse($announcements as $announcement)
+                <div class="announcement-item" style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                    <div style="display: flex; justify-content: between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-weight: 600; color: #2c3e50; flex: 1;">{{ $announcement->title }}</div>
+                        @if($announcement->announcement_type === 'video')
+                            <span class="badge" style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
+                                📹 Video
+                            </span>
+                        @endif
+                    </div>
+                    <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">{{ $announcement->content }}</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">
+                        <i class="bi bi-clock"></i> {{ $announcement->created_at->diffForHumans() }}
+                    </div>
+                </div><div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+                </div>
+            @empty
+            @endforelse
+        </div>
+    </div>
+
     <div class="dashboard-grid">
     <!-- My Programs Section -->
     <div class="dashboard-card courses-card">
@@ -851,43 +878,7 @@
         </div>
     </div>
 
-    <!-- Announcements Section -->
-    <div class="dashboard-card announcement-card">
-        <div class="card-header">
-            <h2>Announcements</h2>
-        </div>
-        <div class="announcement-content">
-            @forelse($announcements as $announcement)
-                <div class="announcement-item" style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
-                    <div style="display: flex; justify-content: between; align-items: flex-start; margin-bottom: 8px;">
-                        <div style="font-weight: 600; color: #2c3e50; flex: 1;">{{ $announcement->title }}</div>
-                        @if($announcement->announcement_type === 'video')
-                            <span class="badge" style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
-                                📹 Video
-                            </span>
-                        @endif
-                    </div>
-                    <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">{{ $announcement->content }}</div>
-                    <div style="font-size: 0.8rem; color: #7f8c8d;">
-                        <i class="bi bi-clock"></i> {{ $announcement->created_at->diffForHumans() }}
-                    </div>
-                </div><div class="course-header d-flex align-items-center justify-content-between flex-wrap">
-                    <div class="flex-grow-1">
-                        <h1 class="course-title mb-1">{{ $program->program_name ?? 'Course' }}</h1>
-                        <p class="course-subtitle mb-0">{{ $program->description ?? 'Learn at your own pace with interactive modules and assignments.' }}</p>
-                    </div>
-                    <a href="{{ route('student.dashboard') }}" class="btn btn-secondary mt-3 mt-md-0">
-                        <i class="bi bi-arrow-left"></i> Back to Dashboard
-                    </a>
-                </div>
-                
-            @empty
-                <div style="padding: 20px;">
-                    <p style="margin-bottom: 0;">Welcome to your student dashboard! Here you can access your courses, track your progress, and stay updated with important announcements.</p>
-                </div>
-            @endforelse
-        </div>
-    </div>
+
 
 
 </div>
