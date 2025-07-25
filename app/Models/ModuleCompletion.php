@@ -13,7 +13,7 @@ class ModuleCompletion extends Model
     
     protected $fillable = [
         'student_id',
-        'module_id',
+        'modules_id',
         'program_id',
         'completed_at',
         'score',
@@ -34,7 +34,7 @@ class ModuleCompletion extends Model
     
     public function module()
     {
-        return $this->belongsTo(Module::class, 'module_id', 'modules_id');
+        return $this->belongsTo(Module::class, 'modules_id', 'modules_id');
     }
     
     public function program()

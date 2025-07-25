@@ -141,6 +141,7 @@ class AdminModuleController extends Controller
             if (strpos($videoUrl, 'youtube.com') !== false || strpos($videoUrl, 'youtu.be') !== false) {
                 $videoUrl = $this->convertYouTubeToEmbed($videoUrl);
             }
+            $videoPath = $videoUrl; // Use video_path for storage
         }
 
         $module = Module::create([
@@ -152,7 +153,6 @@ class AdminModuleController extends Controller
             'attachment' => $attachmentPath,
             'content_type' => $contentType,
             'content_data' => $contentData,
-            'video_url' => $videoUrl,
             'video_path' => $videoPath,
             'is_archived' => false,
         ]);

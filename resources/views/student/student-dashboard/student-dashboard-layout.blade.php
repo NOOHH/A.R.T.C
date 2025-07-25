@@ -86,20 +86,20 @@
     {{-- Top Header --}}
     @include('components.student-navbar')
 
-    {{-- Main Container --}}
-    <div class="container-fluid p-0">
-      <div class="row g-0">
-        {{-- Conditional Sidebar --}}
-        @if(!isset($hideSidebar) || !$hideSidebar)
-          @include('components.student-sidebar')
-        @endif
-        
-        {{-- Main Content with dynamic width based on sidebar visibility --}}
-        <main class="@if(!isset($hideSidebar) || !$hideSidebar) col-lg-9 col-xl-10 @else col-12 @endif main-content">
-          <div class="content-wrapper p-3">
+    {{-- Main Content --}}
+    <div class="main-content">
+      <div class="main-wrapper">
+        <div class="content-below-search">
+          {{-- Conditional Sidebar --}}
+          @if(!isset($hideSidebar) || !$hideSidebar)
+            @include('components.student-sidebar')
+          @endif
+          
+          {{-- Main Content --}}
+          <div class="content-wrapper">
             @yield('content')
           </div>
-        </main>
+        </div>
       </div>
     </div>
   </div>
@@ -115,122 +115,81 @@
   <!-- Sidebar Toggle JavaScript -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const sidebar = document.getElementById('modernSidebar');
-      const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-      const sidebarClose = document.getElementById('sidebarClose');
-      const sidebarOverlay = document.getElementById('sidebarOverlay');
-      const sidebarReopenBtn = document.getElementById('sidebarReopenBtn');
-      const mainContent = document.querySelector('.main-content');
-      
-      let sidebarCollapsed = false;
-      
-      function toggleSidebar() {
-        if (!sidebar) return;
-        
-        if (window.innerWidth >= 992) {
-          // Desktop behavior - collapse/expand sidebar
-          sidebarCollapsed = !sidebarCollapsed;
-          
-          if (sidebarCollapsed) {
-            sidebar.classList.add('collapsed');
-            if (mainContent) {
-              mainContent.classList.add('sidebar-collapsed');
-              mainContent.classList.remove('sidebar-expanded');
+        // Sidebar Toggle Functionality
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const modernSidebar = document.getElementById('modernSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const contentWrapper = document.querySelector('.content-wrapper');
+
+        // Toggle sidebar function
+        function toggleSidebar() {
+            if (window.innerWidth >= 768) {
+                // Desktop: Toggle collapsed state
+                modernSidebar.classList.toggle('collapsed');    
+                
+                if (modernSidebar.classList.contains('collapsed')) {
+                    contentWrapper.style.marginLeft = '70px';
+                } else {
+                    contentWrapper.style.marginLeft = '280px';
+                }
+            } else {
+                // Mobile: Toggle sidebar visibility
+                if (modernSidebar) {
+                    modernSidebar.classList.toggle('active');
+                }
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.toggle('active');
+                }
+                document.body.style.overflow = modernSidebar && modernSidebar.classList.contains('active') ? 'hidden' : '';
             }
-            if (sidebarReopenBtn) {
-              sidebarReopenBtn.style.display = 'block';
-            }
-          } else {
-            sidebar.classList.remove('collapsed');
-            if (mainContent) {
-              mainContent.classList.remove('sidebar-collapsed');
-              mainContent.classList.add('sidebar-expanded');
-            }
-            if (sidebarReopenBtn) {
-              sidebarReopenBtn.style.display = 'none';
-            }
-          }
-        } else {
-          // Mobile behavior - show/hide with overlay
-          sidebar.classList.toggle('active');
-          if (sidebarOverlay) {
-            sidebarOverlay.classList.toggle('active');
-          }
         }
-      }
-      
-      function closeSidebar() {
-        if (!sidebar) return;
-        
-        sidebar.classList.remove('active');
+
+        // Close sidebar function (mobile only)
+        function closeSidebar() {
+            if (window.innerWidth < 768) {
+                if (modernSidebar) {
+                    modernSidebar.classList.remove('active');
+                }
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.remove('active');
+                }
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Event listeners
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', toggleSidebar);
+        }
+
         if (sidebarOverlay) {
-          sidebarOverlay.classList.remove('active');
+            sidebarOverlay.addEventListener('click', closeSidebar);
         }
-      }
-      
-      function reopenSidebar() {
-        if (!sidebar) return;
-        
-        sidebarCollapsed = false;
-        sidebar.classList.remove('collapsed');
-        if (mainContent) {
-          mainContent.classList.remove('sidebar-collapsed');
-          mainContent.classList.add('sidebar-expanded');
-        }
-        if (sidebarReopenBtn) {
-          sidebarReopenBtn.style.display = 'none';
-        }
-      }
-      
-      // Sidebar toggle button
-      if (sidebarToggleBtn) {
-        sidebarToggleBtn.addEventListener('click', toggleSidebar);
-      }
-      
-      // Close sidebar
-      if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeSidebar);
-      }
-      
-      // Reopen sidebar
-      if (sidebarReopenBtn) {
-        sidebarReopenBtn.addEventListener('click', reopenSidebar);
-      }
-      
-      // Close sidebar when clicking overlay
-      if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', closeSidebar);
-      }
-      
-      // Handle responsive behavior
-      window.addEventListener('resize', function() {
-        if (window.innerWidth >= 992) {
-          closeSidebar(); // Close mobile overlay if open
-          // Reset to expanded state on desktop if not manually collapsed
-          if (!sidebarCollapsed) {
-            if (mainContent) {
-              mainContent.classList.add('sidebar-expanded');
-              mainContent.classList.remove('sidebar-collapsed');
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768 && contentWrapper) {
+                contentWrapper.style.marginLeft = modernSidebar.classList.contains('collapsed')
+                    ? '70px'
+                    : '280px';
+                
+                // Close mobile overlay if open
+                if (modernSidebar) {
+                    modernSidebar.classList.remove('active');
+                }
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.remove('active');
+                }
+                document.body.style.overflow = '';
+            } else if (window.innerWidth < 768 && contentWrapper) {
+                contentWrapper.style.marginLeft = '0';
             }
-            if (sidebarReopenBtn) {
-              sidebarReopenBtn.style.display = 'none';
-            }
-          }
-        } else {
-          // Mobile: hide reopen button and reset classes
-          if (sidebarReopenBtn) {
-            sidebarReopenBtn.style.display = 'none';
-          }
-          if (mainContent) {
-            mainContent.classList.remove('sidebar-collapsed', 'sidebar-expanded');
-          }
+        });
+
+        // Initialize sidebar state for desktop
+        if (window.innerWidth >= 768 && contentWrapper) {
+            contentWrapper.style.marginLeft = '280px';
         }
-      });
-      
-      // Initialize sidebar state
-      if (window.innerWidth >= 992 && mainContent) {
-        mainContent.classList.add('sidebar-expanded');
-      }
     });
   </script>
   

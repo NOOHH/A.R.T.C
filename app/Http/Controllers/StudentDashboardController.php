@@ -472,7 +472,15 @@ class StudentDashboardController extends Controller
         if ($student) {
             $completedModuleIds = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
                 ->where('program_id', $courseId)
-                ->pluck('module_id')
+                ->pluck('modules_id')
+                ->toArray();
+        }
+        
+        // Get completed content for this student
+        $completedContentIds = [];
+        if ($student) {
+            $completedContentIds = \App\Models\ContentCompletion::where('student_id', $student->student_id)
+                ->pluck('content_id')
                 ->toArray();
         }
         
@@ -608,7 +616,9 @@ class StudentDashboardController extends Controller
             'enrollment',
             'paymentStatus',
             'enrollmentStatus',
-            'studentPrograms'
+            'studentPrograms',
+            'completedModuleIds',
+            'completedContentIds' // <-- add this
         ));
     }
 
@@ -747,7 +757,7 @@ class StudentDashboardController extends Controller
         $isCompleted = false;
         if ($student) {
             $completion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                ->where('module_id', $moduleId)
+                ->where('modules_id', $moduleId)
                 ->first();
             $isCompleted = (bool) $completion;
         }
@@ -866,20 +876,23 @@ class StudentDashboardController extends Controller
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Student not found.']);
         }
+        $programId = $request->input('program_id');
         // Check if already completed
         $exists = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-            ->where('module_id', $id)
+            ->where('modules_id', $id)
             ->exists();
         if (!$exists) {
             \App\Models\ModuleCompletion::create([
                 'student_id' => $student->student_id,
-                'module_id' => $id,
+                'modules_id' => $id,
+                'program_id' => $programId,
+                'completed_at' => now(),
             ]);
         }
         // Calculate progress
-        $totalModules = \App\Models\Module::where('program_id', $request->input('program_id'))->count();
+        $totalModules = \App\Models\Module::where('program_id', $programId)->count();
         $completedModules = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-            ->whereIn('module_id', \App\Models\Module::where('program_id', $request->input('program_id'))->pluck('id'))
+            ->where('program_id', $programId)
             ->count();
         $progress = $totalModules > 0 ? round(($completedModules / $totalModules) * 100) : 0;
         return response()->json([
@@ -905,7 +918,7 @@ class StudentDashboardController extends Controller
                 ]);
             }
             $completion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                ->where('module_id', $moduleId)
+                ->where('modules_id', $moduleId)
                 ->first();
             if ($completion) {
                 $programId = $completion->program_id;

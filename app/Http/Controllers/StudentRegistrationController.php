@@ -2224,8 +2224,57 @@ class StudentRegistrationController extends Controller
         ]);
 
         $userId = auth()->id() ?? session('user_id');
+        
+        // If no user is authenticated, return all available programs for new enrollments
         if (!$userId) {
-            return response()->json(['programs' => []]);
+            $programs = \App\Models\Program::with(['modules.courses.contentItems'])
+                ->where('is_archived', false)
+                ->get();
+            
+            $allPrograms = [];
+            foreach ($programs as $program) {
+                $filteredModules = [];
+                foreach ($program->modules as $module) {
+                    $filteredCourses = [];
+                    foreach ($module->courses as $course) {
+                        // Include all courses, even if they don't have content items yet
+                        // Content items can be added later by administrators
+                        $filteredCourses[] = [
+                            'course_id' => $course->subject_id,
+                            'course_name' => $course->subject_name,
+                            'description' => $course->subject_description,
+                            'content_items_count' => $course->contentItems->count(), // For debugging
+                        ];
+                    }
+                    if (count($filteredCourses) > 0) {
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => $filteredCourses
+                        ];
+                    } else {
+                        // Include modules even without courses for non-authenticated users
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => []
+                        ];
+                    }
+                }
+                if (count($filteredModules) > 0) {
+                    $allPrograms[] = [
+                        'program_id' => $program->program_id,
+                        'program_name' => $program->program_name,
+                        'description' => $program->program_description,
+                        'modules' => $filteredModules
+                    ];
+                }
+            }
+            
+            \Log::info('Programs for non-authenticated user', ['programs' => $allPrograms]);
+            return response()->json(['programs' => $allPrograms]);
         }
 
         // 1. Full-plan exclusion
@@ -2285,22 +2334,31 @@ class StudentRegistrationController extends Controller
 
                 $filteredCourses = [];
                 foreach ($module->courses as $course) {
-                    // Use loaded relationship for contentItems
-                    if ($course->contentItems->count() === 0) continue;
+                    // Include all courses, even if they don't have content items yet
+                    // Content items can be added later by administrators
                     $filteredCourses[] = [
                         'course_id' => $course->subject_id,
                         'course_name' => $course->subject_name,
                         'description' => $course->subject_description,
+                        'content_items_count' => $course->contentItems->count(), // For debugging
                     ];
                 }
-                if (count($filteredCourses) > 0) {
-                    $filteredModules[] = [
-                        'module_id' => $module->modules_id,
-                        'module_name' => $module->module_name,
-                        'description' => $module->module_description,
-                        'courses' => $filteredCourses
-                    ];
-                }
+                    if (count($filteredCourses) > 0) {
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => $filteredCourses
+                        ];
+                    } else {
+                        // Include modules even without courses
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => []
+                        ];
+                    }
             }
             if (count($filteredModules) > 0) {
                 $filteredPrograms[] = [

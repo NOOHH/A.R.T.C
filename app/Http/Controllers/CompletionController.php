@@ -63,7 +63,8 @@ class CompletionController extends Controller
         $courseId = $request->input('course_id');
         $moduleId = $request->input('module_id');
 
-        $completion = ContentCompletion::firstOrCreate(
+        // Use CourseCompletion instead of ContentCompletion
+        $completion = CourseCompletion::firstOrCreate(
             [
                 'student_id' => $studentId,
                 'content_id' => $contentId,
@@ -86,6 +87,18 @@ class CompletionController extends Controller
         ]);
         $studentId = Auth::id();
         $moduleId = $request->input('module_id');
+
+        // Check if all content items for this module are completed by the student
+        $allContentIds = \App\Models\ContentItem::where('module_id', $moduleId)->pluck('id')->toArray();
+        $completedContentIds = CourseCompletion::where('student_id', $studentId)
+            ->where('module_id', $moduleId)
+            ->pluck('content_id')
+            ->toArray();
+        $allCompleted = empty(array_diff($allContentIds, $completedContentIds));
+        if (!$allCompleted && count($allContentIds) > 0) {
+            return response()->json(['success' => false, 'message' => 'You must complete all course content before marking this module as complete.']);
+        }
+
         // Assuming you have a ModuleCompletion model/table
         $completion = \App\Models\ModuleCompletion::firstOrCreate(
             [

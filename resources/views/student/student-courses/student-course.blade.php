@@ -46,6 +46,7 @@
 
     <script>
         window.completedModuleIds = @json($completedModuleIds ?? []);
+        window.completedContentIds = @json($completedContentIds ?? []);
     </script>
 
     <!-- Course Header -->
@@ -987,6 +988,11 @@
             courses.forEach(course => {
                 const icon = getContentIcon(course.type || course.course_type || 'course');
                 const isCompleted = window.completedModuleIds && window.completedModuleIds.includes(parseInt(course.course_id));
+                // Check if all content items for this course are completed
+                let allContentCompleted = true;
+                if (course.content_items && course.content_items.length > 0) {
+                    allContentCompleted = course.content_items.every(item => window.completedContentIds.includes(parseInt(item.id)));
+                }
                 html += `
                     <div class="course-item d-flex justify-content-between align-items-center" onclick="selectCourse('${course.course_id}')">
                         <div class="d-flex align-items-center flex-grow-1">
@@ -1002,7 +1008,7 @@
                                 ${course.duration ? `<span class=\"badge bg-secondary ms-1\">${course.duration}</span>` : ''}
                             </div>
                         </div>
-                        <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); toggleComplete('course', '${course.course_id}', this)">${isCompleted ? 'Unmark as Complete' : 'Mark Complete'}</button>
+                        <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); toggleComplete('course', '${course.course_id}', this)" ${allContentCompleted ? '' : 'disabled title=\'Complete all course content first\''}>${isCompleted ? 'Unmark as Complete' : 'Mark Complete'}</button>
                     </div>
                 `;
             });
@@ -1871,6 +1877,10 @@ if (addSubmissionBtn) {
     <script>
         // Move the markComplete function here and fix the CSRF token reference
         function markComplete(type, id, btn) {
+            if (!btn) {
+                console.error('markComplete: btn is null or undefined');
+                return;
+            }
             btn.disabled = true;
             btn.innerText = 'Marking...';
             btn.classList.remove('btn-success');
@@ -1883,7 +1893,11 @@ if (addSubmissionBtn) {
                 payload = { course_id: id };
             } else if (type === 'content') {
                 url = '/student/complete-content';
-                payload = { content_id: id };
+                payload = {
+                    content_id: id,
+                    course_id: currentCourse,
+                    module_id: currentModule
+                };
             } else if (type === 'document') {
                 url = '/student/complete-content';
                 payload = { content_id: id };
@@ -1915,6 +1929,13 @@ if (addSubmissionBtn) {
                         if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
                         if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
                     }
+                    // Update completedModuleIds for UI consistency
+                    if (type === 'course') {
+                        const moduleId = parseInt(id);
+                        if (!window.completedModuleIds.includes(moduleId)) {
+                            window.completedModuleIds.push(moduleId);
+                        }
+                    }
                 } else {
                     btn.disabled = false;
                     btn.innerText = 'Mark Complete';
@@ -1933,6 +1954,10 @@ if (addSubmissionBtn) {
         }
 
         function toggleComplete(type, id, btn) {
+            if (!btn) {
+                console.error('toggleComplete: btn is null or undefined');
+                return;
+            }
             btn.disabled = true;
             btn.innerText = (btn.innerText === 'Mark Complete') ? 'Marking...' : 'Unmarking...';
             let url = '';
