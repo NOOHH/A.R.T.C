@@ -24,6 +24,7 @@
                 </div>
             @endif
 
+            {{-- Only use $assignedPrograms as provided by the controller. Do not fetch or display any other programs. --}}
             @if($assignedPrograms->count() > 0)
                 <div class="row">
                     @foreach($assignedPrograms as $program)

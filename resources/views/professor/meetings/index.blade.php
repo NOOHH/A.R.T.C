@@ -101,6 +101,7 @@
 
             <!-- Meetings by Program -->
             <div id="meetingsByProgram">
+                {{-- Only use $professorPrograms and $batches as provided by the controller. Do not fetch or display any other programs or batches. --}}
                 @if($professorPrograms->count() > 0)
                     @foreach($professorPrograms as $program)
                         <div class="program-section" data-program-id="{{ $program->program_id }}" style="margin-bottom: 2rem;">

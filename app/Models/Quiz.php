@@ -17,17 +17,22 @@ class Quiz extends Model
         'program_id',
         'quiz_title',
         'instructions',
-        'difficulty',
         'total_questions',
         'time_limit',
         'document_path',
         'is_active',
+        'is_draft',
+        'randomize_order',
+        'tags',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'is_draft' => 'boolean',
+        'randomize_order' => 'boolean',
+        'tags' => 'array',
     ];
 
     public function professor()

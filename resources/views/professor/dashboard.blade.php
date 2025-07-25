@@ -55,6 +55,7 @@ html, body, .admin-container, .main-wrapper {
   overflow-y: auto;
   padding: 1rem;      /* your container-fluid padding */
   background: #fff;
+  margin-left: 0;
 }
 
 /* 6) Collapse sidebar toggling */
@@ -219,6 +220,7 @@ body.sidebar-collapse .content-below-search {
                     <a href="{{ route('professor.programs') }}" class="btn btn-outline-primary btn-sm">View All</a>
                 </div>
                 <div class="card-body">
+                    {{-- Only use $assignedPrograms as provided by the controller. Do not fetch or display any other programs. --}}
                     @if($assignedPrograms->count() > 0)
                         <div class="row">
                             @foreach($assignedPrograms->take(3) as $program)

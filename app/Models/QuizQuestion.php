@@ -21,19 +21,20 @@ class QuizQuestion extends Model
         'options',
         'correct_answer',
         'explanation',
-        'difficulty',
         'instructions',
         'points',
         'source_file',
         'is_active',
         'created_by_admin',
-        'created_by_professor'
+        'created_by_professor',
+        'tags',
     ];
 
     protected $casts = [
         'options' => 'array',
         'is_active' => 'boolean',
         'points' => 'integer',
+        'tags' => 'array',
     ];
 
     /**
