@@ -49,6 +49,17 @@ html, body, .admin-container, .main-wrapper {
   overflow: hidden; /* we'll scroll the inner wrapper */
 }
 
+/* Custom announcement card styling */
+.border-left-primary {
+  border-left: 4px solid #007bff !important;
+}
+
+.card.border-left-primary:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 123, 255, 0.15) !important;
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
 /* 5) YOUR real scrolling area */
 .content-wrapper {
   flex: 1 1 auto;
@@ -261,5 +272,140 @@ body.sidebar-collapse .content-below-search {
             </div>
         </div>
     </div>
+
+    <!-- Announcements Section -->
+    @if(isset($announcements) && $announcements->count() > 0)
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-megaphone"></i> Announcements</h5>
+                    <span class="badge bg-primary">{{ $announcements->count() }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach($announcements->take(3) as $announcement)
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-left-primary">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0">{{ $announcement->title }}</h6>
+                                            @if($announcement->priority === 'high')
+                                                <span class="badge bg-danger">High Priority</span>
+                                            @elseif($announcement->priority === 'medium')
+                                                <span class="badge bg-warning">Medium Priority</span>
+                                            @else
+                                                <span class="badge bg-info">Low Priority</span>
+                                            @endif
+                                        </div>
+                                        <p class="card-text small text-muted mb-2">
+                                            {{ Str::limit($announcement->content, 100) }}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar3"></i>
+                                                {{ $announcement->created_at->format('M d, Y') }}
+                                            </small>
+                                            @if($announcement->target_scope === 'program_specific')
+                                                <small class="text-primary">
+                                                    <i class="bi bi-bookmark"></i> Program Specific
+                                                </small>
+                                            @else
+                                                <small class="text-success">
+                                                    <i class="bi bi-globe"></i> General
+                                                </small>
+                                            @endif
+                                        </div>
+                                        @if($announcement->expire_date && $announcement->expire_date->isToday())
+                                            <div class="mt-2">
+                                                <small class="text-warning">
+                                                    <i class="bi bi-exclamation-triangle"></i> Expires today
+                                                </small>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if($announcements->count() > 3)
+                        <div class="text-center mt-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="toggleAllAnnouncements()">
+                                <span id="toggleText">Show All Announcements</span>
+                                <i class="bi bi-chevron-down" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <div id="additionalAnnouncements" style="display: none;" class="mt-3">
+                            <div class="row">
+                                @foreach($announcements->skip(3) as $announcement)
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100 border-left-primary">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0">{{ $announcement->title }}</h6>
+                                                    @if($announcement->priority === 'high')
+                                                        <span class="badge bg-danger">High Priority</span>
+                                                    @elseif($announcement->priority === 'medium')
+                                                        <span class="badge bg-warning">Medium Priority</span>
+                                                    @else
+                                                        <span class="badge bg-info">Low Priority</span>
+                                                    @endif
+                                                </div>
+                                                <p class="card-text small text-muted mb-2">
+                                                    {{ Str::limit($announcement->content, 100) }}
+                                                </p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar3"></i>
+                                                        {{ $announcement->created_at->format('M d, Y') }}
+                                                    </small>
+                                                    @if($announcement->target_scope === 'program_specific')
+                                                        <small class="text-primary">
+                                                            <i class="bi bi-bookmark"></i> Program Specific
+                                                        </small>
+                                                    @else
+                                                        <small class="text-success">
+                                                            <i class="bi bi-globe"></i> General
+                                                        </small>
+                                                    @endif
+                                                </div>
+                                                @if($announcement->expire_date && $announcement->expire_date->isToday())
+                                                    <div class="mt-2">
+                                                        <small class="text-warning">
+                                                            <i class="bi bi-exclamation-triangle"></i> Expires today
+                                                        </small>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
+
+<script>
+function toggleAllAnnouncements() {
+    const additionalDiv = document.getElementById('additionalAnnouncements');
+    const toggleText = document.getElementById('toggleText');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (additionalDiv.style.display === 'none') {
+        additionalDiv.style.display = 'block';
+        toggleText.textContent = 'Show Less';
+        toggleIcon.className = 'bi bi-chevron-up';
+    } else {
+        additionalDiv.style.display = 'none';
+        toggleText.textContent = 'Show All Announcements';
+        toggleIcon.className = 'bi bi-chevron-down';
+    }
+}
+</script>
+
 @endsection

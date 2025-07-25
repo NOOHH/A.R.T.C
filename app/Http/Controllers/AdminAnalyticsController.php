@@ -895,7 +895,7 @@ class AdminAnalyticsController extends Controller
                 }
 
                 if (!empty($filters['subject'])) {
-                    $query->where('module_completions.module_id', $filters['subject']);
+                    $query->where('module_completions.modules_id', $filters['subject']);
                 }
 
                 $avgScore = $query->avg('module_completions.score');
@@ -971,7 +971,7 @@ class AdminAnalyticsController extends Controller
                 }
 
                 if (!empty($filters['subject'])) {
-                    $query->where('module_completions.module_id', $filters['subject']);
+                    $query->where('module_completions.modules_id', $filters['subject']);
                 }
 
                 $actualCompletions = $query->count();
@@ -1142,7 +1142,7 @@ class AdminAnalyticsController extends Controller
                 // Check module_completions table if no quiz_results
                 if ($performance == 0 && DB::getSchemaBuilder()->hasTable('module_completions')) {
                     $avgScore = DB::table('module_completions')
-                        ->where('module_id', $subject->module_id)
+                        ->where('modules_id', $subject->modules_id)
                         ->avg('score');
                     if ($avgScore) {
                         $performance = round($avgScore, 1);

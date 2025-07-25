@@ -10,15 +10,137 @@ use App\Models\Student;
 use App\Models\Program;
 use App\Models\Module;
 use App\Models\Course;
-use App\Models\Lesson;
 use App\Models\ContentItem;
 use App\Models\Deadline;
 use App\Models\Announcement;
 use App\Models\Package;
-use App\Models\StudentSubmission;
+use App\Models\AssignmentSubmission;
 
 class StudentDashboardController extends Controller
 {
+    /**
+     * Ensure enrollment course records exist for modular enrollments
+     * This is a helper method to fix missing enrollment_courses records
+     */
+    private function ensureEnrollmentCourseRecords($enrollment)
+    {
+        if (!$enrollment || $enrollment->enrollment_type !== 'Modular') {
+            return;
+        }
+        
+        // Check if enrollment course records already exist
+        $existingCourseCount = $enrollment->enrollmentCourses()->count();
+        if ($existingCourseCount > 0) {
+            return; // Records already exist
+        }
+        
+        Log::info('Creating missing enrollment course records', [
+            'enrollment_id' => $enrollment->enrollment_id,
+            'user_id' => $enrollment->user_id
+        ]);
+        
+        // Get the registration to find selected courses
+        $registration = \App\Models\Registration::where('user_id', $enrollment->user_id)
+            ->where('program_id', $enrollment->program_id)
+            ->where('enrollment_type', 'Modular')
+            ->first();
+        
+        if (!$registration || !$registration->selected_modules) {
+            Log::warning('No registration data found for enrollment course creation', [
+                'enrollment_id' => $enrollment->enrollment_id
+            ]);
+            return;
+        }
+        
+        $selectedModulesData = json_decode($registration->selected_modules, true);
+        if (!is_array($selectedModulesData)) {
+            Log::warning('Invalid selected modules data', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'selected_modules' => $registration->selected_modules
+            ]);
+            return;
+        }
+        
+        $createdCourses = 0;
+        foreach ($selectedModulesData as $moduleData) {
+            $moduleId = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+            
+            if (!$moduleId) continue;
+            
+            // If specific courses are selected for this module
+            if (isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                foreach ($moduleData['selected_courses'] as $courseData) {
+                    $courseId = is_array($courseData) ? ($courseData['id'] ?? $courseData['course_id'] ?? $courseData) : $courseData;
+                    
+                    if ($courseId) {
+                        try {
+                            \App\Models\EnrollmentCourse::create([
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $courseId,
+                                'module_id' => $moduleId,
+                                'enrollment_type' => 'course',
+                                'course_price' => 0,
+                                'is_active' => true
+                            ]);
+                            $createdCourses++;
+                            Log::info('Created enrollment course record', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $courseId,
+                                'module_id' => $moduleId
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to create enrollment course record', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $courseId,
+                                'module_id' => $moduleId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                // If no specific courses selected, enroll in all courses of the module
+                $module = \App\Models\Module::find($moduleId);
+                if ($module) {
+                    $moduleCourses = \App\Models\Course::where('module_id', $moduleId)
+                        ->where('is_active', true)
+                        ->get();
+                    
+                    foreach ($moduleCourses as $course) {
+                        try {
+                            \App\Models\EnrollmentCourse::create([
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $course->subject_id,
+                                'module_id' => $moduleId,
+                                'enrollment_type' => 'course',
+                                'course_price' => 0,
+                                'is_active' => true
+                            ]);
+                            $createdCourses++;
+                            Log::info('Created enrollment course record for module course', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $course->subject_id,
+                                'module_id' => $moduleId
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to create enrollment course record for module course', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $course->subject_id,
+                                'module_id' => $moduleId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+        
+        Log::info('Completed enrollment course record creation', [
+            'enrollment_id' => $enrollment->enrollment_id,
+            'created_count' => $createdCourses
+        ]);
+    }
+
     public function __construct()
     {
         // Ensure only authenticated students can access these methods
@@ -240,6 +362,9 @@ class StudentDashboardController extends Controller
         $announcements = [];
         
         if ($student) {
+            // Auto-update overdue deadline statuses
+            $this->updateOverdueAssignmentStatuses($student);
+            
             // Get deadlines for this student from all enrolled programs
             $enrolledProgramIds = $enrollments->pluck('program_id')->toArray();
             // Get all active course_ids the student is enrolled in (via enrollment_courses)
@@ -247,38 +372,81 @@ class StudentDashboardController extends Controller
                 $q->where('student_id', $student->student_id);
             })->where('is_active', true)->pluck('course_id')->toArray();
 
+            // Get deadlines from deadlines table (including overdue ones)
             $deadlines = \App\Models\Deadline::where('student_id', $student->student_id)
                 ->orWhereIn('program_id', $enrolledProgramIds)
-                ->where('due_date', '>=', now())
+                ->where(function($query) {
+                    $query->where('due_date', '>=', now())
+                          ->orWhere('status', 'overdue');
+                })
                 ->orderBy('due_date', 'asc')
-                ->limit(5)
                 ->get();
 
-            // Add assignment deadlines from content_items (use course_id)
+            // Add assignment deadlines from content_items (no lesson references)
             $assignmentDeadlines = \App\Models\ContentItem::where('content_type', 'assignment')
-                ->where('enable_submission', true)
+                ->whereNotNull('due_date')
                 ->whereIn('course_id', $enrolledCourseIds)
-                ->where('due_date', '>=', now())
                 ->get()
-                ->map(function($item) {
+                ->map(function($item) use ($student) {
+                    // Check if student has already submitted this assignment
+                    $submission = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+                        ->where('content_id', $item->id)
+                        ->first();
+                    // Determine status based on submission and due date
+                    $now = now();
+                    if ($submission) {
+                        $status = 'completed';
+                        $feedback = $submission->feedback;
+                        $grade = $submission->grade;
+                    } elseif ($item->due_date < $now) {
+                        $status = 'overdue';
+                        $feedback = null;
+                        $grade = null;
+                    } else {
+                        $status = 'pending';
+                        $feedback = null;
+                        $grade = null;
+                    }
+                    // Get course and program info for navigation and display
+                    $course = \App\Models\Course::find($item->course_id);
+                    $module = $course ? \App\Models\Module::find($course->module_id) : null;
+                    $program = $module ? \App\Models\Program::find($module->program_id) : null;
                     return (object) [
                         'title' => $item->content_title,
-                        'description' => $item->content_description,
+                        'description' => $item->content_description ?? 'Assignment deadline',
                         'due_date' => $item->due_date,
                         'type' => 'assignment',
                         'reference_id' => $item->id,
-                        'status' => 'pending',
+                        'status' => $status,
+                        'feedback' => $feedback,
+                        'grade' => $grade,
+                        'course_id' => $item->course_id,
+                        'module_id' => $module ? $module->modules_id : null,
+                        'course_name' => $course ? $course->subject_name : null,
+                        'module_name' => $module ? $module->module_name : null,
+                        'program_name' => $program ? $program->program_name : null,
+                        'program_id' => $program ? $program->program_id : null,
+                        'submission' => $submission
                     ];
+                })
+                ->filter(function($deadline) {
+                    // Show upcoming deadlines and overdue assignments
+                    return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
                 });
 
-            // Merge and sort deadlines
-            $deadlines = $deadlines->concat($assignmentDeadlines)->sortBy('due_date')->values();
+            // Auto-create missing deadline entries for assignments that don't have them
+            $this->createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds);
 
-            // Get announcements for this student from all enrolled programs
-            $announcements = \App\Models\Announcement::whereIn('program_id', $enrolledProgramIds)
-                ->orderBy('created_at', 'desc')
-                ->limit(3)
-                ->get();
+            // Merge and sort deadlines by due date
+            $allDeadlines = $deadlines->concat($assignmentDeadlines)
+                ->sortBy('due_date')
+                ->take(5)
+                ->values();
+            
+            $deadlines = $allDeadlines;
+
+            // Get announcements for this student using new targeting system
+            $announcements = $this->getTargetedAnnouncements($student, $enrolledProgramIds);
         }
 
         return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms'));
@@ -446,23 +614,73 @@ class StudentDashboardController extends Controller
                          ->orderBy('modules_id', 'asc')
                          ->get();
 
-        // Filter modules for modular enrollments based on selected modules
+        // Filter modules for modular enrollments based on enrolled courses
         if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
-            $registration = \App\Models\Registration::where('user_id', session('user_id'))
-                ->where('program_id', $courseId)
-                ->where('enrollment_type', 'Modular')
-                ->first();
-            if ($registration && $registration->selected_modules) {
-                $selectedModuleIds = json_decode($registration->selected_modules, true);
-                if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
-                    $modules = $modules->filter(function($module) use ($selectedModuleIds) {
-                        return in_array($module->modules_id, $selectedModuleIds);
-                    });
-                    Log::info('Filtered modules for modular enrollment', [
-                        'original_count' => Module::where('program_id', $courseId)->count(),
-                        'filtered_count' => $modules->count(),
-                        'selected_modules' => $selectedModuleIds
-                    ]);
+            // Ensure enrollment course records exist
+            $this->ensureEnrollmentCourseRecords($enrollment);
+            
+            // Get the courses the student is enrolled in
+            $enrolledCourseIds = $enrollment->enrollmentCourses()
+                ->where('is_active', true)
+                ->pluck('course_id')
+                ->toArray();
+            
+            if (!empty($enrolledCourseIds)) {
+                // Get the module IDs that contain these courses
+                $moduleIdsWithEnrolledCourses = \App\Models\Course::whereIn('subject_id', $enrolledCourseIds)
+                    ->pluck('module_id')
+                    ->unique()
+                    ->toArray();
+                
+                // Filter modules to only include those that contain enrolled courses
+                $modules = $modules->filter(function($module) use ($moduleIdsWithEnrolledCourses) {
+                    return in_array($module->modules_id, $moduleIdsWithEnrolledCourses);
+                });
+                
+                Log::info('Filtered modules for modular enrollment based on enrolled courses', [
+                    'original_count' => Module::where('program_id', $courseId)->count(),
+                    'filtered_count' => $modules->count(),
+                    'enrolled_courses' => $enrolledCourseIds,
+                    'modules_with_courses' => $moduleIdsWithEnrolledCourses
+                ]);
+            } else {
+                // No enrolled courses found, try fallback to registration data
+                $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                    ->where('program_id', $courseId)
+                    ->where('enrollment_type', 'Modular')
+                    ->first();
+                
+                if ($registration && $registration->selected_modules) {
+                    $selectedModulesData = json_decode($registration->selected_modules, true);
+                    
+                    // Handle both old format (array of IDs) and new format (object with courses)
+                    $selectedCourseIds = [];
+                    if (is_array($selectedModulesData)) {
+                        foreach ($selectedModulesData as $moduleData) {
+                            if (is_array($moduleData) && isset($moduleData['selected_courses'])) {
+                                $selectedCourseIds = array_merge($selectedCourseIds, $moduleData['selected_courses']);
+                            }
+                        }
+                    }
+                    
+                    if (!empty($selectedCourseIds)) {
+                        // Get the module IDs that contain these courses
+                        $moduleIdsWithSelectedCourses = \App\Models\Course::whereIn('subject_id', $selectedCourseIds)
+                            ->pluck('module_id')
+                            ->unique()
+                            ->toArray();
+                        
+                        // Filter modules to only include those that contain selected courses
+                        $modules = $modules->filter(function($module) use ($moduleIdsWithSelectedCourses) {
+                            return in_array($module->modules_id, $moduleIdsWithSelectedCourses);
+                        });
+                        
+                        Log::info('Filtered modules using registration fallback', [
+                            'selected_courses' => $selectedCourseIds,
+                            'modules_with_courses' => $moduleIdsWithSelectedCourses,
+                            'filtered_count' => $modules->count()
+                        ]);
+                    }
                 }
             }
         }
@@ -472,7 +690,15 @@ class StudentDashboardController extends Controller
         if ($student) {
             $completedModuleIds = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
                 ->where('program_id', $courseId)
-                ->pluck('module_id')
+                ->pluck('modules_id')
+                ->toArray();
+        }
+        
+        // Get completed content for this student
+        $completedContentIds = [];
+        if ($student) {
+            $completedContentIds = \App\Models\ContentCompletion::where('student_id', $student->student_id)
+                ->pluck('content_id')
                 ->toArray();
         }
         
@@ -608,7 +834,9 @@ class StudentDashboardController extends Controller
             'enrollment',
             'paymentStatus',
             'enrollmentStatus',
-            'studentPrograms'
+            'studentPrograms',
+            'completedModuleIds',
+            'completedContentIds' // <-- add this
         ));
     }
 
@@ -711,6 +939,7 @@ class StudentDashboardController extends Controller
         }
     }
     
+    /*
     public function module($moduleId)
     {
         // Get user data from session
@@ -747,26 +976,79 @@ class StudentDashboardController extends Controller
         $isCompleted = false;
         if ($student) {
             $completion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                ->where('module_id', $moduleId)
+                ->where('modules_id', $moduleId)
                 ->first();
             $isCompleted = (bool) $completion;
         }
         
         // Get courses associated with this module from the database
-        $courses = Course::where('module_id', $moduleId)
+        $coursesQuery = Course::where('module_id', $moduleId)
             ->where('is_active', true)
-            ->ordered()
-            ->get();
+            ->ordered();
         
-        // Format courses with their content (lessons, PDFs, etc.)
+        // Apply modular enrollment filtering
+        if ($student && $enrollment && $enrollment->enrollment_type === 'Modular') {
+            // Ensure enrollment course records exist
+            $this->ensureEnrollmentCourseRecords($enrollment);
+            
+            $allowedCourseIds = $enrollment->enrollmentCourses()
+                ->where('is_active', true)
+                ->pluck('course_id')
+                ->toArray();
+            
+            Log::info('Module view course filtering for modular enrollment', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'module_id' => $moduleId,
+                'allowed_course_ids' => $allowedCourseIds
+            ]);
+            
+            if (!empty($allowedCourseIds)) {
+                $coursesQuery->whereIn('subject_id', $allowedCourseIds);
+            } else {
+                // Fallback to registration data if no enrollment courses found
+                $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                    ->where('program_id', $enrollment->program_id)
+                    ->where('enrollment_type', 'Modular')
+                    ->first();
+                
+                if ($registration && $registration->selected_modules) {
+                    $selectedModulesData = json_decode($registration->selected_modules, true);
+                    $fallbackCourseIds = [];
+                    
+                    if (is_array($selectedModulesData)) {
+                        foreach ($selectedModulesData as $moduleData) {
+                            $moduleIdFromData = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+                            
+                            if ($moduleIdFromData == $moduleId && isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                                foreach ($moduleData['selected_courses'] as $courseId) {
+                                    $fallbackCourseIds[] = is_array($courseId) ? ($courseId['id'] ?? $courseId['course_id'] ?? $courseId) : $courseId;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (!empty($fallbackCourseIds)) {
+                        Log::info('Using fallback course filtering in module view', [
+                            'fallback_course_ids' => $fallbackCourseIds,
+                            'module_id' => $moduleId
+                        ]);
+                        $coursesQuery->whereIn('subject_id', $fallbackCourseIds);
+                    } else {
+                        // No specific courses selected for this module - show none
+                        $coursesQuery->where('subject_id', -1); // This will return no results
+                    }
+                } else {
+                    // No registration data - show none
+                    $coursesQuery->where('subject_id', -1); // This will return no results
+                }
+            }
+        }
+        
+        $courses = $coursesQuery->get();
+        
+        // Format courses with their content (PDFs, assignments, etc.)
         $formattedCourses = [];
         foreach ($courses as $course) {
-            // Get lessons for this course
-            $lessons = Lesson::where('course_id', $course->subject_id)
-                ->where('is_active', true)
-                ->orderBy('lesson_order', 'asc')
-                ->get();
-            
             // Get content items for this course
             $contentItems = ContentItem::where('course_id', $course->subject_id)
                 ->where('is_active', true)
@@ -780,17 +1062,6 @@ class StudentDashboardController extends Controller
                 'price' => $course->subject_price,
                 'order' => $course->subject_order,
                 'is_required' => $course->is_required,
-                'lessons' => $lessons->map(function($lesson) {
-                    return [
-                        'id' => $lesson->lesson_id,
-                        'name' => $lesson->lesson_name,
-                        'description' => $lesson->lesson_description,
-                        'duration' => $lesson->lesson_duration,
-                        'video_url' => $lesson->lesson_video_url,
-                        'order' => $lesson->lesson_order,
-                        'learning_mode' => $lesson->learning_mode,
-                    ];
-                }),
                 'content_items' => $contentItems->map(function($item) {
                     return [
                         'id' => $item->id,
@@ -853,11 +1124,10 @@ class StudentDashboardController extends Controller
         if ($module->video_path) {
             $moduleData['content_data']['video_url'] = asset('storage/' . $module->video_path);
         }
-        
+
         return view('student.student-courses.student-module', compact('user', 'module', 'program', 'moduleData', 'courses', 'formattedCourses'));
     }
-    
-    /**
+    */    /**
      * Mark a module as completed (toggle on)
      */
     public function completeModule($id, \Illuminate\Http\Request $request)
@@ -866,20 +1136,23 @@ class StudentDashboardController extends Controller
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Student not found.']);
         }
+        $programId = $request->input('program_id');
         // Check if already completed
         $exists = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-            ->where('module_id', $id)
+            ->where('modules_id', $id)
             ->exists();
         if (!$exists) {
             \App\Models\ModuleCompletion::create([
                 'student_id' => $student->student_id,
-                'module_id' => $id,
+                'modules_id' => $id,
+                'program_id' => $programId,
+                'completed_at' => now(),
             ]);
         }
         // Calculate progress
-        $totalModules = \App\Models\Module::where('program_id', $request->input('program_id'))->count();
+        $totalModules = \App\Models\Module::where('program_id', $programId)->count();
         $completedModules = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-            ->whereIn('module_id', \App\Models\Module::where('program_id', $request->input('program_id'))->pluck('id'))
+            ->where('program_id', $programId)
             ->count();
         $progress = $totalModules > 0 ? round(($completedModules / $totalModules) * 100) : 0;
         return response()->json([
@@ -905,7 +1178,7 @@ class StudentDashboardController extends Controller
                 ]);
             }
             $completion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                ->where('module_id', $moduleId)
+                ->where('modules_id', $moduleId)
                 ->first();
             if ($completion) {
                 $programId = $completion->program_id;
@@ -1063,6 +1336,10 @@ class StudentDashboardController extends Controller
                     'submitted_at' => now(),
                     'status' => 'submitted',
                 ]);
+                
+                // Update deadline status for this assignment
+                $this->updateAssignmentDeadlineStatus($student->student_id, $contentId, 'completed');
+                
                 return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
             }
 
@@ -1090,6 +1367,10 @@ class StudentDashboardController extends Controller
                 'submitted_at' => now(),
                 'status' => 'submitted'
             ]);
+            
+            // Update deadline status for this assignment
+            $this->updateAssignmentDeadlineStatus($student->student_id, $contentId, 'completed');
+            
             return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -1453,11 +1734,14 @@ class StudentDashboardController extends Controller
             
             // Get the student
             $student = Student::where('user_id', session('user_id'))->first();
-            
+            $enrollment = null;
             if ($student) {
-                // Check if student is enrolled in the program
-                $enrollment = $student->enrollments()->where('program_id', $module->program_id)->first();
-                
+                // Always get the latest approved or pending enrollment for this program
+                $enrollment = $student->enrollments()
+                    ->where('program_id', $module->program_id)
+                    ->orderByDesc('enrollment_status') // approved > pending > others
+                    ->orderByDesc('created_at')
+                    ->first();
                 if (!$enrollment) {
                     return response()->json([
                         'success' => false,
@@ -1467,27 +1751,92 @@ class StudentDashboardController extends Controller
             }
             
             // Get courses associated with this module
-            $courses = \App\Models\Course::where('module_id', $moduleId)
-                ->with(['lessons' => function($query) {
-                    $query->with(['contentItems' => function($contentQuery) {
-                        $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
-                    }])->orderBy('lesson_order');
-                }])
+            $coursesQuery = \App\Models\Course::where('module_id', $moduleId)
+                //->with(['lessons' => function($query) {
+                //    $query->with(['contentItems' => function($contentQuery) {
+                //        $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
+                //    }])->orderBy('lesson_order');
+                //}])
                 ->select('subject_id', 'subject_name', 'subject_description', 'subject_price', 'is_required', 'module_id')
-                ->orderBy('subject_order')
-                ->get();
+                ->orderBy('subject_order');
 
-            // Also get direct content items (not linked to lessons)
-            $directContentItems = \App\Models\ContentItem::whereIn('course_id', $courses->pluck('subject_id'))
-                ->whereNull('lesson_id')
-                ->select('id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required')
-                ->orderBy('content_order')
-                ->get();
+            // Filter by EnrollmentCourse for modular enrollments
+            if ($student && $enrollment && $enrollment->enrollment_type === 'Modular') {
+                // Ensure enrollment course records exist
+                $this->ensureEnrollmentCourseRecords($enrollment);
+                
+                $allowedCourseIds = $enrollment->enrollmentCourses()
+                    ->where('is_active', true)
+                    ->pluck('course_id')
+                    ->toArray();
+                
+                Log::info('Modular enrollment course filtering', [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'module_id' => $moduleId,
+                    'enrollment_type' => $enrollment->enrollment_type,
+                    'allowed_course_ids' => $allowedCourseIds,
+                    'student_id' => $student->student_id,
+                    'user_id' => session('user_id')
+                ]);
+                
+                if (!empty($allowedCourseIds)) {
+                    $coursesQuery->whereIn('subject_id', $allowedCourseIds);
+                } else {
+                    // If no allowed courses found, check if we should fall back to registration data
+                    Log::warning('No enrolled courses found for modular enrollment, checking registration data', [
+                        'enrollment_id' => $enrollment->enrollment_id,
+                        'module_id' => $moduleId
+                    ]);
+                    
+                    // Fallback: check registration selected_modules for this specific module
+                    $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                        ->where('program_id', $enrollment->program_id)
+                        ->where('enrollment_type', 'Modular')
+                        ->first();
+                    
+                    if ($registration && $registration->selected_modules) {
+                        $selectedModulesData = json_decode($registration->selected_modules, true);
+                        $fallbackCourseIds = [];
+                        
+                        if (is_array($selectedModulesData)) {
+                            foreach ($selectedModulesData as $moduleData) {
+                                $moduleIdFromData = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+                                
+                                if ($moduleIdFromData == $moduleId && isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                                    foreach ($moduleData['selected_courses'] as $courseId) {
+                                        $fallbackCourseIds[] = is_array($courseId) ? ($courseId['id'] ?? $courseId['course_id'] ?? $courseId) : $courseId;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (!empty($fallbackCourseIds)) {
+                            Log::info('Using fallback course filtering from registration data', [
+                                'fallback_course_ids' => $fallbackCourseIds,
+                                'module_id' => $moduleId
+                            ]);
+                            $coursesQuery->whereIn('subject_id', $fallbackCourseIds);
+                        } else {
+                            // If still no courses found, return empty collection
+                            $courses = collect();
+                        }
+                    } else {
+                        // No registration data available, return empty
+                        $courses = collect();
+                    }
+                }
+            }
+
+            if (!isset($courses)) {
+                $courses = $coursesQuery->get();
+            }
             
             // Format the response
-            $formattedCourses = $courses->map(function($course) use ($directContentItems) {
-                $courseDirectItems = $directContentItems->where('course_id', $course->subject_id);
-                
+            $formattedCourses = $courses->map(function($course) {
+                $contentItems = \App\Models\ContentItem::where('course_id', $course->subject_id)
+                    ->select('id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required')
+                    ->orderBy('content_order')
+                    ->get();
                 return [
                     'course_id' => $course->subject_id,
                     'course_name' => $course->subject_name,
@@ -1495,29 +1844,7 @@ class StudentDashboardController extends Controller
                     'price' => $course->subject_price,
                     'duration' => null, // Not available in this table structure
                     'required' => (bool) $course->is_required,
-                    'lessons' => $course->lessons->map(function($lesson) {
-                        return [
-                            'id' => $lesson->lesson_id,
-                            'lesson_name' => $lesson->lesson_name,
-                            'lesson_description' => $lesson->lesson_description,
-                            'duration' => $lesson->lesson_duration ?? null,
-                            'content_items' => $lesson->contentItems->map(function($item) {
-                                return [
-                                    'id' => $item->id,
-                                    'content_type' => $item->content_type,
-                                    'content_title' => $item->content_title,
-                                    'content_description' => $item->content_description,
-                                    'content_url' => $item->attachment_path,
-                                    'attachment_path' => $item->attachment_path,
-                                    'content_data' => $item->content_data,
-                                    'max_points' => $item->max_points,
-                                    'due_date' => $item->due_date,
-                                    'is_required' => (bool) $item->is_required
-                                ];
-                            })
-                        ];
-                    }),
-                    'direct_content_items' => $courseDirectItems->map(function($item) {
+                    'content_items' => $contentItems->map(function($item) {
                         return [
                             'id' => $item->id,
                             'content_type' => $item->content_type,
@@ -1600,7 +1927,7 @@ class StudentDashboardController extends Controller
                 $extension = $file->getClientOriginalExtension();
                 $filename = 'submission_' . $student->student_id . '_' . $content->id . '_' . time() . '_' . uniqid() . '.' . $extension;
                 $filePath = $file->storeAs('submissions', $filename, 'public');
-                \App\Models\StudentSubmission::create([
+                \App\Models\AssignmentSubmission::create([
                     'student_id' => $student->student_id,
                     'content_id' => $content->id,
                     'file_path' => $filePath,
@@ -1611,6 +1938,9 @@ class StudentDashboardController extends Controller
                     'status' => 'submitted',
                     'submitted_at' => now(),
                 ]);
+                
+                // Update deadline status for this assignment
+                $this->updateAssignmentDeadlineStatus($student->student_id, $content->id, 'completed');
             }
             return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
@@ -1816,5 +2146,229 @@ class StudentDashboardController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Update overdue assignment statuses for a specific student (called automatically)
+     */
+    private function updateOverdueAssignmentStatuses($student)
+    {
+        try {
+            $overdueDeadlines = \App\Models\Deadline::where('student_id', $student->student_id)
+                ->where('type', 'assignment')
+                ->where('due_date', '<', now())
+                ->where('status', 'pending')
+                ->get();
+
+            foreach ($overdueDeadlines as $deadline) {
+                // Check if the assignment has been submitted
+                $submission = \App\Models\AssignmentSubmission::where('student_id', $deadline->student_id)
+                    ->where('content_id', $deadline->reference_id)
+                    ->first();
+
+                if ($submission) {
+                    $deadline->update(['status' => 'completed']);
+                } else {
+                    $deadline->update(['status' => 'overdue']);
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently handle errors - this is called automatically
+            Log::warning('Error updating overdue assignment statuses: ' . $e->getMessage(), [
+                'student_id' => $student->student_id
+            ]);
+        }
+    }
+
+    /**
+     * Update overdue assignment deadline statuses
+     */
+    public function updateOverdueDeadlines()
+    {
+        try {
+            $overdueDeadlines = \App\Models\Deadline::where('type', 'assignment')
+                ->where('due_date', '<', now())
+                ->where('status', 'pending')
+                ->get();
+
+            foreach ($overdueDeadlines as $deadline) {
+                // Check if the assignment has been submitted
+                $submission = \App\Models\AssignmentSubmission::where('student_id', $deadline->student_id)
+                    ->where('content_id', $deadline->reference_id)
+                    ->first();
+
+                if ($submission) {
+                    $deadline->update(['status' => 'completed']);
+                } else {
+                    $deadline->update(['status' => 'overdue']);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Updated ' . $overdueDeadlines->count() . ' deadline statuses'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating overdue deadlines: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update assignment deadline status when assignment is submitted
+     */
+    private function updateAssignmentDeadlineStatus($studentId, $contentId, $status = 'completed')
+    {
+        try {
+            $deadline = \App\Models\Deadline::where('student_id', $studentId)
+                ->where('type', 'assignment')
+                ->where('reference_id', $contentId)
+                ->first();
+
+            if ($deadline) {
+                $deadline->update(['status' => $status]);
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error updating assignment deadline status: ' . $e->getMessage(), [
+                'student_id' => $studentId,
+                'content_id' => $contentId,
+                'status' => $status
+            ]);
+        }
+    }
+
+    /**
+     * Create missing deadline entries for assignments that don't have them
+     */
+    private function createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds)
+    {
+        try {
+            // Get all assignments in enrolled courses that have due dates
+            $assignments = \App\Models\ContentItem::where('content_type', 'assignment')
+                ->whereNotNull('due_date')
+                ->whereIn('course_id', $enrolledCourseIds)
+                ->get();
+
+            foreach ($assignments as $assignment) {
+                // Check if deadline already exists for this student and assignment
+                $existingDeadline = \App\Models\Deadline::where('student_id', $student->student_id)
+                    ->where('type', 'assignment')
+                    ->where('reference_id', $assignment->id)
+                    ->first();
+
+                if (!$existingDeadline) {
+                    // Get the program ID for this assignment's course
+                    $course = \App\Models\Course::find($assignment->course_id);
+                    $programId = $course ? $course->module->program_id : null;
+
+                    if ($programId && in_array($programId, $enrolledProgramIds)) {
+                        // Check if student has submitted this assignment
+                        $submission = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+                            ->where('content_id', $assignment->id)
+                            ->first();
+
+                        $status = $submission ? 'completed' : 'pending';
+                        
+                        // Only create deadline if assignment is not overdue or if it's still pending
+                        if ($assignment->due_date >= now() || !$submission) {
+                            \App\Models\Deadline::create([
+                                'student_id' => $student->student_id,
+                                'program_id' => $programId,
+                                'title' => 'Assignment: ' . $assignment->content_title,
+                                'description' => $assignment->content_description ?? 'Complete the assigned assignment',
+                                'type' => 'assignment',
+                                'reference_id' => $assignment->id,
+                                'due_date' => $assignment->due_date,
+                                'status' => $status,
+                            ]);
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error creating missing assignment deadlines: ' . $e->getMessage(), [
+                'student_id' => $student->student_id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Get targeted announcements for a student based on new targeting system
+     */
+    private function getTargetedAnnouncements($student, $enrolledProgramIds)
+    {
+        $query = \App\Models\Announcement::where('is_active', true)
+            ->where('is_published', true)
+            ->where(function($q) {
+                $q->whereNull('publish_date')
+                  ->orWhere('publish_date', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('expire_date')
+                  ->orWhere('expire_date', '>', now());
+            });
+
+        $query->where(function($mainQuery) use ($student, $enrolledProgramIds) {
+            // Include announcements for all users
+            $mainQuery->where('target_scope', 'all');
+
+            // Include specific targeting announcements
+            $mainQuery->orWhere(function($specificQuery) use ($student, $enrolledProgramIds) {
+                $specificQuery->where('target_scope', 'specific');
+
+                // Check if student is in target users
+                $specificQuery->where(function($userQuery) {
+                    $userQuery->whereJsonContains('target_users', 'students')
+                             ->orWhereNull('target_users');
+                });
+
+                // Check if student's programs are targeted
+                if (!empty($enrolledProgramIds)) {
+                    $specificQuery->where(function($programQuery) use ($enrolledProgramIds) {
+                        $programQuery->whereNull('target_programs');
+                        
+                        foreach ($enrolledProgramIds as $programId) {
+                            $programQuery->orWhereJsonContains('target_programs', $programId);
+                        }
+                    });
+                }
+
+                // Check if student's enrollment type is targeted
+                if ($student) {
+                    $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
+                    $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
+                    
+                    if (!empty($enrollmentTypes)) {
+                        $specificQuery->where(function($planQuery) use ($enrollmentTypes) {
+                            $planQuery->whereNull('target_plans');
+                            
+                            foreach ($enrollmentTypes as $type) {
+                                $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
+                                $planQuery->orWhereJsonContains('target_plans', $planType);
+                            }
+                        });
+                    }
+
+                    // Check if student's batches are targeted
+                    $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
+                    if (!empty($batchIds)) {
+                        $specificQuery->where(function($batchQuery) use ($batchIds) {
+                            $batchQuery->whereNull('target_batches');
+                            
+                            foreach ($batchIds as $batchId) {
+                                $batchQuery->orWhereJsonContains('target_batches', $batchId);
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        return $query->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
     }
 }

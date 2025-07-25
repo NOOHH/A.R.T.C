@@ -1,41 +1,442 @@
-@extends('layouts.navbar')
-
-@section('title', 'Modular Enrollment - Multi-Step Form')
-@section('hide_footer', true)
-@section('body_class', 'registration-page')
-
-@php
-    // Check if user is already logged in
-    $isUserLoggedIn = auth()->check() || session('user_id');
-    $loggedInUser = auth()->check() ? auth()->user() : (session('user_id') ? \App\Models\User::find(session('user_id')) : null);
-@endphp
-
-@push('styles')
-    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-     <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_enrollment.css') }}">
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="GENYsPJitdErjpdniTbVQzsxouQwCXNB958lT2G0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment - Multi-Step Form</title>
+    
+    
+    <!-- Global Variables for JavaScript - Must be loaded first -->
+    <script>
+        // Global variables accessible throughout the page
+        window.myId = null;
+        window.myName = "Guest";
+        window.isAuthenticated = false;
+        window.userRole = "guest";
+        window.csrfToken = "GENYsPJitdErjpdniTbVQzsxouQwCXNB958lT2G0";
+        
+        // Global chat state
+        window.currentChatType = null;
+        window.currentChatUser = null;
+        
+        // Make variables available without window prefix
+        var myId = window.myId;
+        var myName = window.myName;
+        var isAuthenticated = window.isAuthenticated;
+        var userRole = window.userRole;
+        var csrfToken = window.csrfToken;
+        var currentChatType = window.currentChatType;
+        var currentChatUser = window.currentChatUser;
+        
+        console.log('Navbar Global variables initialized:', { myId, myName, isAuthenticated, userRole });
+    </script>
+    
+    
+    
+        <link rel="icon" type="image/x-icon" href="http://localhost/favicon.ico">
+        <meta name="description" content="A.R.T.C - Professional Review Center">
+        <meta property="og:title" content="A.R.T.C">
+        <meta property="og:image" content="http://localhost/images/ARTC_logo.png">
+        
+        <style>
+        :root {
+            --navbar-header-bg: #ffffff;
+            --navbar-header-text: #d23737;
+            --navbar-header-border: #e0e0e0;
+            --navbar-search-bg: #f8f9fa;
+            --navbar-sidebar-bg: #343a40;
+            --navbar-sidebar-text: #ffffff;
+            --navbar-active-link-bg: #007bff;
+            --navbar-active-link-text: #ffffff;
+            --navbar-hover-bg: #c8147d;
+            --navbar-hover-text: #ffffff;
+            --navbar-submenu-bg: #2c3034;
+            --navbar-submenu-text: #18212a;
+            --navbar-footer-bg: #237ad1;
+            --navbar-icon-color: #6c757d;
+        }
+        
+        /* Header Styles */
+        .main-header,
+        .navbar,
+        header {
+            background-color: var(--navbar-header-bg) !important;
+            color: var(--navbar-header-text) !important;
+            border-bottom: 1px solid var(--navbar-header-border) !important;
+        }
+        
+        .search-box,
+        .header-search input {
+            background-color: var(--navbar-search-bg) !important;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar,
+        .sidebar-nav,
+        nav.sidebar {
+            background-color: var(--navbar-sidebar-bg) !important;
+            color: var(--navbar-sidebar-text) !important;
+        }
+        
+        .sidebar .sidebar-link,
+        .sidebar a,
+        .nav-link {
+            color: var(--navbar-sidebar-text) !important;
+        }
+        
+        .sidebar .sidebar-link:hover,
+        .sidebar a:hover,
+        .nav-link:hover {
+            background-color: var(--navbar-hover-bg) !important;
+            color: var(--navbar-hover-text) !important;
+        }
+        
+        .sidebar li.active > .sidebar-link,
+        .sidebar li.active > a,
+        .nav-link.active {
+            background-color: var(--navbar-active-link-bg) !important;
+            color: var(--navbar-active-link-text) !important;
+        }
+        
+        .sidebar .sidebar-submenu,
+        .dropdown-menu {
+            background-color: var(--navbar-submenu-bg) !important;
+        }
+        
+        .sidebar .sidebar-submenu a,
+        .dropdown-menu a {
+            color: var(--navbar-submenu-text) !important;
+        }
+        
+        .sidebar,
+        .modern-sidebar,
+        .sidebar-nav {
+            background: var(--navbar-sidebar-bg) !important;
+        }
+        
+        .sidebar-footer,
+        .footer {
+            background: var(--navbar-footer-bg) !important;
+            background-color: var(--navbar-footer-bg) !important;
+        }
+        
+        .sidebar .icon,
+        .fa,
+        .fas,
+        .far,
+        .fab {
+            color: var(--navbar-icon-color) !important;
+        }
+        
+        /* Student Portal Specific */
+        .student-navbar {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-sidebar-bg) 100%) !important;
+        }
+        
+        /* Professor Portal Specific */
+        .professor-navbar {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-active-link-bg) 100%) !important;
+        }
+        
+        /* Enrollment Page Background */
+        .enrollment-page {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-sidebar-bg) 100%) !important;
+        }
+        
+        /* Homepage Background */
+        .homepage-hero {
+            background: linear-gradient(135deg, var(--navbar-active-link-bg) 0%, var(--navbar-hover-bg) 100%) !important;
+        }
+        </style>
+        
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="http://127.0.0.1:8000/css/navbar.css">
+    <style>
+        
+            .navbar {
+                background-color: #f1f1f1 !important;
+            }
+            
+            .navbar .navbar-brand,
+            .navbar .nav-link {
+                color: #222222 !important;
+            }
+            
+            .navbar .nav-link:hover {
+                color: #1b1b1b !important;
+            }
+            
+            .navbar .nav-link.active {
+                color: #0056b3 !important;
+            }
+        
+        
+            .footer {
+                background-color: #ff1fe1 !important;
+                color: #ffffff !important;
+            }
+            
+            .footer-links a {
+                color: #adb5bd !important;
+            }
+            
+            .footer-links a:hover {
+                color: #ffffff !important;
+            }
+        
+        
+            .program-card,
+            .enrollment-program-card {
+                background-color: #f9f9f9 !important;
+                color: #333333 !important;
+                border-color: #dddddd !important;
+            }
+            
+            .program-card:hover,
+            .enrollment-program-card:hover {
+                border-color: #1c2951 !important;
+                box-shadow: 0 4px 8px rgba(28, 41, 81, 0.3) !important;
+            }
+            
+            .program-card h3,
+            .enrollment-program-card h3 {
+                color: #333333 !important;
+            }
+        
+ 
+    </style>
+        
+        <style>
+        :root {
+            --navbar-header-bg: #ffffff;
+            --navbar-header-text: #d23737;
+            --navbar-header-border: #e0e0e0;
+            --navbar-search-bg: #f8f9fa;
+            --navbar-sidebar-bg: #343a40;
+            --navbar-sidebar-text: #ffffff;
+            --navbar-active-link-bg: #007bff;
+            --navbar-active-link-text: #ffffff;
+            --navbar-hover-bg: #c8147d;
+            --navbar-hover-text: #ffffff;
+            --navbar-submenu-bg: #2c3034;
+            --navbar-submenu-text: #18212a;
+            --navbar-footer-bg: #237ad1;
+            --navbar-icon-color: #6c757d;
+        }
+        
+        /* Header Styles */
+        .main-header,
+        .navbar,
+        header {
+            background-color: var(--navbar-header-bg) !important;
+            color: var(--navbar-header-text) !important;
+            border-bottom: 1px solid var(--navbar-header-border) !important;
+        }
+        
+        .search-box,
+        .header-search input {
+            background-color: var(--navbar-search-bg) !important;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar,
+        .sidebar-nav,
+        nav.sidebar {
+            background-color: var(--navbar-sidebar-bg) !important;
+            color: var(--navbar-sidebar-text) !important;
+        }
+        
+        .sidebar .sidebar-link,
+        .sidebar a,
+        .nav-link {
+            color: var(--navbar-sidebar-text) !important;
+        }
+        
+        .sidebar .sidebar-link:hover,
+        .sidebar a:hover,
+        .nav-link:hover {
+            background-color: var(--navbar-hover-bg) !important;
+            color: var(--navbar-hover-text) !important;
+        }
+        
+        .sidebar li.active > .sidebar-link,
+        .sidebar li.active > a,
+        .nav-link.active {
+            background-color: var(--navbar-active-link-bg) !important;
+            color: var(--navbar-active-link-text) !important;
+        }
+        
+        .sidebar .sidebar-submenu,
+        .dropdown-menu {
+            background-color: var(--navbar-submenu-bg) !important;
+        }
+        
+        .sidebar .sidebar-submenu a,
+        .dropdown-menu a {
+            color: var(--navbar-submenu-text) !important;
+        }
+        
+        .sidebar,
+        .modern-sidebar,
+        .sidebar-nav {
+            background: var(--navbar-sidebar-bg) !important;
+        }
+        
+        .sidebar-footer,
+        .footer {
+            background: var(--navbar-footer-bg) !important;
+            background-color: var(--navbar-footer-bg) !important;
+        }
+        
+        .sidebar .icon,
+        .fa,
+        .fas,
+        .far,
+        .fab {
+            color: var(--navbar-icon-color) !important;
+        }
+        
+        /* Student Portal Specific */
+        .student-navbar {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-sidebar-bg) 100%) !important;
+        }
+        
+        /* Professor Portal Specific */
+        .professor-navbar {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-active-link-bg) 100%) !important;
+        }
+        
+        /* Enrollment Page Background */
+        .enrollment-page {
+            background: linear-gradient(135deg, var(--navbar-header-bg) 0%, var(--navbar-sidebar-bg) 100%) !important;
+        }
+        
+        /* Homepage Background */
+        .homepage-hero {
+            background: linear-gradient(135deg, var(--navbar-active-link-bg) 0%, var(--navbar-hover-bg) 100%) !important;
+        }
+        </style>
+        
+    <meta name="csrf-token" content="GENYsPJitdErjpdniTbVQzsxouQwCXNB958lT2G0">
+     <link rel="stylesheet" href="http://127.0.0.1:8000/css/ENROLLMENT/Modular_enrollment.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
 
     </style>
-@endpush
+ 
+</head>
 
-@section('content')
-<div class="form-container">
+<body class="body-background d-flex flex-column min-vh-100  enrollment-page ">
+        
+    
+        <nav class="navbar navbar-expand-lg navbar-light fixed-top bg-white shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="http://127.0.0.1:8000">
+                <img src="http://127.0.0.1:8000/images/ARTC_Logo.png" 
+                     alt="Logo" class="logo me-2" style="height: 40px;"
+                     onerror="this.src='http://127.0.0.1:8000/images/ARTC_Logo.png'">
+                <strong>Ascendo Review and Training Center</strong>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Universal Search Component (accessible to all users) -->
+                <div class="navbar-nav me-auto">
+                    <div class="nav-item" style="min-width: 300px;">
+                       
+                    </div>
+                </div>
+                
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://127.0.0.1:8000">
+                            <i class="bi bi-house-door"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" href="javascript:void(0)" id="navbarProgramsBtn" 
+                           onclick="toggleProgramsModal(event)">
+                            <i class="bi bi-book"></i> Review Programs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)">
+                            <i class="bi bi-people"></i> About Us
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)">
+                            <i class="bi bi-envelope"></i> Contact Us
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                                                    
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-plus"></i> Account
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="http://127.0.0.1:8000/login">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a></li>
+                                <li><a class="dropdown-item" href="http://127.0.0.1:8000/signup">
+                                    <i class="bi bi-person-plus-fill"></i> Sign Up
+                                </a></li>
+                            </ul>
+                                            </li>
+
+                                            </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Programs Modal -->
+    <div id="programsModal" class="programs-modal" style="display: none;">
+        <div class="programs-modal-overlay" onclick="closeProgramsModal()"></div>
+        <div class="programs-modal-content">
+            <div class="programs-modal-header">
+                <h3>Review Programs</h3>
+                <button type="button" class="close-modal" onclick="closeProgramsModal()">&times;</button>
+            </div>
+            <div class="programs-modal-body">
+                <div id="programsModalList">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading programs...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <main class="main-content flex-grow-1">
+        <div class="form-container">
     <div class="form-wrapper">
         <!-- Stepper Progress -->
         <div class="stepper-progress">
             <div class="stepper">
                 <div class="bar">
-                    <div class="progress" id="progressBar" style="width: {{ $isUserLoggedIn ? '20%' : '14.28%' }};"></div>
+                    <div class="progress" id="progressBar" style="width: 14.28%;"></div>
                 </div>
-                <div class="step {{ !$isUserLoggedIn ? 'active' : '' }}" id="step-1">
+                <div class="step active" id="step-1">
                     <div class="circle">1</div>
                     <div class="label">Account Check</div>
                 </div>
-                <div class="step {{ $isUserLoggedIn ? 'active' : '' }}" id="step-2">
+                <div class="step " id="step-2">
                     <div class="circle">2</div>
                     <div class="label">Packages</div>
                 </div>
@@ -51,8 +452,7 @@
                     <div class="circle">5</div>
                     <div class="label">Learning Mode</div>
                 </div>
-                @if(!$isUserLoggedIn)
-                <div class="step" id="step-6">
+                                <div class="step" id="step-6">
                     <div class="circle">6</div>
                     <div class="label">Account</div>
                 </div>
@@ -60,13 +460,7 @@
                     <div class="circle">7</div>
                     <div class="label">Form</div>
                 </div>
-                @else
-                <div class="step" id="step-6">
-                    <div class="circle">6</div>
-                    <div class="label">Form</div>
-                </div>
-                @endif
-            </div>
+                            </div>
         </div>
 
         <!-- Hidden inputs for form data -->
@@ -78,7 +472,7 @@
         </div>
 
         <!-- Step 1: Account Check -->
-        <div class="step-content {{ !$isUserLoggedIn ? 'active' : '' }}" id="content-1">
+        <div class="step-content active" id="content-1">
             <div class="step-header mb-4">
                 <h2 class="fw-bold text-center" style="font-size:2.5rem;">Welcome to Modular Enrollment</h2>
                 <p class="text-center text-muted" style="font-size:1.15rem;">Let's get you started with your modular enrollment</p>
@@ -141,7 +535,7 @@
         </div>
 
         <!-- Step 2: Package Selection (Bootstrap Carousel) -->
-        <div class="step-content {{ $isUserLoggedIn ? 'active' : '' }}" id="content-2">
+        <div class="step-content " id="content-2">
             <div class="step-header mb-4">
                 <h2 class="fw-bold text-center" style="font-size:2.5rem;">Choose Your Package</h2>
                 <p class="text-center text-muted" style="font-size:1.15rem;">Select a learning package that suits your needs</p>
@@ -150,67 +544,32 @@
             <!-- Bootstrap Carousel for Packages -->
             <div id="packageCarousel" class="carousel slide package-carousel-container" data-bs-ride="false">
                 <div class="carousel-inner">
-                    @php $chunkSize = 2; @endphp
-                    @foreach($packages->chunk($chunkSize) as $index => $packageChunk)
-                        <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                                                                <div class="carousel-item active">
                             <div class="d-flex justify-content-center gap-4 flex-wrap">
-                                @foreach($packageChunk as $package)
-                                    <div class="package-card-pro card p-4 mb-3"
-                                         onclick="selectPackage({{ json_encode($package->package_id) }}, {{ json_encode($package->program_id) }}, {{ json_encode($package->module_count ?? $package->modules_count ?? 3) }}, {{ json_encode($package->selection_mode ?? 'modules') }}, {{ json_encode($package->course_count ?? 0) }})"
-                                         data-package-id="{{ $package->package_id }}">
+                                                                    <div class="package-card-pro card p-4 mb-3"
+                                         onclick="selectPackage(33, null, 3, "modules", 0)"
+                                         data-package-id="33">
                                         <div class="card-body text-center">
-                                            <h4 class="fw-bold mb-2">{{ $package->package_name }}</h4>
-                                            <div class="text-primary fw-bold" style="font-size:2rem;">₱{{ number_format($package->amount, 2) }}</div>
-                                            <p class="text-muted mb-3" style="min-height:2rem;">{{ $package->description ?? 'No description yet.' }}</p>
+                                            <h4 class="fw-bold mb-2">Modular</h4>
+                                            <div class="text-primary fw-bold" style="font-size:2rem;">₱250.00</div>
+                                            <p class="text-muted mb-3" style="min-height:2rem;">Modular</p>
                                             <ul class="list-unstyled text-start mx-auto" style="max-width:220px;">
-                                                @if($package->selection_mode === 'courses')
-                                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->course_count ?? 'All' }} courses included</li>
-                                                @else
-                                                    <li><i class="bi bi-check2 text-success"></i> {{ $package->module_count ?? $package->modules_count ?? 3 }} modules included</li>
-                                                @endif
-                                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
+                                                                                                    <li><i class="bi bi-check2 text-success"></i> 3 modules included</li>
+                                                                                                <li><i class="bi bi-check2 text-success"></i> Self-paced learning</li>
                                                 <li><i class="bi bi-check2 text-success"></i> Certificate upon completion</li>
                                                 <li><i class="bi bi-check2 text-success"></i> Flexible scheduling</li>
-                                                @php
-                                                    $periodParts = [];
-                                                    if (!empty($package->access_period_years)) $periodParts[] = $package->access_period_years . ' Year' . ($package->access_period_years > 1 ? 's' : '');
-                                                    if (!empty($package->access_period_months)) $periodParts[] = $package->access_period_months . ' Month' . ($package->access_period_months > 1 ? 's' : '');
-                                                    if (!empty($package->access_period_days)) $periodParts[] = $package->access_period_days . ' Day' . ($package->access_period_days > 1 ? 's' : '');
-                                                @endphp
-                                                @if(count($periodParts) > 0)
-                                                    <li><span class="badge bg-info text-dark">Access Period: {{ implode(' ', $periodParts) }}</span></li>
-                                                @endif
-                                            </ul>
+                                                                                                                                                    <li><span class="badge bg-info text-dark">Access Period: 1 Month</span></li>
+                                                                                            </ul>
                                         </div>
                                     </div>
-                                @endforeach
-                            </div>
+                                                            </div>
                         </div>
-                    @endforeach
-                </div>
+                                    </div>
                 
                 <!-- Carousel Controls -->
-                @if($packages->count() > $chunkSize)
-                    <button class="carousel-control-prev" type="button" data-bs-target="#packageCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#packageCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                @endif
-                
+                                
                 <!-- Carousel Indicators -->
-                @if($packages->chunk($chunkSize)->count() > 1)
-                    <div class="carousel-indicators">
-                        @foreach($packages->chunk($chunkSize) as $index => $chunk)
-                            <button type="button" data-bs-target="#packageCarousel" data-bs-slide-to="{{ $index }}" 
-                                    class="{{ $index == 0 ? 'active' : '' }}" aria-label="Slide {{ $index + 1 }}"></button>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
+                            </div>
             
             <!-- Immediate Script for Package Selection -->
             <script>
@@ -405,8 +764,7 @@
         </div>
 
         <!-- Step 6: Account Registration (Enhanced with OTP and Referral validation) - Only show for non-logged-in users -->
-        @if(!$isUserLoggedIn)
-        <div class="step-content" id="content-6">
+                <div class="step-content" id="content-6">
             <div class="account-step-card">
                 <div class="step-header">
                     <h2><i class="bi bi-person-plus me-2"></i>Create Your Account</h2>
@@ -446,26 +804,24 @@
                         <div id="passwordMatchError" class="error-message" style="display: none;"></div>
                     </div>
                     
-                    @if(DB::table('admin_settings')->where('setting_key', 'referral_enabled')->value('setting_value') === '1')
-                    <div class="form-group" style="grid-column: 1 / span 2;">
-                        <label for="referral_code">Referral Code @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') <span class="text-danger">*</span> @endif</label>
+                                        <div class="form-group" style="grid-column: 1 / span 2;">
+                        <label for="referral_code">Referral Code </label>
                         <div class="referral-input-group">
                             <input type="text" id="referral_code" name="referral_code" class="form-control" 
                                    placeholder="Enter referral code (e.g., PROF01JDOE or DIR01SMITH)"
-                                   @if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') required @endif>
+                                   >
                             <button type="button" id="validateReferralBtn" class="btn-validate-referral" onclick="validateReferralCode()">
                                 <i class="fas fa-check"></i> Validate
                             </button>
                         </div>
                         <div id="referralCodeError" class="error-message" style="display: none;"></div>
                         <div id="referralCodeSuccess" class="success-message" style="display: none;"></div>
-                        <div class="form-text">@if(DB::table('admin_settings')->where('setting_key', 'referral_required')->value('setting_value') === '1') Required: @endif Enter the referral code provided by your professor or director</div>
+                        <div class="form-text"> Enter the referral code provided by your professor or director</div>
                     </div>
-                    @endif
-                </div>
+                                    </div>
 
                 <div class="login-prompt">
-                    <p>Already have an account? <a href="{{ route('login') }}">Click here to login</a></p>
+                    <p>Already have an account? <a href="http://127.0.0.1:8000/login">Click here to login</a></p>
                 </div>
 
                 <div class="form-navigation">
@@ -478,21 +834,15 @@
                 </div>
             </div>
         </div>
-        @endif
-
+        
         <!-- Step 7: Final Registration Form (for non-logged-in users) OR Step 6: Final Registration Form (for logged-in users) -->
-        <div class="step-content" id="content-{{ $isUserLoggedIn ? '6' : '7' }}">
+        <div class="step-content" id="content-7">
             <div class="step-header">
                 <h2>Complete Your Registration</h2>
-                @if($isUserLoggedIn)
-                <p>Welcome back, {{ $loggedInUser->user_firstname ?? 'User' }}! Complete your modular enrollment below.</p>
-                @else
-                <p>Fill in your personal and academic information.</p>
-                @endif
-            </div>
-            <form action="{{ route('enrollment.modular.submit') }}" method="POST" enctype="multipart/form-data" class="registration-form" id="modularEnrollmentForm" novalidate>
-                @csrf
-                <!-- Hidden inputs for form data -->
+                                <p>Fill in your personal and academic information.</p>
+                            </div>
+            <form action="http://127.0.0.1:8000/enrollment/modular/submit" method="POST" enctype="multipart/form-data" class="registration-form" id="modularEnrollmentForm" novalidate>
+                <input type="hidden" name="_token" value="GENYsPJitdErjpdniTbVQzsxouQwCXNB958lT2G0">                <!-- Hidden inputs for form data -->
                 <input type="hidden" name="enrollment_type" value="Modular">
                 <input type="hidden" name="package_id" value="" id="packageIdInput">
                 <input type="hidden" name="program_id" value="" id="hidden_program_id">
@@ -501,112 +851,7 @@
                 <input type="hidden" name="selected_modules" id="selected_modules" value="">
 
                 <!-- Dynamic Form Fields -->
-                @if(isset($formRequirements) && $formRequirements->count() > 0)
-                    @php 
-                        $currentSection = null;
-                    @endphp
-                    @foreach($formRequirements as $field)
-                        @if($field->field_type === 'section')
-                            @php 
-                                $currentSection = $field->section_name ?: $field->field_label;
-                            @endphp
-                            <h3 style="margin-top:2.1rem; margin-bottom:1rem; color:#2c3e50; border-bottom:2px solid #3498db; padding-bottom:0.5rem;">
-                                <i class="bi bi-folder me-2"></i>{{ $currentSection }}
-                            </h3>
-                        @else
-                            @if($field->field_name !== 'Cert_of_Grad')
-                                <div class="form-group">
-                                    @if($currentSection)
-                                        <div class="section-indicator" style="font-size:0.9rem; color:#6c757d; margin-bottom:0.5rem;">
-                                            {{ $currentSection }}
-                                        </div>
-                                    @endif
-                                    <label for="{{ $field->field_name }}" @if($field->is_bold) style="font-weight:bold;" @endif>
-                                        {{ $field->field_label ?: $field->field_name }}
-                                        @if($field->is_required) <span class="required">*</span> @endif
-                                    </label>
-                                    @if($field->field_type === 'text')
-                                        <input type="text" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                            class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
-                                            {{ $field->is_required ? 'required' : '' }}>
-                                    @elseif($field->field_type === 'email')
-                                        <input type="email" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                            class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
-                                            {{ $field->is_required ? 'required' : '' }}>
-                                    @elseif($field->field_type === 'number')
-                                        <input type="number" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                            class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
-                                            {{ $field->is_required ? 'required' : '' }}>
-                                    @elseif($field->field_type === 'date')
-                                        <input type="date" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                            class="form-control" value="{{ old($field->field_name, $student->{$field->field_name} ?? '') }}"
-                                            {{ $field->is_required ? 'required' : '' }}>
-                                    @elseif($field->field_type === 'file')
-                                        <input type="file" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                            class="form-control" accept=".jpg,.jpeg,.png,.pdf" 
-                                            onchange="handleFileUpload(this)" {{ $field->is_required ? 'required' : '' }}>
-                                        @if(isset($student) && $student->{$field->field_name})
-                                            <div class="existing-file-info mt-2">
-                                                <small class="text-success">
-                                                    <i class="bi bi-check-circle"></i> File already uploaded: {{ $student->{$field->field_name} }}
-                                                </small>
-                                            </div>
-                                        @endif
-                                        <small class="form-text text-muted">Upload {{ $field->field_label ?: $field->field_name }} (JPG, PNG, PDF only)</small>
-                                    @elseif($field->field_type === 'select')
-                                        <select name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                                class="form-select" {{ $field->is_required ? 'required' : '' }}>
-                                            <option value="">Select {{ $field->field_label ?: $field->field_name }}</option>
-                                            @if($field->field_options)
-                                                @php
-                                                    $options = [];
-                                                    if (is_string($field->field_options)) {
-                                                        $decoded = json_decode($field->field_options, true);
-                                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                                            $options = $decoded;
-                                                        } else {
-                                                            // fallback: treat as comma-separated string if not valid JSON
-                                                            $options = array_filter(array_map('trim', explode(',', $field->field_options)));
-                                                        }
-                                                    } elseif (is_array($field->field_options)) {
-                                                        $options = $field->field_options;
-                                                    }
-                                                    $selectedValue = old($field->field_name, $student->{$field->field_name} ?? '');
-                                                @endphp
-                                                @if(is_array($options))
-                                                    @foreach($options as $option)
-                                                        @if($option !== '')
-                                                            <option value="{{ $option }}" {{ $selectedValue == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                                        @endif
-                                                    @endforeach
-                                                @endif
-                                            @endif
-                                        </select>
-                                    @elseif($field->field_type === 'textarea')
-                                        <textarea name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                                class="form-control" rows="3" {{ $field->is_required ? 'required' : '' }}>{{ old($field->field_name, $student->{$field->field_name} ?? '') }}</textarea>
-                                    @elseif($field->field_type === 'checkbox')
-                                        @php
-                                            $isChecked = old($field->field_name, $student->{$field->field_name} ?? false);
-                                        @endphp
-                                        <div class="form-check">
-                                            <input type="checkbox" name="{{ $field->field_name }}" id="{{ $field->field_name }}" 
-                                                class="form-check-input" value="1" {{ $isChecked ? 'checked' : '' }}
-                                                {{ $field->is_required ? 'required' : '' }}>
-                                            <label class="form-check-label" for="{{ $field->field_name }}">
-                                                {{ $field->field_label ?: $field->field_name }}
-                                            </label>
-                                        </div>
-                                    @endif
-                                    @if(isset($field->help_text) && $field->help_text)
-                                        <small class="form-text text-muted">{{ $field->help_text }}</small>
-                                    @endif
-                                </div>
-                            @endif
-                        @endif
-                    @endforeach
-                @else
-                    <!-- Fallback fields if no dynamic fields are configured -->
+                                    <!-- Fallback fields if no dynamic fields are configured -->
                     <div class="form-group">
                         <label for="firstname" style="font-weight:700;">
                             <i class="bi bi-person me-2"></i>First Name
@@ -621,8 +866,7 @@
                         </label>
                         <input type="text" name="lastname" id="lastname" class="form-control" required>
                     </div>
-                @endif
-                <!-- Education Level Selection (after dynamic fields) -->
+                                <!-- Education Level Selection (after dynamic fields) -->
                 <div class="form-group" style="margin-bottom:2rem;">
                     <label for="educationLevel" style="font-size:1.17rem;font-weight:700;">
                         <i class="bi bi-mortarboard me-2"></i>Education Level
@@ -630,18 +874,15 @@
                     </label>
                     <select name="education_level" id="educationLevel" class="form-select" required onchange="toggleEducationLevelRequirements()">
                         <option value="">Select Education Level</option>
-                        @if(isset($educationLevels) && $educationLevels->count() > 0)
-                            @foreach($educationLevels as $level)
-                                <option value="{{ $level->level_name }}" 
-                                        data-file-requirements="{{ json_encode($level->getFileRequirementsForPlan($enrollmentType ?? 'modular')) }}">
-                                    {{ $level->level_name }}
+                                                                                    <option value="Undergraduate" 
+                                        data-file-requirements="[{&quot;field_name&quot;:&quot;school_id&quot;,&quot;display_name&quot;:&quot;Valid school identification&quot;,&quot;is_required&quot;:true,&quot;type&quot;:&quot;file&quot;,&quot;document_type&quot;:&quot;school_id&quot;},{&quot;field_name&quot;:&quot;TOR&quot;,&quot;display_name&quot;:&quot;Transcript of Records&quot;,&quot;is_required&quot;:true,&quot;type&quot;:&quot;file&quot;,&quot;document_type&quot;:&quot;TOR&quot;},{&quot;field_name&quot;:&quot;good_moral&quot;,&quot;display_name&quot;:&quot;Certificate of Good Moral Character&quot;,&quot;is_required&quot;:true,&quot;type&quot;:&quot;file&quot;,&quot;document_type&quot;:&quot;good_moral&quot;},{&quot;field_name&quot;:&quot;PSA&quot;,&quot;display_name&quot;:&quot;PSA Birth Certificate&quot;,&quot;is_required&quot;:true,&quot;type&quot;:&quot;file&quot;,&quot;document_type&quot;:&quot;PSA&quot;}]">
+                                    Undergraduate
                                 </option>
-                            @endforeach
-                        @else
-                            <!-- No education levels configured - admin needs to set them up -->
-                            <option value="" disabled>No education levels configured. Please contact administrator.</option>
-                        @endif
-                    </select>
+                                                            <option value="Graduate" 
+                                        data-file-requirements="[{&quot;field_name&quot;:&quot;school_id&quot;,&quot;display_name&quot;:&quot;school_id&quot;,&quot;is_required&quot;:false,&quot;type&quot;:&quot;file&quot;,&quot;document_type&quot;:&quot;school_id&quot;},{&quot;field_name&quot;:&quot;diploma&quot;,&quot;display_name&quot;:&quot;diploma&quot;,&quot;is_required&quot;:false,&quot;type&quot;:&quot;file&quot;,&quot;document_type&quot;:&quot;diploma&quot;}]">
+                                    Graduate
+                                </option>
+                                                                        </select>
                 </div>
                 <!-- Dynamic Education Level File Requirements -->
                 <div id="educationLevelRequirements" style="display: none;"></div>
@@ -769,7 +1010,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-{!! nl2br(e(\App\Models\AdminSetting::getValue('modular_enrollment_terms', 'By registering for this modular program, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.'))) !!}
+By registering for this modular program, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -779,14 +1020,133 @@
     </div>
 </div>
 
-@endsection
+    </main>
 
-@push('scripts')
-<script>
+    <!-- Only keep the new custom footer below, remove the old duplicate footer -->
+         <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    // Load programs for navbar modal
+    document.addEventListener('DOMContentLoaded', function() {
+        loadProgramsModal();
+        initNavbarScroll();
+    });
+    
+    // Navbar scroll effect
+    function initNavbarScroll() {
+        const navbar = document.querySelector('.navbar');
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    }
+    
+    // Toggle programs modal
+    function toggleProgramsModal(event) {
+        event.preventDefault();
+        const modal = document.getElementById('programsModal');
+        if (modal.style.display === 'none' || modal.style.display === '') {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            // Load programs when modal is opened
+            loadProgramsModal();
+        } else {
+            closeProgramsModal();
+        }
+    }
+    
+    // Close programs modal
+    function closeProgramsModal() {
+        const modal = document.getElementById('programsModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    function loadProgramsModal() {
+        fetch('/api/programs')
+            .then(response => response.json())
+            .then(data => {
+                const modalList = document.getElementById('programsModalList');
+                if (!modalList) return;
+                
+                modalList.innerHTML = '';
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    // Add "View All Programs" option first
+                    const viewAllItem = document.createElement('a');
+                    viewAllItem.href = '/programs';
+                    viewAllItem.className = 'program-modal-item view-all-programs';
+                    viewAllItem.innerHTML = `
+                        <i class="bi bi-list-ul"></i>
+                        <div class="program-modal-item-content">
+                            <div class="program-modal-item-title">View All Programs</div>
+                            <p class="program-modal-item-desc">Browse all available review programs</p>
+                        </div>
+                    `;
+                    modalList.appendChild(viewAllItem);
+                    
+                    // Add individual programs
+                    data.data.forEach(program => {
+                        const programItem = document.createElement('a');
+                        programItem.href = `/programs/${program.program_id}`;
+                        programItem.className = 'program-modal-item';
+                        programItem.innerHTML = `
+                            <i class="bi bi-book"></i>
+                            <div class="program-modal-item-content">
+                                <div class="program-modal-item-title">${program.program_name}</div>
+                                <p class="program-modal-item-desc">${program.program_description ? 
+                                    (program.program_description.length > 100 ? 
+                                        program.program_description.substring(0, 100) + '...' : 
+                                        program.program_description) 
+                                    : 'Professional review program'}</p>
+                            </div>
+                        `;
+                        modalList.appendChild(programItem);
+                    });
+                } else {
+                    // No programs found
+                    modalList.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-book" style="font-size: 3rem; color: #ccc;"></i>
+                            <h5 class="mt-3 text-muted">No Programs Available</h5>
+                            <p class="text-muted mb-0">Check back later for new programs</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading programs:', error);
+                const modalList = document.getElementById('programsModalList');
+                if (modalList) {
+                    modalList.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
+                            <h5 class="mt-3 text-danger">Error Loading Programs</h5>
+                            <p class="text-muted mb-0">Please try again later</p>
+                        </div>
+                    `;
+                }
+            });
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeProgramsModal();
+        }
+    });
+    </script>
+    
+    <script>
     // Global variables - consolidated to avoid temporal dead zone issues
-    let currentStep = {{ $isUserLoggedIn ? 2 : 1 }}; // Start at step 2 for logged-in users, step 1 for new users
-    let totalSteps = {{ $isUserLoggedIn ? 6 : 7 }}; // Updated total steps: 1 (Account Check) + 5 original steps
-    let isUserLoggedIn = @json($isUserLoggedIn);
+    let currentStep = 1; // Start at step 2 for logged-in users, step 1 for new users
+    let totalSteps = 7; // Updated total steps: 1 (Account Check) + 5 original steps
+    let isUserLoggedIn = false;
     
     // Package selection variables (moved from earlier script block)
     let selectedPackageId = null;
@@ -828,7 +1188,7 @@
         
         if (hasAccount) {
             // Redirect to login page
-            window.location.href = "{{ route('login') }}";
+            window.location.href = "http://127.0.0.1:8000/login";
             return;
         } else {
             // Continue to step 2 (packages)
@@ -838,6 +1198,7 @@
             loadStepContent();
         }
     }
+    window.selectAccountOption = selectAccountOption;
     
     // Step navigation
     function nextStep() {
@@ -1205,9 +1566,12 @@
                 const program = window.availableProgramsForModular.find(p => p.program_id == programId);
                 if (program) {
                     if (program.modules && program.modules.length > 0) {
-                        // Modules are already loaded with the program
+                        // Modules are already loaded with the program - map API format to expected format
                         const programModules = program.modules.map(module => ({
                             ...module,
+                            id: module.module_id, // Map module_id to id for consistency
+                            name: module.module_name,
+                            description: module.module_description,
                             program_name: program.program_name,
                             program_id: program.program_id
                         }));
@@ -1225,6 +1589,9 @@
                 if (program.modules && program.modules.length > 0) {
                     allModules = program.modules.map(module => ({
                         ...module,
+                        id: module.module_id, // Map module_id to id for consistency
+                        name: module.module_name,
+                        description: module.module_description,
                         program_name: program.program_name,
                         program_id: program.program_id
                     }));
@@ -1243,12 +1610,13 @@
                         if (data.success && data.modules) {
                             return data.modules.map(module => ({
                                 ...module,
-                                id: module.modules_id || module.id,
+                                id: module.module_id || module.modules_id || module.id,
                                 name: module.module_name || module.name,
                                 description: module.module_description || module.description,
                                 program_name: program.program_name,
                                 program_id: program.program_id
                             }));
+                        }
                         }
                         return [];
                     })
@@ -1274,10 +1642,12 @@
             grid.innerHTML = '<div class="alert alert-info">No modules available for the selected program(s).</div>';
             return;
         }
+        
         // Remove duplicates based on module_id
         const uniqueModules = allModules.filter((module, index, self) => 
-            index === self.findIndex(m => m.module_id === module.module_id)
+            index === self.findIndex(m => (m.module_id || m.id) === (module.module_id || module.id))
         );
+        
         console.log('Loading modules:', uniqueModules);
         displayModules(uniqueModules);
     }
@@ -1311,19 +1681,20 @@
             
             let modulesHtml = '';
             slideModules.forEach(module => {
-                const moduleName = module.module_name || 'Unnamed Module';
-                const moduleDesc = module.description || 'No description available';
+                const moduleId = module.module_id || module.id; // Handle both API formats
+                const moduleName = module.module_name || module.name || 'Unnamed Module';
+                const moduleDesc = module.module_description || module.description || 'No description available';
                 const programInfo = module.program_name ? `<small class="text-muted">From: ${module.program_name}</small><br>` : '';
                 
                 modulesHtml += `
                     <div class="col-md-6 mb-4">
-                        <div class="module-card" data-module-id="${module.module_id}">
+                        <div class="module-card" data-module-id="${moduleId}">
                             <div class="card module-card h-100">
                                 <div class="card-body">
                                     <div class="form-check">
-                                        <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.module_id}" 
-                                               value="${module.module_id}" onchange="handleModuleSelection(this)">
-                                        <label class="form-check-label module-title" for="module_${module.module_id}">${moduleName}</label>
+                                        <input type="checkbox" class="form-check-input module-checkbox" id="module_${moduleId}" 
+                                               value="${moduleId}" onchange="handleModuleSelection(this)">
+                                        <label class="form-check-label module-title" for="module_${moduleId}">${moduleName}</label>
                                     </div>
                                     ${programInfo}
                                     <p class="card-text module-description">${moduleDesc}</p>
@@ -1335,7 +1706,7 @@
                                     </div>
                                     <div class="module-actions">
                                         <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                                onclick="showCoursesModal(${module.module_id}, '${moduleName}')">
+                                                onclick="showCoursesModal(${moduleId}, '${moduleName}')">
                                             <i class="bi bi-list"></i> View Courses
                                         </button>
                                     </div>
@@ -1935,35 +2306,10 @@
     function loadDynamicFormFields() {
         console.log('Loading dynamic form fields');
         
-        @if($isUserLoggedIn)
-        // Auto-fill user data for logged-in users
-        console.log('User is logged in, skipping account data collection');
-        
-        // Auto-fill firstname/lastname fields in the form
-        const firstnameField = document.querySelector('input[name="firstname"]');
-        const lastnameField = document.querySelector('input[name="lastname"]');
-        
-        if (firstnameField && !firstnameField.value) {
-            firstnameField.value = '{{ $loggedInUser->user_firstname ?? "" }}';
-            console.log('✅ Pre-filled firstname for logged-in user:', firstnameField.value);
-        }
-        if (lastnameField && !lastnameField.value) {
-            lastnameField.value = '{{ $loggedInUser->user_lastname ?? "" }}';
-            console.log('✅ Pre-filled lastname for logged-in user:', lastnameField.value);
-        }
-        
-        // Auto-fill program selection if we have the program from stepper data
-        const programSelect = document.getElementById('programSelect');
-        if (programSelect && selectedProgramId) {
-            programSelect.value = selectedProgramId;
-            onProgramSelectionChange(); // Trigger any dependent logic
-        }
-        @else
-        // For non-logged-in users, the form fields will be populated by copyStepperDataToFinalForm
+                // For non-logged-in users, the form fields will be populated by copyStepperDataToFinalForm
         // which is called after this function with a delay
         console.log('User is not logged in, form will be populated by copyStepperDataToFinalForm');
-        @endif
-    }
+            }
     
     // Submit enrollment
     function submitEnrollment() {
@@ -3498,13 +3844,13 @@ document.addEventListener('DOMContentLoaded', autofillProgramInForm);
 // Duplicate functions removed - using the enhanced OCR functions above
 
 try {
-    window.studentEnrollments = @json($studentEnrollments ?? []);
+    window.studentEnrollments = [];
 } catch (e) {
     console.error('Error parsing studentEnrollments JSON:', e);
     window.studentEnrollments = [];
 }
 try {
-    window.contentStructure = @json($contentStructure ?? []);
+    window.contentStructure = [];
 } catch (e) {
     console.error('Error parsing contentStructure JSON:', e);
     window.contentStructure = [];
@@ -3770,4 +4116,422 @@ prevStep = function() {
     return result;
 };
 </style>
-@endpush
+ 
+
+    <!-- Global Chat Component -->
+<script>
+(function() {
+
+  // UTILS
+  function clearSearch() {
+    document.getElementById('userSearchInput').value = '';
+    document.getElementById('searchResults').innerHTML = '';
+  }
+  function clearChatHistory() {
+    document.getElementById('chatMessages').innerHTML =
+      '<div class="text-center text-muted py-3">Chat history cleared.</div>';
+  }
+
+  // FETCH current user if needed
+  function fetchCurrentUserInfo() {
+    if (!myId && isAuthenticated) {
+      fetch('/api/me', {
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+        credentials: 'include'
+      })
+      .then(r => r.json())
+      .then(d => console.log('User info:', d.data))
+      .catch(console.error);
+    }
+  }
+
+  // LOAD USERS
+  function loadUsersByType(type) {
+    fetch(`/api/chat/session/users?type=${type}`, {
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      credentials: 'include'
+    })
+    .then(r => r.json())
+    .then(json => displayUsers(json.data || []))
+    .catch(console.error);
+  }
+  function displayUsers(users) {
+    const c = document.getElementById('searchResults');
+    if (!users.length) {
+      return c.innerHTML = '<div class="text-center text-muted py-3">No users found.</div>';
+    }
+    c.innerHTML = users.map(u => `
+      <div class="user-item p-2 border-bottom" onclick="selectUserForChat(${u.id},'${u.name}','${u.role}')">
+        <div class="d-flex align-items-center">
+          <div class="avatar-circle me-2"><i class="bi bi-person-circle"></i></div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">${u.name}</div>
+            <div class="text-muted small">${u.email}</div>
+            <div class="text-muted small text-capitalize">${u.role}</div>
+          </div>
+          <span class="badge ${u.is_online?'bg-success':'bg-secondary'} ms-2">
+            ${u.is_online?'Online':'Offline'}
+          </span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // SELECT USER & LOAD MESSAGES
+  window.selectUserForChat = function(userId, userName, userRole) {
+    currentChatUser = { id:userId, name:userName, role:userRole };
+    document.getElementById('chatInterface').classList.remove('d-none');
+    document.getElementById('availableUsers').classList.add('d-none');
+    document.getElementById('chatWithName').textContent = userName;
+    loadMessages(userId);
+  };
+
+  function loadMessages(userId) {
+    fetch(`/api/chat/session/messages?with=${userId}`, {
+      headers: { 'X-CSRF-TOKEN': csrfToken },
+      credentials: 'include'
+    })
+    .then(r => r.json())
+    .then(json => displayChatMessages(json.data || []))
+    .catch(console.error);
+  }
+  function displayChatMessages(msgs) {
+    const c = document.getElementById('chatMessages');
+    if (!msgs.length) {
+      return c.innerHTML = '<div class="text-center text-muted py-3">No messages yet.</div>';
+    }
+    c.innerHTML = msgs.map(m => {
+      const isMe = m.sender_id === myId;
+      const cls  = isMe ? 'user-message ms-auto' : 'other-message me-auto';
+      const name = isMe ? 'You' : (m.sender?.name || 'Unknown');
+      const tm   = new Date(m.sent_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      return `
+        <div class="message ${cls}">
+          <div class="message-content">
+            <div class="message-sender">${name}</div>
+            <div class="message-text">${m.message}</div>
+            <div class="message-time">${tm}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    c.scrollTop = c.scrollHeight;
+  }
+
+  // SEND MESSAGE
+  document.addEventListener('submit', function(e) {
+    if (e.target.id === 'chatForm') {
+      e.preventDefault();
+      const txt = document.getElementById('chatInput').value.trim();
+      if (!txt || !currentChatUser) return;
+      fetch('/api/chat/session/send', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'X-CSRF-TOKEN':csrfToken
+        },
+        credentials:'include',
+        body: JSON.stringify({
+          receiver_id: currentChatUser.id,
+          message: txt
+        })
+      })
+      .then(r=>r.json())
+      .then(d=>{
+        if (d.success) {
+          displayChatMessages([{ sender_id:myId, message:txt, sent_at:new Date() }]);
+          document.getElementById('chatInput').value = '';
+        }
+      })
+      .catch(console.error);
+    }
+  });
+
+  // USER‐TYPE BUTTONS
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.user-type-btn');
+    if (btn) {
+      currentChatType = btn.dataset.type;
+      document.getElementById('chatSelectionPanel').classList.add('d-none');
+      if (currentChatType === 'faq') {
+        document.getElementById('availableUsers').classList.add('d-none');
+        document.getElementById('chatInterface').classList.remove('d-none');
+        document.getElementById('faqQuickResponses').classList.remove('d-none');
+        // Optionally hide chat messages area if you want only FAQ visible:
+        // document.getElementById('chatMessages').classList.add('d-none');
+      } else {
+        document.getElementById('faqQuickResponses').classList.add('d-none');
+        document.getElementById('availableUsers').classList.remove('d-none');
+        document.getElementById('chatInterface').classList.add('d-none');
+        loadUsersByType(currentChatType);
+      }
+    }
+  });
+
+  // INITIALIZE
+  document.addEventListener('DOMContentLoaded', fetchCurrentUserInfo);
+})();
+</script>
+
+<!-- Chat Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="chatOffcanvas" aria-labelledby="chatOffcanvasLabel" style="width: 400px;">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title fw-bold text-primary" id="chatOffcanvasLabel">
+            <i class="bi bi-chat-dots me-2"></i>Live Chat
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    
+    <!-- Chat Selection Panel -->
+    <div id="chatSelectionPanel" class="p-3 border-bottom">
+        <h6 class="mb-3">Choose who to chat with:</h6>
+        
+        <!-- User Type Selection -->
+        <div class="user-type-selection mb-3">
+            
+                            <div class="text-center">
+                    <button class="btn btn-outline-warning user-type-btn" data-type="faq">
+                        <i class="bi bi-question-circle me-1"></i>FAQ Bot
+                    </button>
+                </div>
+                    </div>
+
+        <!-- Group Chat Options (Admin/Director only) -->
+            </div>
+    
+    <!-- Enhanced Search Section -->
+    <div id="availableUsers" class="d-none p-3 border-bottom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">
+                <i class="bi bi-person-lines-fill me-2"></i>Search Users
+            </h6>
+            <button class="btn btn-outline-secondary btn-sm" onclick="goBackToSelection()">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </button>
+        </div>
+        
+        <!-- Enhanced Search Input -->
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input
+                    type="text"
+                    id="userSearchInput"
+                    class="form-control"
+                    placeholder="Type name or email to search..."
+                    autocomplete="off"
+                >
+                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search Results Container -->
+        <div class="search-results-container">
+            <div id="searchResults" class="search-results" style="max-height: 250px; overflow-y: auto;">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Interface -->
+    <div id="chatInterface" class="d-none flex-grow-1 d-flex flex-column">
+        <!-- Chat Header -->
+        <div class="chat-header p-3 border-bottom bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="chat-avatar me-2">
+                        <i class="bi bi-person-circle text-primary" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-medium" id="chatWithName">Support Team</div>
+                        <small class="text-muted" id="chatStatus">Online</small>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="backToSelection()">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearChatHistory()">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex-grow-1 d-flex flex-column">
+            <!-- Chat Messages Area -->
+            <div id="chatMessages" class="flex-grow-1 overflow-auto p-3" style="max-height: calc(100vh - 300px);">
+                <!-- Messages will be populated here -->
+            </div>
+            
+            <!-- FAQ Quick Responses -->
+            <div id="faqQuickResponses" class="d-none p-3 border-top">
+                <h6 class="mb-2">Frequently Asked Questions:</h6>
+                <div class="faq-buttons">
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('enrollment')">
+                        How do I enroll in a course?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('payment')">
+                        What are the payment options?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('schedule')">
+                        How do I check my class schedule?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('certificate')">
+                        How do I get my certificate?
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="selectFAQ('support')">
+                        How do I contact support?
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Input Form -->
+            <div class="border-top p-3 bg-light">
+                <form id="chatForm" class="d-flex gap-2">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        class="form-control" 
+                        placeholder="Type your message..."
+                        required
+                    >
+                    <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center" style="min-width: 45px;">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted">
+                        Press Enter to send
+                    </small>
+                    <small class="text-muted">
+                        Real-time chat enabled
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// Global variables already defined in layout files
+
+// Fetch current user info if myId is null
+if (typeof myId !== 'undefined' && !myId && isAuthenticated) {
+    fetchCurrentUserInfo();
+}
+
+// ─────── REAL-TIME CHAT FUNCTIONALITY ───────
+if (typeof window.chatPollingInterval === 'undefined') {
+    window.chatPollingInterval = null;
+}
+if (typeof window.lastMessageId === 'undefined') {
+    window.lastMessageId = 0;
+}
+
+function startRealTimeChat() {
+    if (currentChatUser && currentChatUser.id) {
+        window.chatPollingInterval = setInterval(() => {
+            checkForNewMessages(currentChatUser.id);
+        }, 3000); // Check every 3 seconds
+    }
+}
+
+function stopRealTimeChat() {
+    if (window.chatPollingInterval) {
+        clearInterval(window.chatPollingInterval);
+        window.chatPollingInterval = null;
+    }
+}
+
+function checkForNewMessages(userId) {
+    if (!userId) return;
+    
+    fetch(`/api/chat/session/messages?with=${userId}&after=${window.lastMessageId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+            // Add new messages to chat
+            const chatMessages = document.getElementById('chatMessages');
+            data.data.forEach(msg => {
+                // Append new message logic here
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    })
+    .catch(error => {
+        console.error('Error checking for new messages:', error);
+    });
+}
+
+// ─────── NAVIGATION FUNCTIONS ───────
+function goBackToSelection() {
+    document.getElementById('availableUsers').classList.add('d-none');
+    document.getElementById('chatSelectionPanel').classList.remove('d-none');
+}
+
+function backToSelection() {
+    // Stop real-time polling
+    stopRealTimeChat();
+    
+    document.getElementById('chatInterface').classList.add('d-none');
+    document.getElementById('chatSelectionPanel').classList.remove('d-none');
+    
+    // Clear current chat user
+    currentChatUser = null;
+}
+
+function createGroupChat() {
+    alert('Group chat feature coming soon!');
+}
+
+function selectFAQ(type) {
+    // FAQ responses mapping (should match admin FAQ management)
+    const faqResponses = {
+        enrollment: "To enroll in a course, go to your dashboard, select 'Available Courses', choose your desired course, and click 'Enroll Now'. Complete the payment process to finalize your enrollment.",
+        payment: "We accept credit/debit cards, PayPal, bank transfers, and installment plans for select courses. All payments are processed securely.",
+        schedule: "Login to your dashboard, go to 'My Courses', and click the 'Schedule' tab. You can also export your schedule to your calendar.",
+        certificate: "Complete all course modules, pass assessments, maintain 80% attendance, and complete the final project. Certificates are generated automatically within 5-7 business days.",
+        support: "Contact support via live chat, email (support@artc.edu), phone (+1-555-123-4567), or submit a ticket through the support portal."
+    };
+    const chatMessages = document.getElementById('chatMessages');
+    const response = faqResponses[type];
+    if (response) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message bot me-auto';
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <div class="message-sender">FAQ Bot</div>
+                <div class="message-text">${response.replace(/\n/g, '<br>')}</div>
+                <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            </div>
+        `;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+</script>
+
+</body>
+
+</html>

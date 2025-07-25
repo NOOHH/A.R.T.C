@@ -1398,6 +1398,8 @@ class StudentRegistrationController extends Controller
 
             // Create module registrations if registration_modules table exists
             if (is_array($selectedModules) && count($selectedModules) > 0) {
+                $enrolledCourseIds = []; // Track enrolled courses to prevent duplicates
+                
                 foreach ($selectedModules as $moduleData) {
                     $moduleId = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
                     
@@ -1417,7 +1419,7 @@ class StudentRegistrationController extends Controller
                                 foreach ($moduleData['selected_courses'] as $courseData) {
                                     $courseId = is_array($courseData) ? ($courseData['id'] ?? $courseData['course_id'] ?? null) : $courseData;
                                     
-                                    if ($courseId) {
+                                    if ($courseId && !in_array($courseId, $enrolledCourseIds)) {
                                         try {
                                             EnrollmentCourse::create([
                                                 'enrollment_id' => $enrollment->enrollment_id,
@@ -1427,6 +1429,7 @@ class StudentRegistrationController extends Controller
                                                 'course_price' => 0, // Price will be calculated based on package
                                                 'is_active' => true
                                             ]);
+                                            $enrolledCourseIds[] = $courseId; // Track enrolled course
                                             Log::info('Course enrolled', [
                                                 'course_id' => $courseId, 
                                                 'module_id' => $moduleId,
@@ -1440,6 +1443,12 @@ class StudentRegistrationController extends Controller
                                                 'error' => $e->getMessage()
                                             ]);
                                         }
+                                    } elseif (in_array($courseId, $enrolledCourseIds)) {
+                                        Log::info('Skipping duplicate course enrollment', [
+                                            'course_id' => $courseId,
+                                            'module_id' => $moduleId,
+                                            'enrollment_id' => $enrollment->enrollment_id
+                                        ]);
                                     }
                                 }
                             } else {
@@ -1447,23 +1456,32 @@ class StudentRegistrationController extends Controller
                                 $module = \App\Models\Module::with('courses')->find($moduleId);
                                 if ($module && $module->courses) {
                                     foreach ($module->courses as $course) {
-                                        // Exclude course if it has no content items
-                                        if ($course->contentItems()->count() === 0) continue;
-                                        // If you track enrolled courses, exclude them here
-                                        $filteredCourses[] = [
-                                            'course_id' => $course->subject_id,
-                                            'course_name' => $course->subject_name,
-                                            'description' => $course->subject_description,
-                                            // Add more fields as needed
-                                        ];
-                                    }
-                                    if (count($filteredCourses) > 0) {
-                                        $filteredModules[] = [
-                                            'module_id' => $module->modules_id,
-                                            'module_name' => $module->module_name,
-                                            'description' => $module->module_description,
-                                            'courses' => $filteredCourses
-                                        ];
+                                        if (!in_array($course->subject_id, $enrolledCourseIds)) {
+                                            try {
+                                                EnrollmentCourse::create([
+                                                    'enrollment_id' => $enrollment->enrollment_id,
+                                                    'course_id' => $course->subject_id,
+                                                    'module_id' => $moduleId,
+                                                    'enrollment_type' => 'course',
+                                                    'course_price' => 0,
+                                                    'is_active' => true
+                                                ]);
+                                                $enrolledCourseIds[] = $course->subject_id; // Track enrolled course
+                                                Log::info('Course enrolled (all module courses)', [
+                                                    'course_id' => $course->subject_id,
+                                                    'course_name' => $course->subject_name,
+                                                    'module_id' => $moduleId,
+                                                    'enrollment_id' => $enrollment->enrollment_id
+                                                ]);
+                                            } catch (\Exception $e) {
+                                                Log::warning('Failed to create course enrollment (all module courses)', [
+                                                    'course_id' => $course->subject_id,
+                                                    'module_id' => $moduleId,
+                                                    'enrollment_id' => $enrollment->enrollment_id,
+                                                    'error' => $e->getMessage()
+                                                ]);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1476,6 +1494,12 @@ class StudentRegistrationController extends Controller
                         }
                     }
                 }
+                
+                Log::info('Course enrollment summary', [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'total_enrolled_courses' => count($enrolledCourseIds),
+                    'enrolled_course_ids' => $enrolledCourseIds
+                ]);
             }
 
             DB::commit();
@@ -2224,8 +2248,57 @@ class StudentRegistrationController extends Controller
         ]);
 
         $userId = auth()->id() ?? session('user_id');
+        
+        // If no user is authenticated, return all available programs for new enrollments
         if (!$userId) {
-            return response()->json(['programs' => []]);
+            $programs = \App\Models\Program::with(['modules.courses.contentItems'])
+                ->where('is_archived', false)
+                ->get();
+            
+            $allPrograms = [];
+            foreach ($programs as $program) {
+                $filteredModules = [];
+                foreach ($program->modules as $module) {
+                    $filteredCourses = [];
+                    foreach ($module->courses as $course) {
+                        // Include all courses, even if they don't have content items yet
+                        // Content items can be added later by administrators
+                        $filteredCourses[] = [
+                            'course_id' => $course->subject_id,
+                            'course_name' => $course->subject_name,
+                            'description' => $course->subject_description,
+                            'content_items_count' => $course->contentItems->count(), // For debugging
+                        ];
+                    }
+                    if (count($filteredCourses) > 0) {
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => $filteredCourses
+                        ];
+                    } else {
+                        // Include modules even without courses for non-authenticated users
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => []
+                        ];
+                    }
+                }
+                if (count($filteredModules) > 0) {
+                    $allPrograms[] = [
+                        'program_id' => $program->program_id,
+                        'program_name' => $program->program_name,
+                        'description' => $program->program_description,
+                        'modules' => $filteredModules
+                    ];
+                }
+            }
+            
+            \Log::info('Programs for non-authenticated user', ['programs' => $allPrograms]);
+            return response()->json(['programs' => $allPrograms]);
         }
 
         // 1. Full-plan exclusion
@@ -2285,22 +2358,31 @@ class StudentRegistrationController extends Controller
 
                 $filteredCourses = [];
                 foreach ($module->courses as $course) {
-                    // Use loaded relationship for contentItems
-                    if ($course->contentItems->count() === 0) continue;
+                    // Include all courses, even if they don't have content items yet
+                    // Content items can be added later by administrators
                     $filteredCourses[] = [
                         'course_id' => $course->subject_id,
                         'course_name' => $course->subject_name,
                         'description' => $course->subject_description,
+                        'content_items_count' => $course->contentItems->count(), // For debugging
                     ];
                 }
-                if (count($filteredCourses) > 0) {
-                    $filteredModules[] = [
-                        'module_id' => $module->modules_id,
-                        'module_name' => $module->module_name,
-                        'description' => $module->module_description,
-                        'courses' => $filteredCourses
-                    ];
-                }
+                    if (count($filteredCourses) > 0) {
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => $filteredCourses
+                        ];
+                    } else {
+                        // Include modules even without courses
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => []
+                        ];
+                    }
             }
             if (count($filteredModules) > 0) {
                 $filteredPrograms[] = [

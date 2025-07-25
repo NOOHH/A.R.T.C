@@ -141,6 +141,7 @@ class AdminModuleController extends Controller
             if (strpos($videoUrl, 'youtube.com') !== false || strpos($videoUrl, 'youtu.be') !== false) {
                 $videoUrl = $this->convertYouTubeToEmbed($videoUrl);
             }
+            $videoPath = $videoUrl; // Use video_path for storage
         }
 
         $module = Module::create([
@@ -152,7 +153,6 @@ class AdminModuleController extends Controller
             'attachment' => $attachmentPath,
             'content_type' => $contentType,
             'content_data' => $contentData,
-            'video_url' => $videoUrl,
             'video_path' => $videoPath,
             'is_archived' => false,
         ]);
@@ -1182,19 +1182,9 @@ class AdminModuleController extends Controller
                 \Log::info('Files uploaded successfully', ['paths' => $attachmentPaths]);
             }
 
-            // Get the course to find the lesson
+            // Get the course
             $course = Course::findOrFail($request->course_id);
-            // Find or create lesson for this course
-            $lesson = \App\Models\Lesson::firstOrCreate([
-                'course_id' => $course->subject_id,
-                'lesson_name' => $course->subject_name . ' - Main Lesson'
-            ], [
-                'lesson_description' => 'Auto-generated lesson for ' . $course->subject_name,
-                'lesson_price' => 0, // Default price
-                'lesson_duration' => 60, // Default 60 minutes
-                'lesson_video_url' => $request->input('lesson_video_url'),
-                'is_active' => true
-            ]);
+            // (Removed: Find or create lesson for this course)
 
             // Prepare content-specific data
             $contentData = [];
@@ -1229,11 +1219,11 @@ class AdminModuleController extends Controller
                     break;
             }
 
-            // Create content item
+            // Create content item (lesson_id removed)
             $contentItem = \App\Models\ContentItem::create([
                 'content_title' => $request->content_title,
                 'content_description' => $request->content_description,
-                'lesson_id' => $lesson->lesson_id,
+                // 'lesson_id' => $lesson->lesson_id, // Removed
                 'course_id' => $course->subject_id,
                 'content_type' => $contentType,
                 'content_data' => $contentData,
@@ -1248,6 +1238,11 @@ class AdminModuleController extends Controller
                 'max_file_size' => $request->input('max_file_size', 10),
                 'submission_instructions' => $request->submission_instructions,
             ]);
+
+            // If this is an assignment with a due date, create deadline entries for enrolled students
+            if ($contentType === 'assignment' && $request->input('due_date')) {
+                $this->createAssignmentDeadlines($contentItem, $request->input('program_id'));
+            }
 
             return response()->json([
                 'success' => true,
@@ -1283,6 +1278,63 @@ class AdminModuleController extends Controller
                 'message' => 'Error creating course content: ' . $e->getMessage(),
                 'errors' => [$e->getMessage()]
             ], 500);
+        }
+    }
+
+    /**
+     * Create assignment deadlines for all enrolled students
+     */
+    private function createAssignmentDeadlines($contentItem, $programId)
+    {
+        try {
+            // Get all students enrolled in this program
+            $enrolledStudents = \App\Models\Student::whereHas('enrollments', function($query) use ($programId) {
+                $query->where('program_id', $programId)
+                      ->where('enrollment_status', 'approved');
+            })->get();
+
+            // Also get students enrolled in courses that belong to this assignment's course
+            $courseStudents = \App\Models\Student::whereHas('enrollments.enrollmentCourses', function($query) use ($contentItem) {
+                $query->where('course_id', $contentItem->course_id)
+                      ->where('is_active', true);
+            })->get();
+
+            // Merge and get unique students
+            $allStudents = $enrolledStudents->merge($courseStudents)->unique('student_id');
+
+            foreach ($allStudents as $student) {
+                // Check if deadline already exists for this student and assignment
+                $existingDeadline = \App\Models\Deadline::where('student_id', $student->student_id)
+                    ->where('type', 'assignment')
+                    ->where('reference_id', $contentItem->id)
+                    ->first();
+
+                if (!$existingDeadline) {
+                    \App\Models\Deadline::create([
+                        'student_id' => $student->student_id,
+                        'program_id' => $programId,
+                        'title' => 'Assignment: ' . $contentItem->content_title,
+                        'description' => $contentItem->content_description ?? 'Complete the assigned assignment',
+                        'type' => 'assignment',
+                        'reference_id' => $contentItem->id,
+                        'due_date' => $contentItem->due_date,
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+
+            \Log::info('Assignment deadlines created', [
+                'content_item_id' => $contentItem->id,
+                'program_id' => $programId,
+                'students_count' => $allStudents->count()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating assignment deadlines: ' . $e->getMessage(), [
+                'content_item_id' => $contentItem->id,
+                'program_id' => $programId,
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 

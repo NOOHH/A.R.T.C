@@ -50,7 +50,11 @@ class ProfessorDashboardController extends Controller
         // Placeholder for pending assignments (set to 0 for now)
         $pendingAssignments = 0;
         
-        return view('professor.dashboard', compact('professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules', 'aiQuizEnabled', 'upcomingMeetings', 'pendingAssignments'));
+        // Get targeted announcements for professor
+        $programIds = $assignedPrograms->pluck('program_id')->toArray();
+        $announcements = $this->getTargetedAnnouncementsForProfessor($programIds);
+        
+        return view('professor.dashboard', compact('professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules', 'aiQuizEnabled', 'upcomingMeetings', 'pendingAssignments', 'announcements'));
     }
 
     public function programs()
@@ -333,6 +337,54 @@ class ProfessorDashboardController extends Controller
         $professor->dynamic_data = $dynamicData;
         $professor->save();
 
-        return redirect()->route('professor.settings')->with('success', 'Settings updated successfully!');
+        return redirect()->route('professor.dashboard')->with('success', 'Settings updated successfully!');
+    }
+
+    /**
+     * Get targeted announcements for professors
+     */
+    private function getTargetedAnnouncementsForProfessor($programIds)
+    {
+        $query = Announcement::where('is_active', true)
+            ->where('is_published', true)
+            ->where(function($q) {
+                $q->whereNull('publish_date')
+                  ->orWhere('publish_date', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('expire_date')
+                  ->orWhere('expire_date', '>', now());
+            });
+
+        $query->where(function($mainQuery) use ($programIds) {
+            // Include announcements for all users
+            $mainQuery->where('target_scope', 'all');
+
+            // Include specific targeting announcements
+            $mainQuery->orWhere(function($specificQuery) use ($programIds) {
+                $specificQuery->where('target_scope', 'specific');
+
+                // Check if professor is in target users
+                $specificQuery->where(function($userQuery) {
+                    $userQuery->whereJsonContains('target_users', 'professors')
+                             ->orWhereNull('target_users');
+                });
+
+                // Check if professor's programs are targeted
+                if (!empty($programIds)) {
+                    $specificQuery->where(function($programQuery) use ($programIds) {
+                        $programQuery->whereNull('target_programs');
+                        
+                        foreach ($programIds as $programId) {
+                            $programQuery->orWhereJsonContains('target_programs', $programId);
+                        }
+                    });
+                }
+            });
+        });
+
+        return $query->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
     }
 }

@@ -432,7 +432,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
         ->name('student.meetings.upcoming');
     Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
-    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
+    // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
@@ -481,6 +481,18 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
     Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
     Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
+    
+    // Update overdue deadlines (can be called by admin or cron job)
+    Route::post('/student/update-overdue-deadlines', [App\Http\Controllers\StudentDashboardController::class, 'updateOverdueDeadlines']);
+    
+    // API endpoint to get program ID for a module
+    Route::get('/api/module/{moduleId}/program', function($moduleId) {
+        $module = \App\Models\Module::find($moduleId);
+        if ($module) {
+            return response()->json(['program_id' => $module->program_id]);
+        }
+        return response()->json(['error' => 'Module not found'], 404);
+    });
 });
 
 // Test routes for debugging rejection details
@@ -615,25 +627,40 @@ Route::get('/api/programs', function () {
 // API endpoint for modules by program
 Route::get('/api/programs/{programId}/modules', function ($programId) {
     try {
-        // Use raw database query to bypass Model accessors
+        // Fetch modules with their courses
         $modules = DB::table('modules')
-                    ->where('program_id', $programId)
-                    ->where('is_archived', false)
-                    ->orderBy('module_order', 'asc')
-                    ->select('modules_id', 'module_name', 'module_description', 'program_id')
-                    ->get();
-        
-        // Transform the data to ensure the id field is properly set
+            ->where('program_id', $programId)
+            ->where('is_archived', false)
+            ->orderBy('module_order', 'asc')
+            ->select('modules_id', 'module_name', 'module_description', 'program_id')
+            ->get();
+
+        $moduleIds = $modules->pluck('modules_id')->toArray();
+        $courses = DB::table('courses')
+            ->whereIn('module_id', $moduleIds)
+            ->select('subject_id as course_id', 'subject_name as course_name', 'subject_description as description', 'module_id')
+            ->get();
+
+        $coursesByModule = [];
+        foreach ($courses as $course) {
+            $coursesByModule[$course->module_id][] = [
+                'course_id' => $course->course_id,
+                'course_name' => $course->course_name,
+                'description' => $course->description,
+            ];
+        }
+
         $transformedModules = [];
         foreach ($modules as $module) {
             $transformedModules[] = [
-                'id' => $module->modules_id,
+                'module_id' => $module->modules_id,
                 'module_name' => $module->module_name,
-                'module_description' => $module->module_description,
+                'description' => $module->module_description,
                 'program_id' => $module->program_id,
+                'courses' => $coursesByModule[$module->modules_id] ?? [],
             ];
         }
-        
+
         return response()->json([
             'success' => true,
             'modules' => $transformedModules
@@ -817,6 +844,31 @@ Route::post('/admin/programs/assign', [AdminProgramController::class, 'assignPro
 // Enrollment management page
 Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])
      ->name('admin.enrollments.index');
+
+/*
+|--------------------------------------------------------------------------
+| Admin Announcements
+|--------------------------------------------------------------------------
+*/
+// Announcements routes
+Route::get('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])
+     ->name('admin.announcements.index');
+Route::get('/admin/announcements/create', [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])
+     ->name('admin.announcements.create');
+Route::post('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])
+     ->name('admin.announcements.store');
+Route::get('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'show'])
+     ->name('admin.announcements.show');
+Route::get('/admin/announcements/{id}/edit', [\App\Http\Controllers\Admin\AnnouncementController::class, 'edit'])
+     ->name('admin.announcements.edit');
+Route::put('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'update'])
+     ->name('admin.announcements.update');
+Route::delete('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])
+     ->name('admin.announcements.destroy');
+Route::post('/admin/announcements/{id}/toggle-status', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleStatus'])
+     ->name('admin.announcements.toggle-status');
+Route::post('/admin/announcements/{id}/toggle-published', [\App\Http\Controllers\Admin\AnnouncementController::class, 'togglePublished'])
+     ->name('admin.announcements.toggle-published');
 
 
 /*
