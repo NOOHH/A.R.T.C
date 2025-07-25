@@ -845,6 +845,31 @@ Route::post('/admin/programs/assign', [AdminProgramController::class, 'assignPro
 Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])
      ->name('admin.enrollments.index');
 
+/*
+|--------------------------------------------------------------------------
+| Admin Announcements
+|--------------------------------------------------------------------------
+*/
+// Announcements routes
+Route::get('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])
+     ->name('admin.announcements.index');
+Route::get('/admin/announcements/create', [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])
+     ->name('admin.announcements.create');
+Route::post('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])
+     ->name('admin.announcements.store');
+Route::get('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'show'])
+     ->name('admin.announcements.show');
+Route::get('/admin/announcements/{id}/edit', [\App\Http\Controllers\Admin\AnnouncementController::class, 'edit'])
+     ->name('admin.announcements.edit');
+Route::put('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'update'])
+     ->name('admin.announcements.update');
+Route::delete('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])
+     ->name('admin.announcements.destroy');
+Route::post('/admin/announcements/{id}/toggle-status', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleStatus'])
+     ->name('admin.announcements.toggle-status');
+Route::post('/admin/announcements/{id}/toggle-published', [\App\Http\Controllers\Admin\AnnouncementController::class, 'togglePublished'])
+     ->name('admin.announcements.toggle-published');
+
 
 /*
 |--------------------------------------------------------------------------

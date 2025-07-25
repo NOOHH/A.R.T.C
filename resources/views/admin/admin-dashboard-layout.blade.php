@@ -296,6 +296,14 @@
                             </a>
                         </div>
 
+                        <!-- Announcements -->
+                        <div class="nav-item">
+                            <a href="{{ route('admin.announcements.index') }}" class="nav-link @if(str_starts_with(Route::currentRouteName(), 'admin.announcements')) active @endif">
+                                <i class="bi bi-megaphone"></i>
+                                <span>Announcements</span>
+                            </a>
+                        </div>
+
                         <!-- Settings -->
                         @if($isAdmin)
                         <div class="nav-item">

@@ -445,11 +445,8 @@ class StudentDashboardController extends Controller
             
             $deadlines = $allDeadlines;
 
-            // Get announcements for this student from all enrolled programs
-            $announcements = \App\Models\Announcement::whereIn('program_id', $enrolledProgramIds)
-                ->orderBy('created_at', 'desc')
-                ->limit(3)
-                ->get();
+            // Get announcements for this student using new targeting system
+            $announcements = $this->getTargetedAnnouncements($student, $enrolledProgramIds);
         }
 
         return view('student.student-dashboard.student-dashboard', compact('user', 'courses', 'deadlines', 'announcements', 'studentPrograms'));
@@ -2296,5 +2293,82 @@ class StudentDashboardController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
         }
+    }
+
+    /**
+     * Get targeted announcements for a student based on new targeting system
+     */
+    private function getTargetedAnnouncements($student, $enrolledProgramIds)
+    {
+        $query = \App\Models\Announcement::where('is_active', true)
+            ->where('is_published', true)
+            ->where(function($q) {
+                $q->whereNull('publish_date')
+                  ->orWhere('publish_date', '<=', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('expire_date')
+                  ->orWhere('expire_date', '>', now());
+            });
+
+        $query->where(function($mainQuery) use ($student, $enrolledProgramIds) {
+            // Include announcements for all users
+            $mainQuery->where('target_scope', 'all');
+
+            // Include specific targeting announcements
+            $mainQuery->orWhere(function($specificQuery) use ($student, $enrolledProgramIds) {
+                $specificQuery->where('target_scope', 'specific');
+
+                // Check if student is in target users
+                $specificQuery->where(function($userQuery) {
+                    $userQuery->whereJsonContains('target_users', 'students')
+                             ->orWhereNull('target_users');
+                });
+
+                // Check if student's programs are targeted
+                if (!empty($enrolledProgramIds)) {
+                    $specificQuery->where(function($programQuery) use ($enrolledProgramIds) {
+                        $programQuery->whereNull('target_programs');
+                        
+                        foreach ($enrolledProgramIds as $programId) {
+                            $programQuery->orWhereJsonContains('target_programs', $programId);
+                        }
+                    });
+                }
+
+                // Check if student's enrollment type is targeted
+                if ($student) {
+                    $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
+                    $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
+                    
+                    if (!empty($enrollmentTypes)) {
+                        $specificQuery->where(function($planQuery) use ($enrollmentTypes) {
+                            $planQuery->whereNull('target_plans');
+                            
+                            foreach ($enrollmentTypes as $type) {
+                                $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
+                                $planQuery->orWhereJsonContains('target_plans', $planType);
+                            }
+                        });
+                    }
+
+                    // Check if student's batches are targeted
+                    $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
+                    if (!empty($batchIds)) {
+                        $specificQuery->where(function($batchQuery) use ($batchIds) {
+                            $batchQuery->whereNull('target_batches');
+                            
+                            foreach ($batchIds as $batchId) {
+                                $batchQuery->orWhereJsonContains('target_batches', $batchId);
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        return $query->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
     }
 }
