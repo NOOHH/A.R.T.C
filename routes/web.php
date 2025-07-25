@@ -432,7 +432,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
         ->name('student.meetings.upcoming');
     Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
-    Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module');
+    // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
@@ -481,6 +481,18 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
     Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
     Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
+    
+    // Update overdue deadlines (can be called by admin or cron job)
+    Route::post('/student/update-overdue-deadlines', [App\Http\Controllers\StudentDashboardController::class, 'updateOverdueDeadlines']);
+    
+    // API endpoint to get program ID for a module
+    Route::get('/api/module/{moduleId}/program', function($moduleId) {
+        $module = \App\Models\Module::find($moduleId);
+        if ($module) {
+            return response()->json(['program_id' => $module->program_id]);
+        }
+        return response()->json(['error' => 'Module not found'], 404);
+    });
 });
 
 // Test routes for debugging rejection details

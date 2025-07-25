@@ -10,12 +10,11 @@ use App\Models\Student;
 use App\Models\Program;
 use App\Models\Module;
 use App\Models\Course;
-use App\Models\Lesson;
 use App\Models\ContentItem;
 use App\Models\Deadline;
 use App\Models\Announcement;
 use App\Models\Package;
-use App\Models\StudentSubmission;
+use App\Models\AssignmentSubmission;
 
 class StudentDashboardController extends Controller
 {
@@ -363,6 +362,9 @@ class StudentDashboardController extends Controller
         $announcements = [];
         
         if ($student) {
+            // Auto-update overdue deadline statuses
+            $this->updateOverdueAssignmentStatuses($student);
+            
             // Get deadlines for this student from all enrolled programs
             $enrolledProgramIds = $enrollments->pluck('program_id')->toArray();
             // Get all active course_ids the student is enrolled in (via enrollment_courses)
@@ -370,32 +372,78 @@ class StudentDashboardController extends Controller
                 $q->where('student_id', $student->student_id);
             })->where('is_active', true)->pluck('course_id')->toArray();
 
+            // Get deadlines from deadlines table (including overdue ones)
             $deadlines = \App\Models\Deadline::where('student_id', $student->student_id)
                 ->orWhereIn('program_id', $enrolledProgramIds)
-                ->where('due_date', '>=', now())
+                ->where(function($query) {
+                    $query->where('due_date', '>=', now())
+                          ->orWhere('status', 'overdue');
+                })
                 ->orderBy('due_date', 'asc')
-                ->limit(5)
                 ->get();
 
-            // Add assignment deadlines from content_items (use course_id)
+            // Add assignment deadlines from content_items (no lesson references)
             $assignmentDeadlines = \App\Models\ContentItem::where('content_type', 'assignment')
-                ->where('enable_submission', true)
+                ->whereNotNull('due_date')
                 ->whereIn('course_id', $enrolledCourseIds)
-                ->where('due_date', '>=', now())
                 ->get()
-                ->map(function($item) {
+                ->map(function($item) use ($student) {
+                    // Check if student has already submitted this assignment
+                    $submission = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+                        ->where('content_id', $item->id)
+                        ->first();
+                    // Determine status based on submission and due date
+                    $now = now();
+                    if ($submission) {
+                        $status = 'completed';
+                        $feedback = $submission->feedback;
+                        $grade = $submission->grade;
+                    } elseif ($item->due_date < $now) {
+                        $status = 'overdue';
+                        $feedback = null;
+                        $grade = null;
+                    } else {
+                        $status = 'pending';
+                        $feedback = null;
+                        $grade = null;
+                    }
+                    // Get course and program info for navigation and display
+                    $course = \App\Models\Course::find($item->course_id);
+                    $module = $course ? \App\Models\Module::find($course->module_id) : null;
+                    $program = $module ? \App\Models\Program::find($module->program_id) : null;
                     return (object) [
                         'title' => $item->content_title,
-                        'description' => $item->content_description,
+                        'description' => $item->content_description ?? 'Assignment deadline',
                         'due_date' => $item->due_date,
                         'type' => 'assignment',
                         'reference_id' => $item->id,
-                        'status' => 'pending',
+                        'status' => $status,
+                        'feedback' => $feedback,
+                        'grade' => $grade,
+                        'course_id' => $item->course_id,
+                        'module_id' => $module ? $module->modules_id : null,
+                        'course_name' => $course ? $course->subject_name : null,
+                        'module_name' => $module ? $module->module_name : null,
+                        'program_name' => $program ? $program->program_name : null,
+                        'program_id' => $program ? $program->program_id : null,
+                        'submission' => $submission
                     ];
+                })
+                ->filter(function($deadline) {
+                    // Show upcoming deadlines and overdue assignments
+                    return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
                 });
 
-            // Merge and sort deadlines
-            $deadlines = $deadlines->concat($assignmentDeadlines)->sortBy('due_date')->values();
+            // Auto-create missing deadline entries for assignments that don't have them
+            $this->createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds);
+
+            // Merge and sort deadlines by due date
+            $allDeadlines = $deadlines->concat($assignmentDeadlines)
+                ->sortBy('due_date')
+                ->take(5)
+                ->values();
+            
+            $deadlines = $allDeadlines;
 
             // Get announcements for this student from all enrolled programs
             $announcements = \App\Models\Announcement::whereIn('program_id', $enrolledProgramIds)
@@ -894,6 +942,7 @@ class StudentDashboardController extends Controller
         }
     }
     
+    /*
     public function module($moduleId)
     {
         // Get user data from session
@@ -1000,15 +1049,9 @@ class StudentDashboardController extends Controller
         
         $courses = $coursesQuery->get();
         
-        // Format courses with their content (lessons, PDFs, etc.)
+        // Format courses with their content (PDFs, assignments, etc.)
         $formattedCourses = [];
         foreach ($courses as $course) {
-            // Get lessons for this course
-            $lessons = Lesson::where('course_id', $course->subject_id)
-                ->where('is_active', true)
-                ->orderBy('lesson_order', 'asc')
-                ->get();
-            
             // Get content items for this course
             $contentItems = ContentItem::where('course_id', $course->subject_id)
                 ->where('is_active', true)
@@ -1022,17 +1065,6 @@ class StudentDashboardController extends Controller
                 'price' => $course->subject_price,
                 'order' => $course->subject_order,
                 'is_required' => $course->is_required,
-                'lessons' => $lessons->map(function($lesson) {
-                    return [
-                        'id' => $lesson->lesson_id,
-                        'name' => $lesson->lesson_name,
-                        'description' => $lesson->lesson_description,
-                        'duration' => $lesson->lesson_duration,
-                        'video_url' => $lesson->lesson_video_url,
-                        'order' => $lesson->lesson_order,
-                        'learning_mode' => $lesson->learning_mode,
-                    ];
-                }),
                 'content_items' => $contentItems->map(function($item) {
                     return [
                         'id' => $item->id,
@@ -1095,11 +1127,10 @@ class StudentDashboardController extends Controller
         if ($module->video_path) {
             $moduleData['content_data']['video_url'] = asset('storage/' . $module->video_path);
         }
-        
+
         return view('student.student-courses.student-module', compact('user', 'module', 'program', 'moduleData', 'courses', 'formattedCourses'));
     }
-    
-    /**
+    */    /**
      * Mark a module as completed (toggle on)
      */
     public function completeModule($id, \Illuminate\Http\Request $request)
@@ -1308,6 +1339,10 @@ class StudentDashboardController extends Controller
                     'submitted_at' => now(),
                     'status' => 'submitted',
                 ]);
+                
+                // Update deadline status for this assignment
+                $this->updateAssignmentDeadlineStatus($student->student_id, $contentId, 'completed');
+                
                 return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
             }
 
@@ -1335,6 +1370,10 @@ class StudentDashboardController extends Controller
                 'submitted_at' => now(),
                 'status' => 'submitted'
             ]);
+            
+            // Update deadline status for this assignment
+            $this->updateAssignmentDeadlineStatus($student->student_id, $contentId, 'completed');
+            
             return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -1716,11 +1755,11 @@ class StudentDashboardController extends Controller
             
             // Get courses associated with this module
             $coursesQuery = \App\Models\Course::where('module_id', $moduleId)
-                ->with(['lessons' => function($query) {
-                    $query->with(['contentItems' => function($contentQuery) {
-                        $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
-                    }])->orderBy('lesson_order');
-                }])
+                //->with(['lessons' => function($query) {
+                //    $query->with(['contentItems' => function($contentQuery) {
+                //        $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
+                //    }])->orderBy('lesson_order');
+                //}])
                 ->select('subject_id', 'subject_name', 'subject_description', 'subject_price', 'is_required', 'module_id')
                 ->orderBy('subject_order');
 
@@ -1795,17 +1834,12 @@ class StudentDashboardController extends Controller
                 $courses = $coursesQuery->get();
             }
             
-            // Also get direct content items (not linked to lessons)
-            $directContentItems = \App\Models\ContentItem::whereIn('course_id', $courses->pluck('subject_id'))
-                ->whereNull('lesson_id')
-                ->select('id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required')
-                ->orderBy('content_order')
-                ->get();
-            
             // Format the response
-            $formattedCourses = $courses->map(function($course) use ($directContentItems) {
-                $courseDirectItems = $directContentItems->where('course_id', $course->subject_id);
-                
+            $formattedCourses = $courses->map(function($course) {
+                $contentItems = \App\Models\ContentItem::where('course_id', $course->subject_id)
+                    ->select('id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required')
+                    ->orderBy('content_order')
+                    ->get();
                 return [
                     'course_id' => $course->subject_id,
                     'course_name' => $course->subject_name,
@@ -1813,29 +1847,7 @@ class StudentDashboardController extends Controller
                     'price' => $course->subject_price,
                     'duration' => null, // Not available in this table structure
                     'required' => (bool) $course->is_required,
-                    'lessons' => $course->lessons->map(function($lesson) {
-                        return [
-                            'id' => $lesson->lesson_id,
-                            'lesson_name' => $lesson->lesson_name,
-                            'lesson_description' => $lesson->lesson_description,
-                            'duration' => $lesson->lesson_duration ?? null,
-                            'content_items' => $lesson->contentItems->map(function($item) {
-                                return [
-                                    'id' => $item->id,
-                                    'content_type' => $item->content_type,
-                                    'content_title' => $item->content_title,
-                                    'content_description' => $item->content_description,
-                                    'content_url' => $item->attachment_path,
-                                    'attachment_path' => $item->attachment_path,
-                                    'content_data' => $item->content_data,
-                                    'max_points' => $item->max_points,
-                                    'due_date' => $item->due_date,
-                                    'is_required' => (bool) $item->is_required
-                                ];
-                            })
-                        ];
-                    }),
-                    'direct_content_items' => $courseDirectItems->map(function($item) {
+                    'content_items' => $contentItems->map(function($item) {
                         return [
                             'id' => $item->id,
                             'content_type' => $item->content_type,
@@ -1918,7 +1930,7 @@ class StudentDashboardController extends Controller
                 $extension = $file->getClientOriginalExtension();
                 $filename = 'submission_' . $student->student_id . '_' . $content->id . '_' . time() . '_' . uniqid() . '.' . $extension;
                 $filePath = $file->storeAs('submissions', $filename, 'public');
-                \App\Models\StudentSubmission::create([
+                \App\Models\AssignmentSubmission::create([
                     'student_id' => $student->student_id,
                     'content_id' => $content->id,
                     'file_path' => $filePath,
@@ -1929,6 +1941,9 @@ class StudentDashboardController extends Controller
                     'status' => 'submitted',
                     'submitted_at' => now(),
                 ]);
+                
+                // Update deadline status for this assignment
+                $this->updateAssignmentDeadlineStatus($student->student_id, $content->id, 'completed');
             }
             return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
@@ -2133,6 +2148,153 @@ class StudentDashboardController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update overdue assignment statuses for a specific student (called automatically)
+     */
+    private function updateOverdueAssignmentStatuses($student)
+    {
+        try {
+            $overdueDeadlines = \App\Models\Deadline::where('student_id', $student->student_id)
+                ->where('type', 'assignment')
+                ->where('due_date', '<', now())
+                ->where('status', 'pending')
+                ->get();
+
+            foreach ($overdueDeadlines as $deadline) {
+                // Check if the assignment has been submitted
+                $submission = \App\Models\AssignmentSubmission::where('student_id', $deadline->student_id)
+                    ->where('content_id', $deadline->reference_id)
+                    ->first();
+
+                if ($submission) {
+                    $deadline->update(['status' => 'completed']);
+                } else {
+                    $deadline->update(['status' => 'overdue']);
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently handle errors - this is called automatically
+            Log::warning('Error updating overdue assignment statuses: ' . $e->getMessage(), [
+                'student_id' => $student->student_id
+            ]);
+        }
+    }
+
+    /**
+     * Update overdue assignment deadline statuses
+     */
+    public function updateOverdueDeadlines()
+    {
+        try {
+            $overdueDeadlines = \App\Models\Deadline::where('type', 'assignment')
+                ->where('due_date', '<', now())
+                ->where('status', 'pending')
+                ->get();
+
+            foreach ($overdueDeadlines as $deadline) {
+                // Check if the assignment has been submitted
+                $submission = \App\Models\AssignmentSubmission::where('student_id', $deadline->student_id)
+                    ->where('content_id', $deadline->reference_id)
+                    ->first();
+
+                if ($submission) {
+                    $deadline->update(['status' => 'completed']);
+                } else {
+                    $deadline->update(['status' => 'overdue']);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Updated ' . $overdueDeadlines->count() . ' deadline statuses'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating overdue deadlines: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update assignment deadline status when assignment is submitted
+     */
+    private function updateAssignmentDeadlineStatus($studentId, $contentId, $status = 'completed')
+    {
+        try {
+            $deadline = \App\Models\Deadline::where('student_id', $studentId)
+                ->where('type', 'assignment')
+                ->where('reference_id', $contentId)
+                ->first();
+
+            if ($deadline) {
+                $deadline->update(['status' => $status]);
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error updating assignment deadline status: ' . $e->getMessage(), [
+                'student_id' => $studentId,
+                'content_id' => $contentId,
+                'status' => $status
+            ]);
+        }
+    }
+
+    /**
+     * Create missing deadline entries for assignments that don't have them
+     */
+    private function createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds)
+    {
+        try {
+            // Get all assignments in enrolled courses that have due dates
+            $assignments = \App\Models\ContentItem::where('content_type', 'assignment')
+                ->whereNotNull('due_date')
+                ->whereIn('course_id', $enrolledCourseIds)
+                ->get();
+
+            foreach ($assignments as $assignment) {
+                // Check if deadline already exists for this student and assignment
+                $existingDeadline = \App\Models\Deadline::where('student_id', $student->student_id)
+                    ->where('type', 'assignment')
+                    ->where('reference_id', $assignment->id)
+                    ->first();
+
+                if (!$existingDeadline) {
+                    // Get the program ID for this assignment's course
+                    $course = \App\Models\Course::find($assignment->course_id);
+                    $programId = $course ? $course->module->program_id : null;
+
+                    if ($programId && in_array($programId, $enrolledProgramIds)) {
+                        // Check if student has submitted this assignment
+                        $submission = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
+                            ->where('content_id', $assignment->id)
+                            ->first();
+
+                        $status = $submission ? 'completed' : 'pending';
+                        
+                        // Only create deadline if assignment is not overdue or if it's still pending
+                        if ($assignment->due_date >= now() || !$submission) {
+                            \App\Models\Deadline::create([
+                                'student_id' => $student->student_id,
+                                'program_id' => $programId,
+                                'title' => 'Assignment: ' . $assignment->content_title,
+                                'description' => $assignment->content_description ?? 'Complete the assigned assignment',
+                                'type' => 'assignment',
+                                'reference_id' => $assignment->id,
+                                'due_date' => $assignment->due_date,
+                                'status' => $status,
+                            ]);
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error creating missing assignment deadlines: ' . $e->getMessage(), [
+                'student_id' => $student->student_id,
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 }

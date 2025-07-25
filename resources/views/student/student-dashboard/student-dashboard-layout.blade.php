@@ -45,6 +45,13 @@
   @stack('styles')
 
   <style>
+    /* Global text rendering optimization */
+    * {
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
     /* 1) Remove any nested scrollbars up to the main container */
     html, body,
     .student-container,

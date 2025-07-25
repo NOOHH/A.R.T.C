@@ -576,6 +576,21 @@
             height: 120px;
         }
     }
+
+    /* Bootstrap Enhancement for Deadline Cards */
+    .deadline-item-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .deadline-item-modern .card {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+    
+    .deadline-item-modern:hover .card {
+        border-color: #667eea;
+    }
 </style>
 @endpush
 
@@ -678,49 +693,123 @@
     <!-- Deadlines Section -->
     <div class="dashboard-card deadlines-card">
         <div class="card-header">
-            <h2>Deadlines</h2>
+            <h2><i class="bi bi-calendar-check me-2"></i>Deadlines</h2>
         </div>
-        <div class="deadlines-content">
+        <div class="deadlines-content p-3">
             @forelse($deadlines as $deadline)
-                <div class="deadline-item" style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; color: #2c3e50;">
-                            @if($deadline->type === 'assignment')
-                                <i class="bi bi-pencil-square text-warning me-1"></i>
-                            @elseif($deadline->type === 'quiz')
-                                <i class="bi bi-question-circle text-primary me-1"></i>
-                            @endif
-                            {{ $deadline->title }}
-                            @if($deadline->type === 'assignment')
-                                <span class="badge bg-warning text-dark ms-2">Assignment</span>
-                            @elseif($deadline->type === 'quiz')
-                                <span class="badge bg-primary ms-2">Quiz</span>
-                            @endif
+                <div class="card mb-3 deadline-item-modern shadow-sm border-0" 
+                     onclick="redirectToAssignment('{{ $deadline->reference_id }}', '{{ $deadline->module_id }}', '{{ $deadline->type }}', '{{ $deadline->program_id ?? '' }}')"
+                     style="cursor: pointer; transition: all 0.3s ease;">
+                    <div class="card-body">
+                        <!-- Header with Icon, Title and Status -->
+                        <div class="d-flex align-items-start justify-content-between mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    @if($deadline->type === 'assignment')
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-file-earmark-text text-white fs-5"></i>
+                                        </div>
+                                    @elseif($deadline->type === 'quiz')
+                                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-question-circle text-white fs-5"></i>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1 fw-bold">{{ $deadline->title }}</h5>
+                                    <p class="card-text text-muted mb-2">{{ $deadline->description }}</p>
+                                    
+                                    <!-- Program/Course Information -->
+                                    @if(!empty($deadline->course_name) || !empty($deadline->program_name))
+                                        <div class="mb-2">
+                                            <span class="badge bg-light text-dark border me-2">
+                                                <i class="bi bi-folder2-open me-1"></i>
+                                                {{ $deadline->course_name ?? $deadline->program_name ?? 'Course' }}
+                                            </span>
+                                            @if(!empty($deadline->module_name))
+                                                <span class="badge bg-light text-dark border">
+                                                    <i class="bi bi-collection me-1"></i>
+                                                    {{ $deadline->module_name }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                @if($deadline->status === 'completed')
+                                    <span class="badge bg-success fs-6">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Completed
+                                    </span>
+                                @elseif($deadline->status === 'overdue')
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        <i class="bi bi-clock-fill me-1"></i>Pending
+                                    </span>
+                                @endif
+                            </div>
                         </div>
-                        <div style="font-size: 0.85rem; color: #7f8c8d;">{{ $deadline->description }}</div>
-                        <div style="font-size: 0.8rem; color: #e74c3c;">
-                            <i class="bi bi-clock"></i> Due: {{ \Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A') }}
+                        
+                        <!-- Due Date and Type -->
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="bi bi-calendar3 me-2"></i>
+                                <span class="fw-medium">Due: {{ \Carbon\Carbon::parse($deadline->due_date)->format('M d, Y g:i A') }}</span>
+                            </div>
+                            <span class="badge {{ $deadline->type === 'assignment' ? 'bg-primary' : 'bg-success' }} rounded-pill">
+                                {{ ucfirst($deadline->type) }}
+                            </span>
                         </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        @if($deadline->type === 'quiz' && $deadline->status === 'pending')
-                            <a href="{{ route('student.ai-quiz.start', $deadline->reference_id) }}" 
-                               class="btn btn-primary btn-sm" 
-                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 5px 15px; border-radius: 15px; color: white; text-decoration: none; font-size: 0.8rem;">
-                                <i class="bi bi-play-circle"></i> Take Quiz
-                            </a>
+                        
+                        <!-- Feedback Section (if completed with feedback) -->
+                        @if($deadline->status === 'completed' && (!empty($deadline->feedback) || !empty($deadline->grade)))
+                            <div class="alert alert-light border-start border-4 border-success mb-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="mb-0 text-success">
+                                        <i class="bi bi-chat-text-fill me-2"></i>Instructor Feedback
+                                    </h6>
+                                    @if(!empty($deadline->grade))
+                                        <span class="badge bg-success">Grade: {{ $deadline->grade }}%</span>
+                                    @endif
+                                </div>
+                                @if(!empty($deadline->feedback))
+                                    <p class="mb-0 small">{{ $deadline->feedback }}</p>
+                                @endif
+                            </div>
                         @endif
-                        <span class="badge" style="background: 
-                            @if($deadline->status === 'completed') #28a745
-                            @elseif($deadline->status === 'overdue') #dc3545  
-                            @else #ffc107
-                            @endif; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">
-                            {{ ucfirst($deadline->status) }}
-                        </span>
+                        
+                        <!-- Action Indicator -->
+                        <div class="border-top pt-3">
+                            @if($deadline->status === 'pending')
+                                <div class="d-flex align-items-center text-primary">
+                                    <i class="bi bi-arrow-right-circle me-2"></i>
+                                    <span class="fw-medium">Click to {{ $deadline->type === 'assignment' ? 'submit assignment' : 'take quiz' }}</span>
+                                </div>
+                            @elseif($deadline->status === 'completed')
+                                <div class="d-flex align-items-center text-success">
+                                    <i class="bi bi-eye me-2"></i>
+                                    <span class="fw-medium">Click to view details</span>
+                                </div>
+                            @elseif($deadline->status === 'overdue')
+                                <div class="d-flex align-items-center text-danger">
+                                    <i class="bi bi-exclamation-circle me-2"></i>
+                                    <span class="fw-medium">Click to submit (overdue)</span>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             @empty
-                <p style="padding: 30px 20px; text-align: center; color: #7f8c8d;">No upcoming deadlines at this time.</p>
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-calendar-check text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-muted">No upcoming deadlines</h4>
+                    <p class="text-muted mb-0">You're all caught up! Check back later for new assignments.</p>
+                </div>
             @endforelse
         </div>
     </div>
@@ -2308,5 +2397,47 @@ document.addEventListener('click', function() {
         removeAllBackdrops();
     }
 });
+
+// Redirect to assignment/quiz function
+function redirectToAssignment(referenceId, moduleId, type, programId) {
+    console.log('Redirecting to:', { referenceId, moduleId, type, programId });
+    
+    if (type === 'assignment') {
+        if (programId) {
+            // Directly redirect to student course page using the program ID
+            window.location.href = `/student/course/${programId}`;
+        } else if (moduleId) {
+            // Fallback: Get the program ID for this module
+            fetch(`/api/module/${moduleId}/program`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.program_id) {
+                        window.location.href = `/student/course/${data.program_id}`;
+                    } else {
+                        console.warn('No program ID found for module', moduleId);
+                        window.location.href = '/student/dashboard';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error getting program ID:', error);
+                    window.location.href = '/student/dashboard';
+                });
+        } else {
+            console.warn('No program ID or module ID provided for assignment', referenceId);
+            window.location.href = '/student/dashboard';
+        }
+    } else if (type === 'quiz') {
+        if (referenceId) {
+            // Redirect to quiz start page using the module ID (referenceId for quizzes)
+            window.location.href = `/student/quiz/${referenceId}/start`;
+        } else {
+            console.warn('No reference ID provided for quiz');
+            window.location.href = '/student/dashboard';
+        }
+    } else {
+        console.warn('Unknown deadline type:', type);
+        window.location.href = '/student/dashboard';
+    }
+}
 </script>
 @endsection
