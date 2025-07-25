@@ -615,25 +615,40 @@ Route::get('/api/programs', function () {
 // API endpoint for modules by program
 Route::get('/api/programs/{programId}/modules', function ($programId) {
     try {
-        // Use raw database query to bypass Model accessors
+        // Fetch modules with their courses
         $modules = DB::table('modules')
-                    ->where('program_id', $programId)
-                    ->where('is_archived', false)
-                    ->orderBy('module_order', 'asc')
-                    ->select('modules_id', 'module_name', 'module_description', 'program_id')
-                    ->get();
-        
-        // Transform the data to ensure the id field is properly set
+            ->where('program_id', $programId)
+            ->where('is_archived', false)
+            ->orderBy('module_order', 'asc')
+            ->select('modules_id', 'module_name', 'module_description', 'program_id')
+            ->get();
+
+        $moduleIds = $modules->pluck('modules_id')->toArray();
+        $courses = DB::table('courses')
+            ->whereIn('module_id', $moduleIds)
+            ->select('subject_id as course_id', 'subject_name as course_name', 'subject_description as description', 'module_id')
+            ->get();
+
+        $coursesByModule = [];
+        foreach ($courses as $course) {
+            $coursesByModule[$course->module_id][] = [
+                'course_id' => $course->course_id,
+                'course_name' => $course->course_name,
+                'description' => $course->description,
+            ];
+        }
+
         $transformedModules = [];
         foreach ($modules as $module) {
             $transformedModules[] = [
-                'id' => $module->modules_id,
+                'module_id' => $module->modules_id,
                 'module_name' => $module->module_name,
-                'module_description' => $module->module_description,
+                'description' => $module->module_description,
                 'program_id' => $module->program_id,
+                'courses' => $coursesByModule[$module->modules_id] ?? [],
             ];
         }
-        
+
         return response()->json([
             'success' => true,
             'modules' => $transformedModules

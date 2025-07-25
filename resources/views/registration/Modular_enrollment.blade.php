@@ -1274,12 +1274,10 @@
             grid.innerHTML = '<div class="alert alert-info">No modules available for the selected program(s).</div>';
             return;
         }
-        
         // Remove duplicates based on module_id
         const uniqueModules = allModules.filter((module, index, self) => 
-            index === self.findIndex(m => (m.modules_id || m.id) === (module.modules_id || module.id))
+            index === self.findIndex(m => m.module_id === module.module_id)
         );
-        
         console.log('Loading modules:', uniqueModules);
         displayModules(uniqueModules);
     }
@@ -1313,19 +1311,19 @@
             
             let modulesHtml = '';
             slideModules.forEach(module => {
-                const moduleName = module.name || module.module_name || 'Unnamed Module';
-                const moduleDesc = module.description || module.module_description || 'No description available';
+                const moduleName = module.module_name || 'Unnamed Module';
+                const moduleDesc = module.description || 'No description available';
                 const programInfo = module.program_name ? `<small class="text-muted">From: ${module.program_name}</small><br>` : '';
                 
                 modulesHtml += `
                     <div class="col-md-6 mb-4">
-                        <div class="module-card" data-module-id="${module.id}">
+                        <div class="module-card" data-module-id="${module.module_id}">
                             <div class="card module-card h-100">
                                 <div class="card-body">
                                     <div class="form-check">
-                                        <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.id}" 
-                                               value="${module.id}" onchange="handleModuleSelection(this)">
-                                        <label class="form-check-label module-title" for="module_${module.id}">${moduleName}</label>
+                                        <input type="checkbox" class="form-check-input module-checkbox" id="module_${module.module_id}" 
+                                               value="${module.module_id}" onchange="handleModuleSelection(this)">
+                                        <label class="form-check-label module-title" for="module_${module.module_id}">${moduleName}</label>
                                     </div>
                                     ${programInfo}
                                     <p class="card-text module-description">${moduleDesc}</p>
@@ -1337,7 +1335,7 @@
                                     </div>
                                     <div class="module-actions">
                                         <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                                onclick="showCoursesModal(${module.id}, '${moduleName}')">
+                                                onclick="showCoursesModal(${module.module_id}, '${moduleName}')">
                                             <i class="bi bi-list"></i> View Courses
                                         </button>
                                     </div>

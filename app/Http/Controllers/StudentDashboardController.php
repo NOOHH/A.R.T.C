@@ -19,6 +19,129 @@ use App\Models\StudentSubmission;
 
 class StudentDashboardController extends Controller
 {
+    /**
+     * Ensure enrollment course records exist for modular enrollments
+     * This is a helper method to fix missing enrollment_courses records
+     */
+    private function ensureEnrollmentCourseRecords($enrollment)
+    {
+        if (!$enrollment || $enrollment->enrollment_type !== 'Modular') {
+            return;
+        }
+        
+        // Check if enrollment course records already exist
+        $existingCourseCount = $enrollment->enrollmentCourses()->count();
+        if ($existingCourseCount > 0) {
+            return; // Records already exist
+        }
+        
+        Log::info('Creating missing enrollment course records', [
+            'enrollment_id' => $enrollment->enrollment_id,
+            'user_id' => $enrollment->user_id
+        ]);
+        
+        // Get the registration to find selected courses
+        $registration = \App\Models\Registration::where('user_id', $enrollment->user_id)
+            ->where('program_id', $enrollment->program_id)
+            ->where('enrollment_type', 'Modular')
+            ->first();
+        
+        if (!$registration || !$registration->selected_modules) {
+            Log::warning('No registration data found for enrollment course creation', [
+                'enrollment_id' => $enrollment->enrollment_id
+            ]);
+            return;
+        }
+        
+        $selectedModulesData = json_decode($registration->selected_modules, true);
+        if (!is_array($selectedModulesData)) {
+            Log::warning('Invalid selected modules data', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'selected_modules' => $registration->selected_modules
+            ]);
+            return;
+        }
+        
+        $createdCourses = 0;
+        foreach ($selectedModulesData as $moduleData) {
+            $moduleId = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+            
+            if (!$moduleId) continue;
+            
+            // If specific courses are selected for this module
+            if (isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                foreach ($moduleData['selected_courses'] as $courseData) {
+                    $courseId = is_array($courseData) ? ($courseData['id'] ?? $courseData['course_id'] ?? $courseData) : $courseData;
+                    
+                    if ($courseId) {
+                        try {
+                            \App\Models\EnrollmentCourse::create([
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $courseId,
+                                'module_id' => $moduleId,
+                                'enrollment_type' => 'course',
+                                'course_price' => 0,
+                                'is_active' => true
+                            ]);
+                            $createdCourses++;
+                            Log::info('Created enrollment course record', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $courseId,
+                                'module_id' => $moduleId
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to create enrollment course record', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $courseId,
+                                'module_id' => $moduleId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                // If no specific courses selected, enroll in all courses of the module
+                $module = \App\Models\Module::find($moduleId);
+                if ($module) {
+                    $moduleCourses = \App\Models\Course::where('module_id', $moduleId)
+                        ->where('is_active', true)
+                        ->get();
+                    
+                    foreach ($moduleCourses as $course) {
+                        try {
+                            \App\Models\EnrollmentCourse::create([
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $course->subject_id,
+                                'module_id' => $moduleId,
+                                'enrollment_type' => 'course',
+                                'course_price' => 0,
+                                'is_active' => true
+                            ]);
+                            $createdCourses++;
+                            Log::info('Created enrollment course record for module course', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $course->subject_id,
+                                'module_id' => $moduleId
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::warning('Failed to create enrollment course record for module course', [
+                                'enrollment_id' => $enrollment->enrollment_id,
+                                'course_id' => $course->subject_id,
+                                'module_id' => $moduleId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+        
+        Log::info('Completed enrollment course record creation', [
+            'enrollment_id' => $enrollment->enrollment_id,
+            'created_count' => $createdCourses
+        ]);
+    }
+
     public function __construct()
     {
         // Ensure only authenticated students can access these methods
@@ -446,23 +569,73 @@ class StudentDashboardController extends Controller
                          ->orderBy('modules_id', 'asc')
                          ->get();
 
-        // Filter modules for modular enrollments based on selected modules
+        // Filter modules for modular enrollments based on enrolled courses
         if ($enrollment && isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
-            $registration = \App\Models\Registration::where('user_id', session('user_id'))
-                ->where('program_id', $courseId)
-                ->where('enrollment_type', 'Modular')
-                ->first();
-            if ($registration && $registration->selected_modules) {
-                $selectedModuleIds = json_decode($registration->selected_modules, true);
-                if (is_array($selectedModuleIds) && !empty($selectedModuleIds)) {
-                    $modules = $modules->filter(function($module) use ($selectedModuleIds) {
-                        return in_array($module->modules_id, $selectedModuleIds);
-                    });
-                    Log::info('Filtered modules for modular enrollment', [
-                        'original_count' => Module::where('program_id', $courseId)->count(),
-                        'filtered_count' => $modules->count(),
-                        'selected_modules' => $selectedModuleIds
-                    ]);
+            // Ensure enrollment course records exist
+            $this->ensureEnrollmentCourseRecords($enrollment);
+            
+            // Get the courses the student is enrolled in
+            $enrolledCourseIds = $enrollment->enrollmentCourses()
+                ->where('is_active', true)
+                ->pluck('course_id')
+                ->toArray();
+            
+            if (!empty($enrolledCourseIds)) {
+                // Get the module IDs that contain these courses
+                $moduleIdsWithEnrolledCourses = \App\Models\Course::whereIn('subject_id', $enrolledCourseIds)
+                    ->pluck('module_id')
+                    ->unique()
+                    ->toArray();
+                
+                // Filter modules to only include those that contain enrolled courses
+                $modules = $modules->filter(function($module) use ($moduleIdsWithEnrolledCourses) {
+                    return in_array($module->modules_id, $moduleIdsWithEnrolledCourses);
+                });
+                
+                Log::info('Filtered modules for modular enrollment based on enrolled courses', [
+                    'original_count' => Module::where('program_id', $courseId)->count(),
+                    'filtered_count' => $modules->count(),
+                    'enrolled_courses' => $enrolledCourseIds,
+                    'modules_with_courses' => $moduleIdsWithEnrolledCourses
+                ]);
+            } else {
+                // No enrolled courses found, try fallback to registration data
+                $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                    ->where('program_id', $courseId)
+                    ->where('enrollment_type', 'Modular')
+                    ->first();
+                
+                if ($registration && $registration->selected_modules) {
+                    $selectedModulesData = json_decode($registration->selected_modules, true);
+                    
+                    // Handle both old format (array of IDs) and new format (object with courses)
+                    $selectedCourseIds = [];
+                    if (is_array($selectedModulesData)) {
+                        foreach ($selectedModulesData as $moduleData) {
+                            if (is_array($moduleData) && isset($moduleData['selected_courses'])) {
+                                $selectedCourseIds = array_merge($selectedCourseIds, $moduleData['selected_courses']);
+                            }
+                        }
+                    }
+                    
+                    if (!empty($selectedCourseIds)) {
+                        // Get the module IDs that contain these courses
+                        $moduleIdsWithSelectedCourses = \App\Models\Course::whereIn('subject_id', $selectedCourseIds)
+                            ->pluck('module_id')
+                            ->unique()
+                            ->toArray();
+                        
+                        // Filter modules to only include those that contain selected courses
+                        $modules = $modules->filter(function($module) use ($moduleIdsWithSelectedCourses) {
+                            return in_array($module->modules_id, $moduleIdsWithSelectedCourses);
+                        });
+                        
+                        Log::info('Filtered modules using registration fallback', [
+                            'selected_courses' => $selectedCourseIds,
+                            'modules_with_courses' => $moduleIdsWithSelectedCourses,
+                            'filtered_count' => $modules->count()
+                        ]);
+                    }
                 }
             }
         }
@@ -763,10 +936,69 @@ class StudentDashboardController extends Controller
         }
         
         // Get courses associated with this module from the database
-        $courses = Course::where('module_id', $moduleId)
+        $coursesQuery = Course::where('module_id', $moduleId)
             ->where('is_active', true)
-            ->ordered()
-            ->get();
+            ->ordered();
+        
+        // Apply modular enrollment filtering
+        if ($student && $enrollment && $enrollment->enrollment_type === 'Modular') {
+            // Ensure enrollment course records exist
+            $this->ensureEnrollmentCourseRecords($enrollment);
+            
+            $allowedCourseIds = $enrollment->enrollmentCourses()
+                ->where('is_active', true)
+                ->pluck('course_id')
+                ->toArray();
+            
+            Log::info('Module view course filtering for modular enrollment', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'module_id' => $moduleId,
+                'allowed_course_ids' => $allowedCourseIds
+            ]);
+            
+            if (!empty($allowedCourseIds)) {
+                $coursesQuery->whereIn('subject_id', $allowedCourseIds);
+            } else {
+                // Fallback to registration data if no enrollment courses found
+                $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                    ->where('program_id', $enrollment->program_id)
+                    ->where('enrollment_type', 'Modular')
+                    ->first();
+                
+                if ($registration && $registration->selected_modules) {
+                    $selectedModulesData = json_decode($registration->selected_modules, true);
+                    $fallbackCourseIds = [];
+                    
+                    if (is_array($selectedModulesData)) {
+                        foreach ($selectedModulesData as $moduleData) {
+                            $moduleIdFromData = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+                            
+                            if ($moduleIdFromData == $moduleId && isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                                foreach ($moduleData['selected_courses'] as $courseId) {
+                                    $fallbackCourseIds[] = is_array($courseId) ? ($courseId['id'] ?? $courseId['course_id'] ?? $courseId) : $courseId;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (!empty($fallbackCourseIds)) {
+                        Log::info('Using fallback course filtering in module view', [
+                            'fallback_course_ids' => $fallbackCourseIds,
+                            'module_id' => $moduleId
+                        ]);
+                        $coursesQuery->whereIn('subject_id', $fallbackCourseIds);
+                    } else {
+                        // No specific courses selected for this module - show none
+                        $coursesQuery->where('subject_id', -1); // This will return no results
+                    }
+                } else {
+                    // No registration data - show none
+                    $coursesQuery->where('subject_id', -1); // This will return no results
+                }
+            }
+        }
+        
+        $courses = $coursesQuery->get();
         
         // Format courses with their content (lessons, PDFs, etc.)
         $formattedCourses = [];
@@ -1466,11 +1698,14 @@ class StudentDashboardController extends Controller
             
             // Get the student
             $student = Student::where('user_id', session('user_id'))->first();
-            
+            $enrollment = null;
             if ($student) {
-                // Check if student is enrolled in the program
-                $enrollment = $student->enrollments()->where('program_id', $module->program_id)->first();
-                
+                // Always get the latest approved or pending enrollment for this program
+                $enrollment = $student->enrollments()
+                    ->where('program_id', $module->program_id)
+                    ->orderByDesc('enrollment_status') // approved > pending > others
+                    ->orderByDesc('created_at')
+                    ->first();
                 if (!$enrollment) {
                     return response()->json([
                         'success' => false,
@@ -1480,16 +1715,86 @@ class StudentDashboardController extends Controller
             }
             
             // Get courses associated with this module
-            $courses = \App\Models\Course::where('module_id', $moduleId)
+            $coursesQuery = \App\Models\Course::where('module_id', $moduleId)
                 ->with(['lessons' => function($query) {
                     $query->with(['contentItems' => function($contentQuery) {
                         $contentQuery->select('id', 'lesson_id', 'course_id', 'content_type', 'content_title', 'content_description', 'attachment_path', 'content_data', 'max_points', 'due_date', 'is_required');
                     }])->orderBy('lesson_order');
                 }])
                 ->select('subject_id', 'subject_name', 'subject_description', 'subject_price', 'is_required', 'module_id')
-                ->orderBy('subject_order')
-                ->get();
+                ->orderBy('subject_order');
 
+            // Filter by EnrollmentCourse for modular enrollments
+            if ($student && $enrollment && $enrollment->enrollment_type === 'Modular') {
+                // Ensure enrollment course records exist
+                $this->ensureEnrollmentCourseRecords($enrollment);
+                
+                $allowedCourseIds = $enrollment->enrollmentCourses()
+                    ->where('is_active', true)
+                    ->pluck('course_id')
+                    ->toArray();
+                
+                Log::info('Modular enrollment course filtering', [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'module_id' => $moduleId,
+                    'enrollment_type' => $enrollment->enrollment_type,
+                    'allowed_course_ids' => $allowedCourseIds,
+                    'student_id' => $student->student_id,
+                    'user_id' => session('user_id')
+                ]);
+                
+                if (!empty($allowedCourseIds)) {
+                    $coursesQuery->whereIn('subject_id', $allowedCourseIds);
+                } else {
+                    // If no allowed courses found, check if we should fall back to registration data
+                    Log::warning('No enrolled courses found for modular enrollment, checking registration data', [
+                        'enrollment_id' => $enrollment->enrollment_id,
+                        'module_id' => $moduleId
+                    ]);
+                    
+                    // Fallback: check registration selected_modules for this specific module
+                    $registration = \App\Models\Registration::where('user_id', session('user_id'))
+                        ->where('program_id', $enrollment->program_id)
+                        ->where('enrollment_type', 'Modular')
+                        ->first();
+                    
+                    if ($registration && $registration->selected_modules) {
+                        $selectedModulesData = json_decode($registration->selected_modules, true);
+                        $fallbackCourseIds = [];
+                        
+                        if (is_array($selectedModulesData)) {
+                            foreach ($selectedModulesData as $moduleData) {
+                                $moduleIdFromData = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
+                                
+                                if ($moduleIdFromData == $moduleId && isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                                    foreach ($moduleData['selected_courses'] as $courseId) {
+                                        $fallbackCourseIds[] = is_array($courseId) ? ($courseId['id'] ?? $courseId['course_id'] ?? $courseId) : $courseId;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (!empty($fallbackCourseIds)) {
+                            Log::info('Using fallback course filtering from registration data', [
+                                'fallback_course_ids' => $fallbackCourseIds,
+                                'module_id' => $moduleId
+                            ]);
+                            $coursesQuery->whereIn('subject_id', $fallbackCourseIds);
+                        } else {
+                            // If still no courses found, return empty collection
+                            $courses = collect();
+                        }
+                    } else {
+                        // No registration data available, return empty
+                        $courses = collect();
+                    }
+                }
+            }
+
+            if (!isset($courses)) {
+                $courses = $coursesQuery->get();
+            }
+            
             // Also get direct content items (not linked to lessons)
             $directContentItems = \App\Models\ContentItem::whereIn('course_id', $courses->pluck('subject_id'))
                 ->whereNull('lesson_id')

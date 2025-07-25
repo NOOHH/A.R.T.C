@@ -247,8 +247,60 @@ class AdminController extends Controller
                     $enrollmentData['batch_id'] = $batchId;
                     Log::info('Creating new enrollment with batch_id', ['batch_id' => $batchId, 'student_id' => $student->student_id]);
                 }
-                Enrollment::create($enrollmentData);
+                $enrollment = Enrollment::create($enrollmentData);
             }
+            // --- BEGIN: Create EnrollmentCourse records for modular enrollments ---
+            if ($enrollment && ($enrollment->enrollment_type === 'Modular' || $registration->enrollment_type === 'Modular' || $registration->plan_name === 'Modular')) {
+                $selectedCourses = $registration->selected_courses;
+                if (is_string($selectedCourses)) {
+                    $selectedCourses = json_decode($selectedCourses, true);
+                }
+                if (is_array($selectedCourses)) {
+                    // Also need selected_modules to get module_id for each course
+                    $selectedModules = $registration->selected_modules;
+                    if (is_string($selectedModules)) {
+                        $selectedModules = json_decode($selectedModules, true);
+                    }
+                    $courseToModule = [];
+                    if (is_array($selectedModules)) {
+                        foreach ($selectedModules as $moduleData) {
+                            if (isset($moduleData['id']) && isset($moduleData['selected_courses']) && is_array($moduleData['selected_courses'])) {
+                                foreach ($moduleData['selected_courses'] as $courseId) {
+                                    $courseToModule[$courseId] = $moduleData['id'];
+                                }
+                            }
+                        }
+                    }
+                    foreach ($selectedCourses as $courseId) {
+                        $moduleId = $courseToModule[$courseId] ?? null;
+                        if ($courseId) {
+                            try {
+                                \App\Models\EnrollmentCourse::firstOrCreate([
+                                    'enrollment_id' => $enrollment->enrollment_id,
+                                    'course_id' => $courseId,
+                                ], [
+                                    'module_id' => $moduleId,
+                                    'enrollment_type' => 'course',
+                                    'course_price' => 0,
+                                    'is_active' => true
+                                ]);
+                                Log::info('EnrollmentCourse created', [
+                                    'enrollment_id' => $enrollment->enrollment_id,
+                                    'course_id' => $courseId,
+                                    'module_id' => $moduleId
+                                ]);
+                            } catch (\Exception $e) {
+                                Log::error('Failed to create EnrollmentCourse', [
+                                    'enrollment_id' => $enrollment->enrollment_id,
+                                    'course_id' => $courseId,
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+            // --- END: Create EnrollmentCourse records for modular enrollments ---
             if ($batchId) {
                 session()->forget('selected_batch_id');
                 Log::info('Cleared batch_id from session after enrollment creation');
