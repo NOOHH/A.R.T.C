@@ -562,7 +562,7 @@
         }
 
         .assignment-header {
-            background: var(--light-color);
+            background: rgb(1, 25, 78);
             padding: 1.5rem;
             border-radius: 0.5rem;
             margin-bottom: 1.5rem;
@@ -1254,31 +1254,31 @@
                     })
                     .then(response => response.json())
                     .then(data => {
+                        console.log('Submissions response:', data.submissions); // DEBUG LOG
                         let hasSubmission = false;
                         let latest = null;
                         let isDraft = false;
-                        let showSubmissionForm = !!window.assignmentFormState[contentId];
+                        // Always show the form if a draft exists in backend
                         if (data.success && data.submissions && data.submissions.length > 0) {
                             hasSubmission = true;
-                            // Find draft if exists, else latest
-                            latest = data.submissions.find(s => s.status === 'draft') || data.submissions[0];
-                            isDraft = latest.status === 'draft';
-                            // Always show the draft/submission status view if any submission exists
-                            showSubmissionForm = true;
+                            const draftSubmission = data.submissions.find(s => s.status === 'draft');
+                            isDraft = !!draftSubmission;
+                            latest = draftSubmission || data.submissions[0];
+                            showSubmissionForm = isDraft;
+                            console.log('Draft found:', draftSubmission, 'isDraft:', isDraft, 'showSubmissionForm:', showSubmissionForm, 'latest:', latest); // DEBUG LOG
                         } else {
                             hasSubmission = false;
                             latest = null;
                             isDraft = false;
                             showSubmissionForm = !!window.assignmentFormState[contentId];
+                            console.log('No submissions or not success. showSubmissionForm:', showSubmissionForm); // DEBUG LOG
                         }
                         // Use global state for form visibility
                         html += `<div id="assignmentSubmissionBlock">`;
                         // If no submission and not showing form, show Add Submission button
                         if (!hasSubmission && !showSubmissionForm) {
                             html += `<button class="btn btn-primary" id="addSubmissionBtn">Add submission</button>`;
-                        }
-                        // Show the form if a draft exists or Add Submission was clicked
-                        if (isDraft || showSubmissionForm) {
+                        } else if (isDraft || showSubmissionForm) {
                             let buttons = '<button type="button" class="btn btn-secondary" id="saveDraftBtn">Save changes</button>';
                             if (isDraft) {
                                 buttons += '<button type="button" class="btn btn-primary" id="submitAssignmentBtn">Submit assignment</button>';
@@ -1288,7 +1288,6 @@
                             html += `<div class="assignment-actions">
         <form id="assignmentDraftForm" enctype="multipart/form-data">
             <input type="hidden" name="content_id" value="${content.id}">
-            <input type="hidden" name="module_id" value="${content.module_id}">
             <input type="hidden" name="module_id" value="${parseInt(content.module_id || currentModule)}">
             <div class="mb-3">
                 <label for="assignmentFiles" class="form-label">Upload Files</label>
@@ -1303,6 +1302,22 @@
         </form>
         <div id="assignmentSubmissionStatus" class="mt-3"></div>
         </div>`;
+                        } else if (hasSubmission && !isDraft) {
+                            // If submission exists and is not a draft, show status and disable further submissions
+                            let statusClass = 'bg-secondary';
+                            let statusText = 'Submitted';
+                            if (latest.status === 'graded') {
+                                statusClass = 'bg-success';
+                                statusText = 'Graded';
+                            } else if (latest.status === 'reviewed') {
+                                statusClass = 'bg-info';
+                                statusText = 'Reviewed';
+                            }
+                            html += `<div class="alert alert-light border-start border-4 ${statusClass} d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Submission Status:</strong> <span class="badge ${statusClass} ms-2">${statusText}</span>
+                                <span class="ms-3">You have submitted this assignment. You can no longer edit or resubmit.</span>
+                            </div>`;
                         }
                         html += `<div id="previousAssignmentSubmissions" class="mt-3"></div>`;
 
@@ -1407,6 +1422,24 @@ if (addSubmissionBtn) {
                         // Add form handler if form exists
                         const formElem = document.getElementById('assignmentDraftForm');
                         if (formElem) {
+                            // Ensure hidden input is set
+                            let hiddenInput = formElem.querySelector('input[name="content_id"]');
+                            if (!hiddenInput) {
+                                hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = 'content_id';
+                                formElem.appendChild(hiddenInput);
+                            }
+                            hiddenInput.value = content.id || contentId;
+                            // Ensure module_id is set as integer
+                            let moduleInput = formElem.querySelector('input[name="module_id"]');
+                            if (!moduleInput) {
+                                moduleInput = document.createElement('input');
+                                moduleInput.type = 'hidden';
+                                moduleInput.name = 'module_id';
+                                formElem.appendChild(moduleInput);
+                            }
+                            moduleInput.value = parseInt(content.module_id || currentModule);
                             const saveDraftBtn = document.getElementById('saveDraftBtn');
                             const submitAssignmentBtn = document.getElementById('submitAssignmentBtn');
                             const removeDraftBtn = document.getElementById('removeDraftBtn');
@@ -1415,8 +1448,11 @@ if (addSubmissionBtn) {
                             if (saveDraftBtn) {
                                 saveDraftBtn.onclick = function() {
                                     const formData = new FormData(formElem);
-                                    // Append the current module ID (ensure integer)
-                                    formData.append('module_id', currentModule);
+                                    const contentIdValue = formElem.querySelector('input[name="content_id"]').value;
+                                    const moduleIdValue = parseInt(formElem.querySelector('input[name="module_id"]').value || currentModule);
+                                    formData.set('module_id', moduleIdValue);
+                                    formData.set('content_id', contentIdValue);
+                                    console.log('DEBUG: content_id from form before save draft:', contentIdValue, 'module_id:', moduleIdValue);
                                     statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving draft...';
                                     fetch('/student/assignment/save-draft', {
                                         method: 'POST',
@@ -1430,7 +1466,9 @@ if (addSubmissionBtn) {
                                     .then(data => {
                                         statusDiv.innerHTML = data.success ? '<span class="text-success">Draft saved!</span>' : `<span class="text-danger">${data.message}</span>`;
                                         if (data.success) {
-                                            setTimeout(() => openAssignmentViewer(contentId), 500); // Re-render to show draft state
+                                            // Clear assignmentFormState so backend state is always trusted
+                                            if (window.assignmentFormState) window.assignmentFormState[contentIdValue] = false;
+                                            setTimeout(() => openAssignmentViewer(contentIdValue), 500); // Re-render to show draft state
                                         }
                                     })
                                     .catch(err => {
@@ -1441,7 +1479,11 @@ if (addSubmissionBtn) {
                             if (submitAssignmentBtn) {
                                 submitAssignmentBtn.onclick = function() {
                                     const formData = new FormData(formElem);
-                                    formData.append('module_id', content.module_id);
+                                    const contentIdValue = formElem.querySelector('input[name="content_id"]').value;
+                                    const moduleIdValue = parseInt(formElem.querySelector('input[name="module_id"]').value || currentModule);
+                                    formData.set('module_id', moduleIdValue);
+                                    formData.set('content_id', contentIdValue);
+                                    console.log('DEBUG: content_id from form before submit:', contentIdValue, 'module_id:', moduleIdValue);
                                     statusDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
                                     fetch('/student/assignment/submit', {
                                         method: 'POST',
@@ -1453,7 +1495,7 @@ if (addSubmissionBtn) {
                                     .then(r => r.json())
                                     .then(data => {
                                         statusDiv.innerHTML = data.success ? '<span class="text-success">Assignment submitted!</span>' : `<span class="text-danger">${data.message}</span>`;
-                                        if (data.success) setTimeout(() => openAssignmentViewer(contentId), 1000);
+                                        if (data.success) setTimeout(() => openAssignmentViewer(contentIdValue), 1000);
                                     });
                                 };
                             }
@@ -1472,15 +1514,15 @@ if (addSubmissionBtn) {
                                     .then(r => r.json())
                                     .then(data => {
                                         statusDiv.innerHTML = data.success ? '<span class="text-success">Draft removed!</span>' : `<span class="text-danger">${data.message}</span>`;
-                                        if (data.success) setTimeout(() => openAssignmentViewer(contentId), 1000);
+                                        if (data.success) setTimeout(() => openAssignmentViewer(contentIdValue), 1000);
                                     });
                                 };
                             }
                             if (cancelSubmissionBtn) {
                                 cancelSubmissionBtn.onclick = function() {
                                     // Hide the form and show Add Submission button again
-                                    window.assignmentFormState[contentId] = false;
-                                    openAssignmentViewer(contentId);
+                                    window.assignmentFormState[contentIdValue] = false;
+                                    openAssignmentViewer(contentIdValue);
                                 };
                             }
                         }

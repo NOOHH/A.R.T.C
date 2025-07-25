@@ -502,7 +502,7 @@
                                                         <i class="bi bi-{{ str_contains($file['type'], 'pdf') ? 'file-earmark-pdf' : (str_contains($file['type'], 'image') ? 'file-earmark-image' : (str_contains($file['type'], 'word') ? 'file-earmark-word' : 'file-earmark')) }}"></i>
                                                     </div>
                                                     <div class="file-info">
-                                                        <h6 class="mb-1">{{ $file['original_name'] }}</h6>
+                                                        <h6 class="mb-1">{{ $file['original_filename'] ?? ($file['original_name'] ?? ($file['name'] ?? 'File')) }}</h6>
                                                         <p class="mb-2 text-muted">{{ round($file['size'] / 1024, 2) }} KB</p>
                                                         <div class="d-flex gap-2 justify-content-center">
                                                             <a href="{{ asset('storage/' . $file['path']) }}" target="_blank" class="btn btn-view btn-sm">
