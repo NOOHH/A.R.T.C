@@ -1104,6 +1104,10 @@
                 const hasAttachment = item.attachment_path && item.attachment_path.trim() !== '';
                 console.log('Item has attachment:', hasAttachment, 'Path:', item.attachment_path);
 
+                // Check if this content is already completed
+                const isContentCompleted = window.completedContentIds && window.completedContentIds.includes(parseInt(item.id));
+                console.log('Content completion status:', item.id, isContentCompleted);
+
                 // Determine if it's an assignment or requires submission
                 const isAssignment = item.content_type === 'assignment' || item.enable_submission === true;
                 const isQuiz = item.content_type === 'quiz';
@@ -1122,9 +1126,10 @@
                                 <span class="badge bg-primary">${item.content_type || item.type || 'Content'}</span>
                                 ${hasAttachment ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-paperclip\"></i> Attachment</span>` : ''}
                                 ${item.duration ? `<span class=\"badge bg-secondary ms-1\">${item.duration}</span>` : ''}
+                                ${isContentCompleted ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-check-circle\"></i> Completed</span>` : ''}
                             </div>
                         </div>
-                        <button class="btn btn-success btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); markComplete('content', '${item.id}', this)">Mark Complete</button>
+                        <button class="btn ${isContentCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); markComplete('content', '${item.id}', this)" ${isContentCompleted ? 'disabled' : ''}>${isContentCompleted ? 'Completed' : 'Mark Complete'}</button>
                     </div>
                 `;
 
@@ -1921,14 +1926,57 @@ if (addSubmissionBtn) {
                     btn.innerText = 'Completed';
                     btn.disabled = true;
                     btn.classList.remove('btn-success');
-                    btn.classList.add('btn-secondary');
+                    btn.classList.add('btn-outline-success');
+                    
+                    // Update global state for content completion
+                    if (type === 'content') {
+                        const contentId = parseInt(id);
+                        if (!window.completedContentIds.includes(contentId)) {
+                            window.completedContentIds.push(contentId);
+                        }
+                        
+                        // Add completed badge to the content item
+                        const contentItem = btn.closest('.content-item');
+                        if (contentItem) {
+                            const badgeContainer = contentItem.querySelector('.mt-2');
+                            if (badgeContainer && !badgeContainer.querySelector('.bi-check-circle')) {
+                                badgeContainer.innerHTML += '<span class="badge bg-success ms-1"><i class="bi bi-check-circle"></i> Completed</span>';
+                            }
+                        }
+                        
+                        // Check if all content in the current course is completed
+                        if (currentCourse && currentModule) {
+                            checkAndMarkCourseComplete(currentModule, currentCourse);
+                        }
+                    }
+                    
                     // Update progress indicators in real time
                     if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
-                        const progressPercent = document.getElementById('progress-percentage');
+                        // Try to find dashboard progress elements (they may not exist on course page)
+                        const progressPercent = document.getElementById('progress-percentage') || document.querySelector('.completion-badge');
                         const progressModules = document.getElementById('progress-modules');
-                        if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
-                        if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                        
+                        if (progressPercent) {
+                            // If it's the dashboard completion badge, update it differently
+                            if (progressPercent.classList.contains('completion-badge')) {
+                                progressPercent.innerText = `${data.progress_percentage}% overall progress`;
+                            } else {
+                                progressPercent.innerText = `${data.progress_percentage}% complete`;
+                            }
+                        }
+                        
+                        if (progressModules) {
+                            progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                        }
+                        
+                        // Log progress update for debugging
+                        console.log('Progress updated:', {
+                            percentage: data.progress_percentage,
+                            completed: data.completed_modules,
+                            total: data.total_modules
+                        });
                     }
+                    
                     // Update completedModuleIds for UI consistency
                     if (type === 'course') {
                         const moduleId = parseInt(id);
@@ -1953,6 +2001,128 @@ if (addSubmissionBtn) {
             });
         }
 
+        // Function to check if all content in a course is completed and auto-mark course as complete
+        function checkAndMarkCourseComplete(moduleId, courseId) {
+            console.log('Checking course completion for course:', courseId, 'in module:', moduleId);
+            
+            // Get all content items for this course from the current view
+            const contentItems = document.querySelectorAll('.content-item');
+            const totalContent = contentItems.length;
+            let completedContent = 0;
+            
+            // Count completed content items in the current view
+            contentItems.forEach(item => {
+                const markBtn = item.querySelector('.mark-complete-btn');
+                if (markBtn && markBtn.disabled && markBtn.innerText === 'Completed') {
+                    completedContent++;
+                }
+            });
+            
+            console.log(`Course completion check: ${completedContent}/${totalContent} content items completed`);
+            
+            // If all content is completed, automatically mark course as complete
+            if (totalContent > 0 && completedContent === totalContent) {
+                console.log('All content completed, auto-marking course as complete');
+                
+                // Auto-complete the course
+                fetch('/student/complete-course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        course_id: courseId,
+                        module_id: moduleId
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Course auto-completed successfully');
+                        
+                        // Update the course button in the courses view if visible
+                        const courseBtns = document.querySelectorAll(`[onclick*="toggleComplete('course', '${courseId}'"]`);
+                        courseBtns.forEach(btn => {
+                            btn.innerText = 'Completed';
+                            btn.disabled = false; // Allow unmarking
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-outline-success');
+                        });
+                        
+                        // Check if all courses in module are completed for auto-module completion
+                        checkAndMarkModuleComplete(moduleId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error auto-completing course:', error);
+                });
+            }
+        }
+
+        // Function to check if all courses in a module are completed and auto-mark module as complete
+        function checkAndMarkModuleComplete(moduleId) {
+            console.log('Checking module completion for module:', moduleId);
+            
+            // This would require fetching all courses in the module and checking their completion status
+            // For now, we'll implement a simpler version that checks via backend
+            fetch(`/student/module/${moduleId}/check-completion`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.should_complete) {
+                    console.log('All courses completed, auto-marking module as complete');
+                    
+                    // Auto-complete the module
+                    fetch('/student/complete-module', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            module_id: moduleId
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Module auto-completed successfully');
+                            
+                            // Update global module completion state
+                            const moduleIdInt = parseInt(moduleId);
+                            if (!window.completedModuleIds.includes(moduleIdInt)) {
+                                window.completedModuleIds.push(moduleIdInt);
+                            }
+                            
+                            // Update module button visual state
+                            const moduleBtn = document.querySelector(`[onclick*="toggleModule('${moduleId}'"]`);
+                            if (moduleBtn) {
+                                moduleBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2 text-success"></i>' + moduleBtn.textContent;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error auto-completing module:', error);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking module completion:', error);
+            });
+        }
+
         function toggleComplete(type, id, btn) {
             if (!btn) {
                 console.error('toggleComplete: btn is null or undefined');
@@ -1964,9 +2134,13 @@ if (addSubmissionBtn) {
             let payload = {};
             let isCompleted = false;
             if (type === 'course') {
-                isCompleted = window.completedModuleIds && window.completedModuleIds.includes(parseInt(id));
-                url = isCompleted ? '/student/uncomplete-module' : '/student/complete-module/' + id;
-                payload = isCompleted ? { module_id: id } : {};
+                // For course completion, we'll just mark as complete (no toggle for now)
+                url = '/student/complete-course';
+                payload = { 
+                    course_id: id,
+                    module_id: currentModule // Include the current module ID
+                };
+                isCompleted = false; // Always mark as complete for now
             }
             let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
             fetch(url, {

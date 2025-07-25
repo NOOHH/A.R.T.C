@@ -2130,18 +2130,23 @@ class StudentDashboardController extends Controller
         try {
             $student = \App\Models\Student::where('user_id', session('user_id'))->firstOrFail();
             $content = \App\Models\ContentItem::findOrFail($contentId);
-            // Prevent duplicate completions
-            $exists = \App\Models\StudentContentCompletion::where('student_id', $student->student_id)
+            
+            // Prevent duplicate completions - use the correct table
+            $exists = \App\Models\ContentCompletion::where('student_id', $student->student_id)
                 ->where('content_id', $contentId)
                 ->exists();
             if ($exists) {
                 return response()->json(['success' => true, 'message' => 'Already marked as done.']);
             }
-            \App\Models\StudentContentCompletion::create([
+            
+            \App\Models\ContentCompletion::create([
                 'student_id' => $student->student_id,
                 'content_id' => $contentId,
+                'course_id' => $content->course_id ?? null,
+                'module_id' => $content->module_id ?? null,
                 'completed_at' => now(),
             ]);
+            
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
