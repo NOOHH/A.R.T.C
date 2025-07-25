@@ -52,3 +52,8 @@ body:not(.with-sidebar) .content-wrapper {
 body:not(.with-sidebar) .main-content {
   padding: 0 !important;
 }
+/* student-course.css */
+#content-viewer .empty-state + .mb-3 strong,
+#content-viewer .mb-3 strong {
+  color: #ff5722; /* your new color */
+}

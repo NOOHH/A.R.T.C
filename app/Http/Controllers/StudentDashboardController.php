@@ -953,6 +953,7 @@ class StudentDashboardController extends Controller
                 'files' => 'required',
                 'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
                 'module_id' => 'required|integer',
+                'content_id' => 'required|integer', // <-- ensure content_id is required
                 'comments' => 'nullable|string'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -969,6 +970,7 @@ class StudentDashboardController extends Controller
         }
 
         $moduleId = $request->input('module_id');
+        $contentId = $request->input('content_id');
         $module = Module::find($moduleId);
         if (!$module) {
             return response()->json(['success' => false, 'message' => 'Module not found.']);
@@ -981,26 +983,28 @@ class StudentDashboardController extends Controller
             $fileInfos[] = [
                 'path' => $filePath,
                 'type' => $file->getMimeType(),
-                'original_name' => $file->getClientOriginalName(),
                 'size' => $file->getSize(),
             ];
         }
 
-        // Check if a draft exists
+        // Check if a draft exists for this content_id
         $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
             ->where('module_id', $moduleId)
+            ->where('content_id', $contentId)
             ->where('status', 'draft')
             ->first();
         if ($draft) {
             $draft->update([
                 'files' => $fileInfos,
                 'comments' => $request->comments,
+                'content_id' => $contentId, // Always set content_id on update
             ]);
         } else {
             \App\Models\AssignmentSubmission::create([
                 'student_id' => $student->student_id,
                 'module_id' => $moduleId,
                 'program_id' => $module->program_id,
+                'content_id' => $contentId,
                 'files' => $fileInfos,
                 'comments' => $request->comments,
                 'status' => 'draft',
@@ -1019,6 +1023,7 @@ class StudentDashboardController extends Controller
                 'files' => 'sometimes|required',
                 'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
                 'module_id' => 'required|integer',
+                'content_id' => 'required|integer', // <-- ensure content_id is required
                 'comments' => 'nullable|string'
             ]);
 
@@ -1028,14 +1033,16 @@ class StudentDashboardController extends Controller
             }
 
             $moduleId = $request->input('module_id');
+            $contentId = $request->input('content_id');
             $module = Module::find($moduleId);
             if (!$module) {
                 return response()->json(['success' => false, 'message' => 'Module not found.']);
             }
 
-            // Check for draft
+            // Check for draft for this content_id
             $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
                 ->where('module_id', $moduleId)
+                ->where('content_id', $contentId)
                 ->where('status', 'draft')
                 ->first();
             if ($draft) {
@@ -1081,6 +1088,7 @@ class StudentDashboardController extends Controller
                 'student_id' => $student->student_id,
                 'module_id' => $moduleId,
                 'program_id' => $module->program_id,
+                'content_id' => $contentId,
                 'files' => $fileInfos,
                 'comments' => $request->comments,
                 'submitted_at' => now(),
@@ -1088,8 +1096,7 @@ class StudentDashboardController extends Controller
             ]);
             return response()->json(['success' => true, 'message' => 'Assignment submitted successfully!']);
         } catch (\Exception $e) {
-            \Log::error('Assignment submission error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'An error occurred while submitting the assignment.']);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -1102,6 +1109,7 @@ class StudentDashboardController extends Controller
             'files' => 'sometimes|required',
             'files.*' => 'file|mimes:pdf,doc,docx,txt,zip,jpg,jpeg,png|max:102400',
             'module_id' => 'required|integer',
+            'content_id' => 'required|integer', // <-- ensure content_id is required
             'comments' => 'nullable|string'
         ]);
 
@@ -1111,8 +1119,10 @@ class StudentDashboardController extends Controller
         }
 
         $moduleId = $request->input('module_id');
+        $contentId = $request->input('content_id');
         $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
             ->where('module_id', $moduleId)
+            ->where('content_id', $contentId)
             ->where('status', 'draft')
             ->first();
         if (!$draft) {
@@ -1145,15 +1155,18 @@ class StudentDashboardController extends Controller
     public function removeAssignmentDraft(Request $request)
     {
         $request->validate([
-            'module_id' => 'required|integer'
+            'module_id' => 'required|integer',
+            'content_id' => 'required|integer' // <-- ensure content_id is required
         ]);
         $student = Student::where('user_id', session('user_id'))->first();
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Student not found.']);
         }
         $moduleId = $request->input('module_id');
+        $contentId = $request->input('content_id');
         $draft = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
             ->where('module_id', $moduleId)
+            ->where('content_id', $contentId)
             ->where('status', 'draft')
             ->first();
         if ($draft) {
@@ -1773,11 +1786,12 @@ class StudentDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Content not found'], 404);
         }
         
+        // FIX: Only get submissions for this student AND this content_id
         $submissions = \App\Models\AssignmentSubmission::where('student_id', $student->student_id)
-            ->where('module_id', $content->module_id)
+            ->where('content_id', $contentId)
             ->orderBy('submitted_at', 'desc')
             ->get();
-            
+        
         foreach ($submissions as $sub) {
             $sub->files = is_string($sub->files) ? json_decode($sub->files, true) : $sub->files;
         }

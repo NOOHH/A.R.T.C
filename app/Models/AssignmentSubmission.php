@@ -13,6 +13,7 @@ class AssignmentSubmission extends Model
         'student_id',
         'module_id',
         'program_id',
+        'content_id',
         'file_path',
         'original_filename',
         'comments',
