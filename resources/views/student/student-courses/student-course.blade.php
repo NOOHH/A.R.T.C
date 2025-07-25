@@ -44,6 +44,10 @@
         }
     @endphp
 
+    <script>
+        window.completedModuleIds = @json($completedModuleIds ?? []);
+    </script>
+
     <!-- Course Header -->
     <div class="course-header d-flex align-items-center justify-content-between flex-wrap">
         <div class="flex-grow-1">
@@ -982,6 +986,7 @@
             let html = '<div class="courses-grid">';
             courses.forEach(course => {
                 const icon = getContentIcon(course.type || course.course_type || 'course');
+                const isCompleted = window.completedModuleIds && window.completedModuleIds.includes(parseInt(course.course_id));
                 html += `
                     <div class="course-item d-flex justify-content-between align-items-center" onclick="selectCourse('${course.course_id}')">
                         <div class="d-flex align-items-center flex-grow-1">
@@ -997,7 +1002,7 @@
                                 ${course.duration ? `<span class=\"badge bg-secondary ms-1\">${course.duration}</span>` : ''}
                             </div>
                         </div>
-                        <button class="btn btn-success btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); markComplete('course', '${course.course_id}', this)">Mark Complete</button>
+                        <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); toggleComplete('course', '${course.course_id}', this)">${isCompleted ? 'Unmark as Complete' : 'Mark Complete'}</button>
                     </div>
                 `;
             });
@@ -1842,7 +1847,6 @@ if (addSubmissionBtn) {
                 payload = { content_id: id };
             }
 
-            // Always get the CSRF token from meta if not present
             let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
 
             fetch(url, {
@@ -1862,6 +1866,13 @@ if (addSubmissionBtn) {
                     btn.disabled = true;
                     btn.classList.remove('btn-success');
                     btn.classList.add('btn-secondary');
+                    // Update progress indicators in real time
+                    if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
+                        const progressPercent = document.getElementById('progress-percentage');
+                        const progressModules = document.getElementById('progress-modules');
+                        if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
+                        if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                    }
                 } else {
                     btn.disabled = false;
                     btn.innerText = 'Mark Complete';
@@ -1876,6 +1887,65 @@ if (addSubmissionBtn) {
                 btn.classList.remove('btn-secondary');
                 btn.classList.add('btn-success');
                 alert('Error marking as complete.');
+            });
+        }
+
+        function toggleComplete(type, id, btn) {
+            btn.disabled = true;
+            btn.innerText = (btn.innerText === 'Mark Complete') ? 'Marking...' : 'Unmarking...';
+            let url = '';
+            let payload = {};
+            let isCompleted = false;
+            if (type === 'course') {
+                isCompleted = window.completedModuleIds && window.completedModuleIds.includes(parseInt(id));
+                url = isCompleted ? '/student/uncomplete-module' : '/student/complete-module/' + id;
+                payload = isCompleted ? { module_id: id } : {};
+            }
+            let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update completedModuleIds
+                    const moduleId = parseInt(id);
+                    if (isCompleted) {
+                        window.completedModuleIds = window.completedModuleIds.filter(mid => mid !== moduleId);
+                        btn.innerText = 'Mark Complete';
+                        btn.classList.remove('btn-outline-success');
+                        btn.classList.add('btn-success');
+                    } else {
+                        window.completedModuleIds.push(moduleId);
+                        btn.innerText = 'Unmark as Complete';
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    }
+                    btn.disabled = false;
+                    // Update progress indicators in real time
+                    if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
+                        const progressPercent = document.getElementById('progress-percentage');
+                        const progressModules = document.getElementById('progress-modules');
+                        if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
+                        if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                    alert(data.message || 'Error updating completion status.');
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                alert('Error updating completion status.');
             });
         }
     </script>

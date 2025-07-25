@@ -858,87 +858,83 @@ class StudentDashboardController extends Controller
     }
     
     /**
-     * Mark a module as completed
+     * Mark a module as completed (toggle on)
      */
-    public function completeModule(Request $request, $moduleId)
+    public function completeModule($id, \Illuminate\Http\Request $request)
     {
-        try {
-            // Get the student
-            $student = Student::where('user_id', session('user_id'))->first();
-            
-            if (!$student) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Student not found.'
-                ]);
-            }
-            
-            // Get the module
-            $module = Module::find($moduleId);
-            
-            if (!$module) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Module not found.'
-                ]);
-            }
-            
-            // Check if student is enrolled in the program
-            $enrollment = $student->enrollments()->where('program_id', $module->program_id)->first();
-            
-            if (!$enrollment) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You are not enrolled in this course.'
-                ]);
-            }
-            
-            // Check if already completed
-            $existingCompletion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                ->where('module_id', $moduleId)
-                ->first();
-            
-            if ($existingCompletion) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Module is already completed.'
-                ]);
-            }
-            
-            // Create completion record
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.']);
+        }
+        // Check if already completed
+        $exists = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+            ->where('module_id', $id)
+            ->exists();
+        if (!$exists) {
             \App\Models\ModuleCompletion::create([
                 'student_id' => $student->student_id,
-                'module_id' => $moduleId,
-                'program_id' => $module->program_id,
-                'completed_at' => now(),
-                'score' => 100, // Default score for completing the module
-                'time_spent' => 0, // You can track this if needed
-                'submission_data' => null
+                'module_id' => $id,
             ]);
-            
-            // Calculate progress percentage
-            $totalModules = Module::where('program_id', $module->program_id)->count();
-            $completedModules = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                ->where('program_id', $module->program_id)
-                ->count();
-            
-            $progressPercentage = $totalModules > 0 ? round(($completedModules / $totalModules) * 100, 2) : 0;
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Module completed successfully!',
-                'progress_percentage' => $progressPercentage,
-                'completed_modules' => $completedModules,
-                'total_modules' => $totalModules,
-                'course_id' => $module->program_id
-            ]);
-            
+        }
+        // Calculate progress
+        $totalModules = \App\Models\Module::where('program_id', $request->input('program_id'))->count();
+        $completedModules = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+            ->whereIn('module_id', \App\Models\Module::where('program_id', $request->input('program_id'))->pluck('id'))
+            ->count();
+        $progress = $totalModules > 0 ? round(($completedModules / $totalModules) * 100) : 0;
+        return response()->json([
+            'success' => true,
+            'progress_percentage' => $progress,
+            'completed_modules' => $completedModules,
+            'total_modules' => $totalModules,
+        ]);
+    }
+    
+    /**
+     * Unmark a module as completed (toggle off)
+     */
+    public function uncompleteModule(Request $request)
+    {
+        try {
+            $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+            $moduleId = $request->input('module_id');
+            if (!$student || !$moduleId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student or module not found.'
+                ]);
+            }
+            $completion = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                ->where('module_id', $moduleId)
+                ->first();
+            if ($completion) {
+                $programId = $completion->program_id;
+                $completion->delete();
+                // Recalculate progress
+                $totalModules = \App\Models\Module::where('program_id', $programId)->count();
+                $completedModules = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                    ->where('program_id', $programId)
+                    ->count();
+                $progressPercentage = $totalModules > 0 ? round(($completedModules / $totalModules) * 100, 2) : 0;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Module unmarked as complete.',
+                    'progress_percentage' => $progressPercentage,
+                    'completed_modules' => $completedModules,
+                    'total_modules' => $totalModules,
+                    'course_id' => $programId
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Completion record not found.'
+                ]);
+            }
         } catch (\Exception $e) {
-            Log::error('Module completion error: ' . $e->getMessage());
-            
+            \Log::error('Module uncompletion error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while completing the module.'
+                'message' => 'Error unmarking module as complete.'
             ]);
         }
     }
