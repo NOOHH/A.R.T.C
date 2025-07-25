@@ -24,6 +24,9 @@ return new class extends Migration
             $table->integer('time_limit')->default(60); // in minutes
             $table->string('document_path')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_draft')->default(true); // Draft by default
+            $table->boolean('randomize_order')->default(false); // Randomize order toggle
+            $table->json('tags')->nullable(); // Tags for filtering/searching
             $table->timestamps();
 
             $table->foreign('professor_id')->references('professor_id')->on('professors')->onDelete('cascade');

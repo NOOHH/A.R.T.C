@@ -11,6 +11,7 @@
                     <h5 class="card-title mb-0">My Assigned Batches</h5>
                 </div>
                 <div class="card-body">
+                    {{-- Only use $batches as provided by the controller. Do not fetch or display any other batches. --}}
                     @if($batches->count() > 0)
                         <div class="row">
                             @foreach($batches as $batch)

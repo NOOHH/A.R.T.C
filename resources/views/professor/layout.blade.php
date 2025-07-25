@@ -135,7 +135,7 @@
             
             <!-- Brand Logo and Text -->
             <div class="brand-container">
-                <img src="{{ asset('images/logo.png') }}" alt="A.R.T.C" class="brand-logo">
+                <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
                 <span class="brand-text">Professor Dashboard</span>
             </div>
         </div>
@@ -336,6 +336,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- jQuery (required for dynamic dropdowns and AJAX in child views) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @stack('scripts')
 
 <!-- Include Global Chat Component -->

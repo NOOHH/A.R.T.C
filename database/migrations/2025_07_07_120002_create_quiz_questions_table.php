@@ -20,6 +20,7 @@ return new class extends Migration
             $table->text('question_text');
             $table->enum('question_type', ['multiple_choice', 'true_false', 'short_answer', 'essay']);
             $table->json('options')->nullable(); // For multiple choice questions
+            $table->json('tags')->nullable(); // Tags for filtering/searching
             $table->text('correct_answer');
             $table->text('explanation')->nullable();
             $table->string('difficulty')->nullable(); // easy, medium, hard

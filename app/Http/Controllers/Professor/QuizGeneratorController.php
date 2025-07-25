@@ -12,7 +12,7 @@ use App\Models\Announcement;
 use App\Models\AdminSetting;
 use App\Models\Module;
 use App\Models\Course;
-use App\Models\CourseContent;
+use App\Models\ContentItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -51,10 +51,15 @@ class QuizGeneratorController extends Controller
      */
     public function getModulesByProgram($programId)
     {
+        \Log::info('getModulesByProgram called', [
+            'programId' => $programId,
+            'professor_id' => session('professor_id'),
+            'url' => request()->fullUrl(),
+        ]);
         $modules = Module::where('program_id', $programId)
-                        ->where('is_archived', false)
-                        ->orderBy('module_name')
-                        ->get(['module_id', 'module_name']);
+            ->where('is_archived', false)
+            ->orderBy('module_name')
+            ->get(['modules_id as module_id', 'module_name']);
 
         return response()->json([
             'success' => true,
@@ -68,30 +73,33 @@ class QuizGeneratorController extends Controller
     public function getCoursesByModule($moduleId)
     {
         $courses = Course::where('module_id', $moduleId)
-                        ->where('is_archived', false)
-                        ->orderBy('course_name')
-                        ->get(['course_id', 'course_name']);
-
+            ->where('is_archived', false)
+            ->orderBy('subject_name')
+            ->get(['subject_id as course_id', 'subject_name as course_name']);
         return response()->json([
             'success' => true,
             'courses' => $courses
         ]);
     }
 
-    /**
-     * Get content for selected course (AJAX)
-     */
-    public function getContentByCourse($courseId)
-    {
-        $contents = CourseContent::where('course_id', $courseId)
-                                ->orderBy('content_title')
-                                ->get(['content_id', 'content_title']);
+public function getContentsByCourse($courseId)
+{
+    $contents = ContentItem::where('course_id', $courseId)
+                   ->active()
+                   ->ordered()
+                   ->get(['id as content_id','content_title']);
 
-        return response()->json([
-            'success' => true,
-            'contents' => $contents
-        ]);
-    }
+    return response()->json([
+        'success'  => true,
+        'contents' => $contents,
+    ]);
+}
+
+    // Alias for route compatibility: singular 'Content'
+public function getContentByCourse($courseId)
+{
+    return $this->getContentsByCourse($courseId);
+}
 
     public function generate(Request $request)
     {
@@ -105,13 +113,18 @@ class QuizGeneratorController extends Controller
         $request->validate([
             'program_id' => 'required|exists:programs,program_id',
             'module_id' => 'required|exists:modules,module_id',
-            'course_id' => 'required|exists:courses,course_id',
-            'content_id' => 'required|exists:course_contents,content_id',
+            'program_id' => 'required|exists:programs,program_id',
+            'module_id'  => 'required|exists:modules,modules_id',
+            'course_id' => 'required|exists:courses,subject_id',
+            'content_id' => 'required|exists:content_items,id',
             'document' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240', // 10MB max
             'num_questions' => 'required|integer|min:5|max:50',
             'quiz_type' => 'required|in:multiple_choice,true_false,mixed',
             'quiz_title' => 'required|string|max:255',
             'instructions' => 'nullable|string|max:1000',
+            'randomize_order' => 'nullable|boolean',
+            'tags' => 'nullable|array',
+            'is_draft' => 'nullable|boolean',
         ]);
 
         $professor = Professor::find(session('professor_id'));
@@ -130,7 +143,6 @@ class QuizGeneratorController extends Controller
             $generatedQuestions = $this->generateQuestionsFromText(
                 $extractedText,
                 $request->num_questions,
-                'medium', // Default difficulty removed from UI but set to medium
                 $request->quiz_type
             );
 
@@ -143,11 +155,13 @@ class QuizGeneratorController extends Controller
                 'content_id' => $request->content_id,
                 'quiz_title' => $request->quiz_title,
                 'instructions' => $request->instructions,
-                'difficulty' => 'medium', // Default difficulty
+                'randomize_order' => $request->randomize_order ?? false,
+                'tags' => json_encode($request->tags ?? []),
+                'is_draft' => $request->is_draft ?? false,
                 'total_questions' => count($generatedQuestions),
                 'time_limit' => 60, // Default 60 minutes
                 'document_path' => $documentPath,
-                'is_active' => true,
+                'is_active' => !$request->is_draft, // Only active if not a draft
                 'created_at' => now(),
             ]);
 
@@ -245,7 +259,7 @@ class QuizGeneratorController extends Controller
         return json_encode(['csv_questions' => $questions]);
     }
 
-    private function generateQuestionsFromText($text, $numQuestions, $difficulty, $quizType)
+    private function generateQuestionsFromText($text, $numQuestions, $quizType)
     {
         // Check if text contains CSV questions data
         $csvData = json_decode($text, true);
@@ -259,12 +273,6 @@ class QuizGeneratorController extends Controller
         $sentences = array_filter(explode('.', $text));
         $questions = [];
         
-        $difficultyMultiplier = [
-            'easy' => 1,
-            'medium' => 2,
-            'hard' => 3
-        ];
-        
         for ($i = 0; $i < $numQuestions && $i < count($sentences); $i++) {
             $sentence = trim($sentences[$i]);
             if (strlen($sentence) < 10) continue;
@@ -274,16 +282,16 @@ class QuizGeneratorController extends Controller
                 : $quizType;
             
             if ($questionType === 'multiple_choice') {
-                $questions[] = $this->generateMultipleChoiceQuestion($sentence, $difficulty);
+                $questions[] = $this->generateMultipleChoiceQuestion($sentence);
             } else {
-                $questions[] = $this->generateTrueFalseQuestion($sentence, $difficulty);
+                $questions[] = $this->generateTrueFalseQuestion($sentence);
             }
         }
         
         return $questions;
     }
 
-    private function generateMultipleChoiceQuestion($text, $difficulty)
+    private function generateMultipleChoiceQuestion($text)
     {
         // Extract key words from the text
         $words = explode(' ', $text);
@@ -299,11 +307,11 @@ class QuizGeneratorController extends Controller
                 'D' => "Unrelated information about " . $keyWord
             ],
             'correct_answer' => 'A',
-            'points' => $difficulty === 'hard' ? 3 : ($difficulty === 'medium' ? 2 : 1)
+            'points' => 1
         ];
     }
 
-    private function generateTrueFalseQuestion($text, $difficulty)
+    private function generateTrueFalseQuestion($text)
     {
         $isTrue = rand(0, 1);
         
@@ -315,7 +323,7 @@ class QuizGeneratorController extends Controller
                 'B' => 'False'
             ],
             'correct_answer' => $isTrue ? 'A' : 'B',
-            'points' => $difficulty === 'hard' ? 3 : ($difficulty === 'medium' ? 2 : 1)
+            'points' => 1
         ];
     }
 
