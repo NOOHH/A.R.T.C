@@ -2,10 +2,43 @@
 @section('content')
 <div class="container mt-4">
     <h2 class="mb-4"><i class="bi bi-robot"></i> AI Quiz Generator</h2>
+    
+    <!-- Error/Success Messages -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    
+    <!-- Debug Info (will be populated by JavaScript on errors) -->
+    <div id="debug-alert" class="alert alert-info" style="display: none;">
+        <h6>Debug Information:</h6>
+        <div id="debug-content"></div>
+    </div>
+    
     <form id="quiz-generator-form" enctype="multipart/form-data" method="POST" action="{{ route('professor.quiz-generator.generate') }}">
         @csrf
         <div class="row g-3 mb-3">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="program_id" class="form-label">Program</label>
                 <select id="program_id" name="program_id" class="form-select" required>
                     <option value="">Select Program</option>
@@ -14,22 +47,16 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="module_id" class="form-label">Module</label>
                 <select id="module_id" name="module_id" class="form-select" required disabled>
                     <option value="">Select Module</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="course_id" class="form-label">Course</label>
                 <select id="course_id" name="course_id" class="form-select" required disabled>
                     <option value="">Select Course</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="content_id" class="form-label">Course Content</label>
-                <select id="content_id" name="content_id" class="form-select" required disabled>
-                    <option value="">Select Content</option>
                 </select>
             </div>
         </div>
@@ -113,6 +140,9 @@
                     <td>
                         <button class="btn btn-outline-secondary btn-sm view-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">View/Edit Questions</button>
                         <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Preview</button>
+                        @if($quiz->jotform_url)
+                            <a href="{{ $quiz->jotform_url }}" target="_blank" class="btn btn-outline-success btn-sm">Open JotForm</a>
+                        @endif
                         @if($quiz->is_draft)
                             <form action="{{ route('professor.quiz-generator.publish', $quiz->quiz_id) }}" method="POST" class="d-inline">
                                 @csrf
@@ -172,7 +202,7 @@ $('#program_id').on('change', function() {
     let programId = $(this).val();
     $('#module_id').prop('disabled', true).html('<option value="">Select Module</option>');
     $('#course_id').prop('disabled', true).html('<option value="">Select Course</option>');
-    $('#content_id').prop('disabled', true).html('<option value="">Select Content</option>');
+    
     if (programId) {
         $.get('/professor/quiz-generator/modules/' + programId, function(res) {
             if (res.success) {
@@ -183,29 +213,17 @@ $('#program_id').on('change', function() {
         });
     }
 });
+
 $('#module_id').on('change', function() {
     let moduleId = $(this).val();
     $('#course_id').prop('disabled', true).html('<option value="">Select Course</option>');
-    $('#content_id').prop('disabled', true).html('<option value="">Select Content</option>');
+    
     if (moduleId) {
         $.get('/professor/quiz-generator/courses/' + moduleId, function(res) {
             if (res.success) {
                 let options = '<option value="">Select Course</option>';
                 res.courses.forEach(c => options += `<option value="${c.course_id}">${c.course_name}</option>`);
                 $('#course_id').html(options).prop('disabled', false);
-            }
-        });
-    }
-});
-$('#course_id').on('change', function() {
-    let courseId = $(this).val();
-    $('#content_id').prop('disabled', true).html('<option value="">Select Content</option>');
-    if (courseId) {
-        $.get('/professor/quiz-generator/contents/' + courseId, function(res) {
-            if (res.success) {
-                let options = '<option value="">Select Content</option>';
-                res.contents.forEach(c => options += `<option value="${c.content_id}">${c.content_title}</option>`);
-                $('#content_id').html(options).prop('disabled', false);
             }
         });
     }
@@ -231,14 +249,160 @@ $('.preview-quiz-btn').on('click', function() {
     });
 });
 
-// --- Simple Tag Input: Convert comma-separated to array on submit ---
-$('#quiz-generator-form').on('submit', function() {
+// --- Enhanced Form Submission with Error Handling ---
+$('#quiz-generator-form').on('submit', function(e) {
+    e.preventDefault(); // Prevent default form submission
+    console.log('Form submission started');
+    
+    // Validate required fields
+    const requiredFields = {
+        'program_id': $('#program_id').val(),
+        'module_id': $('#module_id').val(), 
+        'course_id': $('#course_id').val(),
+        'quiz_title': $('#quiz_title').val(),
+        'document': $('#document')[0].files.length > 0 ? $('#document')[0].files[0] : null
+    };
+    
+    console.log('Required fields check:', requiredFields);
+    
+    // Check for missing required fields
+    let missingFields = [];
+    if (!requiredFields.program_id) missingFields.push('Program');
+    if (!requiredFields.module_id) missingFields.push('Module');
+    if (!requiredFields.course_id) missingFields.push('Course');
+    if (!requiredFields.quiz_title) missingFields.push('Quiz Title');
+    if (!requiredFields.document) missingFields.push('Document');
+    
+    if (missingFields.length > 0) {
+        alert('Please fill in all required fields: ' + missingFields.join(', '));
+        return false;
+    }
+    
+    // Process tags
     let tags = $('#tags').val();
     if (tags) {
         let tagArr = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-        $('<input>').attr({type: 'hidden', name: 'tags[]'}).val(tagArr).appendTo(this);
-        $('#tags').prop('disabled', true); // prevent double submit
+        console.log('Tags processed:', tagArr);
+        
+        // Remove existing tag inputs
+        $(this).find('input[name="tags[]"]').remove();
+        
+        // Add new tag inputs
+        tagArr.forEach(tag => {
+            $('<input>').attr({
+                type: 'hidden', 
+                name: 'tags[]'
+            }).val(tag).appendTo(this);
+        });
     }
+    
+    // Add loading state to submit button
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...');
+    submitBtn.prop('disabled', true);
+    
+    // Create FormData for file upload
+    const formData = new FormData(this);
+    
+    // Fix the randomize_order checkbox value - convert "on" to boolean
+    if (formData.has('randomize_order')) {
+        formData.set('randomize_order', '1'); // Laravel expects '1' for true
+    } else {
+        formData.set('randomize_order', '0'); // Laravel expects '0' for false
+    }
+    
+    console.log('Form data being submitted:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value instanceof File ? `File: ${value.name}` : value);
+    }
+    
+    // Submit via AJAX for better error handling
+    $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            console.log('Success response:', response);
+            if (response.success) {
+                let message = 'Quiz generated successfully!';
+                if (response.data.jotform && response.data.jotform.form_url) {
+                    message += `\n\nJotForm created: ${response.data.jotform.form_url}`;
+                }
+                alert(message);
+                location.reload(); // Refresh to show new quiz
+            } else {
+                alert('Error: ' + (response.message || 'Unknown error occurred'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('AJAX Error Details:');
+            console.log('Status:', status);
+            console.log('Error:', error);
+            console.log('Response Text:', xhr.responseText);
+            console.log('Status Code:', xhr.status);
+            
+            let errorMessage = 'An error occurred while generating the quiz.';
+            let debugInfo = '';
+            
+            if (xhr.status === 422) {
+                // Validation errors
+                try {
+                    const errors = JSON.parse(xhr.responseText);
+                    if (errors.errors) {
+                        errorMessage = 'Validation errors:\n';
+                        Object.keys(errors.errors).forEach(field => {
+                            errorMessage += `- ${field}: ${errors.errors[field].join(', ')}\n`;
+                        });
+                    } else if (errors.message) {
+                        errorMessage = errors.message;
+                    }
+                } catch (e) {
+                    errorMessage = 'Validation error: ' + xhr.responseText;
+                }
+            } else if (xhr.status === 500) {
+                try {
+                    const serverError = JSON.parse(xhr.responseText);
+                    if (serverError.message) {
+                        errorMessage = 'Server error: ' + serverError.message;
+                        if (serverError.debug_info) {
+                            debugInfo = `Error at line ${serverError.debug_info.error_line} in ${serverError.debug_info.error_file}`;
+                        }
+                    }
+                } catch (e) {
+                    errorMessage = 'Server error. Please check the server logs.';
+                }
+            } else if (xhr.status === 419) {
+                errorMessage = 'CSRF token mismatch. Please refresh the page and try again.';
+            } else if (xhr.status === 0) {
+                errorMessage = 'Network error. Please check your internet connection.';
+            }
+            
+            alert(errorMessage);
+            
+            // Show debug info if available
+            if (debugInfo || xhr.responseText) {
+                $('#debug-content').html(`
+                    <strong>Status Code:</strong> ${xhr.status}<br>
+                    <strong>Status:</strong> ${status}<br>
+                    <strong>Error:</strong> ${error}<br>
+                    ${debugInfo ? `<strong>Debug:</strong> ${debugInfo}<br>` : ''}
+                    <strong>Response:</strong> <pre style="white-space: pre-wrap; font-size: 12px;">${xhr.responseText}</pre>
+                `);
+                $('#debug-alert').show();
+            }
+        },
+        complete: function() {
+            // Restore button state
+            submitBtn.html(originalText);
+            submitBtn.prop('disabled', false);
+            $('#tags').prop('disabled', false);
+        }
+    });
+    
+    return false;
 });
 </script>
 @endpush

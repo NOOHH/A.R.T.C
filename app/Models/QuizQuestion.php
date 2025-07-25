@@ -10,7 +10,8 @@ class QuizQuestion extends Model
     use HasFactory;
 
     protected $table = 'quiz_questions';
-    protected $primaryKey = 'quiz_id'; // Note: This table uses quiz_id as primary key
+    protected $primaryKey = 'id'; // Using id as primary key, not quiz_id
+    public $incrementing = true;
 
     protected $fillable = [
         'quiz_id',

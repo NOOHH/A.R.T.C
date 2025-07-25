@@ -1,0 +1,24 @@
+Machine Design Fundamentals
+
+This document covers basic machine design principles including stress analysis, material selection, and component design.
+
+Stress Analysis
+Stress is force per unit area applied to a material. There are three main types of stress: tensile, compressive, and shear stress.
+
+Material Selection
+Engineers must consider factors such as strength, weight, cost, and corrosion resistance when selecting materials for machine components.
+
+Safety Factors
+A safety factor is the ratio of ultimate strength to working stress. It ensures safe operation under varying conditions.
+
+Bearing Design
+Bearings support rotating shafts and reduce friction. Ball bearings are commonly used for high-speed applications.
+
+Gear Systems
+Gears transmit power between rotating shafts. Gear ratio determines the speed and torque relationship.
+
+Welding Processes
+Welding creates permanent joints between metal components. Common processes include MIG, TIG, and arc welding.
+
+Heat Treatment
+Heat treatment processes can improve material properties such as hardness, toughness, and machinability.

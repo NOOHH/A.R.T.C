@@ -15,6 +15,9 @@ class Quiz extends Model
     protected $fillable = [
         'professor_id',
         'program_id',
+        'module_id',
+        'course_id', 
+        'content_id',
         'quiz_title',
         'instructions',
         'total_questions',
@@ -28,11 +31,11 @@ class Quiz extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
         'is_draft' => 'boolean',
         'randomize_order' => 'boolean',
         'tags' => 'array',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function professor()
