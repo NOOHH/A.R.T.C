@@ -418,10 +418,35 @@ class StudentDashboardController extends Controller
             
             // Get deadlines for this student from all enrolled programs
             $enrolledProgramIds = $enrollments->pluck('program_id')->toArray();
-            // Get all active course_ids the student is enrolled in (via enrollment_courses)
+            
+            // Get all active course_ids the student is enrolled in
+            // For modular: from enrollment_courses table
+            // For full: all courses in enrolled programs
             $enrolledCourseIds = \App\Models\EnrollmentCourse::whereHas('enrollment', function($q) use ($student) {
                 $q->where('student_id', $student->student_id);
             })->where('is_active', true)->pluck('course_id')->toArray();
+            
+            // For Full program enrollments, add ALL courses in enrolled programs
+            $fullProgramEnrollments = $enrollments->where('enrollment_type', 'Full');
+            foreach ($fullProgramEnrollments as $enrollment) {
+                if ($enrollment->program_id) {
+                    $programCourseIds = \App\Models\Course::whereHas('module', function($q) use ($enrollment) {
+                        $q->where('program_id', $enrollment->program_id);
+                    })->pluck('subject_id')->toArray();
+                    
+                    $enrolledCourseIds = array_merge($enrolledCourseIds, $programCourseIds);
+                }
+            }
+            
+            // Remove duplicates
+            $enrolledCourseIds = array_unique($enrolledCourseIds);
+            
+            Log::info('Deadlines Debug Info', [
+                'student_id' => $student->student_id,
+                'enrolled_program_ids' => $enrolledProgramIds,
+                'enrolled_course_ids' => $enrolledCourseIds,
+                'enrollments_types' => $enrollments->pluck('enrollment_type')->toArray()
+            ]);
 
             // Get deadlines from deadlines table (including overdue ones)
             $deadlines = \App\Models\Deadline::where('student_id', $student->student_id)
@@ -484,6 +509,18 @@ class StudentDashboardController extends Controller
                     // Show upcoming deadlines and overdue assignments
                     return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
                 });
+            
+            Log::info('Assignment Deadlines Found', [
+                'count' => $assignmentDeadlines->count(),
+                'deadlines' => $assignmentDeadlines->map(function($d) {
+                    return [
+                        'title' => $d->title,
+                        'due_date' => $d->due_date,
+                        'course_id' => $d->course_id,
+                        'status' => $d->status
+                    ];
+                })->toArray()
+            ]);
 
             // Auto-create missing deadline entries for assignments that don't have them
             $this->createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds);

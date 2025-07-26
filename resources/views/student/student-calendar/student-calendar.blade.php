@@ -373,6 +373,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         assignments: data.events.filter(e => e.type === 'assignment').length,
                         announcements: data.events.filter(e => e.type === 'announcement').length
                     });
+                } else if (data.success === false && data.message === 'Student not found') {
+                    console.log('🔒 Authentication required for events - using demo data');
+                    // Use mock data for demo when not authenticated
+                    const mockEvents = generateMockEvents(year, month);
+                    currentEvents = mockEvents;
+                    populateCalendarEvents();
+                    updateStats({
+                        meetings: mockEvents.filter(e => e.type === 'meeting').length,
+                        assignments: mockEvents.filter(e => e.type === 'assignment').length,
+                        announcements: mockEvents.filter(e => e.type === 'announcement').length
+                    });
                 } else {
                     // Fallback to mock data for demo
                     console.log('ℹ️ No real events found, using mock data');
@@ -550,8 +561,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('✅ Found real events, displaying:', data.events.length);
                     displayTodaySchedule(data.events);
                 } else if (data.success === false && data.message === 'Student not found') {
-                    console.log('🔒 Authentication required');
+                    console.log('🔒 Authentication required - showing auth error');
                     displayAuthError();
+                } else if (data.success === false) {
+                    console.log('⚠️ API returned error:', data.message);
+                    // Still show mock data if API fails for other reasons
+                    const today = new Date();
+                    const mockTodayEvents = [
+                        {
+                            id: 'today_1',
+                            title: 'Morning Lecture',
+                            start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0).toISOString(),
+                            type: 'meeting',
+                            description: 'Software Engineering Fundamentals',
+                            program: 'Computer Science',
+                            professor: 'Dr. Johnson',
+                            time: '9:00 AM'
+                        }
+                    ];
+                    displayTodaySchedule(mockTodayEvents);
                 } else {
                     console.log('ℹ️ No real events found, using mock data for demo');
                     // If no real data, use mock data for demo
@@ -806,48 +834,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make showEventDetails available globally
     window.showEventDetails = showEventDetails;
+});
+
+// Debug function to test calendar endpoints - defined outside DOMContentLoaded for global access
+window.testCalendarEndpoints = function() {
+    console.log('🧪 Testing Calendar Endpoints...');
     
-    // Debug function to test calendar endpoints
-    window.testCalendarEndpoints = function() {
-        console.log('🧪 Testing Calendar Endpoints...');
+    // Test 1: Today's schedule
+    console.log('1️⃣ Testing /student/calendar/today');
+    fetch('/student/calendar/today')
+        .then(response => {
+            console.log('Today API Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Today API Response:', data);
+            alert('Today API Response: ' + JSON.stringify(data, null, 2));
+        })
+        .catch(error => {
+            console.error('Today API Error:', error);
+            alert('Today API Error: ' + error.message);
+        });
+    
+    // Test 2: Current month events
+    setTimeout(() => {
+        const today = new Date();
+        const url = `/student/calendar/events?year=${today.getFullYear()}&month=${today.getMonth() + 1}`;
+        console.log('2️⃣ Testing:', url);
         
-        // Test 1: Today's schedule
-        console.log('1️⃣ Testing /student/calendar/today');
-        fetch('/student/calendar/today')
+        fetch(url)
             .then(response => {
-                console.log('Today API Status:', response.status);
+                console.log('Events API Status:', response.status);
                 return response.json();
             })
             .then(data => {
-                console.log('Today API Response:', data);
-                alert('Today API Response: ' + JSON.stringify(data, null, 2));
+                console.log('Events API Response:', data);
+                alert('Events API Response: ' + JSON.stringify(data, null, 2));
             })
             .catch(error => {
-                console.error('Today API Error:', error);
-                alert('Today API Error: ' + error.message);
+                console.error('Events API Error:', error);
+                alert('Events API Error: ' + error.message);
             });
-        
-        // Test 2: Current month events
-        setTimeout(() => {
-            const today = new Date();
-            const url = `/student/calendar/events?year=${today.getFullYear()}&month=${today.getMonth() + 1}`;
-            console.log('2️⃣ Testing:', url);
-            
-            fetch(url)
-                .then(response => {
-                    console.log('Events API Status:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Events API Response:', data);
-                    alert('Events API Response: ' + JSON.stringify(data, null, 2));
-                })
-                .catch(error => {
-                    console.error('Events API Error:', error);
-                    alert('Events API Error: ' + error.message);
-                });
-        }, 1000);
-    };
-});
+    }, 1000);
+};
 </script>
 @endsection

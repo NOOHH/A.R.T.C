@@ -587,6 +587,74 @@ Route::get('/student/test-login', function() {
     }
 })->name('student.test.login');
 
+// Debug route to check deadlines - REMOVE IN PRODUCTION
+Route::get('/student/debug-deadlines', function() {
+    try {
+        // Check if user is logged in
+        if (!session('user_id')) {
+            return response()->json(['error' => 'Not logged in. Visit /student/test-login first.']);
+        }
+        
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        if (!$student) {
+            return response()->json(['error' => 'Student not found']);
+        }
+        
+        // Get enrollments
+        $enrollments = \App\Models\Enrollment::where('student_id', $student->student_id)->get();
+        $enrolledProgramIds = $enrollments->pluck('program_id')->toArray();
+        
+        // Get enrolled course IDs
+        $enrolledCourseIds = \App\Models\EnrollmentCourse::whereHas('enrollment', function($q) use ($student) {
+            $q->where('student_id', $student->student_id);
+        })->where('is_active', true)->pluck('course_id')->toArray();
+        
+        // For Full programs, add all courses
+        $fullProgramEnrollments = $enrollments->where('enrollment_type', 'Full');
+        foreach ($fullProgramEnrollments as $enrollment) {
+            if ($enrollment->program_id) {
+                $programCourseIds = \App\Models\Course::whereHas('module', function($q) use ($enrollment) {
+                    $q->where('program_id', $enrollment->program_id);
+                })->pluck('subject_id')->toArray();
+                
+                $enrolledCourseIds = array_merge($enrolledCourseIds, $programCourseIds);
+            }
+        }
+        $enrolledCourseIds = array_unique($enrolledCourseIds);
+        
+        // Get assignment deadlines
+        $assignmentDeadlines = \App\Models\ContentItem::where('content_type', 'assignment')
+            ->whereNotNull('due_date')
+            ->whereIn('course_id', $enrolledCourseIds)
+            ->get();
+        
+        return response()->json([
+            'student_id' => $student->student_id,
+            'enrollments' => $enrollments->map(function($e) {
+                return [
+                    'id' => $e->enrollment_id,
+                    'program_id' => $e->program_id,
+                    'type' => $e->enrollment_type,
+                    'status' => $e->enrollment_status
+                ];
+            }),
+            'enrolled_program_ids' => $enrolledProgramIds,
+            'enrolled_course_ids' => $enrolledCourseIds,
+            'assignment_deadlines_count' => $assignmentDeadlines->count(),
+            'assignment_deadlines' => $assignmentDeadlines->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->content_title,
+                    'due_date' => $item->due_date,
+                    'course_id' => $item->course_id
+                ];
+            })
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()]);
+    }
+})->name('student.debug.deadlines');
+
 // Test routes for debugging rejection details
 Route::get('/test-rejection-details', function () {
     return view('test-rejection-details');
