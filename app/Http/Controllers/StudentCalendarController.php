@@ -174,24 +174,24 @@ class StudentCalendarController extends Controller
         if ($enrolledPrograms->isNotEmpty()) {
             $announcements = Announcement::with(['program', 'professor'])
                 ->whereIn('program_id', $enrolledPrograms)
-                ->whereBetween('announcement_date', [$startDate, $endDate])
-                ->where('status', 'active')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('is_active', true)
                 ->get();
 
             foreach ($announcements as $announcement) {
                 $events->push([
                     'id' => 'announcement_' . $announcement->announcement_id,
                     'title' => $announcement->title,
-                    'start' => $announcement->announcement_date->toISOString(),
+                    'start' => $announcement->created_at->toISOString(),
                     'type' => 'announcement',
                     'description' => $announcement->content ?? '',
                     'program' => $announcement->program->program_name ?? '',
                     'professor' => $announcement->professor->name ?? 'System',
-                    'announcement_type' => $announcement->announcement_type ?? 'general',
+                    'announcement_type' => $announcement->type ?? 'general',
                     'content' => $announcement->content ?? '',
                     'expire_date' => $announcement->expire_date ?? null,
                     'video_link' => $announcement->video_link ?? null,
-                    'time' => $announcement->announcement_date->format('g:i A')
+                    'time' => $announcement->created_at->format('g:i A')
                 ]);
             }
         }
@@ -298,21 +298,21 @@ class StudentCalendarController extends Controller
         if ($enrolledPrograms->isNotEmpty()) {
             $announcements = Announcement::with(['program', 'professor'])
                 ->whereIn('program_id', $enrolledPrograms)
-                ->whereDate('announcement_date', $today)
-                ->where('status', 'active')
-                ->orderBy('announcement_date', 'asc')
+                ->whereDate('created_at', $today)
+                ->where('is_active', true)
+                ->orderBy('created_at', 'asc')
                 ->get();
 
             foreach ($announcements as $announcement) {
                 $events->push([
                     'id' => 'announcement_' . $announcement->announcement_id,
                     'title' => $announcement->title,
-                    'start' => $announcement->announcement_date->toISOString(),
+                    'start' => $announcement->created_at->toISOString(),
                     'type' => 'announcement',
                     'description' => $announcement->content ?? '',
                     'program' => $announcement->program->program_name ?? '',
                     'professor' => $announcement->professor->name ?? 'System',
-                    'time' => $announcement->announcement_date->format('g:i A')
+                    'time' => $announcement->created_at->format('g:i A')
                 ]);
             }
         }
@@ -386,12 +386,12 @@ class StudentCalendarController extends Controller
                     $event = [
                         'id' => 'announcement_' . $announcement->announcement_id,
                         'title' => $announcement->title,
-                        'start' => $announcement->announcement_date->toISOString(),
+                        'start' => $announcement->created_at->toISOString(),
                         'type' => 'announcement',
                         'description' => $announcement->content ?? '',
                         'program' => $announcement->program->program_name ?? '',
                         'professor' => $announcement->professor->name ?? 'System',
-                        'announcement_type' => $announcement->announcement_type ?? 'general',
+                        'announcement_type' => $announcement->type ?? 'general',
                         'content' => $announcement->content ?? '',
                         'expire_date' => $announcement->expire_date ?? null,
                         'video_link' => $announcement->video_link ?? null
