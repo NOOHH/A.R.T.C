@@ -40,7 +40,31 @@ class CompletionController extends Controller
         );
         $completion->completed_at = Carbon::now();
         $completion->save();
-        return response()->json(['success' => true]);
+        
+        Log::info('Course completion saved/updated', [
+            'student_id' => $studentId,
+            'course_id' => $courseId,
+            'module_id' => $moduleId,
+            'completion_id' => $completion->id
+        ]);
+
+        // Check if module should be auto-completed
+        if ($moduleId) {
+            $this->checkAndAutoCompleteModule($studentId, $moduleId);
+        }
+
+        // Calculate and return progress information for dashboard updates
+        $progressData = $this->calculateStudentProgress($studentId);
+        
+        return response()->json([
+            'success' => true,
+            'progress_percentage' => $progressData['progress_percentage'],
+            'completed_modules' => $progressData['completed_modules'],
+            'total_modules' => $progressData['total_modules'],
+            'type' => 'course',
+            'course_id' => $courseId,
+            'module_id' => $moduleId
+        ]);
     }
 
     public function markContentComplete(Request $request)
@@ -62,6 +86,13 @@ class CompletionController extends Controller
         $contentId = $request->input('content_id');
         $courseId = $request->input('course_id');
         $moduleId = $request->input('module_id');
+
+        Log::info('DEBUG: markContentComplete processing', [
+            'student_id' => $studentId,
+            'content_id' => $contentId,
+            'course_id' => $courseId,
+            'module_id' => $moduleId
+        ]);
 
         // Use ContentCompletion model for content completions
         $completion = ContentCompletion::firstOrCreate(
@@ -87,17 +118,34 @@ class CompletionController extends Controller
 
         // Check if all content in the course is completed for auto-course completion
         if ($courseId && $moduleId) {
+            Log::info('DEBUG: Checking auto-course completion', [
+                'student_id' => $studentId,
+                'course_id' => $courseId,
+                'module_id' => $moduleId
+            ]);
             $this->checkAndAutoCompleteCourse($studentId, $courseId, $moduleId);
         }
 
         // Calculate and return progress information for dashboard updates
+        Log::info('DEBUG: Calculating student progress', ['student_id' => $studentId]);
         $progressData = $this->calculateStudentProgress($studentId);
+        
+        Log::info('DEBUG: Progress data calculated', [
+            'student_id' => $studentId,
+            'progress_percentage' => $progressData['progress_percentage'],
+            'completed_modules' => $progressData['completed_modules'],
+            'total_modules' => $progressData['total_modules']
+        ]);
         
         return response()->json([
             'success' => true,
             'progress_percentage' => $progressData['progress_percentage'],
             'completed_modules' => $progressData['completed_modules'],
-            'total_modules' => $progressData['total_modules']
+            'total_modules' => $progressData['total_modules'],
+            'type' => 'content',
+            'content_id' => $contentId,
+            'course_id' => $courseId,
+            'module_id' => $moduleId
         ]);
     }
 
@@ -106,7 +154,14 @@ class CompletionController extends Controller
         $request->validate([
             'module_id' => 'required|integer',
         ]);
-        $studentId = Auth::id();
+        
+        // Fix: Get student properly using session user_id
+        $userId = session('user_id');
+        $student = \App\Models\Student::where('user_id', $userId)->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.'], 401);
+        }
+        $studentId = $student->student_id;
         $moduleId = $request->input('module_id');
 
         // Check if all content items for this module are completed by the student
@@ -124,11 +179,11 @@ class CompletionController extends Controller
             return response()->json(['success' => false, 'message' => 'You must complete all course content before marking this module as complete.']);
         }
 
-        // Assuming you have a ModuleCompletion model/table
+        // Fix: Use correct field name 'modules_id' instead of 'module_id'
         $completion = \App\Models\ModuleCompletion::firstOrCreate(
             [
                 'student_id' => $studentId,
-                'module_id' => $moduleId,
+                'modules_id' => $moduleId, // Fixed: was 'module_id'
             ],
             [
                 'completed_at' => Carbon::now(),
@@ -194,6 +249,11 @@ class CompletionController extends Controller
      */
     private function checkAndAutoCompleteModule($studentId, $moduleId)
     {
+        Log::info('DEBUG: checkAndAutoCompleteModule called', [
+            'student_id' => $studentId,
+            'module_id' => $moduleId
+        ]);
+
         // Validate that moduleId is actually a valid module ID, not a course ID
         $module = \App\Models\Module::where('modules_id', $moduleId)->first();
         if (!$module) {
@@ -215,6 +275,13 @@ class CompletionController extends Controller
             ->pluck('course_id') // This stores subject_id values
             ->toArray();
 
+        Log::info('DEBUG: Module completion check', [
+            'student_id' => $studentId,
+            'module_id' => $moduleId,
+            'all_courses' => $allCourseIds,
+            'completed_courses' => $completedCourseIds
+        ]);
+
         // Check if all courses are completed
         $allCompleted = empty(array_diff($allCourseIds, $completedCourseIds));
 
@@ -230,7 +297,7 @@ class CompletionController extends Controller
             ]);
 
             // Auto-complete the module
-            \App\Models\ModuleCompletion::firstOrCreate(
+            $moduleCompletion = \App\Models\ModuleCompletion::firstOrCreate(
                 [
                     'student_id' => $studentId,
                     'modules_id' => $moduleId, // This should be the actual modules_id, not course_id
@@ -244,7 +311,15 @@ class CompletionController extends Controller
             Log::info('Module auto-completed', [
                 'student_id' => $studentId,
                 'module_id' => $moduleId,
-                'program_id' => $programId
+                'program_id' => $programId,
+                'module_completion_id' => $moduleCompletion->id
+            ]);
+        } else {
+            Log::info('Module not ready for auto-completion', [
+                'student_id' => $studentId,
+                'module_id' => $moduleId,
+                'all_completed' => $allCompleted,
+                'course_count' => count($allCourseIds)
             ]);
         }
     }
@@ -254,7 +329,9 @@ class CompletionController extends Controller
      */
     public function checkModuleCompletion(Request $request, $moduleId)
     {
-        $student = session('user_id') ? \App\Models\Student::where('student_id', session('user_id'))->first() : null;
+        // Fix: Get student properly using session user_id
+        $userId = session('user_id');
+        $student = \App\Models\Student::where('user_id', $userId)->first();
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Student not found.'], 401);
         }
@@ -285,31 +362,151 @@ class CompletionController extends Controller
 
     /**
      * Calculate student progress for dashboard updates
+     * Enhanced to handle modular enrollments based on enrolled courses
+     * Made public so other controllers can use this method
      */
-    private function calculateStudentProgress($studentId)
+    public function calculateStudentProgress($studentId)
     {
-        // Get student's enrolled program
+        // Get student's enrolled programs
         $student = \App\Models\Student::where('student_id', $studentId)->first();
         if (!$student) {
             return ['progress_percentage' => 0, 'completed_modules' => 0, 'total_modules' => 0];
         }
 
-        // Get all modules for student's program
-        $totalModules = \App\Models\Module::where('program_id', $student->program_id)->count();
-        
-        // Get completed modules
-        $completedModules = \App\Models\ModuleCompletion::where('student_id', $studentId)
-            ->whereHas('module', function($query) use ($student) {
-                $query->where('program_id', $student->program_id);
-            })
-            ->count();
+        // Get student's enrollments to find their programs
+        $enrollments = \App\Models\Enrollment::where('student_id', $studentId)
+            ->orWhere('user_id', $student->user_id)
+            ->with('program')
+            ->get();
 
-        $progressPercentage = $totalModules > 0 ? round(($completedModules / $totalModules) * 100, 1) : 0;
+        if ($enrollments->isEmpty()) {
+            return ['progress_percentage' => 0, 'completed_modules' => 0, 'total_modules' => 0];
+        }
+
+        $totalContentItems = 0;
+        $completedContentItems = 0;
+        $totalModules = 0;
+        $completedModules = 0;
+
+        foreach ($enrollments as $enrollment) {
+            if (!$enrollment->program) continue;
+
+            Log::info('Processing enrollment', [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'program_id' => $enrollment->program->program_id,
+                'enrollment_type' => $enrollment->enrollment_type ?? 'full'
+            ]);
+
+            // Check if this is a modular enrollment
+            if (isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
+                // For modular enrollments, calculate based on enrolled courses only
+                $enrolledCourseIds = $enrollment->enrollmentCourses()
+                    ->where('is_active', true)
+                    ->pluck('course_id')
+                    ->toArray();
+                
+                Log::info('Modular enrollment - enrolled courses', [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'enrolled_courses' => $enrolledCourseIds
+                ]);
+
+                if (!empty($enrolledCourseIds)) {
+                    // Get all content items for enrolled courses
+                    $courseContentItems = \App\Models\ContentItem::whereIn('course_id', $enrolledCourseIds)->count();
+                    $totalContentItems += $courseContentItems;
+
+                    // Get completed content items for enrolled courses
+                    $completedCourseContent = \App\Models\ContentCompletion::where('student_id', $studentId)
+                        ->whereIn('course_id', $enrolledCourseIds)
+                        ->count();
+                    $completedContentItems += $completedCourseContent;
+
+                    // For modular, also count module completions based on enrolled courses
+                    $moduleIdsWithEnrolledCourses = \App\Models\Course::whereIn('subject_id', $enrolledCourseIds)
+                        ->pluck('module_id')
+                        ->unique()
+                        ->toArray();
+                    
+                    $totalModules += count($moduleIdsWithEnrolledCourses);
+                    
+                    $completedModulesForEnrollment = \App\Models\ModuleCompletion::where('student_id', $studentId)
+                        ->where('program_id', $enrollment->program->program_id)
+                        ->whereIn('modules_id', $moduleIdsWithEnrolledCourses)
+                        ->count();
+                    $completedModules += $completedModulesForEnrollment;
+
+                    Log::info('Modular progress calculation', [
+                        'course_content_items' => $courseContentItems,
+                        'completed_content' => $completedCourseContent,
+                        'modules_with_courses' => $moduleIdsWithEnrolledCourses,
+                        'completed_modules' => $completedModulesForEnrollment
+                    ]);
+                }
+            } else {
+                // For full program enrollments, use traditional module-based calculation
+                $programModules = \App\Models\Module::where('program_id', $enrollment->program->program_id)->count();
+                $totalModules += $programModules;
+
+                $programCompletedModules = \App\Models\ModuleCompletion::where('student_id', $studentId)
+                    ->where('program_id', $enrollment->program->program_id)
+                    ->count();
+                $completedModules += $programCompletedModules;
+
+                // Also get content completion for full programs
+                $allProgramCourses = \App\Models\Module::where('program_id', $enrollment->program->program_id)
+                    ->with('courses')
+                    ->get()
+                    ->pluck('courses')
+                    ->flatten()
+                    ->pluck('subject_id')
+                    ->toArray();
+
+                if (!empty($allProgramCourses)) {
+                    $programContentItems = \App\Models\ContentItem::whereIn('course_id', $allProgramCourses)->count();
+                    $totalContentItems += $programContentItems;
+
+                    $programCompletedContent = \App\Models\ContentCompletion::where('student_id', $studentId)
+                        ->whereIn('course_id', $allProgramCourses)
+                        ->count();
+                    $completedContentItems += $programCompletedContent;
+                }
+
+                Log::info('Full program progress calculation', [
+                    'program_id' => $enrollment->program->program_id,
+                    'total_modules' => $programModules,
+                    'completed_modules' => $programCompletedModules,
+                    'content_items' => $programContentItems ?? 0,
+                    'completed_content' => $programCompletedContent ?? 0
+                ]);
+            }
+        }
+
+        // Calculate progress based on content completion (more granular)
+        $contentProgressPercentage = $totalContentItems > 0 ? round(($completedContentItems / $totalContentItems) * 100, 1) : 0;
+        
+        // Also calculate module-based progress for compatibility
+        $moduleProgressPercentage = $totalModules > 0 ? round(($completedModules / $totalModules) * 100, 1) : 0;
+
+        // Use content-based progress as primary, fall back to module-based
+        $finalProgressPercentage = $totalContentItems > 0 ? $contentProgressPercentage : $moduleProgressPercentage;
+
+        Log::info('Final progress calculation', [
+            'student_id' => $studentId,
+            'total_content_items' => $totalContentItems,
+            'completed_content_items' => $completedContentItems,
+            'content_progress_percentage' => $contentProgressPercentage,
+            'total_modules' => $totalModules,
+            'completed_modules' => $completedModules,
+            'module_progress_percentage' => $moduleProgressPercentage,
+            'final_progress_percentage' => $finalProgressPercentage
+        ]);
 
         return [
-            'progress_percentage' => $progressPercentage,
+            'progress_percentage' => $finalProgressPercentage,
             'completed_modules' => $completedModules,
-            'total_modules' => $totalModules
+            'total_modules' => $totalModules,
+            'completed_content' => $completedContentItems,
+            'total_content' => $totalContentItems
         ];
     }
 } 

@@ -566,13 +566,58 @@ class ClassMeetingController extends Controller
         // Optionally, keep pastMeetings for attendance stats if needed
         $pastMeetings = collect();
 
+        // Calculate attendance statistics
+        $totalMeetings = $finishedMeetings->count();
+        $attendedMeetings = 0;
+        
+        foreach ($finishedMeetings as $meeting) {
+            $attendanceLog = $meeting->attendanceLogs->where('student_id', $studentId)->first();
+            if ($attendanceLog && $attendanceLog->attendance_status === 'present') {
+                $attendedMeetings++;
+            }
+        }
+        
+        $attendanceRate = $totalMeetings > 0 ? round(($attendedMeetings / $totalMeetings) * 100) : 0;
+
+        // Get student programs for sidebar (to fix the error)
+        $studentPrograms = [];
+        if ($student) {
+            $enrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
+                ->orWhere('user_id', $student->user_id)
+                ->with(['program', 'package'])
+                ->where('enrollment_status', '!=', 'rejected')
+                ->get();
+
+            foreach ($enrollments as $enrollment) {
+                if ($enrollment->program) {
+                    $studentPrograms[] = [
+                        'program_id' => $enrollment->program->program_id,
+                        'program_name' => $enrollment->program->program_name,
+                        'package_name' => $enrollment->package->package_name ?? 'Standard Package'
+                    ];
+                }
+            }
+        }
+
+        // Create user object for sidebar
+        $user = (object) [
+            'id' => session('user_id'),
+            'name' => session('user_name') ?? $student->firstname . ' ' . $student->lastname,
+            'role' => 'student'
+        ];
+
         return view('student.meetings', compact(
             'upcomingMeetings',
             'currentMeetings',
             'todaysMeetings',
             'finishedMeetings',
             'pastMeetings',
-            'studentId'
+            'studentId',
+            'totalMeetings',
+            'attendedMeetings', 
+            'attendanceRate',
+            'user',
+            'studentPrograms'
         ));
     }
     public function logStudentAccess(Request $request, $meetingId)

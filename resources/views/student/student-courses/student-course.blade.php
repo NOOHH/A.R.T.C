@@ -47,6 +47,10 @@
     <script>
         window.completedModuleIds = @json($completedModuleIds ?? []);
         window.completedContentIds = @json($completedContentIds ?? []);
+        window.completedCourseIds = @json($completedCourseIds ?? []);
+        
+        // Define storage URL for file access
+        const storageUrl = '{{ url("storage") }}';
     </script>
 
     <!-- Course Header -->
@@ -987,7 +991,7 @@
             let html = '<div class="courses-grid">';
             courses.forEach(course => {
                 const icon = getContentIcon(course.type || course.course_type || 'course');
-                const isCompleted = window.completedModuleIds && window.completedModuleIds.includes(parseInt(course.course_id));
+                const isCompleted = window.completedCourseIds && window.completedCourseIds.includes(parseInt(course.course_id));
                 // Check if all content items for this course are completed
                 let allContentCompleted = true;
                 if (course.content_items && course.content_items.length > 0) {
@@ -1977,13 +1981,17 @@ if (addSubmissionBtn) {
                         });
                     }
                     
-                    // Update completedModuleIds for UI consistency
+                    // Update completedCourseIds for UI consistency
                     if (type === 'course') {
-                        const moduleId = parseInt(id);
-                        if (!window.completedModuleIds.includes(moduleId)) {
-                            window.completedModuleIds.push(moduleId);
+                        const courseId = parseInt(id);
+                        if (!window.completedCourseIds.includes(courseId)) {
+                            window.completedCourseIds.push(courseId);
                         }
                     }
+                    
+                    // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                    // Notify dashboard to update in real-time
+                    notifyDashboardUpdate(type, id, data);
                 } else {
                     btn.disabled = false;
                     btn.innerText = 'Mark Complete';
@@ -1999,6 +2007,274 @@ if (addSubmissionBtn) {
                 btn.classList.add('btn-success');
                 alert('Error marking as complete.');
             });
+        }
+
+        // Function to check if all content in a course is completed and auto-mark course as complete
+        function checkAndMarkCourseComplete(moduleId, courseId) {
+            console.log('Checking course completion for course:', courseId, 'in module:', moduleId);
+            
+            // Get all content items for this course from the current view
+            const contentItems = document.querySelectorAll('.content-item');
+            const totalContent = contentItems.length;
+            let completedContent = 0;
+            
+            // Count completed content items in the current view
+            contentItems.forEach(item => {
+                const markBtn = item.querySelector('.mark-complete-btn');
+                if (markBtn && markBtn.disabled && markBtn.innerText === 'Completed') {
+                    completedContent++;
+                }
+            });
+            
+            console.log(`Course completion check: ${completedContent}/${totalContent} content items completed`);
+            
+            // If all content is completed, automatically mark course as complete
+            if (totalContent > 0 && completedContent === totalContent) {
+                console.log('All content completed, auto-marking course as complete');
+                
+                // Auto-complete the course
+                fetch('/student/complete-course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        course_id: courseId,
+                        module_id: moduleId
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Course auto-completed successfully');
+                        
+                        // Update global completed courses array
+                        const courseIdInt = parseInt(courseId);
+                        if (!window.completedCourseIds.includes(courseIdInt)) {
+                            window.completedCourseIds.push(courseIdInt);
+                        }
+                        
+                        // Update the course button in the courses view if visible
+                        const courseBtns = document.querySelectorAll(`[onclick*="toggleComplete('course', '${courseId}'"]`);
+                        courseBtns.forEach(btn => {
+                            if (btn) { // Add null check
+                                btn.innerText = 'Completed';
+                                btn.disabled = false; // Allow unmarking
+                                btn.classList.remove('btn-success');
+                                btn.classList.add('btn-outline-success');
+                            }
+                        });
+                        
+                        // Check if all courses in module are completed for auto-module completion
+                        checkAndMarkModuleComplete(moduleId);
+                        
+                        // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                        // Notify dashboard about auto-completion
+                        notifyDashboardUpdate('course', courseId, data);
+                    }
+                })
+                 .catch(error => {
+                     console.error('Error auto-completing course:', error);
+                 });
+             }
+         }
+
+         // Function to check if all courses in a module are completed and auto-mark module as complete
+        function checkAndMarkModuleComplete(moduleId) {
+            console.log('Checking module completion for module:', moduleId);
+            
+            // This would require fetching all courses in the module and checking their completion status
+            // For now, we'll implement a simpler version that checks via backend
+            fetch(`/student/module/${moduleId}/check-completion`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                credentials: 'include'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.should_complete) {
+                    console.log('All courses completed, auto-marking module as complete');
+                    
+                    // Auto-complete the module
+                    fetch('/student/complete-module', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            module_id: moduleId
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Module auto-completed successfully');
+                            
+                            // Update global module completion state
+                            const moduleIdInt = parseInt(moduleId);
+                            if (!window.completedModuleIds.includes(moduleIdInt)) {
+                                window.completedModuleIds.push(moduleIdInt);
+                            }
+                            
+                                                         // Update module button visual state
+                             const moduleBtn = document.querySelector(`[onclick*="toggleModule('${moduleId}'"]`);
+                             if (moduleBtn) {
+                                 moduleBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2 text-success"></i>' + moduleBtn.textContent;
+                             }
+                             
+                             // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                             // Notify dashboard about module completion
+                             notifyDashboardUpdate('module', moduleId, data);
+                         }
+                     })
+                     .catch(error => {
+                         console.error('Error auto-completing module:', error);
+                     });
+                 }
+             })
+             .catch(error => {
+                 console.error('Error checking module completion:', error);
+             });
+         }
+
+         function toggleComplete(type, id, btn) {
+            if (!btn) {
+                console.error('toggleComplete: btn is null or undefined');
+                return;
+            }
+            btn.disabled = true;
+            btn.innerText = (btn.innerText === 'Mark Complete') ? 'Marking...' : 'Unmarking...';
+            let url = '';
+            let payload = {};
+            let isCompleted = false;
+            if (type === 'course') {
+                // For course completion, we'll just mark as complete (no toggle for now)
+                url = '/student/complete-course';
+                payload = { 
+                    course_id: id,
+                    module_id: currentModule // Include the current module ID
+                };
+                isCompleted = false; // Always mark as complete for now
+            }
+            let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update completedCourseIds for course type
+                    const courseId = parseInt(id);
+                    if (isCompleted) {
+                        window.completedCourseIds = window.completedCourseIds.filter(cid => cid !== courseId);
+                        btn.innerText = 'Mark Complete';
+                        btn.classList.remove('btn-outline-success');
+                        btn.classList.add('btn-success');
+                    } else {
+                        if (!window.completedCourseIds.includes(courseId)) {
+                            window.completedCourseIds.push(courseId);
+                        }
+                        btn.innerText = 'Unmark as Complete';
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    }
+                    btn.disabled = false;
+                    
+                    // Update progress indicators in real time
+                    if (data.progress_percentage !== undefined && data.completed_modules !== undefined && data.total_modules !== undefined) {
+                        const progressPercent = document.getElementById('progress-percentage');
+                        const progressModules = document.getElementById('progress-modules');
+                        if (progressPercent) progressPercent.innerText = `${data.progress_percentage}% complete`;
+                        if (progressModules) progressModules.innerText = `${data.completed_modules} / ${data.total_modules} modules complete`;
+                    }
+                     
+                     // 🔥 DASHBOARD UPDATE NOTIFICATION 🔥
+                     // Notify dashboard about completion update
+                     notifyDashboardUpdate(type, id, data);
+                 } else {
+                     btn.disabled = false;
+                     btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                     alert(data.message || 'Error updating completion status.');
+                 }
+             })
+             .catch(() => {
+                 btn.disabled = false;
+                 btn.innerText = isCompleted ? 'Unmark as Complete' : 'Mark Complete';
+                 alert('Error updating completion status.');
+             });
+         }
+
+         // 🔥 DASHBOARD UPDATE NOTIFICATION SYSTEM 🔥
+        // Function to notify dashboard about completion updates
+        function notifyDashboardUpdate(type, id, data) {
+            console.log('🔥 Notifying dashboard about completion update:', { type, id, data });
+            
+            // Method 1: localStorage event (works across tabs)
+            const updateData = {
+                type: type,
+                id: id,
+                timestamp: Date.now(),
+                progress: data.progress_percentage,
+                completed_modules: data.completed_modules,
+                total_modules: data.total_modules,
+                course_id: (type === 'course') ? id : currentCourse,
+                module_id: currentModule
+            };
+            
+            localStorage.setItem('dashboardUpdate', JSON.stringify(updateData));
+            localStorage.setItem('dashboardLastUpdate', updateData.timestamp.toString());
+            
+            // Method 2: BroadcastChannel (works across tabs in modern browsers)
+            if (window.BroadcastChannel) {
+                try {
+                    const channel = new BroadcastChannel('dashboard-updates');
+                    channel.postMessage(updateData);
+                    console.log('📡 BroadcastChannel message sent');
+                } catch (error) {
+                    console.log('📡 BroadcastChannel not available:', error);
+                }
+            }
+            
+            // Method 3: Custom event (works on same page)
+            const event = new CustomEvent('dashboardUpdate', { 
+                detail: updateData 
+            });
+            window.dispatchEvent(event);
+            
+            console.log('✅ Dashboard update notification sent');
+        }
+
+        // Test function for dashboard updates (remove in production)
+        function testDashboardUpdate() {
+            console.log('🧪 Testing dashboard update...');
+            const testData = {
+                type: 'course',
+                id: currentCourse || '33',
+                timestamp: Date.now(),
+                progress: 85,
+                completed_modules: 3,
+                total_modules: 4,
+                course_id: currentCourse || '33',
+                module_id: currentModule || '67'
+            };
+            notifyDashboardUpdate('course', testData.id, testData);
         }
 
         // Function to check if all content in a course is completed and auto-mark course as complete

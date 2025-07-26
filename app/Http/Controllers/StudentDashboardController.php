@@ -200,10 +200,61 @@ class StudentDashboardController extends Controller
                 
                 // Get completed modules count based on actual completion records
                 $completedCount = 0;
+                $courseProgress = 0;
                 if ($student) {
-                    $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                        ->where('program_id', $enrollment->program->program_id)
-                        ->count();
+                    // Use enhanced progress calculation for more accurate results
+                    if (isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
+                        // For modular, calculate based on enrolled courses only
+                        $enrolledCourseIds = $enrollment->enrollmentCourses()
+                            ->where('is_active', true)
+                            ->pluck('course_id')
+                            ->toArray();
+                        
+                        if (!empty($enrolledCourseIds)) {
+                            $totalCourseContent = \App\Models\ContentItem::whereIn('course_id', $enrolledCourseIds)->count();
+                            $completedCourseContent = \App\Models\ContentCompletion::where('student_id', $student->student_id)
+                                ->whereIn('course_id', $enrolledCourseIds)
+                                ->count();
+                            
+                            $courseProgress = $totalCourseContent > 0 ? round(($completedCourseContent / $totalCourseContent) * 100) : 0;
+                            
+                            // Get module completion count for this specific enrollment
+                            $moduleIdsWithEnrolledCourses = \App\Models\Course::whereIn('subject_id', $enrolledCourseIds)
+                                ->pluck('module_id')
+                                ->unique()
+                                ->toArray();
+                            
+                            $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                                ->where('program_id', $enrollment->program->program_id)
+                                ->whereIn('modules_id', $moduleIdsWithEnrolledCourses)
+                                ->count();
+                        }
+                    } else {
+                        // For full program enrollments, calculate based on all content
+                        $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                            ->where('program_id', $enrollment->program->program_id)
+                            ->count();
+                        
+                        // Also calculate content-based progress for more granular updates
+                        $allProgramCourses = \App\Models\Module::where('program_id', $enrollment->program->program_id)
+                            ->with('courses')
+                            ->get()
+                            ->pluck('courses')
+                            ->flatten()
+                            ->pluck('subject_id')
+                            ->toArray();
+                        
+                        if (!empty($allProgramCourses)) {
+                            $totalProgramContent = \App\Models\ContentItem::whereIn('course_id', $allProgramCourses)->count();
+                            $completedProgramContent = \App\Models\ContentCompletion::where('student_id', $student->student_id)
+                                ->whereIn('course_id', $allProgramCourses)
+                                ->count();
+                            
+                            $courseProgress = $totalProgramContent > 0 ? round(($completedProgramContent / $totalProgramContent) * 100) : 0;
+                        } else {
+                            $courseProgress = $moduleCount > 0 ? round(($completedCount / $moduleCount) * 100) : 0;
+                        }
+                    }
                 }
                 
                 // Determine button text and action based on status
@@ -252,7 +303,7 @@ class StudentDashboardController extends Controller
                     'id' => $enrollment->program->program_id,
                     'name' => $enrollment->program->program_name,
                     'description' => $enrollment->program->program_description ?? 'No description available.',
-                    'progress' => $moduleCount > 0 ? round(($completedCount / $moduleCount) * 100) : 0,
+                    'progress' => $courseProgress, // Use content-based progress instead of module-based
                     'status' => 'in_progress',
                     'learning_mode' => $enrollment->learning_mode ?? 'Synchronous',
                     'enrollment_type' => $enrollment->enrollment_type,
@@ -696,9 +747,15 @@ class StudentDashboardController extends Controller
         
         // Get completed content for this student
         $completedContentIds = [];
+        $completedCourseIds = [];
         if ($student) {
             $completedContentIds = \App\Models\ContentCompletion::where('student_id', $student->student_id)
                 ->pluck('content_id')
+                ->toArray();
+            
+            // Get completed courses for this student
+            $completedCourseIds = \App\Models\CourseCompletion::where('student_id', $student->student_id)
+                ->pluck('course_id')
                 ->toArray();
         }
         
@@ -836,7 +893,8 @@ class StudentDashboardController extends Controller
             'enrollmentStatus',
             'studentPrograms',
             'completedModuleIds',
-            'completedContentIds' // <-- add this
+            'completedContentIds',
+            'completedCourseIds' // <-- add completed course IDs
         ));
     }
 
@@ -2437,5 +2495,108 @@ class StudentDashboardController extends Controller
         ]);
 
         return $results;
+    }
+
+    /**
+     * Display all enrolled courses for the student
+     */
+    public function enrolledCourses()
+    {
+        $user = (object) [
+            'user_id' => session('user_id'),
+            'user_firstname' => explode(' ', session('user_name'))[0] ?? '',
+            'user_lastname' => explode(' ', session('user_name'))[1] ?? '',
+            'role' => session('user_role')
+        ];
+
+        $student = Student::where('user_id', session('user_id'))->first();
+
+        // Get all enrollments for this user
+        $enrollments = collect();
+        
+        if (session('user_id')) {
+            $userEnrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->with(['program', 'package', 'batch'])
+                ->get();
+            $enrollments = $enrollments->merge($userEnrollments);
+        }
+        
+        if ($student) {
+            $studentEnrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
+                ->with(['program', 'package', 'batch'])
+                ->get();
+            $enrollments = $enrollments->merge($studentEnrollments);
+        }
+
+        // Remove duplicates based on enrollment_id
+        $enrollments = $enrollments->unique('enrollment_id');
+
+        $enrolledCoursesData = [];
+
+        foreach ($enrollments as $enrollment) {
+            if (!$enrollment->program) {
+                continue;
+            }
+
+            $enrollmentInfo = [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'program_name' => $enrollment->program->program_name,
+                'enrollment_type' => $enrollment->enrollment_type,
+                'enrollment_status' => $enrollment->enrollment_status,
+                'payment_status' => $enrollment->payment_status ?? 'pending',
+                'package_name' => $enrollment->package->package_name ?? 'N/A',
+                'learning_mode' => $enrollment->learning_mode ?? 'N/A',
+                'enrolled_at' => $enrollment->created_at->format('M d, Y'),
+                'courses' => []
+            ];
+
+            if ($enrollment->enrollment_type === 'Modular') {
+                // Get enrolled courses for modular enrollments
+                $enrolledCourses = $enrollment->enrollmentCourses()
+                    ->with(['course', 'module'])
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($enrolledCourses as $enrollmentCourse) {
+                    if ($enrollmentCourse->course) {
+                        $enrollmentInfo['courses'][] = [
+                            'course_id' => $enrollmentCourse->course->subject_id,
+                            'course_name' => $enrollmentCourse->course->subject_name,
+                            'course_description' => $enrollmentCourse->course->subject_description,
+                            'module_name' => $enrollmentCourse->module->module_name ?? 'N/A',
+                            'enrolled_at' => $enrollmentCourse->created_at->format('M d, Y')
+                        ];
+                    }
+                }
+            } else {
+                // For full enrollments, get all courses in the program
+                $programModules = Module::where('program_id', $enrollment->program_id)
+                    ->where('is_archived', false)
+                    ->with(['courses' => function($query) {
+                        $query->where('is_archived', false);
+                    }])
+                    ->get();
+
+                foreach ($programModules as $module) {
+                    foreach ($module->courses as $course) {
+                        $enrollmentInfo['courses'][] = [
+                            'course_id' => $course->subject_id,
+                            'course_name' => $course->subject_name,
+                            'course_description' => $course->subject_description,
+                            'module_name' => $module->module_name,
+                            'enrolled_at' => $enrollment->created_at->format('M d, Y')
+                        ];
+                    }
+                }
+            }
+
+            $enrolledCoursesData[] = $enrollmentInfo;
+        }
+
+        return view('student.enrolled-courses', [
+            'user' => $user,
+            'student' => $student,
+            'enrolledCoursesData' => $enrolledCoursesData
+        ]);
     }
 }

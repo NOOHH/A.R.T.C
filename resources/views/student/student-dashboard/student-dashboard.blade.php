@@ -591,6 +591,26 @@
     .deadline-item-modern:hover .card {
         border-color: #667eea;
     }
+    
+    /* Spinning animation for refresh button */
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Dashboard update notification styles */
+    .dashboard-update-notification {
+        animation: slideInRight 0.3s ease;
+    }
+    
+    @keyframes slideInRight {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
 </style>
 @endpush
 
@@ -628,11 +648,19 @@
     <div class="dashboard-card courses-card">
         <div class="card-header">
             <h2>My Programs</h2>
-            <span class="completion-badge">{{ count($courses) > 0 ? floor(array_sum(array_column($courses, 'progress')) / count($courses)) : '0' }}% overall progress</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="completion-badge">{{ count($courses) > 0 ? floor(array_sum(array_column($courses, 'progress')) / count($courses)) : '0' }}% overall progress</span>
+                <button onclick="refreshDashboard()" class="btn btn-sm btn-outline-light" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <button onclick="testDashboardUpdate()" class="btn btn-sm btn-outline-warning" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
+                    <i class="bi bi-bug"></i> Test
+                </button>
+            </div>
         </div>
         <div class="courses-list">
             @forelse($courses as $course)
-                <div class="course-item">
+                <div class="course-item" data-course-id="{{ $course['id'] }}" data-enrollment-id="{{ $course['enrollment_id'] ?? '' }}">
                     <div class="course-thumbnail">
                         <div class="course-placeholder">📚</div>
                     </div>
@@ -2388,6 +2416,244 @@ document.addEventListener('click', function() {
         removeAllBackdrops();
     }
 });
+
+// 🔥 REAL-TIME DASHBOARD UPDATE SYSTEM 🔥
+// Listen for completion updates from course pages
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing real-time dashboard update system...');
+    
+    // Method 1: localStorage event listener (works across tabs)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'dashboardUpdate') {
+            console.log('📡 Received dashboard update via localStorage:', e.newValue);
+            try {
+                const updateData = JSON.parse(e.newValue);
+                updateDashboardUI(updateData);
+            } catch (error) {
+                console.error('Error parsing dashboard update data:', error);
+            }
+        }
+    });
+    
+    // Method 2: BroadcastChannel listener (works across tabs in modern browsers)
+    if (window.BroadcastChannel) {
+        try {
+            const channel = new BroadcastChannel('dashboard-updates');
+            channel.onmessage = function(event) {
+                console.log('📡 Received dashboard update via BroadcastChannel:', event.data);
+                updateDashboardUI(event.data);
+            };
+            console.log('✅ BroadcastChannel listener initialized');
+        } catch (error) {
+            console.log('❌ BroadcastChannel not available:', error);
+        }
+    }
+    
+    // Method 3: Custom event listener (works on same page)
+    window.addEventListener('dashboardUpdate', function(event) {
+        console.log('📡 Received dashboard update via CustomEvent:', event.detail);
+        updateDashboardUI(event.detail);
+    });
+    
+    // Method 4: Polling fallback (checks for updates every 5 seconds)
+    setInterval(function() {
+        const lastUpdate = localStorage.getItem('dashboardLastUpdate');
+        if (lastUpdate) {
+            const lastUpdateTime = parseInt(lastUpdate);
+            const now = Date.now();
+            // If last update was more than 5 seconds ago, check for new updates
+            if (now - lastUpdateTime > 5000) {
+                const updateData = localStorage.getItem('dashboardUpdate');
+                if (updateData) {
+                    try {
+                        const data = JSON.parse(updateData);
+                        const dataTime = data.timestamp || 0;
+                        // Only update if the data is newer than our last check
+                        if (dataTime > lastUpdateTime) {
+                            console.log('📡 Received dashboard update via polling:', data);
+                            updateDashboardUI(data);
+                            localStorage.setItem('dashboardLastUpdate', now.toString());
+                        }
+                    } catch (error) {
+                        console.error('Error parsing dashboard update data:', error);
+                    }
+                }
+            }
+        }
+    }, 5000);
+    
+    console.log('✅ Real-time dashboard update system initialized');
+});
+
+// Function to update dashboard UI with new completion data
+function updateDashboardUI(updateData) {
+    console.log('🔄 Updating dashboard UI with:', updateData);
+    
+    const { type, id, progress, completed_modules, total_modules, course_id, module_id } = updateData;
+    
+    // Update overall progress badge using the actual progress calculation from backend
+    const completionBadge = document.querySelector('.completion-badge');
+    if (completionBadge && progress !== undefined) {
+        completionBadge.textContent = `${Math.round(progress)}% overall progress`;
+        console.log('✅ Updated overall progress badge to', Math.round(progress) + '%');
+    }
+    
+    // Find and update all course cards since we might have multiple courses for the same program
+    const courseItems = document.querySelectorAll('.course-item');
+    courseItems.forEach(courseItem => {
+        const courseName = courseItem.querySelector('h3')?.textContent;
+        const courseDataId = courseItem.getAttribute('data-course-id');
+        
+        // Try to match by course ID or update all cards for the program
+        if (courseDataId == course_id || type === 'content' || type === 'course') {
+            // Update progress bar with the calculated progress from backend
+            const progressBar = courseItem.querySelector('.progress-bar');
+            if (progressBar && progress !== undefined) {
+                progressBar.style.setProperty('--progress', Math.round(progress) + '%');
+                console.log('✅ Updated progress bar to', Math.round(progress) + '%');
+            }
+            
+            // Update progress text
+            const progressText = courseItem.querySelector('.progress-text');
+            if (progressText && progress !== undefined) {
+                progressText.textContent = `${Math.round(progress)}% complete`;
+                console.log('✅ Updated progress text to', Math.round(progress) + '% complete');
+            }
+            
+            // Update modules count if available
+            if (completed_modules !== undefined && total_modules !== undefined) {
+                const courseMeta = courseItem.querySelector('.course-meta span');
+                if (courseMeta) {
+                    courseMeta.textContent = `${completed_modules} / ${total_modules} modules complete`;
+                    console.log('✅ Updated modules count to', completed_modules + '/' + total_modules);
+                }
+            }
+            
+            // Update button if course is completed
+            if (type === 'course' && progress >= 100) {
+                const button = courseItem.querySelector('.resume-btn');
+                if (button) {
+                    button.textContent = 'Completed';
+                    button.classList.remove('btn-success', 'btn-outline-primary');
+                    button.classList.add('btn-outline-success', 'completed');
+                    button.disabled = true;
+                    console.log('✅ Updated course button to Completed');
+                }
+            }
+            
+            // Add visual feedback
+            courseItem.style.transition = 'all 0.3s ease';
+            courseItem.style.transform = 'scale(1.02)';
+            courseItem.style.boxShadow = '0 8px 25px rgba(39, 174, 96, 0.3)';
+            
+            setTimeout(() => {
+                courseItem.style.transform = 'scale(1)';
+                courseItem.style.boxShadow = '';
+            }, 300);
+            
+            console.log('✅ Updated course card:', courseName || courseId);
+        }
+    });
+    
+    // Show success notification
+    showDashboardUpdateNotification(type, id);
+    
+    // Clear the update data to prevent duplicate processing
+    localStorage.removeItem('dashboardUpdate');
+}
+
+// Function to show a success notification
+function showDashboardUpdateNotification(type, id) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'dashboard-update-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        z-index: 9999;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        font-weight: 600;
+        max-width: 300px;
+    `;
+    
+    let message = '';
+    if (type === 'content') {
+        message = '📚 Content marked as complete!';
+    } else if (type === 'course') {
+        message = '🎉 Course completed successfully!';
+    } else if (type === 'module') {
+        message = '🏆 Module completed! Great job!';
+    } else {
+        message = '✅ Progress updated!';
+    }
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="bi bi-check-circle-fill" style="font-size: 1.2rem;"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Function to manually refresh the dashboard
+function refreshDashboard() {
+    console.log('🔄 Manually refreshing dashboard...');
+    
+    // Show loading state
+    const refreshBtn = document.querySelector('[onclick="refreshDashboard()"]');
+    if (refreshBtn) {
+        const originalHTML = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Refreshing...';
+        refreshBtn.disabled = true;
+        
+        // Reload the page after a short delay
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    } else {
+        window.location.reload();
+    }
+}
+
+// Test function for dashboard updates (remove in production)
+function testDashboardUpdate() {
+    console.log('🧪 Testing dashboard update from dashboard...');
+    const testData = {
+        type: 'course',
+        id: '33',
+        timestamp: Date.now(),
+        progress: 75,
+        completed_modules: 2,
+        total_modules: 3,
+        course_id: '33',
+        module_id: '67'
+    };
+    updateDashboardUI(testData);
+}
 
 // Redirect to assignment/quiz function
 function redirectToAssignment(referenceId, moduleId, type, programId) {

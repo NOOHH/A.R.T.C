@@ -434,6 +434,9 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
     // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
+    // Enrolled Courses page - NEW
+    Route::get('/student/enrolled-courses', [StudentDashboardController::class, 'enrolledCourses'])->name('student.enrolled-courses');
+    
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
     
