@@ -499,6 +499,22 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/calendar/today', [\App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
     Route::get('/student/calendar/event/{eventId}', [\App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
     
+    // Test route to simulate student login for calendar testing
+    Route::get('/test/student-login/{student_id}', function($student_id) {
+        $student = \App\Models\Student::where('student_id', $student_id)->first();
+        if ($student) {
+            session([
+                'user_id' => $student->user_id,
+                'user_name' => 'Test Student',
+                'user_role' => 'student',
+                'role' => 'student',
+                'logged_in' => true
+            ]);
+            return redirect('/student/calendar')->with('success', 'Test login successful for: ' . $student->student_id);
+        }
+        return 'Student not found';
+    });
+    
     // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
     // Paywall route

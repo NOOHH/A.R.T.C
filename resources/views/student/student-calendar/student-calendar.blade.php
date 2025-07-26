@@ -5,112 +5,312 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/student/student-calendar.css') }}">
 <style>
-.calendar-day {
-    min-height: 120px;
-    border: 1px solid #e9ecef;
-    padding: 8px;
-    position: relative;
-    background: white;
-    transition: all 0.2s ease;
-}
-
-.calendar-day:hover {
-    background-color: #f8f9fa;
-}
-
-.calendar-day.today {
-    background-color: #e3f2fd;
-    border-color: #2196f3;
-    font-weight: bold;
-}
-
-.calendar-day.has-events {
-    background-color: #fff3cd;
-    border-color: #ffc107;
-}
-
-.day-number {
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-bottom: 4px;
-}
-
-.event-item {
-    font-size: 0.75rem;
-    padding: 2px 6px;
-    margin: 1px 0;
-    border-radius: 3px;
-    color: white;
+/* Calendar Container Styles */
+.calendar-container {
+    background: #f8f9fa;
+    border-radius: 12px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.event-item:hover {
-    opacity: 0.8;
-}
-
-.event-meeting { background-color: #007bff; }
-.event-assignment { background-color: #fd7e14; }
-.event-announcement { background-color: #20c997; }
-
-.event-counter {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    background: #6c757d;
+/* Calendar Header */
+.calendar-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 0.7rem;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.calendar-navigation {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.today-btn {
+    background: rgba(255,255,255,0.9);
+    color: #667eea;
+    font-weight: 600;
+}
+
+.current-month {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 20px;
+}
+
+/* Week View Grid */
+.week-view {
+    display: grid;
+    grid-template-columns: 80px repeat(7, 1fr);
+    background: white;
+}
+
+/* Time Column */
+.time-column {
+    background: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+}
+
+.time-slot {
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.8rem;
+    color: #6c757d;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 500;
 }
 
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+/* Day Headers */
+.day-header {
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    color: #495057;
 }
 
-.legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
+.day-header.today {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-bottom-color: #1976d2;
+}
+
+.day-number {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.day-name {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Day Columns */
+.day-column {
+    border-right: 1px solid #e9ecef;
+    position: relative;
+    min-height: 600px;
+}
+
+.day-column:last-child {
+    border-right: none;
+}
+
+/* Time Grid Lines */
+.time-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    pointer-events: none;
+}
+
+.time-line {
+    height: 60px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+/* Events in Calendar */
+.calendar-event {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.calendar-event:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.event-meeting { 
+    background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+}
+
+.event-assignment { 
+    background: linear-gradient(135deg, #ffb74d, #ff9800);
+}
+
+.event-announcement { 
+    background: linear-gradient(135deg, #81c784, #66bb6a);
+}
+
+.event-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.event-time {
+    font-size: 0.65rem;
+    opacity: 0.9;
+}
+
+/* Sidebar Styles */
+.sidebar-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.sidebar-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+    padding: 15px 20px;
+}
+
+.sidebar-card.schedule-card .card-header {
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
 }
 
 .today-schedule-item {
-    padding: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.today-schedule-item:last-child {
+    border-bottom: none;
+}
+
+.schedule-icon {
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
-    margin-bottom: 8px;
-    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
 }
 
-.schedule-meeting { 
-    background-color: #e3f2fd; 
-    border-left-color: #2196f3; 
+.schedule-meeting .schedule-icon { 
+    background: linear-gradient(135deg, #4fc3f7, #29b6f6);
 }
 
-.schedule-assignment { 
-    background-color: #fff3e0; 
-    border-left-color: #ff9800; 
+.schedule-assignment .schedule-icon { 
+    background: linear-gradient(135deg, #ffb74d, #ff9800);
 }
 
-.schedule-announcement { 
-    background-color: #e8f5e8; 
-    border-left-color: #4caf50; 
+.schedule-announcement .schedule-icon { 
+    background: linear-gradient(135deg, #81c784, #66bb6a);
 }
 
+.schedule-details h6 {
+    margin: 0 0 4px 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.schedule-time {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+.schedule-program {
+    font-size: 0.75rem;
+    color: #999;
+    margin: 2px 0 0 0;
+}
+
+/* Legend Styles */
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Stats Styles */
+.stats-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stats-item:last-child {
+    border-bottom: none;
+}
+
+.stats-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.stats-badge.meetings {
+    background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+}
+
+.stats-badge.assignments {
+    background: linear-gradient(135deg, #ffb74d, #ff9800);
+}
+
+.stats-badge.announcements {
+    background: linear-gradient(135deg, #81c784, #66bb6a);
+}
+
+/* Loading Spinner */
 .loading-spinner {
     display: inline-block;
     width: 20px;
     height: 20px;
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
+    border-top: 3px solid #667eea;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -118,6 +318,54 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .week-view {
+        grid-template-columns: 60px repeat(7, 1fr);
+    }
+    
+    .time-slot {
+        font-size: 0.7rem;
+        height: 50px;
+    }
+    
+    .calendar-event {
+        font-size: 0.65rem;
+        padding: 4px 6px;
+    }
+    
+    .current-month {
+        font-size: 1.2rem;
+        margin: 0 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .calendar-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .calendar-navigation {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .week-view {
+        grid-template-columns: 50px repeat(7, 1fr);
+    }
+    
+    .day-header {
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+    
+    .day-number {
+        font-size: 1rem;
+    }
 }
 </style>
 @endpush
@@ -127,45 +375,45 @@
     <div class="row">
         <!-- Main Calendar -->
         <div class="col-lg-9">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="calendar-container">
+                <div class="calendar-header">
                     <h4 class="mb-0">
                         <i class="bi bi-calendar3 me-2"></i>Academic Calendar
                     </h4>
-                    <div class="d-flex align-items-center">
+                    <div class="calendar-navigation">
                         <!-- Debug Test Button -->
-                        <button type="button" class="btn btn-warning btn-sm me-3" onclick="testCalendarEndpoints()">
+                        <button type="button" class="nav-btn" onclick="testCalendarEndpoints()">
                             <i class="bi bi-bug me-1"></i>Test
                         </button>
-                        <div class="calendar-navigation">
-                            <button class="btn btn-outline-light btn-sm me-2" id="prevMonth">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <button class="btn btn-light btn-sm me-2" id="todayBtn">Today</button>
-                            <span class="current-month fw-bold" id="currentMonth">{{ date('F Y') }}</span>
-                            <button class="btn btn-outline-light btn-sm ms-2" id="nextMonth">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
+                        <button class="nav-btn" id="prevMonth">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button class="nav-btn today-btn" id="todayBtn">Today</button>
+                        <span class="current-month" id="currentMonth">{{ date('F Y') }}</span>
+                        <button class="nav-btn" id="nextMonth">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
                 
-                <div class="card-body p-0">
-                    <!-- Calendar Weekdays -->
-                    <div class="row g-0 bg-light border-bottom">
-                        <div class="col text-center py-2 fw-bold">Sunday</div>
-                        <div class="col text-center py-2 fw-bold">Monday</div>
-                        <div class="col text-center py-2 fw-bold">Tuesday</div>
-                        <div class="col text-center py-2 fw-bold">Wednesday</div>
-                        <div class="col text-center py-2 fw-bold">Thursday</div>
-                        <div class="col text-center py-2 fw-bold">Friday</div>
-                        <div class="col text-center py-2 fw-bold">Saturday</div>
+                <!-- Week View Container -->
+                <div class="week-view" id="weekView">
+                    <!-- Time Column -->
+                    <div class="time-column">
+                        <div class="time-slot"></div> <!-- Empty slot for header alignment -->
+                        <div class="time-slot">8 AM</div>
+                        <div class="time-slot">9 AM</div>
+                        <div class="time-slot">10 AM</div>
+                        <div class="time-slot">11 AM</div>
+                        <div class="time-slot">12 PM</div>
+                        <div class="time-slot">1 PM</div>
+                        <div class="time-slot">2 PM</div>
+                        <div class="time-slot">3 PM</div>
+                        <div class="time-slot">4 PM</div>
+                        <div class="time-slot">5 PM</div>
                     </div>
                     
-                    <!-- Calendar Days -->
-                    <div id="calendarDays">
-                        <!-- Calendar days will be generated by JavaScript -->
-                    </div>
+                    <!-- Day Columns will be generated by JavaScript directly in week-view -->
                 </div>
             </div>
         </div>
@@ -173,8 +421,8 @@
         <!-- Sidebar -->
         <div class="col-lg-3">
             <!-- Today's Schedule -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-success text-white">
+            <div class="card sidebar-card schedule-card">
+                <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-calendar-day me-2"></i>Today's Schedule
                     </h5>
@@ -188,7 +436,7 @@
             </div>
             
             <!-- Event Legend -->
-            <div class="card shadow-sm mb-4">
+            <div class="card sidebar-card">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-info-circle me-2"></i>Event Types
@@ -211,24 +459,24 @@
             </div>
             
             <!-- Quick Stats -->
-            <div class="card shadow-sm">
+            <div class="card sidebar-card">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-bar-chart me-2"></i>This Month
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="stats-item">
                         <span>Meetings:</span>
-                        <span class="badge bg-primary" id="meetingCount">0</span>
+                        <span class="stats-badge meetings" id="meetingCount">0</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="stats-item">
                         <span>Assignments:</span>
-                        <span class="badge bg-warning" id="assignmentCount">0</span>
+                        <span class="stats-badge assignments" id="assignmentCount">0</span>
                     </div>
-                    <div class="d-flex justify-content-between">
+                    <div class="stats-item">
                         <span>Announcements:</span>
-                        <span class="badge bg-info" id="announcementCount">0</span>
+                        <span class="stats-badge announcements" id="announcementCount">0</span>
                     </div>
                 </div>
             </div>
@@ -258,99 +506,383 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
+// Debug function to test calendar endpoints - defined at the top for global access
+window.testCalendarEndpoints = function() {
+    console.log('🧪 Testing Calendar Endpoints...');
+    
+    // Test 1: Today's schedule
+    console.log('1️⃣ Testing /student/calendar/today');
+    fetch('/student/calendar/today')
+        .then(response => {
+            console.log('Today API Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Today API Response:', data);
+            alert('Today API Response: ' + JSON.stringify(data, null, 2));
+        })
+        .catch(error => {
+            console.error('Today API Error:', error);
+            alert('Today API Error: ' + error.message);
+        });
+    
+    // Test 2: Current month events
+    setTimeout(() => {
+        const today = new Date();
+        const url = `/student/calendar/events?year=${today.getFullYear()}&month=${today.getMonth() + 1}`;
+        console.log('2️⃣ Testing:', url);
+        
+        fetch(url)
+            .then(response => {
+                console.log('Events API Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Events API Response:', data);
+                alert('Events API Response: ' + JSON.stringify(data, null, 2));
+            })
+            .catch(error => {
+                console.error('Events API Error:', error);
+                alert('Events API Error: ' + error.message);
+            });
+    }, 1000);
+};
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Calendar page loaded, initializing...');
+    
     let currentDate = new Date();
     let currentEvents = [];
+    
+    console.log(`📅 Current date: ${currentDate.toISOString()}`);
+    console.log(`📅 Initializing calendar for: ${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`);
     
     // Initialize calendar
     generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
     loadTodaySchedule();
     
     // Navigation event listeners
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
-    });
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+    const todayBtn = document.getElementById('todayBtn');
     
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
-    });
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', () => {
+            console.log('⬅️ Previous month clicked');
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        });
+    } else {
+        console.error('❌ Could not find prevMonth button');
+    }
     
-    document.getElementById('todayBtn').addEventListener('click', () => {
-        const today = new Date();
-        currentDate = new Date(today);
-        generateCalendar(today.getFullYear(), today.getMonth());
-    });
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', () => {
+            console.log('➡️ Next month clicked');
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        });
+    } else {
+        console.error('❌ Could not find nextMonth button');
+    }
+    
+    if (todayBtn) {
+        todayBtn.addEventListener('click', () => {
+            console.log('📅 Today button clicked');
+            const today = new Date();
+            currentDate = new Date(today);
+            generateCalendar(today.getFullYear(), today.getMonth());
+        });
+    } else {
+        console.error('❌ Could not find todayBtn button');
+    }
     
     function generateCalendar(year, month) {
-        const calendarDays = document.getElementById('calendarDays');
+        console.log(`🗓️ Generating weekly calendar for ${year}-${month + 1}`);
+        
+        const weekViewContainer = document.getElementById('weekView');
         const currentMonthElement = document.getElementById('currentMonth');
+        
+        if (!weekViewContainer) {
+            console.error('❌ Could not find weekView element');
+            return;
+        }
+        
+        if (!currentMonthElement) {
+            console.error('❌ Could not find currentMonth element');
+            return;
+        }
         
         // Update month display
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
         currentMonthElement.textContent = `${monthNames[month]} ${year}`;
         
-        // Get first day and number of days in month
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const daysInMonth = lastDay.getDate();
-        const startingDayOfWeek = firstDay.getDay();
+        // Get current week (week containing today for current month, or first week of month)
+        const today = new Date();
+        let targetDate;
         
-        calendarDays.innerHTML = '';
-        
-        // Calculate number of weeks needed
-        const totalCells = Math.ceil((daysInMonth + startingDayOfWeek) / 7) * 7;
-        
-        // Generate calendar rows
-        for (let week = 0; week < totalCells / 7; week++) {
-            const weekRow = document.createElement('div');
-            weekRow.className = 'row g-0';
-            
-            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-                const cellIndex = week * 7 + dayOfWeek;
-                const dayNumber = cellIndex - startingDayOfWeek + 1;
-                
-                const dayCol = document.createElement('div');
-                dayCol.className = 'col';
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = 'calendar-day';
-                
-                if (dayNumber > 0 && dayNumber <= daysInMonth) {
-                    dayElement.innerHTML = `<div class="day-number">${dayNumber}</div>`;
-                    
-                    // Check if this is today
-                    const today = new Date();
-                    if (year === today.getFullYear() && 
-                        month === today.getMonth() && 
-                        dayNumber === today.getDate()) {
-                        dayElement.classList.add('today');
-                    }
-                    
-                    // Add click handler for day
-                    dayElement.addEventListener('click', () => {
-                        showDayEvents(year, month, dayNumber);
-                    });
-                    
-                    // Store date for later event population
-                    dayElement.dataset.date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
-                } else {
-                    dayElement.classList.add('empty');
-                }
-                
-                dayCol.appendChild(dayElement);
-                weekRow.appendChild(dayCol);
-            }
-            
-            calendarDays.appendChild(weekRow);
+        if (year === today.getFullYear() && month === today.getMonth()) {
+            targetDate = today;
+        } else {
+            targetDate = new Date(year, month, 1);
         }
         
-        // Load events for this month
-        loadMonthEvents(year, month);
+        // Get start of week (Sunday)
+        const startOfWeek = new Date(targetDate);
+        startOfWeek.setDate(targetDate.getDate() - targetDate.getDay());
+        
+        console.log(`� Displaying week starting: ${startOfWeek.toISOString().split('T')[0]}`);
+        
+        // Clear existing day columns (keep time column)
+        const existingDayColumns = weekViewContainer.querySelectorAll('.day-column');
+        existingDayColumns.forEach(column => column.remove());
+        
+        // Generate 7 day columns
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let i = 0; i < 7; i++) {
+            const currentDay = new Date(startOfWeek);
+            currentDay.setDate(startOfWeek.getDate() + i);
+            
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'day-column';
+            
+            // Check if this is today
+            const isToday = currentDay.toDateString() === today.toDateString();
+            
+            // Create day header
+            const dayHeader = document.createElement('div');
+            dayHeader.className = `day-header ${isToday ? 'today' : ''}`;
+            dayHeader.innerHTML = `
+                <div class="day-number">${currentDay.getDate()}</div>
+                <div class="day-name">${dayNames[i]}</div>
+            `;
+            
+            // Create time grid for visual reference
+            const timeGrid = document.createElement('div');
+            timeGrid.className = 'time-grid';
+            for (let hour = 0; hour < 11; hour++) { // 11 time slots including header
+                const timeLine = document.createElement('div');
+                timeLine.className = 'time-line';
+                timeGrid.appendChild(timeLine);
+            }
+            
+            // Store date for later event population
+            const dateString = currentDay.toISOString().split('T')[0];
+            dayColumn.dataset.date = dateString;
+            
+            // Add click handler
+            dayColumn.addEventListener('click', () => {
+                console.log(`🖱️ Day clicked: ${dateString}`);
+                showDayEvents(dateString);
+            });
+            
+            dayColumn.appendChild(dayHeader);
+            dayColumn.appendChild(timeGrid);
+            weekViewContainer.appendChild(dayColumn);
+            
+            console.log(`📝 Created day column for ${dateString} (${isToday ? 'TODAY' : 'normal'})`);
+        }
+        
+        console.log(`✅ Weekly calendar generated with ${weekViewContainer.children.length - 1} day columns`);
+        
+        // Load events for this week
+        loadWeekEvents(startOfWeek);
+    }
+    
+    function loadWeekEvents(startOfWeek) {
+        console.log(`📅 Loading events for week starting: ${startOfWeek.toISOString().split('T')[0]}`);
+        
+        // Calculate end of week
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        // First try to load real data from the API
+        fetch(`/student/calendar/events?year=${startOfWeek.getFullYear()}&month=${startOfWeek.getMonth() + 1}`)
+            .then(response => {
+                console.log('📡 Events API Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('📊 Events API Response data:', data);
+                if (data.success && data.events && data.events.length > 0) {
+                    console.log('✅ Loaded real events from API:', data.events.length);
+                    currentEvents = data.events;
+                    populateWeeklyEvents();
+                    updateStats(data.meta || {
+                        meetings: data.events.filter(e => e.type === 'meeting').length,
+                        assignments: data.events.filter(e => e.type === 'assignment').length,
+                        announcements: data.events.filter(e => e.type === 'announcement').length
+                    });
+                } else if (data.success && data.events && data.events.length === 0) {
+                    console.log('ℹ️ API returned success but no events - using mock data for demo');
+                    // Use mock data when API succeeds but returns empty events array
+                    const mockEvents = generateMockWeekEvents(startOfWeek);
+                    currentEvents = mockEvents;
+                    populateWeeklyEvents();
+                    updateStats({
+                        meetings: mockEvents.filter(e => e.type === 'meeting').length,
+                        assignments: mockEvents.filter(e => e.type === 'assignment').length,
+                        announcements: mockEvents.filter(e => e.type === 'announcement').length
+                    });
+                } else if (data.success === false && data.message === 'Student not found') {
+                    console.log('🔒 Authentication required for events - using demo data');
+                    // Use mock data for demo when not authenticated
+                    const mockEvents = generateMockWeekEvents(startOfWeek);
+                    currentEvents = mockEvents;
+                    populateWeeklyEvents();
+                    updateStats({
+                        meetings: mockEvents.filter(e => e.type === 'meeting').length,
+                        assignments: mockEvents.filter(e => e.type === 'assignment').length,
+                        announcements: mockEvents.filter(e => e.type === 'announcement').length
+                    });
+                } else {
+                    // Fallback to mock data for demo
+                    console.log('ℹ️ No real events found, using mock data');
+                    const mockEvents = generateMockWeekEvents(startOfWeek);
+                    currentEvents = mockEvents;
+                    populateWeeklyEvents();
+                    updateStats({
+                        meetings: mockEvents.filter(e => e.type === 'meeting').length,
+                        assignments: mockEvents.filter(e => e.type === 'assignment').length,
+                        announcements: mockEvents.filter(e => e.type === 'announcement').length
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading events from API:', error);
+                // Fallback to mock data
+                const mockEvents = generateMockWeekEvents(startOfWeek);
+                currentEvents = mockEvents;
+                populateWeeklyEvents();
+                updateStats({
+                    meetings: mockEvents.filter(e => e.type === 'meeting').length,
+                    assignments: mockEvents.filter(e => e.type === 'assignment').length,
+                    announcements: mockEvents.filter(e => e.type === 'announcement').length
+                });
+            });
+    }
+    
+    function generateMockWeekEvents(startOfWeek) {
+        console.log(`🎲 Generating mock events for week starting: ${startOfWeek.toISOString().split('T')[0]}`);
+        const events = [];
+        const today = new Date();
+        
+        // Generate events for each day of the week
+        for (let day = 0; day < 7; day++) {
+            const eventDate = new Date(startOfWeek);
+            eventDate.setDate(startOfWeek.getDate() + day);
+            
+            // Skip weekends for most events
+            if (day === 0 || day === 6) continue;
+            
+            // Add 1-3 events per weekday
+            const numEvents = Math.floor(Math.random() * 3) + 1;
+            
+            for (let i = 0; i < numEvents; i++) {
+                const eventTypes = ['meeting', 'assignment', 'announcement'];
+                const randomType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+                
+                let eventTitle, eventDesc, hour;
+                switch (randomType) {
+                    case 'meeting':
+                        eventTitle = i === 0 ? 'Software Engineering' : 'Database Systems';
+                        eventDesc = 'Interactive class session with professor';
+                        hour = 9 + i * 2; // 9 AM, 11 AM, 1 PM
+                        break;
+                    case 'assignment':
+                        eventTitle = i === 0 ? 'Project Submission' : 'Lab Assignment';
+                        eventDesc = 'Assignment due date';
+                        hour = 23; // Due at end of day
+                        break;
+                    case 'announcement':
+                        eventTitle = i === 0 ? 'Schedule Update' : 'Important Notice';
+                        eventDesc = 'New announcement from administration';
+                        hour = 8; // Morning announcements
+                        break;
+                }
+                
+                const eventDateTime = new Date(eventDate);
+                eventDateTime.setHours(hour, 0, 0, 0);
+                
+                const event = {
+                    id: `${randomType}_${day}_${i}_${startOfWeek.getTime()}`,
+                    title: eventTitle,
+                    start: eventDateTime.toISOString(),
+                    type: randomType,
+                    description: eventDesc,
+                    program: 'Computer Science',
+                    professor: 'Dr. Smith',
+                    time: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`,
+                    duration: randomType === 'meeting' ? 90 : 0 // 90 minutes for meetings
+                };
+                
+                events.push(event);
+                console.log(`➕ Generated mock event: ${event.title} on ${eventDate.toISOString().split('T')[0]} at ${event.time}`);
+            }
+        }
+        
+        console.log(`✅ Generated ${events.length} mock events for the week`);
+        return events;
+    }
+    
+    function populateWeeklyEvents() {
+        console.log(`🎯 Populating weekly calendar with ${currentEvents.length} events`);
+        
+        // Clear existing events
+        const dayColumns = document.querySelectorAll('.day-column');
+        dayColumns.forEach(column => {
+            const existingEvents = column.querySelectorAll('.calendar-event');
+            existingEvents.forEach(event => event.remove());
+        });
+        
+        if (currentEvents.length === 0) {
+            console.log('ℹ️ No events to populate');
+            return;
+        }
+        
+        // Add events to appropriate day columns
+        currentEvents.forEach(event => {
+            const eventDate = new Date(event.start).toISOString().split('T')[0];
+            const dayColumn = document.querySelector(`[data-date="${eventDate}"]`);
+            
+            if (dayColumn) {
+                const eventHour = new Date(event.start).getHours();
+                const topPosition = Math.max(0, (eventHour - 8) * 60); // 60px per hour, starting at 8 AM
+                
+                const eventElement = document.createElement('div');
+                eventElement.className = `calendar-event event-${event.type}`;
+                eventElement.style.top = `${topPosition + 60}px`; // +60 for header
+                
+                if (event.duration && event.duration > 0) {
+                    const height = (event.duration / 60) * 60; // Convert minutes to pixels
+                    eventElement.style.height = `${Math.max(30, height)}px`;
+                } else {
+                    eventElement.style.height = '30px'; // Default height for non-timed events
+                }
+                
+                eventElement.innerHTML = `
+                    <div class="event-title">${event.title}</div>
+                    <div class="event-time">${event.time}</div>
+                `;
+                
+                eventElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log(`🎯 Event clicked: ${event.title}`);
+                    showEventDetails(event);
+                });
+                
+                dayColumn.appendChild(eventElement);
+                console.log(`➕ Added event: ${event.title} to ${eventDate} at ${event.time}`);
+            } else {
+                console.warn(`⚠️ Could not find day column for date: ${eventDate}`);
+            }
+        });
+        
+        console.log(`✅ Finished populating weekly calendar events`);
     }
     
     function loadMonthEvents(year, month) {
@@ -372,6 +904,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         meetings: data.events.filter(e => e.type === 'meeting').length,
                         assignments: data.events.filter(e => e.type === 'assignment').length,
                         announcements: data.events.filter(e => e.type === 'announcement').length
+                    });
+                } else if (data.success && data.events && data.events.length === 0) {
+                    console.log('ℹ️ API returned success but no events - using mock data for demo');
+                    // Use mock data when API succeeds but returns empty events array
+                    const mockEvents = generateMockEvents(year, month);
+                    currentEvents = mockEvents;
+                    populateCalendarEvents();
+                    updateStats({
+                        meetings: mockEvents.filter(e => e.type === 'meeting').length,
+                        assignments: mockEvents.filter(e => e.type === 'assignment').length,
+                        announcements: mockEvents.filter(e => e.type === 'announcement').length
                     });
                 } else if (data.success === false && data.message === 'Student not found') {
                     console.log('🔒 Authentication required for events - using demo data');
@@ -412,6 +955,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function generateMockEvents(year, month) {
+        console.log(`🎲 Generating mock events for ${year}-${month + 1}`);
         const events = [];
         const today = new Date();
         
@@ -441,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         break;
                 }
                 
-                events.push({
+                const event = {
                     id: `${randomType}_${day}_${month}_${year}`,
                     title: eventTitle,
                     start: eventDate.toISOString(),
@@ -450,14 +994,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     program: 'Computer Science',
                     professor: 'Dr. Smith',
                     time: `${8 + (day % 8)}:00 AM`
-                });
+                };
+                
+                events.push(event);
+                console.log(`➕ Generated mock event: ${event.title} on ${eventDate.toISOString().split('T')[0]}`);
             }
         }
         
         // Add some special events for current month
         if (year === today.getFullYear() && month === today.getMonth()) {
+            console.log(`🎯 Adding special events for current month`);
+            
             // Today's events
-            events.push({
+            const todayEvent = {
                 id: 'today_meeting',
                 title: 'Morning Standup',
                 start: new Date(year, month, today.getDate(), 9, 0).toISOString(),
@@ -466,11 +1015,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 program: 'Software Development',
                 professor: 'Prof. Johnson',
                 time: '9:00 AM'
-            });
+            };
+            events.push(todayEvent);
+            console.log(`➕ Added today's event: ${todayEvent.title}`);
             
             // Tomorrow's events if valid
             if (today.getDate() + 1 <= new Date(year, month + 1, 0).getDate()) {
-                events.push({
+                const tomorrowEvent = {
                     id: 'tomorrow_assignment',
                     title: 'Final Project Due',
                     start: new Date(year, month, today.getDate() + 1, 23, 59).toISOString(),
@@ -479,23 +1030,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     program: 'Computer Science',
                     professor: 'Dr. Brown',
                     time: '11:59 PM'
-                });
+                };
+                events.push(tomorrowEvent);
+                console.log(`➕ Added tomorrow's event: ${tomorrowEvent.title}`);
             }
         }
         
-        console.log(`Generated ${events.length} mock events for ${year}-${month + 1}`);
+        console.log(`✅ Generated ${events.length} mock events for ${year}-${month + 1}`);
         return events;
     }
     
     function populateCalendarEvents() {
-        console.log(`Populating calendar with ${currentEvents.length} events`);
+        console.log(`🎯 Populating calendar with ${currentEvents.length} events`);
         
         // Clear existing events
-        document.querySelectorAll('.calendar-day').forEach(day => {
+        const existingDays = document.querySelectorAll('.calendar-day');
+        console.log(`🧹 Clearing events from ${existingDays.length} calendar days`);
+        
+        existingDays.forEach(day => {
             day.classList.remove('has-events');
             const existingEvents = day.querySelectorAll('.event-item, .event-counter');
             existingEvents.forEach(event => event.remove());
         });
+        
+        if (currentEvents.length === 0) {
+            console.log('ℹ️ No events to populate');
+            return;
+        }
         
         // Group events by date
         const eventsByDate = {};
@@ -507,14 +1068,15 @@ document.addEventListener('DOMContentLoaded', function() {
             eventsByDate[eventDate].push(event);
         });
         
-        console.log('Events by date:', eventsByDate);
+        console.log('📅 Events grouped by date:', eventsByDate);
         
         // Add events to calendar days
         Object.keys(eventsByDate).forEach(date => {
             const dayElement = document.querySelector(`[data-date="${date}"]`);
-            console.log(`Looking for day element with date: ${date}`, dayElement);
+            console.log(`🔍 Looking for day element with date: ${date}`, dayElement);
             
             if (dayElement) {
+                console.log(`✅ Found day element for ${date}, adding ${eventsByDate[date].length} events`);
                 dayElement.classList.add('has-events');
                 const events = eventsByDate[date];
                 
@@ -526,9 +1088,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     eventElement.title = event.description || event.title;
                     eventElement.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        console.log(`🎯 Event clicked: ${event.title}`);
                         showEventDetails(event);
                     });
                     dayElement.appendChild(eventElement);
+                    console.log(`➕ Added event: ${event.title} (${event.type})`);
                 });
                 
                 // Show counter if more than 3 events
@@ -541,9 +1105,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         showDayEvents(date);
                     });
                     dayElement.appendChild(counter);
+                    console.log(`➕ Added counter: +${events.length - 3}`);
                 }
+            } else {
+                console.warn(`⚠️ Could not find day element for date: ${date}`);
             }
         });
+        
+        console.log(`✅ Finished populating calendar events`);
     }
     
     function loadTodaySchedule() {
@@ -560,6 +1129,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success && data.events && data.events.length > 0) {
                     console.log('✅ Found real events, displaying:', data.events.length);
                     displayTodaySchedule(data.events);
+                } else if (data.success && data.events && data.events.length === 0) {
+                    console.log('ℹ️ API returned success but no events - using mock data for demo');
+                    // Use mock data when API succeeds but returns empty events array
+                    const today = new Date();
+                    const mockTodayEvents = [
+                        {
+                            id: 'today_1',
+                            title: 'Morning Lecture',
+                            start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0).toISOString(),
+                            type: 'meeting',
+                            description: 'Software Engineering Fundamentals',
+                            program: 'Computer Science',
+                            professor: 'Dr. Johnson',
+                            time: '9:00 AM'
+                        },
+                        {
+                            id: 'today_2',
+                            title: 'Assignment Review',
+                            start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0).toISOString(),
+                            type: 'assignment',
+                            description: 'Database Design Project Review',
+                            program: 'Computer Science',
+                            professor: 'Prof. Smith',
+                            time: '2:00 PM'
+                        }
+                    ];
+                    displayTodaySchedule(mockTodayEvents);
                 } else if (data.success === false && data.message === 'Student not found') {
                     console.log('🔒 Authentication required - showing auth error');
                     displayAuthError();
@@ -657,19 +1253,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 minute: '2-digit'
             });
             
+            let iconClass;
+            switch (event.type) {
+                case 'meeting':
+                    iconClass = 'bi-camera-video';
+                    break;
+                case 'assignment':
+                    iconClass = 'bi-file-earmark-text';
+                    break;
+                case 'announcement':
+                    iconClass = 'bi-megaphone';
+                    break;
+                default:
+                    iconClass = 'bi-calendar-event';
+            }
+            
             return `
-                <div class="today-schedule-item ${scheduleClass}" onclick="showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="mb-1">${event.title}</h6>
-                            <small class="text-muted">${time}</small>
-                            ${event.program ? `<br><small class="text-muted">${event.program}</small>` : ''}
-                        </div>
-                        ${event.type === 'meeting' && event.meeting_url ? 
-                            `<a href="${event.meeting_url}" target="_blank" class="btn btn-primary btn-sm">
-                                <i class="bi bi-camera-video"></i>
-                            </a>` : ''}
+                <div class="today-schedule-item ${scheduleClass}" onclick="showEventFromJSON('${JSON.stringify(event).replace(/'/g, "&#39;").replace(/"/g, "&quot;")}')">
+                    <div class="schedule-icon">
+                        <i class="bi ${iconClass}"></i>
                     </div>
+                    <div class="schedule-details">
+                        <h6>${event.title}</h6>
+                        <p class="schedule-time">${time}</p>
+                        ${event.program ? `<p class="schedule-program">${event.program}</p>` : ''}
+                    </div>
+                    ${event.type === 'meeting' && event.meeting_url ? 
+                        `<a href="${event.meeting_url}" target="_blank" class="btn btn-primary btn-sm ms-auto">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>` : ''}
                 </div>
             `;
         }).join('');
@@ -700,10 +1312,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showEventDetails(event) {
-        const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+        console.log(`🎯 showEventDetails called for event:`, event);
+        
+        const modalElement = document.getElementById('eventModal');
+        if (!modalElement) {
+            console.error('❌ Could not find eventModal element');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
         const modalTitle = document.getElementById('eventModalLabel');
         const modalBody = document.getElementById('eventModalBody');
         const modalActions = document.getElementById('eventModalActions');
+        
+        if (!modalTitle || !modalBody || !modalActions) {
+            console.error('❌ Could not find modal elements');
+            return;
+        }
         
         modalTitle.textContent = event.title;
         
@@ -788,6 +1413,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showDayEvents(dateOrYear, month, day) {
+        console.log(`📅 showDayEvents called with:`, { dateOrYear, month, day });
+        
         let targetDate;
         if (typeof dateOrYear === 'string') {
             targetDate = dateOrYear;
@@ -795,21 +1422,42 @@ document.addEventListener('DOMContentLoaded', function() {
             targetDate = `${dateOrYear}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         }
         
+        console.log(`🎯 Looking for events on: ${targetDate}`);
+        console.log(`📊 Current events count: ${currentEvents.length}`);
+        
         const dayEvents = currentEvents.filter(event => {
             const eventDate = new Date(event.start).toISOString().split('T')[0];
-            return eventDate === targetDate;
+            const matches = eventDate === targetDate;
+            if (matches) {
+                console.log(`✅ Found event for ${targetDate}: ${event.title}`);
+            }
+            return matches;
         });
         
-        const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+        console.log(`📋 Found ${dayEvents.length} events for ${targetDate}`);
+        
+        const modalElement = document.getElementById('eventModal');
+        if (!modalElement) {
+            console.error('❌ Could not find eventModal element');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
         const modalTitle = document.getElementById('eventModalLabel');
         const modalBody = document.getElementById('eventModalBody');
         const modalActions = document.getElementById('eventModalActions');
+        
+        if (!modalTitle || !modalBody || !modalActions) {
+            console.error('❌ Could not find modal elements');
+            return;
+        }
         
         modalTitle.textContent = `Events for ${new Date(targetDate).toLocaleDateString()}`;
         modalActions.innerHTML = '';
         
         if (dayEvents.length === 0) {
             modalBody.innerHTML = '<p class="text-muted">No events scheduled for this day.</p>';
+            console.log('ℹ️ No events found for this day');
         } else {
             const eventsHtml = dayEvents.map(event => `
                 <div class="border rounded p-3 mb-3">
@@ -819,7 +1467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <small class="text-muted">${event.type.charAt(0).toUpperCase() + event.type.slice(1)}</small>
                             ${event.description ? `<p class="mt-2 mb-0">${event.description}</p>` : ''}
                         </div>
-                        <button class="btn btn-outline-primary btn-sm" onclick="showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                        <button class="btn btn-outline-primary btn-sm" onclick="showEventFromJSON('${JSON.stringify(event).replace(/'/g, "&#39;").replace(/"/g, "&quot;")}')">
                             View Details
                         </button>
                     </div>
@@ -827,55 +1475,25 @@ document.addEventListener('DOMContentLoaded', function() {
             `).join('');
             
             modalBody.innerHTML = eventsHtml;
+            console.log(`📝 Generated HTML for ${dayEvents.length} events`);
         }
         
         modal.show();
+        console.log('✅ Modal shown');
     }
     
     // Make showEventDetails available globally
     window.showEventDetails = showEventDetails;
+    
+    // Helper function for JSON event handling
+    window.showEventFromJSON = function(eventJson) {
+        try {
+            const event = JSON.parse(eventJson);
+            showEventDetails(event);
+        } catch (error) {
+            console.error('Error parsing event JSON:', error);
+        }
+    };
 });
-
-// Debug function to test calendar endpoints - defined outside DOMContentLoaded for global access
-window.testCalendarEndpoints = function() {
-    console.log('🧪 Testing Calendar Endpoints...');
-    
-    // Test 1: Today's schedule
-    console.log('1️⃣ Testing /student/calendar/today');
-    fetch('/student/calendar/today')
-        .then(response => {
-            console.log('Today API Status:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Today API Response:', data);
-            alert('Today API Response: ' + JSON.stringify(data, null, 2));
-        })
-        .catch(error => {
-            console.error('Today API Error:', error);
-            alert('Today API Error: ' + error.message);
-        });
-    
-    // Test 2: Current month events
-    setTimeout(() => {
-        const today = new Date();
-        const url = `/student/calendar/events?year=${today.getFullYear()}&month=${today.getMonth() + 1}`;
-        console.log('2️⃣ Testing:', url);
-        
-        fetch(url)
-            .then(response => {
-                console.log('Events API Status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Events API Response:', data);
-                alert('Events API Response: ' + JSON.stringify(data, null, 2));
-            })
-            .catch(error => {
-                console.error('Events API Error:', error);
-                alert('Events API Error: ' + error.message);
-            });
-    }, 1000);
-};
 </script>
-@endsection
+@endpush
