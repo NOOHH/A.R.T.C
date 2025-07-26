@@ -1676,6 +1676,16 @@ Route::middleware(['professor.auth'])
     Route::post('/activities/create', [\App\Http\Controllers\Professor\GradingController::class, 'createActivity'])
          ->name('activities.create');
     
+    // New Enhanced Grading Features
+    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])
+         ->name('grading.auto-grade-quizzes');
+    Route::post('/grading/export', [\App\Http\Controllers\Professor\GradingController::class, 'exportGrades'])
+         ->name('grading.export');
+    Route::get('/grading/student/{student}/details/{program}', [\App\Http\Controllers\Professor\GradingController::class, 'getStudentGradeDetails'])
+         ->name('grading.student-details-enhanced');
+    Route::get('/grading/quiz/{quiz}/analytics', [\App\Http\Controllers\Professor\GradingController::class, 'getQuizAnalytics'])
+         ->name('grading.quiz-analytics');
+    
     // AI Quiz Generator
     Route::get('/quiz-generator', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'index'])
          ->name('quiz-generator.index');

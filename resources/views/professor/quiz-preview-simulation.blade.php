@@ -17,7 +17,6 @@
             <div>
                 <h4>{{ $quiz->quiz_title }}</h4>
                 <div class="quiz-meta">
-                    <span class="badge bg-primary">{{ ucfirst($quiz->difficulty ?? 'medium') }}</span>
                     <span class="badge bg-info">{{ $quiz->total_questions }} Questions</span>
                     @if($quiz->time_limit)
                         <span class="badge bg-warning">{{ $quiz->time_limit }} Minutes</span>
@@ -28,9 +27,9 @@
                 <button type="button" class="btn btn-outline-secondary" onclick="resetQuizSimulation()">
                     <i class="bi bi-arrow-clockwise"></i> Reset
                 </button>
-                <button type="button" class="btn btn-success" onclick="submitQuizSimulation()">
-                    <i class="bi bi-check-circle"></i> Submit Quiz
-                </button>
+                <div class="alert alert-info d-inline-block mb-0 ms-2" style="padding: 0.375rem 0.75rem;">
+                    <i class="bi bi-info-circle"></i> Preview Mode - Submission Disabled
+                </div>
             </div>
         </div>
         
@@ -355,71 +354,9 @@ function checkAnswer(questionId) {
 }
 
 function submitQuizSimulation() {
-    if (isQuizCompleted) return;
-    
-    // Save current answer
-    saveCurrentAnswer();
-    
-    // Stop timer
-    if (timerInterval) {
-        clearInterval(timerInterval);
-    }
-    
-    // Calculate results
-    let correctAnswers = 0;
-    let totalPoints = 0;
-    let earnedPoints = 0;
-    
-    const breakdown = [];
-    
-    Object.keys(quizData).forEach(questionId => {
-        const questionData = quizData[questionId];
-        const userAnswer = userAnswers[questionId];
-        const isCorrect = userAnswer === questionData.correct_answer;
-        
-        totalPoints += questionData.points;
-        if (isCorrect) {
-            correctAnswers++;
-            earnedPoints += questionData.points;
-        }
-        
-        breakdown.push({
-            id: questionId,
-            correct: isCorrect,
-            userAnswer: userAnswer,
-            correctAnswer: questionData.correct_answer,
-            points: questionData.points
-        });
-    });
-    
-    const percentage = Math.round((earnedPoints / totalPoints) * 100);
-    
-    // Calculate time taken
-    const endTime = new Date();
-    const timeTaken = Math.floor((endTime - quizStartTime) / 1000);
-    const minutes = Math.floor(timeTaken / 60);
-    const seconds = timeTaken % 60;
-    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
-    // Update summary
-    $('#final-score').text(`${earnedPoints} / ${totalPoints}`);
-    $('#correct-count').text(correctAnswers);
-    $('#percentage').text(percentage);
-    $('#time-taken').text(timeString);
-    
-    // Create breakdown
-    let breakdownHtml = '';
-    breakdown.forEach((item, index) => {
-        const icon = item.correct ? '✅' : '❌';
-        breakdownHtml += `<div class="mb-1">${icon} Question ${index + 1}: ${item.points} point(s)</div>`;
-    });
-    $('#question-breakdown').html(breakdownHtml);
-    
-    // Hide questions and show summary
-    $('#questions-container').addClass('d-none');
-    $('#quiz-summary').removeClass('d-none');
-    
-    isQuizCompleted = true;
+    // Disable submission for professors in preview mode
+    alert('This is a preview mode. Quiz submission is disabled for professors.\n\nStudents will be able to submit their answers when taking the actual quiz.');
+    return false;
 }
 
 function resetQuizSimulation() {

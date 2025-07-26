@@ -99,4 +99,45 @@ class StudentGrade extends Model
     {
         return $this->percentage >= 60;
     }
+    
+    /**
+     * Get the related quiz submission if this is a quiz grade
+     */
+    public function quizSubmission()
+    {
+        return $this->belongsTo(\App\Models\QuizSubmission::class, 'reference_id', 'quiz_id')
+                   ->where('student_id', $this->student_id);
+    }
+    
+    /**
+     * Get the related quiz if this is a quiz grade
+     */
+    public function quiz()
+    {
+        return $this->belongsTo(\App\Models\Quiz::class, 'reference_id', 'quiz_id');
+    }
+    
+    /**
+     * Scope to get quiz grades only
+     */
+    public function scopeQuizGrades($query)
+    {
+        return $query->where('grade_type', 'quiz');
+    }
+    
+    /**
+     * Scope to get assignment grades only
+     */
+    public function scopeAssignmentGrades($query)
+    {
+        return $query->where('grade_type', 'assignment');
+    }
+    
+    /**
+     * Scope to get activity grades only
+     */
+    public function scopeActivityGrades($query)
+    {
+        return $query->where('grade_type', 'activity');
+    }
 }

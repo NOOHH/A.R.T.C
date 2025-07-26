@@ -32,6 +32,7 @@ class Quiz extends Model
         'show_correct_answers',
         'max_attempts',
         'randomize_order',
+        'randomize_mc_options',
         'tags',
     ];
 
@@ -42,6 +43,7 @@ class Quiz extends Model
         'instant_feedback' => 'boolean',
         'show_correct_answers' => 'boolean',
         'randomize_order' => 'boolean',
+        'randomize_mc_options' => 'boolean',
         'tags' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

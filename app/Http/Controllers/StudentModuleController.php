@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContentItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class StudentModuleController extends Controller
 {
@@ -19,6 +20,13 @@ class StudentModuleController extends Controller
             // Fetch content items directly by course_id and module_id (if needed)
             $items = \App\Models\ContentItem::where('course_id', $courseId)
                 ->where('is_active', 1)
+                ->whereNotExists(function($query) {
+                    // Exclude content items that are linked to draft quizzes
+                    $query->select(DB::raw(1))
+                          ->from('quizzes')
+                          ->whereColumn('quizzes.content_id', 'content_items.id')
+                          ->where('quizzes.is_draft', true);
+                })
                 ->orderBy('content_order')
                 ->get(['id', 'content_title', 'content_type', 'attachment_path', 'content_description', 'content_url']);
 

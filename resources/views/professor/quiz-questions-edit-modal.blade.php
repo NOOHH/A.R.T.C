@@ -15,20 +15,16 @@
             </div>
             <div class="row mt-3">
                 <div class="col-md-6">
-                    <label class="form-label">Difficulty</label>
-                    <select class="form-select" id="difficulty">
-                        <option value="easy" {{ $quiz->difficulty === 'easy' ? 'selected' : '' }}>Easy</option>
-                        <option value="medium" {{ $quiz->difficulty === 'medium' ? 'selected' : '' }}>Medium</option>
-                        <option value="hard" {{ $quiz->difficulty === 'hard' ? 'selected' : '' }}>Hard</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
                     <label class="form-label">Status</label>
                     <select class="form-select" id="status">
                         <option value="draft" {{ $quiz->status === 'draft' ? 'selected' : '' }}>Draft</option>
                         <option value="published" {{ $quiz->status === 'published' ? 'selected' : '' }}>Published</option>
                         <option value="archived" {{ $quiz->status === 'archived' ? 'selected' : '' }}>Archived</option>
                     </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Max Attempts</label>
+                    <input type="number" class="form-control" id="max_attempts" value="{{ $quiz->max_attempts ?? 1 }}" min="1">
                 </div>
             </div>
             <div class="mt-3">
@@ -56,10 +52,16 @@
                     Show Correct Answers
                 </label>
             </div>
-            <div class="form-check mb-3">
+            <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="randomize_order" {{ $quiz->randomize_order ? 'checked' : '' }}>
                 <label class="form-check-label" for="randomize_order">
                     Randomize Questions
+                </label>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="randomize_mc_options" {{ $quiz->randomize_mc_options ?? false ? 'checked' : '' }}>
+                <label class="form-check-label" for="randomize_mc_options">
+                    Randomize Multiple Choice Options
                 </label>
             </div>
             
@@ -107,17 +109,9 @@
                 </div>
                 
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label class="form-label">Points</label>
                         <input type="number" class="form-control" name="points_{{ $question->id }}" value="{{ $question->points ?? 1 }}" min="1">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Difficulty</label>
-                        <select class="form-select" name="difficulty_{{ $question->id }}">
-                            <option value="easy" {{ $question->difficulty === 'easy' ? 'selected' : '' }}>Easy</option>
-                            <option value="medium" {{ $question->difficulty === 'medium' ? 'selected' : '' }}>Medium</option>
-                            <option value="hard" {{ $question->difficulty === 'hard' ? 'selected' : '' }}>Hard</option>
-                        </select>
                     </div>
                 </div>
                 

@@ -95,6 +95,18 @@ class Student extends Model
         return $this->hasMany(StudentGrade::class, 'student_id', 'student_id');
     }
     
+    // Get quiz submissions for this student
+    public function quizSubmissions()
+    {
+        return $this->hasMany(QuizSubmission::class, 'student_id', 'student_id');
+    }
+    
+    // Get assignment submissions for this student
+    public function assignmentSubmissions()
+    {
+        return $this->hasMany(AssignmentSubmission::class, 'student_id', 'student_id');
+    }
+    
     // Get all completed module IDs for this student
     public function getCompletedModuleIdsAttribute()
     {

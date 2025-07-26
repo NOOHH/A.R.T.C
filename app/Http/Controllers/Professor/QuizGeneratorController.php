@@ -289,7 +289,6 @@ public function getContentByCourse($courseId)
                     'explanation' => $questionData['explanation'] ?? '',
                     'question_source' => $useQuizApi ? 'quizapi' : 'generated',
                     'question_metadata' => [
-                        'difficulty' => $questionData['difficulty'] ?? 'Easy',
                         'category' => $questionData['category'] ?? 'General',
                         'generated_at' => now()->toISOString(),
                         'source_topic' => $request->quiz_title
@@ -2012,12 +2011,8 @@ public function getContentByCourse($courseId)
             $title = strtolower($request->quiz_title);
             $category = $this->mapTitleToQuizApiCategory($title);
             
-            // Determine difficulty if possible
-            $difficulty = $this->extractDifficultyFromTitle($title);
-            
             Log::info('QuizAPI parameters determined', [
                 'category' => $category,
-                'difficulty' => $difficulty,
                 'num_questions' => $request->num_questions
             ]);
 
@@ -2025,10 +2020,6 @@ public function getContentByCourse($courseId)
                 'limit' => $request->num_questions,
                 'category' => $category
             ];
-
-            if ($difficulty) {
-                $params['difficulty'] = $difficulty;
-            }
 
             $questions = $quizApiService->getQuestions($params);
 
@@ -2103,24 +2094,6 @@ public function getContentByCourse($courseId)
         }
 
         return 'code'; // Default fallback
-    }
-
-    /**
-     * Extract difficulty from title if mentioned
-     */
-    private function extractDifficultyFromTitle($title)
-    {
-        if (strpos($title, 'easy') !== false || strpos($title, 'basic') !== false || strpos($title, 'beginner') !== false) {
-            return 'easy';
-        }
-        if (strpos($title, 'hard') !== false || strpos($title, 'advanced') !== false || strpos($title, 'expert') !== false) {
-            return 'hard';
-        }
-        if (strpos($title, 'medium') !== false || strpos($title, 'intermediate') !== false) {
-            return 'medium';
-        }
-        
-        return null; // Let API choose
     }
 
     /**
@@ -2393,7 +2366,8 @@ public function getContentByCourse($courseId)
         try {
             Log::info('Quiz save request received', [
                 'quiz_id' => $request->quiz_id,
-                'professor_id' => session('professor_id')
+                'professor_id' => session('professor_id'),
+                'request_data' => $request->all()
             ]);
 
             $professor = Professor::find(session('professor_id'));
@@ -2412,17 +2386,17 @@ public function getContentByCourse($courseId)
 
             // Update quiz settings
             $quiz->update([
-                'quiz_title' => $request->quiz_title,
-                'time_limit' => $request->time_limit,
-                'difficulty' => $request->difficulty,
-                'status' => $request->status,
-                'instructions' => $request->instructions,
-                'allow_retakes' => $request->allow_retakes,
-                'instant_feedback' => $request->instant_feedback,
-                'show_correct_answers' => $request->show_correct_answers,
-                'randomize_order' => $request->randomize_order,
-                'max_attempts' => $request->max_attempts,
-                'total_questions' => count($request->questions),
+                'quiz_title' => $request->quiz_title ?? $quiz->quiz_title,
+                'time_limit' => $request->time_limit ?? $quiz->time_limit,
+                'status' => $request->status ?? $quiz->status,
+                'instructions' => $request->instructions ?? $quiz->instructions,
+                'allow_retakes' => $request->boolean('allow_retakes', false),
+                'instant_feedback' => $request->boolean('instant_feedback', false),
+                'show_correct_answers' => $request->boolean('show_correct_answers', true),
+                'randomize_order' => $request->boolean('randomize_order', false),
+                'randomize_mc_options' => $request->boolean('randomize_mc_options', false),
+                'max_attempts' => $request->max_attempts ?? $quiz->max_attempts,
+                'total_questions' => count($request->questions ?? []),
                 'updated_at' => now()
             ]);
 
@@ -2430,8 +2404,8 @@ public function getContentByCourse($courseId)
             $existingQuestionIds = [];
             $questionsOrder = 1;
 
-            foreach ($request->questions as $questionData) {
-                if ($questionData['id']) {
+            foreach ($request->questions ?? [] as $questionData) {
+                if (isset($questionData['id']) && $questionData['id']) {
                     // Update existing question
                     $question = QuizQuestion::where('id', $questionData['id'])
                                           ->where('quiz_id', $quiz->quiz_id)
@@ -2502,40 +2476,43 @@ public function getContentByCourse($courseId)
     private function updateQuestionData($question, $questionData, $order)
     {
         $updateData = [
-            'question_text' => $questionData['question_text'],
-            'question_type' => $questionData['question_type'],
-            'points' => $questionData['points'],
-            'difficulty' => $questionData['difficulty'],
-            'explanation' => $questionData['explanation'],
+            'question_text' => $questionData['question_text'] ?? $question->question_text,
+            'question_type' => $questionData['question_type'] ?? $question->question_type,
+            'points' => $questionData['points'] ?? $question->points,
+            'explanation' => $questionData['explanation'] ?? $question->explanation,
             'order' => $order,
             'updated_at' => now()
         ];
 
         // Handle question type specific data
-        switch ($questionData['question_type']) {
+        switch ($questionData['question_type'] ?? $question->question_type) {
             case 'multiple_choice':
-                $updateData['options'] = $questionData['options'];
-                $updateData['correct_answer'] = $questionData['correct_option'];
+                $updateData['options'] = $questionData['options'] ?? $question->options;
+                $updateData['correct_answer'] = $questionData['correct_option'] ?? $question->correct_answer;
                 break;
 
             case 'true_false':
                 $updateData['options'] = ['True', 'False'];
-                $updateData['correct_answer'] = $questionData['correct_answer'] ? 'True' : 'False';
+                $updateData['correct_answer'] = isset($questionData['correct_answer']) 
+                    ? ($questionData['correct_answer'] ? 'True' : 'False')
+                    : $question->correct_answer;
                 break;
 
             case 'short_answer':
-                $updateData['correct_answer'] = $questionData['acceptable_answers'];
+                $updateData['correct_answer'] = $questionData['acceptable_answers'] ?? $question->correct_answer;
                 $updateData['question_metadata'] = [
                     'case_sensitive' => $questionData['case_sensitive'] ?? false,
-                    'acceptable_answers' => explode("\n", $questionData['acceptable_answers'])
+                    'acceptable_answers' => isset($questionData['acceptable_answers']) 
+                        ? explode("\n", $questionData['acceptable_answers'])
+                        : (is_array($question->question_metadata) ? $question->question_metadata['acceptable_answers'] ?? [] : [])
                 ];
                 break;
 
             case 'essay':
                 $updateData['question_metadata'] = [
-                    'rubric' => $questionData['rubric'],
-                    'min_words' => $questionData['min_words'],
-                    'max_words' => $questionData['max_words']
+                    'rubric' => $questionData['rubric'] ?? (is_array($question->question_metadata) ? $question->question_metadata['rubric'] ?? '' : ''),
+                    'min_words' => $questionData['min_words'] ?? (is_array($question->question_metadata) ? $question->question_metadata['min_words'] ?? 0 : 0),
+                    'max_words' => $questionData['max_words'] ?? (is_array($question->question_metadata) ? $question->question_metadata['max_words'] ?? 1000 : 1000)
                 ];
                 break;
         }
@@ -2549,11 +2526,10 @@ public function getContentByCourse($courseId)
             'quiz_id' => $quiz->quiz_id,
             'quiz_title' => $quiz->quiz_title,
             'program_id' => $quiz->program_id,
-            'question_text' => $questionData['question_text'],
-            'question_type' => $questionData['question_type'],
-            'points' => $questionData['points'],
-            'difficulty' => $questionData['difficulty'],
-            'explanation' => $questionData['explanation'],
+            'question_text' => $questionData['question_text'] ?? '',
+            'question_type' => $questionData['question_type'] ?? 'multiple_choice',
+            'points' => $questionData['points'] ?? 1,
+            'explanation' => $questionData['explanation'] ?? '',
             'order' => $order,
             'is_active' => true,
             'created_by_professor' => $professor->professor_id,
@@ -2562,30 +2538,34 @@ public function getContentByCourse($courseId)
         ];
 
         // Handle question type specific data
-        switch ($questionData['question_type']) {
+        switch ($questionData['question_type'] ?? 'multiple_choice') {
             case 'multiple_choice':
-                $questionRecord['options'] = $questionData['options'];
-                $questionRecord['correct_answer'] = $questionData['correct_option'];
+                $questionRecord['options'] = $questionData['options'] ?? [];
+                $questionRecord['correct_answer'] = $questionData['correct_option'] ?? null;
                 break;
 
             case 'true_false':
                 $questionRecord['options'] = ['True', 'False'];
-                $questionRecord['correct_answer'] = $questionData['correct_answer'] ? 'True' : 'False';
+                $questionRecord['correct_answer'] = isset($questionData['correct_answer']) 
+                    ? ($questionData['correct_answer'] ? 'True' : 'False')
+                    : 'True';
                 break;
 
             case 'short_answer':
-                $questionRecord['correct_answer'] = $questionData['acceptable_answers'];
+                $questionRecord['correct_answer'] = $questionData['acceptable_answers'] ?? '';
                 $questionRecord['question_metadata'] = [
                     'case_sensitive' => $questionData['case_sensitive'] ?? false,
-                    'acceptable_answers' => explode("\n", $questionData['acceptable_answers'])
+                    'acceptable_answers' => isset($questionData['acceptable_answers']) 
+                        ? explode("\n", $questionData['acceptable_answers'])
+                        : []
                 ];
                 break;
 
             case 'essay':
                 $questionRecord['question_metadata'] = [
-                    'rubric' => $questionData['rubric'],
-                    'min_words' => $questionData['min_words'],
-                    'max_words' => $questionData['max_words']
+                    'rubric' => $questionData['rubric'] ?? '',
+                    'min_words' => $questionData['min_words'] ?? 0,
+                    'max_words' => $questionData['max_words'] ?? 1000
                 ];
                 break;
         }

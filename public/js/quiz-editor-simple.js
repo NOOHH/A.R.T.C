@@ -295,17 +295,9 @@ window.addNewQuestionInModal = function() {
             </div>
             
             <div class="row mb-3">
-                <div class="col-6">
+                <div class="col-12">
                     <label class="form-label">Points</label>
                     <input type="number" class="form-control" name="points_new-${counter}" value="1" min="1">
-                </div>
-                <div class="col-6">
-                    <label class="form-label">Difficulty</label>
-                    <select class="form-select" name="difficulty_new-${counter}">
-                        <option value="easy">Easy</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="hard">Hard</option>
-                    </select>
                 </div>
             </div>
             
@@ -470,13 +462,13 @@ window.saveQuizChanges = function() {
         quiz_id: window.currentQuizId,
         quiz_title: $('#quiz_title').val() || '',
         time_limit: $('#time_limit').val() || 60,
-        difficulty: $('#difficulty').val() || 'medium',
         status: $('#status').val() || 'draft',
         instructions: $('#instructions').val() || '',
         allow_retakes: $('#allow_retakes').is(':checked') || false,
         instant_feedback: $('#instant_feedback').is(':checked') || false,
         show_correct_answers: $('#show_correct_answers').is(':checked') || false,
         randomize_order: $('#randomize_order').is(':checked') || false,
+        randomize_mc_options: $('#randomize_mc_options').is(':checked') || false,
         max_attempts: $('#max_attempts').val() || 1,
         questions: []
     };
@@ -492,7 +484,6 @@ window.saveQuizChanges = function() {
             question_type: questionType,
             question_text: questionEl.find(`[name^="question_text"]`).val() || '',
             points: parseInt(questionEl.find(`[name^="points"]`).val()) || 1,
-            difficulty: questionEl.find(`[name^="difficulty"]`).val() || 'medium',
             explanation: questionEl.find(`[name^="explanation"]`).val() || ''
         };
 
