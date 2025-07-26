@@ -7,49 +7,36 @@
     <title>@yield('title', App\Helpers\UIHelper::getSiteTitle())</title>
     
     @php
-        // Get user info for global variables - PRIORITY: Laravel session first, then Auth, then PHP session
-        $user = null;
-        $isLoggedIn = false;
+        // Get user info for global variables
+        $user = Auth::user();
         
-        // Priority 1: Check Laravel session first (used by student dashboard)
-        if (session('user_id')) {
-            $user = (object) [
-                'id' => session('user_id'),
-                'name' => session('user_name') ?? 'Guest',
-                'role' => session('user_role') ?? 'guest'
-            ];
-            $isLoggedIn = true;
-        }
-        // Priority 2: Check Laravel Auth
-        elseif (Auth::check()) {
-            $authUser = Auth::user();
-            $user = (object) [
-                'id' => $authUser->id,
-                'name' => $authUser->name ?? 'Guest',
-                'role' => $authUser->role ?? 'guest'
-            ];
-            $isLoggedIn = true;
-        }
-        // Priority 3: Fallback to PHP session (legacy)
-        elseif (session('logged_in') === true) {
+        // Check if user is actually logged in via Laravel Auth or valid session
+        $isLoggedIn = Auth::check() || session('logged_in') === true;
+        
+        // If Laravel Auth user is not available but session indicates logged in, fallback to session data
+        if (!$user && $isLoggedIn) {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
             
-            if ($_SESSION['logged_in'] ?? false) {
-                $user = (object) [
-                    'id' => $_SESSION['user_id'] ?? null,
-                    'name' => $_SESSION['user_name'] ?? 'Guest',
-                    'role' => $_SESSION['user_type'] ?? 'guest'
+            // Only use session data if logged_in is explicitly true
+            if (session('logged_in') === true || $_SESSION['logged_in'] ?? false) {
+                $sessionUser = (object) [
+                    'id' => $_SESSION['user_id'] ?? session('user_id'),
+                    'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
+                    'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
                 ];
-                $isLoggedIn = !!$user->id;
+                
+                // Only use session user if we have valid session data
+                if ($sessionUser->id) {
+                    $user = $sessionUser;
+                }
             }
         }
         
         // If not logged in, clear user data
-        if (!$isLoggedIn || !$user || !$user->id) {
+        if (!$isLoggedIn) {
             $user = null;
-            $isLoggedIn = false;
         }
     @endphp
 

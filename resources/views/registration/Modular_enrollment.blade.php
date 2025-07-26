@@ -18,38 +18,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        .already-enrolled {
-            background-color: #f8f9fa !important;
-            border-color: #dee2e6 !important;
-            opacity: 0.7;
-        }
-        
-        .already-enrolled .card-body {
-            position: relative;
-        }
-        
-        .already-enrolled .form-check-input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .already-enrolled::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 10px,
-                rgba(255, 193, 7, 0.1) 10px,
-                rgba(255, 193, 7, 0.1) 20px
-            );
-            pointer-events: none;
-            z-index: 1;
-        }
+
     </style>
 @endpush
 
@@ -840,29 +809,6 @@
     // CSRF token
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
-    // User session data for API calls
-    const CURRENT_USER_ID = @json(session('user_id'));
-    const CURRENT_USER_NAME = @json(session('user_name'));
-    const CURRENT_USER_ROLE = @json(session('user_role'));
-    
-    // Debug: Log session data
-    console.log('Modular Enrollment Session Data:', {
-        CURRENT_USER_ID,
-        CURRENT_USER_NAME,
-        CURRENT_USER_ROLE,
-        globalMyId: window.myId,
-        globalIsAuthenticated: window.isAuthenticated
-    });
-    
-    // Use global variables as fallback if session data is not available
-    const EFFECTIVE_USER_ID = CURRENT_USER_ID || window.myId;
-    const EFFECTIVE_USER_NAME = CURRENT_USER_NAME || window.myName;
-    
-    console.log('Effective User Data:', {
-        EFFECTIVE_USER_ID,
-        EFFECTIVE_USER_NAME
-    });
-    
     // Initialize the form
     document.addEventListener('DOMContentLoaded', function() {
         updateStepper();
@@ -1119,18 +1065,13 @@
         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading programs...</div>';
         
         // Fetch filtered programs based on student's current enrollments
-        const apiUrl = '/api/enrollment/available-programs' + (EFFECTIVE_USER_ID ? `?user_id=${EFFECTIVE_USER_ID}` : '');
-        console.log('API URL:', apiUrl);
-        
-        fetch(apiUrl, {
+        fetch('/api/enrollment/available-programs', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': CSRF_TOKEN,
-                'X-User-ID': EFFECTIVE_USER_ID || '',
                 'Content-Type': 'application/json'
-            },
-            credentials: 'include' // Include session cookies
+            }
         })
         .then(response => response.json())
         .then(data => {
@@ -2050,27 +1991,10 @@
         container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading courses...</div>';
         
         // Load courses for the module
-        const courseApiUrl = `/get-module-courses?module_id=${moduleId}` + (EFFECTIVE_USER_ID ? `&user_id=${EFFECTIVE_USER_ID}` : '');
-        console.log('Loading courses from:', courseApiUrl);
-        
-        fetch(courseApiUrl, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'X-User-ID': EFFECTIVE_USER_ID || '',
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-        })
+        fetch(`/get-module-courses?module_id=${moduleId}`)
             .then(response => response.json())
             .then(data => {
-                console.log('Courses response for module', moduleId, ':', data);
                 if (data.success && data.courses) {
-                    console.log('Processing', data.courses.length, 'courses...');
-                    data.courses.forEach(course => {
-                        console.log(`Course: ${course.course_name} (ID: ${course.course_id}) - Already Enrolled: ${course.already_enrolled ? 'YES' : 'NO'}`);
-                    });
                     displayCoursesWithSelection(data.courses);
                 } else {
                     container.innerHTML = '<div class="alert alert-info">No courses available for this module.</div>';
@@ -2123,16 +2047,10 @@
             const courseDesc = course.course_description || course.subject_description || 'No description available';
             const coursePrice = course.course_price || course.subject_price || 0;
             const isChecked = selectedCourses[currentModuleId] && selectedCourses[currentModuleId].includes(courseId);
-            const alreadyEnrolled = course.already_enrolled || false;
-            
-            // Add styling and disable checkbox for already enrolled courses
-            const cardClass = alreadyEnrolled ? 'course-selection-item card mb-3 already-enrolled' : 'course-selection-item card mb-3';
-            const checkboxDisabled = alreadyEnrolled ? 'disabled' : '';
-            const enrolledBadge = alreadyEnrolled ? '<span class="badge bg-warning text-dark ms-2">Already Enrolled</span>' : '';
             
             coursesHtml += `
-                <div class="${cardClass}" data-course-id="${courseId}">
-                    <div class="card-body ${alreadyEnrolled ? 'opacity-75' : ''}">
+                <div class="course-selection-item card mb-3" data-course-id="${courseId}">
+                    <div class="card-body">
                         <div class="d-flex align-items-start">
                             <div class="form-check me-3">
                                 <input class="form-check-input course-checkbox" 
@@ -2142,22 +2060,16 @@
                                        data-course-name="${courseName}"
                                        data-course-price="${coursePrice}"
                                        ${isChecked ? 'checked' : ''}
-                                       ${checkboxDisabled}
-                                       onchange="handleCourseSelection(this)"
-                                       ${alreadyEnrolled ? 'title="You are already enrolled in this course"' : ''}>
+                                       onchange="handleCourseSelection(this)">
                                 <label class="form-check-label" for="course_${courseId}"></label>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-1 course-title">
-                                    ${courseName}
-                                    ${enrolledBadge}
-                                </h6>
+                                <h6 class="mb-1 course-title">${courseName}</h6>
                                 <p class="mb-1 text-muted course-description">${courseDesc}</p>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">Duration: ${course.duration || 'Flexible'}</small>
                                     ${coursePrice > 0 ? `<span class="badge bg-primary">₱${parseFloat(coursePrice).toFixed(2)}</span>` : ''}
                                 </div>
-                                ${alreadyEnrolled ? '<small class="text-warning"><i class="bi bi-info-circle"></i> You cannot enroll in this course again</small>' : ''}
                             </div>
                         </div>
                     </div>
@@ -2176,13 +2088,6 @@
         const courseId = checkbox.value;
         const courseName = checkbox.dataset.courseName;
         const coursePrice = parseFloat(checkbox.dataset.coursePrice || 0);
-        
-        // Check if this course is already enrolled (disabled checkbox)
-        if (checkbox.disabled) {
-            checkbox.checked = false;
-            alert('You are already enrolled in this course and cannot enroll again.');
-            return;
-        }
         
         // Initialize module in selectedCourses if not exists
         if (!selectedCourses[moduleId]) {
@@ -3616,17 +3521,7 @@ console.log('contentStructure:', window.contentStructure);
 // Fetch available programs for modular enrollment from backend API
 async function fetchAvailableProgramsForStudent() {
     try {
-        const apiUrl = '/api/enrollment/available-programs' + (EFFECTIVE_USER_ID ? `?user_id=${EFFECTIVE_USER_ID}` : '');
-        const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'X-User-ID': EFFECTIVE_USER_ID || '',
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include' // Include session cookies
-        });
+        const response = await fetch('/api/enrollment/available-programs');
         if (!response.ok) throw new Error('Failed to fetch available programs');
         const data = await response.json();
         return data.programs || [];

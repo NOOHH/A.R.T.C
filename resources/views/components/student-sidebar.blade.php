@@ -30,14 +30,6 @@
           <span>Calendar</span>
         </a>
       </div>
-      <!-- Enrolled Courses -->
-      <div class="nav-item">
-        <a href="{{ route('student.enrolled-courses') }}"
-           class="nav-link @if(Route::currentRouteName()==='student.enrolled-courses') active @endif">
-          <i class="bi bi-journal-bookmark"></i>
-          <span>My Enrolled Courses</span>
-        </a>
-      </div>
       <!-- Meetings -->
       <div class="nav-item">
         <a href="{{ route('student.meetings') }}"
@@ -54,28 +46,21 @@
         </a>
         <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'student.course')) show @endif" id="programsMenu">
           <div class="submenu">
-            @if(isset($studentPrograms) && !empty($studentPrograms))
-              @forelse($studentPrograms as $program)
-                <a href="{{ route('student.course', $program['program_id']) }}"
-                   class="submenu-link @if(request()->route('courseId')==$program['program_id']) active @endif">
-                  <i class="bi bi-book"></i>
-                  <span class="program-info">
-                    <div class="program-name">{{ $program['program_name'] }}</div>
-                    <small class="program-details">{{ $program['package_name'] }}</small>
-                  </span>
-                </a>
-              @empty
-                <div class="submenu-link disabled">
-                  <i class="bi bi-info-circle"></i>
-                  <span>No programs available. Contact administrator.</span>
-                </div>
-              @endforelse
-            @else
+            @forelse($studentPrograms as $program)
+              <a href="{{ route('student.course', $program['program_id']) }}"
+                 class="submenu-link @if(request()->route('courseId')==$program['program_id']) active @endif">
+                <i class="bi bi-book"></i>
+                <span class="program-info">
+                  <div class="program-name">{{ $program['program_name'] }}</div>
+                  <small class="program-details">{{ $program['package_name'] }}</small>
+                </span>
+              </a>
+            @empty
               <div class="submenu-link disabled">
                 <i class="bi bi-info-circle"></i>
-                <span>Loading programs...</span>
+                <span>No programs available. Contact administrator.</span>
               </div>
-            @endif
+            @endforelse
           </div>
         </div>
       </div>

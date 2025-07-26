@@ -431,14 +431,14 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])
         ->name('student.meetings.upcoming');
     Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
-    Route::get('/student/calendar', [App\Http\Controllers\StudentCalendarController::class, 'index'])->name('student.calendar');
-    Route::get('/student/calendar/events', [App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
-    Route::get('/student/calendar/today', [App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
-    Route::get('/student/calendar/event/{type}/{id}', [App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
-    // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
-    // Enrolled Courses page - NEW
-    Route::get('/student/enrolled-courses', [StudentDashboardController::class, 'enrolledCourses'])->name('student.enrolled-courses');
+    // Student Calendar Routes
+    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
+    Route::get('/student/calendar/events', [\App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
+    Route::get('/student/calendar/today', [\App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
+    Route::get('/student/calendar/event/{eventId}', [\App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
+    
+    // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');

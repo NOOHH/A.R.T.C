@@ -519,8 +519,26 @@ class StudentDashboardController extends Controller
         $upcomingMeetings = collect();
         $todaysMeetings = collect();
         $allMeetings = collect();
+        $studentPrograms = collect();
         
         if ($student) {
+            // Get student's enrolled programs for sidebar
+            $studentPrograms = $student->enrollments()
+                ->with(['program', 'package'])
+                ->whereNotNull('program_id')
+                ->get()
+                ->map(function ($enrollment) {
+                    return [
+                        'program_id' => $enrollment->program_id,
+                        'program_name' => $enrollment->program->program_name ?? 'Unknown Program',
+                        'package_name' => $enrollment->package->package_name ?? 'Unknown Package',
+                        'enrollment_type' => $enrollment->enrollment_type,
+                        'enrollment_status' => $enrollment->enrollment_status
+                    ];
+                })
+                ->unique('program_id')
+                ->values();
+            
             // Get student's enrolled batches
             $enrolledBatches = $student->enrollments()
                 ->with('batch')
@@ -552,7 +570,7 @@ class StudentDashboardController extends Controller
             }
         }
 
-        return view('student.student-calendar.student-calendar', compact('user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings'));
+        return view('student.student-calendar.student-calendar', compact('user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings', 'studentPrograms'));
     }
 
     public function course($courseId)
@@ -2495,108 +2513,5 @@ class StudentDashboardController extends Controller
         ]);
 
         return $results;
-    }
-
-    /**
-     * Display all enrolled courses for the student
-     */
-    public function enrolledCourses()
-    {
-        $user = (object) [
-            'user_id' => session('user_id'),
-            'user_firstname' => explode(' ', session('user_name'))[0] ?? '',
-            'user_lastname' => explode(' ', session('user_name'))[1] ?? '',
-            'role' => session('user_role')
-        ];
-
-        $student = Student::where('user_id', session('user_id'))->first();
-
-        // Get all enrollments for this user
-        $enrollments = collect();
-        
-        if (session('user_id')) {
-            $userEnrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
-                ->with(['program', 'package', 'batch'])
-                ->get();
-            $enrollments = $enrollments->merge($userEnrollments);
-        }
-        
-        if ($student) {
-            $studentEnrollments = \App\Models\Enrollment::where('student_id', $student->student_id)
-                ->with(['program', 'package', 'batch'])
-                ->get();
-            $enrollments = $enrollments->merge($studentEnrollments);
-        }
-
-        // Remove duplicates based on enrollment_id
-        $enrollments = $enrollments->unique('enrollment_id');
-
-        $enrolledCoursesData = [];
-
-        foreach ($enrollments as $enrollment) {
-            if (!$enrollment->program) {
-                continue;
-            }
-
-            $enrollmentInfo = [
-                'enrollment_id' => $enrollment->enrollment_id,
-                'program_name' => $enrollment->program->program_name,
-                'enrollment_type' => $enrollment->enrollment_type,
-                'enrollment_status' => $enrollment->enrollment_status,
-                'payment_status' => $enrollment->payment_status ?? 'pending',
-                'package_name' => $enrollment->package->package_name ?? 'N/A',
-                'learning_mode' => $enrollment->learning_mode ?? 'N/A',
-                'enrolled_at' => $enrollment->created_at->format('M d, Y'),
-                'courses' => []
-            ];
-
-            if ($enrollment->enrollment_type === 'Modular') {
-                // Get enrolled courses for modular enrollments
-                $enrolledCourses = $enrollment->enrollmentCourses()
-                    ->with(['course', 'module'])
-                    ->where('is_active', true)
-                    ->get();
-
-                foreach ($enrolledCourses as $enrollmentCourse) {
-                    if ($enrollmentCourse->course) {
-                        $enrollmentInfo['courses'][] = [
-                            'course_id' => $enrollmentCourse->course->subject_id,
-                            'course_name' => $enrollmentCourse->course->subject_name,
-                            'course_description' => $enrollmentCourse->course->subject_description,
-                            'module_name' => $enrollmentCourse->module->module_name ?? 'N/A',
-                            'enrolled_at' => $enrollmentCourse->created_at->format('M d, Y')
-                        ];
-                    }
-                }
-            } else {
-                // For full enrollments, get all courses in the program
-                $programModules = Module::where('program_id', $enrollment->program_id)
-                    ->where('is_archived', false)
-                    ->with(['courses' => function($query) {
-                        $query->where('is_archived', false);
-                    }])
-                    ->get();
-
-                foreach ($programModules as $module) {
-                    foreach ($module->courses as $course) {
-                        $enrollmentInfo['courses'][] = [
-                            'course_id' => $course->subject_id,
-                            'course_name' => $course->subject_name,
-                            'course_description' => $course->subject_description,
-                            'module_name' => $module->module_name,
-                            'enrolled_at' => $enrollment->created_at->format('M d, Y')
-                        ];
-                    }
-                }
-            }
-
-            $enrolledCoursesData[] = $enrollmentInfo;
-        }
-
-        return view('student.enrolled-courses', [
-            'user' => $user,
-            'student' => $student,
-            'enrolledCoursesData' => $enrolledCoursesData
-        ]);
     }
 }

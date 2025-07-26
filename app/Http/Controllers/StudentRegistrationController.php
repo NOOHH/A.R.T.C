@@ -756,7 +756,7 @@ class StudentRegistrationController extends Controller
                 'created_by_admin_id' => 1
             ]);
             $packages = collect([$defaultPackage]);
-            Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
+            \Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
         }
         
         // Get requirements for "full" program
@@ -1398,20 +1398,7 @@ class StudentRegistrationController extends Controller
 
             // Create module registrations if registration_modules table exists
             if (is_array($selectedModules) && count($selectedModules) > 0) {
-                $enrolledCourseIds = []; // Track enrolled courses to prevent duplicates within this enrollment
-                
-                // Get already enrolled course IDs for this user to prevent duplicate enrollments across different enrollments
-                $existingEnrolledCourseIds = \App\Models\EnrollmentCourse::whereHas('enrollment', function($query) use ($user) {
-                    $query->where('user_id', $user->user_id)
-                          ->where('enrollment_status', '!=', 'rejected');
-                })->where('is_active', true)
-                  ->pluck('course_id')
-                  ->toArray();
-                
-                Log::info('Existing enrolled courses for user', [
-                    'user_id' => $user->user_id,
-                    'existing_enrolled_course_ids' => $existingEnrolledCourseIds
-                ]);
+                $enrolledCourseIds = []; // Track enrolled courses to prevent duplicates
                 
                 foreach ($selectedModules as $moduleData) {
                     $moduleId = is_array($moduleData) ? ($moduleData['id'] ?? $moduleData['module_id'] ?? null) : $moduleData;
@@ -1432,49 +1419,36 @@ class StudentRegistrationController extends Controller
                                 foreach ($moduleData['selected_courses'] as $courseData) {
                                     $courseId = is_array($courseData) ? ($courseData['id'] ?? $courseData['course_id'] ?? null) : $courseData;
                                     
-                                    if ($courseId) {
-                                        // Check if already enrolled in this course in previous enrollments
-                                        if (in_array($courseId, $existingEnrolledCourseIds)) {
-                                            Log::warning('Skipping course - already enrolled in previous enrollment', [
+                                    if ($courseId && !in_array($courseId, $enrolledCourseIds)) {
+                                        try {
+                                            EnrollmentCourse::create([
+                                                'enrollment_id' => $enrollment->enrollment_id,
                                                 'course_id' => $courseId,
-                                                'user_id' => $user->user_id,
-                                                'enrollment_id' => $enrollment->enrollment_id
+                                                'module_id' => $moduleId,
+                                                'enrollment_type' => 'course',
+                                                'course_price' => 0, // Price will be calculated based on package
+                                                'is_active' => true
                                             ]);
-                                            continue;
-                                        }
-                                        
-                                        // Check if already enrolled in this current enrollment
-                                        if (!in_array($courseId, $enrolledCourseIds)) {
-                                            try {
-                                                EnrollmentCourse::create([
-                                                    'enrollment_id' => $enrollment->enrollment_id,
-                                                    'course_id' => $courseId,
-                                                    'module_id' => $moduleId,
-                                                    'enrollment_type' => 'course',
-                                                    'course_price' => 0, // Price will be calculated based on package
-                                                    'is_active' => true
-                                                ]);
-                                                $enrolledCourseIds[] = $courseId; // Track enrolled course
-                                                Log::info('Course enrolled', [
-                                                    'course_id' => $courseId, 
-                                                    'module_id' => $moduleId,
-                                                    'enrollment_id' => $enrollment->enrollment_id
-                                                ]);
-                                            } catch (\Exception $e) {
-                                                Log::warning('Failed to create course enrollment', [
-                                                    'course_id' => $courseId,
-                                                    'module_id' => $moduleId,
-                                                    'enrollment_id' => $enrollment->enrollment_id,
-                                                    'error' => $e->getMessage()
-                                                ]);
-                                            }
-                                        } else {
-                                            Log::info('Skipping duplicate course enrollment within same enrollment', [
-                                                'course_id' => $courseId,
+                                            $enrolledCourseIds[] = $courseId; // Track enrolled course
+                                            Log::info('Course enrolled', [
+                                                'course_id' => $courseId, 
                                                 'module_id' => $moduleId,
                                                 'enrollment_id' => $enrollment->enrollment_id
                                             ]);
+                                        } catch (\Exception $e) {
+                                            Log::warning('Failed to create course enrollment', [
+                                                'course_id' => $courseId,
+                                                'module_id' => $moduleId,
+                                                'enrollment_id' => $enrollment->enrollment_id,
+                                                'error' => $e->getMessage()
+                                            ]);
                                         }
+                                    } elseif (in_array($courseId, $enrolledCourseIds)) {
+                                        Log::info('Skipping duplicate course enrollment', [
+                                            'course_id' => $courseId,
+                                            'module_id' => $moduleId,
+                                            'enrollment_id' => $enrollment->enrollment_id
+                                        ]);
                                     }
                                 }
                             } else {
@@ -1482,17 +1456,6 @@ class StudentRegistrationController extends Controller
                                 $module = \App\Models\Module::with('courses')->find($moduleId);
                                 if ($module && $module->courses) {
                                     foreach ($module->courses as $course) {
-                                        // Check if already enrolled in this course in previous enrollments
-                                        if (in_array($course->subject_id, $existingEnrolledCourseIds)) {
-                                            Log::warning('Skipping course - already enrolled in previous enrollment', [
-                                                'course_id' => $course->subject_id,
-                                                'course_name' => $course->subject_name,
-                                                'user_id' => $user->user_id,
-                                                'enrollment_id' => $enrollment->enrollment_id
-                                            ]);
-                                            continue;
-                                        }
-                                        
                                         if (!in_array($course->subject_id, $enrolledCourseIds)) {
                                             try {
                                                 EnrollmentCourse::create([
@@ -1793,42 +1756,13 @@ class StudentRegistrationController extends Controller
                 ], 400);
             }
 
-            // Get user ID for enrollment checking
-            $userId = auth()->id() ?? 
-                      session('user_id') ?? 
-                      $request->get('user_id') ?? 
-                      $request->header('X-User-ID');
-
-            Log::info('getModuleCourses called', [
-                'module_id' => $moduleId,
-                'user_id' => $userId
-            ]);
-
-            // Get enrolled course IDs for this user if authenticated
-            $enrolledCourseIds = [];
-            if ($userId) {
-                $enrolledCourseIds = \App\Models\EnrollmentCourse::whereHas('enrollment', function($query) use ($userId) {
-                    $query->where('user_id', $userId)
-                          ->where('enrollment_status', '!=', 'rejected');
-                })->where('is_active', true)
-                  ->pluck('course_id')
-                  ->toArray();
-
-                Log::info('User enrolled courses', [
-                    'user_id' => $userId,
-                    'enrolled_course_ids' => $enrolledCourseIds
-                ]);
-            }
-
             $courses = \App\Models\Course::where('module_id', $moduleId)
                 ->where('is_active', true)
                 ->orderBy('subject_order')
                 ->get();
 
             // Format courses for response
-            $formattedCourses = $courses->map(function ($course) use ($enrolledCourseIds) {
-                $isAlreadyEnrolled = in_array($course->subject_id, $enrolledCourseIds);
-                
+            $formattedCourses = $courses->map(function ($course) {
                 return [
                     'course_id' => $course->subject_id,
                     'subject_id' => $course->subject_id, // Alternative naming
@@ -1842,8 +1776,7 @@ class StudentRegistrationController extends Controller
                     'subject_order' => $course->subject_order, // Alternative naming
                     'is_required' => $course->is_required,
                     'duration' => $course->duration ?? 'Flexible',
-                    'level' => $course->level ?? 'All Levels',
-                    'already_enrolled' => $isAlreadyEnrolled, // Add enrollment status
+                    'level' => $course->level ?? 'All Levels'
                 ];
             });
 
@@ -2308,20 +2241,13 @@ class StudentRegistrationController extends Controller
      */
     public function getAvailableProgramsForModularEnrollment(Request $request)
     {
-        // Try multiple ways to get user ID: auth, session, request parameter, or header
-        $userId = auth()->id() ?? 
-                  session('user_id') ?? 
-                  $request->get('user_id') ?? 
-                  $request->header('X-User-ID');
-
-        Log::info('API called by user', [
+        \Log::info('API called by user', [
             'auth_id' => auth()->id(),
             'session_user_id' => session('user_id'),
-            'request_user_id' => $request->get('user_id'),
-            'header_user_id' => $request->header('X-User-ID'),
-            'final_user_id' => $userId,
             'request_user' => auth()->user()
         ]);
+
+        $userId = auth()->id() ?? session('user_id');
         
         // If no user is authenticated, return all available programs for new enrollments
         if (!$userId) {
@@ -2371,34 +2297,19 @@ class StudentRegistrationController extends Controller
                 }
             }
             
-            Log::info('Programs for non-authenticated user', ['programs' => $allPrograms]);
+            \Log::info('Programs for non-authenticated user', ['programs' => $allPrograms]);
             return response()->json(['programs' => $allPrograms]);
         }
 
-        // Get enrolled course IDs for this user to prevent duplicate enrollments
-        $enrolledCourseIds = \App\Models\EnrollmentCourse::whereHas('enrollment', function($query) use ($userId) {
-            $query->where('user_id', $userId)
-                  ->where('enrollment_status', '!=', 'rejected');
-        })->where('is_active', true)
-          ->pluck('course_id')
-          ->toArray();
-
-        Log::info('Already enrolled courses for user', [
-            'user_id' => $userId,
-            'enrolled_course_ids' => $enrolledCourseIds
-        ]);
-
-        // 1. Full-plan exclusion - check for full enrollments in programs
+        // 1. Full-plan exclusion
         $fullEnrollments = \App\Models\Enrollment::where('user_id', $userId)
             ->where('enrollment_type', 'Full')
-            ->where('enrollment_status', '!=', 'rejected')
             ->pluck('program_id')
             ->toArray();
 
-        // 2. Modular exclusion - get already enrolled modules and courses
+        // 2. Modular exclusion
         $modularEnrollments = \App\Models\Enrollment::where('user_id', $userId)
             ->where('enrollment_type', 'Modular')
-            ->where('enrollment_status', '!=', 'rejected')
             ->get();
 
         $enrolledModules = [];
@@ -2437,61 +2348,41 @@ class StudentRegistrationController extends Controller
 
         $filteredPrograms = [];
         foreach ($programs as $program) {
-            if (in_array($program->program_id, $fullEnrollments)) {
-                Log::info('Excluding program due to full enrollment', [
-                    'program_id' => $program->program_id,
-                    'program_name' => $program->program_name
-                ]);
-                continue;
-            }
+            if (in_array($program->program_id, $fullEnrollments)) continue;
 
             $filteredModules = [];
             foreach ($program->modules as $module) {
                 if (isset($enrolledModules[$program->program_id]) && in_array($module->modules_id, $enrolledModules[$program->program_id])) {
-                    Log::info('Excluding module due to enrollment', [
-                        'module_id' => $module->modules_id,
-                        'module_name' => $module->module_name
-                    ]);
                     continue;
                 }
 
                 $filteredCourses = [];
                 foreach ($module->courses as $course) {
-                    // Check if course is already enrolled
-                    $isAlreadyEnrolled = in_array($course->subject_id, $enrolledCourseIds);
-                    
-                    if ($isAlreadyEnrolled) {
-                        Log::info('Course marked as already enrolled', [
-                            'course_id' => $course->subject_id,
-                            'course_name' => $course->subject_name
-                        ]);
-                    }
-                    
-                    // Include all courses, but mark those already enrolled
+                    // Include all courses, even if they don't have content items yet
+                    // Content items can be added later by administrators
                     $filteredCourses[] = [
                         'course_id' => $course->subject_id,
                         'course_name' => $course->subject_name,
                         'description' => $course->subject_description,
-                        'content_items_count' => $course->contentItems->count(),
-                        'already_enrolled' => $isAlreadyEnrolled,
+                        'content_items_count' => $course->contentItems->count(), // For debugging
                     ];
                 }
-                if (count($filteredCourses) > 0) {
-                    $filteredModules[] = [
-                        'module_id' => $module->modules_id,
-                        'module_name' => $module->module_name,
-                        'description' => $module->module_description,
-                        'courses' => $filteredCourses
-                    ];
-                } else {
-                    // Include modules even without courses
-                    $filteredModules[] = [
-                        'module_id' => $module->modules_id,
-                        'module_name' => $module->module_name,
-                        'description' => $module->module_description,
-                        'courses' => []
-                    ];
-                }
+                    if (count($filteredCourses) > 0) {
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => $filteredCourses
+                        ];
+                    } else {
+                        // Include modules even without courses
+                        $filteredModules[] = [
+                            'module_id' => $module->modules_id,
+                            'module_name' => $module->module_name,
+                            'description' => $module->module_description,
+                            'courses' => []
+                        ];
+                    }
             }
             if (count($filteredModules) > 0) {
                 $filteredPrograms[] = [
@@ -2502,11 +2393,7 @@ class StudentRegistrationController extends Controller
                 ];
             }
         }
-        Log::info('Filtered Programs for Modular Enrollment', [
-            'user_id' => $userId,
-            'enrolled_course_ids' => $enrolledCourseIds,
-            'programs' => $filteredPrograms
-        ]);
+        Log::info('Filtered Programs for Modular Enrollment', ['programs' => $filteredPrograms]);
         return response()->json(['programs' => $filteredPrograms]);
     }
 
