@@ -434,6 +434,18 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     
     // Student Calendar Routes
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
+    
+    // Debug route to check session
+    Route::get('/student/calendar/debug', function() {
+        return response()->json([
+            'session_data' => session()->all(),
+            'user_id' => session('user_id'),
+            'logged_in' => session('logged_in'),
+            'user_role' => session('user_role'),
+            'student_exists' => session('user_id') ? \App\Models\Student::where('user_id', session('user_id'))->exists() : false
+        ]);
+    })->name('student.calendar.debug');
+    
     Route::get('/student/calendar/events', [\App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
     Route::get('/student/calendar/today', [\App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
     Route::get('/student/calendar/event/{eventId}', [\App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
@@ -501,6 +513,30 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
         return response()->json(['error' => 'Module not found'], 404);
     });
 });
+
+// Test login route for debugging - OUTSIDE middleware for testing - REMOVE IN PRODUCTION
+Route::get('/student/test-login', function() {
+    try {
+        // Find any student for testing
+        $student = \App\Models\Student::with('user')->first();
+        
+        if (!$student) {
+            return redirect('/login')->with('error', 'No students found in database. Please create a student account first.');
+        }
+        
+        // Set session
+        session([
+            'logged_in' => true,
+            'user_id' => $student->user_id,
+            'user_role' => 'student',
+            'user_name' => $student->user->first_name . ' ' . $student->user->last_name
+        ]);
+        
+        return redirect('/student/dashboard')->with('success', 'Test login successful as ' . $student->student_id);
+    } catch (\Exception $e) {
+        return redirect('/login')->with('error', 'Test login failed: ' . $e->getMessage());
+    }
+})->name('student.test.login');
 
 // Test routes for debugging rejection details
 Route::get('/test-rejection-details', function () {

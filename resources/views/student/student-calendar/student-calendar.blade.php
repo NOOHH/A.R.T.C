@@ -132,15 +132,21 @@
                     <h4 class="mb-0">
                         <i class="bi bi-calendar3 me-2"></i>Academic Calendar
                     </h4>
-                    <div class="calendar-navigation">
-                        <button class="btn btn-outline-light btn-sm me-2" id="prevMonth">
-                            <i class="bi bi-chevron-left"></i>
+                    <div class="d-flex align-items-center">
+                        <!-- Debug Test Button -->
+                        <button type="button" class="btn btn-warning btn-sm me-3" onclick="testCalendarEndpoints()">
+                            <i class="bi bi-bug me-1"></i>Test
                         </button>
-                        <button class="btn btn-light btn-sm me-2" id="todayBtn">Today</button>
-                        <span class="current-month fw-bold" id="currentMonth">{{ date('F Y') }}</span>
-                        <button class="btn btn-outline-light btn-sm ms-2" id="nextMonth">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
+                        <div class="calendar-navigation">
+                            <button class="btn btn-outline-light btn-sm me-2" id="prevMonth">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button class="btn btn-light btn-sm me-2" id="todayBtn">Today</button>
+                            <span class="current-month fw-bold" id="currentMonth">{{ date('F Y') }}</span>
+                            <button class="btn btn-outline-light btn-sm ms-2" id="nextMonth">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -348,12 +354,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function loadMonthEvents(year, month) {
+        console.log(`📅 Loading events for ${year}-${month + 1}`);
+        
         // First try to load real data from the API
         fetch(`/student/calendar/events?year=${year}&month=${month + 1}`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 Events API Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('📊 Events API Response data:', data);
                 if (data.success && data.events && data.events.length > 0) {
-                    console.log('Loaded real events from API:', data.events);
+                    console.log('✅ Loaded real events from API:', data.events.length);
                     currentEvents = data.events;
                     populateCalendarEvents();
                     updateStats(data.meta || {
@@ -363,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 } else {
                     // Fallback to mock data for demo
-                    console.log('No real events found, using mock data');
+                    console.log('ℹ️ No real events found, using mock data');
                     const mockEvents = generateMockEvents(year, month);
                     currentEvents = mockEvents;
                     populateCalendarEvents();
@@ -375,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.log('Error loading events from API, using mock data:', error);
+                console.error('❌ Error loading events from API:', error);
                 // Fallback to mock data
                 const mockEvents = generateMockEvents(year, month);
                 currentEvents = mockEvents;
@@ -524,13 +536,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function loadTodaySchedule() {
+        console.log('🕐 Loading today schedule...');
+        
         // First, try to load real data from the API
         fetch('/student/calendar/today')
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 API Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                if (data.success && data.events.length > 0) {
+                console.log('📊 API Response data:', data);
+                if (data.success && data.events && data.events.length > 0) {
+                    console.log('✅ Found real events, displaying:', data.events.length);
                     displayTodaySchedule(data.events);
+                } else if (data.success === false && data.message === 'Student not found') {
+                    console.log('🔒 Authentication required');
+                    displayAuthError();
                 } else {
+                    console.log('ℹ️ No real events found, using mock data for demo');
                     // If no real data, use mock data for demo
                     const today = new Date();
                     const mockTodayEvents = [
@@ -559,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.log('Error loading today schedule, using mock data:', error);
+                console.error('❌ Error loading today schedule:', error);
                 // Fallback to mock data
                 const today = new Date();
                 const mockTodayEvents = [
@@ -579,10 +602,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function displayTodaySchedule(events) {
+        console.log('📋 Displaying today schedule with events:', events);
         const container = document.getElementById('todaySchedule');
         
+        if (!container) {
+            console.error('❌ Could not find todaySchedule container');
+            return;
+        }
+        
         if (events.length === 0) {
-            container.innerHTML = '<p class="text-muted mb-0">No events scheduled for today</p>';
+            console.log('ℹ️ No events to display');
+            container.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mb-0 mt-2">No events scheduled for today</p>
+                    <small class="text-muted">Check back tomorrow for new schedule</small>
+                </div>
+            `;
             return;
         }
         
@@ -611,6 +647,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
         
         container.innerHTML = scheduleHtml;
+    }
+    
+    function displayAuthError() {
+        const container = document.getElementById('todaySchedule');
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-shield-exclamation text-warning" style="font-size: 2.5rem;"></i>
+                <h6 class="mt-3 mb-2 text-warning">Authentication Required</h6>
+                <p class="text-muted mb-3">Please log in to view your schedule</p>
+                <a href="/login" class="btn btn-primary btn-sm">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                </a>
+            </div>
+        `;
     }
     
     function updateStats(meta) {
@@ -756,6 +806,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make showEventDetails available globally
     window.showEventDetails = showEventDetails;
+    
+    // Debug function to test calendar endpoints
+    window.testCalendarEndpoints = function() {
+        console.log('🧪 Testing Calendar Endpoints...');
+        
+        // Test 1: Today's schedule
+        console.log('1️⃣ Testing /student/calendar/today');
+        fetch('/student/calendar/today')
+            .then(response => {
+                console.log('Today API Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Today API Response:', data);
+                alert('Today API Response: ' + JSON.stringify(data, null, 2));
+            })
+            .catch(error => {
+                console.error('Today API Error:', error);
+                alert('Today API Error: ' + error.message);
+            });
+        
+        // Test 2: Current month events
+        setTimeout(() => {
+            const today = new Date();
+            const url = `/student/calendar/events?year=${today.getFullYear()}&month=${today.getMonth() + 1}`;
+            console.log('2️⃣ Testing:', url);
+            
+            fetch(url)
+                .then(response => {
+                    console.log('Events API Status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Events API Response:', data);
+                    alert('Events API Response: ' + JSON.stringify(data, null, 2));
+                })
+                .catch(error => {
+                    console.error('Events API Error:', error);
+                    alert('Events API Error: ' + error.message);
+                });
+        }, 1000);
+    };
 });
 </script>
 @endsection

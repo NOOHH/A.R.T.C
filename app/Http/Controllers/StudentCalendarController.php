@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Student;
 use App\Models\ClassMeeting;
 use App\Models\Assignment;
@@ -87,6 +88,12 @@ class StudentCalendarController extends Controller
         $year = $request->get('year');
         $month = $request->get('month');
         
+        Log::info('📅 getEvents called', [
+            'year' => $year,
+            'month' => $month,
+            'user_id' => session('user_id')
+        ]);
+        
         if (!$year || !$month) {
             return response()->json(['success' => false, 'message' => 'Year and month are required']);
         }
@@ -95,6 +102,7 @@ class StudentCalendarController extends Controller
         $student = Student::where('user_id', session('user_id'))->first();
         
         if (!$student) {
+            Log::warning('❌ Student not found for getEvents');
             return response()->json(['success' => false, 'message' => 'Student not found']);
         }
 
@@ -207,12 +215,25 @@ class StudentCalendarController extends Controller
 
     public function getTodaySchedule()
     {
+        Log::info('📅 getTodaySchedule called', [
+            'user_id' => session('user_id'),
+            'session_data' => session()->all()
+        ]);
+        
         // Get student's enrollment info
         $student = Student::where('user_id', session('user_id'))->first();
         
         if (!$student) {
+            Log::warning('❌ Student not found for getTodaySchedule', [
+                'user_id' => session('user_id')
+            ]);
             return response()->json(['success' => false, 'message' => 'Student not found']);
         }
+
+        Log::info('✅ Student found for getTodaySchedule', [
+            'student_id' => $student->student_id,
+            'user_id' => $student->user_id
+        ]);
 
         // Get student's enrolled batches and programs
         $enrolledBatches = $student->enrollments()
@@ -298,6 +319,11 @@ class StudentCalendarController extends Controller
 
         // Sort events by time
         $sortedEvents = $events->sortBy('start')->values();
+
+        Log::info('📋 Returning today schedule', [
+            'events_count' => $sortedEvents->count(),
+            'events' => $sortedEvents->toArray()
+        ]);
 
         return response()->json([
             'success' => true,
