@@ -200,10 +200,61 @@ class StudentDashboardController extends Controller
                 
                 // Get completed modules count based on actual completion records
                 $completedCount = 0;
+                $courseProgress = 0;
                 if ($student) {
-                    $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
-                        ->where('program_id', $enrollment->program->program_id)
-                        ->count();
+                    // Use enhanced progress calculation for more accurate results
+                    if (isset($enrollment->enrollment_type) && $enrollment->enrollment_type === 'Modular') {
+                        // For modular, calculate based on enrolled courses only
+                        $enrolledCourseIds = $enrollment->enrollmentCourses()
+                            ->where('is_active', true)
+                            ->pluck('course_id')
+                            ->toArray();
+                        
+                        if (!empty($enrolledCourseIds)) {
+                            $totalCourseContent = \App\Models\ContentItem::whereIn('course_id', $enrolledCourseIds)->count();
+                            $completedCourseContent = \App\Models\ContentCompletion::where('student_id', $student->student_id)
+                                ->whereIn('course_id', $enrolledCourseIds)
+                                ->count();
+                            
+                            $courseProgress = $totalCourseContent > 0 ? round(($completedCourseContent / $totalCourseContent) * 100) : 0;
+                            
+                            // Get module completion count for this specific enrollment
+                            $moduleIdsWithEnrolledCourses = \App\Models\Course::whereIn('subject_id', $enrolledCourseIds)
+                                ->pluck('module_id')
+                                ->unique()
+                                ->toArray();
+                            
+                            $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                                ->where('program_id', $enrollment->program->program_id)
+                                ->whereIn('modules_id', $moduleIdsWithEnrolledCourses)
+                                ->count();
+                        }
+                    } else {
+                        // For full program enrollments, calculate based on all content
+                        $completedCount = \App\Models\ModuleCompletion::where('student_id', $student->student_id)
+                            ->where('program_id', $enrollment->program->program_id)
+                            ->count();
+                        
+                        // Also calculate content-based progress for more granular updates
+                        $allProgramCourses = \App\Models\Module::where('program_id', $enrollment->program->program_id)
+                            ->with('courses')
+                            ->get()
+                            ->pluck('courses')
+                            ->flatten()
+                            ->pluck('subject_id')
+                            ->toArray();
+                        
+                        if (!empty($allProgramCourses)) {
+                            $totalProgramContent = \App\Models\ContentItem::whereIn('course_id', $allProgramCourses)->count();
+                            $completedProgramContent = \App\Models\ContentCompletion::where('student_id', $student->student_id)
+                                ->whereIn('course_id', $allProgramCourses)
+                                ->count();
+                            
+                            $courseProgress = $totalProgramContent > 0 ? round(($completedProgramContent / $totalProgramContent) * 100) : 0;
+                        } else {
+                            $courseProgress = $moduleCount > 0 ? round(($completedCount / $moduleCount) * 100) : 0;
+                        }
+                    }
                 }
                 
                 // Determine button text and action based on status
@@ -252,7 +303,7 @@ class StudentDashboardController extends Controller
                     'id' => $enrollment->program->program_id,
                     'name' => $enrollment->program->program_name,
                     'description' => $enrollment->program->program_description ?? 'No description available.',
-                    'progress' => $moduleCount > 0 ? round(($completedCount / $moduleCount) * 100) : 0,
+                    'progress' => $courseProgress, // Use content-based progress instead of module-based
                     'status' => 'in_progress',
                     'learning_mode' => $enrollment->learning_mode ?? 'Synchronous',
                     'enrollment_type' => $enrollment->enrollment_type,
@@ -468,8 +519,26 @@ class StudentDashboardController extends Controller
         $upcomingMeetings = collect();
         $todaysMeetings = collect();
         $allMeetings = collect();
+        $studentPrograms = collect();
         
         if ($student) {
+            // Get student's enrolled programs for sidebar
+            $studentPrograms = $student->enrollments()
+                ->with(['program', 'package'])
+                ->whereNotNull('program_id')
+                ->get()
+                ->map(function ($enrollment) {
+                    return [
+                        'program_id' => $enrollment->program_id,
+                        'program_name' => $enrollment->program->program_name ?? 'Unknown Program',
+                        'package_name' => $enrollment->package->package_name ?? 'Unknown Package',
+                        'enrollment_type' => $enrollment->enrollment_type,
+                        'enrollment_status' => $enrollment->enrollment_status
+                    ];
+                })
+                ->unique('program_id')
+                ->values();
+            
             // Get student's enrolled batches
             $enrolledBatches = $student->enrollments()
                 ->with('batch')
@@ -501,7 +570,7 @@ class StudentDashboardController extends Controller
             }
         }
 
-        return view('student.student-calendar.student-calendar', compact('user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings'));
+        return view('student.student-calendar.student-calendar', compact('user', 'upcomingMeetings', 'todaysMeetings', 'allMeetings', 'studentPrograms'));
     }
 
     public function course($courseId)
@@ -696,9 +765,15 @@ class StudentDashboardController extends Controller
         
         // Get completed content for this student
         $completedContentIds = [];
+        $completedCourseIds = [];
         if ($student) {
             $completedContentIds = \App\Models\ContentCompletion::where('student_id', $student->student_id)
                 ->pluck('content_id')
+                ->toArray();
+            
+            // Get completed courses for this student
+            $completedCourseIds = \App\Models\CourseCompletion::where('student_id', $student->student_id)
+                ->pluck('course_id')
                 ->toArray();
         }
         
@@ -836,7 +911,8 @@ class StudentDashboardController extends Controller
             'enrollmentStatus',
             'studentPrograms',
             'completedModuleIds',
-            'completedContentIds' // <-- add this
+            'completedContentIds',
+            'completedCourseIds' // <-- add completed course IDs
         ));
     }
 
@@ -2130,18 +2206,23 @@ class StudentDashboardController extends Controller
         try {
             $student = \App\Models\Student::where('user_id', session('user_id'))->firstOrFail();
             $content = \App\Models\ContentItem::findOrFail($contentId);
-            // Prevent duplicate completions
-            $exists = \App\Models\StudentContentCompletion::where('student_id', $student->student_id)
+            
+            // Prevent duplicate completions - use the correct table
+            $exists = \App\Models\ContentCompletion::where('student_id', $student->student_id)
                 ->where('content_id', $contentId)
                 ->exists();
             if ($exists) {
                 return response()->json(['success' => true, 'message' => 'Already marked as done.']);
             }
-            \App\Models\StudentContentCompletion::create([
+            
+            \App\Models\ContentCompletion::create([
                 'student_id' => $student->student_id,
                 'content_id' => $contentId,
+                'course_id' => $content->course_id ?? null,
+                'module_id' => $content->module_id ?? null,
                 'completed_at' => now(),
             ]);
+            
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -2300,6 +2381,11 @@ class StudentDashboardController extends Controller
      */
     private function getTargetedAnnouncements($student, $enrolledProgramIds)
     {
+        Log::info('Getting targeted announcements for student', [
+            'student_id' => $student->student_id,
+            'enrolled_programs' => $enrolledProgramIds
+        ]);
+
         $query = \App\Models\Announcement::where('is_active', true)
             ->where('is_published', true)
             ->where(function($q) {
@@ -2319,56 +2405,113 @@ class StudentDashboardController extends Controller
             $mainQuery->orWhere(function($specificQuery) use ($student, $enrolledProgramIds) {
                 $specificQuery->where('target_scope', 'specific');
 
-                // Check if student is in target users
-                $specificQuery->where(function($userQuery) {
-                    $userQuery->whereJsonContains('target_users', 'students')
-                             ->orWhereNull('target_users');
-                });
+                // Use a hybrid approach that works with both properly formatted and malformed JSON
+                $specificQuery->where(function($hybridQuery) use ($student, $enrolledProgramIds) {
+                    $hybridQuery->where(function($properQuery) use ($student, $enrolledProgramIds) {
+                        // Proper JSON approach (for new data)
+                        $properQuery->where(function($userQuery) {
+                            $userQuery->whereNull('target_users')
+                                     ->orWhereJsonContains('target_users', 'students');
+                        });
 
-                // Check if student's programs are targeted
-                if (!empty($enrolledProgramIds)) {
-                    $specificQuery->where(function($programQuery) use ($enrolledProgramIds) {
-                        $programQuery->whereNull('target_programs');
-                        
-                        foreach ($enrolledProgramIds as $programId) {
-                            $programQuery->orWhereJsonContains('target_programs', $programId);
+                        if (!empty($enrolledProgramIds)) {
+                            $properQuery->where(function($programQuery) use ($enrolledProgramIds) {
+                                $programQuery->whereNull('target_programs');
+                                foreach ($enrolledProgramIds as $programId) {
+                                    $programQuery->orWhereJsonContains('target_programs', $programId);
+                                }
+                            });
+                        } else {
+                            $properQuery->whereNull('target_programs');
+                        }
+
+                        // Get student batch and plan info
+                        $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
+                        $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
+                        $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
+
+                        if (!empty($batchIds)) {
+                            $properQuery->where(function($batchQuery) use ($batchIds) {
+                                $batchQuery->whereNull('target_batches');
+                                foreach ($batchIds as $batchId) {
+                                    $batchQuery->orWhereJsonContains('target_batches', $batchId);
+                                }
+                            });
+                        } else {
+                            $properQuery->whereNull('target_batches');
+                        }
+
+                        if (!empty($enrollmentTypes)) {
+                            $properQuery->where(function($planQuery) use ($enrollmentTypes) {
+                                $planQuery->whereNull('target_plans');
+                                foreach ($enrollmentTypes as $type) {
+                                    $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
+                                    $planQuery->orWhereJsonContains('target_plans', $planType);
+                                }
+                            });
+                        } else {
+                            $properQuery->whereNull('target_plans');
+                        }
+                    })
+                    ->orWhere(function($legacyQuery) use ($student, $enrolledProgramIds) {
+                        // Legacy approach for malformed JSON (fallback)
+                        $legacyQuery->where(function($userQuery) {
+                            $userQuery->whereNull('target_users')
+                                     ->orWhere('target_users', 'LIKE', '%"students"%');
+                        });
+
+                        if (!empty($enrolledProgramIds)) {
+                            $legacyQuery->where(function($programQuery) use ($enrolledProgramIds) {
+                                $programQuery->whereNull('target_programs');
+                                foreach ($enrolledProgramIds as $programId) {
+                                    $programQuery->orWhere('target_programs', 'LIKE', '%"' . $programId . '"%');
+                                }
+                            });
+                        } else {
+                            $legacyQuery->whereNull('target_programs');
+                        }
+
+                        // Same batch and plan logic but with LIKE queries
+                        $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
+                        $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
+                        $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
+
+                        if (!empty($batchIds)) {
+                            $legacyQuery->where(function($batchQuery) use ($batchIds) {
+                                $batchQuery->whereNull('target_batches');
+                                foreach ($batchIds as $batchId) {
+                                    $batchQuery->orWhere('target_batches', 'LIKE', '%"' . $batchId . '"%');
+                                }
+                            });
+                        } else {
+                            $legacyQuery->whereNull('target_batches');
+                        }
+
+                        if (!empty($enrollmentTypes)) {
+                            $legacyQuery->where(function($planQuery) use ($enrollmentTypes) {
+                                $planQuery->whereNull('target_plans');
+                                foreach ($enrollmentTypes as $type) {
+                                    $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
+                                    $planQuery->orWhere('target_plans', 'LIKE', '%"' . $planType . '"%');
+                                }
+                            });
+                        } else {
+                            $legacyQuery->whereNull('target_plans');
                         }
                     });
-                }
-
-                // Check if student's enrollment type is targeted
-                if ($student) {
-                    $enrollments = $student->enrollments()->where('enrollment_status', 'approved')->get();
-                    $enrollmentTypes = $enrollments->pluck('enrollment_type')->unique()->toArray();
-                    
-                    if (!empty($enrollmentTypes)) {
-                        $specificQuery->where(function($planQuery) use ($enrollmentTypes) {
-                            $planQuery->whereNull('target_plans');
-                            
-                            foreach ($enrollmentTypes as $type) {
-                                $planType = strtolower($type) === 'modular' ? 'modular' : 'full';
-                                $planQuery->orWhereJsonContains('target_plans', $planType);
-                            }
-                        });
-                    }
-
-                    // Check if student's batches are targeted
-                    $batchIds = $enrollments->whereNotNull('batch_id')->pluck('batch_id')->unique()->toArray();
-                    if (!empty($batchIds)) {
-                        $specificQuery->where(function($batchQuery) use ($batchIds) {
-                            $batchQuery->whereNull('target_batches');
-                            
-                            foreach ($batchIds as $batchId) {
-                                $batchQuery->orWhereJsonContains('target_batches', $batchId);
-                            }
-                        });
-                    }
-                }
+                });
             });
         });
 
-        return $query->orderBy('created_at', 'desc')
-                    ->limit(5)
-                    ->get();
+        $results = $query->orderBy('created_at', 'desc')
+                        ->limit(5)
+                        ->get();
+
+        Log::info('Found announcements for student', [
+            'count' => $results->count(),
+            'announcement_ids' => $results->pluck('announcement_id')->toArray()
+        ]);
+
+        return $results;
     }
 }

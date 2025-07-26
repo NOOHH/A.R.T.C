@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Program;
-use App\Models\Batch;
+use App\Models\StudentBatch;
 use App\Http\Resources\ProgramResource;
 use App\Http\Resources\BatchResource;
 use Illuminate\Http\Request;
@@ -33,7 +33,7 @@ class ProgramApiController extends Controller
             'program' => 'required|exists:programs,program_id'
         ]);
 
-        $batches = Batch::where('program_id', $request->program)
+        $batches = StudentBatch::where('program_id', $request->program)
             ->where('is_archived', false)
             ->orderBy('batch_name')
             ->get();

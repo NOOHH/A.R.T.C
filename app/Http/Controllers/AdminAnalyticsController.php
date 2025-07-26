@@ -11,6 +11,7 @@ use App\Models\Program;
 use App\Models\Module;
 use App\Models\Batch;
 use App\Models\BoardPasser;
+use App\Models\StudentBatch;
 use Carbon\Carbon;
 use League\Csv\Reader;
 use League\Csv\Writer;
@@ -85,7 +86,7 @@ class AdminAnalyticsController extends Controller
         }
 
         try {
-            $batches = Batch::select('batch_id as id', 'batch_name as name')
+            $batches = StudentBatch::select('batch_id as id', 'batch_name as name')
                 ->orderBy('batch_name')
                 ->get();
 

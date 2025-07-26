@@ -480,7 +480,25 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])
         ->name('student.meetings.upcoming');
     Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
+    
+    // Student Calendar Routes
     Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
+    
+    // Debug route to check session
+    Route::get('/student/calendar/debug', function() {
+        return response()->json([
+            'session_data' => session()->all(),
+            'user_id' => session('user_id'),
+            'logged_in' => session('logged_in'),
+            'user_role' => session('user_role'),
+            'student_exists' => session('user_id') ? \App\Models\Student::where('user_id', session('user_id'))->exists() : false
+        ]);
+    })->name('student.calendar.debug');
+    
+    Route::get('/student/calendar/events', [\App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
+    Route::get('/student/calendar/today', [\App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
+    Route::get('/student/calendar/event/{eventId}', [\App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
+    
     // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
     
     // Paywall route
@@ -526,6 +544,7 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::post('/student/complete-course', [\App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
     Route::post('/student/complete-content', [\App\Http\Controllers\CompletionController::class, 'markContentComplete']);
     Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
+    Route::post('/student/module/{moduleId}/check-completion', [App\Http\Controllers\CompletionController::class, 'checkModuleCompletion']);
     Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
     Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
     Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
@@ -543,6 +562,30 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
         return response()->json(['error' => 'Module not found'], 404);
     });
 });
+
+// Test login route for debugging - OUTSIDE middleware for testing - REMOVE IN PRODUCTION
+Route::get('/student/test-login', function() {
+    try {
+        // Find any student for testing
+        $student = \App\Models\Student::with('user')->first();
+        
+        if (!$student) {
+            return redirect('/login')->with('error', 'No students found in database. Please create a student account first.');
+        }
+        
+        // Set session
+        session([
+            'logged_in' => true,
+            'user_id' => $student->user_id,
+            'user_role' => 'student',
+            'user_name' => $student->user->first_name . ' ' . $student->user->last_name
+        ]);
+        
+        return redirect('/student/dashboard')->with('success', 'Test login successful as ' . $student->student_id);
+    } catch (\Exception $e) {
+        return redirect('/login')->with('error', 'Test login failed: ' . $e->getMessage());
+    }
+})->name('student.test.login');
 
 // Test routes for debugging rejection details
 Route::get('/test-rejection-details', function () {
@@ -900,24 +943,26 @@ Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentMana
 |--------------------------------------------------------------------------
 */
 // Announcements routes
-Route::get('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])
-     ->name('admin.announcements.index');
-Route::get('/admin/announcements/create', [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])
-     ->name('admin.announcements.create');
-Route::post('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])
-     ->name('admin.announcements.store');
-Route::get('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'show'])
-     ->name('admin.announcements.show');
-Route::get('/admin/announcements/{id}/edit', [\App\Http\Controllers\Admin\AnnouncementController::class, 'edit'])
-     ->name('admin.announcements.edit');
-Route::put('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'update'])
-     ->name('admin.announcements.update');
-Route::delete('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])
-     ->name('admin.announcements.destroy');
-Route::post('/admin/announcements/{id}/toggle-status', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleStatus'])
-     ->name('admin.announcements.toggle-status');
-Route::post('/admin/announcements/{id}/toggle-published', [\App\Http\Controllers\Admin\AnnouncementController::class, 'togglePublished'])
-     ->name('admin.announcements.toggle-published');
+Route::middleware(['admin.auth'])->group(function () {
+    Route::get('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])
+         ->name('admin.announcements.index');
+    Route::get('/admin/announcements/create', [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])
+         ->name('admin.announcements.create');
+    Route::post('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])
+         ->name('admin.announcements.store');
+    Route::get('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'show'])
+         ->name('admin.announcements.show');
+    Route::get('/admin/announcements/{id}/edit', [\App\Http\Controllers\Admin\AnnouncementController::class, 'edit'])
+         ->name('admin.announcements.edit');
+    Route::put('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'update'])
+         ->name('admin.announcements.update');
+    Route::delete('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])
+         ->name('admin.announcements.destroy');
+    Route::post('/admin/announcements/{id}/toggle-status', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleStatus'])
+         ->name('admin.announcements.toggle-status');
+    Route::post('/admin/announcements/{id}/toggle-published', [\App\Http\Controllers\Admin\AnnouncementController::class, 'togglePublished'])
+         ->name('admin.announcements.toggle-published');
+});
 
 
 /*

@@ -26,7 +26,7 @@ class ChatApiController extends Controller
                 'type' => 'required|in:student,professor,admin,director,support,faq',
                 'program' => 'nullable|exists:programs,program_id',
                 'mode' => 'nullable|in:synchronous,asynchronous',
-                'batch' => 'nullable|exists:batches,batch_id',
+                'batch' => 'nullable|exists:student_batches,batch_id',
                 'q' => 'nullable|string|max:255'
             ]);
 

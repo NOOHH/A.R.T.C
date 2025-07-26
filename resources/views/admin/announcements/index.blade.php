@@ -203,8 +203,20 @@
                                                 <span class="badge bg-secondary">All Users</span>
                                             @else
                                                 @php
-                                                    $targetUsers = $announcement->target_users ? json_decode($announcement->target_users, true) : [];
-                                                    $targetPrograms = $announcement->target_programs ? json_decode($announcement->target_programs, true) : [];
+                                                    // Handle both array (new format) and JSON string (old format)
+                                                    $targetUsers = [];
+                                                    if (is_array($announcement->target_users)) {
+                                                        $targetUsers = $announcement->target_users;
+                                                    } elseif (is_string($announcement->target_users)) {
+                                                        $targetUsers = json_decode($announcement->target_users, true) ?: [];
+                                                    }
+                                                    
+                                                    $targetPrograms = [];
+                                                    if (is_array($announcement->target_programs)) {
+                                                        $targetPrograms = $announcement->target_programs;
+                                                    } elseif (is_string($announcement->target_programs)) {
+                                                        $targetPrograms = json_decode($announcement->target_programs, true) ?: [];
+                                                    }
                                                 @endphp
                                                 @if($targetUsers)
                                                     @foreach($targetUsers as $user)
