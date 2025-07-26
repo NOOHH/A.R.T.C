@@ -1746,6 +1746,8 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.publish');
     Route::post('/quiz-generator/{quiz}/archive', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'archive'])
          ->name('quiz-generator.archive');
+    Route::post('/quiz-generator/{quiz}/restore', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'restore'])
+         ->name('quiz-generator.restore');
     Route::get('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'viewQuestions'])
          ->name('quiz-generator.questions');
     Route::get('/quiz-generator/questions/{quiz}/modal-content', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModalQuestions'])

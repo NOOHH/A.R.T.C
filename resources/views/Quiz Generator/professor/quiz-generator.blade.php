@@ -1,5 +1,7 @@
-{{-- This view now redirects to the new Quiz Generator structure --}}
-@extends('Quiz Generator.professor.quiz-generator')
+@extends('professor.layout')
+@section('content')
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="bi bi-robot"></i> AI Quiz Generator</h2>
     
     <!-- Error/Success Messages -->
     @if(session('success'))
@@ -80,12 +82,7 @@
                     <option value="mixed">Mixed (MCQ & T/F)</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="randomize_order" name="randomize_order">
-                    <label class="form-check-label" for="randomize_order">Randomize Order</label>
-                </div>
-            </div>
+            <div class="col-md-3"></div>
         </div>
         <div class="row g-3 mb-3">
             <div class="col-md-6">
@@ -113,34 +110,44 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="time_limit" class="form-label">Time Limit (minutes)</label>
                         <input type="number" class="form-control" id="time_limit" name="time_limit" value="60" min="1" max="300">
                     </div>
-                    <div class="col-md-4">
-                        <label for="max_attempts" class="form-label">Max Attempts (optional)</label>
-                        <input type="number" class="form-control" id="max_attempts" name="max_attempts" min="1" max="10" placeholder="Unlimited">
+                    <div class="col-md-3">
+                        <label for="max_attempts" class="form-label">Max Attempts</label>
+                        <input type="number" class="form-control" id="max_attempts" name="max_attempts" min="1" max="10" value="1">
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <div class="form-check">
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
                             <input class="form-check-input" type="checkbox" id="allow_retakes" name="allow_retakes">
                             <label class="form-check-label" for="allow_retakes">Allow Retakes</label>
                         </div>
                     </div>
-                </div>
-                <div class="row g-3 mt-2">
-                    <div class="col-md-6">
-                        <div class="form-check">
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
                             <input class="form-check-input" type="checkbox" id="instant_feedback" name="instant_feedback">
                             <label class="form-check-label" for="instant_feedback">Instant Feedback</label>
-                            <small class="form-text text-muted d-block">Show correct/incorrect after each question</small>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="randomize_order" name="randomize_order">
+                            <label class="form-check-label" for="randomize_order">Randomize Question Order</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="randomize_mc_options" name="randomize_mc_options">
+                            <label class="form-check-label" for="randomize_mc_options">Randomize Multiple Choice Options</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="show_correct_answers" name="show_correct_answers" checked>
                             <label class="form-check-label" for="show_correct_answers">Show Correct Answers</label>
-                            <small class="form-text text-muted d-block">Display correct answers at end</small>
                         </div>
                     </div>
                 </div>
@@ -174,72 +181,67 @@
     </div>
 
     <hr class="my-4">
-    <h4 class="mb-3">Your Draft & Published Quizzes</h4>
-    <div class="table-responsive">
-        <table class="table table-bordered align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Title</th>
-                    <th>Program</th>
-                    <th>Status</th>
-                    <th>Tags</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($quizzes as $quiz)
-                <tr>
-                    <td>{{ $quiz->quiz_title }}</td>
-                    <td>{{ $quiz->program->program_name ?? '-' }}</td>
-                    <td>
-                        @if($quiz->is_draft)
-                            <span class="badge bg-warning text-dark">Draft</span>
-                        @else
-                            <span class="badge bg-success">Published</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($quiz->tags && is_array($quiz->tags))
-                            @foreach($quiz->tags as $tag)
-                                <span class="badge bg-info text-dark">{{ $tag }}</span>
-                            @endforeach
-                        @endif
-                    </td>
-                    <td>
-                        @if($quiz->status === 'draft')
-                            <span class="badge bg-warning text-dark">Draft</span>
-                        @elseif($quiz->status === 'published')
-                            <span class="badge bg-success">Published</span>
-                        @else
-                            <span class="badge bg-secondary">Archived</span>
-                        @endif
-                        
-                        @if($quiz->allow_retakes)
-                            <span class="badge bg-info text-dark">Retakes Allowed</span>
-                        @endif
-                        
-                        @if($quiz->instant_feedback)
-                            <span class="badge bg-primary">Instant Feedback</span>
-                        @endif
-                    </td>
-                    <td>
-                        <button class="btn btn-outline-secondary btn-sm view-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">View/Edit Questions</button>
-                        <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Preview</button>
-                        
-                        @if($quiz->status === 'draft')
-                            <button class="btn btn-success btn-sm publish-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Publish</button>
-                        @elseif($quiz->status === 'published')
-                            <button class="btn btn-warning btn-sm archive-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Archive</button>
-                        @endif
-                        
-                        <button class="btn btn-danger btn-sm delete-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Delete</button>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="5" class="text-center">No quizzes found.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+    <h4 class="mb-3">Quiz Management</h4>
+    
+    <!-- Status Filter Tabs -->
+    <ul class="nav nav-tabs mb-3" id="quizTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft-pane" type="button" role="tab">
+                <i class="bi bi-file-earmark-text"></i> Draft Quizzes 
+                <span class="badge bg-warning text-dark ms-1">{{ $quizzes->where('status', 'draft')->count() }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="published-tab" data-bs-toggle="tab" data-bs-target="#published-pane" type="button" role="tab">
+                <i class="bi bi-check-circle"></i> Published Quizzes 
+                <span class="badge bg-success ms-1">{{ $quizzes->where('status', 'published')->count() }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived-pane" type="button" role="tab">
+                <i class="bi bi-archive"></i> Archived Quizzes 
+                <span class="badge bg-secondary ms-1">{{ $quizzes->where('status', 'archived')->count() }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="quizTabsContent">
+        <!-- Draft Quizzes -->
+        <div class="tab-pane fade show active" id="draft-pane" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-warning bg-opacity-10">
+                    <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Draft Quizzes</h6>
+                </div>
+                <div class="card-body">
+                    @include('Quiz Generator.professor.quiz-table', ['quizzes' => $quizzes->where('status', 'draft'), 'status' => 'draft'])
+                </div>
+            </div>
+        </div>
+
+        <!-- Published Quizzes -->
+        <div class="tab-pane fade" id="published-pane" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-success bg-opacity-10">
+                    <h6 class="mb-0"><i class="bi bi-check-circle"></i> Published Quizzes</h6>
+                </div>
+                <div class="card-body">
+                    @include('Quiz Generator.professor.quiz-table', ['quizzes' => $quizzes->where('status', 'published'), 'status' => 'published'])
+                </div>
+            </div>
+        </div>
+
+        <!-- Archived Quizzes -->
+        <div class="tab-pane fade" id="archived-pane" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-secondary bg-opacity-10">
+                    <h6 class="mb-0"><i class="bi bi-archive"></i> Archived Quizzes</h6>
+                </div>
+                <div class="card-body">
+                    @include('Quiz Generator.professor.quiz-table', ['quizzes' => $quizzes->where('status', 'archived'), 'status' => 'archived'])
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal for Viewing/Editing Questions -->
@@ -283,5 +285,63 @@ $.ajaxSetup({
         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
     }
 });
+
+// Quiz status management functions
+function publishQuiz(quizId) {
+    if (confirm('Are you sure you want to publish this quiz? It will be available to students.')) {
+        $.post('/professor/quiz-generator/publish', {
+            quiz_id: quizId,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        })
+        .done(function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        })
+        .fail(function() {
+            alert('Error publishing quiz. Please try again.');
+        });
+    }
+}
+
+function archiveQuiz(quizId) {
+    if (confirm('Are you sure you want to archive this quiz? It will no longer be available to students.')) {
+        $.post('/professor/quiz-generator/archive', {
+            quiz_id: quizId,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        })
+        .done(function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        })
+        .fail(function() {
+            alert('Error archiving quiz. Please try again.');
+        });
+    }
+}
+
+function restoreQuiz(quizId) {
+    if (confirm('Are you sure you want to restore this quiz to draft status?')) {
+        $.post('/professor/quiz-generator/restore', {
+            quiz_id: quizId,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        })
+        .done(function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        })
+        .fail(function() {
+            alert('Error restoring quiz. Please try again.');
+        });
+    }
+}
 </script>
 @endpush

@@ -1,0 +1,5 @@
+-- Add missing columns to quizzes table
+ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'draft';
+ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS max_attempts INT DEFAULT 1;
+ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS allow_retakes TINYINT(1) DEFAULT 0;
+ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS instant_feedback TINYINT(1) DEFAULT 0;

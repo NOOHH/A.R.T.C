@@ -48,7 +48,7 @@ class QuizGeneratorController extends Controller
                       ->orderBy('created_at', 'desc')
                       ->get();
         
-        return view('professor.quiz-generator', compact('assignedPrograms', 'quizzes'));
+        return view('Quiz Generator.professor.quiz-generator', compact('assignedPrograms', 'quizzes'));
     }
 
     /**
@@ -134,13 +134,20 @@ public function getContentByCourse($courseId)
                 'program_id' => 'required|exists:programs,program_id',
                 'module_id'  => 'required|exists:modules,modules_id',
                 'course_id' => 'required|exists:courses,subject_id',
-                'document' => 'nullable|file|mimes:pdf,doc,docx,csv,txt|max:10240', // Made nullable, will check later
+                'document' => 'nullable|file|mimes:pdf,doc,docx,csv,txt|max:10240',
                 'num_questions' => 'required|integer|min:5|max:50',
                 'quiz_type' => 'required|in:multiple_choice,true_false,flashcard,mixed',
                 'quiz_title' => 'required|string|max:255',
+                'quiz_description' => 'nullable|string|max:1000',
                 'instructions' => 'nullable|string|max:1000',
-                'randomize_order' => 'nullable|in:0,1,true,false,on,off', // Accept various checkbox formats
-                'tags' => 'nullable|array',
+                'tags' => 'nullable|string', // Changed from array to string since form sends comma-separated
+                'time_limit' => 'nullable|integer|min:1|max:300',
+                'max_attempts' => 'nullable|integer|min:1|max:10',
+                'randomize_order' => 'nullable',
+                'randomize_mc_options' => 'nullable',
+                'allow_retakes' => 'nullable',
+                'instant_feedback' => 'nullable',
+                'show_correct_answers' => 'nullable',
             ]);
             Log::info('✓ Validation passed');
 
@@ -215,6 +222,13 @@ public function getContentByCourse($courseId)
             }
             Log::info('Randomize order processed', ['raw_value' => $request->randomize_order ?? 'not set', 'processed_value' => $randomizeOrder]);
             
+            // Process tags from comma-separated string to array
+            $tagsArray = [];
+            if ($request->tags) {
+                $tagsArray = array_map('trim', explode(',', $request->tags));
+                $tagsArray = array_filter($tagsArray); // Remove empty tags
+            }
+            
             $quiz = Quiz::create([
                 'professor_id' => $professor->professor_id,
                 'program_id' => $request->program_id,
@@ -225,14 +239,15 @@ public function getContentByCourse($courseId)
                 'quiz_description' => $request->input('quiz_description', ''),
                 'instructions' => $request->instructions,
                 'randomize_order' => $randomizeOrder,
-                'tags' => $request->tags ? json_encode($request->tags) : json_encode([]),
+                'randomize_mc_options' => $request->boolean('randomize_mc_options', false),
+                'tags' => json_encode($tagsArray),
                 'status' => 'draft', // Always start as draft
                 'is_draft' => true,
                 'is_active' => false, // Not active until published
                 'allow_retakes' => $request->boolean('allow_retakes', false),
                 'instant_feedback' => $request->boolean('instant_feedback', false),
                 'show_correct_answers' => $request->boolean('show_correct_answers', true),
-                'max_attempts' => $request->input('max_attempts'),
+                'max_attempts' => $request->input('max_attempts', 1),
                 'total_questions' => count($generatedQuestions),
                 'time_limit' => $request->input('time_limit', 60), // From form or default 60 minutes
                 'document_path' => $documentPath,
@@ -345,6 +360,9 @@ public function getContentByCourse($courseId)
             return response()->json([
                 'success' => true,
                 'message' => 'Quiz generated successfully and saved as draft! You can now edit questions and publish when ready.',
+                'quiz_id' => $quiz->quiz_id,
+                'questions_count' => count($generatedQuestions),
+                'quiz_title' => $quiz->quiz_title,
                 'data' => $responseData
             ]);
 
@@ -2180,7 +2198,7 @@ public function getContentByCourse($courseId)
                        ->with(['questions', 'program'])
                        ->firstOrFail();
 
-            return view('professor.quiz-preview-simulation', compact('quiz'));
+            return view('Quiz Generator.professor.quiz-preview-simulation', compact('quiz'));
         } catch (\Exception $e) {
             Log::error('Error previewing quiz: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error loading quiz preview: ' . $e->getMessage()], 500);
@@ -2260,6 +2278,21 @@ public function getContentByCourse($courseId)
         return response()->json(['success' => true, 'message' => 'Quiz archived successfully.']);
     }
 
+    public function restore($quizId)
+    {
+        $professor = Professor::find(session('professor_id'));
+        $quiz = Quiz::where('quiz_id', $quizId)
+                   ->where('professor_id', $professor->professor_id)
+                   ->firstOrFail();
+
+        $quiz->update([
+            'status' => 'draft',
+            'is_active' => true
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Quiz restored to draft successfully.']);
+    }
+
     public function updateQuestions(Request $request, $quizId)
     {
         $professor = Professor::find(session('professor_id'));
@@ -2297,7 +2330,7 @@ public function getContentByCourse($courseId)
                        ->with(['questions', 'program'])
                        ->firstOrFail();
 
-            return view('professor.quiz-questions-edit', compact('quiz'));
+            return view('Quiz Generator.professor.quiz-questions-edit', compact('quiz'));
         } catch (\Exception $e) {
             Log::error('Error viewing quiz questions: ' . $e->getMessage());
             return redirect()->route('professor.quiz-generator')->with('error', 'Error loading quiz questions: ' . $e->getMessage());
@@ -2320,7 +2353,7 @@ public function getContentByCourse($courseId)
                        ->firstOrFail();
 
             // Return just the modal content
-            return view('professor.quiz-questions-edit-modal', compact('quiz'))->render();
+            return view('Quiz Generator.professor.quiz-questions', compact('quiz'))->render();
         } catch (\Exception $e) {
             Log::error('Error loading modal questions: ' . $e->getMessage());
             return response()->json(['error' => 'Error loading questions: ' . $e->getMessage()], 500);
