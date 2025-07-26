@@ -2783,7 +2783,7 @@
         const nextBtn = document.getElementById('step4NextBtn'); // Updated button ID
         
         // Don't validate if we're not on step 4 or if the step is not visible
-        const step4Element = document.getElementById('step-4');
+        const step4Element = document.getElementById('step-content-4');
         if (!step4Element || step4Element.style.display === 'none' || !step4Element.classList.contains('active')) {
             return false;
         }
@@ -3589,7 +3589,7 @@ if (currentStep !== finalStep) {
                 }, 1500);
                 
                 // Enable the next button if all validations pass
-                validateStep3();
+                validateStep4();
             } else {
                 const statusElement = document.getElementById('otpStatusModal');
                 if (statusElement) {
@@ -3821,6 +3821,23 @@ if (currentStep !== finalStep) {
         
         // Initialize email validation for Send OTP button
         initializeEmailValidation();
+        
+        // Add input event listeners for step 4 validation
+        const step4Fields = [
+            'user_firstname',
+            'user_lastname', 
+            'user_email',
+            'password',
+            'password_confirmation'
+        ];
+        
+        step4Fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', validateStep4);
+                field.addEventListener('blur', validateStep4);
+            }
+        });
         
         // Initialize terms modal event handlers
         const termsLink = document.getElementById('showTerms');
