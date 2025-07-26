@@ -112,6 +112,55 @@ Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 // Test database structure
 Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection']);
 
+// Test QuizAPI Integration
+Route::get('/test-quiz-api', function () {
+    try {
+        $quizApiService = new \App\Services\QuizApiService();
+        
+        echo "<h2>QuizAPI Integration Test</h2>";
+        
+        // Test connection
+        echo "<h3>1. Connection Test</h3>";
+        $connected = $quizApiService->testConnection();
+        echo "Connection: " . ($connected ? "<span style='color:green'>SUCCESS</span>" : "<span style='color:red'>FAILED</span>") . "<br>";
+        
+        if ($connected) {
+            // Test categories
+            echo "<h3>2. Available Categories</h3>";
+            $categories = $quizApiService->getCategories();
+            foreach ($categories as $key => $name) {
+                echo "- $key: $name<br>";
+            }
+            
+            // Test getting questions
+            echo "<h3>3. Sample Questions (Linux, 2 questions)</h3>";
+            $questions = $quizApiService->getQuestions(['limit' => 2, 'category' => 'linux']);
+            
+            echo "Retrieved: " . count($questions) . " questions<br><br>";
+            
+            foreach ($questions as $i => $question) {
+                echo "<div style='border:1px solid #ccc; padding:10px; margin:10px 0;'>";
+                echo "<strong>Question " . ($i + 1) . ":</strong> " . $question['question'] . "<br>";
+                echo "<strong>Options:</strong><br>";
+                foreach ($question['options'] as $key => $option) {
+                    $style = ($key === $question['correct_answer']) ? 'color:green; font-weight:bold;' : '';
+                    echo "&nbsp;&nbsp;$key) <span style='$style'>$option</span><br>";
+                }
+                echo "<strong>Difficulty:</strong> " . $question['difficulty'] . "<br>";
+                echo "<strong>Category:</strong> " . $question['category'] . "<br>";
+                if (!empty($question['explanation'])) {
+                    echo "<strong>Explanation:</strong> " . $question['explanation'] . "<br>";
+                }
+                echo "</div>";
+            }
+        }
+        
+        return '';
+    } catch (Exception $e) {
+        return "<h2>QuizAPI Test Failed</h2><p style='color:red;'>" . $e->getMessage() . "</p>";
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Batch Enrollment Routes
@@ -1629,7 +1678,7 @@ Route::middleware(['professor.auth'])
     
     // AI Quiz Generator
     Route::get('/quiz-generator', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'index'])
-         ->name('quiz-generator');
+         ->name('quiz-generator.index');
     Route::post('/quiz-generator/generate', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'generate'])
          ->name('quiz-generator.generate');
     Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'preview'])
@@ -1640,8 +1689,18 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.delete');
     Route::post('/quiz-generator/{quiz}/publish', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'publish'])
          ->name('quiz-generator.publish');
+    Route::post('/quiz-generator/{quiz}/archive', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'archive'])
+         ->name('quiz-generator.archive');
     Route::get('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'viewQuestions'])
          ->name('quiz-generator.questions');
+    Route::get('/quiz-generator/questions/{quiz}/modal-content', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModalQuestions'])
+         ->name('quiz-generator.questions.modal');
+    Route::post('/quiz-generator/questions/{quiz}/update', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestions'])
+         ->name('quiz-generator.questions.update');
+    Route::post('/quiz-generator/question-options', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionOptions'])
+         ->name('quiz-generator.question-options');
+    Route::post('/quiz-generator/save', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'save'])
+         ->name('quiz-generator.save');
     
     // Quiz generator AJAX routes
     Route::get('/quiz-generator/modules/{programId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModulesByProgram'])
@@ -1665,6 +1724,19 @@ Route::middleware(['professor.auth'])
         $quizzes = \App\Models\Quiz::with('questions')->orderBy('created_at', 'desc')->get();
         return response()->json(['quizzes' => $quizzes]);
     });
+    
+    // Test route for quiz generator
+    Route::get('/test-quiz-generator', function() {
+        return response()->json([
+            'session' => [
+                'logged_in' => session('logged_in'),
+                'professor_id' => session('professor_id'),
+                'user_role' => session('user_role')
+            ],
+            'quizzes_count' => \App\Models\Quiz::count(),
+            'professor_quizzes' => \App\Models\Quiz::where('professor_id', session('professor_id'))->count()
+        ]);
+    })->name('test.quiz-generator');
     Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
          ->name('grading.update');
     Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])

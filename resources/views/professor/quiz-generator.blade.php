@@ -63,8 +63,11 @@
         <div class="row g-3 mb-3">
             <div class="col-md-4">
                 <label for="document" class="form-label">Upload Document</label>
-                <input type="file" class="form-control" id="document" name="document" accept=".pdf,.doc,.docx,.csv,.txt" required>
+                <input type="file" class="form-control" id="document" name="document" accept=".pdf,.doc,.docx,.csv,.txt">
                 <small class="text-muted">Supported: PDF, Word, CSV, TXT. Max: 10MB.</small>
+                <small class="text-info d-block mt-1">
+                    <i class="bi bi-lightbulb"></i> For technical topics (Linux, PHP, JavaScript, etc.), you can skip the document - we'll use our technical question database!
+                </small>
             </div>
             <div class="col-md-2">
                 <label for="num_questions" class="form-label"># Questions</label>
@@ -97,13 +100,80 @@
             </div>
         </div>
         <div class="mb-3">
+            <label for="quiz_description" class="form-label">Quiz Description (Optional)</label>
+            <textarea class="form-control" id="quiz_description" name="quiz_description" rows="2" placeholder="Brief description of the quiz content..."></textarea>
+        </div>
+        <div class="mb-3">
             <label for="instructions" class="form-label">Instructions (Optional)</label>
             <textarea class="form-control" id="instructions" name="instructions" rows="2" placeholder="Any special instructions for students..."></textarea>
         </div>
+        
+        <!-- Quiz Settings -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-gear"></i> Quiz Settings</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="time_limit" class="form-label">Time Limit (minutes)</label>
+                        <input type="number" class="form-control" id="time_limit" name="time_limit" value="60" min="1" max="300">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="max_attempts" class="form-label">Max Attempts (optional)</label>
+                        <input type="number" class="form-control" id="max_attempts" name="max_attempts" min="1" max="10" placeholder="Unlimited">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="allow_retakes" name="allow_retakes">
+                            <label class="form-check-label" for="allow_retakes">Allow Retakes</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="instant_feedback" name="instant_feedback">
+                            <label class="form-check-label" for="instant_feedback">Instant Feedback</label>
+                            <small class="form-text text-muted d-block">Show correct/incorrect after each question</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show_correct_answers" name="show_correct_answers" checked>
+                            <label class="form-check-label" for="show_correct_answers">Show Correct Answers</label>
+                            <small class="form-text text-muted d-block">Display correct answers at end</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-magic"></i> Generate Quiz</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-magic"></i> Generate Quiz (Draft)</button>
         </div>
     </form>
+
+    <!-- QuizAPI Information Section -->
+    <div class="alert alert-info mt-3">
+        <h6><i class="bi bi-database"></i> Technical Quiz Database Available</h6>
+        <p class="mb-2">For technical topics, we can generate questions from our extensive database covering:</p>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Programming:</strong><br>
+                <small>PHP, JavaScript, Python, SQL, etc.</small>
+            </div>
+            <div class="col-md-4">
+                <strong>DevOps & Cloud:</strong><br>
+                <small>Docker, Kubernetes, Linux, Cloud</small>
+            </div>
+            <div class="col-md-4">
+                <strong>Security & Networking:</strong><br>
+                <small>Cybersecurity, Networking, DevOps</small>
+            </div>
+        </div>
+        <small class="text-muted">Simply include the topic name in your quiz title (e.g., "PHP Programming Quiz", "Linux Administration Test") and you can skip uploading a document!</small>
+    </div>
 
     <hr class="my-4">
     <h4 class="mb-3">Your Draft & Published Quizzes</h4>
@@ -138,22 +208,33 @@
                         @endif
                     </td>
                     <td>
+                        @if($quiz->status === 'draft')
+                            <span class="badge bg-warning text-dark">Draft</span>
+                        @elseif($quiz->status === 'published')
+                            <span class="badge bg-success">Published</span>
+                        @else
+                            <span class="badge bg-secondary">Archived</span>
+                        @endif
+                        
+                        @if($quiz->allow_retakes)
+                            <span class="badge bg-info text-dark">Retakes Allowed</span>
+                        @endif
+                        
+                        @if($quiz->instant_feedback)
+                            <span class="badge bg-primary">Instant Feedback</span>
+                        @endif
+                    </td>
+                    <td>
                         <button class="btn btn-outline-secondary btn-sm view-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">View/Edit Questions</button>
                         <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Preview</button>
-                        @if($quiz->jotform_url)
-                            <a href="{{ $quiz->jotform_url }}" target="_blank" class="btn btn-outline-success btn-sm">Open JotForm</a>
+                        
+                        @if($quiz->status === 'draft')
+                            <button class="btn btn-success btn-sm publish-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Publish</button>
+                        @elseif($quiz->status === 'published')
+                            <button class="btn btn-warning btn-sm archive-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Archive</button>
                         @endif
-                        @if($quiz->is_draft)
-                            <form action="{{ route('professor.quiz-generator.publish', $quiz->quiz_id) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-sm">Publish</button>
-                            </form>
-                        @endif
-                        <form action="{{ route('professor.quiz-generator.delete', $quiz->quiz_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this quiz?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
+                        
+                        <button class="btn btn-danger btn-sm delete-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">Delete</button>
                     </td>
                 </tr>
                 @empty
@@ -196,213 +277,13 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/quiz-editor-simple.js') }}"></script>
 <script>
-// --- Dynamic Dropdowns ---
-$('#program_id').on('change', function() {
-    let programId = $(this).val();
-    $('#module_id').prop('disabled', true).html('<option value="">Select Module</option>');
-    $('#course_id').prop('disabled', true).html('<option value="">Select Course</option>');
-    
-    if (programId) {
-        $.get('/professor/quiz-generator/modules/' + programId, function(res) {
-            if (res.success) {
-                let options = '<option value="">Select Module</option>';
-                res.modules.forEach(m => options += `<option value="${m.module_id}">${m.module_name}</option>`);
-                $('#module_id').html(options).prop('disabled', false);
-            }
-        });
+// Additional CSRF token setup for AJAX
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
     }
-});
-
-$('#module_id').on('change', function() {
-    let moduleId = $(this).val();
-    $('#course_id').prop('disabled', true).html('<option value="">Select Course</option>');
-    
-    if (moduleId) {
-        $.get('/professor/quiz-generator/courses/' + moduleId, function(res) {
-            if (res.success) {
-                let options = '<option value="">Select Course</option>';
-                res.courses.forEach(c => options += `<option value="${c.course_id}">${c.course_name}</option>`);
-                $('#course_id').html(options).prop('disabled', false);
-            }
-        });
-    }
-});
-
-// --- View/Edit Questions Modal ---
-$('.view-questions-btn').on('click', function() {
-    let quizId = $(this).data('quiz-id');
-    $('#questions-modal-body').html('<div class="text-center py-4"><div class="spinner-border"></div></div>');
-    $('#questionsModal').modal('show');
-    $.get('/professor/quiz-generator/questions/' + quizId, function(res) {
-        $('#questions-modal-body').html(res.html);
-    });
-});
-
-// --- Preview Quiz Modal ---
-$('.preview-quiz-btn').on('click', function() {
-    let quizId = $(this).data('quiz-id');
-    $('#preview-modal-body').html('<div class="text-center py-4"><div class="spinner-border"></div></div>');
-    $('#previewModal').modal('show');
-    $.get('/professor/quiz-generator/preview/' + quizId, function(res) {
-        $('#preview-modal-body').html(res.html);
-    });
-});
-
-// --- Enhanced Form Submission with Error Handling ---
-$('#quiz-generator-form').on('submit', function(e) {
-    e.preventDefault(); // Prevent default form submission
-    console.log('Form submission started');
-    
-    // Validate required fields
-    const requiredFields = {
-        'program_id': $('#program_id').val(),
-        'module_id': $('#module_id').val(), 
-        'course_id': $('#course_id').val(),
-        'quiz_title': $('#quiz_title').val(),
-        'document': $('#document')[0].files.length > 0 ? $('#document')[0].files[0] : null
-    };
-    
-    console.log('Required fields check:', requiredFields);
-    
-    // Check for missing required fields
-    let missingFields = [];
-    if (!requiredFields.program_id) missingFields.push('Program');
-    if (!requiredFields.module_id) missingFields.push('Module');
-    if (!requiredFields.course_id) missingFields.push('Course');
-    if (!requiredFields.quiz_title) missingFields.push('Quiz Title');
-    if (!requiredFields.document) missingFields.push('Document');
-    
-    if (missingFields.length > 0) {
-        alert('Please fill in all required fields: ' + missingFields.join(', '));
-        return false;
-    }
-    
-    // Process tags
-    let tags = $('#tags').val();
-    if (tags) {
-        let tagArr = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-        console.log('Tags processed:', tagArr);
-        
-        // Remove existing tag inputs
-        $(this).find('input[name="tags[]"]').remove();
-        
-        // Add new tag inputs
-        tagArr.forEach(tag => {
-            $('<input>').attr({
-                type: 'hidden', 
-                name: 'tags[]'
-            }).val(tag).appendTo(this);
-        });
-    }
-    
-    // Add loading state to submit button
-    const submitBtn = $(this).find('button[type="submit"]');
-    const originalText = submitBtn.html();
-    submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...');
-    submitBtn.prop('disabled', true);
-    
-    // Create FormData for file upload
-    const formData = new FormData(this);
-    
-    // Fix the randomize_order checkbox value - convert "on" to boolean
-    if (formData.has('randomize_order')) {
-        formData.set('randomize_order', '1'); // Laravel expects '1' for true
-    } else {
-        formData.set('randomize_order', '0'); // Laravel expects '0' for false
-    }
-    
-    console.log('Form data being submitted:');
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value instanceof File ? `File: ${value.name}` : value);
-    }
-    
-    // Submit via AJAX for better error handling
-    $.ajax({
-        url: $(this).attr('action'),
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-            console.log('Success response:', response);
-            if (response.success) {
-                let message = 'Quiz generated successfully!';
-                if (response.data.jotform && response.data.jotform.form_url) {
-                    message += `\n\nJotForm created: ${response.data.jotform.form_url}`;
-                }
-                alert(message);
-                location.reload(); // Refresh to show new quiz
-            } else {
-                alert('Error: ' + (response.message || 'Unknown error occurred'));
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log('AJAX Error Details:');
-            console.log('Status:', status);
-            console.log('Error:', error);
-            console.log('Response Text:', xhr.responseText);
-            console.log('Status Code:', xhr.status);
-            
-            let errorMessage = 'An error occurred while generating the quiz.';
-            let debugInfo = '';
-            
-            if (xhr.status === 422) {
-                // Validation errors
-                try {
-                    const errors = JSON.parse(xhr.responseText);
-                    if (errors.errors) {
-                        errorMessage = 'Validation errors:\n';
-                        Object.keys(errors.errors).forEach(field => {
-                            errorMessage += `- ${field}: ${errors.errors[field].join(', ')}\n`;
-                        });
-                    } else if (errors.message) {
-                        errorMessage = errors.message;
-                    }
-                } catch (e) {
-                    errorMessage = 'Validation error: ' + xhr.responseText;
-                }
-            } else if (xhr.status === 500) {
-                try {
-                    const serverError = JSON.parse(xhr.responseText);
-                    if (serverError.message) {
-                        errorMessage = 'Server error: ' + serverError.message;
-                        if (serverError.debug_info) {
-                            debugInfo = `Error at line ${serverError.debug_info.error_line} in ${serverError.debug_info.error_file}`;
-                        }
-                    }
-                } catch (e) {
-                    errorMessage = 'Server error. Please check the server logs.';
-                }
-            } else if (xhr.status === 419) {
-                errorMessage = 'CSRF token mismatch. Please refresh the page and try again.';
-            } else if (xhr.status === 0) {
-                errorMessage = 'Network error. Please check your internet connection.';
-            }
-            
-            alert(errorMessage);
-            
-            // Show debug info if available
-            if (debugInfo || xhr.responseText) {
-                $('#debug-content').html(`
-                    <strong>Status Code:</strong> ${xhr.status}<br>
-                    <strong>Status:</strong> ${status}<br>
-                    <strong>Error:</strong> ${error}<br>
-                    ${debugInfo ? `<strong>Debug:</strong> ${debugInfo}<br>` : ''}
-                    <strong>Response:</strong> <pre style="white-space: pre-wrap; font-size: 12px;">${xhr.responseText}</pre>
-                `);
-                $('#debug-alert').show();
-            }
-        },
-        complete: function() {
-            // Restore button state
-            submitBtn.html(originalText);
-            submitBtn.prop('disabled', false);
-            $('#tags').prop('disabled', false);
-        }
-    });
-    
-    return false;
 });
 </script>
 @endpush

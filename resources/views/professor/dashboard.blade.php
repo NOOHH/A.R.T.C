@@ -215,7 +215,7 @@ body.sidebar-collapse .content-below-search {
                     <i class="bi bi-robot text-danger" style="font-size: 3rem;"></i>
                     <h5 class="card-title mt-3">AI Quiz Generator</h5>
                     <p class="card-text">Generate quizzes from uploaded documents using AI.</p>
-                    <a href="{{ route('professor.quiz-generator') }}" class="btn btn-danger">Generate Quiz</a>
+                    <a href="{{ route('professor.quiz-generator.index') }}" class="btn btn-danger">Generate Quiz</a>
                 </div>
             </div>
         </div>

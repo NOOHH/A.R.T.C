@@ -5,18 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Quiz extends Model
+class QuizDraft extends Model
 {
     use HasFactory;
 
-    protected $table = 'quizzes';
-    protected $primaryKey = 'quiz_id';
+    protected $table = 'quiz_drafts';
+    protected $primaryKey = 'draft_id';
 
     protected $fillable = [
         'professor_id',
         'program_id',
         'module_id',
-        'course_id', 
+        'course_id',
         'content_id',
         'quiz_title',
         'quiz_description',
@@ -24,25 +24,23 @@ class Quiz extends Model
         'total_questions',
         'time_limit',
         'document_path',
-        'is_active',
-        'is_draft',
-        'status',
         'allow_retakes',
         'instant_feedback',
         'show_correct_answers',
         'max_attempts',
         'randomize_order',
         'tags',
+        'quiz_source',
+        'quiz_settings',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
-        'is_draft' => 'boolean',
         'allow_retakes' => 'boolean',
         'instant_feedback' => 'boolean',
         'show_correct_answers' => 'boolean',
         'randomize_order' => 'boolean',
         'tags' => 'array',
+        'quiz_settings' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -57,8 +55,13 @@ class Quiz extends Model
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
 
-    public function questions()
+    public function module()
     {
-        return $this->hasMany(QuizQuestion::class, 'quiz_id', 'quiz_id');
+        return $this->belongsTo(Module::class, 'module_id', 'module_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'course_id');
     }
 }

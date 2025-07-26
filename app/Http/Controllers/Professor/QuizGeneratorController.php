@@ -13,10 +13,14 @@ use App\Models\AdminSetting;
 use App\Models\Module;
 use App\Models\Course;
 use App\Models\ContentItem;
+use App\Models\Program;
+use App\Models\QuizDraft;
+use App\Models\QuizAttempt;
+use App\Services\QuizApiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class QuizGeneratorController extends Controller
@@ -125,11 +129,12 @@ public function getContentByCourse($courseId)
             }
 
             Log::info('Starting validation');
+            
             $request->validate([
                 'program_id' => 'required|exists:programs,program_id',
                 'module_id'  => 'required|exists:modules,modules_id',
                 'course_id' => 'required|exists:courses,subject_id',
-                'document' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240', // 10MB max
+                'document' => 'nullable|file|mimes:pdf,doc,docx,csv,txt|max:10240', // Made nullable, will check later
                 'num_questions' => 'required|integer|min:5|max:50',
                 'quiz_type' => 'required|in:multiple_choice,true_false,flashcard,mixed',
                 'quiz_title' => 'required|string|max:255',
@@ -157,25 +162,42 @@ public function getContentByCourse($courseId)
             Log::info('✓ Program assignment verified');
 
             Log::info('Starting document processing');
-            // Store the uploaded document
-            $documentPath = $request->file('document')->store('quiz-documents', 'public');
-            Log::info('✓ Document stored', ['path' => $documentPath]);
             
-            // Process the document and generate quiz
-            $extractedText = $this->extractTextFromDocument($request->file('document'));
-            Log::info('✓ Text extracted from document', ['length' => strlen($extractedText), 'preview' => substr($extractedText, 0, 200) . '...']);
+            // Check if we should use QuizAPI instead of document processing
+            $useQuizApi = $this->shouldUseQuizApi($request);
             
-            if (strlen($extractedText) < 100) {
-                Log::warning('Extracted text too short', ['length' => strlen($extractedText), 'text' => $extractedText]);
-                return response()->json(['success' => false, 'message' => 'Document content is too short to generate meaningful questions.'], 400);
+            // If not using QuizAPI, ensure we have a document
+            if (!$useQuizApi && !$request->hasFile('document')) {
+                return response()->json(['success' => false, 'message' => 'Document is required when not using QuizAPI for technical topics.'], 400);
             }
             
-            $generatedQuestions = $this->generateQuestionsFromText(
-                $extractedText,
-                $request->num_questions,
-                $request->quiz_type
-            );
-            Log::info('✓ Questions generated', ['count' => count($generatedQuestions)]);
+            if ($useQuizApi) {
+                Log::info('Using QuizAPI for question generation');
+                $generatedQuestions = $this->generateQuestionsFromQuizApi($request);
+                $documentPath = null; // No document needed for QuizAPI
+            } else {
+                Log::info('Using document processing for question generation');
+                // Store the uploaded document
+                $documentPath = $request->file('document')->store('quiz-documents', 'public');
+                Log::info('✓ Document stored', ['path' => $documentPath]);
+                
+                // Process the document and generate quiz
+                $extractedText = $this->extractTextFromDocument($request->file('document'));
+                Log::info('✓ Text extracted from document', ['length' => strlen($extractedText), 'preview' => substr($extractedText, 0, 200) . '...']);
+                
+                if (strlen($extractedText) < 100) {
+                    Log::warning('Extracted text too short', ['length' => strlen($extractedText), 'text' => $extractedText]);
+                    return response()->json(['success' => false, 'message' => 'Document content is too short to generate meaningful questions.'], 400);
+                }
+                
+                $generatedQuestions = $this->generateQuestionsFromText(
+                    $extractedText,
+                    $request->num_questions,
+                    $request->quiz_type
+                );
+            }
+            
+            Log::info('✓ Questions generated', ['count' => count($generatedQuestions), 'source' => $useQuizApi ? 'QuizAPI' : 'Document']);
 
             if (empty($generatedQuestions)) {
                 Log::error('No questions generated');
@@ -200,14 +222,20 @@ public function getContentByCourse($courseId)
                 'course_id' => $request->course_id,
                 'content_id' => null, // Will be set after creating content item
                 'quiz_title' => $request->quiz_title,
+                'quiz_description' => $request->input('quiz_description', ''),
                 'instructions' => $request->instructions,
                 'randomize_order' => $randomizeOrder,
                 'tags' => $request->tags ? json_encode($request->tags) : json_encode([]),
-                'is_draft' => false, // Always create as published for now
+                'status' => 'draft', // Always start as draft
+                'is_draft' => true,
+                'is_active' => false, // Not active until published
+                'allow_retakes' => $request->boolean('allow_retakes', false),
+                'instant_feedback' => $request->boolean('instant_feedback', false),
+                'show_correct_answers' => $request->boolean('show_correct_answers', true),
+                'max_attempts' => $request->input('max_attempts'),
                 'total_questions' => count($generatedQuestions),
-                'time_limit' => 60, // Default 60 minutes
+                'time_limit' => $request->input('time_limit', 60), // From form or default 60 minutes
                 'document_path' => $documentPath,
-                'is_active' => true,
                 'created_at' => now(),
             ]);
             Log::info('✓ Quiz created successfully', ['quiz_id' => $quiz->quiz_id]);
@@ -258,6 +286,14 @@ public function getContentByCourse($courseId)
                     'question_type' => $questionData['question_type'] ?? $questionData['type'] ?? 'multiple_choice',
                     'options' => $options,
                     'correct_answer' => $questionData['correct_answer'],
+                    'explanation' => $questionData['explanation'] ?? '',
+                    'question_source' => $useQuizApi ? 'quizapi' : 'generated',
+                    'question_metadata' => [
+                        'difficulty' => $questionData['difficulty'] ?? 'Easy',
+                        'category' => $questionData['category'] ?? 'General',
+                        'generated_at' => now()->toISOString(),
+                        'source_topic' => $request->quiz_title
+                    ],
                     'points' => $questionData['points'] ?? 1,
                     'is_active' => true,
                     'created_by_professor' => $professor->professor_id,
@@ -272,14 +308,11 @@ public function getContentByCourse($courseId)
             }
             Log::info('✓ All questions created successfully', ['total_questions' => $questionCount]);
 
-            // Create JotForm integration
-            Log::info('Creating JotForm integration');
-            $jotformResult = $this->createJotFormQuiz($quiz, $generatedQuestions);
-            if ($jotformResult['success']) {
-                Log::info('✓ JotForm created successfully', $jotformResult);
-            } else {
-                Log::warning('JotForm creation failed', $jotformResult);
-            }
+            // Set quiz status to draft initially
+            $quiz->update([
+                'status' => 'draft',
+                'is_active' => false // Keep inactive until published
+            ]);
 
             // DISABLED: Fix student_id column type mismatch before enabling this
             // Sync with students - add to deadlines
@@ -305,19 +338,14 @@ public function getContentByCourse($courseId)
                 'quiz_id' => $quiz->quiz_id,
                 'quiz_title' => $quiz->quiz_title,
                 'total_questions' => $questionCount,
-                'content_id' => $contentItem->id
+                'content_id' => $contentItem->id,
+                'status' => 'draft',
+                'quiz_source' => $useQuizApi ? 'QuizAPI' : 'Document Processing'
             ];
-            
-            if (isset($jotformResult) && $jotformResult['success']) {
-                $responseData['jotform'] = [
-                    'form_id' => $jotformResult['form_id'],
-                    'form_url' => $jotformResult['form_url']
-                ];
-            }
             
             return response()->json([
                 'success' => true,
-                'message' => 'Quiz generated successfully!' . (isset($jotformResult) && $jotformResult['success'] ? ' JotForm created.' : ' (Note: Student notifications temporarily disabled)'),
+                'message' => 'Quiz generated successfully and saved as draft! You can now edit questions and publish when ready.',
                 'data' => $responseData
             ]);
 
@@ -1927,98 +1955,210 @@ public function getContentByCourse($courseId)
     }
 
     /**
-     * Create quiz using JotForm API
+     * Basic check if title suggests QuizAPI usage (for validation)
      */
-    private function createJotFormQuiz($quiz, $questions)
+    private function couldUseQuizApiBasic($title)
     {
-        $apiKey = '2d90d0f5cdff3f4a8fe8373f374af84a';
-        $baseUrl = 'https://api.jotform.com/';
+        $title = strtolower($title);
+        $technicalTopics = ['linux', 'devops', 'networking', 'php', 'javascript', 'python', 'cloud', 'docker', 'kubernetes', 'sql', 'programming', 'coding'];
         
+        foreach ($technicalTopics as $topic) {
+            if (strpos($title, $topic) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Determine if we should use QuizAPI instead of document processing
+     */
+    private function shouldUseQuizApi($request)
+    {
+        // If a document is uploaded, ALWAYS prefer document processing over QuizAPI
+        if ($request->hasFile('document')) {
+            Log::info('Document uploaded, using document processing instead of QuizAPI');
+            return false;
+        }
+        
+        // Only use QuizAPI if NO document is provided AND title suggests technical content
+        $title = strtolower($request->quiz_title);
+        $technicalTopics = [
+            'linux', 'devops', 'networking', 'php', 'javascript', 'python', 
+            'cloud', 'docker', 'kubernetes', 'sql', 'database', 'programming',
+            'coding', 'web development', 'software', 'technology', 'computer'
+        ];
+
+        foreach ($technicalTopics as $topic) {
+            if (strpos($title, $topic) !== false) {
+                Log::info('No document provided and technical topic detected, using QuizAPI', ['topic' => $topic, 'title' => $title]);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate questions using QuizAPI.io
+     */
+    private function generateQuestionsFromQuizApi($request)
+    {
         try {
-            // Create form
-            $formData = [
-                'questions' => [
-                    '1' => [
-                        'type' => 'control_head',
-                        'text' => $quiz->quiz_title,
-                        'order' => '1'
-                    ]
-                ]
-            ];
+            $quizApiService = new QuizApiService();
             
-            // Add instructions if available
-            if ($quiz->instructions) {
-                $formData['questions']['2'] = [
-                    'type' => 'control_text',
-                    'text' => $quiz->instructions,
-                    'order' => '2'
-                ];
-                $questionOrder = 3;
-            } else {
-                $questionOrder = 2;
-            }
+            // Determine the best category based on title
+            $title = strtolower($request->quiz_title);
+            $category = $this->mapTitleToQuizApiCategory($title);
             
-            // Add quiz questions to JotForm
-            foreach ($questions as $index => $question) {
-                if ($question['question_type'] === 'multiple_choice') {
-                    $formData['questions'][$questionOrder] = [
-                        'type' => 'control_radio',
-                        'text' => $question['question'],
-                        'options' => implode('|', $question['options']),
-                        'required' => 'Yes',
-                        'order' => $questionOrder
-                    ];
-                } else if ($question['question_type'] === 'true_false') {
-                    $formData['questions'][$questionOrder] = [
-                        'type' => 'control_radio',
-                        'text' => $question['question'],
-                        'options' => 'True|False',
-                        'required' => 'Yes',
-                        'order' => $questionOrder
-                    ];
-                }
-                $questionOrder++;
-            }
+            // Determine difficulty if possible
+            $difficulty = $this->extractDifficultyFromTitle($title);
             
-            // Create form via JotForm API
-            $response = Http::post($baseUrl . 'form', [
-                'apiKey' => $apiKey,
-                'questions' => json_encode($formData['questions'])
+            Log::info('QuizAPI parameters determined', [
+                'category' => $category,
+                'difficulty' => $difficulty,
+                'num_questions' => $request->num_questions
             ]);
-            
-            if ($response->successful()) {
-                $formData = $response->json();
-                Log::info('JotForm created successfully', ['form_id' => $formData['content']['id'] ?? 'unknown']);
-                
-                // Store JotForm ID in quiz record
-                $quiz->update([
-                    'jotform_id' => $formData['content']['id'] ?? null,
-                    'jotform_url' => $formData['content']['url'] ?? null
-                ]);
-                
-                return [
-                    'success' => true,
-                    'form_id' => $formData['content']['id'] ?? null,
-                    'form_url' => $formData['content']['url'] ?? null
-                ];
-            } else {
-                Log::error('JotForm creation failed', ['response' => $response->body()]);
-                return ['success' => false, 'error' => 'Failed to create JotForm'];
+
+            $params = [
+                'limit' => $request->num_questions,
+                'category' => $category
+            ];
+
+            if ($difficulty) {
+                $params['difficulty'] = $difficulty;
             }
-            
+
+            $questions = $quizApiService->getQuestions($params);
+
+            if (empty($questions)) {
+                Log::warning('QuizAPI returned no questions, fallback needed');
+                
+                if ($request->hasFile('document')) {
+                    Log::info('Falling back to document processing');
+                    $extractedText = $this->extractTextFromDocument($request->file('document'));
+                    return $this->generateQuestionsFromText($extractedText, $request->num_questions, $request->quiz_type);
+                } else {
+                    Log::warning('No document available for fallback, returning empty array');
+                    throw new \Exception('QuizAPI returned no questions and no document available for fallback');
+                }
+            }
+
+            // Filter questions based on requested type
+            if ($request->quiz_type === 'true_false') {
+                // Convert some multiple choice to true/false
+                $questions = $this->convertToTrueFalse($questions);
+            } elseif ($request->quiz_type === 'mixed') {
+                // Keep as is, QuizAPI primarily provides multiple choice
+            }
+
+            Log::info('QuizAPI questions processed successfully', ['count' => count($questions)]);
+            return $questions;
+
         } catch (\Exception $e) {
-            Log::error('JotForm API error', ['error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
+            Log::error('QuizAPI generation failed: ' . $e->getMessage());
+            
+            if ($request->hasFile('document')) {
+                Log::info('Falling back to document processing due to QuizAPI failure');
+                $extractedText = $this->extractTextFromDocument($request->file('document'));
+                return $this->generateQuestionsFromText($extractedText, $request->num_questions, $request->quiz_type);
+            } else {
+                Log::error('No document available for fallback after QuizAPI failure');
+                throw $e; // Re-throw the exception since we have no fallback
+            }
         }
     }
 
-    
-    // Legacy methods - kept for compatibility but deprecated
-    private function convertToTrueFalse($mcQuestion)
+    /**
+     * Map quiz title to QuizAPI category
+     */
+    private function mapTitleToQuizApiCategory($title)
     {
-        return $this->generateEnhancedTrueFalse($mcQuestion['question']);
+        $categoryMap = [
+            'linux' => 'linux',
+            'devops' => 'devops',
+            'network' => 'networking',
+            'php' => 'php',
+            'javascript' => 'javascript',
+            'js' => 'javascript',
+            'python' => 'python',
+            'cloud' => 'cloud',
+            'docker' => 'docker',
+            'kubernetes' => 'kubernetes',
+            'k8s' => 'kubernetes',
+            'sql' => 'sql',
+            'database' => 'sql',
+            'mysql' => 'sql',
+            'programming' => 'code',
+            'coding' => 'code',
+            'security' => 'security',
+            'cybersecurity' => 'security'
+        ];
+
+        foreach ($categoryMap as $keyword => $category) {
+            if (strpos($title, $keyword) !== false) {
+                return $category;
+            }
+        }
+
+        return 'code'; // Default fallback
     }
 
+    /**
+     * Extract difficulty from title if mentioned
+     */
+    private function extractDifficultyFromTitle($title)
+    {
+        if (strpos($title, 'easy') !== false || strpos($title, 'basic') !== false || strpos($title, 'beginner') !== false) {
+            return 'easy';
+        }
+        if (strpos($title, 'hard') !== false || strpos($title, 'advanced') !== false || strpos($title, 'expert') !== false) {
+            return 'hard';
+        }
+        if (strpos($title, 'medium') !== false || strpos($title, 'intermediate') !== false) {
+            return 'medium';
+        }
+        
+        return null; // Let API choose
+    }
+
+    /**
+     * Convert multiple choice questions to true/false format
+     */
+    private function convertToTrueFalse($questions)
+    {
+        $converted = [];
+        
+        foreach ($questions as $question) {
+            if (count($converted) >= count($questions)) break;
+            
+            // Create a true statement from the question and correct answer
+            $correctAnswer = $question['options'][$question['correct_answer']] ?? '';
+            
+            if (!empty($correctAnswer)) {
+                $statement = $question['question'] . ' The answer is: ' . $correctAnswer;
+                
+                $converted[] = [
+                    'question' => $statement,
+                    'question_type' => 'true_false',
+                    'type' => 'true_false',
+                    'options' => [
+                        'A' => 'True',
+                        'B' => 'False'
+                    ],
+                    'correct_answer' => 'A',
+                    'points' => 1,
+                    'source' => 'QuizAPI.io (converted)',
+                    'original_question' => $question['question']
+                ];
+            }
+        }
+        
+        return $converted;
+    }
+    
+    // Legacy methods - kept for compatibility but deprecated
     private function generateMultipleChoiceQuestion($text)
     {
         return $this->generateEnhancedMultipleChoice($text, $text);
@@ -2060,15 +2200,18 @@ public function getContentByCourse($courseId)
 
     public function preview($quizId)
     {
-        $professor = Professor::find(session('professor_id'));
-        $quiz = Quiz::where('quiz_id', $quizId)
-                   ->where('professor_id', $professor->professor_id)
-                   ->with(['questions', 'program'])
-                   ->firstOrFail();
+        try {
+            $professor = Professor::find(session('professor_id'));
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->with(['questions', 'program'])
+                       ->firstOrFail();
 
-        $html = view('professor.quiz-preview', compact('quiz'))->render();
-        
-        return response()->json(['html' => $html]);
+            return view('professor.quiz-preview-simulation', compact('quiz'));
+        } catch (\Exception $e) {
+            Log::error('Error previewing quiz: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error loading quiz preview: ' . $e->getMessage()], 500);
+        }
     }
 
     public function export($quizId)
@@ -2089,23 +2232,28 @@ public function getContentByCourse($courseId)
 
     public function delete($quizId)
     {
-        $professor = Professor::find(session('professor_id'));
-        $quiz = Quiz::where('quiz_id', $quizId)
-                   ->where('professor_id', $professor->professor_id)
-                   ->firstOrFail();
+        try {
+            $professor = Professor::find(session('professor_id'));
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->firstOrFail();
 
-        // Delete associated deadlines
-        Deadline::where('type', 'quiz')
-                ->where('reference_id', $quiz->quiz_id)
-                ->delete();
+            // Delete associated deadlines
+            Deadline::where('type', 'quiz')
+                    ->where('reference_id', $quiz->quiz_id)
+                    ->delete();
 
-        // Delete quiz questions
-        $quiz->questions()->delete();
-        
-        // Delete quiz
-        $quiz->delete();
+            // Delete quiz questions
+            $quiz->questions()->delete();
+            
+            // Delete quiz
+            $quiz->delete();
 
-        return redirect()->route('professor.quiz-generator')->with('success', 'Quiz deleted successfully.');
+            return response()->json(['success' => true, 'message' => 'Quiz deleted successfully.']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting quiz: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error deleting quiz: ' . $e->getMessage()], 500);
+        }
     }
 
     public function publish($quizId)
@@ -2116,23 +2264,332 @@ public function getContentByCourse($courseId)
                    ->firstOrFail();
 
         $quiz->update([
+            'status' => 'published',
             'is_draft' => false,
             'is_active' => true
         ]);
 
-        return redirect()->route('professor.quiz-generator')->with('success', 'Quiz published successfully.');
+        return response()->json(['success' => true, 'message' => 'Quiz published successfully.']);
     }
 
-    public function viewQuestions($quizId)
+    public function archive($quizId)
     {
         $professor = Professor::find(session('professor_id'));
         $quiz = Quiz::where('quiz_id', $quizId)
                    ->where('professor_id', $professor->professor_id)
-                   ->with(['questions', 'program'])
                    ->firstOrFail();
 
-        $html = view('professor.quiz-questions', compact('quiz'))->render();
+        $quiz->update([
+            'status' => 'archived',
+            'is_active' => false
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Quiz archived successfully.']);
+    }
+
+    public function updateQuestions(Request $request, $quizId)
+    {
+        $professor = Professor::find(session('professor_id'));
+        $quiz = Quiz::where('quiz_id', $quizId)
+                   ->where('professor_id', $professor->professor_id)
+                   ->firstOrFail();
+
+        // Update questions based on request data
+        $questions = $request->input('questions', []);
+        
+        foreach ($questions as $questionId => $questionData) {
+            $question = QuizQuestion::where('id', $questionId)
+                                  ->where('quiz_id', $quiz->quiz_id)
+                                  ->first();
+            
+            if ($question) {
+                $question->update([
+                    'question_text' => $questionData['question_text'],
+                    'options' => $questionData['options'],
+                    'correct_answer' => $questionData['correct_answer'],
+                    'explanation' => $questionData['explanation'] ?? ''
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Questions updated successfully.']);
+    }
+
+    public function viewQuestions($quizId)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->with(['questions', 'program'])
+                       ->firstOrFail();
+
+            return view('professor.quiz-questions-edit', compact('quiz'));
+        } catch (\Exception $e) {
+            Log::error('Error viewing quiz questions: ' . $e->getMessage());
+            return redirect()->route('professor.quiz-generator')->with('error', 'Error loading quiz questions: ' . $e->getMessage());
+        }
+    }
+
+    public function getModalQuestions($quizId)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return response()->json(['error' => 'Professor session not found.'], 401);
+            }
+
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->with(['questions' => function($query) {
+                           $query->orderBy('id', 'asc');
+                       }])
+                       ->firstOrFail();
+
+            // Return just the modal content
+            return view('professor.quiz-questions-edit-modal', compact('quiz'))->render();
+        } catch (\Exception $e) {
+            Log::error('Error loading modal questions: ' . $e->getMessage());
+            return response()->json(['error' => 'Error loading questions: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getQuestionOptions(Request $request)
+    {
+        $questionType = $request->input('question_type');
+        $questionId = $request->input('question_id');
+        
+        // Create a mock question object for the partial view
+        $question = new QuizQuestion();
+        $question->id = $questionId;
+        $question->question_type = $questionType;
+        $question->options = null;
+        $question->correct_answer = null;
+        $question->metadata = null;
+        
+        $html = '';
+        switch ($questionType) {
+            case 'multiple_choice':
+                $html = view('professor.partials.question-options-multiple-choice', compact('question'))->render();
+                break;
+            case 'true_false':
+                $html = view('professor.partials.question-options-true-false', compact('question'))->render();
+                break;
+            case 'short_answer':
+                $html = view('professor.partials.question-options-short-answer', compact('question'))->render();
+                break;
+            case 'essay':
+                $html = view('professor.partials.question-options-essay', compact('question'))->render();
+                break;
+            default:
+                $html = '<div class="alert alert-warning">Unknown question type</div>';
+        }
         
         return response()->json(['html' => $html]);
+    }
+
+    public function save(Request $request)
+    {
+        try {
+            Log::info('Quiz save request received', [
+                'quiz_id' => $request->quiz_id,
+                'professor_id' => session('professor_id')
+            ]);
+
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return response()->json(['success' => false, 'message' => 'Professor session not found.'], 401);
+            }
+
+            // Find the quiz and verify ownership
+            $quiz = Quiz::where('quiz_id', $request->quiz_id)
+                       ->where('professor_id', $professor->professor_id)
+                       ->first();
+
+            if (!$quiz) {
+                return response()->json(['success' => false, 'message' => 'Quiz not found or access denied.'], 404);
+            }
+
+            // Update quiz settings
+            $quiz->update([
+                'quiz_title' => $request->quiz_title,
+                'time_limit' => $request->time_limit,
+                'difficulty' => $request->difficulty,
+                'status' => $request->status,
+                'instructions' => $request->instructions,
+                'allow_retakes' => $request->allow_retakes,
+                'instant_feedback' => $request->instant_feedback,
+                'show_correct_answers' => $request->show_correct_answers,
+                'randomize_order' => $request->randomize_order,
+                'max_attempts' => $request->max_attempts,
+                'total_questions' => count($request->questions),
+                'updated_at' => now()
+            ]);
+
+            // Update or create questions
+            $existingQuestionIds = [];
+            $questionsOrder = 1;
+
+            foreach ($request->questions as $questionData) {
+                if ($questionData['id']) {
+                    // Update existing question
+                    $question = QuizQuestion::where('id', $questionData['id'])
+                                          ->where('quiz_id', $quiz->quiz_id)
+                                          ->first();
+
+                    if ($question) {
+                        $this->updateQuestionData($question, $questionData, $questionsOrder);
+                        $existingQuestionIds[] = $questionData['id'];
+                    }
+                } else {
+                    // Create new question
+                    $this->createNewQuestion($quiz, $questionData, $questionsOrder, $professor);
+                }
+                $questionsOrder++;
+            }
+
+            // Delete questions that were removed
+            QuizQuestion::where('quiz_id', $quiz->quiz_id)
+                       ->whereNotIn('id', $existingQuestionIds)
+                       ->delete();
+
+            // Update content item if exists
+            if ($quiz->content_id) {
+                $contentItem = ContentItem::find($quiz->content_id);
+                if ($contentItem) {
+                    $contentItem->update([
+                        'content_title' => $quiz->quiz_title,
+                        'content_description' => $quiz->instructions,
+                        'content_data' => json_encode([
+                            'quiz_id' => $quiz->quiz_id,
+                            'total_questions' => count($request->questions),
+                            'time_limit' => $quiz->time_limit,
+                            'difficulty' => $quiz->difficulty
+                        ])
+                    ]);
+                }
+            }
+
+            Log::info('Quiz saved successfully', [
+                'quiz_id' => $quiz->quiz_id,
+                'total_questions' => count($request->questions)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz saved successfully!',
+                'data' => [
+                    'quiz_id' => $quiz->quiz_id,
+                    'total_questions' => count($request->questions),
+                    'status' => $quiz->status
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Quiz save failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save quiz: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function updateQuestionData($question, $questionData, $order)
+    {
+        $updateData = [
+            'question_text' => $questionData['question_text'],
+            'question_type' => $questionData['question_type'],
+            'points' => $questionData['points'],
+            'difficulty' => $questionData['difficulty'],
+            'explanation' => $questionData['explanation'],
+            'order' => $order,
+            'updated_at' => now()
+        ];
+
+        // Handle question type specific data
+        switch ($questionData['question_type']) {
+            case 'multiple_choice':
+                $updateData['options'] = $questionData['options'];
+                $updateData['correct_answer'] = $questionData['correct_option'];
+                break;
+
+            case 'true_false':
+                $updateData['options'] = ['True', 'False'];
+                $updateData['correct_answer'] = $questionData['correct_answer'] ? 'True' : 'False';
+                break;
+
+            case 'short_answer':
+                $updateData['correct_answer'] = $questionData['acceptable_answers'];
+                $updateData['question_metadata'] = [
+                    'case_sensitive' => $questionData['case_sensitive'] ?? false,
+                    'acceptable_answers' => explode("\n", $questionData['acceptable_answers'])
+                ];
+                break;
+
+            case 'essay':
+                $updateData['question_metadata'] = [
+                    'rubric' => $questionData['rubric'],
+                    'min_words' => $questionData['min_words'],
+                    'max_words' => $questionData['max_words']
+                ];
+                break;
+        }
+
+        $question->update($updateData);
+    }
+
+    private function createNewQuestion($quiz, $questionData, $order, $professor)
+    {
+        $questionRecord = [
+            'quiz_id' => $quiz->quiz_id,
+            'quiz_title' => $quiz->quiz_title,
+            'program_id' => $quiz->program_id,
+            'question_text' => $questionData['question_text'],
+            'question_type' => $questionData['question_type'],
+            'points' => $questionData['points'],
+            'difficulty' => $questionData['difficulty'],
+            'explanation' => $questionData['explanation'],
+            'order' => $order,
+            'is_active' => true,
+            'created_by_professor' => $professor->professor_id,
+            'question_source' => 'manual',
+            'created_at' => now()
+        ];
+
+        // Handle question type specific data
+        switch ($questionData['question_type']) {
+            case 'multiple_choice':
+                $questionRecord['options'] = $questionData['options'];
+                $questionRecord['correct_answer'] = $questionData['correct_option'];
+                break;
+
+            case 'true_false':
+                $questionRecord['options'] = ['True', 'False'];
+                $questionRecord['correct_answer'] = $questionData['correct_answer'] ? 'True' : 'False';
+                break;
+
+            case 'short_answer':
+                $questionRecord['correct_answer'] = $questionData['acceptable_answers'];
+                $questionRecord['question_metadata'] = [
+                    'case_sensitive' => $questionData['case_sensitive'] ?? false,
+                    'acceptable_answers' => explode("\n", $questionData['acceptable_answers'])
+                ];
+                break;
+
+            case 'essay':
+                $questionRecord['question_metadata'] = [
+                    'rubric' => $questionData['rubric'],
+                    'min_words' => $questionData['min_words'],
+                    'max_words' => $questionData['max_words']
+                ];
+                break;
+        }
+
+        return QuizQuestion::create($questionRecord);
     }
 }

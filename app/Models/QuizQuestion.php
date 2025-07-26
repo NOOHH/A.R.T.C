@@ -22,6 +22,8 @@ class QuizQuestion extends Model
         'options',
         'correct_answer',
         'explanation',
+        'question_source',
+        'question_metadata',
         'instructions',
         'points',
         'source_file',
@@ -33,6 +35,7 @@ class QuizQuestion extends Model
 
     protected $casts = [
         'options' => 'array',
+        'question_metadata' => 'array',
         'is_active' => 'boolean',
         'points' => 'integer',
         'tags' => 'array',
