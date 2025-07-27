@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Student;
 use App\Models\ClassMeeting;
-use App\Models\Assignment;
+use App\Models\ContentItem;
 use App\Models\Announcement;
 use Carbon\Carbon;
 
@@ -123,23 +123,24 @@ class StudentCalendarController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
-        // Get class meetings
+        // Get class meetings from class_meetings table
         if ($enrolledBatches->isNotEmpty()) {
             $meetings = ClassMeeting::with(['batch.program', 'professor'])
                 ->whereIn('batch_id', $enrolledBatches)
                 ->whereBetween('meeting_date', [$startDate, $endDate])
+                ->where('status', '!=', 'cancelled')
                 ->get();
 
             foreach ($meetings as $meeting) {
                 $events->push([
                     'id' => 'meeting_' . $meeting->meeting_id,
-                    'title' => $meeting->batch->program->program_name ?? 'Class Meeting',
+                    'title' => $meeting->title ?? ($meeting->batch->program->program_name ?? 'Class Meeting'),
                     'start' => $meeting->meeting_date->toISOString(),
                     'type' => 'meeting',
                     'description' => $meeting->description ?? '',
                     'program' => $meeting->batch->program->program_name ?? '',
-                    'professor' => $meeting->professor->name ?? 'TBA',
-                    'duration' => $meeting->duration ?? 60,
+                    'professor' => $meeting->professor->professor_name ?? 'TBA',
+                    'duration' => $meeting->duration_minutes ?? 60,
                     'status' => $meeting->status ?? 'scheduled',
                     'meeting_url' => $meeting->meeting_url ?? null,
                     'time' => $meeting->meeting_date->format('g:i A')
@@ -147,30 +148,44 @@ class StudentCalendarController extends Controller
             }
         }
 
-        // Get assignments
+        // Get assignments from content_items table
         if ($enrolledPrograms->isNotEmpty()) {
-            $assignments = Assignment::with(['program', 'professor'])
-                ->whereIn('program_id', $enrolledPrograms)
-                ->whereBetween('due_date', [$startDate, $endDate])
-                ->get();
+            // Get course IDs for enrolled programs
+            $enrolledCourseIds = DB::table('courses')
+                ->whereIn('module_id', function($query) use ($enrolledPrograms) {
+                    $query->select('modules_id')
+                          ->from('modules')
+                          ->whereIn('program_id', $enrolledPrograms);
+                })
+                ->pluck('subject_id');
 
-            foreach ($assignments as $assignment) {
-                $events->push([
-                    'id' => 'assignment_' . $assignment->assignment_id,
-                    'title' => $assignment->title,
-                    'start' => $assignment->due_date->toISOString(),
-                    'type' => 'assignment',
-                    'description' => $assignment->description ?? '',
-                    'program' => $assignment->program->program_name ?? '',
-                    'professor' => $assignment->professor->name ?? 'TBA',
-                    'max_points' => $assignment->max_points ?? null,
-                    'instructions' => $assignment->instructions ?? '',
-                    'time' => $assignment->due_date->format('g:i A')
-                ]);
+            if ($enrolledCourseIds->isNotEmpty()) {
+                $assignments = ContentItem::with(['course.module.program'])
+                    ->whereIn('course_id', $enrolledCourseIds)
+                    ->where('content_type', 'assignment')
+                    ->whereNotNull('due_date')
+                    ->whereBetween('due_date', [$startDate, $endDate])
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($assignments as $assignment) {
+                    $events->push([
+                        'id' => 'assignment_' . $assignment->id,
+                        'title' => $assignment->content_title,
+                        'start' => $assignment->due_date->toISOString(),
+                        'type' => 'assignment',
+                        'description' => $assignment->content_description ?? '',
+                        'program' => $assignment->course->module->program->program_name ?? '',
+                        'professor' => 'TBA', // Content items don't have direct professor association
+                        'max_points' => $assignment->max_points ?? null,
+                        'instructions' => $assignment->content_data['assignment_instructions'] ?? '',
+                        'time' => $assignment->due_date->format('g:i A')
+                    ]);
+                }
             }
         }
 
-        // Get announcements
+        // Get announcements from announcements table
         if ($enrolledPrograms->isNotEmpty()) {
             $announcements = Announcement::with(['program', 'professor'])
                 ->whereIn('program_id', $enrolledPrograms)
@@ -186,10 +201,9 @@ class StudentCalendarController extends Controller
                     'type' => 'announcement',
                     'description' => $announcement->content ?? '',
                     'program' => $announcement->program->program_name ?? '',
-                    'professor' => $announcement->professor->name ?? 'System',
+                    'professor' => $announcement->professor->professor_name ?? 'System',
                     'announcement_type' => $announcement->type ?? 'general',
                     'content' => $announcement->content ?? '',
-                    'expire_date' => $announcement->expire_date ?? null,
                     'video_link' => $announcement->video_link ?? null,
                     'time' => $announcement->created_at->format('g:i A')
                 ]);
@@ -254,43 +268,58 @@ class StudentCalendarController extends Controller
             $meetings = ClassMeeting::with(['batch.program', 'professor'])
                 ->whereIn('batch_id', $enrolledBatches)
                 ->whereDate('meeting_date', $today)
+                ->where('status', '!=', 'cancelled')
                 ->orderBy('meeting_date', 'asc')
                 ->get();
 
             foreach ($meetings as $meeting) {
                 $events->push([
                     'id' => 'meeting_' . $meeting->meeting_id,
-                    'title' => $meeting->batch->program->program_name ?? 'Class Meeting',
+                    'title' => $meeting->title ?? ($meeting->batch->program->program_name ?? 'Class Meeting'),
                     'start' => $meeting->meeting_date->toISOString(),
                     'type' => 'meeting',
                     'description' => $meeting->description ?? '',
                     'program' => $meeting->batch->program->program_name ?? '',
-                    'professor' => $meeting->professor->name ?? 'TBA',
+                    'professor' => $meeting->professor->professor_name ?? 'TBA',
                     'meeting_url' => $meeting->meeting_url ?? null,
                     'time' => $meeting->meeting_date->format('g:i A')
                 ]);
             }
         }
 
-        // Get today's assignment deadlines
+        // Get today's assignment deadlines from content_items table
         if ($enrolledPrograms->isNotEmpty()) {
-            $assignments = Assignment::with(['program', 'professor'])
-                ->whereIn('program_id', $enrolledPrograms)
-                ->whereDate('due_date', $today)
-                ->orderBy('due_date', 'asc')
-                ->get();
+            // Get course IDs for enrolled programs
+            $enrolledCourseIds = DB::table('courses')
+                ->whereIn('module_id', function($query) use ($enrolledPrograms) {
+                    $query->select('modules_id')
+                          ->from('modules')
+                          ->whereIn('program_id', $enrolledPrograms);
+                })
+                ->pluck('subject_id');
 
-            foreach ($assignments as $assignment) {
-                $events->push([
-                    'id' => 'assignment_' . $assignment->assignment_id,
-                    'title' => $assignment->title,
-                    'start' => $assignment->due_date->toISOString(),
-                    'type' => 'assignment',
-                    'description' => $assignment->description ?? '',
-                    'program' => $assignment->program->program_name ?? '',
-                    'professor' => $assignment->professor->name ?? 'TBA',
-                    'time' => $assignment->due_date->format('g:i A')
-                ]);
+            if ($enrolledCourseIds->isNotEmpty()) {
+                $assignments = ContentItem::with(['course.module.program'])
+                    ->whereIn('course_id', $enrolledCourseIds)
+                    ->where('content_type', 'assignment')
+                    ->whereNotNull('due_date')
+                    ->whereDate('due_date', $today)
+                    ->where('is_active', true)
+                    ->orderBy('due_date', 'asc')
+                    ->get();
+
+                foreach ($assignments as $assignment) {
+                    $events->push([
+                        'id' => 'assignment_' . $assignment->id,
+                        'title' => $assignment->content_title,
+                        'start' => $assignment->due_date->toISOString(),
+                        'type' => 'assignment',
+                        'description' => $assignment->content_description ?? '',
+                        'program' => $assignment->course->module->program->program_name ?? '',
+                        'professor' => 'TBA', // Content items don't have direct professor association
+                        'time' => $assignment->due_date->format('g:i A')
+                    ]);
+                }
             }
         }
 
@@ -311,7 +340,7 @@ class StudentCalendarController extends Controller
                     'type' => 'announcement',
                     'description' => $announcement->content ?? '',
                     'program' => $announcement->program->program_name ?? '',
-                    'professor' => $announcement->professor->name ?? 'System',
+                    'professor' => $announcement->professor->professor_name ?? 'System',
                     'time' => $announcement->created_at->format('g:i A')
                 ]);
             }
@@ -331,17 +360,8 @@ class StudentCalendarController extends Controller
         ]);
     }
 
-    public function getEventDetails($eventId)
+    public function getEventDetails($type, $id)
     {
-        // Parse event ID to get type and actual ID
-        $parts = explode('_', $eventId, 2);
-        if (count($parts) !== 2) {
-            return response()->json(['success' => false, 'message' => 'Invalid event ID']);
-        }
-
-        $type = $parts[0];
-        $id = $parts[1];
-
         $event = null;
 
         switch ($type) {
@@ -350,13 +370,13 @@ class StudentCalendarController extends Controller
                 if ($meeting) {
                     $event = [
                         'id' => 'meeting_' . $meeting->meeting_id,
-                        'title' => $meeting->batch->program->program_name ?? 'Class Meeting',
+                        'title' => $meeting->title ?? ($meeting->batch->program->program_name ?? 'Class Meeting'),
                         'start' => $meeting->meeting_date->toISOString(),
                         'type' => 'meeting',
                         'description' => $meeting->description ?? '',
                         'program' => $meeting->batch->program->program_name ?? '',
-                        'professor' => $meeting->professor->name ?? 'TBA',
-                        'duration' => $meeting->duration ?? 60,
+                        'professor' => $meeting->professor->professor_name ?? 'TBA',
+                        'duration' => $meeting->duration_minutes ?? 60,
                         'status' => $meeting->status ?? 'scheduled',
                         'meeting_url' => $meeting->meeting_url ?? null
                     ];
@@ -364,18 +384,18 @@ class StudentCalendarController extends Controller
                 break;
 
             case 'assignment':
-                $assignment = Assignment::with(['program', 'professor'])->find($id);
-                if ($assignment) {
+                $assignment = ContentItem::with(['course.module.program'])->find($id);
+                if ($assignment && $assignment->content_type === 'assignment') {
                     $event = [
-                        'id' => 'assignment_' . $assignment->assignment_id,
-                        'title' => $assignment->title,
+                        'id' => 'assignment_' . $assignment->id,
+                        'title' => $assignment->content_title,
                         'start' => $assignment->due_date->toISOString(),
                         'type' => 'assignment',
-                        'description' => $assignment->description ?? '',
-                        'program' => $assignment->program->program_name ?? '',
-                        'professor' => $assignment->professor->name ?? 'TBA',
+                        'description' => $assignment->content_description ?? '',
+                        'program' => $assignment->course->module->program->program_name ?? '',
+                        'professor' => 'TBA', // Content items don't have direct professor association
                         'max_points' => $assignment->max_points ?? null,
-                        'instructions' => $assignment->instructions ?? ''
+                        'instructions' => $assignment->content_data['assignment_instructions'] ?? ''
                     ];
                 }
                 break;
@@ -390,10 +410,9 @@ class StudentCalendarController extends Controller
                         'type' => 'announcement',
                         'description' => $announcement->content ?? '',
                         'program' => $announcement->program->program_name ?? '',
-                        'professor' => $announcement->professor->name ?? 'System',
+                        'professor' => $announcement->professor->professor_name ?? 'System',
                         'announcement_type' => $announcement->type ?? 'general',
                         'content' => $announcement->content ?? '',
-                        'expire_date' => $announcement->expire_date ?? null,
                         'video_link' => $announcement->video_link ?? null
                     ];
                 }
