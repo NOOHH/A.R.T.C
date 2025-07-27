@@ -4,10 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Quiz; // Import Quiz model
 
 class QuizQuestion extends Model
 {
     use HasFactory;
+
+    /**
+     * Boot method to auto-fill quiz_title when creating.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($question) {
+            if (empty($question->quiz_title) && !empty($question->quiz_id)) {
+                $question->quiz_title = Quiz::where('quiz_id', $question->quiz_id)
+                    ->value('quiz_title');
+            }
+        });
+    }
 
     protected $table = 'quiz_questions';
     protected $primaryKey = 'id'; // Using id as primary key, not quiz_id
@@ -24,6 +39,7 @@ class QuizQuestion extends Model
         'explanation',
         'question_source',
         'question_metadata',
+        'question_order',
         'instructions',
         'points',
         'source_file',

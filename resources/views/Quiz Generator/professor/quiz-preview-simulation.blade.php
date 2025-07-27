@@ -6,7 +6,7 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-play-circle"></i> Quiz Preview: {{ $quiz->quiz_title }}</h2>
-        <button type="button" class="btn btn-secondary" onclick="window.close()">
+        <button type="button" class="btn btn-secondary" onclick="closePreview()">
             <i class="bi bi-x-circle"></i> Close Preview
         </button>
     </div>
@@ -426,6 +426,16 @@ function showCorrectAnswers() {
     
     // Hide the button
     $('button[onclick="showCorrectAnswers()"]').hide();
+}
+
+function closePreview() {
+    // Try to close the window if it was opened in a popup
+    if (window.opener) {
+        window.close();
+    } else {
+        // If not a popup, redirect back to quiz management
+        window.location.href = '/professor/quiz-generator';
+    }
 }
 </script>
 

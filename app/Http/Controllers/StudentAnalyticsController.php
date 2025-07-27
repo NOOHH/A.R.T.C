@@ -51,6 +51,20 @@ class StudentAnalyticsController extends Controller
     private function getStudentAnalytics($userId)
     {
         try {
+            // Get student data
+            $student = \App\Models\Student::where('user_id', $userId)->first();
+            if (!$student) {
+                return [
+                    'total_enrollments' => 0,
+                    'total_quizzes' => 0,
+                    'average_score' => 0,
+                    'pass_rate' => 0,
+                    'quiz_results' => collect(),
+                    'progress_data' => [],
+                    'enrollments' => collect()
+                ];
+            }
+
             // Get student's enrollments and progress
             $enrollments = DB::table('enrollments')
                 ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
@@ -58,12 +72,12 @@ class StudentAnalyticsController extends Controller
                 ->select('enrollments.*', 'programs.program_name')
                 ->get();
 
-            // Get quiz results
-            $quizResults = DB::table('quiz_results')
-                ->join('quizzes', 'quiz_results.quiz_id', '=', 'quizzes.quiz_id')
-                ->join('modules', 'quizzes.module_id', '=', 'modules.module_id')
-                ->where('quiz_results.user_id', $userId)
-                ->select('quiz_results.*', 'quizzes.quiz_title', 'modules.module_name')
+            // Get quiz results from quiz_submissions table
+            $quizResults = DB::table('quiz_submissions')
+                ->join('quizzes', 'quiz_submissions.quiz_id', '=', 'quizzes.quiz_id')
+                ->leftJoin('modules', 'quizzes.modules_id', '=', 'modules.modules_id')
+                ->where('quiz_submissions.student_id', $student->student_id)
+                ->select('quiz_submissions.*', 'quizzes.quiz_title', 'modules.module_name')
                 ->get();
 
             // Calculate metrics

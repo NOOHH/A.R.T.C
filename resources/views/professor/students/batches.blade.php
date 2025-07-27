@@ -48,7 +48,7 @@
                                                                             <span class="badge bg-success">Active</span>
                                                                         </td>
                                                                         <td>
-                                                                            <a href="{{ route('professor.grading.student-details', $student->student_id) }}?program_id={{ $batch->program_id }}" 
+                                                                            <a href="{{ route('professor.grading.student', $student->student_id) }}?program_id={{ $batch->program_id }}" 
                                                                                class="btn btn-sm btn-outline-primary">
                                                                                 <i class="bi bi-eye"></i>
                                                                             </a>

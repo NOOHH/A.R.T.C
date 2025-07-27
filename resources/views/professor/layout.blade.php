@@ -55,6 +55,9 @@
         console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
     </script>
     
+    <!-- jQuery (required for dynamic dropdowns and AJAX in child views) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -336,8 +339,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- jQuery (required for dynamic dropdowns and AJAX in child views) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @stack('scripts')
 
 <!-- Include Global Chat Component -->

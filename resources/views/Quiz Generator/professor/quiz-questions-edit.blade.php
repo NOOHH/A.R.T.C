@@ -73,7 +73,7 @@
                     <p class="text-muted mb-0">{{ $quiz->quiz_title }}</p>
                 </div>
                 <div>
-                    <a href="{{ route('professor.quiz-generator.index') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ route('professor.quiz-generator') }}" class="btn btn-outline-secondary me-2">
                         <i class="bi bi-arrow-left"></i> Back to Quiz Generator
                     </a>
                     <button type="button" class="btn btn-success" onclick="saveAllQuestions()">
@@ -336,7 +336,7 @@ function deleteQuestion(questionId) {
 function changeQuestionType(questionId, questionType) {
     const optionsContainer = document.getElementById(`question-options-${questionId}`);
     
-    fetch(`{{ route('professor.quiz-generator.question-options') }}`, {
+                fetch(`{{ route('professor.quiz-generator.question.options') }}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -432,7 +432,7 @@ function saveAllQuestions() {
     });
     
     // Save to server
-    fetch(`{{ route('professor.quiz-generator.questions.update', $quiz->quiz_id) }}`, {
+                fetch(`{{ route('professor.quiz-generator.questions.update', $quiz->quiz_id) }}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

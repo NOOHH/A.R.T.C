@@ -14,10 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('quizzes', function (Blueprint $table) {
-            // Add missing column used by the Gemini quiz generator
-            if (!Schema::hasColumn('quizzes', 'randomize_mc_options')) {
-                $table->boolean('randomize_mc_options')->default(false)->after('randomize_order');
-            }
+            //
         });
     }
 
@@ -29,10 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('quizzes', function (Blueprint $table) {
-            // Remove the column if rolling back
-            if (Schema::hasColumn('quizzes', 'randomize_mc_options')) {
-                $table->dropColumn('randomize_mc_options');
-            }
+            //
         });
     }
 };

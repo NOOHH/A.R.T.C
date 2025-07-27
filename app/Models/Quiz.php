@@ -16,6 +16,7 @@ class Quiz extends Model
         'professor_id',
         'program_id',
         'module_id',
+        'modules_id',
         'course_id', 
         'content_id',
         'quiz_title',

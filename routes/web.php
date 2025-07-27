@@ -1652,24 +1652,6 @@ Route::middleware(['professor.auth'])
     Route::get('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'viewQuestions'])
          ->name('quiz-generator.questions');
     
-    // Quiz editor routes
-    Route::get('/quiz-generator/{quiz}/edit', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'editQuestions'])
-         ->name('quiz-generator.edit');
-    Route::put('/quiz-generator/{quiz}/questions/{question}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestion'])
-         ->name('quiz-generator.question.update');
-    Route::post('/quiz-generator/{quiz}/questions', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'addQuestion'])
-         ->name('quiz-generator.question.add');
-    Route::delete('/quiz-generator/{quiz}/questions/{question}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'deleteQuestion'])
-         ->name('quiz-generator.question.delete');
-    
-    // Quiz generator question management routes
-    Route::get('/quiz-generator/questions/{quiz}/modal-content', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModalQuestions'])
-         ->name('quiz-generator.questions.modal');
-    Route::post('/quiz-generator/save', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'save'])
-         ->name('quiz-generator.save');
-    Route::put('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestions'])
-         ->name('quiz-generator.questions.update');
-    
     // Quiz generator AJAX routes
     Route::get('/quiz-generator/modules/{programId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModulesByProgram'])
          ->name('quiz-generator.modules');
@@ -1677,15 +1659,141 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.courses');
     Route::get('/quiz-generator/contents/{courseId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getContentByCourse'])
          ->name('quiz-generator.contents');
+
+    // New overhauled quiz generator routes
+    Route::post('/quiz-generator/generate-from-document', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'generateFromDocument'])
+         ->name('quiz-generator.generate-from-document');
+    Route::post('/quiz-generator/generate-ai-questions', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'generateAIQuestions'])
+         ->name('quiz-generator.generate-ai-questions');
+    Route::post('/quiz-generator/save-quiz', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveQuizWithQuestions'])
+         ->name('quiz-generator.save-quiz');
+    Route::put('/quiz-generator/update-quiz/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuizWithQuestions'])
+         ->name('quiz-generator.update-quiz');
+    
+    // Quiz edit and preview routes
+    Route::get('/quiz-generator/edit/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'editQuiz'])
+         ->name('quiz-generator.edit');
+    Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'previewQuiz'])
+         ->name('quiz-generator.preview');
+    
+    // Quiz status management routes
+    Route::post('/quiz-generator/{quiz}/publish', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'publishQuiz'])
+         ->name('quiz-generator.publish');
+    Route::post('/quiz-generator/{quiz}/archive', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'archiveQuiz'])
+         ->name('quiz-generator.archive');
+    Route::post('/quiz-generator/{quiz}/restore', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'restoreQuiz'])
+         ->name('quiz-generator.restore');
+    Route::post('/quiz-generator/{quiz}/draft', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'moveToDraft'])
+         ->name('quiz-generator.draft');
+    Route::delete('/quiz-generator/{quiz}/delete', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'deleteQuiz'])
+         ->name('quiz-generator.delete');
+    Route::get('/quiz-generator/edit/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuizForEdit'])
+         ->name('quiz-generator.edit');
          
     // Temporary test route without authentication
     Route::post('/quiz-generator/test-generate', function(\Illuminate\Http\Request $request) {
         // Temporarily set session for testing
         session(['logged_in' => true, 'professor_id' => 8, 'user_role' => 'professor']);
         
-        $controller = new \App\Http\Controllers\Professor\QuizGeneratorController();
+        $geminiService = app(\App\Services\GeminiQuizService::class);
+        $controller = new \App\Http\Controllers\Professor\QuizGeneratorController($geminiService);
         return $controller->generate($request);
     })->name('quiz-generator.test-generate');
+    
+    // Test file extraction route
+    Route::post('/quiz-generator/test-file-extraction', function(\Illuminate\Http\Request $request) {
+        try {
+            if (!$request->hasFile('file')) {
+                return response()->json(['success' => false, 'message' => 'No file uploaded']);
+            }
+            
+            $file = $request->file('file');
+            $extension = strtolower($file->getClientOriginalExtension());
+            $text = '';
+            
+            \Illuminate\Support\Facades\Log::info('Testing file extraction', [
+                'filename' => $file->getClientOriginalName(),
+                'extension' => $extension,
+                'size' => $file->getSize()
+            ]);
+            
+            // Handle image files (JPG, PNG)
+            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                try {
+                    $tempPath = $file->storeAs('temp', uniqid().'.'.$extension);
+                    $fullPath = storage_path('app/'.$tempPath);
+                    
+                    // Use Tesseract OCR for image text extraction
+                    $text = shell_exec('tesseract "'.$fullPath.'" stdout 2>&1');
+                    
+                    // Clean up temp file
+                    @unlink($fullPath);
+                    
+                    \Illuminate\Support\Facades\Log::info('Image OCR result', ['text_length' => strlen($text)]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Image OCR failed', ['error' => $e->getMessage()]);
+                    $text = '';
+                }
+            } 
+            // Handle PDF files
+            else if ($extension === 'pdf') {
+                try {
+                    $parser = new \Smalot\PdfParser\Parser();
+                    $pdf = $parser->parseFile($file->getRealPath());
+                    $text = $pdf->getText();
+                    
+                    \Illuminate\Support\Facades\Log::info('PDF extraction result', ['text_length' => strlen($text)]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('PDF extraction failed', ['error' => $e->getMessage()]);
+                    $text = '';
+                }
+            } 
+            // Handle DOCX files
+            else if ($extension === 'docx') {
+                try {
+                    $phpWord = \PhpOffice\PhpWord\IOFactory::load($file->getRealPath());
+                    $text = '';
+                    
+                    foreach ($phpWord->getSections() as $section) {
+                        foreach ($section->getElements() as $element) {
+                            if (method_exists($element, 'getText')) {
+                                $text .= $element->getText() . "\n";
+                            }
+                        }
+                    }
+                    
+                    \Illuminate\Support\Facades\Log::info('DOCX extraction result', ['text_length' => strlen($text)]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('DOCX extraction failed', ['error' => $e->getMessage()]);
+                    $text = '';
+                }
+            } 
+            // Handle TXT files
+            else if ($extension === 'txt') {
+                try {
+                    $text = file_get_contents($file->getRealPath());
+                    
+                    \Illuminate\Support\Facades\Log::info('TXT extraction result', ['text_length' => strlen($text)]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('TXT extraction failed', ['error' => $e->getMessage()]);
+                    $text = '';
+                }
+            }
+            
+            $text = trim($text);
+            
+            return response()->json([
+                'success' => true,
+                'text_length' => strlen($text),
+                'text_preview' => substr($text, 0, 500) . '...',
+                'extension' => $extension
+            ]);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('File extraction test failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    })->name('quiz-generator.test-file-extraction');
     
     // API route to fetch quizzes for testing
     Route::get('/api/test-quizzes', function() {
@@ -1698,6 +1806,7 @@ Route::middleware(['professor.auth'])
          ->name('grading.destroy');
     Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
          ->name('grading.student');
+    Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz']);
 });
 
 // API routes for student and professor data
@@ -2425,5 +2534,48 @@ Route::post('/test-quiz-manual', function() {
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString()
         ], 500);
+    }
+});
+
+// Test routes for AI quiz generation
+Route::get('/test-ai-connection', function() {
+    try {
+        $geminiService = new \App\Services\GeminiQuizService();
+        $connection = $geminiService->testConnection();
+        
+        return response()->json([
+            'success' => true,
+            'connection' => $connection,
+            'message' => $connection ? 'AI service connected successfully' : 'AI service connection failed'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'message' => 'Error testing AI connection'
+        ]);
+    }
+});
+
+Route::post('/test-ai-generate', function() {
+    try {
+        $geminiService = new \App\Services\GeminiQuizService();
+        
+        $testText = "Machine Design involves understanding stress analysis, factor of safety, and material properties. Key concepts include tension, compression, shear, and fatigue analysis.";
+        
+        $questions = $geminiService->generateQuizFromText($testText, ['num_questions' => 2]);
+        
+        return response()->json([
+            'success' => true,
+            'questions' => $questions,
+            'count' => count($questions),
+            'message' => 'AI quiz generation successful'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'message' => 'Error generating AI quiz'
+        ]);
     }
 });

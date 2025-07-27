@@ -923,11 +923,11 @@ class AdminModuleController extends Controller
     public function adminQuizGenerator()
     {
         $programs = Program::all();
-        return view('admin.admin-modules.admin-quiz-generator', compact('programs'));
+        return view('Quiz Generator.admin.admin-quiz-generator', compact('programs'));
     }
 
     /**
-     * Generate AI Quiz for Admin (Public endpoint)
+     * Generate AI Quiz for Admin using Gemini AI
      */
     public function generateAdminAiQuiz(Request $request)
     {
@@ -948,6 +948,21 @@ class AdminModuleController extends Controller
             $filename = time() . '_ai_quiz_' . $file->getClientOriginalName();
             $documentPath = $file->storeAs('modules/ai_documents', $filename, 'public');
 
+            // Initialize Gemini service
+            $geminiService = new \App\Services\GeminiQuizService();
+            
+            // Generate questions using Gemini AI
+            $generatedQuestions = $geminiService->generateQuizFromFile($file, [
+                'num_questions' => $request->num_questions,
+                'difficulty' => ucfirst($request->difficulty),
+                'quiz_type' => $request->quiz_type,
+                'topic' => $request->quiz_title
+            ]);
+
+            if (empty($generatedQuestions)) {
+                throw new \Exception('Failed to generate questions using Gemini AI. Please try again with different content.');
+            }
+
             // Create the quiz in the database
             $quiz = new \App\Models\Quiz();
             $quiz->professor_id = null; // Admin generated
@@ -955,27 +970,51 @@ class AdminModuleController extends Controller
             $quiz->quiz_title = $request->quiz_title;
             $quiz->instructions = $request->quiz_description ?? 'AI Generated Quiz from ' . $file->getClientOriginalName();
             $quiz->difficulty = $request->difficulty;
-            $quiz->total_questions = $request->num_questions;
+            $quiz->total_questions = count($generatedQuestions);
             $quiz->time_limit = $request->time_limit;
             $quiz->document_path = $documentPath;
             $quiz->is_active = true;
+            $quiz->status = 'published';
+            $quiz->is_draft = false;
             $quiz->save();
 
-            // Generate mock questions for now (replace with actual AI integration)
-            $this->generateMockQuestions($quiz, $request->num_questions, $request->quiz_type);
+            // Save generated questions
+            foreach ($generatedQuestions as $index => $questionData) {
+                $question = new \App\Models\QuizQuestion();
+                $question->quiz_id = $quiz->quiz_id;
+                $question->quiz_title = $quiz->quiz_title;
+                $question->program_id = $quiz->program_id;
+                $question->question_text = $questionData['question'];
+                $question->question_type = $questionData['type'] ?? 'multiple_choice';
+                $question->options = $questionData['options'];
+                $question->correct_answer = $questionData['correct_answer'];
+                $question->explanation = $questionData['explanation'] ?? '';
+                $question->question_source = 'gemini';
+                $question->question_metadata = [
+                    'category' => 'AI Generated',
+                    'generated_at' => now()->toISOString(),
+                    'source_topic' => $request->quiz_title,
+                    'ai_service' => 'google_gemini',
+                    'admin_generated' => true
+                ];
+                $question->points = $questionData['points'] ?? 1;
+                $question->is_active = true;
+                $question->created_by_professor = null; // Admin generated
+                $question->save();
+            }
 
             // Create assignment for the batch
             $this->createQuizAssignment($quiz, $request->batch_id);
 
             $programs = \App\Models\Program::all();
-            return view('admin.admin-modules.admin-quiz-generator', compact('programs', 'quiz'))
-                ->with('success', 'Quiz generated successfully and assigned to the batch!');
+            return view('Quiz Generator.admin.admin-quiz-generator', compact('programs', 'quiz'))
+                ->with('success', 'Quiz generated successfully using Gemini AI and assigned to the batch!');
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('AI Quiz generation error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Gemini AI Quiz generation error: ' . $e->getMessage());
             $programs = \App\Models\Program::all();
-            return view('admin.admin-modules.admin-quiz-generator', compact('programs'))
-                ->with('error', 'Error generating AI quiz: ' . $e->getMessage());
+            return view('Quiz Generator.admin.admin-quiz-generator', compact('programs'))
+                ->with('error', 'Error generating AI quiz with Gemini: ' . $e->getMessage());
         }
     }
 
