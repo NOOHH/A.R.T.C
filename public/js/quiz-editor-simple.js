@@ -47,23 +47,30 @@ $(document).ready(function() {
             return;
         }
         
+        console.log('Loading courses for module ID:', moduleId);
+        
         $.get(`/professor/quiz-generator/courses/${moduleId}`)
         .done(function(response) {
+            console.log('Courses response:', response);
             let options = '<option value="">Select Course</option>';
             if (response.success && response.courses) {
                 response.courses.forEach(function(course) {
+                    console.log('Adding course:', course);
                     options += `<option value="${course.course_id}">${course.course_name}</option>`;
                 });
+            } else {
+                console.error('Courses request succeeded but no courses found or success=false');
             }
             $('#course_id').html(options).prop('disabled', false);
         })
         .fail(function(xhr, status, error) {
             console.error('Failed to load courses:', error);
+            console.error('XHR response:', xhr.responseText);
             $('#course_id').html('<option value="">Error loading courses</option>').prop('disabled', true);
         });
     }
     
-    // Quiz form submission
+    // Quiz form submission with enhanced loading indicators
     $('#quiz-generator-form').on('submit', function(e) {
         e.preventDefault();
         
@@ -71,7 +78,12 @@ $(document).ready(function() {
         const submitButton = $(this).find('button[type="submit"]');
         const originalText = submitButton.html();
         
-        submitButton.html('<i class="bi bi-hourglass-split"></i> Generating Quiz...').prop('disabled', true);
+        // Show loading indicator
+        showLoadingIndicator('Generating quiz...');
+        submitButton.html('<i class="bi bi-hourglass-split spinner-border spinner-border-sm me-2"></i>Generating Quiz...').prop('disabled', true);
+        
+        // Show progress notification
+        showProgressNotification('Starting quiz generation...', 'info');
         
         $.ajax({
             url: '/professor/quiz-generator/generate',
@@ -79,20 +91,70 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
+            timeout: 120000, // 2 minutes timeout
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                // Progress monitoring (if needed)
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = evt.loaded / evt.total;
+                        updateProgressNotification('Uploading document... ' + Math.round(percentComplete * 100) + '%', 'info');
+                    }
+                }, false);
+                return xhr;
+            },
+            beforeSend: function() {
+                updateProgressNotification('Processing request...', 'info');
+            },
             success: function(response) {
+                hideLoadingIndicator();
                 if (response.success) {
-                    showAlert('success', response.message);
-                    setTimeout(() => location.reload(), 2000);
+                    updateProgressNotification('Quiz generated successfully!', 'success');
+                    showAlert('success', `✅ ${response.message || 'Quiz generated successfully!'}`);
+                    
+                    // Show success details if available
+                    if (response.quiz_id) {
+                        setTimeout(() => {
+                            showAlert('info', `Quiz ID: ${response.quiz_id} created with ${response.questions_count || 'multiple'} questions.`);
+                        }, 1000);
+                    }
+                    
+                    setTimeout(() => location.reload(), 3000);
                 } else {
-                    showAlert('danger', response.message || 'Failed to generate quiz.');
+                    updateProgressNotification('Generation failed', 'danger');
+                    showAlert('danger', `❌ ${response.message || 'Failed to generate quiz.'}`);
                 }
             },
             error: function(xhr) {
-                const errorMsg = xhr.responseJSON?.message || 'An error occurred while generating the quiz.';
-                showAlert('danger', errorMsg);
+                hideLoadingIndicator();
+                updateProgressNotification('Error occurred', 'danger');
+                
+                let errorMsg = 'An error occurred while generating the quiz.';
+                
+                if (xhr.status === 422) {
+                    // Validation errors
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errors = Object.values(xhr.responseJSON.errors).flat();
+                        errorMsg = 'Validation Error: ' + errors.join(', ');
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = 'Validation Error: ' + xhr.responseJSON.message;
+                    }
+                } else if (xhr.status === 500) {
+                    errorMsg = 'Server error occurred. Please try again or contact support.';
+                } else if (xhr.status === 403) {
+                    errorMsg = 'Permission denied. Please check your access rights.';
+                } else if (xhr.status === 0) {
+                    errorMsg = 'Connection error. Please check your internet connection.';
+                } else if (xhr.responseJSON?.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                
+                showAlert('danger', `❌ ${errorMsg}`);
+                console.error('Quiz generation error:', xhr);
             },
             complete: function() {
                 submitButton.html(originalText).prop('disabled', false);
+                hideProgressNotification();
             }
         });
     });
@@ -108,8 +170,14 @@ $(document).ready(function() {
         window.location.href = `/professor/quiz-generator/export/${quizId}`;
     });
 
-    // Edit questions modal
-    $(document).on('click', '.view-questions-btn', function() {
+    // Edit questions button - redirect to dedicated edit page
+    $(document).on('click', '.edit-questions-btn, .view-questions-btn', function() {
+        const quizId = $(this).data('quiz-id');
+        window.location.href = `/professor/quiz-generator/${quizId}/edit`;
+    });
+
+    // Legacy modal support (keeping for backwards compatibility)
+    $(document).on('click', '.legacy-view-questions-btn', function() {
         const quizId = $(this).data('quiz-id');
         window.currentQuizId = quizId;
         
@@ -553,3 +621,98 @@ window.saveQuizChanges = function() {
         }
     });
 };
+
+// Enhanced loading and notification functions
+function showLoadingIndicator(message = 'Loading...') {
+    if ($('#loading-overlay').length === 0) {
+        const overlay = $(`
+            <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                 style="background: rgba(0,0,0,0.7); z-index: 9999;">
+                <div class="bg-white p-4 rounded-3 text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div id="loading-message" class="fw-bold">${message}</div>
+                </div>
+            </div>
+        `);
+        $('body').append(overlay);
+    } else {
+        $('#loading-message').text(message);
+        $('#loading-overlay').show();
+    }
+}
+
+function hideLoadingIndicator() {
+    $('#loading-overlay').fadeOut(300);
+}
+
+function showProgressNotification(message, type = 'info') {
+    // Remove existing progress notifications
+    $('.progress-notification').remove();
+    
+    const alertClass = {
+        'info': 'alert-info',
+        'success': 'alert-success', 
+        'danger': 'alert-danger',
+        'warning': 'alert-warning'
+    }[type] || 'alert-info';
+    
+    const icon = {
+        'info': 'bi-info-circle',
+        'success': 'bi-check-circle',
+        'danger': 'bi-exclamation-triangle',
+        'warning': 'bi-exclamation-circle'
+    }[type] || 'bi-info-circle';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show progress-notification position-fixed" 
+             style="top: 20px; right: 20px; z-index: 1050; min-width: 300px;">
+            <i class="bi ${icon} me-2"></i>
+            <span class="progress-message">${message}</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    // Auto-hide info messages after 5 seconds
+    if (type === 'info') {
+        setTimeout(() => {
+            notification.fadeOut();
+        }, 5000);
+    }
+}
+
+function updateProgressNotification(message, type = 'info') {
+    const existing = $('.progress-notification');
+    if (existing.length > 0) {
+        existing.find('.progress-message').text(message);
+        
+        // Update icon and class based on type
+        const alertClass = {
+            'info': 'alert-info',
+            'success': 'alert-success', 
+            'danger': 'alert-danger',
+            'warning': 'alert-warning'
+        }[type] || 'alert-info';
+        
+        const icon = {
+            'info': 'bi-info-circle',
+            'success': 'bi-check-circle',
+            'danger': 'bi-exclamation-triangle',
+            'warning': 'bi-exclamation-circle'
+        }[type] || 'bi-info-circle';
+        
+        existing.removeClass('alert-info alert-success alert-danger alert-warning').addClass(alertClass);
+        existing.find('i').removeClass().addClass(`bi ${icon} me-2`);
+    } else {
+        showProgressNotification(message, type);
+    }
+}
+
+function hideProgressNotification() {
+    $('.progress-notification').fadeOut(300, function() {
+        $(this).remove();
+    });
+}

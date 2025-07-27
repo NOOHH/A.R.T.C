@@ -16,7 +16,6 @@ use App\Models\ContentItem;
 use App\Models\Program;
 use App\Models\QuizDraft;
 use App\Models\QuizAttempt;
-use App\Services\QuizApiService;
 use App\Services\GeminiQuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -26,12 +25,9 @@ use Carbon\Carbon;
 
 class QuizGeneratorController extends Controller
 {
-    protected $geminiQuizService;
-
-    public function __construct(GeminiQuizService $geminiQuizService)
+    public function __construct()
     {
         $this->middleware('professor.auth');
-        $this->geminiQuizService = $geminiQuizService;
     }
 
     public function index()
@@ -81,41 +77,14 @@ class QuizGeneratorController extends Controller
      */
     public function getCoursesByModule($moduleId)
     {
-        Log::info('getCoursesByModule called', [
-            'moduleId' => $moduleId,
-            'professor_id' => session('professor_id'),
-            'url' => request()->fullUrl(),
+        $courses = Course::where('module_id', $moduleId)
+            ->where('is_archived', false)
+            ->orderBy('subject_name')
+            ->get(['subject_id as course_id', 'subject_name as course_name']);
+        return response()->json([
+            'success' => true,
+            'courses' => $courses
         ]);
-        
-        try {
-            $courses = Course::where('module_id', $moduleId)
-                ->where('is_active', true)
-                ->where('is_archived', false)
-                ->orderBy('subject_name')
-                ->get(['subject_id as course_id', 'subject_name as course_name']);
-                
-            Log::info('Courses found', [
-                'count' => $courses->count(),
-                'courses' => $courses->toArray()
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'courses' => $courses
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error loading courses', [
-                'moduleId' => $moduleId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error loading courses: ' . $e->getMessage(),
-                'courses' => []
-            ]);
-        }
     }
 
 public function getContentsByCourse($courseId)
@@ -139,13 +108,7 @@ public function getContentByCourse($courseId)
 
     public function generate(Request $request)
     {
-        // Increase limits for large file processing
-        ini_set('upload_max_filesize', '60M');
-        ini_set('post_max_size', '60M');
-        ini_set('max_execution_time', 300); // 5 minutes
-        ini_set('memory_limit', '1G');
-        
-        Log::info('=== QUIZ GENERATION STARTED ===', [
+        Log::info('=== QUIZ GENERATION STARTED (GEMINI) ===', [
             'professor_id' => session('professor_id'),
             'timestamp' => now()->toISOString(),
             'request_data' => $request->except(['document', '_token']),
@@ -171,14 +134,13 @@ public function getContentByCourse($courseId)
                 'program_id' => 'required|exists:programs,program_id',
                 'module_id'  => 'required|exists:modules,modules_id',
                 'course_id' => 'required|exists:courses,subject_id',
-                'document' => 'nullable|file|mimes:pdf,doc,docx,csv,txt|max:51200', // 50MB limit
+                'document' => 'nullable|file|mimes:pdf,doc,docx,csv,txt|max:10240',
                 'num_questions' => 'required|integer|min:5|max:50',
-                'quiz_type' => 'nullable|in:multiple_choice,true_false,flashcard,mixed',
-                'quiz_format' => 'required|in:comprehensive,multiple_choice,true_false,mixed',
+                'quiz_type' => 'required|in:multiple_choice,true_false,flashcard,mixed',
                 'quiz_title' => 'required|string|max:255',
                 'quiz_description' => 'nullable|string|max:1000',
                 'instructions' => 'nullable|string|max:1000',
-                'tags' => 'nullable|string', // Changed from array to string since form sends comma-separated
+                'tags' => 'nullable|string',
                 'time_limit' => 'nullable|integer|min:1|max:300',
                 'max_attempts' => 'nullable|integer|min:1|max:10',
                 'randomize_order' => 'nullable',
@@ -206,119 +168,54 @@ public function getContentByCourse($courseId)
             }
             Log::info('✓ Program assignment verified');
 
-            Log::info('Starting document processing');
+            Log::info('Starting Gemini quiz generation');
             
-            // Check if we should use QuizAPI instead of document processing
-            $useQuizApi = $this->shouldUseQuizApi($request);
+            // Initialize Gemini service
+            $geminiService = new GeminiQuizService();
+            $documentPath = null;
             
-            // If not using QuizAPI, ensure we have a document
-            if (!$useQuizApi && !$request->hasFile('document')) {
-                return response()->json(['success' => false, 'message' => 'Document is required when not using QuizAPI for technical topics.'], 400);
-            }
-            
-            if ($useQuizApi) {
-                Log::info('Using QuizAPI for question generation');
-                $generatedQuestions = $this->generateQuestionsFromQuizApi($request);
-                $documentPath = null; // No document needed for QuizAPI
-            } else {
-                Log::info('Using enhanced Gemini service for document processing');
-                // Store the uploaded document
+            // Generate questions using Gemini
+            if ($request->hasFile('document')) {
+                Log::info('Using document for question generation');
                 $documentPath = $request->file('document')->store('quiz-documents', 'public');
                 Log::info('✓ Document stored', ['path' => $documentPath]);
                 
-                // Use enhanced GeminiQuizService for better text extraction and processing
-                try {
-                    $extractedText = $this->geminiQuizService->processUploadedFile($request->file('document'));
-                    Log::info('✓ Text extracted via enhanced service', ['length' => strlen($extractedText)]);
-                    
-                    // Validate content quality
-                    $contentValidation = $this->geminiQuizService->validateContent($extractedText);
-                    if (!$contentValidation['valid']) {
-                        return response()->json([
-                            'success' => false, 
-                            'message' => 'Content validation failed: ' . implode(', ', $contentValidation['issues'])
-                        ], 400);
-                    }
-                    
-                    // Determine quiz format and generation method
-                    $quizFormat = $request->input('quiz_format', 'mixed');
-                    $additionalParams = [
-                        'topic_focus' => $request->input('topic_focus', 'all topics covered in the content'),
-                        'question_types' => $quizFormat
-                    ];
-                    
-                    if ($quizFormat === 'comprehensive') {
-                        // Use comprehensive generation with 7 question types
-                        $questionsPerType = max(1, floor($request->num_questions / 7));
-                        $comprehensiveQuiz = $this->geminiQuizService->generateComprehensiveQuiz(
-                            $extractedText,
-                            $questionsPerType,
-                            $additionalParams
-                        );
-                        
-                        // Convert comprehensive format to compatible format for saving
-                        $generatedQuestions = $this->convertComprehensiveToCompatible($comprehensiveQuiz, $request->num_questions);
-                        
-                        Log::info('✓ Comprehensive questions generated', [
-                            'total_questions' => count($generatedQuestions),
-                            'questions_per_type' => $questionsPerType
-                        ]);
-                    } else {
-                        // Use traditional generation method
-                        $difficulty = $request->input('difficulty', 'mixed');
-                        $generatedQuestions = $this->geminiQuizService->generateQuizQuestions(
-                            $extractedText,
-                            $request->num_questions,
-                            $difficulty,
-                            $additionalParams
-                        );
-                        
-                        Log::info('✓ Traditional questions generated', ['count' => count($generatedQuestions)]);
-                    }
-                    
-                } catch (\Exception $e) {
-                    Log::error('Enhanced document processing failed, falling back to legacy method', ['error' => $e->getMessage()]);
-                    
-                    // Fallback to legacy extraction if enhanced service fails
-                    $extractedText = $this->extractTextFromDocument($request->file('document'));
-                    Log::info('✓ Text extracted via fallback method', ['length' => strlen($extractedText)]);
-                    
-                    if (strlen($extractedText) < 100) {
-                        Log::warning('Extracted text too short', ['length' => strlen($extractedText)]);
-                        return response()->json(['success' => false, 'message' => 'Document content is too short to generate meaningful questions.'], 400);
-                    }
-                    
-                    $generatedQuestions = $this->generateQuestionsFromText(
-                        $extractedText,
-                        $request->num_questions,
-                        $request->quiz_type
-                    );
-                }
+                $generatedQuestions = $geminiService->generateQuizFromFile($request->file('document'), [
+                    'num_questions' => $request->num_questions,
+                    'difficulty' => 'Medium', // Could be made configurable
+                    'quiz_type' => $request->quiz_type,
+                    'topic' => $request->quiz_title
+                ]);
+            } else {
+                // Generate from module content
+                Log::info('Generating from module content');
+                $generatedQuestions = $geminiService->generateQuizFromModule($request->module_id, [
+                    'num_questions' => $request->num_questions,
+                    'difficulty' => 'Medium',
+                    'quiz_type' => $request->quiz_type,
+                    'topic' => $request->quiz_title
+                ]);
             }
             
-            Log::info('✓ Questions generated', ['count' => count($generatedQuestions), 'source' => $useQuizApi ? 'QuizAPI' : 'Enhanced Gemini Service']);
+            Log::info('✓ Questions generated with Gemini', ['count' => count($generatedQuestions ?? [])]);
 
             if (empty($generatedQuestions)) {
-                Log::error('No questions generated');
-                return response()->json(['success' => false, 'message' => 'Failed to generate questions from the document.'], 500);
+                Log::error('No questions generated by Gemini');
+                return response()->json(['success' => false, 'message' => 'Failed to generate questions. Please try again with different content or parameters.'], 500);
             }
 
             // Create the quiz
             Log::info('Creating quiz in database');
             
-            // Convert randomize_order checkbox value to boolean
-            $randomizeOrder = false;
-            if ($request->has('randomize_order')) {
-                $randomizeValue = $request->randomize_order;
-                $randomizeOrder = in_array($randomizeValue, ['1', 'true', 'on', true], true);
-            }
-            Log::info('Randomize order processed', ['raw_value' => $request->randomize_order ?? 'not set', 'processed_value' => $randomizeOrder]);
+            // Process randomize_order checkbox
+            $randomizeOrder = $request->boolean('randomize_order', false);
+            Log::info('Randomize order processed', ['value' => $randomizeOrder]);
             
             // Process tags from comma-separated string to array
             $tagsArray = [];
             if ($request->tags) {
                 $tagsArray = array_map('trim', explode(',', $request->tags));
-                $tagsArray = array_filter($tagsArray); // Remove empty tags
+                $tagsArray = array_filter($tagsArray);
             }
             
             $quiz = Quiz::create([
@@ -326,22 +223,22 @@ public function getContentByCourse($courseId)
                 'program_id' => $request->program_id,
                 'module_id' => $request->module_id,
                 'course_id' => $request->course_id,
-                'content_id' => null, // Will be set after creating content item
+                'content_id' => null,
                 'quiz_title' => $request->quiz_title,
                 'quiz_description' => $request->input('quiz_description', ''),
                 'instructions' => $request->instructions,
                 'randomize_order' => $randomizeOrder,
                 'randomize_mc_options' => $request->boolean('randomize_mc_options', false),
                 'tags' => json_encode($tagsArray),
-                'status' => 'draft', // Always start as draft
+                'status' => 'draft',
                 'is_draft' => true,
-                'is_active' => false, // Not active until published
+                'is_active' => false,
                 'allow_retakes' => $request->boolean('allow_retakes', false),
                 'instant_feedback' => $request->boolean('instant_feedback', false),
                 'show_correct_answers' => $request->boolean('show_correct_answers', true),
                 'max_attempts' => $request->input('max_attempts', 1),
                 'total_questions' => count($generatedQuestions),
-                'time_limit' => $request->input('time_limit', 60), // From form or default 60 minutes
+                'time_limit' => $request->input('time_limit', 60),
                 'document_path' => $documentPath,
                 'created_at' => now(),
             ]);
@@ -371,34 +268,21 @@ public function getContentByCourse($courseId)
             Log::info('Starting question creation');
             $questionCount = 0;
             foreach ($generatedQuestions as $index => $questionData) {
-                $options = [];
-                
-                if (isset($questionData['options'])) {
-                    $options = $questionData['options'];
-                } else {
-                    // Handle CSV format
-                    $options = [
-                        'A' => $questionData['option_a'] ?? '',
-                        'B' => $questionData['option_b'] ?? '',
-                        'C' => $questionData['option_c'] ?? '',
-                        'D' => $questionData['option_d'] ?? ''
-                    ];
-                }
-                
                 $question = QuizQuestion::create([
                     'quiz_id' => $quiz->quiz_id,
                     'quiz_title' => $quiz->quiz_title,
                     'program_id' => $quiz->program_id,
                     'question_text' => $questionData['question'],
-                    'question_type' => $questionData['question_type'] ?? $questionData['type'] ?? 'multiple_choice',
-                    'options' => $options,
+                    'question_type' => $questionData['type'] ?? 'multiple_choice',
+                    'options' => $questionData['options'],
                     'correct_answer' => $questionData['correct_answer'],
                     'explanation' => $questionData['explanation'] ?? '',
-                    'question_source' => $useQuizApi ? 'quizapi' : 'generated',
+                    'question_source' => 'gemini',
                     'question_metadata' => [
-                        'category' => $questionData['category'] ?? 'General',
+                        'category' => 'AI Generated',
                         'generated_at' => now()->toISOString(),
-                        'source_topic' => $request->quiz_title
+                        'source_topic' => $request->quiz_title,
+                        'ai_service' => 'google_gemini'
                     ],
                     'points' => $questionData['points'] ?? 1,
                     'is_active' => true,
@@ -417,27 +301,15 @@ public function getContentByCourse($courseId)
             // Set quiz status to draft initially
             $quiz->update([
                 'status' => 'draft',
-                'is_active' => false // Keep inactive until published
+                'is_active' => false
             ]);
 
-            // DISABLED: Fix student_id column type mismatch before enabling this
-            // Sync with students - add to deadlines
-            Log::info('EXPLICITLY SKIPPING quiz sync with students due to column type mismatch');
-            $syncDisabled = true; // Explicit flag to prevent sync
-            if (!$syncDisabled) {
-                $this->syncQuizWithStudents($quiz);
-            } else {
-                Log::info('✓ Student sync explicitly disabled via flag');
-            }
-            Log::info('✓ Quiz creation completed (sync explicitly skipped)');
-
-            Log::info('=== QUIZ GENERATION COMPLETED SUCCESSFULLY ===', [
+            Log::info('=== QUIZ GENERATION COMPLETED SUCCESSFULLY (GEMINI) ===', [
                 'quiz_id' => $quiz->quiz_id,
                 'total_questions' => $questionCount,
                 'content_id' => $contentItem->id,
-                'jotform_result' => $jotformResult ?? null,
                 'timestamp' => now()->toISOString(),
-                'note' => 'Student sync temporarily disabled due to column type mismatch'
+                'ai_service' => 'google_gemini'
             ]);
             
             $responseData = [
@@ -446,12 +318,12 @@ public function getContentByCourse($courseId)
                 'total_questions' => $questionCount,
                 'content_id' => $contentItem->id,
                 'status' => 'draft',
-                'quiz_source' => $useQuizApi ? 'QuizAPI' : 'Document Processing'
+                'quiz_source' => 'Gemini AI'
             ];
             
             return response()->json([
                 'success' => true,
-                'message' => 'Quiz generated successfully and saved as draft! You can now edit questions and publish when ready.',
+                'message' => 'Quiz generated successfully using Gemini AI and saved as draft! You can now edit questions and publish when ready.',
                 'quiz_id' => $quiz->quiz_id,
                 'questions_count' => count($generatedQuestions),
                 'quiz_title' => $quiz->quiz_title,
@@ -466,7 +338,7 @@ public function getContentByCourse($courseId)
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('=== QUIZ GENERATION FAILED ===', [
+            Log::error('=== QUIZ GENERATION FAILED (GEMINI) ===', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -477,115 +349,12 @@ public function getContentByCourse($courseId)
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate quiz: ' . $e->getMessage(),
+                'message' => 'Failed to generate quiz with Gemini AI: ' . $e->getMessage(),
                 'debug_info' => [
                     'error_line' => $e->getLine(),
                     'error_file' => basename($e->getFile())
                 ]
             ], 500);
-        }
-    }
-
-    /**
-     * Convert comprehensive quiz format to compatible format for database storage
-     */
-    private function convertComprehensiveToCompatible(array $comprehensiveQuiz, int $maxQuestions): array
-    {
-        $compatibleQuestions = [];
-        $questionCount = 0;
-        
-        // Define type priorities (multiple choice and true/false first for compatibility)
-        $typePriorities = [
-            'multiple_choice' => 1,
-            'true_false' => 2,
-            'fill_in_blank' => 3,
-            'short_answer' => 4,
-            'definition_recall' => 5,
-            'acronym_expansion' => 6,
-            'matching' => 7
-        ];
-        
-        // Sort question types by priority
-        $sortedTypes = array_keys($typePriorities);
-        usort($sortedTypes, function($a, $b) use ($typePriorities) {
-            return $typePriorities[$a] - $typePriorities[$b];
-        });
-        
-        foreach ($sortedTypes as $type) {
-            if ($questionCount >= $maxQuestions) break;
-            
-            if (!isset($comprehensiveQuiz['questions'][$type])) continue;
-            
-            foreach ($comprehensiveQuiz['questions'][$type] as $question) {
-                if ($questionCount >= $maxQuestions) break;
-                
-                $compatibleQuestion = $this->convertQuestionToCompatible($question, $type);
-                if ($compatibleQuestion) {
-                    $compatibleQuestions[] = $compatibleQuestion;
-                    $questionCount++;
-                }
-            }
-        }
-        
-        return $compatibleQuestions;
-    }
-    
-    /**
-     * Convert individual question to compatible format
-     */
-    private function convertQuestionToCompatible(array $question, string $type): ?array
-    {
-        $baseQuestion = [
-            'question' => $question['question'] ?? '',
-            'explanation' => $question['explanation'] ?? 'No explanation provided',
-            'difficulty' => 'medium', // Default since we removed difficulty levels
-            'topic' => $question['topic'] ?? 'General',
-            'type' => $type
-        ];
-        
-        switch ($type) {
-            case 'multiple_choice':
-                return array_merge($baseQuestion, [
-                    'options' => $question['options'] ?? [],
-                    'correct_answer' => $question['correct_answer'] ?? '',
-                ]);
-                
-            case 'true_false':
-                return array_merge($baseQuestion, [
-                    'options' => ['A' => 'True', 'B' => 'False'],
-                    'correct_answer' => ($question['correct_answer'] ?? 'True') === 'True' ? 'A' : 'B',
-                ]);
-                
-            case 'fill_in_blank':
-                return array_merge($baseQuestion, [
-                    'options' => [], // Fill-in-blank doesn't have options
-                    'correct_answer' => $question['correct_answer'] ?? '',
-                    'question' => $question['question'] ?? '', // Should contain _____ placeholder
-                ]);
-                
-            case 'short_answer':
-                return array_merge($baseQuestion, [
-                    'options' => [], // Short answer doesn't have options
-                    'correct_answer' => $question['sample_answer'] ?? $question['correct_answer'] ?? '',
-                ]);
-                
-            case 'definition_recall':
-            case 'acronym_expansion':
-                return array_merge($baseQuestion, [
-                    'options' => [], // Open-ended questions
-                    'correct_answer' => $question['correct_answer'] ?? '',
-                ]);
-                
-            case 'matching':
-                // Convert matching to multiple choice format for compatibility
-                return array_merge($baseQuestion, [
-                    'options' => $question['options'] ?? [],
-                    'correct_answer' => $question['correct_matches'] ?? '',
-                    'question' => 'Match the following: ' . ($question['question'] ?? ''),
-                ]);
-                
-            default:
-                return null;
         }
     }
 
@@ -2183,171 +1952,62 @@ public function getContentByCourse($courseId)
         return false;
     }
 
-    /**
-     * Determine if we should use QuizAPI instead of document processing
-     */
-    private function shouldUseQuizApi($request)
+    private function extractTextFromDocument($file)
     {
-        // If a document is uploaded, ALWAYS prefer document processing over QuizAPI
-        if ($request->hasFile('document')) {
-            Log::info('Document uploaded, using document processing instead of QuizAPI');
-            return false;
-        }
-        
-        // Only use QuizAPI if NO document is provided AND title suggests technical content
-        $title = strtolower($request->quiz_title);
-        $technicalTopics = [
-            'linux', 'devops', 'networking', 'php', 'javascript', 'python', 
-            'cloud', 'docker', 'kubernetes', 'sql', 'database', 'programming',
-            'coding', 'web development', 'software', 'technology', 'computer'
-        ];
+        $extension = $file->getClientOriginalExtension();
+        $tempPath = $file->getPathname();
 
-        foreach ($technicalTopics as $topic) {
-            if (strpos($title, $topic) !== false) {
-                Log::info('No document provided and technical topic detected, using QuizAPI', ['topic' => $topic, 'title' => $title]);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Generate questions using QuizAPI.io
-     */
-    private function generateQuestionsFromQuizApi($request)
-    {
         try {
-            $quizApiService = new QuizApiService();
-            
-            // Determine the best category based on title
-            $title = strtolower($request->quiz_title);
-            $category = $this->mapTitleToQuizApiCategory($title);
-            
-            Log::info('QuizAPI parameters determined', [
-                'category' => $category,
-                'num_questions' => $request->num_questions
-            ]);
-
-            $params = [
-                'limit' => $request->num_questions,
-                'category' => $category
-            ];
-
-            $questions = $quizApiService->getQuestions($params);
-
-            if (empty($questions)) {
-                Log::warning('QuizAPI returned no questions, fallback needed');
-                
-                if ($request->hasFile('document')) {
-                    Log::info('Falling back to document processing');
-                    $extractedText = $this->extractTextFromDocument($request->file('document'));
-                    return $this->generateQuestionsFromText($extractedText, $request->num_questions, $request->quiz_type);
-                } else {
-                    Log::warning('No document available for fallback, returning empty array');
-                    throw new \Exception('QuizAPI returned no questions and no document available for fallback');
-                }
+            switch (strtolower($extension)) {
+                case 'txt':
+                    return file_get_contents($tempPath);
+                    
+                case 'csv':
+                    return $this->extractTextFromCsv($tempPath);
+                    
+                case 'pdf':
+                    return $this->extractTextFromPdf($tempPath);
+                    
+                case 'doc':
+                case 'docx':
+                    return $this->extractTextFromDoc($tempPath);
+                    
+                default:
+                    throw new \Exception("Unsupported file type: {$extension}");
             }
-
-            // Filter questions based on requested type
-            if ($request->quiz_type === 'true_false') {
-                // Convert some multiple choice to true/false
-                $questions = $this->convertToTrueFalse($questions);
-            } elseif ($request->quiz_type === 'mixed') {
-                // Keep as is, QuizAPI primarily provides multiple choice
-            }
-
-            Log::info('QuizAPI questions processed successfully', ['count' => count($questions)]);
-            return $questions;
-
         } catch (\Exception $e) {
-            Log::error('QuizAPI generation failed: ' . $e->getMessage());
-            
-            if ($request->hasFile('document')) {
-                Log::info('Falling back to document processing due to QuizAPI failure');
-                $extractedText = $this->extractTextFromDocument($request->file('document'));
-                return $this->generateQuestionsFromText($extractedText, $request->num_questions, $request->quiz_type);
-            } else {
-                Log::error('No document available for fallback after QuizAPI failure');
-                throw $e; // Re-throw the exception since we have no fallback
-            }
-        }
-    }
-
-    /**
-     * Map quiz title to QuizAPI category
-     */
-    private function mapTitleToQuizApiCategory($title)
+            Log::error('Document text extraction failed', [
+    private function extractTextFromDocument($file)
     {
-        $categoryMap = [
-            'linux' => 'linux',
-            'devops' => 'devops',
-            'network' => 'networking',
-            'php' => 'php',
-            'javascript' => 'javascript',
-            'js' => 'javascript',
-            'python' => 'python',
-            'cloud' => 'cloud',
-            'docker' => 'docker',
-            'kubernetes' => 'kubernetes',
-            'k8s' => 'kubernetes',
-            'sql' => 'sql',
-            'database' => 'sql',
-            'mysql' => 'sql',
-            'programming' => 'code',
-            'coding' => 'code',
-            'security' => 'security',
-            'cybersecurity' => 'security'
-        ];
+        $extension = $file->getClientOriginalExtension();
+        $tempPath = $file->getPathname();
 
-        foreach ($categoryMap as $keyword => $category) {
-            if (strpos($title, $keyword) !== false) {
-                return $category;
+        try {
+            switch (strtolower($extension)) {
+                case 'txt':
+                    return file_get_contents($tempPath);
+                    
+                case 'csv':
+                    return $this->extractTextFromCsv($tempPath);
+                    
+                case 'pdf':
+                    return $this->extractTextFromPdf($tempPath);
+                    
+                case 'doc':
+                case 'docx':
+                    return $this->extractTextFromDoc($tempPath);
+                    
+                default:
+                    throw new \Exception("Unsupported file type: {$extension}");
             }
+        } catch (\Exception $e) {
+            Log::error('Document text extraction failed', [
+                'file' => $file->getClientOriginalName(),
+                'extension' => $extension,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
         }
-
-        return 'code'; // Default fallback
-    }
-
-    /**
-     * Convert multiple choice questions to true/false format
-     */
-    private function convertToTrueFalse($questions)
-    {
-        $converted = [];
-        
-        foreach ($questions as $question) {
-            if (count($converted) >= count($questions)) break;
-            
-            // Create a true statement from the question and correct answer
-            $correctAnswer = $question['options'][$question['correct_answer']] ?? '';
-            
-            if (!empty($correctAnswer)) {
-                $statement = $question['question'] . ' The answer is: ' . $correctAnswer;
-                
-                $converted[] = [
-                    'question' => $statement,
-                    'question_type' => 'true_false',
-                    'type' => 'true_false',
-                    'options' => [
-                        'A' => 'True',
-                        'B' => 'False'
-                    ],
-                    'correct_answer' => 'A',
-                    'points' => 1,
-                    'source' => 'QuizAPI.io (converted)',
-                    'original_question' => $question['question']
-                ];
-            }
-        }
-        
-        return $converted;
-    }
-    
-    // Legacy methods - kept for compatibility but deprecated
-    private function generateMultipleChoiceQuestion($text)
-    {
-        return $this->generateEnhancedMultipleChoice($text, $text);
     }
 
     private function generateTrueFalseQuestion($text)
@@ -2381,194 +2041,6 @@ public function getContentByCourse($courseId)
                 'status' => 'pending',
                 'created_at' => now(),
             ]);
-        }
-    }
-
-    /**
-     * Show quiz editor page
-     */
-    public function editQuestions($quizId)
-    {
-        try {
-            $professor = Professor::find(session('professor_id'));
-            $quiz = Quiz::where('quiz_id', $quizId)
-                       ->where('professor_id', $professor->professor_id)
-                       ->with(['questions', 'program', 'module', 'course'])
-                       ->firstOrFail();
-
-            return view('Quiz Generator.professor.quiz-editor', compact('quiz'));
-            
-        } catch (\Exception $e) {
-            Log::error('Error loading quiz editor', ['quizId' => $quizId, 'error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Quiz not found or access denied.');
-        }
-    }
-
-    /**
-     * Update quiz question
-     */
-    public function updateQuestion(Request $request, $quizId, $questionId)
-    {
-        try {
-            $professor = Professor::find(session('professor_id'));
-            
-            // Verify quiz ownership
-            $quiz = Quiz::where('quiz_id', $quizId)
-                       ->where('professor_id', $professor->professor_id)
-                       ->firstOrFail();
-
-            $request->validate([
-                'question' => 'required|string|max:1000',
-                'options' => 'nullable|array',
-                'options.*' => 'nullable|string|max:500',
-                'correct_answer' => 'required|string',
-                'explanation' => 'nullable|string|max:1000',
-                'question_type' => 'required|in:multiple_choice,true_false,fill_in_blank,short_answer'
-            ]);
-
-            $question = QuizQuestion::where('question_id', $questionId)
-                                  ->where('quiz_id', $quizId)
-                                  ->firstOrFail();
-
-            // Handle different question types
-            $options = [];
-            if ($request->question_type === 'multiple_choice') {
-                foreach ($request->options as $key => $option) {
-                    if (!empty($option)) {
-                        $options[$key] = $option;
-                    }
-                }
-            } elseif ($request->question_type === 'true_false') {
-                $options = ['A' => 'True', 'B' => 'False'];
-            }
-
-            $question->update([
-                'question' => $request->question,
-                'options' => json_encode($options),
-                'correct_answer' => $request->correct_answer,
-                'explanation' => $request->explanation,
-                'question_type' => $request->question_type,
-                'updated_at' => now()
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Question updated successfully',
-                'question' => $question
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error updating question', [
-                'questionId' => $questionId,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update question: ' . $e->getMessage()
-            ], 400);
-        }
-    }
-
-    /**
-     * Add new question to quiz
-     */
-    public function addQuestion(Request $request, $quizId)
-    {
-        try {
-            $professor = Professor::find(session('professor_id'));
-            
-            // Verify quiz ownership
-            $quiz = Quiz::where('quiz_id', $quizId)
-                       ->where('professor_id', $professor->professor_id)
-                       ->firstOrFail();
-
-            $request->validate([
-                'question' => 'required|string|max:1000',
-                'options' => 'nullable|array',
-                'options.*' => 'nullable|string|max:500',
-                'correct_answer' => 'required|string',
-                'explanation' => 'nullable|string|max:1000',
-                'question_type' => 'required|in:multiple_choice,true_false,fill_in_blank,short_answer'
-            ]);
-
-            // Handle different question types
-            $options = [];
-            if ($request->question_type === 'multiple_choice') {
-                foreach ($request->options as $key => $option) {
-                    if (!empty($option)) {
-                        $options[$key] = $option;
-                    }
-                }
-            } elseif ($request->question_type === 'true_false') {
-                $options = ['A' => 'True', 'B' => 'False'];
-            }
-
-            $question = QuizQuestion::create([
-                'quiz_id' => $quizId,
-                'question' => $request->question,
-                'options' => json_encode($options),
-                'correct_answer' => $request->correct_answer,
-                'explanation' => $request->explanation,
-                'question_type' => $request->question_type,
-                'difficulty_level' => 'medium',
-                'topic' => 'General',
-                'created_at' => now()
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Question added successfully',
-                'question' => $question
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error adding question', [
-                'quizId' => $quizId,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to add question: ' . $e->getMessage()
-            ], 400);
-        }
-    }
-
-    /**
-     * Delete question from quiz
-     */
-    public function deleteQuestion($quizId, $questionId)
-    {
-        try {
-            $professor = Professor::find(session('professor_id'));
-            
-            // Verify quiz ownership
-            $quiz = Quiz::where('quiz_id', $quizId)
-                       ->where('professor_id', $professor->professor_id)
-                       ->firstOrFail();
-
-            $question = QuizQuestion::where('question_id', $questionId)
-                                  ->where('quiz_id', $quizId)
-                                  ->firstOrFail();
-
-            $question->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Question deleted successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error deleting question', [
-                'questionId' => $questionId,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete question: ' . $e->getMessage()
-            ], 400);
         }
     }
 

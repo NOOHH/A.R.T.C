@@ -112,55 +112,6 @@ Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 // Test database structure
 Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection']);
 
-// Test QuizAPI Integration
-Route::get('/test-quiz-api', function () {
-    try {
-        $quizApiService = new \App\Services\QuizApiService();
-        
-        echo "<h2>QuizAPI Integration Test</h2>";
-        
-        // Test connection
-        echo "<h3>1. Connection Test</h3>";
-        $connected = $quizApiService->testConnection();
-        echo "Connection: " . ($connected ? "<span style='color:green'>SUCCESS</span>" : "<span style='color:red'>FAILED</span>") . "<br>";
-        
-        if ($connected) {
-            // Test categories
-            echo "<h3>2. Available Categories</h3>";
-            $categories = $quizApiService->getCategories();
-            foreach ($categories as $key => $name) {
-                echo "- $key: $name<br>";
-            }
-            
-            // Test getting questions
-            echo "<h3>3. Sample Questions (Linux, 2 questions)</h3>";
-            $questions = $quizApiService->getQuestions(['limit' => 2, 'category' => 'linux']);
-            
-            echo "Retrieved: " . count($questions) . " questions<br><br>";
-            
-            foreach ($questions as $i => $question) {
-                echo "<div style='border:1px solid #ccc; padding:10px; margin:10px 0;'>";
-                echo "<strong>Question " . ($i + 1) . ":</strong> " . $question['question'] . "<br>";
-                echo "<strong>Options:</strong><br>";
-                foreach ($question['options'] as $key => $option) {
-                    $style = ($key === $question['correct_answer']) ? 'color:green; font-weight:bold;' : '';
-                    echo "&nbsp;&nbsp;$key) <span style='$style'>$option</span><br>";
-                }
-                echo "<strong>Difficulty:</strong> " . $question['difficulty'] . "<br>";
-                echo "<strong>Category:</strong> " . $question['category'] . "<br>";
-                if (!empty($question['explanation'])) {
-                    echo "<strong>Explanation:</strong> " . $question['explanation'] . "<br>";
-                }
-                echo "</div>";
-            }
-        }
-        
-        return '';
-    } catch (Exception $e) {
-        return "<h2>QuizAPI Test Failed</h2><p style='color:red;'>" . $e->getMessage() . "</p>";
-    }
-});
-
 /*
 |--------------------------------------------------------------------------
 | Batch Enrollment Routes
@@ -480,26 +431,14 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/meetings/upcoming', [\App\Http\Controllers\ClassMeetingController::class, 'studentUpcomingMeetings'])
         ->name('student.meetings.upcoming');
     Route::post('/student/meetings/{id}/access', [\App\Http\Controllers\ClassMeetingController::class, 'logStudentAccess'])->name('student.meetings.access');
-    
-    // Student Calendar Routes
-    Route::get('/student/calendar', [StudentDashboardController::class, 'calendar'])->name('student.calendar');
-    
-    // Debug route to check session
-    Route::get('/student/calendar/debug', function() {
-        return response()->json([
-            'session_data' => session()->all(),
-            'user_id' => session('user_id'),
-            'logged_in' => session('logged_in'),
-            'user_role' => session('user_role'),
-            'student_exists' => session('user_id') ? \App\Models\Student::where('user_id', session('user_id'))->exists() : false
-        ]);
-    })->name('student.calendar.debug');
-    
-    Route::get('/student/calendar/events', [\App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
-    Route::get('/student/calendar/today', [\App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
-    Route::get('/student/calendar/event/{eventId}', [\App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
-    
+    Route::get('/student/calendar', [App\Http\Controllers\StudentCalendarController::class, 'index'])->name('student.calendar');
+    Route::get('/student/calendar/events', [App\Http\Controllers\StudentCalendarController::class, 'getEvents'])->name('student.calendar.events');
+    Route::get('/student/calendar/today', [App\Http\Controllers\StudentCalendarController::class, 'getTodaySchedule'])->name('student.calendar.today');
+    Route::get('/student/calendar/event/{type}/{id}', [App\Http\Controllers\StudentCalendarController::class, 'getEventDetails'])->name('student.calendar.event');
     // Route::get('/student/module/{moduleId}', [StudentDashboardController::class, 'module'])->name('student.module'); // Disabled - using student-course instead
+    
+    // Enrolled Courses page - NEW
+    Route::get('/student/enrolled-courses', [StudentDashboardController::class, 'enrolledCourses'])->name('student.enrolled-courses');
     
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
@@ -562,30 +501,6 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
         return response()->json(['error' => 'Module not found'], 404);
     });
 });
-
-// Test login route for debugging - OUTSIDE middleware for testing - REMOVE IN PRODUCTION
-Route::get('/student/test-login', function() {
-    try {
-        // Find any student for testing
-        $student = \App\Models\Student::with('user')->first();
-        
-        if (!$student) {
-            return redirect('/login')->with('error', 'No students found in database. Please create a student account first.');
-        }
-        
-        // Set session
-        session([
-            'logged_in' => true,
-            'user_id' => $student->user_id,
-            'user_role' => 'student',
-            'user_name' => $student->user->first_name . ' ' . $student->user->last_name
-        ]);
-        
-        return redirect('/student/dashboard')->with('success', 'Test login successful as ' . $student->student_id);
-    } catch (\Exception $e) {
-        return redirect('/login')->with('error', 'Test login failed: ' . $e->getMessage());
-    }
-})->name('student.test.login');
 
 // Test routes for debugging rejection details
 Route::get('/test-rejection-details', function () {
@@ -1721,19 +1636,9 @@ Route::middleware(['professor.auth'])
     Route::post('/activities/create', [\App\Http\Controllers\Professor\GradingController::class, 'createActivity'])
          ->name('activities.create');
     
-    // New Enhanced Grading Features
-    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])
-         ->name('grading.auto-grade-quizzes');
-    Route::post('/grading/export', [\App\Http\Controllers\Professor\GradingController::class, 'exportGrades'])
-         ->name('grading.export');
-    Route::get('/grading/student/{student}/details/{program}', [\App\Http\Controllers\Professor\GradingController::class, 'getStudentGradeDetails'])
-         ->name('grading.student-details-enhanced');
-    Route::get('/grading/quiz/{quiz}/analytics', [\App\Http\Controllers\Professor\GradingController::class, 'getQuizAnalytics'])
-         ->name('grading.quiz-analytics');
-    
     // AI Quiz Generator
     Route::get('/quiz-generator', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'index'])
-         ->name('quiz-generator.index');
+         ->name('quiz-generator');
     Route::post('/quiz-generator/generate', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'generate'])
          ->name('quiz-generator.generate');
     Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'preview'])
@@ -1744,18 +1649,26 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.delete');
     Route::post('/quiz-generator/{quiz}/publish', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'publish'])
          ->name('quiz-generator.publish');
-    Route::post('/quiz-generator/{quiz}/archive', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'archive'])
-         ->name('quiz-generator.archive');
     Route::get('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'viewQuestions'])
          ->name('quiz-generator.questions');
+    
+    // Quiz editor routes
+    Route::get('/quiz-generator/{quiz}/edit', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'editQuestions'])
+         ->name('quiz-generator.edit');
+    Route::put('/quiz-generator/{quiz}/questions/{question}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestion'])
+         ->name('quiz-generator.question.update');
+    Route::post('/quiz-generator/{quiz}/questions', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'addQuestion'])
+         ->name('quiz-generator.question.add');
+    Route::delete('/quiz-generator/{quiz}/questions/{question}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'deleteQuestion'])
+         ->name('quiz-generator.question.delete');
+    
+    // Quiz generator question management routes
     Route::get('/quiz-generator/questions/{quiz}/modal-content', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModalQuestions'])
          ->name('quiz-generator.questions.modal');
-    Route::post('/quiz-generator/questions/{quiz}/update', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestions'])
-         ->name('quiz-generator.questions.update');
-    Route::post('/quiz-generator/question-options', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionOptions'])
-         ->name('quiz-generator.question-options');
     Route::post('/quiz-generator/save', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'save'])
          ->name('quiz-generator.save');
+    Route::put('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestions'])
+         ->name('quiz-generator.questions.update');
     
     // Quiz generator AJAX routes
     Route::get('/quiz-generator/modules/{programId}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModulesByProgram'])
@@ -1779,19 +1692,6 @@ Route::middleware(['professor.auth'])
         $quizzes = \App\Models\Quiz::with('questions')->orderBy('created_at', 'desc')->get();
         return response()->json(['quizzes' => $quizzes]);
     });
-    
-    // Test route for quiz generator
-    Route::get('/test-quiz-generator', function() {
-        return response()->json([
-            'session' => [
-                'logged_in' => session('logged_in'),
-                'professor_id' => session('professor_id'),
-                'user_role' => session('user_role')
-            ],
-            'quizzes_count' => \App\Models\Quiz::count(),
-            'professor_quizzes' => \App\Models\Quiz::where('professor_id', session('professor_id'))->count()
-        ]);
-    })->name('test.quiz-generator');
     Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
          ->name('grading.update');
     Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
