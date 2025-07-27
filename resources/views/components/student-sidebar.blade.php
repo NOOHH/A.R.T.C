@@ -135,3 +135,8 @@
 
 <!-- Sidebar Backdrop for Mobile -->
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<!-- Mobile Toggle Button -->
+<button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Sidebar">
+  <i class="bi bi-list"></i>
+</button>

@@ -1,8 +1,7 @@
-
-<script>
 document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('studentSidebar');
   const toggleBtn = document.getElementById('sidebarToggleBtn');
+  const mobileToggleBtn = document.getElementById('mobileSidebarToggle');
   const backdrop = document.getElementById('sidebarBackdrop');
   
   // Helper to check desktop vs mobile break
@@ -19,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (backdrop) {
         backdrop.classList.toggle('active');
       }
+      // Update mobile toggle button state
+      if (mobileToggleBtn) {
+        mobileToggleBtn.classList.toggle('active');
+        mobileToggleBtn.classList.toggle('sidebar-open');
+      }
     }
   }
 
@@ -29,12 +33,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (backdrop) {
         backdrop.classList.remove('active');
       }
+      // Reset mobile toggle button state
+      if (mobileToggleBtn) {
+        mobileToggleBtn.classList.remove('active');
+        mobileToggleBtn.classList.remove('sidebar-open');
+      }
     }
   }
 
   // Event listeners
   if (toggleBtn) {
     toggleBtn.addEventListener('click', toggleSidebar);
+  }
+  
+  // Mobile toggle button event listener
+  if (mobileToggleBtn) {
+    mobileToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSidebar();
+    });
   }
   
   if (backdrop) {
@@ -48,11 +66,21 @@ document.addEventListener('DOMContentLoaded', () => {
         backdrop.classList.remove('active');
       }
       sidebar.classList.remove('mobile-open');
+      // Reset mobile toggle button state on desktop
+      if (mobileToggleBtn) {
+        mobileToggleBtn.classList.remove('active');
+        mobileToggleBtn.classList.remove('sidebar-open');
+      }
     } else {
       // Keep collapsed state when switching to mobile
       sidebar.classList.remove('mobile-open');
       if (backdrop) {
         backdrop.classList.remove('active');
+      }
+      // Reset mobile toggle button state
+      if (mobileToggleBtn) {
+        mobileToggleBtn.classList.remove('active');
+        mobileToggleBtn.classList.remove('sidebar-open');
       }
     }
   });
@@ -63,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (backdrop) {
       backdrop.classList.remove('active');
     }
+    if (mobileToggleBtn) {
+      mobileToggleBtn.classList.remove('active');
+      mobileToggleBtn.classList.remove('sidebar-open');
+    }
   }
 });
-</script>

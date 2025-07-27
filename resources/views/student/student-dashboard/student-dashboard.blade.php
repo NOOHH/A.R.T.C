@@ -548,6 +548,257 @@
         background-color: rgba(102, 126, 234, 0.05);
     }
     
+    /* Ultra Compact Announcement Design */
+    .announcement-content {
+        padding: 0;
+    }
+    
+    .announcement-item-compact {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .announcement-item-compact:last-child {
+        border-bottom: none;
+    }
+    
+    .announcement-item-compact:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .announcement-item-compact::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .announcement-item-compact:hover::before {
+        opacity: 1;
+    }
+    
+    .announcement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        gap: 8px;
+    }
+    
+    .announcement-title {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        flex: 1;
+        margin: 0;
+    }
+    
+    .announcement-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    
+    .announcement-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .video-badge {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    
+    .announcement-time {
+        font-size: 0.7rem;
+        color: #7f8c8d;
+        white-space: nowrap;
+    }
+    
+    .announcement-preview {
+        color: #555;
+        font-size: 0.75rem;
+        line-height: 1.3;
+        margin: 0;
+        opacity: 0.8;
+    }
+    
+    .empty-announcements {
+        text-align: center;
+        padding: 30px 20px;
+        color: #7f8c8d;
+    }
+    
+    .empty-announcements i {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+        opacity: 0.5;
+    }
+    
+    .empty-announcements p {
+        margin: 0;
+        font-size: 0.8rem;
+    }
+    
+    /* Announcement Modal Styles */
+    .announcement-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .announcement-modal.show {
+        display: flex;
+        opacity: 1;
+    }
+    
+    .announcement-modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+    }
+    
+    .announcement-modal-content {
+        position: relative;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow: hidden;
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    }
+    
+    .announcement-modal.show .announcement-modal-content {
+        transform: scale(1);
+    }
+    
+    .announcement-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .announcement-modal-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .announcement-modal-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+    
+    .announcement-modal-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+    
+    .announcement-modal-body {
+        padding: 25px;
+    }
+    
+    .announcement-modal-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0 0 10px 0;
+        line-height: 1.3;
+    }
+    
+    .announcement-modal-time {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .announcement-modal-time::before {
+        content: '🕒';
+        font-size: 0.8rem;
+    }
+    
+    .announcement-modal-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #34495e;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    @media (max-width: 768px) {
+        .announcement-modal-content {
+            width: 95%;
+            max-height: 85vh;
+        }
+        
+        .announcement-modal-header {
+            padding: 15px 20px;
+        }
+        
+        .announcement-modal-body {
+            padding: 20px;
+        }
+        
+        .announcement-modal-title {
+            font-size: 1.2rem;
+        }
+        
+        .announcement-modal-text {
+            font-size: 0.95rem;
+        }
+    }
+    
     /* Enhanced badges */
     .badge {
         font-weight: 600;
@@ -576,21 +827,201 @@
             width: 100%;
             height: 120px;
         }
+        
+        /* Mobile announcement improvements */
+        .announcement-item-compact {
+            padding: 6px 10px;
+        }
+        
+        .announcement-header {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+        
+        .announcement-meta {
+            align-self: center;
+        }
+        
+        .announcement-title {
+            font-size: 0.8rem;
+        }
+        
+        .announcement-preview {
+            font-size: 0.7rem;
+        }
     }
 
-    /* Bootstrap Enhancement for Deadline Cards */
+    /* Professional Deadline Cards Design */
+    .deadlines-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+    }
+    
+    .deadlines-content {
+        padding: 0 !important;
+    }
+    
+    .deadline-item-modern {
+        margin-bottom: 0 !important;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .deadline-item-modern:last-child {
+        border-bottom: none;
+    }
+    
     .deadline-item-modern:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .deadline-item-modern::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .deadline-item-modern:hover::before {
+        opacity: 1;
     }
     
     .deadline-item-modern .card {
-        transition: all 0.3s ease;
-        border: 1px solid #dee2e6;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent;
+        margin: 0;
+        border-radius: 0;
     }
     
-    .deadline-item-modern:hover .card {
-        border-color: #667eea;
+    .deadline-item-modern .card-body {
+        padding: 16px 20px;
+    }
+    
+    /* Compact deadline header */
+    .deadline-item-modern .d-flex.align-items-start {
+        margin-bottom: 12px !important;
+    }
+    
+    .deadline-item-modern .card-title {
+        font-size: 0.95rem !important;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 4px !important;
+        line-height: 1.3;
+    }
+    
+    .deadline-item-modern .card-text {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        margin-bottom: 8px !important;
+        line-height: 1.4;
+    }
+    
+    /* Compact badges */
+    .deadline-item-modern .badge {
+        font-size: 0.7rem !important;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    
+    /* Compact icon circles */
+    .deadline-item-modern .bg-primary.rounded-circle,
+    .deadline-item-modern .bg-success.rounded-circle {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    .deadline-item-modern .bg-primary.rounded-circle i,
+    .deadline-item-modern .bg-success.rounded-circle i {
+        font-size: 0.9rem !important;
+    }
+    
+    /* Compact due date section */
+    .deadline-item-modern .d-flex.align-items-center.justify-content-between:last-of-type {
+        margin-bottom: 0 !important;
+    }
+    
+    .deadline-item-modern .fw-medium {
+        font-size: 0.75rem;
+        color: #7f8c8d;
+    }
+    
+    /* Compact action indicator */
+    .deadline-item-modern .border-top {
+        border-top: 1px solid #f0f0f0 !important;
+        padding-top: 8px !important;
+        margin-top: 8px;
+    }
+    
+    .deadline-item-modern .border-top .fw-medium {
+        font-size: 0.75rem;
+    }
+    
+    /* Status badge improvements */
+    .deadline-item-modern .badge.bg-success,
+    .deadline-item-modern .badge.bg-danger,
+    .deadline-item-modern .badge.bg-warning {
+        font-size: 0.65rem !important;
+        padding: 3px 6px;
+    }
+    
+    /* Feedback section compact */
+    .deadline-item-modern .alert {
+        padding: 8px 12px;
+        margin-bottom: 8px !important;
+        border-radius: 8px;
+    }
+    
+    .deadline-item-modern .alert h6 {
+        font-size: 0.8rem;
+        margin-bottom: 4px !important;
+    }
+    
+    .deadline-item-modern .alert p {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+    
+    @media (max-width: 768px) {
+        .deadline-item-modern .card-body {
+            padding: 12px 16px;
+        }
+        
+        .deadline-item-modern .card-title {
+            font-size: 0.9rem !important;
+        }
+        
+        .deadline-item-modern .card-text {
+            font-size: 0.75rem;
+        }
+        
+        .deadline-item-modern .bg-primary.rounded-circle,
+        .deadline-item-modern .bg-success.rounded-circle {
+            width: 32px !important;
+            height: 32px !important;
+        }
+        
+        .deadline-item-modern .bg-primary.rounded-circle i,
+        .deadline-item-modern .bg-success.rounded-circle i {
+            font-size: 0.8rem !important;
+        }
     }
     
     /* Spinning animation for refresh button */
@@ -681,22 +1112,25 @@
         </div>
         <div class="announcement-content">
             @forelse($announcements as $announcement)
-                <div class="announcement-item" style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
-                    <div style="display: flex; justify-content: between; align-items: flex-start; margin-bottom: 8px;">
-                        <div style="font-weight: 600; color: #2c3e50; flex: 1;">{{ $announcement->title }}</div>
-                        @if($announcement->announcement_type === 'video')
-                            <span class="badge" style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
-                                📹 Video
-                            </span>
-                        @endif
+                <div class="announcement-item-compact" onclick="openAnnouncementModal('{{ $announcement->id }}', '{{ addslashes($announcement->title) }}', '{{ addslashes($announcement->content) }}', '{{ $announcement->announcement_type }}', '{{ $announcement->created_at->diffForHumans() }}')" style="cursor: pointer;">
+                    <div class="announcement-header">
+                        <div class="announcement-title">{{ $announcement->title }}</div>
+                        <div class="announcement-meta">
+                            @if($announcement->announcement_type === 'video')
+                                <span class="announcement-badge video-badge">
+                                    <i class="bi bi-camera-video"></i>
+                                </span>
+                            @endif
+                            <span class="announcement-time">{{ $announcement->created_at->diffForHumans() }}</span>
+                        </div>
                     </div>
-                    <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">{{ $announcement->content }}</div>
-                    <div style="font-size: 0.8rem; color: #7f8c8d;">
-                        <i class="bi bi-clock"></i> {{ $announcement->created_at->diffForHumans() }}
-                    </div>
-                </div><div class="course-header d-flex align-items-center justify-content-between flex-wrap">
+                    <div class="announcement-preview">{{ Str::limit($announcement->content, 80) }}</div>
                 </div>
             @empty
+                <div class="empty-announcements">
+                    <i class="bi bi-megaphone"></i>
+                    <p>No announcements at the moment</p>
+                </div>
             @endforelse
         </div>
     </div>
@@ -2780,5 +3214,65 @@ function redirectToAssignment(referenceId, moduleId, type, programId) {
         window.location.href = '/student/dashboard';
     }
 }
+
+// Announcement Modal Functions
+function openAnnouncementModal(id, title, content, type, time) {
+    const modal = document.getElementById('announcementModal');
+    const modalTitle = document.getElementById('announcementModalTitle');
+    const modalContent = document.getElementById('announcementModalContent');
+    const modalType = document.getElementById('announcementModalType');
+    const modalTime = document.getElementById('announcementModalTime');
+    
+    modalTitle.textContent = title;
+    modalContent.textContent = content;
+    modalType.textContent = type === 'video' ? 'Video Announcement' : 'Text Announcement';
+    modalTime.textContent = time;
+    
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAnnouncementModal() {
+    const modal = document.getElementById('announcementModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('announcementModal');
+    const modalBackdrop = document.getElementById('announcementModalBackdrop');
+    
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', closeAnnouncementModal);
+    }
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAnnouncementModal();
+        }
+    });
+});
 </script>
+
+<!-- Announcement Modal -->
+<div class="announcement-modal" id="announcementModal">
+    <div class="announcement-modal-backdrop" id="announcementModalBackdrop"></div>
+    <div class="announcement-modal-content">
+        <div class="announcement-modal-header">
+            <div class="announcement-modal-badge" id="announcementModalType">
+                <i class="bi bi-megaphone"></i>
+            </div>
+            <button class="announcement-modal-close" onclick="closeAnnouncementModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="announcement-modal-body">
+            <h3 class="announcement-modal-title" id="announcementModalTitle"></h3>
+            <div class="announcement-modal-time" id="announcementModalTime"></div>
+            <div class="announcement-modal-text" id="announcementModalContent"></div>
+        </div>
+    </div>
+</div>
 @endsection
