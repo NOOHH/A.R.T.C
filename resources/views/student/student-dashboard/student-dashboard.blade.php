@@ -471,6 +471,7 @@
         border-radius: 20px 20px 0 0;
         padding: 20px 25px;
         border-bottom: none;
+        
     }
     
     .modal-title {
@@ -611,6 +612,63 @@
         from { transform: translateX(100%); }
         to { transform: translateX(0); }
     }
+    
+    /* Program Modal specific styles for dashboard */
+    #programModal {
+        z-index: 9999 !important;
+    }
+    
+    #programModal .modal-dialog {
+        z-index: 10000 !important;
+    }
+    
+    #programModal .modal-content {
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        border: none;
+        z-index: 10001 !important;
+    }
+    
+    #programModal .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 20px 25px;
+        border-bottom: none;
+    }
+    
+    #programModal .modal-title {
+        font-weight: 700;
+        font-size: 1.3rem;
+    }
+    
+    #programModal .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+    }
+    
+    #programModal .btn-close:hover {
+        opacity: 1;
+    }
+    
+    /* Ensure program modal displays above dashboard elements */
+    #programModal.modal.show {
+        display: block !important;
+        z-index: 9999 !important;
+    }
+    
+    #programModal .modal-backdrop {
+        z-index: 9998 !important;
+    }
+    
+    /* Override any competing z-index from layout */
+    .modal-backdrop.show {
+        z-index: 9998 !important;
+    }
+    
+    .modal.fade.show {
+        z-index: 9999 !important;
+    }
 </style>
 @endpush
 
@@ -655,6 +713,9 @@
                 </button>
                 <button onclick="testDashboardUpdate()" class="btn btn-sm btn-outline-warning" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
                     <i class="bi bi-bug"></i> Test
+                </button>
+                <button onclick="testProgramModal()" class="btn btn-sm btn-outline-info" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
+                    <i class="bi bi-collection"></i> Test Program Profile
                 </button>
             </div>
         </div>
@@ -1099,6 +1160,29 @@ function testPaymentModal() {
     console.log('=== PAYMENT MODAL TEST ===');
     console.log('1. Testing modal opening...');
     showPaymentModal(999, 'Test Course DEBUG');
+}
+
+// Test function for program profile redirect (accessible from dashboard)
+function testProgramModal() {
+    console.clear();
+    console.log('=== PROGRAM PROFILE TEST ===');
+    console.log('1. Testing program profile redirect...');
+    
+    // Test program ID (Nursing Program)
+    const testProgramId = 40;
+    
+    console.log(`✅ Redirecting to program profile: /profile/program/${testProgramId}`);
+    
+    // Redirect to the program profile page
+    window.location.href = `/profile/program/${testProgramId}`;
+}
+
+// Function to manually trigger program redirect from search result
+function manualShowProgramModal(programId) {
+    console.log('Redirecting to program profile for ID:', programId);
+    
+    // Redirect to the program profile page
+    window.location.href = `/profile/program/${programId}`;
 }
 
 // Emergency cleanup function for stuck backdrops

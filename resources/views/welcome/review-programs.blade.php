@@ -153,30 +153,6 @@
     </div>
 </section>
 
-<!-- Program Details Modal -->
-<div class="modal fade" id="programModal" tabindex="-1" aria-labelledby="programModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="programModalLabel">Program Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="modalProgramContent">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <a href="#" id="viewFullDetailsBtn" class="btn btn-primary-custom">View Full Details</a>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
@@ -238,74 +214,7 @@ function loadPrograms() {
 }
 
 function showProgramModal(programId) {
-    const modal = new bootstrap.Modal(document.getElementById('programModal'));
-    const modalContent = document.getElementById('modalProgramContent');
-    const modalLabel = document.getElementById('programModalLabel');
-    const viewFullBtn = document.getElementById('viewFullDetailsBtn');
-    
-    // Reset modal content
-    modalContent.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-    `;
-    modalLabel.textContent = 'Loading...';
-    viewFullBtn.href = '#';
-    
-    // Show modal
-    modal.show();
-    
-    // Load program details
-    fetch(`/api/programs/${programId}`)
-        .then(response => response.json())
-        .then(program => {
-            modalLabel.textContent = program.program_name;
-            viewFullBtn.href = `/programs/${programId}`;
-            
-            // Load modules
-            return fetch(`/api/programs/${programId}/modules`)
-                .then(response => response.json())
-                .then(modules => {
-                    let html = `
-                        <div class="mb-4">
-                            <h6>Description</h6>
-                            <p>${program.program_description || 'No description available.'}</p>
-                        </div>
-                        
-                        <div>
-                            <h6>Modules</h6>
-                    `;
-                    
-                    if (modules.length > 0) {
-                        html += '<div class="list-group">';
-                        modules.forEach(module => {
-                            html += `
-                                <div class="list-group-item">
-                                    <h6 class="mb-1">${module.module_name}</h6>
-                                    <p class="mb-1 text-muted">${module.module_description || 'No description available.'}</p>
-                                </div>
-                            `;
-                        });
-                        html += '</div>';
-                    } else {
-                        html += '<p class="text-muted">No modules found for this program.</p>';
-                    }
-                    
-                    html += '</div>';
-                    modalContent.innerHTML = html;
-                });
-        })
-        .catch(error => {
-            console.error('Error loading program details:', error);
-            modalContent.innerHTML = `
-                <div class="text-center text-danger">
-                    <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
-                    <p class="mt-2">Error loading program details. Please try again.</p>
-                </div>
-            `;
-        });
+    window.location.href = `/profile/program/${programId}`;
 }
 </script>
 @endpush

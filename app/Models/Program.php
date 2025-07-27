@@ -21,10 +21,12 @@ class Program extends Model
         'created_by_admin_id',
         'director_id',
         'is_archived',
+        'is_active',
     ];
 
     protected $casts = [
         'is_archived' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**

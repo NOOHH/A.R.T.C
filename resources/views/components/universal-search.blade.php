@@ -23,9 +23,21 @@
                     <span id="searchTypeLabel">All</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All Users</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All</a></li>
                     <li><a class="dropdown-item" href="#" onclick="setSearchType('students')">Students Only</a></li>
                     <li><a class="dropdown-item" href="#" onclick="setSearchType('professors')">Professors Only</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('programs')">Programs Only</a></li>
+                </ul>
+            </div>
+            @elseif(auth()->check() && auth()->user()->role === 'professor')
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="searchTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="searchTypeLabel">All</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('students')">Students Only</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('programs')">Programs Only</a></li>
                 </ul>
             </div>
             @endif
@@ -243,6 +255,18 @@
     height: 40px;
     border-radius: 50%;
     margin-right: 15px;
+    object-fit: cover;
+}
+
+.search-result-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
 }
 
 .search-result-info {
@@ -365,24 +389,50 @@ function displaySearchResults(results) {
     }
     
     container.innerHTML = results.map(result => {
-        const roleClass = result.role === 'student' ? 'primary' : 'success';
-        const actions = generateActionButtons(result);
-        
-        return `
-            <div class="search-result-item" onclick="selectSearchResult(${result.id})">
-                <img src="${result.avatar}" alt="${result.name}" class="search-result-avatar">
-                <div class="search-result-info">
-                    <div class="search-result-name">${result.name}</div>
-                    <div class="search-result-email">${result.email}</div>
+        if (result.type === 'program') {
+            return `
+                <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'program')">
+                    <div class="search-result-icon">
+                        <i class="bi bi-collection text-primary" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div class="search-result-info">
+                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-email">${result.description}</div>
+                        <small class="text-muted">
+                            ${result.modules_count} modules • ${result.courses_count} courses
+                        </small>
+                    </div>
+                    <div class="search-result-role">
+                        <span class="badge bg-info">Program</span>
+                    </div>
+                    <div class="search-result-actions">
+                        ${generateProgramActionButtons(result)}
+                    </div>
                 </div>
-                <div class="search-result-role">
-                    <span class="badge bg-${roleClass}">${result.role}</span>
+            `;
+        } else {
+            const roleClass = getRoleClass(result.role);
+            const actions = generateActionButtons(result);
+            
+            return `
+                <div class="search-result-item" onclick="selectSearchResult('${result.id}', '${result.type}')">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <div class="search-result-info">
+                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-email">${result.email}</div>
+                        ${result.programs && result.programs.length > 0 ? 
+                            `<small class="text-muted">Programs: ${result.programs.join(', ')}</small>` : ''}
+                    </div>
+                    <div class="search-result-role">
+                        <span class="badge bg-${roleClass}">${result.role}</span>
+                        <br><small class="text-muted">${result.status}</small>
+                    </div>
+                    <div class="search-result-actions">
+                        ${actions}
+                    </div>
                 </div>
-                <div class="search-result-actions">
-                    ${actions}
-                </div>
-            </div>
-        `;
+            `;
+        }
     }).join('');
     
     showSearchDropdown();
@@ -394,18 +444,18 @@ function generateActionButtons(result) {
     let actions = [];
     
     // View profile action
-    actions.push(`<button class="btn btn-outline-primary btn-sm" onclick="viewProfile(${result.id}, '${result.role}')">
+    actions.push(`<button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewProfile('${result.id}', '${result.type}')">
         <i class="bi bi-person"></i>
     </button>`);
     
     // Chat action
-    actions.push(`<button class="btn btn-outline-success btn-sm" onclick="startChat(${result.id})">
+    actions.push(`<button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); startChat('${result.id}')">
         <i class="bi bi-chat"></i>
     </button>`);
     
     // Admin actions
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'director')) {
-        actions.push(`<button class="btn btn-outline-info btn-sm" onclick="viewDetails(${result.id})">
+        actions.push(`<button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); viewDetails('${result.id}', '${result.type}')">
             <i class="bi bi-info-circle"></i>
         </button>`);
     }
@@ -413,24 +463,156 @@ function generateActionButtons(result) {
     return actions.join('');
 }
 
+// Generate action buttons for programs
+function generateProgramActionButtons(result) {
+    let actions = [];
+    
+    // View program details
+    actions.push(`<button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewProgram('${result.id}')">
+        <i class="bi bi-eye"></i>
+    </button>`);
+    
+    // View modules/courses (redirect to program profile)
+    actions.push(`<button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); window.location.href='/profile/program/${result.id}'">
+        <i class="bi bi-list-ul"></i>
+    </button>`);
+    
+    return actions.join('');
+}
+
+// Get role class for badge styling
+function getRoleClass(role) {
+    switch(role.toLowerCase()) {
+        case 'student': return 'primary';
+        case 'professor': return 'success';
+        case 'admin': return 'warning';
+        case 'director': return 'danger';
+        default: return 'secondary';
+    }
+}
+
 // Select search result
-function selectSearchResult(userId) {
-    // Handle result selection
+function selectSearchResult(id, type) {
     hideSearchDropdown();
-    // You can implement specific actions here
+    
+    if (type === 'program') {
+        window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
+    } else {
+        // For other user types (admin, director), use the existing modal
+        showUserModal(id);
+    }
 }
 
 // View profile
-function viewProfile(userId, role) {
-    const urls = {
-        'student': `/student/profile/${userId}`,
-        'professor': `/professor/profile/${userId}`,
-        'admin': `/admin/profile/${userId}`
-    };
-    
-    if (urls[role]) {
-        window.open(urls[role], '_blank');
+function viewProfile(id, type) {
+    if (type === 'program') {
+        window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
+    } else {
+        // For other user types (admin, director), use the existing modal
+        showUserModal(id);
     }
+}
+
+// Show user profile modal
+function showUserModal(userId) {
+    fetch(`/search/profile?user_id=${userId}&type=user`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayUserProfileModal(data.profile);
+            } else {
+                alert('Failed to load user profile');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user profile:', error);
+            alert('Failed to load user profile');
+        });
+}
+
+// Redirect to program profile page
+function showProgramModal(programId) {
+    window.location.href = `/profile/program/${programId}`;
+}
+
+// Display user profile modal
+function displayUserProfileModal(profile) {
+    const modalContent = `
+        <div class="modal fade" id="userProfileModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-person-circle me-2"></i>User Profile
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <img src="${profile.avatar || '/images/default-avatar.png'}" 
+                                     alt="${profile.name}" 
+                                     class="rounded-circle mb-3" 
+                                     width="120" height="120">
+                                <h5>${profile.name}</h5>
+                                <span class="badge bg-${getRoleClass(profile.role)} mb-2">${profile.role}</span>
+                                <p class="text-muted">${profile.status}</p>
+                            </div>
+                            <div class="col-md-8">
+                                <h6>Contact Information</h6>
+                                <p><strong>Email:</strong> ${profile.email}</p>
+                                <p><strong>Joined:</strong> ${new Date(profile.created_at).toLocaleDateString()}</p>
+                                
+                                ${profile.enrollments ? `
+                                    <h6 class="mt-4">Program Enrollments</h6>
+                                    <div class="list-group">
+                                        ${profile.enrollments.map(enrollment => `
+                                            <div class="list-group-item">
+                                                <strong>${enrollment.program}</strong>
+                                                <br><small class="text-muted">Enrolled: ${new Date(enrollment.enrolled_at).toLocaleDateString()}</small>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" onclick="startChat('${profile.id}')">
+                            <i class="bi bi-chat me-2"></i>Start Chat
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('userProfileModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+    modal.show();
+}
+
+// View program (redirect to program page)
+function viewProgram(programId) {
+    window.location.href = `/profile/program/${programId}`;
 }
 
 // Start chat
@@ -452,8 +634,14 @@ function viewDetails(userId) {
 // Set search type
 function setSearchType(type) {
     currentSearchType = type;
-    document.getElementById('searchTypeLabel').textContent = type === 'all' ? 'All' : 
-        type === 'students' ? 'Students' : 'Professors';
+    const labels = {
+        'all': 'All',
+        'students': 'Students',
+        'professors': 'Professors',
+        'programs': 'Programs'
+    };
+    
+    document.getElementById('searchTypeLabel').textContent = labels[type] || 'All';
     
     // Re-perform search if there's a query
     const query = document.getElementById('universalSearchInput').value.trim();

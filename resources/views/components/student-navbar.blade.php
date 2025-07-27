@@ -1,12 +1,5 @@
 <header class="main-header">
   <div class="header-left">
-    {{-- Sidebar toggle button for all screen sizes --}}
-    @if(!isset($hideSidebar) || !$hideSidebar)
-      <button class="sidebar-toggle-btn me-2" id="sidebarToggleBtn" title="Toggle Sidebar">
-        <i class="bi bi-list"></i>
-      </button>
-    @endif
-    
     <a href="{{ route('home') }}" class="brand-link">
       <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
       <div class="brand-text">
@@ -16,11 +9,7 @@
   </div>
 
   <div class="header-search">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Search courses or topics">
-      <button class="search-btn">🔍</button>
-    </div>
+    @include('components.student-search')
   </div>
 
   <div class="header-right">
@@ -31,7 +20,22 @@
           role="button">
       <i class="bi bi-chat-dots"></i>
     </span>
-    <span class="profile-icon">👤</span>
+    <span class="profile-icon">
+      @php
+        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+        $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+      @endphp
+      
+      @if($profilePhoto)
+        <img src="{{ asset('storage/profile-photos/' . $profilePhoto) }}" 
+             alt="Profile" 
+             class="navbar-profile-image">
+      @else
+        <div class="navbar-profile-placeholder">
+          {{ substr(session('user_firstname', 'U'), 0, 1) }}{{ substr(session('user_lastname', 'U'), 0, 1) }}
+        </div>
+      @endif
+    </span>
   </div>
 </header>
 @include('components.global-chat')

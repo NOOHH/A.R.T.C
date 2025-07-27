@@ -5,7 +5,26 @@
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
-    /* Mobile-First Responsive Design */
+    /* File Viewer Modal z-index fix */
+.modal {
+    z-index: 9999 !important;
+}
+
+.modal-backdrop {
+    z-index: 9998 !important;
+}
+
+.modal-dialog {
+    z-index: 10000 !important;
+}
+
+/* Ensure modal content is properly displayed */
+.modal-content {
+    position: relative;
+    z-index: 10001 !important;
+}
+
+/* Mobile-First Responsive Design */
     .settings-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -214,6 +233,146 @@
         background-color: #f8f9fa;
     }
     
+    .profile-photo-section {
+        border: 2px dashed #28a745;
+        background-color: #f8fff8;
+    }
+    
+    .profile-photo-section:hover {
+        border-color: #1e7e34;
+        background-color: #e8f5e8;
+    }
+    
+    /* Profile Upload Container */
+    .profile-upload-container {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.5rem;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        background: #f8f9fa;
+    }
+    
+    .profile-photo-display {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-photo-display:hover {
+        transform: scale(1.05);
+    }
+    
+    .profile-photo-display:hover .profile-overlay {
+        opacity: 1;
+    }
+    
+    .profile-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    
+    .profile-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #6f42c1 0%, #8e44ad 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2.5rem;
+        font-weight: bold;
+        position: relative;
+    }
+    
+    .profile-placeholder i {
+        position: absolute;
+        font-size: 4rem;
+        opacity: 0.3;
+    }
+    
+    .profile-placeholder span {
+        z-index: 1;
+        font-size: 2rem;
+    }
+    
+    .profile-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .profile-upload-info {
+        flex: 1;
+    }
+    
+    .btn-upload {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+    }
+    
+    .btn-upload:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .current-photo-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-view, .btn-remove {
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .btn-view:hover {
+        background: #138496;
+    }
+    
+    .btn-remove {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-remove:hover {
+        background: #c82333;
+    }
+    
     .file-preview {
         margin-top: 0.5rem;
     }
@@ -250,6 +409,19 @@
         
         .email-field-wrapper {
             max-width: 350px;
+        }
+    }
+    
+    /* Mobile responsive profile upload */
+    @media (max-width: 767px) {
+        .profile-upload-container {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .profile-photo-display {
+            align-self: center;
         }
     }
     
@@ -367,6 +539,48 @@
                             </button>
                         </div>
                         <small class="text-muted">Click "Change" to update your email address</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Photo Upload Section -->
+            <div class="form-group">
+                <label for="profile_photo">Profile Photo</label>
+                <div class="profile-upload-container">
+                    <div class="profile-photo-display">
+                        @if(isset($student->profile_photo) && $student->profile_photo)
+                            <img id="profilePreview" src="{{ asset('storage/profile-photos/' . $student->profile_photo) }}" alt="Profile Photo" class="profile-image">
+                        @else
+                            <div id="profilePreview" class="profile-placeholder">
+                                <i class="bi bi-person-circle"></i>
+                                <span>VD</span>
+                            </div>
+                        @endif
+                        <div class="profile-overlay">
+                            <i class="bi bi-camera"></i>
+                        </div>
+                    </div>
+                    <input type="file" 
+                           class="form-control d-none" 
+                           id="profile_photo" 
+                           name="profile_photo" 
+                           accept=".jpg,.jpeg,.png"
+                           onchange="previewProfilePhoto(this)">
+                    <div class="profile-upload-info">
+                        <button type="button" class="btn-upload" onclick="document.getElementById('profile_photo').click()">
+                            <i class="bi bi-upload me-2"></i>Choose Photo
+                        </button>
+                        <small class="text-muted">Upload a JPG, JPEG, or PNG image (max 2MB)</small>
+                        @if(isset($student->profile_photo) && $student->profile_photo)
+                            <div class="current-photo-actions mt-2">
+                                <button type="button" class="btn-view" onclick="viewProfilePhoto('{{ $student->profile_photo }}')">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </button>
+                                <button type="button" class="btn-remove" onclick="removeProfilePhoto()">
+                                    <i class="bi bi-trash me-1"></i>Remove
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -864,5 +1078,130 @@ function viewFile(fieldName, fileName) {
     document.getElementById('fileViewerContent').innerHTML = content;
     modal.show();
 }
+
+function viewProfilePhoto(fileName) {
+    const modal = new bootstrap.Modal(document.getElementById('fileViewerModal'));
+    document.getElementById('fileViewerTitle').textContent = 'Profile Photo';
+    
+    const fileUrl = '/storage/profile-photos/' + fileName;
+    const content = `<img src="${fileUrl}" class="img-fluid" alt="Profile Photo" style="max-width: 100%; height: auto;">`;
+    
+    document.getElementById('fileViewerContent').innerHTML = content;
+    
+    // Ensure modal appears on top
+    const modalElement = document.getElementById('fileViewerModal');
+    modalElement.style.zIndex = '10000';
+    
+    // Remove any existing backdrops to prevent conflicts
+    const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+    existingBackdrops.forEach(backdrop => {
+        if (backdrop.style.zIndex < '9998') {
+            backdrop.remove();
+        }
+    });
+    
+    modal.show();
+}
+
+function previewProfilePhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        const file = input.files[0];
+        
+        // Validate file size (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size must be less than 2MB');
+            input.value = '';
+            return;
+        }
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please select a JPG, JPEG, or PNG image');
+            input.value = '';
+            return;
+        }
+        
+        reader.onload = function(e) {
+            const preview = document.getElementById('profilePreview');
+            preview.innerHTML = `<img src="${e.target.result}" alt="Profile Photo" class="profile-image">`;
+            
+            // Add overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'profile-overlay';
+            overlay.innerHTML = '<i class="bi bi-camera"></i>';
+            preview.appendChild(overlay);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeProfilePhoto() {
+    if (confirm('Are you sure you want to remove your profile photo?')) {
+        // Reset the file input
+        document.getElementById('profile_photo').value = '';
+        
+        // Reset preview to placeholder
+        const preview = document.getElementById('profilePreview');
+        preview.innerHTML = `
+            <div class="profile-placeholder">
+                <i class="bi bi-person-circle"></i>
+                <span>VD</span>
+            </div>
+            <div class="profile-overlay">
+                <i class="bi bi-camera"></i>
+            </div>
+        `;
+        
+        // Hide action buttons
+        const actions = document.querySelector('.current-photo-actions');
+        if (actions) {
+            actions.style.display = 'none';
+        }
+        
+        // You can add AJAX call here to actually remove from server if needed
+    }
+}
+
+// Add click handler for profile photo display
+document.addEventListener('DOMContentLoaded', function() {
+    const profileDisplay = document.querySelector('.profile-photo-display');
+    if (profileDisplay) {
+        profileDisplay.addEventListener('click', function() {
+            document.getElementById('profile_photo').click();
+        });
+    }
+});
+
+// Add preview functionality for profile photo selection
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePhotoInput = document.getElementById('profile_photo');
+    if (profilePhotoInput) {
+        profilePhotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Create or update preview
+                    let preview = document.querySelector('.profile-photo-preview');
+                    if (!preview) {
+                        preview = document.createElement('div');
+                        preview.className = 'profile-photo-preview mt-2';
+                        profilePhotoInput.closest('.file-upload-section').appendChild(preview);
+                    }
+                    preview.innerHTML = `
+                        <div class="text-center">
+                            <img src="${e.target.result}" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 50%; object-fit: cover;">
+                            <div class="small text-muted mt-1">Preview of selected photo</div>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
 </script>
 @endsection

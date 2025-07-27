@@ -47,18 +47,23 @@ $(document).ready(function() {
             return;
         }
         
-        $.get(`/quiz-generator/courses/${moduleId}`)
+        $.get(`/professor/quiz-generator/courses/${moduleId}`)
         .done(function(response) {
+            console.log('Courses response:', response);
             let options = '<option value="">Select Course</option>';
             if (response.success && response.courses) {
                 response.courses.forEach(function(course) {
+                    console.log('Adding course:', course);
                     options += `<option value="${course.course_id}">${course.course_name}</option>`;
                 });
+            } else {
+                console.error('Courses request succeeded but no courses found or success=false');
             }
             $('#course_id').html(options).prop('disabled', false);
         })
         .fail(function(xhr, status, error) {
             console.error('Failed to load courses:', error);
+            console.error('XHR response:', xhr.responseText);
             $('#course_id').html('<option value="">Error loading courses</option>').prop('disabled', true);
         });
     }
@@ -163,8 +168,14 @@ $(document).ready(function() {
         window.location.href = `/professor/quiz-generator/export/${quizId}`;
     });
 
-    // Edit questions modal
-    $(document).on('click', '.view-questions-btn', function() {
+    // Edit questions button - redirect to dedicated edit page
+    $(document).on('click', '.edit-questions-btn, .view-questions-btn', function() {
+        const quizId = $(this).data('quiz-id');
+        window.location.href = `/professor/quiz-generator/${quizId}/edit`;
+    });
+
+    // Legacy modal support (keeping for backwards compatibility)
+    $(document).on('click', '.legacy-view-questions-btn', function() {
         const quizId = $(this).data('quiz-id');
         window.currentQuizId = quizId;
         

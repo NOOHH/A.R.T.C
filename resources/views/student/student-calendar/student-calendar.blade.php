@@ -6,13 +6,16 @@
 <link rel="stylesheet" href="{{ asset('css/student/student-calendar.css') }}">
 <style>
 .calendar-day {
-    height: 120px;
+    height: 100%;
+    min-height: 120px;
     border: 1px solid #e9ecef;
     padding: 8px;
     position: relative;
     background: white;
     transition: all 0.2s ease;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .calendar-day:hover {
@@ -124,25 +127,42 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Additional calendar styling */
+/* Calendar grid fixes */
 #calendarDays {
     overflow: hidden !important;
 }
 
 #calendarDays .row {
-    margin: 0;
-    height: 120px;
+    margin: 0 !important;
+    min-height: 120px;
     overflow: hidden;
 }
 
 #calendarDays .col {
-    padding: 0;
+    padding: 0 !important;
     border-right: 1px solid #e9ecef;
     border-bottom: 1px solid #e9ecef;
     overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 #calendarDays .col:last-child {
+    border-right: none;
+}
+
+/* Weekday header alignment */
+.calendar-weekdays .col {
+    padding: 0.5rem !important;
+    text-align: center;
+    font-weight: bold;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-right: 1px solid #e9ecef;
+}
+
+.calendar-weekdays .col:last-child {
     border-right: none;
 }
 
@@ -161,14 +181,208 @@
 }
 
 .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     overflow: hidden !important;
+}
+.container-fluid .row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.container-fluid .row > [class*="col-"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+/* Custom Modal Styles - Full page overlay */
+.custom-modal {
+    display: none;
+    position: fixed;
+    z-index: 999999;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.custom-modal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-modal-content {
+    background-color: #fff;
+    margin: auto;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    animation: modalSlideIn 0.3s ease-out;
+    position: relative;
+    z-index: 1000000;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.custom-modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.custom-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.custom-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.custom-modal-close:hover {
+    background-color: #e9ecef;
+    color: #333;
+}
+
+.custom-modal-body {
+    padding: 1.5rem;
+}
+
+.custom-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+}
+
+.custom-modal-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.custom-modal-btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.custom-modal-btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.custom-modal-btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.custom-modal-btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Ensure no other elements interfere */
+.calendar-day,
+.event-item,
+.event-counter {
+    z-index: 1 !important;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+}
+
+/* Remove white gap around the logo image */
+.header-left img {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+}
+
+.brand-link {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.brand-text {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* kill container padding */
+.container-fluid {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* kill the row's negative margins */
+.container-fluid .row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* kill each column's built‑in padding */
+.container-fluid .row > [class*="col-"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid px-0">
+    <div class="row g-0">
         <!-- Main Calendar -->
         <div class="col-lg-9">
             <div class="card shadow-sm">
@@ -192,14 +406,14 @@
                 
                 <div class="card-body p-0">
                     <!-- Calendar Weekdays -->
-                    <div class="row g-0 bg-light border-bottom">
-                        <div class="col text-center py-2 fw-bold">Sunday</div>
-                        <div class="col text-center py-2 fw-bold">Monday</div>
-                        <div class="col text-center py-2 fw-bold">Tuesday</div>
-                        <div class="col text-center py-2 fw-bold">Wednesday</div>
-                        <div class="col text-center py-2 fw-bold">Thursday</div>
-                        <div class="col text-center py-2 fw-bold">Friday</div>
-                        <div class="col text-center py-2 fw-bold">Saturday</div>
+                    <div class="row g-0 calendar-weekdays">
+                        <div class="col">Sunday</div>
+                        <div class="col">Monday</div>
+                        <div class="col">Tuesday</div>
+                        <div class="col">Wednesday</div>
+                        <div class="col">Thursday</div>
+                        <div class="col">Friday</div>
+                        <div class="col">Saturday</div>
                     </div>
                     
                     <!-- Calendar Days -->
@@ -212,33 +426,6 @@
         
         <!-- Sidebar -->
         <div class="col-lg-3">
-            <!-- Debug Information -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <h6 class="mb-0">
-                        <i class="bi bi-bug me-2"></i>Debug Info
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <strong>Session Status:</strong><br>
-                        <small class="text-muted">
-                            User ID: {{ session('user_id') ?? 'Not set' }}<br>
-                            User Name: {{ session('user_name') ?? 'Not set' }}<br>
-                            User Role: {{ session('user_role') ?? 'Not set' }}<br>
-                            Logged In: {{ session('logged_in') ? 'Yes' : 'No' }}
-                        </small>
-                    </div>
-                    <div class="mb-2">
-                        <strong>API Status:</strong><br>
-                        <small class="text-muted" id="apiStatus">Checking...</small>
-                    </div>
-                    <div>
-                        <strong>Current Events:</strong><br>
-                        <small class="text-muted" id="currentEventsCount">0</small>
-                    </div>
-                </div>
-            </div>
             
             <!-- Today's Schedule -->
             <div class="card shadow-sm mb-4">
@@ -304,23 +491,19 @@
     </div>
 </div>
 
-<!-- Event Details Modal -->
-<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="eventModalBody">
-                <!-- Event details will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <div id="eventModalActions">
-                    <!-- Action buttons will be added based on event type -->
-                </div>
-            </div>
+<!-- Custom Event Details Modal -->
+<div id="eventModal" class="custom-modal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h5 class="custom-modal-title" id="eventModalLabel">Event Details</h5>
+            <button type="button" class="custom-modal-close" id="eventModalClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="custom-modal-body" id="eventModalBody">
+            <!-- Event details will be loaded here -->
+        </div>
+        <div class="custom-modal-footer" id="eventModalActions">
+            <button type="button" class="custom-modal-btn custom-modal-btn-secondary" id="eventModalCloseBtn">Close</button>
+            <!-- Action buttons will be added based on event type -->
         </div>
     </div>
 </div>
@@ -376,6 +559,39 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('❌ Could not find todayBtn button');
     }
+    
+    // Modal event listeners
+    const modal = document.getElementById('eventModal');
+    const modalClose = document.getElementById('eventModalClose');
+    const modalCloseBtn = document.getElementById('eventModalCloseBtn');
+    
+    function closeModal() {
+        modal.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+    }
+    
+    if (modalClose) {
+        modalClose.addEventListener('click', closeModal);
+    }
+    
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closeModal);
+    }
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            closeModal();
+        }
+    });
     
     function generateCalendar(year, month) {
         console.log(`🗓️ Generating calendar for ${year}-${month + 1}`);
@@ -496,32 +712,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         announcements: data.events.filter(e => e.type === 'announcement').length
                     });
                     
-                    // Update debug info
-                    document.getElementById('apiStatus').textContent = `✅ Success - ${data.events.length} events loaded`;
-                    document.getElementById('currentEventsCount').textContent = data.events.length;
+
                 } else if (data.success === false && data.message === 'Student not found') {
                     console.log('🔒 Authentication required - please log in');
-                    console.log('🔒 Session data:', {
-                        user_id: '{{ session("user_id") }}',
-                        user_name: '{{ session("user_name") }}',
-                        user_role: '{{ session("user_role") }}'
-                    });
                     currentEvents = [];
                     populateCalendarEvents();
                     updateStats({ meetings: 0, assignments: 0, announcements: 0 });
-                    
-                    // Update debug info
-                    document.getElementById('apiStatus').textContent = '❌ Student not found - Authentication required';
-                    document.getElementById('currentEventsCount').textContent = '0';
                 } else {
                     console.log('ℹ️ No events found for this period');
                     currentEvents = [];
                     populateCalendarEvents();
                     updateStats({ meetings: 0, assignments: 0, announcements: 0 });
-                    
-                    // Update debug info
-                    document.getElementById('apiStatus').textContent = 'ℹ️ No events found for this period';
-                    document.getElementById('currentEventsCount').textContent = '0';
                 }
             })
             .catch(error => {
@@ -530,10 +731,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentEvents = [];
                 populateCalendarEvents();
                 updateStats({ meetings: 0, assignments: 0, announcements: 0 });
-                
-                // Update debug info
-                document.getElementById('apiStatus').textContent = `❌ Error: ${error.message}`;
-                document.getElementById('currentEventsCount').textContent = '0';
             });
     }
     
@@ -713,18 +910,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function showEventDetails(event) {
         console.log(`🎯 showEventDetails called for event:`, event);
         
-        const modalElement = document.getElementById('eventModal');
-        if (!modalElement) {
-            console.error('❌ Could not find eventModal element');
-            return;
-        }
-        
-        const modal = new bootstrap.Modal(modalElement);
+        const modal = document.getElementById('eventModal');
         const modalTitle = document.getElementById('eventModalLabel');
         const modalBody = document.getElementById('eventModalBody');
         const modalActions = document.getElementById('eventModalActions');
         
-        if (!modalTitle || !modalBody || !modalActions) {
+        if (!modal || !modalTitle || !modalBody || !modalActions) {
             console.error('❌ Could not find modal elements');
             return;
         }
@@ -761,8 +952,8 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             modalActions.innerHTML = event.meeting_url ? 
-                `<a href="${event.meeting_url}" target="_blank" class="btn btn-primary">
-                    <i class="bi bi-camera-video me-2"></i>Join Meeting
+                `<a href="${event.meeting_url}" target="_blank" class="custom-modal-btn custom-modal-btn-primary">
+                    <i class="bi bi-camera-video"></i>Join Meeting
                 </a>` : '';
         } else if (event.type === 'assignment') {
             bodyHtml += `
@@ -793,7 +984,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         modalBody.innerHTML = bodyHtml;
-        modal.show();
+        
+        // Show modal
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        
+        console.log('✅ Custom modal shown');
     }
     
     function showDayEvents(dateOrYear, month, day) {
@@ -820,18 +1017,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`📋 Found ${dayEvents.length} events for ${targetDate}`);
         
-        const modalElement = document.getElementById('eventModal');
-        if (!modalElement) {
-            console.error('❌ Could not find eventModal element');
-            return;
-        }
-        
-        const modal = new bootstrap.Modal(modalElement);
+        const modal = document.getElementById('eventModal');
         const modalTitle = document.getElementById('eventModalLabel');
         const modalBody = document.getElementById('eventModalBody');
         const modalActions = document.getElementById('eventModalActions');
         
-        if (!modalTitle || !modalBody || !modalActions) {
+        if (!modal || !modalTitle || !modalBody || !modalActions) {
             console.error('❌ Could not find modal elements');
             return;
         }
@@ -862,8 +1053,12 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`📝 Generated HTML for ${dayEvents.length} events`);
         }
         
-        modal.show();
-        console.log('✅ Modal shown');
+        // Show modal
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        
+        console.log('✅ Custom modal shown');
     }
     
     // Make showEventDetails available globally

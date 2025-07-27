@@ -457,7 +457,7 @@
                                 <div class="assignment-details">
                                     <h6 class="mb-2">
                                         <i class="bi bi-file-earmark-text me-2"></i>
-                                        Module: {{ $submission->module->module_name }}
+                                        Module: {{ $submission->module->module_name ?? 'N/A' }}
                                     </h6>
                                     @if($submission->comments)
                                         <p class="mb-0 text-muted">{{ $submission->comments }}</p>

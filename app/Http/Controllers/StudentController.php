@@ -225,6 +225,7 @@ class StudentController extends Controller
             'city' => 'nullable|string|max:255',
             'zipcode' => 'nullable|string|max:20',
             'contact_number' => 'nullable|string|max:20',
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
 
         // Add dynamic validation rules from form requirements
@@ -262,6 +263,22 @@ class StudentController extends Controller
 
             // Handle file uploads
             $fileUploads = [];
+            
+            // Handle profile photo upload separately
+            if ($request->hasFile('profile_photo')) {
+                $profilePhoto = $request->file('profile_photo');
+                $profilePhotoName = 'profile_' . session('user_id') . '_' . time() . '.' . $profilePhoto->getClientOriginalExtension();
+                $profilePhotoPath = $profilePhoto->storeAs('profile-photos', $profilePhotoName, 'public');
+                $fileUploads['profile_photo'] = $profilePhotoName;
+                
+                Log::info('Profile photo uploaded', [
+                    'user_id' => session('user_id'),
+                    'filename' => $profilePhotoName,
+                    'path' => $profilePhotoPath
+                ]);
+            }
+            
+            // Handle other dynamic form requirement file uploads
             foreach ($formRequirements as $requirement) {
                 if ($requirement->field_type === 'file' && $request->hasFile($requirement->field_name)) {
                     $file = $request->file($requirement->field_name);
@@ -284,6 +301,12 @@ class StudentController extends Controller
                 'zipcode' => $validated['zipcode'] ?? '',
                 'contact_number' => $validated['contact_number'] ?? '',
             ];
+            
+            // Add profile photo if uploaded
+            if (isset($fileUploads['profile_photo'])) {
+                $studentData['profile_photo'] = $fileUploads['profile_photo'];
+                Log::info('Added profile photo to student data', ['filename' => $fileUploads['profile_photo']]);
+            }
 
             // Add dynamic fields and file uploads
             foreach ($formRequirements as $requirement) {

@@ -489,17 +489,19 @@ function performSearch(query = null) {
     
     showSearchLoading(true);
     
-    // Make API call to search
-    fetch('/api/admin/search', {
-        method: 'POST',
+    // Use GET request to our SearchController endpoint
+    const params = new URLSearchParams({
+        query: searchQuery,
+        type: currentSearchType || 'all',
+        limit: 10
+    });
+    
+    fetch(`/search?${params.toString()}`, {
+        method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            query: searchQuery,
-            type: currentSearchType
-        })
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(response => {
         if (!response.ok) {
@@ -534,37 +536,54 @@ function displaySearchResults(data) {
     
     // Clear previous results
     resultsContainer.innerHTML = '';
-    suggestionsContainer.innerHTML = '';
-    
-    // Show suggestions
-    if (data.suggestions && data.suggestions.length > 0) {
-        suggestionsContainer.innerHTML = `
-            <div class="suggestions-header">Suggestions</div>
-            ${data.suggestions.map(suggestion => `
-                <div class="suggestion-item" onclick="selectSuggestion('${suggestion}')">
-                    <i class="bi bi-search me-2"></i>${suggestion}
-                </div>
-            `).join('')}
-        `;
+    if (suggestionsContainer) {
+        suggestionsContainer.innerHTML = '';
     }
     
+    // Check if we got the new format from SearchController
+    const results = data.results || data;
+    
     // Show results
-    if (data.results && data.results.length > 0) {
-        resultsContainer.innerHTML = `
-            <div class="results-header">Results (${data.results.length})</div>
-            ${data.results.map(result => `
-                <div class="result-item" onclick="selectResult('${result.type}', '${result.id}')">
-                    <div class="result-icon">
-                        <i class="bi bi-${getResultIcon(result.type)}"></i>
+    if (results && results.length > 0) {
+        resultsContainer.innerHTML = results.map(result => {
+            if (result.type === 'program') {
+                return `
+                    <div class="result-item" onclick="selectResult('program', '${result.id}')">
+                        <div class="result-icon">
+                            <i class="bi bi-collection text-primary"></i>
+                        </div>
+                        <div class="result-details">
+                            <div class="result-title">${result.name}</div>
+                            <div class="result-subtitle">${result.description || 'Program'}</div>
+                            <small class="text-muted">${result.modules_count || 0} modules • ${result.courses_count || 0} courses</small>
+                        </div>
+                        <div class="result-type">
+                            <span class="badge bg-info">Program</span>
+                        </div>
                     </div>
-                    <div class="result-details">
-                        <div class="result-title">${result.name}</div>
-                        <div class="result-subtitle">${result.subtitle}</div>
+                `;
+            } else {
+                // User result
+                const roleClass = getRoleClass(result.role);
+                return `
+                    <div class="result-item" onclick="selectResult('${result.type}', '${result.id}')">
+                        <div class="result-icon">
+                            <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="result-avatar">
+                        </div>
+                        <div class="result-details">
+                            <div class="result-title">${result.name}</div>
+                            <div class="result-subtitle">${result.email}</div>
+                            ${result.programs && result.programs.length > 0 ? 
+                                `<small class="text-muted">Programs: ${result.programs.join(', ')}</small>` : ''}
+                        </div>
+                        <div class="result-type">
+                            <span class="badge bg-${roleClass}">${result.role}</span>
+                            <br><small class="text-muted">${result.status}</small>
+                        </div>
                     </div>
-                    <div class="result-type">${result.type}</div>
-                </div>
-            `).join('')}
-        `;
+                `;
+            }
+        }).join('');
     } else {
         resultsContainer.innerHTML = `
             <div class="no-results">
@@ -594,24 +613,51 @@ function selectSuggestion(suggestion) {
     performSearch(suggestion);
 }
 
-function selectResult(type, id) {
-    // Navigate to appropriate page based on result type
-    switch(type) {
-        case 'student':
-            window.location.href = `/admin/students/${id}`;
-            break;
-        case 'professor':
-            window.location.href = `/admin/professors/${id}`;
-            break;
-        case 'program':
-            window.location.href = `/admin/programs/${id}`;
-            break;
-        case 'batch':
-            window.location.href = `/admin/batches/${id}`;
-            break;
-        default:
-            console.log('Unknown result type:', type);
+// Get role class for badge styling
+function getRoleClass(role) {
+    switch(role ? role.toLowerCase() : '') {
+        case 'student': return 'primary';
+        case 'professor': return 'success';
+        case 'admin': return 'warning';
+        case 'director': return 'danger';
+        default: return 'secondary';
     }
+}
+
+function selectResult(type, id) {
+    hideSearchDropdown();
+    if (type === 'program') {
+        window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
+    } else {
+        // For other user types (admin, director), use the existing modal
+        showUserModal(id);
+    }
+}
+
+// Show user profile modal
+function showUserModal(userId) {
+    fetch(`/search/profile?user_id=${userId}&type=user`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayUserProfileModal(data.profile);
+            } else {
+                alert('Unable to load user profile. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user profile:', error);
+            alert('Error loading user profile. Please try again.');
+        });
+}
+
+// Show program details modal (now redirects)
+function showProgramModal(programId) {
+    window.location.href = `/profile/program/${programId}`;
 }
 
 function showSearchDropdown() {
@@ -724,6 +770,13 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #666;
 }
 
+.result-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .result-details {
     flex: 1;
 }
@@ -780,6 +833,209 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('admin-logout-form').submit();
         }
     }
+
+    // Display user profile modal
+    function displayUserProfileModal(profile) {
+        const modalContent = `
+            <div class="modal fade" id="userProfileModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-person-circle me-2"></i>User Profile
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <img src="${profile.avatar || '/images/default-avatar.png'}" 
+                                         alt="${profile.name}" 
+                                         class="rounded-circle mb-3" 
+                                         width="120" height="120">
+                                    <h5>${profile.name}</h5>
+                                    <span class="badge bg-${getRoleClass(profile.role)} mb-2">${profile.role}</span>
+                                    <p class="text-muted">${profile.status}</p>
+                                </div>
+                                <div class="col-md-8">
+                                    <h6>Contact Information</h6>
+                                    <p><strong>Email:</strong> ${profile.email}</p>
+                                    <p><strong>Joined:</strong> ${new Date(profile.created_at).toLocaleDateString()}</p>
+                                    
+                                    ${profile.enrollments ? `
+                                        <h6 class="mt-4">Program Enrollments</h6>
+                                        <div class="list-group">
+                                            ${profile.enrollments.map(enrollment => `
+                                                <div class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>${enrollment.program}</strong>
+                                                            <br><small class="text-muted">Enrolled: ${new Date(enrollment.enrolled_at).toLocaleDateString()}</small>
+                                                        </div>
+                                                        <span class="badge bg-success">${enrollment.status || 'Active'}</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${profile.role === 'Professor' && profile.professor_id ? `
+                                        <h6 class="mt-4">Professor Information</h6>
+                                        <p><strong>Professor ID:</strong> ${profile.professor_id}</p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            ${profile.role === 'Student' ? `
+                                <button type="button" class="btn btn-primary" onclick="window.open('/admin/students/${profile.student_id ? profile.student_id : profile.id}', '_blank')">
+                                    <i class="bi bi-eye me-2"></i>View Full Student Profile
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="window.open('/profile/user/${profile.id}', '_blank')">
+                                    <i class="bi bi-user me-2"></i>Public Profile
+                                </button>
+                            ` : profile.role === 'Professor' && profile.professor_id ? `
+                                <button type="button" class="btn btn-success" onclick="window.open('/admin/professors/${profile.id}', '_blank')">
+                                    <i class="bi bi-eye me-2"></i>View Full Professor Profile
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="window.open('/profile/user/${profile.id}', '_blank')">
+                                    <i class="bi bi-user me-2"></i>Public Profile
+                                </button>
+                            ` : `
+                                <button type="button" class="btn btn-primary" onclick="window.open('/profile/user/${profile.id}', '_blank')">
+                                    <i class="bi bi-user me-2"></i>View Profile
+                                </button>
+                            `}
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('userProfileModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add new modal to body
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+        modal.show();
+    }
+
+    // Display program modal
+    function displayProgramModal(program) {
+        const modalContent = `
+            <div class="modal fade" id="programModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-collection me-2"></i>${program.name}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6>Program Description</h6>
+                                    <p>${program.description || 'No description available'}</p>
+                                    
+                                    <h6 class="mt-4">Modules & Courses</h6>
+                                    <div class="accordion" id="modulesAccordion">
+                                        ${program.modules.map((module, index) => `
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading${index}">
+                                                    <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                                            type="button" 
+                                                            data-bs-toggle="collapse" 
+                                                            data-bs-target="#collapse${index}">
+                                                        ${module.name}
+                                                        <span class="badge bg-secondary ms-2">${module.courses.length} courses</span>
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse${index}" 
+                                                     class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                                     data-bs-parent="#modulesAccordion">
+                                                    <div class="accordion-body">
+                                                        <p class="text-muted">${module.description || 'No description available'}</p>
+                                                        <div class="row">
+                                                            ${module.courses.map(course => `
+                                                                <div class="col-md-6 mb-2">
+                                                                    <div class="card">
+                                                                        <div class="card-body p-3">
+                                                                            <h6 class="card-title">${course.name}</h6>
+                                                                            <p class="card-text small text-muted">${course.description || 'No description'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Program Statistics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Total Modules:</span>
+                                                <span class="badge bg-primary">${program.total_modules}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Total Courses:</span>
+                                                <span class="badge bg-info">${program.total_courses}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Enrolled Students:</span>
+                                                <span class="badge bg-success">${program.total_students}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Created:</span>
+                                                <small class="text-muted">${new Date(program.created_at).toLocaleDateString()}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="window.open('/admin/programs/${program.id}', '_blank')">
+                                <i class="bi bi-eye me-2"></i>View Full Program
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="window.open('/profile/program/${program.id}', '_blank')">
+                                <i class="bi bi-collection me-2"></i>Public Profile
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('programModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add new modal to body
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('programModal'));
+        modal.show();
+    }
+    
     // … your search and sidebar toggle scripts …
     </script>
 
