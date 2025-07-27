@@ -61,7 +61,12 @@
                     </td>
                     <td>
                         <div class="btn-group-vertical btn-group-sm" role="group">
-                            <!-- Preview Quiz (available for all statuses) -->
+                            <!-- View/Edit Questions -->
+                            <button class="btn btn-outline-secondary btn-sm view-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">
+                                <i class="bi bi-list-ul"></i> Questions
+                            </button>
+                            
+                            <!-- Preview Quiz -->
                             <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
                                 <i class="bi bi-eye"></i> Preview
                             </button>
