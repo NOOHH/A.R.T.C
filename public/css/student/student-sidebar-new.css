@@ -243,6 +243,7 @@ body, html {
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* Prevent content from overflowing */
 }
 
 .modern-sidebar.active {
@@ -258,6 +259,7 @@ body, html {
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Allow flex item to shrink */
 }
 
 .sidebar-content::-webkit-scrollbar {
@@ -275,6 +277,28 @@ body, html {
 
 .sidebar-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
+}
+
+/* Navigation within sidebar content */
+.sidebar-content .sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Bottom Navigation */
+.sidebar-bottom-nav {
+  margin-top: auto;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0; /* Don't shrink the bottom nav */
+}
+
+.sidebar-bottom-nav .nav-item {
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-bottom-nav .nav-item:last-child {
+  margin-bottom: 0;
 }
 
 /* Navigation */

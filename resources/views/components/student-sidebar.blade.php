@@ -1,116 +1,137 @@
-<aside class="modern-sidebar col-lg-3 col-xl-2" id="modernSidebar">
+<!-- Professional Student Sidebar -->
+<aside class="professional-sidebar" id="studentSidebar">
+  <!-- Sidebar Header -->
   <div class="sidebar-header">
-    <button class="sidebar-toggle" id="sidebarToggle">
-      <i class="bi bi-arrow-left"></i>
-    </button>
     <div class="sidebar-brand">
-      <i class="bi bi-mortarboard"></i>
-      <span class="brand-title">Student Portal</span>
+      <div class="brand-icon">
+        <i class="bi bi-mortarboard-fill"></i>
+      </div>
+      <div class="brand-content">
+        <div class="brand-title">ARTC</div>
+        <div class="brand-subtitle">Student Portal</div>
+      </div>
     </div>
-    <button class="sidebar-close" id="sidebarClose">
-      <i class="bi bi-x-lg"></i>
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+      <i class="bi bi-chevron-left"></i>
     </button>
   </div>
 
-  <div class="sidebar-content">
-    <nav class="sidebar-nav">
-      <!-- Dashboard -->
-      <div class="nav-item">
-        <a href="{{ route('student.dashboard') }}"
-           class="nav-link @if(Route::currentRouteName()==='student.dashboard') active @endif">
-          <i class="bi bi-speedometer2"></i>
-          <span>Dashboard</span>
-        </a>
-      </div>
-      <!-- Calendar -->
-      <div class="nav-item">
-        <a href="{{ route('student.calendar') }}"
-           class="nav-link @if(Route::currentRouteName()==='student.calendar') active @endif">
-          <i class="bi bi-calendar3"></i>
-          <span>Calendar</span>
-        </a>
-      </div>
-      <!-- Enrolled Courses -->
-      <div class="nav-item">
-        <a href="{{ route('student.enrolled-courses') }}"
-           class="nav-link @if(Route::currentRouteName()==='student.enrolled-courses') active @endif">
-          <i class="bi bi-journal-bookmark"></i>
-          <span>My Enrolled Courses</span>
-        </a>
-      </div>
-      <!-- Meetings -->
-      <div class="nav-item">
-        <a href="{{ route('student.meetings') }}"
-           class="nav-link @if(Route::currentRouteName()==='student.meetings') active @endif">
-          <i class="bi bi-camera-video"></i>
-          <span>Meetings</span>
-        </a>
-      </div>
-      <!-- My Programs dropdown -->
-      <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'student.course')) active show @endif">
-        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#programsMenu">
-          <i class="bi bi-journal-bookmark"></i>
-          <span>My Programs</span>
-        </a>
-        <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'student.course')) show @endif" id="programsMenu">
-          <div class="submenu">
-            @if(isset($studentPrograms) && !empty($studentPrograms))
-              @forelse($studentPrograms as $program)
-                <a href="{{ route('student.course', $program['program_id']) }}"
-                   class="submenu-link @if(request()->route('courseId')==$program['program_id']) active @endif">
-                  <i class="bi bi-book"></i>
-                  <span class="program-info">
-                    <div class="program-name">{{ $program['program_name'] }}</div>
-                    <small class="program-details">{{ $program['package_name'] }}</small>
-                  </span>
-                </a>
-              @empty
-                <div class="submenu-link disabled">
-                  <i class="bi bi-info-circle"></i>
-                  <span>No programs available. Contact administrator.</span>
-                </div>
-              @endforelse
-            @else
-              <div class="submenu-link disabled">
-                <i class="bi bi-info-circle"></i>
-                <span>Loading programs...</span>
-              </div>
-            @endif
-          </div>
+  <!-- User Profile Section -->
+  <div class="sidebar-profile">
+    @php
+      $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+      $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+    @endphp
+    
+    <div class="profile-avatar">
+      @if($profilePhoto)
+        <img src="{{ asset('storage/profile-photos/' . $profilePhoto) }}" 
+             alt="Profile" 
+             class="avatar-image">
+      @else
+        <div class="avatar-placeholder">
+          {{ substr(session('user_firstname', 'S'), 0, 1) }}{{ substr(session('user_lastname', 'T'), 0, 1) }}
         </div>
-      </div>
-    </nav>
+      @endif
+    </div>
+    <div class="profile-info">
+      <div class="profile-name">{{ session('user_firstname') }} {{ session('user_lastname') }}</div>
+      <div class="profile-role">Student</div>
+    </div>
   </div>
 
-  <div class="user-profile">
-    <div class="user-info">
-      <div class="user-avatar">
-        {{ strtoupper(substr(optional($user)->name ?? 'S', 0, 1)) }}
-      </div>
-      <div class="user-details">
-        <h6>{{ optional($user)->name ?? 'Student' }}</h6>
-        <span>Student</span>
-      </div>
+  <!-- Navigation Menu -->
+  <nav class="sidebar-navigation">
+    <div class="nav-section">
+      <div class="nav-section-title">Main</div>
+      
+      <!-- Dashboard -->
+      <a href="{{ route('student.dashboard') }}" 
+         class="nav-item @if(Route::currentRouteName()==='student.dashboard') active @endif">
+        <div class="nav-icon">
+          <i class="bi bi-speedometer2"></i>
+        </div>
+        <span class="nav-text">Dashboard</span>
+      </a>
+
+      <!-- Calendar -->
+      <a href="{{ route('student.calendar') }}" 
+         class="nav-item @if(Route::currentRouteName()==='student.calendar') active @endif">
+        <div class="nav-icon">
+          <i class="bi bi-calendar-week"></i>
+        </div>
+        <span class="nav-text">Calendar</span>
+      </a>
+
+      <!-- Enrolled Courses -->
+      <a href="{{ route('student.enrolled-courses') }}" 
+         class="nav-item @if(Route::currentRouteName()==='student.enrolled-courses') active @endif">
+        <div class="nav-icon">
+          <i class="bi bi-journal-bookmark"></i>
+        </div>
+        <span class="nav-text">My Courses</span>
+      </a>
+
+      <!-- Meetings -->
+      <a href="{{ route('student.meetings') }}" 
+         class="nav-item @if(Route::currentRouteName()==='student.meetings') active @endif">
+        <div class="nav-icon">
+          <i class="bi bi-camera-video"></i>
+        </div>
+        <span class="nav-text">Meetings</span>
+      </a>
     </div>
-    <nav class="sidebar-nav">
-      <div class="nav-item">
-        <a href="{{ route('student.settings') }}"
-           class="nav-link @if(Route::currentRouteName()==='student.settings') active @endif">
+
+    <!-- Programs Section -->
+    @if(isset($studentPrograms) && !empty($studentPrograms))
+    <div class="nav-section">
+      <div class="nav-section-title">My Programs</div>
+      
+      @foreach($studentPrograms as $program)
+        <a href="{{ route('student.course', $program['program_id']) }}" 
+           class="nav-item program-item @if(request()->route('courseId')==$program['program_id']) active @endif">
+          <div class="nav-icon">
+            <i class="bi bi-book"></i>
+          </div>
+          <div class="nav-text">
+            <div class="program-name">{{ $program['program_name'] }}</div>
+            <small class="program-package">{{ $program['package_name'] }}</small>
+          </div>
+        </a>
+      @endforeach
+    </div>
+    @endif
+
+    <!-- Account Section -->
+    <div class="nav-section">
+      <div class="nav-section-title">Account</div>
+      
+      <!-- Settings -->
+      <a href="{{ route('student.settings') }}" 
+         class="nav-item @if(Route::currentRouteName()==='student.settings') active @endif">
+        <div class="nav-icon">
           <i class="bi bi-gear"></i>
-          <span>Settings</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="#" class="nav-link" onclick="document.getElementById('logout-form').submit();">
+        </div>
+        <span class="nav-text">Settings</span>
+      </a>
+
+      <!-- Logout -->
+      <a href="#" class="nav-item logout-item" onclick="document.getElementById('logout-form').submit();">
+        <div class="nav-icon">
           <i class="bi bi-box-arrow-right"></i>
-          <span>Logout</span>
-        </a>
-      </div>
-    </nav>
+        </div>
+        <span class="nav-text">Logout</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Sidebar Footer -->
+  <div class="sidebar-footer">
+    <div class="footer-text">
+      <small>ARTC © {{ date('Y') }}</small>
+    </div>
   </div>
 </aside>
 
-<!-- Floating arrow button for collapsed sidebar -->
-<button class="sidebar-reopen-btn" id="sidebarReopenBtn" style="display:none; position:fixed; top:50%; left:0; transform:translateY(-50%); z-index:2000; background:#fff; border:none; border-radius:0 8px 8px 0; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:8px 10px; cursor:pointer;">
-  <i class="bi bi-arrow-right" style="font-size:1.5rem; color:#2d1b69;"></i>
-</button>
+<!-- Sidebar Backdrop for Mobile -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>

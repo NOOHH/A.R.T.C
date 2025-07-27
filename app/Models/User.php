@@ -77,6 +77,38 @@ class User extends Authenticatable
     }
 
     /**
+     * Student relationship
+     */
+    public function student()
+    {
+        return $this->hasOne(Student::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Professor relationship
+     */
+    public function professor()
+    {
+        return $this->hasOne(Professor::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Admin relationship
+     */
+    public function admin()
+    {
+        return $this->hasOne(Admin::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Director relationship
+     */
+    public function director()
+    {
+        return $this->hasOne(Director::class, 'user_id', 'user_id');
+    }
+
+    /**
      * Sent messages relationship
      */
     public function sentMessages()

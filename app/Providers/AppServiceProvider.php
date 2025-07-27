@@ -27,5 +27,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register FormRequirement observer for automatic column management
         FormRequirement::observe(FormRequirementObserver::class);
+        
+        // Register view composer for student sidebar
+        view()->composer('components.student-sidebar', \App\Http\View\Composers\StudentSidebarComposer::class);
     }
 }

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <h2 class="text-center mb-4">A.R.T.C Search System Test</h2>
+                
+                <!-- Mock authentication for testing -->
+                <div class="alert alert-info">
+                    <strong>Test Mode:</strong> Simulating admin user for testing purposes
+                </div>
+                
+                <!-- Search Component -->
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <div class="input-group">
+                            <span class="input-group-text search-icon">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   id="universalSearchInput" 
+                                   class="form-control search-input" 
+                                   placeholder="Search students, professors, programs..."
+                                   autocomplete="off"
+                                   onkeyup="handleSearchInput()"
+                                   onfocus="showSearchDropdown()"
+                                   onblur="hideSearchDropdown()">
+                            
+                            <!-- Search Type Selector -->
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="searchTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span id="searchTypeLabel">All</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="setSearchType('students')">Students Only</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="setSearchType('professors')">Professors Only</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="setSearchType('programs')">Programs Only</a></li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Advanced Search Button -->
+                            <button class="btn btn-outline-primary" type="button" onclick="showAdvancedSearch()">
+                                <i class="bi bi-funnel"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Search Results Dropdown -->
+                        <div id="searchResultsDropdown" class="search-dropdown" style="display: none;">
+                            <div class="search-dropdown-content">
+                                <!-- Search results -->
+                                <div id="searchResults" class="search-results">
+                                    <!-- Dynamic results -->
+                                </div>
+                                
+                                <!-- No results message -->
+                                <div id="noResults" class="no-results text-center py-3" style="display: none;">
+                                    <i class="bi bi-search text-muted mb-2" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mb-0">No results found</p>
+                                </div>
+                                
+                                <!-- Loading indicator -->
+                                <div id="searchLoading" class="search-loading text-center py-3" style="display: none;">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Searching...</span>
+                                    </div>
+                                    <p class="text-muted mb-0 mt-2">Searching...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Test Results Display -->
+                <div class="mt-4">
+                    <h5>Test Features:</h5>
+                    <ul>
+                        <li>Type in the search box to search for users and programs</li>
+                        <li>Use the dropdown to filter by type (Students, Professors, Programs)</li>
+                        <li>Click on results to see profile/program details</li>
+                        <li>Test with names like "John", "admin", "test", or program names</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-result-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .search-result-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .search-result-info {
+            flex: 1;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .search-result-email {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .search-result-role {
+            margin-right: 10px;
+        }
+
+        .search-result-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .search-result-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+    </style>
+    
+    <script>
+        let searchTimeout;
+        let currentSearchType = 'all';
+        let isSearchFocused = false;
+
+        // Mock current user for testing
+        const mockCurrentUser = {
+            user_id: 1,
+            role: 'admin',
+            user_firstname: 'Test',
+            user_lastname: 'Admin'
+        };
+
+        // Handle search input
+        function handleSearchInput() {
+            const query = document.getElementById('universalSearchInput').value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                hideSearchDropdown();
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        }
+
+        // Perform search
+        function performSearch(query) {
+            if (!query) return;
+            
+            showSearchLoading();
+            
+            const params = new URLSearchParams({
+                query: query,
+                type: currentSearchType,
+                limit: 10
+            });
+            
+            fetch(`/search?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideSearchLoading();
+                    if (data.success) {
+                        displaySearchResults(data.results);
+                    } else {
+                        showNoResults();
+                    }
+                })
+                .catch(error => {
+                    hideSearchLoading();
+                    console.error('Search error:', error);
+                    showNoResults();
+                });
+        }
+
+        // Display search results
+        function displaySearchResults(results) {
+            const container = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                showNoResults();
+                return;
+            }
+            
+            container.innerHTML = results.map(result => {
+                if (result.type === 'program') {
+                    return `
+                        <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'program')">
+                            <div class="search-result-icon">
+                                <i class="bi bi-collection text-primary" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="search-result-info">
+                                <div class="search-result-name">${result.name}</div>
+                                <div class="search-result-email">${result.description}</div>
+                                <small class="text-muted">
+                                    ${result.modules_count} modules • ${result.courses_count} courses
+                                </small>
+                            </div>
+                            <div class="search-result-role">
+                                <span class="badge bg-info">Program</span>
+                            </div>
+                            <div class="search-result-actions">
+                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); alert('View Program: ' + '${result.name}')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const roleClass = getRoleClass(result.role);
+                    
+                    return `
+                        <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'user')">
+                            <img src="${result.avatar || 'https://via.placeholder.com/40'}" alt="${result.name}" class="search-result-avatar">
+                            <div class="search-result-info">
+                                <div class="search-result-name">${result.name}</div>
+                                <div class="search-result-email">${result.email}</div>
+                                ${result.programs && result.programs.length > 0 ? 
+                                    `<small class="text-muted">Programs: ${result.programs.join(', ')}</small>` : ''}
+                            </div>
+                            <div class="search-result-role">
+                                <span class="badge bg-${roleClass}">${result.role}</span>
+                                <br><small class="text-muted">${result.status}</small>
+                            </div>
+                            <div class="search-result-actions">
+                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); alert('View Profile: ' + '${result.name}')">
+                                    <i class="bi bi-person"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+            
+            showSearchDropdown();
+        }
+
+        // Get role class for badge styling
+        function getRoleClass(role) {
+            switch(role.toLowerCase()) {
+                case 'student': return 'primary';
+                case 'professor': return 'success';
+                case 'admin': return 'warning';
+                case 'director': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        // Select search result
+        function selectSearchResult(id, type) {
+            hideSearchDropdown();
+            
+            if (type === 'program') {
+                alert(`Selected program ID: ${id}\nThis would show program details with modules and courses.`);
+            } else {
+                alert(`Selected user ID: ${id}\nThis would show user profile with enrollment details.`);
+            }
+        }
+
+        // Set search type
+        function setSearchType(type) {
+            currentSearchType = type;
+            const labels = {
+                'all': 'All',
+                'students': 'Students',
+                'professors': 'Professors',
+                'programs': 'Programs'
+            };
+            
+            document.getElementById('searchTypeLabel').textContent = labels[type] || 'All';
+            
+            // Re-perform search if there's a query
+            const query = document.getElementById('universalSearchInput').value.trim();
+            if (query.length >= 2) {
+                performSearch(query);
+            }
+        }
+
+        // Show/hide search dropdown
+        function showSearchDropdown() {
+            isSearchFocused = true;
+            document.getElementById('searchResultsDropdown').style.display = 'block';
+        }
+
+        function hideSearchDropdown() {
+            setTimeout(() => {
+                if (!isSearchFocused) {
+                    document.getElementById('searchResultsDropdown').style.display = 'none';
+                }
+                isSearchFocused = false;
+            }, 200);
+        }
+
+        // Show loading
+        function showSearchLoading() {
+            document.getElementById('searchLoading').style.display = 'block';
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('noResults').style.display = 'none';
+        }
+
+        // Hide loading
+        function hideSearchLoading() {
+            document.getElementById('searchLoading').style.display = 'none';
+        }
+
+        // Show no results
+        function showNoResults() {
+            document.getElementById('noResults').style.display = 'block';
+            document.getElementById('searchResults').innerHTML = '';
+            showSearchDropdown();
+        }
+
+        // Advanced search placeholder
+        function showAdvancedSearch() {
+            alert('Advanced search would open a modal with filters for role, status, program, etc.');
+        }
+
+        // Set up outside click handler
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                hideSearchDropdown();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -141,13 +141,9 @@
         </div>
 
         <div class="header-center">
-            <!-- Global Search -->
+            <!-- Universal Search -->
             <div class="search-container">
-                <div class="search-wrapper">
-                    <i class="bi bi-search search-icon"></i>
-                    <input type="text" class="search-input" placeholder="Search students, meetings, programs...">
-                    <div class="search-results-dropdown" id="searchResults"></div>
-                </div>
+                @include('components.universal-search')
             </div>
         </div>
 

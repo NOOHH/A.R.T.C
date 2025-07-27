@@ -152,6 +152,7 @@ class AdminProgramController extends Controller
             'program_description' => $request->program_description,
             'created_by_admin_id' => Auth::user()->admin_id ?? 1,
             'is_archived' => false,
+            'is_active' => true,
         ]);
 
         return redirect()
@@ -250,6 +251,7 @@ class AdminProgramController extends Controller
                     'program_description' => $programData['program_description'] ?? null,
                     'created_by_admin_id' => $adminId,
                     'is_archived' => false,
+                    'is_active' => true,
                 ]);
                 $createdCount++;
             }

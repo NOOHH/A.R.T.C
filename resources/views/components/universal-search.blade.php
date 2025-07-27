@@ -23,9 +23,21 @@
                     <span id="searchTypeLabel">All</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All Users</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All</a></li>
                     <li><a class="dropdown-item" href="#" onclick="setSearchType('students')">Students Only</a></li>
                     <li><a class="dropdown-item" href="#" onclick="setSearchType('professors')">Professors Only</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('programs')">Programs Only</a></li>
+                </ul>
+            </div>
+            @elseif(auth()->check() && auth()->user()->role === 'professor')
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="searchTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="searchTypeLabel">All</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('all')">All</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('students')">Students Only</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setSearchType('programs')">Programs Only</a></li>
                 </ul>
             </div>
             @endif
@@ -243,6 +255,18 @@
     height: 40px;
     border-radius: 50%;
     margin-right: 15px;
+    object-fit: cover;
+}
+
+.search-result-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
 }
 
 .search-result-info {
@@ -365,24 +389,50 @@ function displaySearchResults(results) {
     }
     
     container.innerHTML = results.map(result => {
-        const roleClass = result.role === 'student' ? 'primary' : 'success';
-        const actions = generateActionButtons(result);
-        
-        return `
-            <div class="search-result-item" onclick="selectSearchResult(${result.id})">
-                <img src="${result.avatar}" alt="${result.name}" class="search-result-avatar">
-                <div class="search-result-info">
-                    <div class="search-result-name">${result.name}</div>
-                    <div class="search-result-email">${result.email}</div>
+        if (result.type === 'program') {
+            return `
+                <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'program')">
+                    <div class="search-result-icon">
+                        <i class="bi bi-collection text-primary" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div class="search-result-info">
+                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-email">${result.description}</div>
+                        <small class="text-muted">
+                            ${result.modules_count} modules • ${result.courses_count} courses
+                        </small>
+                    </div>
+                    <div class="search-result-role">
+                        <span class="badge bg-info">Program</span>
+                    </div>
+                    <div class="search-result-actions">
+                        ${generateProgramActionButtons(result)}
+                    </div>
                 </div>
-                <div class="search-result-role">
-                    <span class="badge bg-${roleClass}">${result.role}</span>
+            `;
+        } else {
+            const roleClass = getRoleClass(result.role);
+            const actions = generateActionButtons(result);
+            
+            return `
+                <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'user')">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <div class="search-result-info">
+                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-email">${result.email}</div>
+                        ${result.programs && result.programs.length > 0 ? 
+                            `<small class="text-muted">Programs: ${result.programs.join(', ')}</small>` : ''}
+                    </div>
+                    <div class="search-result-role">
+                        <span class="badge bg-${roleClass}">${result.role}</span>
+                        <br><small class="text-muted">${result.status}</small>
+                    </div>
+                    <div class="search-result-actions">
+                        ${actions}
+                    </div>
                 </div>
-                <div class="search-result-actions">
-                    ${actions}
-                </div>
-            </div>
-        `;
+            `;
+        }
     }).join('');
     
     showSearchDropdown();
@@ -394,18 +444,18 @@ function generateActionButtons(result) {
     let actions = [];
     
     // View profile action
-    actions.push(`<button class="btn btn-outline-primary btn-sm" onclick="viewProfile(${result.id}, '${result.role}')">
+    actions.push(`<button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewProfile('${result.id}', '${result.type}')">
         <i class="bi bi-person"></i>
     </button>`);
     
     // Chat action
-    actions.push(`<button class="btn btn-outline-success btn-sm" onclick="startChat(${result.id})">
+    actions.push(`<button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); startChat('${result.id}')">
         <i class="bi bi-chat"></i>
     </button>`);
     
     // Admin actions
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'director')) {
-        actions.push(`<button class="btn btn-outline-info btn-sm" onclick="viewDetails(${result.id})">
+        actions.push(`<button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); viewDetails('${result.id}', '${result.type}')">
             <i class="bi bi-info-circle"></i>
         </button>`);
     }
@@ -413,24 +463,288 @@ function generateActionButtons(result) {
     return actions.join('');
 }
 
+// Generate action buttons for programs
+function generateProgramActionButtons(result) {
+    let actions = [];
+    
+    // View program details
+    actions.push(`<button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewProgram('${result.id}')">
+        <i class="bi bi-eye"></i>
+    </button>`);
+    
+    // View modules/courses
+    actions.push(`<button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); showProgramModal('${result.id}')">
+        <i class="bi bi-list-ul"></i>
+    </button>`);
+    
+    return actions.join('');
+}
+
+// Get role class for badge styling
+function getRoleClass(role) {
+    switch(role.toLowerCase()) {
+        case 'student': return 'primary';
+        case 'professor': return 'success';
+        case 'admin': return 'warning';
+        case 'director': return 'danger';
+        default: return 'secondary';
+    }
+}
+
 // Select search result
-function selectSearchResult(userId) {
-    // Handle result selection
+function selectSearchResult(id, type) {
     hideSearchDropdown();
-    // You can implement specific actions here
+    
+    if (type === 'program') {
+        showProgramModal(id);
+    } else {
+        showUserModal(id);
+    }
 }
 
 // View profile
-function viewProfile(userId, role) {
-    const urls = {
-        'student': `/student/profile/${userId}`,
-        'professor': `/professor/profile/${userId}`,
-        'admin': `/admin/profile/${userId}`
-    };
-    
-    if (urls[role]) {
-        window.open(urls[role], '_blank');
+function viewProfile(id, type) {
+    if (type === 'program') {
+        showProgramModal(id);
+    } else {
+        showUserModal(id);
     }
+}
+
+// Show user profile modal
+function showUserModal(userId) {
+    fetch(`/search/profile?user_id=${userId}&type=user`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayUserProfileModal(data.profile);
+            } else {
+                alert('Failed to load user profile');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user profile:', error);
+            alert('Failed to load user profile');
+        });
+}
+
+// Show program details modal
+function showProgramModal(programId) {
+    fetch(`/search/profile?user_id=${programId}&type=program`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayProgramModal(data.program);
+            } else {
+                alert('Failed to load program details');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading program details:', error);
+            alert('Failed to load program details');
+        });
+}
+
+// Display user profile modal
+function displayUserProfileModal(profile) {
+    const modalContent = `
+        <div class="modal fade" id="userProfileModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-person-circle me-2"></i>User Profile
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <img src="${profile.avatar || '/images/default-avatar.png'}" 
+                                     alt="${profile.name}" 
+                                     class="rounded-circle mb-3" 
+                                     width="120" height="120">
+                                <h5>${profile.name}</h5>
+                                <span class="badge bg-${getRoleClass(profile.role)} mb-2">${profile.role}</span>
+                                <p class="text-muted">${profile.status}</p>
+                            </div>
+                            <div class="col-md-8">
+                                <h6>Contact Information</h6>
+                                <p><strong>Email:</strong> ${profile.email}</p>
+                                <p><strong>Joined:</strong> ${new Date(profile.created_at).toLocaleDateString()}</p>
+                                
+                                ${profile.enrollments ? `
+                                    <h6 class="mt-4">Program Enrollments</h6>
+                                    <div class="list-group">
+                                        ${profile.enrollments.map(enrollment => `
+                                            <div class="list-group-item">
+                                                <strong>${enrollment.program}</strong>
+                                                <br><small class="text-muted">Enrolled: ${new Date(enrollment.enrolled_at).toLocaleDateString()}</small>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" onclick="startChat('${profile.id}')">
+                            <i class="bi bi-chat me-2"></i>Start Chat
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('userProfileModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+    modal.show();
+}
+
+// Display program modal
+function displayProgramModal(program) {
+    const modalContent = `
+        <div class="modal fade" id="programModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-collection me-2"></i>${program.name}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>Program Description</h6>
+                                <p>${program.description || 'No description available'}</p>
+                                
+                                <h6 class="mt-4">Modules & Courses</h6>
+                                <div class="accordion" id="modulesAccordion">
+                                    ${program.modules.map((module, index) => `
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="heading${index}">
+                                                <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                                        type="button" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#collapse${index}">
+                                                    ${module.name}
+                                                    <span class="badge bg-secondary ms-2">${module.courses.length} courses</span>
+                                                </button>
+                                            </h2>
+                                            <div id="collapse${index}" 
+                                                 class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                                 data-bs-parent="#modulesAccordion">
+                                                <div class="accordion-body">
+                                                    <p class="text-muted">${module.description || 'No description available'}</p>
+                                                    <div class="row">
+                                                        ${module.courses.map(course => `
+                                                            <div class="col-md-6 mb-2">
+                                                                <div class="card">
+                                                                    <div class="card-body p-3">
+                                                                        <h6 class="card-title">${course.name}</h6>
+                                                                        <p class="card-text small text-muted">${course.description || 'No description'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Program Statistics</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Total Modules:</span>
+                                            <span class="badge bg-primary">${program.total_modules}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Total Courses:</span>
+                                            <span class="badge bg-info">${program.total_courses}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Enrolled Students:</span>
+                                            <span class="badge bg-success">${program.total_students}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Created:</span>
+                                            <small class="text-muted">${new Date(program.created_at).toLocaleDateString()}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                ${program.enrolled_students && program.enrolled_students.length > 0 ? `
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Recent Students</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            ${program.enrolled_students.slice(0, 5).map(student => `
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <img src="/images/default-avatar.png" 
+                                                         alt="${student.name}" 
+                                                         class="rounded-circle me-2" 
+                                                         width="30" height="30">
+                                                    <div>
+                                                        <small class="fw-bold">${student.name}</small>
+                                                        <br><small class="text-muted">${student.email}</small>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                            ${program.enrolled_students.length > 5 ? 
+                                                `<small class="text-muted">...and ${program.enrolled_students.length - 5} more</small>` : ''}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="viewProgram('${program.id}')">
+                            <i class="bi bi-eye me-2"></i>View Full Program
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('programModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('programModal'));
+    modal.show();
+}
+
+// View program (redirect to program page)
+function viewProgram(programId) {
+    window.open(`/admin/programs/${programId}`, '_blank');
 }
 
 // Start chat
@@ -452,8 +766,14 @@ function viewDetails(userId) {
 // Set search type
 function setSearchType(type) {
     currentSearchType = type;
-    document.getElementById('searchTypeLabel').textContent = type === 'all' ? 'All' : 
-        type === 'students' ? 'Students' : 'Professors';
+    const labels = {
+        'all': 'All',
+        'students': 'Students',
+        'professors': 'Professors',
+        'programs': 'Programs'
+    };
+    
+    document.getElementById('searchTypeLabel').textContent = labels[type] || 'All';
     
     // Re-perform search if there's a query
     const query = document.getElementById('universalSearchInput').value.trim();

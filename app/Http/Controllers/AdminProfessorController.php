@@ -435,4 +435,32 @@ class AdminProfessorController extends Controller
 
         return back()->with('success', 'Meeting deleted successfully!');
     }
+
+    /**
+     * Show professor profile (for search modal)
+     */
+    public function showProfile($id)
+    {
+        $user = \App\Models\User::where('user_id', $id)->where('role', 'professor')->firstOrFail();
+        $professor = Professor::where('user_id', $id)->first();
+        
+        $profile = [
+            'id' => $user->user_id,
+            'name' => $user->user_firstname . ' ' . $user->user_lastname,
+            'email' => $user->email,
+            'role' => 'Professor',
+            'avatar' => asset('images/default-avatar.png'),
+            'status' => $user->is_online ? 'Online' : 'Offline',
+            'created_at' => $user->created_at,
+            'professor_data' => $professor ? [
+                'referral_code' => $professor->referral_code,
+                'programs' => $professor->programs->pluck('program_name')->toArray()
+            ] : null
+        ];
+
+        return response()->json([
+            'success' => true,
+            'profile' => $profile
+        ]);
+    }
 }

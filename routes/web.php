@@ -1242,6 +1242,21 @@ Route::get('/search', [SearchController::class, 'search'])->name('search');
 Route::get('/search/advanced', [SearchController::class, 'advancedSearch'])->name('search.advanced');
 Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
 
+// New Universal Search System routes
+Route::get('/search/universal', [SearchController::class, 'universalSearch'])->name('search.universal');
+Route::get('/search/profile', [SearchController::class, 'getProfile'])->name('search.profile');
+
+// Profile pages for search results
+Route::get('/profile/user/{id}', [SearchController::class, 'showUserProfile'])->name('profile.user');
+Route::get('/profile/program/{id}', [SearchController::class, 'showProgramProfile'])->name('profile.program');
+
+// API routes for AJAX search
+Route::prefix('api/search')->group(function () {
+    Route::get('/', [SearchController::class, 'universalSearch'])->name('api.search');
+    Route::get('/profile', [SearchController::class, 'getProfile'])->name('api.search.profile');
+    Route::get('/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
+});
+
 // Homepage customization routes
 Route::get('/admin/settings/homepage', [AdminSettingsController::class, 'getHomepageSettings']);
 Route::post('/admin/settings/homepage', [AdminSettingsController::class, 'saveHomepageSettings']);
@@ -1449,6 +1464,9 @@ Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController:
 
 Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
      ->name('admin.professors.destroy');
+
+Route::get('/admin/professors/{id}/profile', [AdminProfessorController::class, 'showProfile'])
+     ->name('admin.professors.profile');
 
 Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
      ->name('admin.professors.video.update');

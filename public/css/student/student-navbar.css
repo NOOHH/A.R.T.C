@@ -118,17 +118,62 @@
 
 .notification-icon,
 .profile-icon {
-  font-size: 1.2rem;
+ 
   color: #2d1b69;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notification-icon:hover,
 .profile-icon:hover {
   background: rgba(45, 27, 105, 0.1);
+}
+
+/* Profile Image Styles - Professional Round Design */
+.navbar-profile-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.navbar-profile-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: #2d1b69;
+}
+
+.navbar-profile-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d1b69 0%, #6f42c1 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.navbar-profile-placeholder:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: #2d1b69;
 }
 
 /* Sidebar Toggle Button */

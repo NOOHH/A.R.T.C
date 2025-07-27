@@ -37,7 +37,8 @@
   <!-- Fonts & CSS -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="{{ asset('css/student/student-dashboard-layout.css') }}" rel="stylesheet">
-  <link href="{{ asset('css/student/student-sidebar.css') }}" rel="stylesheet">
+  <link href="{{ asset('css/student/student-sidebar-professional.css') }}" rel="stylesheet">
+  <link href="{{ asset('css/student/student-navbar.css') }}" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -92,25 +93,82 @@
 </head>
 <body>
   <div class="student-container">
-    {{-- Top Header --}}
-    @include('components.student-navbar')
+    {{-- Professional Sidebar --}}
+    @if(!isset($hideSidebar) || !$hideSidebar)
+      @include('components.student-sidebar')
+    @endif
 
-    {{-- Main Content --}}
-    <div class="main-content">
-      <div class="main-wrapper">
-        <div class="content-below-search">
-          {{-- Conditional Sidebar --}}
-          @if(!isset($hideSidebar) || !$hideSidebar)
-            @include('components.student-sidebar')
-          @endif
-          
-          {{-- Main Content --}}
-          <div class="content-wrapper">
-            @yield('content')
-          </div>
-        </div>
+    {{-- Main Content Area --}}
+    <div class="main-content-area">
+      {{-- Top Header --}}
+      @include('components.student-navbar')
+
+      {{-- Page Content --}}
+      <div class="content-wrapper">
+        @yield('content')
       </div>
     </div>
+
+    {{-- Floating Course Toggle (Only shown when sidebar is hidden) --}}
+    @if(isset($hideSidebar) && $hideSidebar)
+      <div class="floating-course-toggle" id="floatingCourseToggle">
+        <button class="course-toggle-btn" id="courseToggleBtn" title="Show Navigation">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+      
+      {{-- Compact Course Sidebar (Hidden by default) --}}
+      <div class="compact-course-sidebar" id="compactCourseSidebar">
+        <div class="compact-sidebar-header">
+          <div class="compact-brand">
+            <i class="bi bi-mortarboard-fill"></i>
+            <span>ARTC</span>
+          </div>
+          <button class="compact-close-btn" id="compactCloseBtn">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        <div class="compact-sidebar-content">
+          <div class="compact-nav-section">
+            <a href="{{ route('student.dashboard') }}" class="compact-nav-item">
+              <i class="bi bi-speedometer2"></i>
+              <span>Dashboard</span>
+            </a>
+            <a href="{{ route('student.calendar') }}" class="compact-nav-item">
+              <i class="bi bi-calendar-week"></i>
+              <span>Calendar</span>
+            </a>
+            <a href="{{ route('student.enrolled-courses') }}" class="compact-nav-item">
+              <i class="bi bi-journal-bookmark"></i>
+              <span>My Courses</span>
+            </a>
+            <a href="{{ route('student.meetings') }}" class="compact-nav-item">
+              <i class="bi bi-camera-video"></i>
+              <span>Meetings</span>
+            </a>
+          </div>
+          
+          @if(isset($studentPrograms) && !empty($studentPrograms))
+          <div class="compact-nav-section">
+            <div class="compact-section-title">My Programs</div>
+            @foreach($studentPrograms as $program)
+              <a href="{{ route('student.course', $program['program_id']) }}" 
+                 class="compact-nav-item program-item">
+                <i class="bi bi-book"></i>
+                <div class="compact-program-info">
+                  <div class="compact-program-name">{{ $program['program_name'] }}</div>
+                  <small class="compact-program-package">{{ $program['package_name'] }}</small>
+                </div>
+              </a>
+            @endforeach
+          </div>
+          @endif
+        </div>
+      </div>
+      
+      {{-- Compact Sidebar Backdrop --}}
+      <div class="compact-sidebar-backdrop" id="compactSidebarBackdrop"></div>
+    @endif
   </div>
 
   {{-- Hidden Logout Form --}}
@@ -121,39 +179,191 @@
   @stack('scripts')
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- Sidebar Toggle JavaScript -->
+  <!-- Professional Sidebar JavaScript -->
   <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  const sidebar       = document.getElementById('modernSidebar');
-  const overlay       = document.getElementById('sidebarOverlay');
+  const sidebar = document.getElementById('studentSidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const toggleBtns = document.querySelectorAll('#sidebarToggleBtn, .sidebar-toggle-btn');
+  const mainContentArea = document.querySelector('.main-content-area');
 
-  sidebarToggle.addEventListener('click', () => {
-    if (window.innerWidth >= 768) {
-      sidebar.classList.toggle('collapsed');
+  // Course page compact sidebar elements
+  const floatingToggle = document.getElementById('floatingCourseToggle');
+  const courseToggleBtn = document.getElementById('courseToggleBtn');
+  const compactSidebar = document.getElementById('compactCourseSidebar');
+  const compactBackdrop = document.getElementById('compactSidebarBackdrop');
+  const compactCloseBtn = document.getElementById('compactCloseBtn');
+
+  // Toggle sidebar function
+  function toggleSidebar() {
+    if (window.innerWidth >= 769) {
+      // Desktop: Toggle collapsed state
+      if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+        
+        // Update content margin
+        if (sidebar.classList.contains('collapsed')) {
+          mainContentArea.style.marginLeft = '60px';
+        } else {
+          mainContentArea.style.marginLeft = '280px';
+        }
+      }
     } else {
-      sidebar.classList.toggle('active');
-      overlay && overlay.classList.toggle('active');
-      document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      // Mobile: Toggle visibility
+      if (sidebar) {
+        sidebar.classList.toggle('mobile-open');
+      }
+      if (backdrop) {
+        backdrop.classList.toggle('active');
+      }
+      
+      // Prevent body scroll when sidebar is open
+      if (sidebar && sidebar.classList.contains('mobile-open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  }
+
+  // Close sidebar (mobile)
+  function closeSidebar() {
+    if (sidebar) {
+      sidebar.classList.remove('mobile-open');
+    }
+    if (backdrop) {
+      backdrop.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+  }
+
+  // Compact course sidebar functions
+  function toggleCompactSidebar() {
+    if (compactSidebar) {
+      compactSidebar.classList.toggle('active');
+    }
+    if (compactBackdrop) {
+      compactBackdrop.classList.toggle('active');
+    }
+    
+    // Prevent body scroll when compact sidebar is open
+    if (compactSidebar && compactSidebar.classList.contains('active')) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
+
+  function closeCompactSidebar() {
+    if (compactSidebar) {
+      compactSidebar.classList.remove('active');
+    }
+    if (compactBackdrop) {
+      compactBackdrop.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+  }
+
+  // Event listeners for main sidebar
+  toggleBtns.forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebar();
+      });
     }
   });
 
-  overlay && overlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-    document.body.style.overflow = '';
+  // Backdrop click to close (mobile)
+  if (backdrop) {
+    backdrop.addEventListener('click', closeSidebar);
+  }
+
+  // Event listeners for compact course sidebar
+  if (courseToggleBtn) {
+    courseToggleBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleCompactSidebar();
+    });
+  }
+
+  if (compactCloseBtn) {
+    compactCloseBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeCompactSidebar();
+    });
+  }
+
+  if (compactBackdrop) {
+    compactBackdrop.addEventListener('click', closeCompactSidebar);
+  }
+
+  // Handle window resize
+  window.addEventListener('resize', function() {
+    if (window.innerWidth >= 769) {
+      // Desktop mode
+      if (sidebar) {
+        sidebar.classList.remove('mobile-open');
+      }
+      if (backdrop) {
+        backdrop.classList.remove('active');
+      }
+      document.body.style.overflow = '';
+      
+      // Set proper margin
+      if (sidebar && sidebar.classList.contains('collapsed')) {
+        mainContentArea.style.marginLeft = '60px';
+      } else if (sidebar) {
+        mainContentArea.style.marginLeft = '280px';
+      } else {
+        mainContentArea.style.marginLeft = '0'; // Course pages without sidebar
+      }
+    } else {
+      // Mobile mode
+      if (sidebar) {
+        sidebar.classList.remove('collapsed');
+      }
+      mainContentArea.style.marginLeft = '0';
+    }
+    
+    // Close compact sidebar on resize
+    closeCompactSidebar();
   });
 
-  // Optional: clean up on resize
-  window.addEventListener('resize', () => {
-    overlay && overlay.classList.remove('active');
-    sidebar.classList.remove('active');
-    document.body.style.overflow = '';
+  // Initialize proper layout on load
+  if (window.innerWidth >= 769) {
+    if (sidebar) {
+      mainContentArea.style.marginLeft = '280px';
+    } else {
+      mainContentArea.style.marginLeft = '0'; // Course pages without sidebar
+    }
+  } else {
+    mainContentArea.style.marginLeft = '0';
+  }
+
+  // Add tooltips for collapsed state
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    const textSpan = item.querySelector('.nav-text');
+    if (textSpan) {
+      const text = textSpan.textContent.trim();
+      item.setAttribute('data-tooltip', text);
+    }
+  });
+
+  // Close compact sidebar when clicking on navigation items
+  const compactNavItems = document.querySelectorAll('.compact-nav-item');
+  compactNavItems.forEach(item => {
+    item.addEventListener('click', function() {
+      closeCompactSidebar();
+    });
   });
 });
-
   </script>
   
-  @include('components.global-chat')
+  <!-- Global chat is already included in student-navbar component, no need to duplicate -->
 </body>
 </html>
