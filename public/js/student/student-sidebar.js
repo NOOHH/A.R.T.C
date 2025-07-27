@@ -1,68 +1,68 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const sidebar       = document.getElementById('modernSidebar');
-  const toggleBtn     = document.getElementById('sidebarToggle');
-  const closeBtn      = document.getElementById('sidebarClose');
-  const reopenBtn     = document.getElementById('sidebarReopenBtn');
+  const sidebar = document.getElementById('studentSidebar');
+  const toggleBtn = document.getElementById('sidebarToggleBtn');
+  const backdrop = document.getElementById('sidebarBackdrop');
   
-  // Create overlay for mobile
-  const overlay = document.createElement('div');
-  overlay.className = 'sidebar-overlay';
-  document.body.appendChild(overlay);
-
   // Helper to check desktop vs mobile break
-  const isDesktop = () => window.innerWidth >= 992;
+  const isDesktop = () => window.innerWidth >= 769;
 
   // Toggle action
-  function openOrCollapse() {
+  function toggleSidebar() {
     if (isDesktop()) {
       // collapse/expand on desktop
       sidebar.classList.toggle('collapsed');
-      reopenBtn.style.display = sidebar.classList.contains('collapsed') ? 'block' : 'none';
     } else {
-      // slide‐in on mobile
-      sidebar.classList.add('active');
-      overlay.classList.add('active');
+      // slide-in on mobile
+      sidebar.classList.toggle('mobile-open');
+      if (backdrop) {
+        backdrop.classList.toggle('active');
+      }
     }
   }
 
-  // Close action
+  // Close sidebar on mobile
   function closeSidebar() {
-    if (isDesktop()) {
-      sidebar.classList.toggle('collapsed');
-      reopenBtn.style.display = sidebar.classList.contains('collapsed') ? 'block' : 'none';
-    } else {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
+    if (!isDesktop()) {
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) {
+        backdrop.classList.remove('active');
+      }
     }
   }
 
-  toggleBtn.addEventListener('click', openOrCollapse);
-  closeBtn.addEventListener('click', closeSidebar);
+  // Event listeners
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', toggleSidebar);
+  }
   
-  // Reopen button only for desktop collapsed state
-  reopenBtn.addEventListener('click', () => {
-    sidebar.classList.remove('collapsed');
-    reopenBtn.style.display = 'none';
-  });
+  if (backdrop) {
+    backdrop.addEventListener('click', closeSidebar);
+  }
 
-  // Clicking overlay hides mobile sidebar
-  overlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-  });
-
-  // On window resize, ensure overlay/sidebar states reset
+  // On window resize, ensure proper state
   window.addEventListener('resize', () => {
     if (isDesktop()) {
-      overlay.classList.remove('active');
-      sidebar.classList.remove('active');
+      if (backdrop) {
+        backdrop.classList.remove('active');
+      }
+      sidebar.classList.remove('mobile-open');
     } else {
-      // optionally collapse desktop state when switching to mobile
-      sidebar.classList.remove('collapsed');
-      reopenBtn.style.display = 'none';
+      // Keep collapsed state when switching to mobile
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) {
+        backdrop.classList.remove('active');
+      }
     }
   });
+
+  // Initialize sidebar state based on screen size
+  if (isDesktop()) {
+    sidebar.classList.remove('mobile-open');
+    if (backdrop) {
+      backdrop.classList.remove('active');
+    }
+  }
 });
 </script>

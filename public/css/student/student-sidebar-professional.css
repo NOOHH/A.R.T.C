@@ -4,7 +4,7 @@
 
 :root {
   --sidebar-width: 280px;
-  --sidebar-collapsed-width: 60px;
+  --sidebar-collapsed-width: 70px;
   --sidebar-bg: #1a1a1a;
   --sidebar-text: #e0e0e0;
   --sidebar-text-muted: #9ca3af;
@@ -28,8 +28,9 @@
   box-shadow: var(--sidebar-shadow);
   transform: translateX(0);
   transition: var(--transition-smooth);
-  z-index: 1000;
+  z-index: 9999;
   overflow: hidden;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -60,12 +61,29 @@
   min-height: 80px;
 }
 
+.professional-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 1.5rem 0.5rem;
+  position: relative;
+}
+
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex: 1;
   min-width: 0;
+}
+
+.professional-sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  gap: 0;
+  flex: none;
+  width: 100%;
+  position: relative;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
 }
 
 .brand-icon {
@@ -77,6 +95,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.professional-sidebar.collapsed .brand-icon {
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .brand-icon i {
@@ -95,6 +120,7 @@
   opacity: 0;
   width: 0;
   overflow: hidden;
+  display: none;
 }
 
 .brand-title {
@@ -124,6 +150,14 @@
   cursor: pointer;
   transition: var(--transition-smooth);
   flex-shrink: 0;
+  
+}
+
+.professional-sidebar.collapsed .sidebar-toggle-btn {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .sidebar-toggle-btn:hover {
@@ -132,8 +166,17 @@
   transform: scale(1.05);
 }
 
+.professional-sidebar.collapsed .sidebar-toggle-btn:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
 .professional-sidebar.collapsed .sidebar-toggle-btn i {
   transform: rotate(180deg);
+  transition: var(--transition-smooth);
+}
+
+.sidebar-toggle-btn i {
+  transition: var(--transition-smooth);
 }
 
 /* ═══ USER PROFILE SECTION ═══ */
@@ -146,9 +189,30 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.professional-sidebar.collapsed .sidebar-profile {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  width: 100%;
+}
+
 .profile-avatar {
   position: relative;
   flex-shrink: 0;
+}
+
+.professional-sidebar.collapsed .profile-avatar {
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  left: 0;
+  right: 0;
 }
 
 .avatar-image,
@@ -158,6 +222,13 @@
   border-radius: 12px;
   border: 2px solid var(--sidebar-active);
   object-fit: cover;
+}
+
+.professional-sidebar.collapsed .avatar-image,
+.professional-sidebar.collapsed .avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
 }
 
 .avatar-placeholder {
@@ -182,6 +253,7 @@
   opacity: 0;
   width: 0;
   overflow: hidden;
+  display: none;
 }
 
 .profile-name {
@@ -206,6 +278,7 @@
 .sidebar-navigation {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem 0;
   scrollbar-width: thin;
   scrollbar-color: var(--sidebar-border) transparent;
@@ -263,11 +336,30 @@
   cursor: pointer;
 }
 
+.professional-sidebar.collapsed .nav-item {
+  justify-content: center;
+  align-items: center;
+  margin: 0.125rem 0.5rem;
+  padding: 0.75rem 0.25rem;
+  min-width: 0;
+  overflow: hidden;
+  width: calc(100% - 1rem);
+  max-width: 60px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 8px;
+}
+
 .nav-item:hover {
   background: var(--sidebar-hover);
   color: white;
   text-decoration: none;
   transform: translateX(2px);
+}
+
+.professional-sidebar.collapsed .nav-item:hover {
+  transform: scale(1.1);
+  border-radius: 12px;
 }
 
 .nav-item.active {
@@ -288,6 +380,10 @@
   border-radius: 2px;
 }
 
+.professional-sidebar.collapsed .nav-item.active::before {
+  display: none;
+}
+
 .nav-icon {
   width: 24px;
   height: 24px;
@@ -296,6 +392,16 @@
   justify-content: center;
   flex-shrink: 0;
   font-size: 1.1rem;
+}
+
+.professional-sidebar.collapsed .nav-icon {
+  margin: 0 auto;
+  font-size: 1.2rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-text {
@@ -310,6 +416,7 @@
   opacity: 0;
   width: 0;
   overflow: hidden;
+  display: none;
 }
 
 /* Program Items */
@@ -324,6 +431,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   line-height: 1.2;
+  color: white;   
 }
 
 .program-package {
@@ -358,6 +466,15 @@
 
 .professional-sidebar.collapsed .footer-text {
   opacity: 0;
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+}
+
+.professional-sidebar.collapsed .sidebar-footer {
+  padding: 0;
+  border-top: none;
 }
 
 /* ═══ MOBILE BACKDROP ═══ */
@@ -368,7 +485,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 9998;
   opacity: 0;
   visibility: hidden;
   transition: var(--transition-smooth);
@@ -418,6 +535,10 @@
 
 .professional-sidebar.collapsed .nav-item {
   justify-content: center;
+  margin: 0.125rem 0.25rem;
+  padding: 0.75rem 0.5rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .professional-sidebar.collapsed .nav-item:hover {
@@ -442,7 +563,7 @@
   opacity: 0;
   visibility: hidden;
   transition: var(--transition-smooth);
-  z-index: 1001;
+  z-index: 10000;
 }
 
 .professional-sidebar.collapsed .nav-item:hover::after {
@@ -464,4 +585,21 @@
 
 .professional-sidebar * {
   transition: var(--transition-smooth);
+}
+/* remove the btn’s bg and make only the icon white */
+.sidebar-toggle-btn {
+  background: transparent !important;
+}
+
+.sidebar-toggle-btn i {
+  color: white !important;
+}
+
+/* if you’d also like no bg on hover */
+.sidebar-toggle-btn:hover {
+  background: transparent !important;
+}
+
+.sidebar-toggle-btn:hover i {
+  color: white !important;
 }

@@ -754,3 +754,9 @@ html, body {
   padding: 1.5rem;         /* kill any inline margin */
   transition: margin .3s ease;   /* optional */
 }
+
+.main-header,
+.content-wrapper {
+  position: relative;
+  z-index: 1;
+}

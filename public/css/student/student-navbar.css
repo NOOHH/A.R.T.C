@@ -65,14 +65,32 @@
   max-width: 500px;
 }
 
+/* --- Professional Navbar Search Redesign --- */
 .search-box {
   display: flex;
   align-items: center;
-  background: rgba(45, 27, 105, 0.05);
+  background: #f4f6fa;
   border-radius: 25px;
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(45, 27, 105, 0.1);
+  border: 1.5px solid #e0e6ed;
+  box-shadow: 0 2px 8px rgba(45, 27, 105, 0.06);
+  padding: 0.25rem 1rem 0.25rem 0.75rem;
+  transition: box-shadow 0.2s, border-color 0.2s;
   width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+
+.search-box:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.10);
+}
+
+.search-icon {
+  font-size: 1.1rem;
+  color: #9ca3af;
+  margin-right: 0.5rem;
+  margin-left: 0.25rem;
+  pointer-events: none;
 }
 
 .search-box input[type="text"] {
@@ -80,33 +98,40 @@
   background: transparent;
   border: none;
   color: #2d1b69;
-  font-size: 0.9rem;
-  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 0;
   outline: none;
-}
-
-.search-box input[type="text"]::placeholder {
-  color: rgba(45, 27, 105, 0.5);
-}
-
-.search-icon {
-  font-size: 0.9rem;
-  color: rgba(45, 27, 105, 0.6);
-  margin-right: 0.5rem;
-}
-
-.search-btn {
-  background: transparent;
-  border: none;
-  color: rgba(45, 27, 105, 0.6);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
+  border-radius: 25px;
+  box-shadow: none;
   transition: background 0.2s;
 }
 
-.search-btn:hover {
-  background: rgba(45, 27, 105, 0.1);
+.search-box input[type="text"]::placeholder {
+  color: #b0b8c9;
+  opacity: 1;
+}
+
+.search-btn {
+  background: #3b82f6;
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.08);
+  cursor: pointer;
+}
+
+.search-btn:hover, .search-btn:focus {
+  background: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  outline: none;
 }
 
 .header-right {

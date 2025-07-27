@@ -1,87 +1,314 @@
-<!-- Student Search Component -->
-<div class="position-relative" id="studentSearchContainer">
-    <div class="input-group">
-        <span class="input-group-text bg-primary text-white">
-            <i class="fas fa-search"></i>
-        </span>
+<!-- Professional Student Search Component -->
+<div class="search-container" id="studentSearchContainer">
+    <div class="search-input-wrapper">
+        <div class="search-icon">
+            <i class="bi bi-search"></i>
+        </div>
         <input 
             type="text" 
-            class="form-control" 
+            class="search-input" 
             id="studentSearchInput" 
-            placeholder="Search programs, modules, courses, and your professors..."
+            placeholder="Search programs, modules, courses..."
             autocomplete="off"
         >
+        <div class="search-actions">
+            <button class="search-clear-btn" id="searchClearBtn" style="display: none;">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
     </div>
     
     <!-- Search Results Dropdown -->
-    <div class="search-dropdown position-absolute w-100 mt-1 bg-white border border-secondary rounded shadow-lg" 
+    <div class="search-results-dropdown" 
          id="studentSearchResults" 
-         style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto;">
+         style="display: none;">
         
         <!-- Results will be populated here -->
         <div id="studentSearchResultsList"></div>
         
         <!-- No Results Message -->
-        <div id="studentNoResults" class="p-3 text-center text-muted" style="display: none;">
-            <i class="fas fa-info-circle mb-2"></i>
-            <p class="mb-0">No results found.</p>
-            <small>Search for any programs, modules, courses, or your enrolled professors.</small>
+        <div id="studentNoResults" class="no-results-message" style="display: none;">
+            <div class="no-results-icon">
+                <i class="bi bi-search"></i>
+            </div>
+            <div class="no-results-content">
+                <h6>No results found</h6>
+                <p>Try searching for programs, modules, courses, or professors</p>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-.search-dropdown {
-    border: 1px solid #ced4da;
-    border-radius: 0.375rem;
-    background: white;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+.search-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.search-input-wrapper:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+.search-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.95rem;
+    color: #374151;
+    font-weight: 500;
+    min-width: 0;
+}
+
+.search-input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.search-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.search-clear-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* Search Results Dropdown */
+.search-results-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1050;
+    backdrop-filter: blur(10px);
 }
 
 .search-result-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid #f8f9fa;
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #f9fafb;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
 }
 
 .search-result-item:hover {
-    background-color: #f8f9fa;
+    background: #f8fafc;
+    transform: translateX(2px);
 }
 
 .search-result-item:last-child {
     border-bottom: none;
 }
 
-.search-result-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
 .search-result-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 1.25rem;
     color: white;
+    margin-right: 1rem;
+    flex-shrink: 0;
 }
 
 .program-icon {
-    background: linear-gradient(45deg, #007bff, #0056b3);
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
 }
 
 .professor-icon {
-    background: linear-gradient(45deg, #28a745, #1e7e34);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
-.badge-count {
-    font-size: 0.75rem;
+.search-result-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-result-title {
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-result-subtitle {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.search-result-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.search-result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     padding: 0.25rem 0.5rem;
+    background: #f3f4f6;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.search-result-badge.primary {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.search-result-badge.success {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.search-result-badge.info {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.search-result-badge.secondary {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.search-result-arrow {
+    color: #9ca3af;
+    font-size: 1.1rem;
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* No Results Message */
+.no-results-message {
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.no-results-icon {
+    width: 64px;
+    height: 64px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    color: #9ca3af;
+    font-size: 1.5rem;
+}
+
+.no-results-content h6 {
+    color: #374151;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.no-results-content p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Scrollbar Styling */
+.search-results-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.search-results-dropdown::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 3px;
+}
+
+.search-results-dropdown::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+.search-results-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .search-container {
+        max-width: 100%;
+    }
+    
+    .search-input-wrapper {
+        padding: 0.625rem 0.875rem;
+    }
+    
+    .search-result-item {
+        padding: 0.875rem;
+    }
+    
+    .search-result-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
 }
 </style>
 
@@ -91,6 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchResults = document.getElementById('studentSearchResults');
     const resultsList = document.getElementById('studentSearchResultsList');
     const noResults = document.getElementById('studentNoResults');
+    const clearBtn = document.getElementById('searchClearBtn');
     let searchTimeout;
 
     // Search input handler
@@ -98,6 +326,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = this.value.trim();
         
         clearTimeout(searchTimeout);
+        
+        // Show/hide clear button
+        clearBtn.style.display = query.length > 0 ? 'flex' : 'none';
         
         if (query.length < 2) {
             hideSearchResults();
@@ -107,6 +338,14 @@ document.addEventListener('DOMContentLoaded', function() {
         searchTimeout = setTimeout(() => {
             performStudentSearch(query);
         }, 300);
+    });
+
+    // Clear search
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        searchInput.focus();
+        clearBtn.style.display = 'none';
+        hideSearchResults();
     });
 
     // Hide results when clicking outside
@@ -127,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            credentials: 'same-origin' // Include cookies for session authentication
+            credentials: 'same-origin'
         })
         .then(response => {
             console.log('Student search: Response status:', response.status);
@@ -176,50 +415,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create result item
     function createStudentResultItem(result) {
         const item = document.createElement('div');
-        item.className = 'search-result-item d-flex align-items-center';
+        item.className = 'search-result-item';
         
         if (result.type === 'program') {
             const statusClass = result.is_enrolled ? 'success' : 'primary';
             const statusIcon = result.is_enrolled ? 'check-circle' : 'plus-circle';
             
             item.innerHTML = `
-                <div class="search-result-icon program-icon me-3">
-                    <i class="fas fa-graduation-cap"></i>
+                <div class="search-result-icon program-icon">
+                    <i class="bi bi-mortarboard"></i>
                 </div>
-                <div class="flex-grow-1">
-                    <div class="fw-bold text-primary d-flex align-items-center">
+                <div class="search-result-content">
+                    <div class="search-result-title">
                         ${result.name}
-                        <span class="badge bg-${statusClass} ms-2">
-                            <i class="fas fa-${statusIcon} me-1"></i>${result.role}
+                        <span class="search-result-badge ${statusClass}">
+                            <i class="bi bi-${statusIcon}"></i>
+                            ${result.role}
                         </span>
                     </div>
-                    <div class="text-muted small">${result.description || 'No description available'}</div>
-                    <div class="d-flex gap-2 mt-1">
-                        <span class="badge bg-info badge-count">
-                            <i class="fas fa-cube me-1"></i>${result.modules_count || 0} Modules
+                    <div class="search-result-subtitle">${result.description || 'No description available'}</div>
+                    <div class="search-result-badges">
+                        <span class="search-result-badge info">
+                            <i class="bi bi-collection"></i>
+                            ${result.modules_count || 0} Modules
                         </span>
-                        <span class="badge bg-secondary badge-count">
-                            <i class="fas fa-book me-1"></i>${result.courses_count || 0} Courses
+                        <span class="search-result-badge secondary">
+                            <i class="bi bi-book"></i>
+                            ${result.courses_count || 0} Courses
                         </span>
                     </div>
                 </div>
-                <div class="text-muted">
-                    <i class="fas fa-info-circle"></i>
+                <div class="search-result-arrow">
+                    <i class="bi bi-arrow-right"></i>
                 </div>
             `;
             item.addEventListener('click', () => showStudentProgramDetails(result));
         } else if (result.type === 'professor') {
             item.innerHTML = `
-                <div class="search-result-icon professor-icon me-3">
-                    <i class="fas fa-chalkboard-teacher"></i>
+                <div class="search-result-icon professor-icon">
+                    <i class="bi bi-person-workspace"></i>
                 </div>
-                <div class="flex-grow-1">
-                    <div class="fw-bold text-success">${result.name}</div>
-                    <div class="text-muted small">${result.role}</div>
-                    <div class="text-muted small">${result.description || result.email}</div>
+                <div class="search-result-content">
+                    <div class="search-result-title">${result.name}</div>
+                    <div class="search-result-subtitle">${result.role}</div>
+                    <div class="search-result-subtitle">${result.description || result.email}</div>
                 </div>
-                <div class="text-muted">
-                    <i class="fas fa-user-circle"></i>
+                <div class="search-result-arrow">
+                    <i class="bi bi-arrow-right"></i>
                 </div>
             `;
             item.addEventListener('click', () => showStudentProfessorDetails(result));
