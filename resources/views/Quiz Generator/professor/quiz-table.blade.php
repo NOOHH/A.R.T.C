@@ -57,9 +57,9 @@
                     </td>
                     <td>
                         <div class="btn-group-vertical btn-group-sm" role="group">
-                            <!-- View/Edit Questions -->
-                            <button class="btn btn-outline-secondary btn-sm view-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">
-                                <i class="bi bi-list-ul"></i> Questions
+                            <!-- Edit Questions -->
+                            <button class="btn btn-outline-secondary btn-sm edit-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">
+                                <i class="bi bi-pencil-square"></i> Edit Questions
                             </button>
                             
                             <!-- Preview Quiz -->

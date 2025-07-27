@@ -45,6 +45,8 @@
   @stack('styles')
 
   <style>
+
+
     /* Global text rendering optimization */
     * {
       text-rendering: optimizeLegibility;
@@ -121,83 +123,35 @@
   
   <!-- Sidebar Toggle JavaScript -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Sidebar Toggle Functionality
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const modernSidebar = document.getElementById('modernSidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const contentWrapper = document.querySelector('.content-wrapper');
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar       = document.getElementById('modernSidebar');
+  const overlay       = document.getElementById('sidebarOverlay');
 
-        // Toggle sidebar function
-        function toggleSidebar() {
-            if (window.innerWidth >= 768) {
-                // Desktop: Toggle collapsed state
-                modernSidebar.classList.toggle('collapsed');    
-                
-                if (modernSidebar.classList.contains('collapsed')) {
-                    contentWrapper.style.marginLeft = '70px';
-                } else {
-                    contentWrapper.style.marginLeft = '280px';
-                }
-            } else {
-                // Mobile: Toggle sidebar visibility
-                if (modernSidebar) {
-                    modernSidebar.classList.toggle('active');
-                }
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.toggle('active');
-                }
-                document.body.style.overflow = modernSidebar && modernSidebar.classList.contains('active') ? 'hidden' : '';
-            }
-        }
+  sidebarToggle.addEventListener('click', () => {
+    if (window.innerWidth >= 768) {
+      sidebar.classList.toggle('collapsed');
+    } else {
+      sidebar.classList.toggle('active');
+      overlay && overlay.classList.toggle('active');
+      document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+    }
+  });
 
-        // Close sidebar function (mobile only)
-        function closeSidebar() {
-            if (window.innerWidth < 768) {
-                if (modernSidebar) {
-                    modernSidebar.classList.remove('active');
-                }
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.remove('active');
-                }
-                document.body.style.overflow = '';
-            }
-        }
+  overlay && overlay.addEventListener('click', () => {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  });
 
-        // Event listeners
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', toggleSidebar);
-        }
+  // Optional: clean up on resize
+  window.addEventListener('resize', () => {
+    overlay && overlay.classList.remove('active');
+    sidebar.classList.remove('active');
+    document.body.style.overflow = '';
+  });
+});
 
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', closeSidebar);
-        }
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 768 && contentWrapper) {
-                contentWrapper.style.marginLeft = modernSidebar.classList.contains('collapsed')
-                    ? '70px'
-                    : '280px';
-                
-                // Close mobile overlay if open
-                if (modernSidebar) {
-                    modernSidebar.classList.remove('active');
-                }
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.remove('active');
-                }
-                document.body.style.overflow = '';
-            } else if (window.innerWidth < 768 && contentWrapper) {
-                contentWrapper.style.marginLeft = '0';
-            }
-        });
-
-        // Initialize sidebar state for desktop
-        if (window.innerWidth >= 768 && contentWrapper) {
-            contentWrapper.style.marginLeft = '280px';
-        }
-    });
   </script>
   
   @include('components.global-chat')

@@ -868,48 +868,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make showEventDetails available globally
     window.showEventDetails = showEventDetails;
-    
-    // Debug function to test calendar endpoints
-    window.testCalendarEndpoints = function() {
-        console.log('🧪 Testing Calendar Endpoints...');
-        
-        // Test 1: Today's schedule
-        console.log('1️⃣ Testing /student/calendar/today');
-        fetch('/student/calendar/today')
-            .then(response => {
-                console.log('Today API Status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Today API Response:', data);
-                alert('Today API Response: ' + JSON.stringify(data, null, 2));
-            })
-            .catch(error => {
-                console.error('Today API Error:', error);
-                alert('Today API Error: ' + error.message);
-            });
-        
-        // Test 2: Current month events
-        setTimeout(() => {
-            const today = new Date();
-            const url = `/student/calendar/events?year=${today.getFullYear()}&month=${today.getMonth() + 1}`;
-            console.log('2️⃣ Testing:', url);
-            
-            fetch(url)
-                .then(response => {
-                    console.log('Events API Status:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Events API Response:', data);
-                    alert('Events API Response: ' + JSON.stringify(data, null, 2));
-                })
-                .catch(error => {
-                    console.error('Events API Error:', error);
-                    alert('Events API Error: ' + error.message);
-                });
-        }, 1000);
-    };
 });
 </script>
 @endpush
