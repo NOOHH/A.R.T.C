@@ -472,8 +472,8 @@ function generateProgramActionButtons(result) {
         <i class="bi bi-eye"></i>
     </button>`);
     
-    // View modules/courses
-    actions.push(`<button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); showProgramModal('${result.id}')">
+    // View modules/courses (redirect to program profile)
+    actions.push(`<button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); window.location.href='/profile/program/${result.id}'">
         <i class="bi bi-list-ul"></i>
     </button>`);
     
@@ -496,7 +496,7 @@ function selectSearchResult(id, type) {
     hideSearchDropdown();
     
     if (type === 'program') {
-        showProgramModal(id);
+        window.location.href = `/profile/program/${id}`;
     } else {
         showUserModal(id);
     }
@@ -505,7 +505,7 @@ function selectSearchResult(id, type) {
 // View profile
 function viewProfile(id, type) {
     if (type === 'program') {
-        showProgramModal(id);
+        window.location.href = `/profile/program/${id}`;
     } else {
         showUserModal(id);
     }
@@ -528,21 +528,9 @@ function showUserModal(userId) {
         });
 }
 
-// Show program details modal
+// Redirect to program profile page
 function showProgramModal(programId) {
-    fetch(`/search/profile?user_id=${programId}&type=program`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayProgramModal(data.program);
-            } else {
-                alert('Failed to load program details');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading program details:', error);
-            alert('Failed to load program details');
-        });
+    window.location.href = `/profile/program/${programId}`;
 }
 
 // Display user profile modal
@@ -612,139 +600,9 @@ function displayUserProfileModal(profile) {
     modal.show();
 }
 
-// Display program modal
-function displayProgramModal(program) {
-    const modalContent = `
-        <div class="modal fade" id="programModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-collection me-2"></i>${program.name}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <h6>Program Description</h6>
-                                <p>${program.description || 'No description available'}</p>
-                                
-                                <h6 class="mt-4">Modules & Courses</h6>
-                                <div class="accordion" id="modulesAccordion">
-                                    ${program.modules.map((module, index) => `
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="heading${index}">
-                                                <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
-                                                        type="button" 
-                                                        data-bs-toggle="collapse" 
-                                                        data-bs-target="#collapse${index}">
-                                                    ${module.name}
-                                                    <span class="badge bg-secondary ms-2">${module.courses.length} courses</span>
-                                                </button>
-                                            </h2>
-                                            <div id="collapse${index}" 
-                                                 class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
-                                                 data-bs-parent="#modulesAccordion">
-                                                <div class="accordion-body">
-                                                    <p class="text-muted">${module.description || 'No description available'}</p>
-                                                    <div class="row">
-                                                        ${module.courses.map(course => `
-                                                            <div class="col-md-6 mb-2">
-                                                                <div class="card">
-                                                                    <div class="card-body p-3">
-                                                                        <h6 class="card-title">${course.name}</h6>
-                                                                        <p class="card-text small text-muted">${course.description || 'No description'}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Program Statistics</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>Total Modules:</span>
-                                            <span class="badge bg-primary">${program.total_modules}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>Total Courses:</span>
-                                            <span class="badge bg-info">${program.total_courses}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span>Enrolled Students:</span>
-                                            <span class="badge bg-success">${program.total_students}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span>Created:</span>
-                                            <small class="text-muted">${new Date(program.created_at).toLocaleDateString()}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                ${program.enrolled_students && program.enrolled_students.length > 0 ? `
-                                    <div class="card mt-3">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">Recent Students</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            ${program.enrolled_students.slice(0, 5).map(student => `
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <img src="/images/default-avatar.png" 
-                                                         alt="${student.name}" 
-                                                         class="rounded-circle me-2" 
-                                                         width="30" height="30">
-                                                    <div>
-                                                        <small class="fw-bold">${student.name}</small>
-                                                        <br><small class="text-muted">${student.email}</small>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                            ${program.enrolled_students.length > 5 ? 
-                                                `<small class="text-muted">...and ${program.enrolled_students.length - 5} more</small>` : ''}
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="viewProgram('${program.id}')">
-                            <i class="bi bi-eye me-2"></i>View Full Program
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal if any
-    const existingModal = document.getElementById('programModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    // Add new modal to body
-    document.body.insertAdjacentHTML('beforeend', modalContent);
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('programModal'));
-    modal.show();
-}
-
 // View program (redirect to program page)
 function viewProgram(programId) {
-    window.open(`/admin/programs/${programId}`, '_blank');
+    window.location.href = `/profile/program/${programId}`;
 }
 
 // Start chat

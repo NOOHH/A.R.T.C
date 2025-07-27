@@ -196,7 +196,7 @@
                                     <option value="">Select a batch to assign...</option>
                                     @foreach($batches as $batch)
                                         <option value="{{ $batch->batch_id }}">
-                                            {{ $batch->batch_name }} - {{ $batch->program->program_name }} 
+                                            {{ $batch->batch_name }} - {{ $batch->program->program_name ?? 'N/A' }} 
                                             ({{ $batch->current_capacity }}/{{ $batch->max_capacity }})
                                         </option>
                                     @endforeach
@@ -233,7 +233,7 @@
                                                 <td>
                                                     <strong>{{ $batch->batch_name }}</strong>
                                                 </td>
-                                                <td>{{ $batch->program->program_name }}</td>
+                                                <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
                                                 <td>
                                                     <span class="badge bg-info">
                                                         {{ $batch->current_capacity }}/{{ $batch->max_capacity }}

@@ -167,14 +167,16 @@ class SearchController extends Controller
         Log::info("SearchController DEBUG: getProfile called", [
             'user_id' => $user_id,
             'type' => $type,
-            'request_auth_user' => Auth::id()
+            'request_auth_user' => Auth::id(),
+            'session_user_id' => session('user_id'),
+            'session_user_role' => session('user_role'),
         ]);
 
         if (!$user_id) {
             Log::error("SearchController DEBUG: getProfile - no user_id provided");
             return response()->json([
                 'success' => false,
-                'message' => 'User ID required'
+                'message' => 'User ID required in request.'
             ]);
         }
 
@@ -189,11 +191,16 @@ class SearchController extends Controller
         } catch (\Exception $e) {
             Log::error("SearchController DEBUG: getProfile exception", [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user_id,
+                'type' => $type
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Profile not found: ' . $e->getMessage()
+                'message' => 'Profile not found: ' . $e->getMessage(),
+                'error_type' => get_class($e),
+                'user_id' => $user_id,
+                'type' => $type
             ]);
         }
     }
@@ -273,8 +280,8 @@ class SearchController extends Controller
         $userResults = $this->searchUsers($query, $limit, $user);
         $results = array_merge($results, $userResults);
         
-        // Search programs if user can see them
-        if ($user && in_array($user->role, ['admin', 'director', 'professor'])) {
+        // Search programs if user can see them (now also for students)
+        if ($user && in_array($user->role, ['admin', 'director', 'professor', 'student'])) {
             $programResults = $this->searchPrograms($query, $limit - count($results), $user);
             $results = array_merge($results, $programResults);
         }
@@ -320,13 +327,13 @@ class SearchController extends Controller
         
         return $users->map(function($userItem) {
             return [
-                'id' => $userItem->user_id,
+                'id' => $userItem->user_id ?? '',
                 'type' => 'user',
-                'name' => $userItem->user_firstname . ' ' . $userItem->user_lastname,
-                'email' => $userItem->email,
-                'role' => ucfirst($userItem->role),
+                'name' => (isset($userItem->user_firstname) ? $userItem->user_firstname : '') . ' ' . (isset($userItem->user_lastname) ? $userItem->user_lastname : ''),
+                'email' => $userItem->email ?? '',
+                'role' => isset($userItem->role) ? ucfirst($userItem->role) : '',
                 'avatar' => $this->getUserAvatar($userItem),
-                'status' => $userItem->is_online ? 'Online' : 'Offline',
+                'status' => isset($userItem->is_online) && $userItem->is_online ? 'Online' : 'Offline',
                 'profile_url' => $this->getUserProfileUrl($userItem)
             ];
         })->toArray();
@@ -366,17 +373,17 @@ class SearchController extends Controller
                 return $enrollment->program ? $enrollment->program->program_name : null;
             })->filter()->unique();
 
-            $studentId = $student->student ? $student->student->student_id : $student->user_id;
+            $studentId = $student->student ? $student->student->student_id : ($student->user_id ?? '');
 
             return [
-                'id' => $student->user_id,
+                'id' => $student->user_id ?? '',
                 'type' => 'student',
-                'name' => $student->user_firstname . ' ' . $student->user_lastname,
-                'email' => $student->email,
+                'name' => (isset($student->user_firstname) ? $student->user_firstname : '') . ' ' . (isset($student->user_lastname) ? $student->user_lastname : ''),
+                'email' => $student->email ?? '',
                 'role' => 'Student',
                 'programs' => $programs->toArray(),
                 'avatar' => $this->getUserAvatar($student),
-                'status' => $student->is_online ? 'Online' : 'Offline',
+                'status' => isset($student->is_online) && $student->is_online ? 'Online' : 'Offline',
                 'profile_url' => $student->student ? route('admin.students.show', $studentId) : '#',
                 'student_id' => $studentId
             ];
@@ -394,16 +401,17 @@ class SearchController extends Controller
 
         $query_parts = explode(' ', $query);
         
-        $professors = User::where('role', 'professor')
+        $professors = Professor::where('professor_archived', false)
             ->where(function($q) use ($query, $query_parts) {
-                $q->where('user_firstname', 'LIKE', "%{$query}%")
-                  ->orWhere('user_lastname', 'LIKE', "%{$query}%")
-                  ->orWhere('email', 'LIKE', "%{$query}%");
+                $q->where('professor_first_name', 'LIKE', "%{$query}%")
+                  ->orWhere('professor_last_name', 'LIKE', "%{$query}%")
+                  ->orWhere('professor_name', 'LIKE', "%{$query}%")
+                  ->orWhere('professor_email', 'LIKE', "%{$query}%");
                 
                 if (count($query_parts) >= 2) {
                     $q->orWhere(function($subQ) use ($query_parts) {
-                        $subQ->where('user_firstname', 'LIKE', "%{$query_parts[0]}%")
-                             ->where('user_lastname', 'LIKE', "%{$query_parts[1]}%");
+                        $subQ->where('professor_first_name', 'LIKE', "%{$query_parts[0]}%")
+                             ->where('professor_last_name', 'LIKE', "%{$query_parts[1]}%");
                     });
                 }
             })
@@ -411,15 +419,20 @@ class SearchController extends Controller
             ->get();
 
         return $professors->map(function($professor) {
+            $professorName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+            if (empty($professorName)) {
+                $professorName = $professor->professor_name ?? '';
+            }
+            
             return [
-                'id' => $professor->user_id,
+                'id' => $professor->professor_id,
                 'type' => 'professor',
-                'name' => $professor->user_firstname . ' ' . $professor->user_lastname,
-                'email' => $professor->email,
+                'name' => $professorName,
+                'email' => $professor->professor_email ?? '',
                 'role' => 'Professor',
-                'avatar' => $this->getUserAvatar($professor),
-                'status' => $professor->is_online ? 'Online' : 'Offline',
-                'profile_url' => route('admin.professors.show', $professor->user_id)
+                'avatar' => $this->getUserAvatar((object)['email' => $professor->professor_email]),
+                'status' => 'Available',
+                'profile_url' => route('admin.professors.show', $professor->professor_id)
             ];
         })->toArray();
     }
@@ -429,23 +442,24 @@ class SearchController extends Controller
      */
     private function searchPrograms($query, $limit, $user)
     {
-        if (!$user || !in_array($user->role, ['admin', 'director', 'professor'])) {
+        // Allow students to search all available programs
+        if (!$user || !in_array($user->role, ['admin', 'director', 'professor', 'student'])) {
             return [];
         }
-
-        $programs = Program::where('program_name', 'LIKE', "%{$query}%")
-            ->orWhere('program_description', 'LIKE', "%{$query}%")
+        $programs = Program::where(function($q) use ($query) {
+                $q->where('program_name', 'LIKE', "%{$query}%")
+                  ->orWhere('program_description', 'LIKE', "%{$query}%");
+            })
             ->where('is_archived', false)
+            ->where('is_active', true)
             ->with(['modules.courses'])
             ->limit($limit)
             ->get();
-
         return $programs->map(function($program) {
             $moduleCount = $program->modules->count();
             $courseCount = $program->modules->sum(function($module) {
                 return $module->courses->count();
             });
-
             return [
                 'id' => $program->program_id,
                 'type' => 'program',
@@ -454,7 +468,7 @@ class SearchController extends Controller
                 'modules_count' => $moduleCount,
                 'courses_count' => $courseCount,
                 'created_at' => $program->created_at->format('M d, Y'),
-                'profile_url' => route('admin.programs.show', $program->program_id)
+                'profile_url' => route('profile.program', $program->program_id)
             ];
         })->toArray();
     }
@@ -526,8 +540,17 @@ class SearchController extends Controller
      */
     private function getUserProfile($user_id)
     {
-        $user = User::with(['student.enrollments.program', 'professor'])->findOrFail($user_id);
-        
+        Log::info("SearchController DEBUG: getUserProfile called", ['user_id' => $user_id]);
+        $user = User::with(['student.enrollments.program', 'professor'])->find($user_id);
+        if (!$user) {
+            Log::warning("SearchController DEBUG: getUserProfile - user not found", ['user_id' => $user_id]);
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found in users table.',
+                'user_id' => $user_id
+            ]);
+        }
+        Log::info("SearchController DEBUG: getUserProfile - user found", ['user_id' => $user_id, 'role' => $user->role]);
         $profile = [
             'id' => $user->user_id,
             'name' => $user->user_firstname . ' ' . $user->user_lastname,
@@ -550,6 +573,12 @@ class SearchController extends Controller
             });
             $profile['enrollments'] = $enrollments;
             $profile['student_id'] = $user->student->student_id;
+        } else if ($user->role === 'student') {
+            // Fallback: try to get student_id from Student model
+            $student = \App\Models\Student::where('user_id', $user->user_id)->first();
+            if ($student) {
+                $profile['student_id'] = $student->student_id;
+            }
         }
 
         // Add professor data
@@ -558,6 +587,7 @@ class SearchController extends Controller
             // You can add more professor-specific data here
         }
 
+        Log::info("SearchController DEBUG: getUserProfile - returning profile", ['user_id' => $user_id, 'profile' => $profile]);
         return response()->json([
             'success' => true,
             'profile' => $profile
@@ -579,9 +609,9 @@ class SearchController extends Controller
                 'description' => $module->module_description,
                 'courses' => $module->courses->map(function($course) {
                     return [
-                        'id' => $course->course_id,
-                        'name' => $course->course_name,
-                        'description' => $course->course_description
+                        'id' => $course->subject_id,
+                        'name' => $course->subject_name,
+                        'description' => $course->subject_description
                     ];
                 })
             ];
@@ -641,10 +671,10 @@ class SearchController extends Controller
         
         // Generate a simple avatar using the user's initials
         $initials = '';
-        if ($user->user_firstname) {
+        if (isset($user->user_firstname) && $user->user_firstname) {
             $initials .= strtoupper(substr($user->user_firstname, 0, 1));
         }
-        if ($user->user_lastname) {
+        if (isset($user->user_lastname) && $user->user_lastname) {
             $initials .= strtoupper(substr($user->user_lastname, 0, 1));
         }
         
@@ -670,8 +700,8 @@ class SearchController extends Controller
                 }
                 return '#';
             case 'professor':
-                // For professors, we'll create a profile route
-                return route('admin.professors.profile', $user->user_id);
+                // For professors, we'll create a profile route later
+                return '#';
             default:
                 return '#';
         }
@@ -681,14 +711,14 @@ class SearchController extends Controller
     {
         return $students->map(function($student) {
             return [
-                'id' => $student->user_id,
+                'id' => $student->user_id ?? '',
                 'type' => 'student',
-                'name' => $student->user_firstname . ' ' . $student->user_lastname,
-                'email' => $student->email,
+                'name' => (isset($student->user_firstname) ? $student->user_firstname : '') . ' ' . (isset($student->user_lastname) ? $student->user_lastname : ''),
+                'email' => $student->email ?? '',
                 'role' => 'Student',
                 'avatar' => $this->getUserAvatar($student),
-                'status' => $student->is_online ? 'Online' : 'Offline',
-                'profile_url' => route('admin.students.show', $student->user_id)
+                'status' => isset($student->is_online) && $student->is_online ? 'Online' : 'Offline',
+                'profile_url' => route('admin.students.show', $student->user_id ?? '')
             ];
         })->toArray();
     }
@@ -696,15 +726,20 @@ class SearchController extends Controller
     private function formatProfessorResults($professors)
     {
         return $professors->map(function($professor) {
+            $professorName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+            if (empty($professorName)) {
+                $professorName = $professor->professor_name ?? '';
+            }
+            
             return [
-                'id' => $professor->user_id,
+                'id' => $professor->professor_id,
                 'type' => 'professor',
-                'name' => $professor->user_firstname . ' ' . $professor->user_lastname,
-                'email' => $professor->email,
+                'name' => $professorName,
+                'email' => $professor->professor_email ?? '',
                 'role' => 'Professor',
-                'avatar' => $this->getUserAvatar($professor),
-                'status' => $professor->is_online ? 'Online' : 'Offline',
-                'profile_url' => route('admin.professors.show', $professor->user_id)
+                'avatar' => $this->getUserAvatar((object)['email' => $professor->professor_email]),
+                'status' => 'Available',
+                'profile_url' => route('admin.professors.show', $professor->professor_id)
             ];
         })->toArray();
     }
@@ -757,8 +792,9 @@ class SearchController extends Controller
                 'modules_count' => $program->modules->count(),
                 'courses_count' => $coursesCount,
                 'professors' => $program->professors->map(function($prof) {
-                    return $prof->user->user_firstname . ' ' . $prof->user->user_lastname;
-                })->toArray(),
+                    $name = trim(($prof->professor_first_name ?? '') . ' ' . ($prof->professor_last_name ?? ''));
+                    return !empty($name) ? $name : ($prof->professor_name ?? '');
+                })->filter()->toArray(),
                 'description' => $program->program_description,
                 'is_enrolled' => $isEnrolled
             ];
@@ -770,34 +806,39 @@ class SearchController extends Controller
             foreach ($enrolledProgramIds as $programId) {
                 $program = Program::find($programId);
                 if ($program) {
-                    $professorIds = $professorIds->merge($program->professors->pluck('user_id'));
+                    $professorIds = $professorIds->merge($program->professors->pluck('professor_id'));
                 }
             }
             
             if (!$professorIds->isEmpty()) {
-                $professors = User::whereIn('user_id', $professorIds->unique())
-                    ->where('role', 'professor')
-                    ->where(function($userQuery) use ($query) {
-                        $userQuery->where('user_firstname', 'like', "%{$query}%")
-                            ->orWhere('user_lastname', 'like', "%{$query}%")
-                            ->orWhere('email', 'like', "%{$query}%");
+                $professors = Professor::whereIn('professor_id', $professorIds->unique())
+                    ->where('professor_archived', false)
+                    ->where(function($professorQuery) use ($query) {
+                        $professorQuery->where('professor_first_name', 'like', "%{$query}%")
+                            ->orWhere('professor_last_name', 'like', "%{$query}%")
+                            ->orWhere('professor_name', 'like', "%{$query}%")
+                            ->orWhere('professor_email', 'like', "%{$query}%");
                     })
-                    ->with('professor.programs')
+                    ->with('programs')
                     ->limit(3)
                     ->get();
 
                 foreach ($professors as $professor) {
-                    $enrolledPrograms = $professor->professor ? 
-                        $professor->professor->programs->whereIn('program_id', $enrolledProgramIds)->pluck('program_name')->toArray() : [];
+                    $enrolledPrograms = $professor->programs->whereIn('program_id', $enrolledProgramIds)->pluck('program_name')->toArray();
+                    
+                    $professorName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+                    if (empty($professorName)) {
+                        $professorName = $professor->professor_name ?? '';
+                    }
                         
                     $results[] = [
-                        'id' => $professor->user_id,
+                        'id' => $professor->professor_id,
                         'type' => 'professor',
-                        'name' => $professor->user_firstname . ' ' . $professor->user_lastname,
-                        'email' => $professor->email,
+                        'name' => $professorName,
+                        'email' => $professor->professor_email ?? '',
                         'role' => 'Professor',
-                        'avatar' => $this->getUserAvatar($professor),
-                        'status' => $professor->is_online ? 'Online' : 'Offline',
+                        'avatar' => $this->getUserAvatar((object)['email' => $professor->professor_email]),
+                        'status' => 'Available',
                         'profile_url' => '#',
                         'programs' => $enrolledPrograms,
                         'description' => 'Teaching: ' . implode(', ', $enrolledPrograms)
@@ -882,8 +923,9 @@ class SearchController extends Controller
                 'modules_count' => $program->modules->count(),
                 'courses_count' => $coursesCount,
                 'professors' => $program->professors->map(function($prof) {
-                    return $prof->user->user_firstname . ' ' . $prof->user->user_lastname;
-                })->toArray(),
+                    $name = trim(($prof->professor_first_name ?? '') . ' ' . ($prof->professor_last_name ?? ''));
+                    return !empty($name) ? $name : ($prof->professor_name ?? '');
+                })->filter()->toArray(),
                 'description' => $program->program_description,
                 'is_enrolled' => $isEnrolled
             ];
@@ -909,36 +951,40 @@ class SearchController extends Controller
         $student = Student::where('user_id', $user->user_id)->first();
         $enrolledProgramIds = $student ? $student->enrollments->pluck('program_id')->unique() : collect();
 
-        // Search ALL professors
-        $professors = User::where('role', 'professor')
-            ->where(function($userQuery) use ($query) {
-                $userQuery->where('user_firstname', 'like', "%{$query}%")
-                    ->orWhere('user_lastname', 'like', "%{$query}%")
-                    ->orWhere('email', 'like', "%{$query}%");
+        // Search ALL professors in the professors table
+        $professors = Professor::where('professor_archived', false)
+            ->where(function($professorQuery) use ($query) {
+                $professorQuery->where('professor_first_name', 'like', "%{$query}%")
+                    ->orWhere('professor_last_name', 'like', "%{$query}%")
+                    ->orWhere('professor_name', 'like', "%{$query}%")
+                    ->orWhere('professor_email', 'like', "%{$query}%");
             })
-            ->with('professor.programs')
+            ->with('programs')
             ->limit($limit)
             ->get();
 
         $results = [];
         foreach ($professors as $professor) {
-            $allPrograms = $professor->professor ? 
-                $professor->professor->programs->pluck('program_name')->toArray() : [];
+            $allPrograms = $professor->programs->pluck('program_name')->toArray();
             
-            $enrolledPrograms = $professor->professor ? 
-                $professor->professor->programs->whereIn('program_id', $enrolledProgramIds)->pluck('program_name')->toArray() : [];
+            $enrolledPrograms = $professor->programs->whereIn('program_id', $enrolledProgramIds)->pluck('program_name')->toArray();
             
             $isMyProfessor = !empty($enrolledPrograms);
             
+            $professorName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+            if (empty($professorName)) {
+                $professorName = $professor->professor_name ?? '';
+            }
+            
             $results[] = [
-                'id' => $professor->user_id,
+                'id' => $professor->professor_id,
                 'type' => 'professor',
-                'name' => $professor->user_firstname . ' ' . $professor->user_lastname,
-                'email' => $professor->email,
+                'name' => $professorName,
+                'email' => $professor->professor_email ?? '',
                 'role' => $isMyProfessor ? 'Your Professor' : 'Professor',
-                'avatar' => $this->getUserAvatar($professor),
-                'status' => $professor->is_online ? 'Online' : 'Offline',
-                'profile_url' => route('profile.user', $professor->user_id),
+                'avatar' => $this->getUserAvatar((object)['email' => $professor->professor_email]),
+                'status' => 'Available', // Professors table doesn't have online status
+                'profile_url' => '#',
                 'programs' => $isMyProfessor ? $enrolledPrograms : $allPrograms,
                 'description' => $isMyProfessor ? 
                     'Teaching your: ' . implode(', ', $enrolledPrograms) :
@@ -1001,8 +1047,10 @@ class SearchController extends Controller
      */
     public function showProgramProfile($id)
     {
-        $program = Program::with(['modules.courses', 'professors.user', 'students.user'])->findOrFail($id);
-        
+        $program = Program::with(['modules.courses', 'professors', 'students.user'])->findOrFail($id);
+        // Fetch user_ids for professors by matching emails (since no user_id in professors table)
+        $professorEmails = $program->professors->pluck('professor_email')->all();
+        $userMap = User::whereIn('email', $professorEmails)->pluck('user_id', 'email');
         $profileData = [
             'id' => $program->program_id,
             'name' => $program->program_name,
@@ -1025,22 +1073,27 @@ class SearchController extends Controller
                     })
                 ];
             }),
-            'professors' => $program->professors->map(function($professor) {
+            'professors' => $program->professors->map(function($professor) use ($userMap) {
+                $name = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+                if (empty($name)) {
+                    $name = $professor->professor_name ?? '';
+                }
+                $email = $professor->professor_email ?? '';
                 return [
                     'professor_id' => $professor->professor_id,
-                    'user_id' => $professor->user_id,
-                    'name' => $professor->user->user_firstname . ' ' . $professor->user->user_lastname,
-                    'email' => $professor->user->email,
-                    'avatar' => $this->getUserAvatar($professor->user)
+                    'name' => $name,
+                    'email' => $email,
+                    'avatar' => $this->getUserAvatar((object)['email' => $email]),
+                    'user_id' => $userMap[$email] ?? null,
                 ];
             }),
             'students' => $program->students->map(function($student) {
                 return [
                     'student_id' => $student->student_id,
                     'user_id' => $student->user_id,
-                    'name' => $student->user->user_firstname . ' ' . $student->user->user_lastname,
-                    'email' => $student->user->email,
-                    'avatar' => $this->getUserAvatar($student->user)
+                    'name' => ($student->user ? (($student->user->user_firstname ?? '') . ' ' . ($student->user->user_lastname ?? '')) : ''),
+                    'email' => $student->user ? ($student->user->email ?? '') : '',
+                    'avatar' => $student->user ? $this->getUserAvatar($student->user) : ''
                 ];
             })
         ];

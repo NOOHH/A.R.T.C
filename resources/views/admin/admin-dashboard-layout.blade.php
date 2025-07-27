@@ -625,11 +625,9 @@ function getRoleClass(role) {
 }
 
 function selectResult(type, id) {
-    // For our new search system, show profile modal instead of navigating
     hideSearchDropdown();
-    
     if (type === 'program') {
-        showProgramModal(id);
+        window.location.href = `/profile/program/${id}`;
     } else {
         showUserModal(id);
     }
@@ -652,23 +650,9 @@ function showUserModal(userId) {
         });
 }
 
-// Show program details modal
+// Show program details modal (now redirects)
 function showProgramModal(programId) {
-    fetch(`/search/profile?user_id=${programId}&type=program`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayProgramModal(data.program);
-            } else {
-                // Fallback to navigation
-                window.location.href = `/admin/programs/${programId}`;
-            }
-        })
-        .catch(error => {
-            console.error('Error loading program details:', error);
-            // Fallback to navigation
-            window.location.href = `/admin/programs/${programId}`;
-        });
+    window.location.href = `/profile/program/${programId}`;
 }
 
 function showSearchDropdown() {
@@ -898,8 +882,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         <div class="modal-footer">
-                            ${profile.role === 'Student' && profile.student_id ? `
-                                <button type="button" class="btn btn-primary" onclick="window.open('/admin/students/${profile.student_id}', '_blank')">
+                            ${profile.role === 'Student' ? `
+                                <button type="button" class="btn btn-primary" onclick="window.open('/admin/students/${profile.student_id ? profile.student_id : profile.id}', '_blank')">
                                     <i class="bi bi-eye me-2"></i>View Full Student Profile
                                 </button>
                                 <button type="button" class="btn btn-success" onclick="window.open('/profile/user/${profile.id}', '_blank')">

@@ -30,24 +30,6 @@
     </div>
 </div>
 
-<!-- Program Details Modal -->
-<div class="modal fade" id="studentProgramModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-graduation-cap me-2"></i>
-                    Program Details
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="studentProgramModalBody">
-                <!-- Program details will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Professor Details Modal -->
 <div class="modal fade" id="studentProfessorModal" tabindex="-1">
     <div class="modal-dialog">
@@ -266,75 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show program details
     function showStudentProgramDetails(program) {
-        hideSearchResults();
-        
-        const modalBody = document.getElementById('studentProgramModalBody');
-        const enrollmentStatusClass = program.is_enrolled ? 'success' : 'info';
-        const enrollmentStatusIcon = program.is_enrolled ? 'check-circle' : 'info-circle';
-        const enrollmentStatusText = program.is_enrolled ? 'You are enrolled in this program' : 'You are not enrolled in this program';
-        
-        modalBody.innerHTML = `
-            <div class="text-center mb-4">
-                <div class="program-icon d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 80px; height: 80px; font-size: 32px;">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <h4 class="text-primary">${program.name}</h4>
-                <span class="badge bg-${enrollmentStatusClass} mb-2">
-                    <i class="fas fa-${enrollmentStatusIcon} me-1"></i>${program.role}
-                </span>
-                <p class="text-muted">${program.description || 'No description available'}</p>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <i class="fas fa-cube text-info fs-2 mb-2"></i>
-                            <h5 class="card-title">${program.modules_count || 0}</h5>
-                            <p class="card-text text-muted">Modules</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <i class="fas fa-book text-secondary fs-2 mb-2"></i>
-                            <h5 class="card-title">${program.courses_count || 0}</h5>
-                            <p class="card-text text-muted">Courses</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            ${program.professors && program.professors.length > 0 ? `
-                <div class="mb-3">
-                    <h6 class="text-success mb-2">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>
-                        Teaching Professors
-                    </h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        ${program.professors.map(prof => `
-                            <span class="badge bg-success">${prof}</span>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : ''}
-
-            <div class="alert alert-${enrollmentStatusClass}">
-                <i class="fas fa-${enrollmentStatusIcon} me-2"></i>
-                ${enrollmentStatusText}
-                ${!program.is_enrolled ? '. Contact the administration to enroll in this program.' : '. Access your modules and courses through the main navigation.'}
-            </div>
-            
-            <div class="text-center">
-                <a href="/profile/program/${program.id}" class="btn btn-primary" target="_blank">
-                    <i class="fas fa-external-link-alt me-2"></i>View Full Program Profile
-                </a>
-            </div>
-        `;
-
-        new bootstrap.Modal(document.getElementById('studentProgramModal')).show();
+        window.location.href = `/profile/program/${program.id}`;
     }
 
     // Show professor details
