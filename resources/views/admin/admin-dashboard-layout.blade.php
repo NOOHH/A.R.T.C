@@ -628,7 +628,12 @@ function selectResult(type, id) {
     hideSearchDropdown();
     if (type === 'program') {
         window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
     } else {
+        // For other user types (admin, director), use the existing modal
         showUserModal(id);
     }
 }

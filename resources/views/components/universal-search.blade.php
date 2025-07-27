@@ -415,7 +415,7 @@ function displaySearchResults(results) {
             const actions = generateActionButtons(result);
             
             return `
-                <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'user')">
+                <div class="search-result-item" onclick="selectSearchResult('${result.id}', '${result.type}')">
                     <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
                     <div class="search-result-info">
                         <div class="search-result-name">${result.name}</div>
@@ -497,7 +497,12 @@ function selectSearchResult(id, type) {
     
     if (type === 'program') {
         window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
     } else {
+        // For other user types (admin, director), use the existing modal
         showUserModal(id);
     }
 }
@@ -506,7 +511,12 @@ function selectSearchResult(id, type) {
 function viewProfile(id, type) {
     if (type === 'program') {
         window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
     } else {
+        // For other user types (admin, director), use the existing modal
         showUserModal(id);
     }
 }

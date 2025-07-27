@@ -1248,6 +1248,7 @@ Route::get('/search/profile', [SearchController::class, 'getProfile'])->name('se
 
 // Profile pages for search results
 Route::get('/profile/user/{id}', [SearchController::class, 'showUserProfile'])->name('profile.user');
+Route::get('/profile/professor/{id}', [SearchController::class, 'showProfessorProfile'])->name('profile.professor');
 Route::get('/profile/program/{id}', [SearchController::class, 'showProgramProfile'])->name('profile.program');
 
 // API routes for AJAX search
@@ -1697,13 +1698,13 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.contents');
          
     // Temporary test route without authentication
-    Route::post('/quiz-generator/test-generate', function(\Illuminate\Http\Request $request) {
-        // Temporarily set session for testing
-        session(['logged_in' => true, 'professor_id' => 8, 'user_role' => 'professor']);
-        
-        $controller = new \App\Http\Controllers\Professor\QuizGeneratorController();
-        return $controller->generate($request);
-    })->name('quiz-generator.test-generate');
+    // Route::post('/quiz-generator/test-generate', function(\Illuminate\Http\Request $request) {
+    //     // Temporarily set session for testing
+    //     session(['logged_in' => true, 'professor_id' => 8, 'user_role' => 'professor']);
+    //     
+    //     $controller = new \App\Http\Controllers\Professor\QuizGeneratorController();
+    //     return $controller->generate($request);
+    // })->name('quiz-generator.test-generate');
     
     // API route to fetch quizzes for testing
     Route::get('/api/test-quizzes', function() {

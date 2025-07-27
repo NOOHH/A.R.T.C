@@ -30,24 +30,6 @@
     </div>
 </div>
 
-<!-- Professor Details Modal -->
-<div class="modal fade" id="studentProfessorModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-chalkboard-teacher me-2"></i>
-                    Professor Profile
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="studentProfessorModalBody">
-                <!-- Professor details will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
 .search-dropdown {
     border: 1px solid #ced4da;
@@ -253,49 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show professor details
     function showStudentProfessorDetails(professor) {
-        hideSearchResults();
-        
-        const modalBody = document.getElementById('studentProfessorModalBody');
-        modalBody.innerHTML = `
-            <div class="text-center mb-4">
-                <div class="professor-icon d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 80px; height: 80px; font-size: 32px;">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                </div>
-                <h4 class="text-success">${professor.name}</h4>
-                <p class="text-muted">${professor.email}</p>
-                <span class="badge ${professor.status === 'Online' ? 'bg-success' : 'bg-secondary'}">
-                    ${professor.status}
-                </span>
-            </div>
-
-            ${professor.programs && professor.programs.length > 0 ? `
-                <div class="mb-3">
-                    <h6 class="text-primary mb-2">
-                        <i class="fas fa-graduation-cap me-2"></i>
-                        Teaching Your Programs
-                    </h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        ${professor.programs.map(prog => `
-                            <span class="badge bg-primary">${prog}</span>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : ''}
-
-            <div class="alert alert-success">
-                <i class="fas fa-info-circle me-2"></i>
-                This professor teaches in your enrolled programs. You can contact them through the messaging system.
-            </div>
-            
-            <div class="text-center">
-                <a href="/profile/user/${professor.id}" class="btn btn-success" target="_blank">
-                    <i class="fas fa-external-link-alt me-2"></i>View Full Professor Profile
-                </a>
-            </div>
-        `;
-
-        new bootstrap.Modal(document.getElementById('studentProfessorModal')).show();
+        window.location.href = `/profile/professor/${professor.id}`;
     }
 
     // Utility functions

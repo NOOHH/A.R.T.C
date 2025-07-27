@@ -541,7 +541,7 @@ class SearchController extends Controller
     private function getUserProfile($user_id)
     {
         Log::info("SearchController DEBUG: getUserProfile called", ['user_id' => $user_id]);
-        $user = User::with(['student.enrollments.program', 'professor'])->find($user_id);
+        $user = User::with(['student.enrollments.program'])->find($user_id);
         if (!$user) {
             Log::warning("SearchController DEBUG: getUserProfile - user not found", ['user_id' => $user_id]);
             return response()->json([
@@ -581,10 +581,13 @@ class SearchController extends Controller
             }
         }
 
-        // Add professor data
-        if ($user->role === 'professor' && $user->professor) {
-            $profile['professor_id'] = $user->professor->professor_id;
-            // You can add more professor-specific data here
+        // Add professor data using email matching
+        if ($user->role === 'professor') {
+            $professor = Professor::where('professor_email', $user->email)->first();
+            if ($professor) {
+                $profile['professor_id'] = $professor->professor_id;
+                // You can add more professor-specific data here
+            }
         }
 
         Log::info("SearchController DEBUG: getUserProfile - returning profile", ['user_id' => $user_id, 'profile' => $profile]);
@@ -1000,7 +1003,7 @@ class SearchController extends Controller
      */
     public function showUserProfile($id)
     {
-        $user = User::with(['student.enrollments.program', 'professor.programs'])->findOrFail($id);
+        $user = User::with(['student.enrollments.program'])->findOrFail($id);
         
         $profile = [
             'id' => $user->user_id,
@@ -1026,8 +1029,47 @@ class SearchController extends Controller
             $profile['student_id'] = $user->student->student_id;
         }
 
-        if ($user->role === 'professor' && $user->professor) {
-            $profile['programs'] = $user->professor->programs->map(function($program) {
+        if ($user->role === 'professor') {
+            // For professors, we need to find the professor record by email matching
+            $professor = Professor::where('professor_email', $user->email)->with(['programs.modules.courses'])->first();
+            if ($professor) {
+                $profile['programs'] = $professor->programs->map(function($program) {
+                    return [
+                        'program_id' => $program->program_id,
+                        'program_name' => $program->program_name,
+                        'program_description' => $program->program_description,
+                        'modules_count' => $program->modules->count(),
+                        'students_count' => $program->students->count()
+                    ];
+                });
+                $profile['professor_id'] = $professor->professor_id;
+            }
+        }
+
+        return view('profiles.user', compact('profile', 'user'));
+    }
+
+    /**
+     * Show professor profile page
+     */
+    public function showProfessorProfile($id)
+    {
+        $professor = Professor::with(['programs.modules.courses', 'batches.students.user'])->findOrFail($id);
+        
+        $profile = [
+            'id' => $professor->professor_id,
+            'name' => $professor->professor_first_name . ' ' . $professor->professor_last_name,
+            'email' => $professor->professor_email,
+            'role' => 'Professor',
+            'avatar' => $this->getUserAvatar((object)['email' => $professor->professor_email]),
+            'status' => 'Available',
+            'created_at' => $professor->created_at ?? now(),
+            'professor_id' => $professor->professor_id
+        ];
+
+        // Add professor-specific data
+        if ($professor->programs) {
+            $profile['programs'] = $professor->programs->map(function($program) {
                 return [
                     'program_id' => $program->program_id,
                     'program_name' => $program->program_name,
@@ -1036,10 +1078,21 @@ class SearchController extends Controller
                     'students_count' => $program->students->count()
                 ];
             });
-            $profile['professor_id'] = $user->professor->professor_id;
         }
 
-        return view('profiles.user', compact('profile', 'user'));
+        // Add batches data
+        if ($professor->batches) {
+            $profile['batches'] = $professor->batches->map(function($batch) {
+                return [
+                    'batch_id' => $batch->batch_id,
+                    'batch_name' => $batch->batch_name,
+                    'program_name' => $batch->program ? $batch->program->program_name : 'Unknown',
+                    'students_count' => $batch->students->count()
+                ];
+            });
+        }
+
+        return view('profiles.professor', compact('profile', 'professor'));
     }
 
     /**

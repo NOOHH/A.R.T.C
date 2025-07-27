@@ -239,8 +239,8 @@
                                 <div class="faculty-info flex-grow-1">
                                     <h6 class="mb-1 fw-bold text-dark">{{ $professor['name'] ?: 'Professor' }}</h6>
                                     <p class="text-muted small mb-2">{{ $professor['email'] ?: 'No contact available' }}</p>
-                                    @if(!empty($professor['user_id']))
-                                        <a href="{{ route('profile.user', $professor['user_id']) }}" 
+                                    @if(!empty($professor['professor_id']))
+                                        <a href="{{ route('profile.professor', $professor['professor_id']) }}" 
                                            class="btn btn-sm btn-outline-success rounded-pill">
                                             <i class="bi bi-person me-1"></i>View Profile
                                         </a>

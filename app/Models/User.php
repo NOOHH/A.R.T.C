@@ -85,12 +85,13 @@ class User extends Authenticatable
     }
 
     /**
-     * Professor relationship
+     * Professor relationship - Note: Professors table doesn't have user_id column
+     * Use email matching instead: Professor::where('professor_email', $user->email)
      */
-    public function professor()
-    {
-        return $this->hasOne(Professor::class, 'user_id', 'user_id');
-    }
+    // public function professor()
+    // {
+    //     return $this->hasOne(Professor::class, 'user_id', 'user_id');
+    // }
 
     /**
      * Admin relationship

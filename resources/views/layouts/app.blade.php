@@ -7,36 +7,29 @@
     <title>@yield('title', 'ARTC - Academic Resource and Training Center')</title>
     
     @php
-        // Get user info for global variables
-        $user = Auth::user();
+        // Proper authentication logic that matches student dashboard
+        $user = null;
+        $isLoggedIn = false;
         
-        // Check if user is actually logged in via Laravel Auth or valid session
-        $isLoggedIn = Auth::check() || session('logged_in') === true;
-        
-        // If Laravel Auth user is not available but session indicates logged in, fallback to session data
-        if (!$user && $isLoggedIn) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            
-            // Only use session data if logged_in is explicitly true
-            if (session('logged_in') === true || $_SESSION['logged_in'] ?? false) {
-                $sessionUser = (object) [
-                    'id' => $_SESSION['user_id'] ?? session('user_id'),
-                    'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
-                    'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
-                ];
-                
-                // Only use session user if we have valid session data
-                if ($sessionUser->id) {
-                    $user = $sessionUser;
-                }
-            }
+        // Check if user is logged in via Laravel Auth
+        if (Auth::check()) {
+            $user = Auth::user();
+            $isLoggedIn = true;
+        }
+        // Check if user is logged in via session (for student authentication)
+        elseif (session('user_id') && session('user_role')) {
+            $user = (object) [
+                'id' => session('user_id'),
+                'name' => session('user_name') ?? session('user_firstname') . ' ' . session('user_lastname'),
+                'role' => session('user_role'),
+                'email' => session('user_email')
+            ];
+            $isLoggedIn = true;
         }
         
-        // If not logged in, clear user data
-        if (!$isLoggedIn) {
-            $user = null;
+        // Force student role if session indicates student
+        if ($isLoggedIn && session('user_role') === 'student') {
+            $user->role = 'student';
         }
     @endphp
 
@@ -74,15 +67,11 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/homepage.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/student/student-navbar.css') }}">
     <style>
         body {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
             min-height: 100vh;
-        }
-        
-        .navbar {
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px);
         }
         
         .main-content {
@@ -95,79 +84,68 @@
             backdrop-filter: blur(10px);
             border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
+        
+        /* Override student navbar for app layout */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        /* Hide sidebar toggle button for app layout */
+        .sidebar-toggle-btn {
+            display: none !important;
+        }
     </style>
     @stack('styles')
 </head>
 
 <body class="d-flex flex-column min-vh-100">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light fixed-top bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-                <img src="{{ asset('images/ARTC_Logo.png') }}" alt="ARTC Logo" height="40" class="me-2">
-                <span class="fw-bold text-primary">ARTC</span>
+    <!-- Student Navbar -->
+    <header class="main-header">
+        <div class="header-left">
+            <a href="{{ route('home') }}" class="brand-link">
+                <img src="{{ asset('images/ARTC_logo.png') }}" alt="Logo">
+                <div class="brand-text">
+                    Ascendo Review<br>and Training Center
+                </div>
             </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url('/') }}">
-                            <i class="fas fa-home me-1"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url('/programs') }}">
-                            <i class="fas fa-graduation-cap me-1"></i>Programs
-                        </a>
-                    </li>
-                    @if($isLoggedIn && $user)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a>
-                        </li>
-                    @endif
-                </ul>
-                
-                <ul class="navbar-nav">
-                    @if($isLoggedIn && $user)
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle me-1"></i>{{ $user->name }}
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url('/profile') }}">
-                                    <i class="fas fa-user me-2"></i>Profile
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url('/settings') }}">
-                                    <i class="fas fa-cog me-2"></i>Settings
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url('/logout') }}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                </a></li>
-                            </ul>
-                        </li>
-                    @else
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/login') }}">
-                                <i class="fas fa-sign-in-alt me-1"></i>Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/register') }}">
-                                <i class="fas fa-user-plus me-1"></i>Register
-                            </a>
-                        </li>
-                    @endif
-                </ul>
-            </div>
         </div>
-    </nav>
+
+        <div class="header-search">
+            @include('components.student-search')
+        </div>
+
+        <div class="header-right">
+            <span class="notification-icon chat-trigger"
+                  data-bs-toggle="offcanvas"
+                  data-bs-target="#chatOffcanvas"
+                  aria-label="Open chat"
+                  role="button">
+                <i class="bi bi-chat-dots"></i>
+            </span>
+            <span class="profile-icon">
+                @php
+                    $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+                    $profilePhoto = $student && $student->profile_photo ? $student->profile_photo : null;
+                @endphp
+                
+                @if($profilePhoto)
+                    <img src="{{ asset('storage/profile-photos/' . $profilePhoto) }}" 
+                         alt="Profile" 
+                         class="navbar-profile-image">
+                @else
+                    <div class="navbar-profile-placeholder">
+                        {{ substr(session('user_firstname', 'U'), 0, 1) }}{{ substr(session('user_lastname', 'U'), 0, 1) }}
+                    </div>
+                @endif
+            </span>
+        </div>
+    </header>
+    
+    @include('components.global-chat')
 
     <!-- Main Content -->
     <main class="main-content flex-grow-1">
