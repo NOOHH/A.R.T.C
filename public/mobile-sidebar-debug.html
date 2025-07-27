@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Sidebar Debug</title>
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Sidebar CSS -->
+    <link href="css/student/student-sidebar-professional.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .debug-panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .log-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h1>Mobile Sidebar Debug</h1>
+        <p>This page helps debug the mobile sidebar toggle button.</p>
+        
+        <h3>Test Controls:</h3>
+        <button class="test-button" onclick="testButtonVisibility()">Test Button Visibility</button>
+        <button class="test-button" onclick="testButtonClick()">Test Button Click</button>
+        <button class="test-button" onclick="clearLog()">Clear Log</button>
+        
+        <h3>Debug Log:</h3>
+        <div class="log-output" id="logOutput"></div>
+    </div>
+    
+    <!-- Professional Student Sidebar -->
+    <aside class="professional-sidebar" id="studentSidebar">
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <div class="brand-content">
+                    <div class="brand-title">ARTC</div>
+                    <div class="brand-subtitle">Student Portal</div>
+                </div>
+            </div>
+            <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+
+        <!-- User Profile Section -->
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                <div class="avatar-placeholder">
+                    JS
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">John Student</div>
+                <div class="profile-role">Student</div>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="sidebar-navigation">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                
+                <!-- Dashboard -->
+                <a href="#" class="nav-item active">
+                    <div class="nav-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+
+                <!-- Calendar -->
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <span class="nav-text">Calendar</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <div class="footer-text">
+                <small>ARTC © 2024</small>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Sidebar Backdrop for Mobile -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Sidebar">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <script>
+        function log(message) {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.textContent += `[${timestamp}] ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        function testButtonVisibility() {
+            const button = document.getElementById('mobileSidebarToggle');
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                const styles = window.getComputedStyle(button);
+                
+                log('Button visibility test:');
+                log(`- Element found: ${!!button}`);
+                log(`- Display: ${styles.display}`);
+                log(`- Visibility: ${styles.visibility}`);
+                log(`- Opacity: ${styles.opacity}`);
+                log(`- Position: ${styles.position}`);
+                log(`- Z-index: ${styles.zIndex}`);
+                log(`- Bounding rect: ${rect.width}x${rect.height} at (${rect.left}, ${rect.top})`);
+                log(`- Window width: ${window.innerWidth}px`);
+                log(`- Should be visible: ${window.innerWidth <= 768}`);
+            } else {
+                log('ERROR: Mobile toggle button not found!');
+            }
+        }
+        
+        function testButtonClick() {
+            const button = document.getElementById('mobileSidebarToggle');
+            if (button) {
+                log('Simulating button click...');
+                button.click();
+            } else {
+                log('ERROR: Cannot click - button not found!');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('logOutput').textContent = '';
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Page loaded');
+            
+            const sidebar = document.getElementById('studentSidebar');
+            const toggleBtn = document.getElementById('sidebarToggleBtn');
+            const mobileToggleBtn = document.getElementById('mobileSidebarToggle');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            
+            log('Elements found:');
+            log(`- Sidebar: ${!!sidebar}`);
+            log(`- Toggle button: ${!!toggleBtn}`);
+            log(`- Mobile toggle button: ${!!mobileToggleBtn}`);
+            log(`- Backdrop: ${!!backdrop}`);
+            
+            // Helper to check desktop vs mobile break
+            const isDesktop = () => window.innerWidth >= 769;
+
+            // Toggle action
+            function toggleSidebar() {
+                log('toggleSidebar called, isDesktop: ' + isDesktop());
+                
+                if (isDesktop()) {
+                    // collapse/expand on desktop
+                    sidebar.classList.toggle('collapsed');
+                    log('Desktop: toggled collapsed class');
+                } else {
+                    // slide-in on mobile
+                    sidebar.classList.toggle('mobile-open');
+                    log('Mobile: toggled mobile-open class, sidebar classes: ' + sidebar.className);
+                    
+                    if (backdrop) {
+                        backdrop.classList.toggle('active');
+                        log('Mobile: toggled backdrop active class');
+                    }
+                    // Update mobile toggle button state
+                    if (mobileToggleBtn) {
+                        mobileToggleBtn.classList.toggle('active');
+                        mobileToggleBtn.classList.toggle('sidebar-open');
+                        log('Mobile: updated toggle button classes: ' + mobileToggleBtn.className);
+                    }
+                }
+            }
+
+            // Event listeners
+            if (mobileToggleBtn) {
+                mobileToggleBtn.addEventListener('click', (e) => {
+                    log('Mobile toggle button clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSidebar();
+                });
+                log('Mobile toggle button event listener added');
+            } else {
+                log('ERROR: Mobile toggle button not found for event listener!');
+            }
+            
+            if (backdrop) {
+                backdrop.addEventListener('click', (e) => {
+                    log('Backdrop clicked');
+                    if (!isDesktop()) {
+                        sidebar.classList.remove('mobile-open');
+                        backdrop.classList.remove('active');
+                        if (mobileToggleBtn) {
+                            mobileToggleBtn.classList.remove('active');
+                            mobileToggleBtn.classList.remove('sidebar-open');
+                        }
+                        log('Mobile: closed sidebar via backdrop');
+                    }
+                });
+            }
+            
+            log('Initialization complete');
+            testButtonVisibility();
+        });
+    </script>
+</body>
+</html> 

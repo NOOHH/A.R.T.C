@@ -16,6 +16,58 @@
   --border-radius: 12px;
 }
 
+/* ═══ MOBILE TOGGLE BUTTON ═══ */
+.mobile-sidebar-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  width: 48px;
+  height: 48px;
+  background: var(--sidebar-bg);
+  border: 2px solid var(--sidebar-border);
+  border-radius: 12px;
+  color: white;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-sidebar-toggle:hover {
+  background: var(--sidebar-hover);
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-sidebar-toggle i {
+  font-size: 1.25rem;
+  transition: var(--transition-smooth);
+}
+
+.mobile-sidebar-toggle.active i {
+  transform: rotate(180deg);
+}
+
+/* Show mobile toggle only on mobile */
+@media (max-width: 768px) {
+  .mobile-sidebar-toggle {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* Hide mobile toggle on desktop */
+@media (min-width: 769px) {
+  .mobile-sidebar-toggle {
+    display: none !important;
+  }
+}
+
 /* ═══ MAIN SIDEBAR CONTAINER ═══ */
 .professional-sidebar {
   position: fixed;
@@ -47,6 +99,11 @@
   
   .professional-sidebar.mobile-open {
     transform: translateX(0);
+  }
+  
+  /* Adjust mobile toggle position when sidebar is open */
+  .mobile-sidebar-toggle.sidebar-open {
+    left: calc(var(--sidebar-width) + 1rem);
   }
 }
 

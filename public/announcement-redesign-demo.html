@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcement Redesign Demo</title>
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f7fa;
+            padding: 2rem;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+        }
+        
+        .demo-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .demo-content {
+            padding: 1.5rem;
+        }
+        
+        /* Compact Announcement Design */
+        .announcement-content {
+            padding: 0;
+        }
+        
+        .announcement-item-compact {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .announcement-item-compact:last-child {
+            border-bottom: none;
+        }
+        
+        .announcement-item-compact:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .announcement-item-compact::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .announcement-item-compact:hover::before {
+            opacity: 1;
+        }
+        
+        .announcement-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            gap: 12px;
+        }
+        
+        .announcement-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+            line-height: 1.3;
+            flex: 1;
+            margin: 0;
+        }
+        
+        .announcement-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        .announcement-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .video-badge {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+        
+        .urgent-badge {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .event-badge {
+            background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+        }
+        
+        .announcement-time {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            white-space: nowrap;
+        }
+        
+        .announcement-preview {
+            color: #555;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin: 0;
+            opacity: 0.8;
+        }
+        
+        .empty-announcements {
+            text-align: center;
+            padding: 40px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-announcements i {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        .empty-announcements p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* Comparison Section */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .old-design {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .new-design {
+            background: white;
+            border: 2px solid #667eea;
+        }
+        
+        .comparison-header {
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .old-design .comparison-header {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .new-design .comparison-header {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .announcement-item-compact {
+                padding: 10px 12px;
+            }
+            
+            .announcement-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            
+            .announcement-meta {
+                align-self: flex-end;
+            }
+            
+            .announcement-title {
+                font-size: 0.9rem;
+            }
+            
+            .announcement-preview {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-section">
+            <div class="demo-header">
+                <h2>Announcement Redesign Demo</h2>
+            </div>
+            <div class="demo-content">
+                <p>This demo shows the new compact announcement design that reduces vertical space while maintaining readability and professional appearance.</p>
+            </div>
+        </div>
+        
+        <div class="comparison-grid">
+            <!-- Old Design -->
+            <div class="demo-section old-design">
+                <div class="comparison-header">Old Design (Large Items)</div>
+                <div class="demo-content">
+                    <div style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: #2c3e50; flex: 1;">Welcome to the New Semester!</div>
+                            <span style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
+                                📹 Video
+                            </span>
+                        </div>
+                        <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">We're excited to welcome all students to the new semester. Please review the updated course materials and schedule. Important information about upcoming events and deadlines will be shared regularly.</div>
+                        <div style="font-size: 0.8rem; color: #7f8c8d;">
+                            <i class="bi bi-clock"></i> 2 hours ago
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: #2c3e50; flex: 1;">Assignment Deadline Reminder</div>
+                        </div>
+                        <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">Don't forget that the first assignment is due this Friday. Make sure to submit your work through the online portal before the deadline.</div>
+                        <div style="font-size: 0.8rem; color: #7f8c8d;">
+                            <i class="bi bi-clock"></i> 1 day ago
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 15px 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div style="font-weight: 600; color: #2c3e50; flex: 1;">Campus Event: Career Fair</div>
+                        </div>
+                        <div style="color: #555; line-height: 1.5; margin-bottom: 8px;">Join us for the annual career fair next week. Meet with potential employers and learn about internship opportunities.</div>
+                        <div style="font-size: 0.8rem; color: #7f8c8d;">
+                            <i class="bi bi-clock"></i> 3 days ago
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Design -->
+            <div class="demo-section new-design">
+                <div class="comparison-header">New Design (Compact Items)</div>
+                <div class="demo-content">
+                    <div class="announcement-content">
+                        <div class="announcement-item-compact">
+                            <div class="announcement-header">
+                                <div class="announcement-title">Welcome to the New Semester!</div>
+                                <div class="announcement-meta">
+                                    <span class="announcement-badge video-badge">
+                                        <i class="bi bi-camera-video"></i>
+                                    </span>
+                                    <span class="announcement-time">2 hours ago</span>
+                                </div>
+                            </div>
+                            <div class="announcement-preview">We're excited to welcome all students to the new semester. Please review the updated course materials and schedule...</div>
+                        </div>
+                        
+                        <div class="announcement-item-compact">
+                            <div class="announcement-header">
+                                <div class="announcement-title">Assignment Deadline Reminder</div>
+                                <div class="announcement-meta">
+                                    <span class="announcement-time">1 day ago</span>
+                                </div>
+                            </div>
+                            <div class="announcement-preview">Don't forget that the first assignment is due this Friday. Make sure to submit your work through the online portal...</div>
+                        </div>
+                        
+                        <div class="announcement-item-compact">
+                            <div class="announcement-header">
+                                <div class="announcement-title">Campus Event: Career Fair</div>
+                                <div class="announcement-meta">
+                                    <span class="announcement-badge event-badge">
+                                        <i class="bi bi-calendar-event"></i>
+                                    </span>
+                                    <span class="announcement-time">3 days ago</span>
+                                </div>
+                            </div>
+                            <div class="announcement-preview">Join us for the annual career fair next week. Meet with potential employers and learn about internship opportunities...</div>
+                        </div>
+                        
+                        <div class="announcement-item-compact">
+                            <div class="announcement-header">
+                                <div class="announcement-title">Urgent: System Maintenance</div>
+                                <div class="announcement-meta">
+                                    <span class="announcement-badge urgent-badge">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </span>
+                                    <span class="announcement-time">5 days ago</span>
+                                </div>
+                            </div>
+                            <div class="announcement-preview">The learning management system will be temporarily unavailable for maintenance this weekend...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <div class="demo-header">
+                <h2>Key Improvements</h2>
+            </div>
+            <div class="demo-content">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 0.5rem;">📏 Compact Design</h4>
+                        <p style="margin: 0; font-size: 0.9rem;">Reduced vertical space by ~60% while maintaining readability</p>
+                    </div>
+                    <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 0.5rem;">🎨 Professional Look</h4>
+                        <p style="margin: 0; font-size: 0.9rem;">Clean, modern design with subtle hover effects and gradients</p>
+                    </div>
+                    <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 0.5rem;">📱 Mobile Friendly</h4>
+                        <p style="margin: 0; font-size: 0.9rem;">Responsive design that adapts to different screen sizes</p>
+                    </div>
+                    <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #667eea; margin-bottom: 0.5rem;">⚡ Better Performance</h4>
+                        <p style="margin: 0; font-size: 0.9rem;">Faster loading and smoother scrolling with multiple announcements</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
