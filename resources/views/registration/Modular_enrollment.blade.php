@@ -2362,7 +2362,7 @@
             switch (req.file_type) {
                 case 'image': accept = '.jpg,.jpeg,.png,.gif'; break;
                 case 'pdf': accept = '.pdf'; break;
-                case 'document': accept = '.pdf,.doc,.docx'; break;
+
                 default: accept = '*'; break;
             }
             html += `<div class="form-group mb-3">

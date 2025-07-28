@@ -56,7 +56,7 @@ class AdminModuleController extends Controller
             'batch_id' => ($request->input('plan') === 'full') ? 'required|exists:student_batches,batch_id' : 'nullable|exists:student_batches,batch_id',
             'learning_mode' => 'required|in:Synchronous,Asynchronous',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg,mp4,webm,ogg|max:102400',
-            'content_type' => 'nullable|string|in:module,assignment,quiz,ai_quiz,test,link',
+            'content_type' => 'nullable|string|in:lesson,video,assignment,quiz,test,link',
             'video_url' => 'nullable|url',
         ]);
 
@@ -81,6 +81,16 @@ class AdminModuleController extends Controller
 
         // Extract content-specific fields based on type
         switch ($contentType) {
+            case 'lesson':
+                $contentData = [
+                    'lesson_video_url' => $request->input('any_url'),
+                ];
+                break;
+            case 'video':
+                $contentData = [
+                    'video_url' => $request->input('any_url'),
+                ];
+                break;
             case 'assignment':
                 $contentData = [
                     'assignment_title' => $request->input('assignment_title'),
@@ -99,19 +109,6 @@ class AdminModuleController extends Controller
                     'randomize_questions' => $request->boolean('randomize_questions'),
                 ];
                 break;
-            case 'ai_quiz':
-                $contentData = [
-                    'ai_quiz_title' => $request->input('ai_quiz_title'),
-                    'ai_quiz_description' => $request->input('ai_quiz_description'),
-                    'ai_document_path' => $aiDocumentPath,
-                    'ai_num_questions' => $request->input('ai_num_questions', 10),
-                    'ai_difficulty' => $request->input('ai_difficulty', 'medium'),
-                    'ai_quiz_type' => $request->input('ai_quiz_type', 'multiple_choice'),
-                    'ai_time_limit' => $request->input('ai_time_limit', 30),
-                    'ai_instructions' => $request->input('ai_instructions'),
-                    'ai_generated' => true,
-                ];
-                break;
             case 'test':
                 $contentData = [
                     'test_title' => $request->input('test_title'),
@@ -123,13 +120,14 @@ class AdminModuleController extends Controller
                 break;
             case 'link':
                 $contentData = [
-                    'external_url' => $request->input('external_url'),
+                    'external_url' => $request->input('any_url'),
                     'link_title' => $request->input('link_title'),
                     'link_description' => $request->input('link_description'),
                     'link_type' => $request->input('link_type', 'other'),
                     'open_in_new_tab' => $request->boolean('open_in_new_tab'),
                 ];
                 break;
+
         }
 
         // Handle video URL (YouTube, Vimeo, etc.)
@@ -154,6 +152,7 @@ class AdminModuleController extends Controller
             'content_type' => $contentType,
             'content_data' => $contentData,
             'video_path' => $videoPath,
+            'content_url' => $request->input('any_url'),
             'is_archived' => false,
         ]);
 
@@ -1231,7 +1230,12 @@ class AdminModuleController extends Controller
             switch ($contentType) {
                 case 'lesson':
                     $contentData = [
-                        'lesson_video_url' => $request->input('lesson_video_url'),
+                        'lesson_video_url' => $request->input('content_url'),
+                    ];
+                    break;
+                case 'video':
+                    $contentData = [
+                        'video_url' => $request->input('content_url'),
                     ];
                     break;
                 case 'assignment':
@@ -1256,6 +1260,12 @@ class AdminModuleController extends Controller
                         'total_marks' => $request->input('total_marks', 100),
                     ];
                     break;
+                case 'link':
+                    $contentData = [
+                        'link_url' => $request->input('content_url'),
+                    ];
+                    break;
+                
             }
 
             // Create content item (lesson_id removed)
@@ -1267,6 +1277,7 @@ class AdminModuleController extends Controller
                 'content_type' => $contentType,
                 'content_data' => $contentData,
                 'attachment_path' => !empty($attachmentPaths) ? json_encode($attachmentPaths) : null,
+                'content_url' => $request->input('content_url'),
                 'max_points' => $request->input('max_points', 0),
                 'due_date' => $request->input('due_date'),
                 'time_limit' => $request->input('time_limit'),
@@ -1407,7 +1418,7 @@ class AdminModuleController extends Controller
     public function getContent($id)
     {
         try {
-            $content = ContentItem::with(['course.module', 'lesson'])->findOrFail($id);
+            $content = ContentItem::with(['course.module'])->findOrFail($id);
             
             return response()->json([
                 'success' => true,
@@ -1425,8 +1436,6 @@ class AdminModuleController extends Controller
                     'content_url' => $content->content_url,
                     'sort_order' => $content->sort_order,
                     'course_id' => $content->course_id,
-                    'lesson_id' => $content->lesson_id,
-                    'module_id' => $content->course ? $content->course->module_id : null,
                     'enable_submission' => $content->enable_submission ?? false,
                     'allowed_file_types' => $content->allowed_file_types,
                     'submission_instructions' => $content->submission_instructions,
@@ -1555,7 +1564,7 @@ class AdminModuleController extends Controller
                         'validationRules' => [
                             'title' => 'required|string|max:255',
                             'description' => 'nullable|string',
-                            'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video,document',
+                            'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video',
                             'attachment' => 'nullable|file',
                             'course_id' => 'nullable|exists:courses,subject_id'
                         ]

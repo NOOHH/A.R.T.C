@@ -64,12 +64,9 @@
             <div class="col-md-4">
                 <label for="document" class="form-label">Upload Document</label>
                 <input type="file" class="form-control" id="document" name="document" accept=".pdf,.doc,.docx,.csv,.txt">
-                <small class="text-muted">Supported: PDF, Word, CSV, TXT. Max: 50MB.</small>
+                <small class="text-muted">Supported: PDF, Word, CSV, TXT. Max: 10MB.</small>
                 <small class="text-info d-block mt-1">
                     <i class="bi bi-lightbulb"></i> For technical topics (Linux, PHP, JavaScript, etc.), you can skip the document - we'll use our technical question database!
-                </small>
-                <small class="text-success d-block mt-1">
-                    <i class="bi bi-magic"></i> Enhanced with Tesseract OCR for scanned/image-based PDFs!
                 </small>
             </div>
             <div class="col-md-2">
@@ -122,38 +119,15 @@
                         <input type="number" class="form-control" id="max_attempts" name="max_attempts" min="1" max="10" value="1">
                     </div>
                     <div class="col-md-3">
-                        <label for="quiz_format" class="form-label">Question Format</label>
-                        <select id="quiz_format" name="quiz_format" class="form-select">
-                            <option value="comprehensive">Comprehensive (7 Types)</option>
-                            <option value="multiple_choice">Multiple Choice Only</option>
-                            <option value="true_false">True/False Only</option>
-                            <option value="mixed">Mixed Traditional</option>
-                        </select>
-                        <small class="text-muted">Comprehensive includes: Multiple Choice, True/False, Fill-in-Blank, Short Answer, Acronym Expansion, Definition Recall, and Matching</small>
-                    </div>
-                    <div class="col-md-3">
                         <div class="form-check mt-4">
                             <input class="form-check-input" type="checkbox" id="allow_retakes" name="allow_retakes">
                             <label class="form-check-label" for="allow_retakes">Allow Retakes</label>
                         </div>
                     </div>
-                </div>
-                <div class="row g-3 mt-2">
-                    <div class="col-md-6">
-                        <label for="topic_focus" class="form-label">Topic Focus (Optional)</label>
-                        <input type="text" class="form-control" id="topic_focus" name="topic_focus" placeholder="e.g., threat intelligence, cybersecurity frameworks, malware analysis">
-                        <small class="text-muted">Specify particular topics to emphasize, or leave blank for general coverage</small>
-                    </div>
                     <div class="col-md-3">
                         <div class="form-check mt-4">
                             <input class="form-check-input" type="checkbox" id="instant_feedback" name="instant_feedback">
                             <label class="form-check-label" for="instant_feedback">Instant Feedback</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" id="show_correct_answers" name="show_correct_answers" checked>
-                            <label class="form-check-label" for="show_correct_answers">Show Correct Answers</label>
                         </div>
                     </div>
                 </div>
@@ -171,7 +145,10 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <!-- Additional space for future settings -->
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show_correct_answers" name="show_correct_answers" checked>
+                            <label class="form-check-label" for="show_correct_answers">Show Correct Answers</label>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -85,11 +85,12 @@
                 <label for="contentTypeFilter">Filter by Content Type:</label>
                 <select id="contentTypeFilter" class="form-select">
                     <option value="">All Content Types</option>
-                    <option value="module">Module/Lesson</option>
-                    <option value="assignment">Assignment</option>
-                    <option value="quiz">Quiz</option>
-                    <option value="test">Test</option>
-                    <option value="link">External Link</option>
+                    <option value="lesson">📚 Lesson</option>
+                    <option value="video">🎥 Video</option>
+                    <option value="assignment">📝 Assignment</option>
+                    <option value="quiz">❓ Quiz</option>
+                    <option value="test">📋 Test</option>
+                    <option value="link">🔗 External Link</option>
                 </select>
             </div>
         </div>
@@ -949,7 +950,7 @@ function loadCourseContentInViewer(moduleId, courseId) {
 function getContentIcon(contentType) {
     const icons = {
         'video': 'play-circle',
-        'document': 'file-earmark-text',
+        
         'quiz': 'question-circle',
         'assignment': 'pencil-square',
         'link': 'link-45deg',
@@ -979,7 +980,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                 subtitleElement.textContent = `${(content.content_type || 'CONTENT').toUpperCase()} • Course ID: ${courseId}`;
                 
                 let contentHtml = '';
-                const contentType = (content.content_type || 'document').toLowerCase();
+                const contentType = (content.content_type || 'lesson').toLowerCase();
                 
                 switch(contentType) {
                     case 'video':
@@ -1037,8 +1038,61 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                         }
                         break;
                     
+                    case 'lesson':
+                        // Display lesson video if available, otherwise show description
+                        let lessonHtml = '';
+                        if (content.content_url || content.attachment_path) {
+                            const videoUrl = content.content_url || `/storage/${content.attachment_path}`;
+                            
+                            // Check if it's a YouTube or Vimeo URL
+                            if (content.content_url && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com'))) {
+                                let embedUrl = content.content_url;
+                                
+                                // Convert YouTube URLs to embed format
+                                if (content.content_url.includes('youtube.com/watch?v=')) {
+                                    const videoId = content.content_url.split('v=')[1].split('&')[0];
+                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                                } else if (content.content_url.includes('youtu.be/')) {
+                                    const videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
+                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                                } else if (content.content_url.includes('vimeo.com/')) {
+                                    const videoId = content.content_url.split('vimeo.com/')[1].split('/')[0];
+                                    embedUrl = `https://player.vimeo.com/video/${videoId}`;
+                                }
+                                
+                                lessonHtml = `
+                                    <div class="video-container">
+                                        <iframe class="content-frame" src="${embedUrl}" style="width: 100%; height: 450px; border: 1px solid #ddd;" allowfullscreen></iframe>
+                                    </div>
+                                `;
+                            } else {
+                                // Local video file
+                                lessonHtml = `
+                                    <div class="video-container">
+                                        <video controls style="width: 100%; max-height: 450px;" class="border">
+                                            <source src="${videoUrl}" type="video/mp4">
+                                            <source src="${videoUrl}" type="video/webm">
+                                            <source src="${videoUrl}" type="video/ogg">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                `;
+                            }
+                        }
+                        
+                        contentHtml = `
+                            <div class="content-display">
+                                ${lessonHtml}
+                                <div class="content-details mt-3">
+                                    <h5>Lesson Details</h5>
+                                    <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                    ${content.content_url ? `<p><strong>Video URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        break;
+                    
                     case 'pdf':
-                    case 'document':
                         if (content.attachment_path) {
                             const fileUrl = `/storage/${content.attachment_path}`;
                             const fileName = content.attachment_path.split('/').pop();
@@ -3269,12 +3323,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="form-group">
                     <label for="content_type">Content Type <span class="text-danger">*</span></label>
                     <select id="content_type" name="content_type" class="form-select" required>
-                        <option value="module">Module/Lesson</option>
-                        <option value="assignment">Assignment</option>
-                        <option value="quiz">Quiz</option>
-                        <option value="ai_quiz">AI Quiz</option>
-                        <option value="test">Test</option>
-                        <option value="link">External Link</option>
+                        <option value="lesson">📚 Lesson</option>
+                        <option value="video">🎥 Video</option>
+                        <option value="assignment">📝 Assignment</option>
+                        <option value="quiz">❓ Quiz</option>
+                        <option value="test">📋 Test</option>
+                        <option value="link">🔗 External Link</option>
                     </select>
                 </div>
                 <!-- 5. Title -->
@@ -3558,12 +3612,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label for="edit_content_type">Content Type <span class="text-danger">*</span></label>
                     <select id="edit_content_type" name="type" class="form-select" required>
                         <option value="">Select type...</option>
-                        <option value="lesson">Lesson</option>
-                        <option value="assignment">Assignment</option>
-                        <option value="quiz">Quiz</option>
-                        <option value="test">Test</option>
-                        <option value="pdf">PDF Document</option>
-                        <option value="link">External Link</option>
+                        <option value="lesson">📚 Lesson</option>
+                        <option value="video">🎥 Video</option>
+                        <option value="assignment">📝 Assignment</option>
+                        <option value="quiz">❓ Quiz</option>
+                        <option value="test">📋 Test</option>
+                        <option value="link">🔗 External Link</option>
                     </select>
                 </div>
                 

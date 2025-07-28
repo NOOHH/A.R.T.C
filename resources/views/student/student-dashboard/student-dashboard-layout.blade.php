@@ -73,6 +73,8 @@
       border-radius: .5rem;
       box-shadow: 0 .125rem .25rem rgba(0,0,0,0.075);
       overflow: visible !important;
+      width: 100%;
+      height: 100%;
     }
 
     /* 3) Sidebar toggle button styling */

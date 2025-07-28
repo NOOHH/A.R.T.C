@@ -78,6 +78,63 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+        
+        /* Video modal styles */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            background: #000;
+        }
+        
+        .video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .modal-xl {
+            max-width: 90%;
+        }
+        
+        /* Video loading state */
+        .video-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        /* Video embed container styles */
+        .video-embed-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            background-color: #000; /* To hide potential white space before video loads */
+            border-radius: 0.5rem; /* Match iframe/video border-radius */
+        }
+        
+        .video-embed-container iframe,
+        .video-embed-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none; /* Remove default iframe border */
+            object-fit: contain; /* Ensure video fits within bounds */
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
     </style>
 @endpush
 
@@ -811,10 +868,26 @@
                 </div>
                 <div class="modal-body p-0">
                     <div class="video-container">
-                        <video class="video-player" id="videoPlayer" controls>
+                        <video class="video-player" id="videoPlayer" controls preload="metadata">
                             <source id="videoSource" src="" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
+                        <div id="videoLoadingState" class="video-loading" style="display: none;">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading video...</span>
+                                </div>
+                                <p class="mt-2">Loading video content...</p>
+                            </div>
+                        </div>
+                        <div id="videoErrorState" class="video-loading" style="display: none;">
+                            <div class="text-center">
+                                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">Video Not Available</h5>
+                                <p class="text-muted">The video content could not be loaded. Please check if the video file is accessible.</p>
+                                <button class="btn btn-outline-primary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1156,13 +1229,18 @@
             switch (type?.toLowerCase()) {
                 case 'video':
                     return { icon: 'bi-play-circle-fill', class: 'video-icon' };
-                case 'document':
-                case 'pdf':
-                    return { icon: 'bi-file-earmark-text', class: 'document-icon' };
+                case 'lesson':
+                    return { icon: 'bi-book', class: 'document-icon' };
                 case 'assignment':
                     return { icon: 'bi-pencil-square', class: 'assignment-icon' };
                 case 'quiz':
                     return { icon: 'bi-question-circle', class: 'assignment-icon' };
+                case 'test':
+                    return { icon: 'bi-clipboard-check', class: 'assignment-icon' };
+                case 'link':
+                    return { icon: 'bi-link-45deg', class: 'document-icon' };
+                case 'pdf':
+                    return { icon: 'bi-file-earmark-text', class: 'document-icon' };
                 default:
                     return { icon: 'bi-book', class: 'document-icon' };
             }
@@ -1184,11 +1262,26 @@
                     console.log('Opening as video content');
                     openVideoContent(contentId);
                     break;
+                case 'lesson':
+                    console.log('Opening as lesson content');
+                    openGenericContent(contentId);
+                    break;
                 case 'assignment':
                     console.log('Opening as assignment content');
                     openAssignmentViewer(contentId);
                     break;
-                case 'document':
+                case 'quiz':
+                    console.log('Opening as quiz content');
+                    openGenericContent(contentId);
+                    break;
+                case 'test':
+                    console.log('Opening as test content');
+                    openGenericContent(contentId);
+                    break;
+                case 'link':
+                    console.log('Opening as link content');
+                    openGenericContent(contentId);
+                    break;
                 case 'pdf':
                     console.log('Opening as document content');
                     openDocumentContent(contentId);
@@ -1550,6 +1643,7 @@ if (addSubmissionBtn) {
 
         // Open video content
         function openVideoContent(contentId) {
+            console.log('Opening video content with ID:', contentId);
             // Load content details first
             fetch(`/student/content/${contentId}`, {
                 method: 'GET',
@@ -1560,16 +1654,104 @@ if (addSubmissionBtn) {
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Video content data:', data);
                 if (data.content && (data.content.attachment_path || data.content.content_url)) {
                     document.getElementById('videoModalTitle').textContent = data.content.content_title || 'Video Content';
-                    const videoSrc = data.content.content_url || storageUrl + '/' + data.content.attachment_path;
-                    document.getElementById('videoSource').src = videoSrc;
-                    document.getElementById('videoPlayer').load();
+                    
+                    // Determine video source with robust validation
+                    let videoSrc = '';
+                    if (data.content.content_url && data.content.content_url.trim() !== '') {
+                        videoSrc = data.content.content_url;
+                        console.log('Using content_url:', videoSrc);
+                    } else if (data.content.attachment_path && data.content.attachment_path.trim() !== '' && data.content.attachment_path !== '[') {
+                        // Validate attachment_path is not malformed
+                        const cleanPath = data.content.attachment_path.replace(/[\[\]]/g, '').trim();
+                        if (cleanPath && cleanPath.length > 0) {
+                            videoSrc = storageUrl + '/' + cleanPath;
+                            console.log('Using attachment_path:', videoSrc);
+                        } else {
+                            console.warn('Invalid attachment_path:', data.content.attachment_path);
+                        }
+                    }
+                    
+                    // Set video source with validation
+                    const videoSource = document.getElementById('videoSource');
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    const videoLoadingState = document.getElementById('videoLoadingState');
+                    const videoErrorState = document.getElementById('videoErrorState');
+                    
+                    // Validate video source before setting
+                    if (!videoSrc || videoSrc.trim() === '' || videoSrc.includes('storage/[')) {
+                        console.error('Invalid video source:', videoSrc);
+                        videoPlayer.style.display = 'none';
+                        videoLoadingState.style.display = 'none';
+                        videoErrorState.style.display = 'flex';
+                        const videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
+                        videoModal.show();
+                        return;
+                    }
+                    
+                    // Show loading state
+                    videoPlayer.style.display = 'none';
+                    videoLoadingState.style.display = 'flex';
+                    videoErrorState.style.display = 'none';
+                    
+                    videoSource.src = videoSrc;
+                    videoSource.type = 'video/mp4'; // Default type
+                    
+                    // Try to determine video type from URL
+                    if (videoSrc.includes('.webm')) {
+                        videoSource.type = 'video/webm';
+                    } else if (videoSrc.includes('.ogg')) {
+                        videoSource.type = 'video/ogg';
+                    } else if (videoSrc.includes('.mov')) {
+                        videoSource.type = 'video/quicktime';
+                    }
+                    
+                    console.log('Video source set to:', videoSrc, 'Type:', videoSource.type);
+                    
+                    // Load and show video
+                    videoPlayer.load();
+                    
+                    // Add event handlers for video loading
+                    videoPlayer.onloadstart = function() {
+                        console.log('Video loading started');
+                    };
+                    
+                    videoPlayer.onloadeddata = function() {
+                        console.log('Video loaded successfully');
+                        videoPlayer.style.display = 'block';
+                        videoLoadingState.style.display = 'none';
+                    };
+                    
+                    videoPlayer.oncanplay = function() {
+                        console.log('Video can start playing');
+                        videoPlayer.style.display = 'block';
+                        videoLoadingState.style.display = 'none';
+                    };
+                    
+                    videoPlayer.onerror = function() {
+                        console.error('Video loading error:', videoPlayer.error);
+                        videoPlayer.style.display = 'none';
+                        videoLoadingState.style.display = 'none';
+                        videoErrorState.style.display = 'flex';
+                    };
+                    
+                    // Timeout fallback
+                    setTimeout(() => {
+                        if (videoLoadingState.style.display === 'flex') {
+                            console.log('Video loading timeout, showing error state');
+                            videoPlayer.style.display = 'none';
+                            videoLoadingState.style.display = 'none';
+                            videoErrorState.style.display = 'flex';
+                        }
+                    }, 10000); // 10 second timeout
                     
                     const videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
                     videoModal.show();
                 } else {
-                    alert('Video content not available');
+                    console.error('No video content available:', data);
+                    alert('Video content not available. Please check if the video file is uploaded or linked.');
                 }
             })
             .catch(error => {
@@ -1677,6 +1859,60 @@ if (addSubmissionBtn) {
             `;
         }
 
+        // Helper function to generate video embed HTML
+        function getVideoEmbedHtml(url) {
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                // Extract YouTube video ID
+                let videoId = '';
+                if (url.includes('youtube.com/watch?v=')) {
+                    videoId = url.split('v=')[1];
+                } else if (url.includes('youtu.be/')) {
+                    videoId = url.split('youtu.be/')[1];
+                }
+                // Remove any additional parameters
+                if (videoId.includes('&')) {
+                    videoId = videoId.split('&')[0];
+                }
+                
+                return `<iframe width="100%" height="400" 
+                        src="https://www.youtube.com/embed/${videoId}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>`;
+            } else if (url.includes('vimeo.com')) {
+                // Extract Vimeo video ID
+                const videoId = url.split('vimeo.com/')[1];
+                return `<iframe width="100%" height="400" 
+                        src="https://player.vimeo.com/video/${videoId}" 
+                        frameborder="0" 
+                        allow="autoplay; fullscreen; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>`;
+            } else if (url.includes('dailymotion.com')) {
+                // Extract Dailymotion video ID
+                const videoId = url.split('dailymotion.com/video/')[1];
+                return `<iframe width="100%" height="400" 
+                        src="https://www.dailymotion.com/embed/video/${videoId}" 
+                        frameborder="0" 
+                        allow="autoplay; fullscreen; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>`;
+            } else if (url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+                // Direct video file
+                return `<video width="100%" height="400" controls>
+                    <source src="${url}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>`;
+            } else {
+                // Fallback to link
+                return `<div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <a href="${url}" target="_blank" class="alert-link">Click here to view the video content</a>
+                </div>`;
+            }
+        }
+
         // Open generic content
         function openGenericContent(contentId) {
             fetch(`/student/content/${contentId}`, {
@@ -1690,6 +1926,15 @@ if (addSubmissionBtn) {
             .then(data => {
                 if (data.content) {
                     const viewer = document.getElementById('content-viewer');
+                    
+                    // Check if content_url is a video URL
+                    const isVideoUrl = data.content.content_url && (
+                        data.content.content_url.includes('youtube.com') || 
+                        data.content.content_url.includes('youtu.be') ||
+                        data.content.content_url.includes('vimeo.com') ||
+                        data.content.content_url.includes('dailymotion.com') ||
+                        data.content.content_url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)
+                    );
                     
                     // Check if there's an attachment to display
                     let attachmentSection = '';
@@ -1733,6 +1978,41 @@ if (addSubmissionBtn) {
                         `;
                     }
                     
+                    // Check if there's a content URL to display
+                    let contentUrlSection = '';
+                    if (data.content.content_url && data.content.content_url.trim() !== '') {
+                        if (isVideoUrl) {
+                            contentUrlSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-play-circle me-2"></i>Video Content</h5>
+                                    <div class="video-embed-container">
+                                        ${getVideoEmbedHtml(data.content.content_url)}
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            contentUrlSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-link-45deg me-2"></i>Content Link</h5>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <i class="bi bi-link-45deg text-primary" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">External Content</h6>
+                                            <small class="text-muted">Click to view external content</small>
+                                        </div>
+                                        <div>
+                                            <a href="${data.content.content_url}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> Open Content
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
                     viewer.innerHTML = `
                         <div class="content-details">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1743,6 +2023,7 @@ if (addSubmissionBtn) {
                             </div>
                             ${data.content.content_description ? `<p class="mb-3">${data.content.content_description}</p>` : ''}
                             ${data.content.content_text ? `<div class="content-body mb-4">${data.content.content_text}</div>` : ''}
+                            ${contentUrlSection}
                             ${attachmentSection}
                         </div>
                     `;
@@ -1907,10 +2188,7 @@ if (addSubmissionBtn) {
                     course_id: currentCourse,
                     module_id: currentModule
                 };
-            } else if (type === 'document') {
-                url = '/student/complete-content';
-                payload = { content_id: id };
-            }
+
 
             let token = (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
 

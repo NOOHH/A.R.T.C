@@ -1961,13 +1961,42 @@ public function getContentByCourse($courseId)
             switch (strtolower($extension)) {
                 case 'txt':
                     return file_get_contents($tempPath);
+                    
                 case 'csv':
                     return $this->extractTextFromCsv($tempPath);
+                    
                 case 'pdf':
                     return $this->extractTextFromPdf($tempPath);
+                    
                 case 'doc':
                 case 'docx':
                     return $this->extractTextFromDoc($tempPath);
+                    
+                default:
+                    throw new \Exception("Unsupported file type: {$extension}");
+            }
+        } catch (\Exception $e) {
+            Log::error('Document text extraction failed', [
+    private function extractTextFromDocument($file)
+    {
+        $extension = $file->getClientOriginalExtension();
+        $tempPath = $file->getPathname();
+
+        try {
+            switch (strtolower($extension)) {
+                case 'txt':
+                    return file_get_contents($tempPath);
+                    
+                case 'csv':
+                    return $this->extractTextFromCsv($tempPath);
+                    
+                case 'pdf':
+                    return $this->extractTextFromPdf($tempPath);
+                    
+                case 'doc':
+                case 'docx':
+                    return $this->extractTextFromDoc($tempPath);
+                    
                 default:
                     throw new \Exception("Unsupported file type: {$extension}");
             }
@@ -2243,14 +2272,6 @@ public function getContentByCourse($courseId)
                 return response()->json(['success' => false, 'message' => 'Quiz not found or access denied.'], 404);
             }
 
-            // Ensure program_id is present and valid
-            if (!$quiz->program_id) {
-                $quiz->program_id = $request->program_id ?? null;
-                if (!$quiz->program_id) {
-                    return response()->json(['success' => false, 'message' => 'Missing program_id for quiz.'], 400);
-                }
-            }
-
             // Update quiz settings
             $quiz->update([
                 'quiz_title' => $request->quiz_title ?? $quiz->quiz_title,
@@ -2264,8 +2285,7 @@ public function getContentByCourse($courseId)
                 'randomize_mc_options' => $request->boolean('randomize_mc_options', false),
                 'max_attempts' => $request->max_attempts ?? $quiz->max_attempts,
                 'total_questions' => count($request->questions ?? []),
-                'updated_at' => now(),
-                'program_id' => $quiz->program_id
+                'updated_at' => now()
             ]);
 
             // Update or create questions
@@ -2273,10 +2293,6 @@ public function getContentByCourse($courseId)
             $questionsOrder = 1;
 
             foreach ($request->questions ?? [] as $questionData) {
-                // Defensive: Ensure question_text and question_type are present
-                if (empty($questionData['question_text']) || empty($questionData['question_type'])) {
-                    continue; // Skip invalid question
-                }
                 if (isset($questionData['id']) && $questionData['id']) {
                     // Update existing question
                     $question = QuizQuestion::where('id', $questionData['id'])
@@ -2295,11 +2311,9 @@ public function getContentByCourse($courseId)
             }
 
             // Delete questions that were removed
-            if (!empty($existingQuestionIds)) {
-                QuizQuestion::where('quiz_id', $quiz->quiz_id)
-                           ->whereNotIn('id', $existingQuestionIds)
-                           ->delete();
-            }
+            QuizQuestion::where('quiz_id', $quiz->quiz_id)
+                       ->whereNotIn('id', $existingQuestionIds)
+                       ->delete();
 
             // Update content item if exists
             if ($quiz->content_id) {
@@ -2310,7 +2324,7 @@ public function getContentByCourse($courseId)
                         'content_description' => $quiz->instructions,
                         'content_data' => json_encode([
                             'quiz_id' => $quiz->quiz_id,
-                            'total_questions' => count($request->questions ?? []),
+                            'total_questions' => count($request->questions),
                             'time_limit' => $quiz->time_limit,
                             'difficulty' => $quiz->difficulty
                         ])
@@ -2320,7 +2334,7 @@ public function getContentByCourse($courseId)
 
             Log::info('Quiz saved successfully', [
                 'quiz_id' => $quiz->quiz_id,
-                'total_questions' => count($request->questions ?? [])
+                'total_questions' => count($request->questions)
             ]);
 
             return response()->json([
@@ -2328,7 +2342,7 @@ public function getContentByCourse($courseId)
                 'message' => 'Quiz saved successfully!',
                 'data' => [
                     'quiz_id' => $quiz->quiz_id,
-                    'total_questions' => count($request->questions ?? []),
+                    'total_questions' => count($request->questions),
                     'status' => $quiz->status
                 ]
             ]);

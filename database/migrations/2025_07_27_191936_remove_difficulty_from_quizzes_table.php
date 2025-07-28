@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('quizzes', function (Blueprint $table) {
-            $table->dropColumn('difficulty');
+            //
         });
     }
 
@@ -26,7 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('quizzes', function (Blueprint $table) {
-            $table->enum('difficulty', ['easy', 'medium', 'hard'])->default('medium');
+            //
         });
     }
 };

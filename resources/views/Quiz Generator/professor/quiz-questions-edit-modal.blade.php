@@ -1,4 +1,3 @@
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 <!-- Quiz Information Panel -->
 <div class="quiz-settings-panel">
     <div class="row">
@@ -21,37 +20,6 @@
                         <option value="draft" {{ $quiz->status === 'draft' ? 'selected' : '' }}>Draft</option>
                         <option value="published" {{ $quiz->status === 'published' ? 'selected' : '' }}>Published</option>
                         <option value="archived" {{ $quiz->status === 'archived' ? 'selected' : '' }}>Archived</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Program</label>
-                    <select class="form-select" id="program_id" name="program_id" required onchange="fetchModulesForProgram(this.value)">
-                        <option value="">Select Program</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->id }}" {{ (isset($quiz->program_id) && $quiz->program_id == $program->id) ? 'selected' : '' }}>{{ $program->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Module</label>
-                    <select class="form-select" id="module_id" name="module_id" required onchange="fetchCoursesForModule(this.value)">
-                        <option value="">Select Module</option>
-                        @if(isset($modules))
-                            @foreach($modules as $module)
-                                <option value="{{ $module->id }}" {{ (isset($quiz->module_id) && $quiz->module_id == $module->id) ? 'selected' : '' }}>{{ $module->name }}</option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Course</label>
-                    <select class="form-select" id="course_id" name="course_id" required>
-                        <option value="">Select Course</option>
-                        @if(isset($courses))
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}" {{ (isset($quiz->course_id) && $quiz->course_id == $course->id) ? 'selected' : '' }}>{{ $course->name }}</option>
-                            @endforeach
-                        @endif
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -168,16 +136,7 @@
             </div>
         </div>
     @endforeach
-    <!-- Empty State for JS integration (must be inside questions-container for JS to find it) -->
-    <div id="quizEmptyState" class="text-center" style="display:none; width:100%;">
-        <i class="bi bi-inbox" style="font-size:2.5rem;color:#bdbdbd"></i>
-        <div class="mt-2 text-muted">
-            No questions yet—click <b>Add Question</b> or use AI Generate to get started.
-        </div>
-    </div>
 </div>
-
-<!-- Empty State for JS integration -->
 
 @if($quiz->questions->count() === 0)
     <div class="alert alert-info text-center">

@@ -13,36 +13,26 @@ class StudentModuleController extends Controller
 
     /**
      * Return JSON list of active content items for a course.
-     * Only shows published quizzes to students.
      */
     public function getCourseContent($moduleId, $courseId)
     {
         try {
-            // Fetch content items for the course
+            // Fetch content items directly by course_id and module_id (if needed)
             $items = \App\Models\ContentItem::where('course_id', $courseId)
                 ->where('is_active', 1)
+                ->whereNotExists(function($query) {
+                    // Exclude content items that are linked to draft quizzes
+                    $query->select(DB::raw(1))
+                          ->from('quizzes')
+                          ->whereColumn('quizzes.content_id', 'content_items.id')
+                          ->where('quizzes.is_draft', true);
+                })
                 ->orderBy('content_order')
                 ->get(['id', 'content_title', 'content_type', 'attachment_path', 'content_description', 'content_url']);
 
-            // Filter out quiz content that's not published
-            $filteredItems = $items->filter(function($item) {
-                // If it's not a quiz, include it
-                if ($item->content_type !== 'quiz') {
-                    return true;
-                }
-                
-                // If it's a quiz, check if there's a published quiz linked to this content
-                $publishedQuiz = \App\Models\Quiz::where('content_id', $item->id)
-                    ->where('status', 'published')
-                    ->where('is_active', true)
-                    ->first();
-                
-                return $publishedQuiz !== null;
-            });
-
             return response()->json([
                 'success' => true,
-                'content_items' => $filteredItems->values(), // Reset array keys
+                'content_items' => $items,
             ]);
         } catch (\Exception $e) {
             Log::error('Error getting course content: ' . $e->getMessage());

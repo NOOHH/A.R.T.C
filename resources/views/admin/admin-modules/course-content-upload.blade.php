@@ -301,9 +301,11 @@
                         <select id="contentType" name="content_type" class="form-select" required>
                             <option value="">-- Select Type --</option>
                             <option value="lesson">📚 Lesson</option>
-                            <option value="assignment">📝 Assignment</option>
                             <option value="video">🎥 Video</option>
-                            <option value="document">📄 Document</option>
+                            <option value="assignment">📝 Assignment</option>
+                            <option value="quiz">❓ Quiz</option>
+                            <option value="test">📋 Test</option>
+                            <option value="link">🔗 External Link</option>
                         </select>
                     </div>
                 </div>
@@ -347,7 +349,7 @@
             </h3>
             <div class="form-group">
                 <label for="contentLink" class="form-label">Content Link (URL)</label>
-                <input type="url" id="contentLink" name="content_link" class="form-control" placeholder="Paste a link to content (optional)">
+                <input type="url" id="contentLink" name="content_url" class="form-control" placeholder="Paste a link to content (optional)">
             </div>
             <div class="file-upload-area" id="fileUploadArea">
                 <div class="file-upload-icon">

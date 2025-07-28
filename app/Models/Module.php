@@ -29,6 +29,7 @@ class Module extends Model
         'is_archived',
         'module_order',
         'video_path',
+        'content_url',
         'additional_content',
         'order',
         'admin_override',
@@ -83,14 +84,13 @@ class Module extends Model
     public function getContentTypeDisplayAttribute()
     {
         return match($this->content_type) {
-            'module' => 'Module/Lesson',
-            'assignment' => 'Assignment',
-            'quiz' => 'Quiz',
-            'ai_quiz' => 'AI-Powered Quiz',
-            'test' => 'Test',
-            'link' => 'External Link',
-            'file' => 'File Upload',
-            default => 'Module/Lesson',
+            'lesson' => '📚 Lesson',
+            'video' => '🎥 Video',
+            'assignment' => '📝 Assignment',
+            'quiz' => '❓ Quiz',
+            'test' => '📋 Test',
+            'link' => '🔗 External Link',
+            default => '📚 Lesson',
         };
     }
 

@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::table('content_items', function (Blueprint $table) {
             // Update the enum to include 'lesson' type
-            DB::statement("ALTER TABLE content_items MODIFY content_type ENUM('assignment', 'quiz', 'test', 'link', 'video', 'document', 'lesson')");
+            DB::statement("ALTER TABLE content_items MODIFY content_type ENUM('assignment', 'quiz', 'test', 'link', 'video', 'lesson')");
         });
     }
 

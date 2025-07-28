@@ -1767,13 +1767,6 @@ function validateFormInfo() {
     return true;
 }
 
-// Show course lessons
-function showCourseLessons(courseId, courseName) {
-    // This would typically make an AJAX call to get course lessons
-    console.log('Showing lessons for course:', courseId, courseName);
-    showAlert(`Lesson details for "${courseName}" would be displayed here.`, 'info');
-}
-
 // Alert function
 function showAlert(message, type = 'info') {
     const alertContainer = document.getElementById('alertContainer');

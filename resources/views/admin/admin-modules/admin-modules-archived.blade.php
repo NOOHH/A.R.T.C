@@ -50,18 +50,6 @@
     align-items: center;
     gap: 8px;
   }
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-  }
 
   .back-to-modules-btn:hover {
     transform: translateY(-2px);
@@ -429,7 +417,7 @@
                                     <div class="module-title">
                                         {{ $module->content_type_icon ?? '📚' }} {{ $module->module_name }}
                                         <span class="content-type-badge {{ $module->content_type ?? 'module' }}">
-                                            {{ $module->content_type_display ?? 'Module/Lesson' }}
+                                            {{ $module->content_type_display ?? 'Module' }}
                                         </span>
                                     </div>
                                     

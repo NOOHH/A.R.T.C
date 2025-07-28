@@ -19,7 +19,6 @@ class ContentItem extends Model
     protected $fillable = [
         'content_title',
         'content_description',
-        'lesson_id',
         'course_id',
         'content_type',
         'content_data',
@@ -55,11 +54,6 @@ class ContentItem extends Model
     ];
 
     // Relationships
-    public function lesson()
-    {
-        return $this->belongsTo(Lesson::class, 'lesson_id', 'lesson_id');
-    }
-
     public function course()
     {
         return $this->belongsTo(Course::class, 'course_id', 'subject_id');

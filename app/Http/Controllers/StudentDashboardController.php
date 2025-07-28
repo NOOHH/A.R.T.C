@@ -1656,13 +1656,10 @@ class StudentDashboardController extends Controller
      */
     public function startAiQuiz($quizId)
     {
-        $quiz = \App\Models\Quiz::with('questions')
-            ->where('status', 'published')
-            ->where('is_active', true)
-            ->find($quizId);
+        $quiz = \App\Models\Quiz::with('questions')->find($quizId);
         
         if (!$quiz) {
-            return redirect()->back()->with('error', 'Quiz not found or not available.');
+            return redirect()->back()->with('error', 'Quiz not found.');
         }
         
         $student = Student::where('user_id', session('user_id'))->first();
@@ -1703,15 +1700,12 @@ class StudentDashboardController extends Controller
                 ]);
             }
             
-            $quiz = \App\Models\Quiz::with('questions')
-                ->where('status', 'published')
-                ->where('is_active', true)
-                ->find($quizId);
+            $quiz = \App\Models\Quiz::with('questions')->find($quizId);
             
             if (!$quiz) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Quiz not found or not available.'
+                    'message' => 'Quiz not found.'
                 ]);
             }
             

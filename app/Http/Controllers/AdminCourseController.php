@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Module;
-use App\Models\Lesson;
 use App\Models\ContentItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +13,7 @@ class AdminCourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::with('module', 'lessons')->orderBy('subject_order')->get();
+        $courses = Course::with('module', 'contentItems')->orderBy('subject_order')->get();
         return response()->json([
             'success' => true,
             'courses' => $courses
@@ -90,7 +89,7 @@ class AdminCourseController extends Controller
 
     public function show($id)
     {
-        $course = Course::with(['module', 'lessons'])->findOrFail($id);
+        $course = Course::with(['module', 'contentItems'])->findOrFail($id);
         return response()->json([
             'success' => true,
             'course' => $course,
@@ -136,7 +135,7 @@ class AdminCourseController extends Controller
     {
         try {
             $courses = Course::where('module_id', $moduleId)
-                ->with('lessons.contentItems')
+                ->with('contentItems')
                 ->orderBy('subject_order')
                 ->get();
 
