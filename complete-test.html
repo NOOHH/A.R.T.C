@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Chat & Search Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .output { background: white; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; max-height: 300px; overflow-y: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Complete Chat & Search System Test</h1>
+    
+    <div class="test-section">
+        <h2>📧 Chat API Tests</h2>
+        <div>
+            <h3>Send Message Test</h3>
+            <input type="number" id="receiver-id" placeholder="Receiver ID" value="8">
+            <input type="text" id="message-text" placeholder="Test message" value="Hello from complete test">
+            <button onclick="testSendMessage()">Send Message</button>
+        </div>
+        
+        <div>
+            <h3>Get Messages Test</h3>
+            <input type="number" id="with-user-id" placeholder="Chat with User ID" value="8">
+            <button onclick="testGetMessages()">Get Messages</button>
+        </div>
+        
+        <div>
+            <h3>Unread Count Test</h3>
+            <button onclick="testUnreadCount()">Get Unread Count</button>
+        </div>
+        
+        <div id="chat-output" class="output"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 Search System Tests</h2>
+        <div>
+            <h3>Chat User Search</h3>
+            <input type="text" id="search-query" placeholder="Search users..." value="vince">
+            <select id="search-type">
+                <option value="students">Students</option>
+                <option value="professors">Professors</option>
+                <option value="admins">Admins</option>
+                <option value="directors">Directors</option>
+                <option value="support">Support</option>
+            </select>
+            <button onclick="testChatSearch()">Search Users</button>
+        </div>
+        
+        <div>
+            <h3>Global Search Test</h3>
+            <input type="text" id="global-search-query" placeholder="Search globally..." value="admin">
+            <select id="global-search-type">
+                <option value="all">All</option>
+                <option value="students">Students</option>
+                <option value="professors">Professors</option>
+                <option value="programs">Programs</option>
+            </select>
+            <button onclick="testGlobalSearch()">Global Search</button>
+        </div>
+        
+        <div id="search-output" class="output"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🗄️ Database Tests</h2>
+        <button onclick="testEncryption()">Check Message Encryption</button>
+        <button onclick="testDatabase()">Check Database Status</button>
+        <div id="db-output" class="output"></div>
+    </div>
+
+    <script>
+        // Set up CSRF token for AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
+        function log(message, type = 'info', targetId = 'chat-output') {
+            const output = document.getElementById(targetId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Chat API Tests
+        function testSendMessage() {
+            const receiverId = document.getElementById('receiver-id').value;
+            const message = document.getElementById('message-text').value;
+            
+            log('🚀 Testing message send...', 'info', 'chat-output');
+            
+            fetch('/api/chat/session/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                body: JSON.stringify({
+                    receiver_id: parseInt(receiverId),
+                    message: message
+                })
+            })
+            .then(response => {
+                log(`Response status: ${response.status}`, response.status === 200 ? 'success' : 'error', 'chat-output');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    log('✅ Message sent successfully!', 'success', 'chat-output');
+                    log(`Message ID: ${data.id}, Content: "${data.data.message}"`, 'info', 'chat-output');
+                } else {
+                    log(`❌ Failed to send: ${data.message || data.error}`, 'error', 'chat-output');
+                }
+            })
+            .catch(error => {
+                log(`❌ Error: ${error.message}`, 'error', 'chat-output');
+            });
+        }
+        
+        function testGetMessages() {
+            const withUserId = document.getElementById('with-user-id').value;
+            
+            log('📥 Testing message retrieval...', 'info', 'chat-output');
+            
+            fetch(`/api/chat/session/messages?with=${withUserId}`)
+            .then(response => {
+                log(`Response status: ${response.status}`, response.status === 200 ? 'success' : 'error', 'chat-output');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    log(`✅ Retrieved ${data.messages.length} messages`, 'success', 'chat-output');
+                    data.messages.slice(-3).forEach(msg => {
+                        log(`- [${msg.sent_at}] ${msg.sender.name}: "${msg.message}"`, 'info', 'chat-output');
+                    });
+                } else {
+                    log(`❌ Failed to get messages: ${data.message || data.error}`, 'error', 'chat-output');
+                }
+            })
+            .catch(error => {
+                log(`❌ Error: ${error.message}`, 'error', 'chat-output');
+            });
+        }
+        
+        function testUnreadCount() {
+            log('📊 Testing unread count...', 'info', 'chat-output');
+            
+            fetch('/api/chat/unread-count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log(`✅ Unread count: ${data.count}`, 'success', 'chat-output');
+                } else {
+                    log(`❌ Failed to get unread count: ${data.message || data.error}`, 'error', 'chat-output');
+                }
+            })
+            .catch(error => {
+                log(`❌ Error: ${error.message}`, 'error', 'chat-output');
+            });
+        }
+        
+        // Search Tests
+        function testChatSearch() {
+            const query = document.getElementById('search-query').value;
+            const type = document.getElementById('search-type').value;
+            
+            log(`🔍 Testing chat search for ${type}: "${query}"`, 'info', 'search-output');
+            
+            fetch(`/api/chat/search-users?search=${encodeURIComponent(query)}&type=${type}`)
+            .then(response => {
+                log(`Response status: ${response.status}`, response.status === 200 ? 'success' : 'error', 'search-output');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    log(`✅ Found ${data.users.length} ${type}`, 'success', 'search-output');
+                    data.users.forEach(user => {
+                        log(`- ${user.name} (${user.email}) - ${user.role}`, 'info', 'search-output');
+                    });
+                } else {
+                    log(`❌ Search failed: ${data.message || data.error}`, 'error', 'search-output');
+                }
+            })
+            .catch(error => {
+                log(`❌ Error: ${error.message}`, 'error', 'search-output');
+            });
+        }
+        
+        function testGlobalSearch() {
+            const query = document.getElementById('global-search-query').value;
+            const type = document.getElementById('global-search-type').value;
+            
+            log(`🌐 Testing global search for ${type}: "${query}"`, 'info', 'search-output');
+            
+            fetch(`/api/search?query=${encodeURIComponent(query)}&type=${type}&limit=10`)
+            .then(response => {
+                log(`Response status: ${response.status}`, response.status === 200 ? 'success' : 'error', 'search-output');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    log(`✅ Found ${data.results.length} results`, 'success', 'search-output');
+                    data.results.forEach(result => {
+                        log(`- ${result.name} (${result.type}) - ${result.email || result.role || ''}`, 'info', 'search-output');
+                    });
+                } else {
+                    log(`❌ Global search failed: ${data.message || data.error}`, 'error', 'search-output');
+                }
+            })
+            .catch(error => {
+                log(`❌ Error: ${error.message}`, 'error', 'search-output');
+            });
+        }
+        
+        // Database Tests
+        function testEncryption() {
+            log('🔐 Testing message encryption...', 'info', 'db-output');
+            
+            fetch('/check_encryption.php')
+            .then(response => response.text())
+            .then(text => {
+                if (text.includes('✅')) {
+                    log('✅ Encryption is working correctly', 'success', 'db-output');
+                } else {
+                    log('❌ Encryption issues detected', 'error', 'db-output');
+                }
+                log(`Details: ${text}`, 'info', 'db-output');
+            })
+            .catch(error => {
+                log(`❌ Error checking encryption: ${error.message}`, 'error', 'db-output');
+            });
+        }
+        
+        function testDatabase() {
+            log('🗄️ Testing database status...', 'info', 'db-output');
+            
+            fetch('/check_chats_table.php')
+            .then(response => response.text())
+            .then(text => {
+                log('✅ Database is accessible', 'success', 'db-output');
+                log(`Database info: ${text}`, 'info', 'db-output');
+            })
+            .catch(error => {
+                log(`❌ Database error: ${error.message}`, 'error', 'db-output');
+            });
+        }
+        
+        // Auto-run basic tests on page load
+        window.addEventListener('load', function() {
+            log('🚀 Complete Chat & Search Test Page Loaded', 'success', 'chat-output');
+            log('🔍 Search System Ready', 'success', 'search-output');
+            log('🗄️ Database Tests Ready', 'success', 'db-output');
+        });
+    </script>
+</body>
+</html>

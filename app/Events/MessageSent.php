@@ -14,32 +14,15 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
+    public $chat;
 
-    public function __construct(Chat $message)
+    public function __construct(Chat $chat)
     {
-        $this->message = $message;
-    }
-
-    public function broadcastOn(): array
-    {
-        return [
-            new PrivateChannel('chat.' . $this->message->receiver_id),
-            new PrivateChannel('chat.' . $this->message->sender_id)
-        ];
-    }
-
-    public function broadcastAs(): string
-    {
-        return 'message.sent';
+        $this->chat = $chat;
     }
 
     /**
      * The channels the event should broadcast on.
-     *
-     * Both the sender and receiver subscribe to their own private channels.
-     *
-     * @return \Illuminate\Broadcasting\PrivateChannel[]
      */
     public function broadcastOn(): array
     {
@@ -50,26 +33,34 @@ class MessageSent implements ShouldBroadcast
     }
 
     /**
+     * The event name that should be broadcasted.
+     */
+    public function broadcastAs(): string
+    {
+        return 'message.sent';
+    }
+
+    /**
      * The data to broadcast.
-     *
-     * @return array<string,mixed>
      */
     public function broadcastWith(): array
     {
+        $senderInfo = $this->chat->sender_info;
+        
         return [
-            'id' => $this->message->chat_id,
-            'sender_id' => $this->message->sender_id,
-            'receiver_id' => $this->message->receiver_id,
-            'message' => $this->message->message, // This will be decrypted automatically
-            'sent_at' => $this->message->sent_at,
-            'is_read' => $this->message->is_read,
-            'sender' => [
-                'id' => $this->message->sender->user_id,
-                'name' => $this->message->sender->full_name,
-                'email' => $this->message->sender->email,
-                'role' => $this->message->sender->role,
-                'is_online' => $this->message->sender->is_online
-            ]
+            'id' => $this->chat->chat_id,
+            'sender_id' => $this->chat->sender_id,
+            'receiver_id' => $this->chat->receiver_id,
+            'message' => $this->chat->message,
+            'sent_at' => $this->chat->sent_at->toISOString(),
+            'is_read' => $this->chat->is_read,
+            'sender' => $senderInfo ? [
+                'id' => $senderInfo['id'],
+                'name' => $senderInfo['name'],
+                'email' => $senderInfo['email'],
+                'role' => $senderInfo['role'],
+                'type' => $senderInfo['type']
+            ] : null
         ];
     }
 }

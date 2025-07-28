@@ -395,7 +395,8 @@ class SearchController extends Controller
      */
     private function searchProfessors($query, $limit, $user)
     {
-        if (!$user || !in_array($user->role, ['admin', 'director', 'student'])) {
+        // Allow admin, director, student, and professor roles to search professors
+        if (!$user || !in_array($user->role, ['admin', 'director', 'student', 'professor'])) {
             return [];
         }
 

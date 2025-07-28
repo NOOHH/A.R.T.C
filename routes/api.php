@@ -14,7 +14,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chat/users', [App\Http\Controllers\ChatController::class, 'getSessionUsers']);
     Route::get('/chat/messages', [App\Http\Controllers\ChatController::class, 'getSessionMessages']);
     Route::post('/chat/send', [App\Http\Controllers\ChatController::class, 'sendSessionMessage']);
-});ion-based chat API routes (alternative for session auth)
+});
+
+// Session-based chat API routes (alternative for session auth)
 Route::middleware(['web'])->group(function () {
     Route::get('/chat/session/programs', [App\Http\Controllers\Api\ProgramApiController::class, 'index']);
     Route::get('/chat/session/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
@@ -22,7 +24,22 @@ Route::middleware(['web'])->group(function () {
     Route::get('/chat/session/messages', [App\Http\Controllers\ChatController::class, 'getSessionMessages']);
     Route::post('/chat/session/send', [App\Http\Controllers\ChatController::class, 'sendSessionMessage']);
     Route::post('/chat/session/clear-history', [App\Http\Controllers\ChatController::class, 'clearSessionHistory']);
-});-----
+    
+    // Professor chat routes
+    Route::post('/chat/send', [App\Http\Controllers\Professor\ChatController::class, 'sendMessage']);
+    Route::get('/chat/unread-count', [App\Http\Controllers\ChatController::class, 'getUnreadCount']);
+});
+
+// Chat search route (separate to avoid middleware conflicts)
+Route::post('/chat/session/search', [App\Http\Controllers\ChatController::class, 'sessionSearch'])->middleware('web');
+
+// Test route to verify routing is working
+Route::get('/test-route', function() {
+    return response()->json(['message' => 'Test route works']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |

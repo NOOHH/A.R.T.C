@@ -618,5 +618,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Include Global Chat Component -->
 @include('components.global-chat')
+
+<!-- Include Real-time Chat Component -->
+@include('components.realtime-chat')
 </body>
 </html>

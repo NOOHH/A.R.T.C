@@ -29,10 +29,37 @@ class ChatController extends Controller
 
         $type = $request->input('type');
         $search = $request->input('search', '');
-        $currentUser = Auth::user();
-
-        if (!$currentUser) {
-            return response()->json(['error' => 'Authentication required'], 401);
+        
+        // Get current user from Auth or session fallback
+        $authUser = Auth::user();
+        if ($authUser && $authUser instanceof Professor) {
+            // Authenticated professor
+            $currentUser = (object) [
+                'user_id' => $authUser->professor_id,
+                'id' => $authUser->professor_id,
+                'role' => 'professor',
+                'name' => trim(($authUser->professor_first_name ?? '') . ' ' . ($authUser->professor_last_name ?? '')) ?: ($authUser->professor_name ?? 'Unknown Professor')
+            ];
+        } elseif ($authUser && isset($authUser->role)) {
+            // Other Auth user (admin, director, etc)
+            $currentUser = (object) [
+                'user_id' => $authUser->id ?? $authUser->user_id,
+                'id' => $authUser->id ?? $authUser->user_id,
+                'role' => $authUser->role,
+                'name' => $authUser->name ?? ($authUser->user_firstname . ' ' . $authUser->user_lastname) ?? 'Unknown User'
+            ];
+        } else {
+            // Fallback to session-based authentication
+            $sessionUser = $this->getCurrentSessionUser();
+            if (!$sessionUser['id']) {
+                return response()->json(['error' => 'Not authenticated'], 401);
+            }
+            $currentUser = (object) [
+                'user_id' => $sessionUser['id'],
+                'id' => $sessionUser['id'],
+                'role' => $sessionUser['role'],
+                'name' => $sessionUser['name']
+            ];
         }
 
         try {
@@ -59,10 +86,17 @@ class ChatController extends Controller
             return response()->json([
                 'success' => true,
                 'users' => $users,
-                'total' => count($users)
+                'total' => count($users),
+                'search' => $search,
+                'type' => $type,
+                'current_user' => [
+                    'id' => $currentUser->user_id ?? $currentUser->id,
+                    'role' => $currentUser->role
+                ]
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error searching users: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to search users',
                 'message' => $e->getMessage()
@@ -84,22 +118,25 @@ class ChatController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+                $q->where('user_firstname', 'like', '%' . $search . '%')
+                  ->orWhere('user_lastname', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhereRaw("CONCAT(user_firstname, ' ', user_lastname) LIKE ?", ['%' . $search . '%']);
             });
         }
 
-        return $query->select('id', 'name', 'email', 'role', 'created_at')
-                    ->orderBy('name')
+        return $query->select('user_id as id', 'user_firstname', 'user_lastname', 'email', 'role', 'created_at')
+                    ->orderBy('user_firstname')
                     ->limit(20)
                     ->get()
                     ->map(function ($user) {
+                        $fullName = trim($user->user_firstname . ' ' . $user->user_lastname);
                         return [
                             'id' => $user->id,
-                            'name' => $user->name,
+                            'name' => $fullName,
                             'email' => $user->email,
                             'role' => $user->role,
-                            'avatar' => $this->getInitials($user->name),
+                            'avatar' => $this->getInitials($fullName),
                             'status' => $this->getUserStatus($user->id),
                             'last_seen' => $user->updated_at ? $user->updated_at->diffForHumans() : null
                         ];
@@ -111,28 +148,36 @@ class ChatController extends Controller
      */
     private function getProfessors($search, $currentUser)
     {
-        $query = User::where('role', 'professor');
+        // Use the Professor model for more complete data
+        $query = Professor::where('professor_archived', false);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+                $q->where('professor_first_name', 'like', '%' . $search . '%')
+                  ->orWhere('professor_last_name', 'like', '%' . $search . '%')
+                  ->orWhere('professor_name', 'like', '%' . $search . '%')
+                  ->orWhere('professor_email', 'like', '%' . $search . '%')
+                  ->orWhereRaw("CONCAT(professor_first_name, ' ', professor_last_name) LIKE ?", ['%' . $search . '%']);
             });
         }
 
-        return $query->select('id', 'name', 'email', 'role', 'created_at')
-                    ->orderBy('name')
+        return $query->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_name', 'professor_email', 'created_at')
+                    ->orderBy('professor_first_name')
                     ->limit(20)
                     ->get()
-                    ->map(function ($user) {
+                    ->map(function ($professor) {
+                        $fullName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+                        if (empty($fullName)) {
+                            $fullName = $professor->professor_name ?? 'Unknown Professor';
+                        }
                         return [
-                            'id' => $user->id,
-                            'name' => $user->name,
-                            'email' => $user->email,
-                            'role' => $user->role,
-                            'avatar' => $this->getInitials($user->name),
-                            'status' => $this->getUserStatus($user->id),
-                            'last_seen' => $user->updated_at ? $user->updated_at->diffForHumans() : null
+                            'id' => $professor->id,
+                            'name' => $fullName,
+                            'email' => $professor->professor_email,
+                            'role' => 'professor',
+                            'avatar' => $this->getInitials($fullName),
+                            'status' => $this->getUserStatus($professor->id),
+                            'last_seen' => $professor->updated_at ? $professor->updated_at->diffForHumans() : null
                         ];
                     });
     }
@@ -173,34 +218,35 @@ class ChatController extends Controller
      */
     private function getAdmins($search, $currentUser)
     {
-        // Only other admins and directors can chat with admins
-        if (!in_array($currentUser->role, ['admin', 'director'])) {
-            return [];
+        // Students and professors can chat with admins for support
+        // Only exclude other admins from seeing themselves
+        $query = Admin::query();
+        
+        // If current user is an admin, exclude themselves
+        if ($currentUser->role === 'admin' && isset($currentUser->admin_id)) {
+            $query->where('admin_id', '!=', $currentUser->admin_id);
         }
-
-        $query = User::where('role', 'admin')
-                    ->where('id', '!=', $currentUser->id); // Exclude current user
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
+                $q->where('admin_name', 'like', '%' . $search . '%')
                   ->orWhere('email', 'like', '%' . $search . '%');
             });
         }
 
-        return $query->select('id', 'name', 'email', 'role', 'created_at')
-                    ->orderBy('name')
+        return $query->select('admin_id as id', 'admin_name', 'email', 'created_at')
+                    ->orderBy('admin_name')
                     ->limit(20)
                     ->get()
-                    ->map(function ($user) {
+                    ->map(function ($admin) {
                         return [
-                            'id' => $user->id,
-                            'name' => $user->name,
-                            'email' => $user->email,
-                            'role' => $user->role,
-                            'avatar' => $this->getInitials($user->name),
-                            'status' => $this->getUserStatus($user->id),
-                            'last_seen' => $user->updated_at ? $user->updated_at->diffForHumans() : null
+                            'id' => $admin->id,
+                            'name' => $admin->admin_name,
+                            'email' => $admin->email,
+                            'role' => 'admin',
+                            'avatar' => $this->getInitials($admin->admin_name),
+                            'status' => $this->getUserStatus($admin->id),
+                            'last_seen' => $admin->updated_at ? $admin->updated_at->diffForHumans() : null
                         ];
                     });
     }
@@ -215,29 +261,36 @@ class ChatController extends Controller
             return [];
         }
 
-        $query = User::where('role', 'director')
-                    ->where('id', '!=', $currentUser->id); // Exclude current user
+        $query = Director::where('directors_archived', false)
+                        ->where('directors_id', '!=', $currentUser->directors_id ?? 0); // Exclude current user
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+                $q->where('directors_name', 'like', '%' . $search . '%')
+                  ->orWhere('directors_first_name', 'like', '%' . $search . '%')
+                  ->orWhere('directors_last_name', 'like', '%' . $search . '%')
+                  ->orWhere('directors_email', 'like', '%' . $search . '%')
+                  ->orWhereRaw("CONCAT(directors_first_name, ' ', directors_last_name) LIKE ?", ['%' . $search . '%']);
             });
         }
 
-        return $query->select('id', 'name', 'email', 'role', 'created_at')
-                    ->orderBy('name')
+        return $query->select('directors_id as id', 'directors_name', 'directors_first_name', 'directors_last_name', 'directors_email', 'created_at')
+                    ->orderBy('directors_first_name')
                     ->limit(20)
                     ->get()
-                    ->map(function ($user) {
+                    ->map(function ($director) {
+                        $fullName = trim(($director->directors_first_name ?? '') . ' ' . ($director->directors_last_name ?? ''));
+                        if (empty($fullName)) {
+                            $fullName = $director->directors_name ?? 'Unknown Director';
+                        }
                         return [
-                            'id' => $user->id,
-                            'name' => $user->name,
-                            'email' => $user->email,
-                            'role' => $user->role,
-                            'avatar' => $this->getInitials($user->name),
-                            'status' => $this->getUserStatus($user->id),
-                            'last_seen' => $user->updated_at ? $user->updated_at->diffForHumans() : null
+                            'id' => $director->id,
+                            'name' => $fullName,
+                            'email' => $director->directors_email,
+                            'role' => 'director',
+                            'avatar' => $this->getInitials($fullName),
+                            'status' => $this->getUserStatus($director->id),
+                            'last_seen' => $director->updated_at ? $director->updated_at->diffForHumans() : null
                         ];
                     });
     }
@@ -278,7 +331,24 @@ class ChatController extends Controller
             'content' => 'required|string|max:1000',
         ]);
 
-        $user = Auth::user();
+        $authUser = Auth::user();
+        if ($authUser && $authUser instanceof Professor) {
+            $user = (object) [
+                'user_id' => $authUser->professor_id,
+                'id' => $authUser->professor_id,
+                'role' => 'professor',
+                'name' => trim(($authUser->professor_first_name ?? '') . ' ' . ($authUser->professor_last_name ?? '')) ?: ($authUser->professor_name ?? 'Unknown Professor')
+            ];
+        } elseif ($authUser && isset($authUser->role)) {
+            $user = (object) [
+                'user_id' => $authUser->id ?? $authUser->user_id,
+                'id' => $authUser->id ?? $authUser->user_id,
+                'role' => $authUser->role,
+                'name' => $authUser->name ?? ($authUser->user_firstname . ' ' . $authUser->user_lastname) ?? 'Unknown User'
+            ];
+        } else {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
         $receiver = User::findOrFail($request->receiver_id);
 
         // Check if user can send messages to this receiver
@@ -304,7 +374,24 @@ class ChatController extends Controller
             'limit' => 'integer|min:1|max:100',
         ]);
 
-        $user = Auth::user();
+        $authUser = Auth::user();
+        if ($authUser && $authUser instanceof Professor) {
+            $user = (object) [
+                'user_id' => $authUser->professor_id,
+                'id' => $authUser->professor_id,
+                'role' => 'professor',
+                'name' => trim(($authUser->professor_first_name ?? '') . ' ' . ($authUser->professor_last_name ?? '')) ?: ($authUser->professor_name ?? 'Unknown Professor')
+            ];
+        } elseif ($authUser && isset($authUser->role)) {
+            $user = (object) [
+                'user_id' => $authUser->id ?? $authUser->user_id,
+                'id' => $authUser->id ?? $authUser->user_id,
+                'role' => $authUser->role,
+                'name' => $authUser->name ?? ($authUser->user_firstname . ' ' . $authUser->user_lastname) ?? 'Unknown User'
+            ];
+        } else {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
         $otherUser = User::findOrFail($request->user_id);
 
         // Check if user can view messages with this user
@@ -699,44 +786,56 @@ class ChatController extends Controller
             // Basic validation
             $receiverId = $request->input('receiver_id');
             $message = $request->input('message');
-            $receiverType = $request->input('receiver_type');
             
             if (!$receiverId || !$message) {
                 return response()->json(['error' => 'Receiver ID and message are required'], 400);
             }
             
-            // Create message entry in database
-            $messageData = [
-                'sender_id' => $currentUser['id'],
-                'sender_type' => $currentUser['role'],
-                'receiver_id' => $receiverId,
-                'receiver_type' => $receiverType,
-                'message' => $message,
-                'sent_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
-            ];
+            // Validate message length
+            if (strlen($message) > 1000) {
+                return response()->json(['error' => 'Message too long'], 400);
+            }
             
-            // Insert into messages table
-            $messageId = DB::table('messages')->insertGetId($messageData);
+            // Create encrypted message entry using Chat model
+            $chat = Chat::create([
+                'sender_id' => $currentUser['id'],
+                'receiver_id' => $receiverId,
+                'message' => $message, // This will be automatically encrypted by the model
+                'sent_at' => now(),
+                'is_read' => false
+            ]);
+            
+            // Load sender relationship for broadcasting
+            $chat->load('sender');
+            
+            // Broadcast the message via WebSocket if available
+            try {
+                if (class_exists('\App\Events\MessageSent')) {
+                    broadcast(new \App\Events\MessageSent($chat))->toOthers();
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to broadcast message: ' . $e->getMessage());
+                // Continue execution even if broadcasting fails
+            }
             
             return response()->json([
                 'success' => true,
-                'id' => $messageId,
+                'id' => $chat->chat_id,
                 'message' => 'Message sent successfully',
                 'data' => [
-                    'id' => $messageId,
+                    'id' => $chat->chat_id,
                     'sender_id' => $currentUser['id'],
                     'receiver_id' => $receiverId,
-                    'message' => $message,
-                    'sent_at' => now()->toISOString(),
+                    'message' => $message, // Send plain text in response (encrypted in DB)
+                    'sent_at' => $chat->sent_at->toISOString(),
                     'sender_name' => $currentUser['name'],
-                    'receiver_type' => $receiverType
+                    'is_read' => false
                 ]
             ]);
             
         } catch (\Exception $e) {
             Log::error('Error sending session message: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'error' => 'Failed to send message',
                 'message' => $e->getMessage()
@@ -750,6 +849,7 @@ class ChatController extends Controller
     public function getSessionMessages(Request $request)
     {
         $with = $request->input('with');
+        $after = $request->input('after'); // For pagination/real-time updates
         $currentUser = $this->getCurrentSessionUser();
         
         if (!$currentUser['id']) {
@@ -757,36 +857,64 @@ class ChatController extends Controller
         }
         
         try {
-            // Get messages between current user and specified user
-            $messages = collect([]);
+            // Get messages between current user and specified user using Chat model
+            $query = Chat::with(['sender', 'receiver'])
+                ->where(function ($q) use ($currentUser, $with) {
+                    $q->where('sender_id', $currentUser['id'])
+                      ->where('receiver_id', $with);
+                })
+                ->orWhere(function ($q) use ($currentUser, $with) {
+                    $q->where('sender_id', $with)
+                      ->where('receiver_id', $currentUser['id']);
+                });
             
-            if ($with) {
-                // Get messages from database
-                $messages = DB::table('messages')
-                    ->where(function ($query) use ($currentUser, $with) {
-                        $query->where('sender_id', $currentUser['id'])
-                              ->where('receiver_id', $with);
-                    })
-                    ->orWhere(function ($query) use ($currentUser, $with) {
-                        $query->where('sender_id', $with)
-                              ->where('receiver_id', $currentUser['id']);
-                    })
-                    ->orderBy('sent_at', 'asc')
-                    ->get();
+            // If 'after' parameter is provided, get only newer messages
+            if ($after) {
+                $query->where('chat_id', '>', $after);
             }
+            
+            $messages = $query->orderBy('sent_at', 'asc')->get();
+            
+            // Transform messages for frontend
+            $transformedMessages = $messages->map(function ($message) {
+                $senderInfo = $message->sender_info;
+                return [
+                    'id' => $message->chat_id,
+                    'sender_id' => $message->sender_id,
+                    'receiver_id' => $message->receiver_id,
+                    'message' => $message->message, // Automatically decrypted by model
+                    'sent_at' => $message->sent_at->toISOString(),
+                    'is_read' => $message->is_read,
+                    'sender' => $senderInfo ? [
+                        'id' => $senderInfo['id'],
+                        'name' => $senderInfo['name'],
+                        'email' => $senderInfo['email'],
+                        'role' => $senderInfo['role'],
+                        'type' => $senderInfo['type']
+                    ] : [
+                        'id' => $message->sender_id,
+                        'name' => 'Unknown User',
+                        'role' => 'unknown',
+                        'type' => 'unknown'
+                    ]
+                ];
+            });
             
             return response()->json([
                 'success' => true,
-                'data' => $messages->toArray(),
+                'messages' => $transformedMessages,
+                'data' => $transformedMessages, // For backward compatibility
                 'debug' => [
                     'current_user_id' => $currentUser['id'],
                     'with_user_id' => $with,
-                    'message' => 'Messages loaded successfully'
+                    'message_count' => $messages->count(),
+                    'after' => $after
                 ]
             ]);
             
         } catch (\Exception $e) {
             Log::error('Error fetching session messages: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'error' => 'Failed to fetch messages',
                 'message' => $e->getMessage()
@@ -800,32 +928,63 @@ class ChatController extends Controller
     public function clearSessionHistory(Request $request)
     {
         $with = $request->input('with');
-        $currentUserId = session('user_id');
+        $currentUser = $this->getCurrentSessionUser();
         
-        if (!$currentUserId) {
+        if (!$currentUser['id']) {
             return response()->json(['error' => 'Not authenticated'], 401);
         }
         
         try {
-            Message::where(function ($query) use ($currentUserId, $with) {
-                $query->where('sender_id', $currentUserId)
+            $deletedCount = Chat::where(function ($query) use ($currentUser, $with) {
+                $query->where('sender_id', $currentUser['id'])
                       ->where('receiver_id', $with);
             })
-            ->orWhere(function ($query) use ($currentUserId, $with) {
+            ->orWhere(function ($query) use ($currentUser, $with) {
                 $query->where('sender_id', $with)
-                      ->where('receiver_id', $currentUserId);
+                      ->where('receiver_id', $currentUser['id']);
             })
             ->delete();
             
             return response()->json([
                 'success' => true,
-                'message' => 'Chat history cleared successfully'
+                'message' => 'Chat history cleared successfully',
+                'deleted_count' => $deletedCount
             ]);
             
         } catch (\Exception $e) {
             Log::error('Error clearing session chat history: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to clear chat history',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get unread message count for current user
+     */
+    public function getUnreadCount(Request $request)
+    {
+        $currentUser = $this->getCurrentSessionUser();
+        
+        if (!$currentUser['id']) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        
+        try {
+            $unreadCount = Chat::where('receiver_id', $currentUser['id'])
+                ->where('is_read', false)
+                ->count();
+            
+            return response()->json([
+                'success' => true,
+                'count' => $unreadCount
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting unread count: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to get unread count',
                 'message' => $e->getMessage()
             ], 500);
         }
@@ -1086,34 +1245,181 @@ class ChatController extends Controller
     }
 
     /**
-     * Get current session user info
+     * Get current session user info (with Auth support for professors)
      */
     private function getCurrentSessionUser()
     {
-        $userId = session('user_id');
-        $userRole = session('user_role') ?? session('role');
+        // First check if user is authenticated via Laravel Auth (for professors)
+        $authUser = Auth::user();
+        if ($authUser) {
+            // Determine role based on the guard or model type
+            if ($authUser instanceof Professor) {
+                return [
+                    'id' => $authUser->professor_id,
+                    'role' => 'professor', 
+                    'name' => trim(($authUser->professor_first_name ?? '') . ' ' . ($authUser->professor_last_name ?? '')) ?: ($authUser->professor_name ?? 'Unknown Professor')
+                ];
+            } elseif (isset($authUser->role)) {
+                // Handle other Auth users with role attribute
+                return [
+                    'id' => $authUser->id ?? $authUser->user_id,
+                    'role' => $authUser->role,
+                    'name' => $authUser->name ?? $authUser->user_firstname . ' ' . $authUser->user_lastname ?? 'Unknown User'
+                ];
+            }
+        }
         
-        // If no user_id, check for specific role-based IDs
+        // Fallback to session-based authentication for other user types
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        $userId = session('user_id') ?? $_SESSION['user_id'] ?? null;
+        $userRole = session('user_role') ?? session('role') ?? $_SESSION['user_type'] ?? $_SESSION['role'] ?? null;
+        $userName = session('user_name') ?? session('name') ?? $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown User';
+        
+        // If no user_id found, check for specific role-based IDs (excluding professor since it uses Auth now)
         if (!$userId) {
-            if (session('professor_id')) {
-                $userId = session('professor_id');
-                $userRole = 'professor';
-            } elseif (session('student_id')) {
-                $userId = session('student_id');
+            // Check for student session
+            if (session('student_id') || (isset($_SESSION['student_id']) && $_SESSION['student_id'])) {
+                $userId = session('student_id') ?? $_SESSION['student_id'];
                 $userRole = 'student';
-            } elseif (session('director_id')) {
-                $userId = session('director_id');
-                $userRole = 'director';
-            } elseif (session('admin_id') || isset($_SESSION['admin_id'])) {
+                $userName = session('student_name') ?? (isset($_SESSION['student_name']) ? $_SESSION['student_name'] : null) ?? $userName;
+            }
+            // Check for admin session
+            elseif (session('admin_id') || (isset($_SESSION['admin_id']) && $_SESSION['admin_id'])) {
                 $userId = session('admin_id') ?? $_SESSION['admin_id'];
                 $userRole = 'admin';
+                $userName = session('admin_name') ?? (isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : null) ?? $userName;
+            }
+            // Check for director session
+            elseif (session('director_id') || (isset($_SESSION['director_id']) && $_SESSION['director_id'])) {
+                $userId = session('director_id') ?? $_SESSION['director_id'];
+                $userRole = 'director';
+                $userName = session('director_name') ?? (isset($_SESSION['director_name']) ? $_SESSION['director_name'] : null) ?? $userName;
             }
         }
         
         return [
             'id' => $userId,
             'role' => $userRole,
-            'name' => session('user_name') ?? session('name') ?? 'Unknown User'
+            'name' => $userName
         ];
+    }
+
+    /**
+     * General search endpoint for chat users
+     */
+    public function sessionSearch(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string|min:2|max:50'
+        ]);
+
+        $query = $request->input('query');
+        // Get current user from Auth or session fallback
+        $authUser = Auth::user();
+        if ($authUser && $authUser instanceof Professor) {
+            // Authenticated professor
+            $currentUser = (object) [
+                'user_id' => $authUser->professor_id,
+                'id' => $authUser->professor_id, // for compatibility
+                'role' => 'professor',
+                'name' => trim(($authUser->professor_first_name ?? '') . ' ' . ($authUser->professor_last_name ?? '')) ?: ($authUser->professor_name ?? 'Unknown Professor')
+            ];
+        } elseif ($authUser && isset($authUser->role)) {
+            // Other Auth user (admin, director, etc)
+            $currentUser = (object) [
+                'user_id' => $authUser->id ?? $authUser->user_id,
+                'id' => $authUser->id ?? $authUser->user_id,
+                'role' => $authUser->role,
+                'name' => $authUser->name ?? ($authUser->user_firstname . ' ' . $authUser->user_lastname) ?? 'Unknown User'
+            ];
+        } else {
+            // Fallback to session-based authentication
+            $sessionUser = $this->getCurrentSessionUser();
+            if (!$sessionUser['id']) {
+                return response()->json(['error' => 'Not authenticated'], 401);
+            }
+            $currentUser = (object) [
+                'user_id' => $sessionUser['id'],
+                'id' => $sessionUser['id'],
+                'role' => $sessionUser['role'],
+                'name' => $sessionUser['name']
+            ];
+        }
+
+        try {
+            $allUsers = [];
+
+            // Search across all user types based on current user's role
+            switch ($currentUser->role) {
+                case 'admin':
+                case 'director':
+                    // Admins and directors can search all user types
+                    $allUsers = array_merge(
+                        $this->getStudents($query, $currentUser)->toArray(),
+                        $this->getProfessors($query, $currentUser)->toArray(),
+                        $this->getAdmins($query, $currentUser)->toArray(),
+                        $this->getDirectors($query, $currentUser)->toArray()
+                    );
+                    break;
+                    
+                case 'professor':
+                    // Professors can search students and support
+                    $allUsers = array_merge(
+                        $this->getStudents($query, $currentUser)->toArray(),
+                        $this->getAdmins($query, $currentUser)->toArray()
+                    );
+                    break;
+                    
+                case 'student':
+                    // Students can search professors and admins
+                    $allUsers = array_merge(
+                        $this->getProfessors($query, $currentUser)->toArray(),
+                        $this->getAdmins($query, $currentUser)->toArray()
+                    );
+                    break;
+                    
+                default:
+                    $allUsers = [];
+            }
+
+            // Remove duplicates and sort by name
+            $uniqueUsers = [];
+            $seenIds = [];
+            
+            foreach ($allUsers as $user) {
+                $uniqueKey = $user['id'] . '_' . $user['role'];
+                if (!in_array($uniqueKey, $seenIds)) {
+                    $seenIds[] = $uniqueKey;
+                    $uniqueUsers[] = $user;
+                }
+            }
+
+            // Sort by name
+            usort($uniqueUsers, function($a, $b) {
+                return strcasecmp($a['name'], $b['name']);
+            });
+
+            // Limit results to 20
+            $uniqueUsers = array_slice($uniqueUsers, 0, 20);
+
+            return response()->json([
+                'success' => true,
+                'data' => $uniqueUsers,
+                'total' => count($uniqueUsers),
+                'query' => $query,
+                'current_user_role' => $currentUser->role
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in sessionSearch: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Search failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
