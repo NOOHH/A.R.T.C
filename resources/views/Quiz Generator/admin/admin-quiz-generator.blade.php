@@ -34,6 +34,17 @@
         opacity: 0.9;
     }
 
+    .gemini-badge {
+        background: linear-gradient(45deg, #4285f4, #34a853, #fbbc05, #ea4335);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+
     .form-container {
         padding: 2rem;
     }
@@ -160,7 +171,8 @@
     <!-- Header -->
     <div class="quiz-header">
         <h1><i class="bi bi-robot"></i> AI Quiz Generator</h1>
-        <p>Generate intelligent quizzes from your documents using AI</p>
+        <p>Generate intelligent quizzes from your documents using Google Gemini AI</p>
+        <div class="gemini-badge">Powered by Google Gemini</div>
     </div>
 
     <div class="form-container">

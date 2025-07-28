@@ -18,6 +18,9 @@ use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
+
+// Chat search route  
+Route::post('/api/chat/session/search', [App\Http\Controllers\ChatController::class, 'sessionSearch'])->middleware('web')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
@@ -1652,8 +1655,16 @@ Route::middleware(['professor.auth'])
          ->name('grading.quiz');
     Route::post('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignment'])
          ->name('assignments.create');
+    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])
+         ->name('assignments.create');
     Route::post('/activities/create', [\App\Http\Controllers\Professor\GradingController::class, 'createActivity'])
          ->name('activities.create');
+    Route::post('/grading/export', [\App\Http\Controllers\Professor\GradingController::class, 'exportGrades'])
+         ->name('grading.export');
+    
+    // Chat routes
+    Route::post('/chat/send', [\App\Http\Controllers\Professor\ChatController::class, 'sendMessage'])
+         ->name('chat.send');
     
     // AI Quiz Generator
     Route::get('/quiz-generator', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'index'])
@@ -1843,7 +1854,13 @@ Route::middleware(['professor.auth'])
          ->name('grading.destroy');
     Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
          ->name('grading.student');
-    Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz']);
+    Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz'])
+         ->name('quiz-generator.save-manual');
+    Route::post('/quiz-generator/question/options', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionOptions'])
+         ->name('quiz-generator.question.options');
+    // ...existing professor routes...
+    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])->name('grading.auto-grade-quizzes');
+    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])->name('assignments.create');
 });
 
 // API routes for student and professor data

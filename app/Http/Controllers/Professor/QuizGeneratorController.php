@@ -42,13 +42,18 @@ class QuizGeneratorController extends Controller
         $professor = Professor::find(session('professor_id'));
         $assignedPrograms = $professor->programs()->get();
         
-        // Get professor's generated quizzes
-        $quizzes = Quiz::where('professor_id', $professor->professor_id)
-                      ->with(['program', 'questions'])
-                      ->orderBy('created_at', 'desc')
-                      ->get();
+        // Get professor's generated quizzes categorized by status
+        $allQuizzes = Quiz::where('professor_id', $professor->professor_id)
+                          ->with(['program', 'questions'])
+                          ->orderBy('created_at', 'desc')
+                          ->get();
         
-        return view('Quiz Generator.professor.quiz-generator', compact('assignedPrograms', 'quizzes'));
+        // Categorize quizzes by status
+        $draftQuizzes = $allQuizzes->where('status', 'draft');
+        $publishedQuizzes = $allQuizzes->where('status', 'published');
+        $archivedQuizzes = $allQuizzes->where('status', 'archived');
+        
+        return view('Quiz Generator.professor.quiz-generator', compact('assignedPrograms', 'draftQuizzes', 'publishedQuizzes', 'archivedQuizzes'));
     }
 
     /**
@@ -2574,7 +2579,22 @@ public function getContentByCourse($courseId)
         switch ($questionData['question_type'] ?? 'multiple_choice') {
             case 'multiple_choice':
                 $questionRecord['options'] = $questionData['options'] ?? [];
-                $questionRecord['correct_answer'] = $questionData['correct_option'] ?? null;
+                // Handle multiple correct answers
+                if (isset($questionData['correct_answers']) && is_array($questionData['correct_answers'])) {
+                    // Handle both string letters (A, B, C, D) and numeric indices (0, 1, 2, 3)
+                    $correctAnswers = array_map(function($answer) {
+                        if (is_numeric($answer)) {
+                            // Convert numeric index to letter (0->A, 1->B, 2->C, 3->D)
+                            return chr(65 + intval($answer));
+                        } else {
+                            // Already a letter, just return it
+                            return strtoupper($answer);
+                        }
+                    }, $questionData['correct_answers']);
+                    $questionRecord['correct_answer'] = implode(',', $correctAnswers);
+                } else {
+                    $questionRecord['correct_answer'] = $questionData['correct_option'] ?? 'A';
+                }
                 break;
 
             case 'true_false':
@@ -2604,5 +2624,227 @@ public function getContentByCourse($courseId)
         }
 
         return QuizQuestion::create($questionRecord);
+    }
+
+    /**
+     * Create new quiz with questions
+     */
+    public function saveManualQuiz(Request $request)
+    {
+        try {
+            Log::info('Quiz save request received', [
+                'quiz_id' => $request->quiz_id,
+                'professor_id' => session('professor_id'),
+                'request_data' => $request->all()
+            ]);
+
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return response()->json(['success' => false, 'message' => 'Professor session not found.'], 401);
+            }
+
+            // Create new quiz
+            $quiz = Quiz::create([
+                'professor_id' => $professor->professor_id,
+                'program_id' => $request->program_id,
+                'module_id' => $request->module_id,
+                'course_id' => $request->course_id,
+                'quiz_title' => $request->title,
+                'quiz_description' => $request->description,
+                'instructions' => $request->instructions ?? '',
+                'time_limit' => $request->time_limit ?? 60,
+                'max_attempts' => $request->max_attempts ?? 1,
+                'total_questions' => count($request->questions ?? []),
+                'status' => $request->is_draft ? 'draft' : 'published',
+                'is_draft' => $request->is_draft ?? true,
+                'allow_retakes' => $request->allow_retakes ?? false,
+                'instant_feedback' => $request->instant_feedback ?? false,
+                'show_correct_answers' => $request->show_correct_answers ?? true,
+                'randomize_order' => $request->randomize_order ?? false,
+                'randomize_mc_options' => $request->randomize_mc_options ?? false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Create questions
+            $questionsOrder = 1;
+            foreach ($request->questions ?? [] as $questionData) {
+                $this->createNewQuestion($quiz, $questionData, $questionsOrder, $professor);
+                $questionsOrder++;
+            }
+
+            Log::info('Quiz created successfully', [
+                'quiz_id' => $quiz->quiz_id,
+                'total_questions' => count($request->questions)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz created successfully!',
+                'data' => [
+                    'quiz_id' => $quiz->quiz_id,
+                    'total_questions' => count($request->questions),
+                    'status' => $quiz->status
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Quiz creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Error creating quiz: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Alias for delete method - for frontend compatibility
+     */
+    public function deleteQuiz($quizId)
+    {
+        return $this->delete($quizId);
+    }
+
+    /**
+     * Alias for publish method - for frontend compatibility
+     */
+    public function publishQuiz($quizId)
+    {
+        return $this->publish($quizId);
+    }
+
+    /**
+     * Alias for archive method - for frontend compatibility
+     */
+    public function archiveQuiz($quizId)
+    {
+        return $this->archive($quizId);
+    }
+
+    /**
+     * Get quiz for editing
+     */
+    public function getQuizForEdit($quizId)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return redirect()->route('professor.quiz-generator')->with('error', 'Professor session not found.');
+            }
+
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->with(['program', 'questions'])
+                       ->first();
+
+            if (!$quiz) {
+                return redirect()->route('professor.quiz-generator')->with('error', 'Quiz not found or access denied.');
+            }
+
+            $assignedPrograms = $professor->programs()->get();
+
+            return view('Quiz Generator.professor.quiz-editor', compact('quiz', 'assignedPrograms'));
+
+        } catch (\Exception $e) {
+            Log::error('Error loading quiz for edit: ' . $e->getMessage());
+            return redirect()->route('professor.quiz-generator')->with('error', 'Error loading quiz: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview quiz
+     */
+    public function previewQuiz($quizId)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return redirect()->route('professor.quiz-generator')->with('error', 'Professor session not found.');
+            }
+
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->with(['program', 'questions'])
+                       ->first();
+
+            if (!$quiz) {
+                return redirect()->route('professor.quiz-generator')->with('error', 'Quiz not found or access denied.');
+            }
+
+            return view('Quiz Generator.professor.quiz-preview-simulation', compact('quiz'));
+
+        } catch (\Exception $e) {
+            Log::error('Error loading quiz preview: ' . $e->getMessage());
+            return redirect()->route('professor.quiz-generator')->with('error', 'Error loading quiz preview: ' . $e->getMessage());
+        }
+    }
+
+
+
+    /**
+     * Generate AI questions from uploaded document
+     */
+    public function generateAIQuestions(Request $request)
+    {
+        try {
+            Log::info('generateAIQuestions called', [
+                'request_data' => $request->except(['file', '_token']),
+                'has_file' => $request->hasFile('file')
+            ]);
+
+            $request->validate([
+                'file' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240',
+                'num_questions' => 'required|integer|min:5|max:50',
+                'question_type' => 'required|in:multiple_choice,true_false,flashcard,mixed'
+            ]);
+
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return response()->json(['success' => false, 'message' => 'Professor session not found.'], 401);
+            }
+
+            // Extract text from document
+            $extractedText = $this->extractTextFromDocument($request->file('file'));
+            
+            if (strlen($extractedText) < 100) {
+                return response()->json(['success' => false, 'message' => 'Document content is too short to generate meaningful questions.'], 400);
+            }
+
+            // Generate questions from text
+            $generatedQuestions = $this->generateQuestionsFromText(
+                $extractedText,
+                $request->num_questions,
+                $request->question_type
+            );
+
+            if (empty($generatedQuestions)) {
+                return response()->json(['success' => false, 'message' => 'Failed to generate questions from the document.'], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Questions generated successfully!',
+                'questions' => $generatedQuestions,
+                'count' => count($generatedQuestions)
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('generateAIQuestions failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate questions: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

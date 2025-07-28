@@ -49,7 +49,7 @@
                 @endif
             </div>
             <div class="progress">
-                <div id="quiz-progress-bar" class="progress-bar" role="progressbar" style="width: {{ 100 / $quiz->questions->count() }}%"></div>
+                <div id="quiz-progress-bar" class="progress-bar" role="progressbar" style="width: {{ $quiz->questions->count() > 0 ? (100 / $quiz->questions->count()) : 0 }}%"></div>
             </div>
         </div>
     </div>

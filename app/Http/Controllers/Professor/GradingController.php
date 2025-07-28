@@ -10,6 +10,7 @@ use App\Models\Activity;
 use App\Models\Quiz;
 use App\Models\StudentGrade;
 use App\Models\Deadline;
+use App\Models\Program;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -298,6 +299,14 @@ class GradingController extends Controller
         $this->syncActivityWithStudents($activity);
 
         return redirect()->back()->with('success', 'Activity created successfully and added to student deadlines!');
+    }
+
+    public function createAssignmentForm()
+    {
+        $professor = Professor::find(session('professor_id'));
+        $assignedPrograms = $professor->programs()->get();
+        
+        return view('professor.assignments.create', compact('assignedPrograms'));
     }
 
     private function syncAssignmentWithStudents($assignment)

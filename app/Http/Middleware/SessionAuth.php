@@ -95,6 +95,73 @@ class SessionAuth
             'auth_user_role' => $userRole
         ]);
 
+        // Set up Laravel Auth user for compatibility
+        $this->setAuthUser($userId, $userRole);
+
         return $next($request);
+    }
+
+    /**
+     * Set up Laravel Auth user from session data
+     */
+    private function setAuthUser($userId, $userRole)
+    {
+        try {
+            // Create a generic user object for Auth::user()
+            $authUser = new \App\Models\User();
+            
+            // Set basic properties
+            $authUser->user_id = $userId;
+            $authUser->role = $userRole;
+            
+            // Get additional user data based on role
+            switch ($userRole) {
+                case 'student':
+                    $userData = \App\Models\User::find($userId);
+                    if ($userData) {
+                        $authUser->user_firstname = $userData->user_firstname;
+                        $authUser->user_lastname = $userData->user_lastname;
+                        $authUser->email = $userData->email;
+                        $authUser->exists = true;
+                    }
+                    break;
+                    
+                case 'professor':
+                    $professorData = \App\Models\Professor::find($userId);
+                    if ($professorData) {
+                        $authUser->user_firstname = $professorData->professor_first_name ?? $professorData->professor_name;
+                        $authUser->user_lastname = $professorData->professor_last_name ?? '';
+                        $authUser->email = $professorData->professor_email;
+                        $authUser->exists = true;
+                    }
+                    break;
+                    
+                case 'admin':
+                    $adminData = \App\Models\Admin::find($userId);
+                    if ($adminData) {
+                        $authUser->user_firstname = $adminData->admin_name;
+                        $authUser->user_lastname = '';
+                        $authUser->email = $adminData->email;
+                        $authUser->exists = true;
+                    }
+                    break;
+                    
+                case 'director':
+                    $directorData = \App\Models\Director::find($userId);
+                    if ($directorData) {
+                        $authUser->user_firstname = $directorData->directors_first_name ?? $directorData->directors_name;
+                        $authUser->user_lastname = $directorData->directors_last_name ?? '';
+                        $authUser->email = $directorData->directors_email;
+                        $authUser->exists = true;
+                    }
+                    break;
+            }
+            
+            // Set the authenticated user in Laravel's Auth system
+            \Illuminate\Support\Facades\Auth::setUser($authUser);
+            
+        } catch (\Exception $e) {
+            Log::warning('Failed to set Auth user: ' . $e->getMessage());
+        }
     }
 }

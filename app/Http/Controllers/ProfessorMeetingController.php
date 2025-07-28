@@ -31,6 +31,9 @@ class ProfessorMeetingController extends Controller
     public function index()
     {
         $professorId = session('professor_id');
+        if (!$professorId) {
+            return redirect()->route('professor.login')->withErrors('Session expired. Please log in again.');
+        }
         $professor = Professor::with(['programs'])->findOrFail($professorId);
 
         // Get batches assigned to this professor
@@ -39,15 +42,19 @@ class ProfessorMeetingController extends Controller
             ->get();
 
         // Get all programs that have batches assigned to this professor
-        $programsWithBatches = $professorBatches->pluck('program')->unique('program_id');
+        $programsWithBatches = $professorBatches->pluck('program')->filter()->unique('program_id');
         
         // Combine professor's assigned programs with programs that have his batches
-        $allRelevantPrograms = $professor->programs()->get()->merge($programsWithBatches)->unique('program_id');
+        $allRelevantPrograms = $professor->programs()->get()->merge($programsWithBatches)->filter()->unique('program_id');
 
         $professorPrograms = collect();
         
         // Organize batches by program
         foreach ($allRelevantPrograms as $program) {
+            if (!$program || !$program->program_id) {
+                continue; // Skip null programs
+            }
+            
             $programBatches = $professorBatches->where('program_id', $program->program_id);
             
             if ($programBatches->count() > 0) {

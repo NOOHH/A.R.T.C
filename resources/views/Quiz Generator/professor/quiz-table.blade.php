@@ -26,7 +26,15 @@
                     </td>
                     <td>{{ $quiz->program->program_name ?? '-' }}</td>
                     <td>
-                        <span class="badge bg-primary">{{ $quiz->questions->count() ?? 0 }} Questions</span>
+                        <span class="badge bg-primary">
+                            @if(property_exists($quiz, 'questions') && $quiz->questions)
+                                {{ $quiz->questions->count() ?? 0 }} Questions
+                            @elseif(isset($quiz->total_questions))
+                                {{ $quiz->total_questions }} Questions
+                            @else
+                                0 Questions
+                            @endif
+                        </span>
                         @if($quiz->time_limit)
                             <br><small class="text-muted"><i class="bi bi-clock"></i> {{ $quiz->time_limit }}min</small>
                         @endif
@@ -35,19 +43,15 @@
                         @if($quiz->allow_retakes)
                             <span class="badge bg-info text-dark">Retakes</span>
                         @endif
-                        
                         @if($quiz->instant_feedback)
                             <span class="badge bg-warning text-dark">Instant Feedback</span>
                         @endif
-                        
                         @if($quiz->randomize_order)
                             <span class="badge bg-secondary">Random Order</span>
                         @endif
-                        
-                        @if($quiz->randomize_mc_options)
+                        @if(isset($quiz->randomize_mc_options) && $quiz->randomize_mc_options)
                             <span class="badge bg-secondary">Random Options</span>
                         @endif
-                        
                         @if($quiz->max_attempts > 1)
                             <span class="badge bg-info">Max: {{ $quiz->max_attempts }}</span>
                         @endif
@@ -66,22 +70,27 @@
                             <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
                                 <i class="bi bi-eye"></i> Preview
                             </button>
-                            
+                            <!-- Edit Quiz (available for all statuses) -->
+                            <button class="btn btn-outline-secondary btn-sm edit-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
+                                <i class="bi bi-pencil"></i> Edit Quiz
+                            </button>
                             <!-- Status-specific actions -->
                             @if($status === 'draft')
-                                <button class="btn btn-success btn-sm" onclick="publishQuiz({{ $quiz->quiz_id }})">
+                                <button class="btn btn-success btn-sm" onclick="publishQuiz('{{ $quiz->quiz_id }}')">
                                     <i class="bi bi-check-circle"></i> Publish
                                 </button>
+                                <button class="btn btn-warning btn-sm" onclick="archiveQuiz('{{ $quiz->quiz_id }}')">
+                                    <i class="bi bi-archive"></i> Archive
+                                </button>
                             @elseif($status === 'published')
-                                <button class="btn btn-warning btn-sm" onclick="archiveQuiz({{ $quiz->quiz_id }})">
+                                <button class="btn btn-warning btn-sm" onclick="archiveQuiz('{{ $quiz->quiz_id }}')">
                                     <i class="bi bi-archive"></i> Archive
                                 </button>
                             @elseif($status === 'archived')
-                                <button class="btn btn-info btn-sm" onclick="restoreQuiz({{ $quiz->quiz_id }})">
-                                    <i class="bi bi-arrow-clockwise"></i> Restore
+                                <button class="btn btn-info btn-sm" onclick="restoreQuiz('{{ $quiz->quiz_id }}')">
+                                    <i class="bi bi-arrow-clockwise"></i> Unarchive
                                 </button>
                             @endif
-                            
                             <!-- Delete (available for all statuses) -->
                             <button class="btn btn-danger btn-sm delete-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
                                 <i class="bi bi-trash"></i> Delete
