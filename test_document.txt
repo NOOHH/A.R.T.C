@@ -1,0 +1,1 @@
+Machine Design is the process of creating mechanical components. Stress analysis involves tension, compression, shear. Factor of safety ensures designs are safe.
