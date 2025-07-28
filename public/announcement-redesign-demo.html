@@ -234,6 +234,60 @@
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-bottom: 1px solid #eee;">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="#">
+      <img src="https://i.ibb.co/6bQ7QpP/ascendo-logo.png" alt="ARTC Logo" style="height: 38px; width: 38px; border-radius: 8px; margin-right: 10px;">
+      <span style="font-weight: 600; color: #2c3e50; font-size: 1.1rem;">Ascendo Review<br><span style="font-size: 0.9rem; font-weight: 400;">and Training Center</span></span>
+    </a>
+    <form class="d-flex mx-auto" style="max-width: 500px; width: 100%;">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0" style="border-radius: 20px 0 0 20px; border-color: #e0e6ed;">
+          <i class="bi bi-search" style="color: #b0b8c9;"></i>
+        </span>
+        <input class="form-control border-start-0" type="search" placeholder="Search programs, modules, courses..." aria-label="Search" style="border-radius: 0 20px 20px 0; border-color: #e0e6ed;">
+      </div>
+    </form>
+    <div class="d-flex align-items-center gap-3">
+      <!-- Chat Icon Button -->
+      <button class="btn btn-link p-0" id="chatTriggerBtn" title="Open Chat" style="font-size: 1.5rem; color: #764ba2;">
+        <i class="bi bi-chat-dots"></i>
+      </button>
+      <!-- Profile Placeholder -->
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #eee; object-fit: cover;">
+    </div>
+  </div>
+</nav>
+
+<!-- Chat Offcanvas (hidden by default) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="chatOffcanvas" aria-labelledby="chatOffcanvasLabel" style="width: 400px;">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title fw-bold text-primary" id="chatOffcanvasLabel">
+      <i class="bi bi-chat-dots me-2"></i>Live Chat
+    </h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-chat-dots" style="font-size: 2.5rem;"></i>
+      <div class="mt-3">Chat feature coming soon.<br>Here you will be able to message support or students.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Bootstrap 5 Offcanvas trigger
+  document.addEventListener('DOMContentLoaded', function() {
+    var chatBtn = document.getElementById('chatTriggerBtn');
+    if (chatBtn) {
+      chatBtn.addEventListener('click', function() {
+        var chatOffcanvas = new bootstrap.Offcanvas(document.getElementById('chatOffcanvas'));
+        chatOffcanvas.show();
+      });
+    }
+  });
+</script>
+
     <div class="demo-container">
         <div class="demo-section">
             <div class="demo-header">

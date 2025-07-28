@@ -31,6 +31,9 @@ class ProfessorMeetingController extends Controller
     public function index()
     {
         $professorId = session('professor_id');
+        if (!$professorId) {
+            return redirect()->route('professor.login')->withErrors('Session expired. Please log in again.');
+        }
         $professor = Professor::with(['programs'])->findOrFail($professorId);
 
         // Get batches assigned to this professor

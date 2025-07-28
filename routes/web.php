@@ -1844,6 +1844,9 @@ Route::middleware(['professor.auth'])
     Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
          ->name('grading.student');
     Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz']);
+    // ...existing professor routes...
+    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])->name('grading.auto-grade-quizzes');
+    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])->name('assignments.create');
 });
 
 // API routes for student and professor data

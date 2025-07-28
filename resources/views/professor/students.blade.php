@@ -3,7 +3,6 @@
 @section('title', 'Student Management')
 
 @section('content')
-<div class="container-fluid">
     <!-- Stats Cards -->
     <div class="row mb-4">
         <div class="col-md-3">

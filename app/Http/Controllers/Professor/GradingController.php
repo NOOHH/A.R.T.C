@@ -300,6 +300,11 @@ class GradingController extends Controller
         return redirect()->back()->with('success', 'Activity created successfully and added to student deadlines!');
     }
 
+    public function createAssignmentForm()
+    {
+        return view('professor.assignments.create');
+    }
+
     private function syncAssignmentWithStudents($assignment)
     {
         // Get all students enrolled in this program
