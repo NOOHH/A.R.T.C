@@ -98,674 +98,610 @@
 }
 
 .file-upload-area:hover {
-    border-color: #5a6fd8;
+    border-color: #5a67d8;
     background: #f0f2ff;
 }
 
-.file-upload-area.dragover {
-    border-color: #28a745;
-    background: #f8fff9;
-    transform: scale(1.02);
+.file-upload-area-hover {
+    border-color: #5a67d8;
+    background: #f0f2ff;
 }
 
-.upload-icon {
+.file-upload-icon {
     font-size: 3rem;
     color: #667eea;
     margin-bottom: 1rem;
 }
 
-.upload-text {
-    font-size: 1.1rem;
-    color: #495057;
-    margin-bottom: 0.5rem;
+.file-input {
+    display: none;
 }
 
-.upload-hint {
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-.file-list {
-    margin-top: 1rem;
-}
-
-.file-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-}
-
-.file-item-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.file-icon {
-    font-size: 1.2rem;
-    color: #667eea;
-}
-
-.file-details h6 {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #495057;
-}
-
-.file-details small {
-    color: #6c757d;
-    font-size: 0.8rem;
-}
-
-.file-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-remove-file {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
+.file-label {
     cursor: pointer;
-    transition: all 0.2s ease;
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: underline;
 }
 
-.btn-remove-file:hover {
-    background: #c82333;
-    transform: scale(1.05);
+.file-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.selected-file {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    color: #155724;
+    display: none;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 auto;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .progress-bar {
-    height: 8px;
+    width: 100%;
+    height: 4px;
     background: #e9ecef;
-    border-radius: 4px;
+    border-radius: 2px;
+    margin-top: 1rem;
     overflow: hidden;
-    margin-top: 0.5rem;
+    display: none;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     width: 0%;
     transition: width 0.3s ease;
 }
 
-.content-type-selector {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+.required {
+    color: #e74c3c;
 }
 
-.content-type-option {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: white;
+.select-loading {
+    position: relative;
 }
 
-.content-type-option:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
-    transform: translateY(-2px);
+.select-loading::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #667eea;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
-.content-type-option.selected {
-    border-color: #667eea;
-    background: #f0f2ff;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
 }
 
-.content-type-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
-.content-type-label {
+.back-btn {
+    color: #667eea;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
     font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.25rem;
-}
-
-.content-type-description {
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-
-.btn-submit {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
     transition: all 0.3s ease;
-    width: 100%;
 }
 
-.btn-submit:hover {
-    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-}
-
-.btn-submit:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-.alert {
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    border: 1px solid transparent;
-}
-
-.alert-success {
-    background: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
-}
-
-.alert-danger {
-    background: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
-}
-
-.alert-info {
-    background: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
-}
-
-@media (max-width: 768px) {
-    .upload-container {
-        padding: 1rem;
-    }
-    
-    .upload-form {
-        padding: 2rem 1.5rem;
-    }
-    
-    .content-type-selector {
-        grid-template-columns: 1fr;
-    }
+.back-btn:hover {
+    color: #5a67d8;
+    text-decoration: none;
+    transform: translateX(-3px);
 }
 </style>
 @endpush
 
 @section('content')
 <div class="upload-container">
+    <a href="{{ url()->previous() }}" class="back-btn">
+        <i class="bi bi-arrow-left"></i>
+        Back to Professor Modules
+    </a>
+
     <div class="upload-header">
         <h1><i class="bi bi-cloud-upload"></i> Course Content Upload</h1>
-        <p>Upload and organize educational content for your courses</p>
+        <p>Upload educational content for your courses with ease</p>
     </div>
-    
-    <div class="upload-form">
-        @if(session('success'))
-            <div class="alert alert-success">
-                <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
-            </div>
-        @endif
+
+    <form id="nonModalContentForm" action="{{ route('professor.modules.course-content-store') }}" method="POST" enctype="multipart/form-data" class="upload-form">
+        @csrf
         
-        @if(session('error'))
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}
-            </div>
-        @endif
-        
-        @if($errors->any())
-            <div class="alert alert-danger">
-                <strong>Please correct the following errors:</strong>
-                <ul class="mb-0 mt-2">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-        
-        <form action="{{ route('professor.content.upload') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
-            @csrf
-            
-            <!-- Program and Module Selection -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="bi bi-diagram-3"></i>
-                    Program & Module Selection
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="program_id" class="form-label">Program *</label>
-                            <select class="form-select" id="program_id" name="program_id" required>
-                                <option value="">Select Program</option>
-                                @foreach($programs as $program)
-                                    <option value="{{ $program->program_id }}" 
-                                            {{ old('program_id') == $program->program_id ? 'selected' : '' }}>
-                                        {{ $program->program_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="module_id" class="form-label">Module *</label>
-                            <select class="form-select" id="module_id" name="module_id" required disabled>
-                                <option value="">Select Module</option>
-                            </select>
-                        </div>
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="bi bi-mortarboard"></i>
+                Course Selection
+            </h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="nonModalProgramSelect" class="form-label">
+                            Program <span class="required">*</span>
+                        </label>
+                        <select id="nonModalProgramSelect" name="program_id" class="form-select" required>
+                            <option value="">-- Select Program --</option>
+                            @foreach($programs as $program)
+                                <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="course_id" class="form-label">Course *</label>
-                            <select class="form-select" id="course_id" name="course_id" required disabled>
-                                <option value="">Select Course</option>
-                            </select>
-                        </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="nonModalModuleSelect" class="form-label">
+                            Module <span class="required">*</span>
+                        </label>
+                        <select id="nonModalModuleSelect" name="module_id" class="form-select" required disabled>
+                            <option value="">-- Select Module --</option>
+                        </select>
                     </div>
-                    
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="batch_id" class="form-label">Batch (Optional)</label>
-                            <select class="form-select" id="batch_id" name="batch_id">
-                                <option value="">All Batches</option>
-                            </select>
-                        </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="nonModalCourseSelect" class="form-label">
+                            Course <span class="required">*</span>
+                        </label>
+                        <select id="nonModalCourseSelect" name="course_id" class="form-select" required disabled>
+                            <option value="">-- Select Course --</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            
-            <!-- Content Type Selection -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="bi bi-file-earmark-text"></i>
-                    Content Type
-                </div>
-                
-                <div class="content-type-selector">
-                    <div class="content-type-option" data-type="lesson">
-                        <div class="content-type-icon">📚</div>
-                        <div class="content-type-label">Lesson</div>
-                        <div class="content-type-description">Text-based learning material</div>
-                    </div>
-                    
-                    <div class="content-type-option" data-type="video">
-                        <div class="content-type-icon">🎥</div>
-                        <div class="content-type-label">Video</div>
-                        <div class="content-type-description">Video content or recordings</div>
-                    </div>
-                    
-                    <div class="content-type-option" data-type="assignment">
-                        <div class="content-type-icon">📝</div>
-                        <div class="content-type-label">Assignment</div>
-                        <div class="content-type-description">Student assignments and tasks</div>
-                    </div>
-                    
-                    <div class="content-type-option" data-type="quiz">
-                        <div class="content-type-icon">❓</div>
-                        <div class="content-type-label">Quiz</div>
-                        <div class="content-type-description">Interactive quizzes and tests</div>
-                    </div>
-                    
-                    <div class="content-type-option" data-type="pdf">
-                        <div class="content-type-icon">📄</div>
-                        <div class="content-type-label">PDF Document</div>
-                        <div class="content-type-description">PDF files and documents</div>
-                    </div>
-                    
-                    <div class="content-type-option" data-type="link">
-                        <div class="content-type-icon">🔗</div>
-                        <div class="content-type-label">External Link</div>
-                        <div class="content-type-description">Links to external resources</div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="bi bi-file-text"></i>
+                Content Details
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="contentType" class="form-label">
+                            Content Type <span class="required">*</span>
+                        </label>
+                        <select id="contentType" name="content_type" class="form-select" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="lesson">📚 Lesson</option>
+                            <option value="video">🎥 Video</option>
+                            <option value="assignment">📝 Assignment</option>
+                            <option value="quiz">❓ Quiz</option>
+                            <option value="test">📋 Test</option>
+                            <option value="link">🔗 External Link</option>
+                        </select>
                     </div>
                 </div>
-                
-                <input type="hidden" id="content_type" name="content_type" required>
-            </div>
-            
-            <!-- Content Details -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="bi bi-info-circle"></i>
-                    Content Details
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="form-group">
-                            <label for="title" class="form-label">Content Title *</label>
-                            <input type="text" class="form-control" id="title" name="title" 
-                                   value="{{ old('title') }}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="order" class="form-label">Display Order</label>
-                            <input type="number" class="form-control" id="order" name="order" 
-                                   value="{{ old('order', 1) }}" min="1">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea class="form-control" id="description" name="description" 
-                              rows="4">{{ old('description') }}</textarea>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="learning_mode" class="form-label">Learning Mode</label>
-                            <select class="form-select" id="learning_mode" name="learning_mode">
-                                <option value="">Select Learning Mode</option>
-                                <option value="synchronous" {{ old('learning_mode') == 'synchronous' ? 'selected' : '' }}>
-                                    Synchronous
-                                </option>
-                                <option value="asynchronous" {{ old('learning_mode') == 'asynchronous' ? 'selected' : '' }}>
-                                    Asynchronous
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="duration" class="form-label">Estimated Duration (minutes)</label>
-                            <input type="number" class="form-control" id="duration" name="duration" 
-                                   value="{{ old('duration') }}" min="1">
-                        </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="contentTitle" class="form-label">
+                            Content Title <span class="required">*</span>
+                        </label>
+                        <input type="text" id="contentTitle" name="content_title" class="form-control" 
+                               placeholder="Enter a descriptive title..." required>
                     </div>
                 </div>
             </div>
-            
-            <!-- File Upload -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="bi bi-upload"></i>
-                    File Upload
-                </div>
-                
-                <div class="file-upload-area" id="fileUploadArea">
-                    <div class="upload-icon">
-                        <i class="bi bi-cloud-upload"></i>
-                    </div>
-                    <div class="upload-text">Drag and drop files here or click to browse</div>
-                    <div class="upload-hint">Supported formats: PDF, DOC, DOCX, PPT, PPTX, MP4, MP3, JPG, PNG</div>
-                    <input type="file" id="files" name="files[]" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.mp3,.jpg,.jpeg,.png" style="display: none;">
-                </div>
-                
-                <div class="file-list" id="fileList"></div>
+            <!-- Assignment Due Date (only for assignments) -->
+            <div class="form-group" id="assignmentDueDateGroup" style="display:none;">
+                <label for="assignmentDueDate" class="form-label">Assignment Due Date <span class="required">*</span></label>
+                <input type="datetime-local" id="assignmentDueDate" name="due_date" class="form-control">
+                <small class="form-text text-muted">Set the deadline for this assignment. Students cannot submit after this date/time.</small>
             </div>
-            
-            <!-- Additional Settings -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="bi bi-gear"></i>
-                    Additional Settings
+            <div class="form-group">
+                <label for="contentDescription" class="form-label">Content Description</label>
+                <textarea id="contentDescription" name="content_description" class="form-control" 
+                          rows="4" placeholder="Provide a detailed description of this content..."></textarea>
+            </div>
+        </div>
+
+        <!-- Allow student submission toggle, hidden by default -->
+        <div class="form-group" id="studentSubmissionToggle" style="display:none;">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="1" id="enableSubmission" name="enable_submission">
+                <label class="form-check-label" for="enableSubmission">
+                    Allow student submission (students can upload their work for this assignment)
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="bi bi-paperclip"></i>
+                File Upload or Content Link
+            </h3>
+            <div class="form-group">
+                <label for="contentLink" class="form-label">Content Link (URL)</label>
+                <input type="url" id="contentLink" name="content_url" class="form-control" placeholder="Paste a link to content (optional)">
+            </div>
+            <div class="file-upload-area" id="fileUploadArea">
+                <div class="file-upload-icon">
+                    <i class="bi bi-cloud-arrow-up"></i>
                 </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="is_required" class="form-label">Required Content</label>
-                            <select class="form-select" id="is_required" name="is_required">
-                                <option value="1" {{ old('is_required', 1) == 1 ? 'selected' : '' }}>Yes</option>
-                                <option value="0" {{ old('is_required') == 0 ? 'selected' : '' }}>No</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="is_visible" class="form-label">Visible to Students</label>
-                            <select class="form-select" id="is_visible" name="is_visible">
-                                <option value="1" {{ old('is_visible', 1) == 1 ? 'selected' : '' }}>Yes</option>
-                                <option value="0" {{ old('is_visible') == 0 ? 'selected' : '' }}>No</option>
-                            </select>
-                        </div>
-                    </div>
+                <p><strong>Click to upload</strong> or drag and drop</p>
+                <div class="file-info">
+                    Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos<br>
+                    Maximum file size: 100MB each
                 </div>
-                
-                <div class="form-group">
-                    <label for="notes" class="form-label">Internal Notes (Optional)</label>
-                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ old('notes') }}</textarea>
-                    <small class="text-muted">These notes are only visible to professors</small>
+                <input type="file" id="attachment" name="attachment[]" class="file-input" multiple accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg,.avi,.mov">
+                <div class="selected-file" id="selectedFile" style="display:none">
+                    <i class="bi bi-file-check"></i>
+                    <span id="fileName"></span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile()">
+                        <i class="bi bi-x"></i>
+                    </button>
                 </div>
             </div>
-            
-            <!-- Submit Button -->
-            <div class="form-section">
-                <button type="submit" class="btn-submit" id="submitBtn">
-                    <i class="bi bi-cloud-upload"></i> Upload Content
-                </button>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <i class="bi bi-upload"></i>
+                Upload Content
+            </button>
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 
-@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const programSelect = document.getElementById('program_id');
-    const moduleSelect = document.getElementById('module_id');
-    const courseSelect = document.getElementById('course_id');
-    const batchSelect = document.getElementById('batch_id');
-    const contentTypeOptions = document.querySelectorAll('.content-type-option');
-    const contentTypeInput = document.getElementById('content_type');
-    const fileUploadArea = document.getElementById('fileUploadArea');
-    const fileInput = document.getElementById('files');
-    const fileList = document.getElementById('fileList');
-    const submitBtn = document.getElementById('submitBtn');
-    
-    // Program selection handler
-    programSelect.addEventListener('change', function() {
-        const programId = this.value;
-        moduleSelect.innerHTML = '<option value="">Select Module</option>';
-        courseSelect.innerHTML = '<option value="">Select Course</option>';
-        batchSelect.innerHTML = '<option value="">All Batches</option>';
-        
-        if (programId) {
-            moduleSelect.disabled = false;
-            loadModules(programId);
-            loadBatches(programId);
-        } else {
-            moduleSelect.disabled = true;
-            courseSelect.disabled = true;
-        }
-    });
-    
-    // Module selection handler
-    moduleSelect.addEventListener('change', function() {
-        const moduleId = this.value;
-        courseSelect.innerHTML = '<option value="">Select Course</option>';
-        
-        if (moduleId) {
-            courseSelect.disabled = false;
-            loadCourses(moduleId);
-        } else {
-            courseSelect.disabled = true;
-        }
-    });
-    
-    // Content type selection
-    contentTypeOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            contentTypeOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-            contentTypeInput.value = this.dataset.type;
-        });
-    });
-    
-    // File upload handling
-    fileUploadArea.addEventListener('click', () => fileInput.click());
-    
-    fileUploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileUploadArea.classList.add('dragover');
-    });
-    
-    fileUploadArea.addEventListener('dragleave', () => {
-        fileUploadArea.classList.remove('dragover');
-    });
-    
-    fileUploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileUploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        handleFiles(files);
-    });
-    
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
-    
-    // Form submission
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-        if (!contentTypeInput.value) {
-            e.preventDefault();
-            alert('Please select a content type');
-            return;
-        }
-        
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
-    });
-    
-    // Load modules for selected program
-    function loadModules(programId) {
-        fetch(`/api/programs/${programId}/modules`)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(module => {
-                    const option = document.createElement('option');
-                    option.value = module.modules_id;
-                    option.textContent = module.module_name;
-                    moduleSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading modules:', error);
-            });
-    }
-    
-    // Load courses for selected module
-    function loadCourses(moduleId) {
-        fetch(`/api/modules/${moduleId}/courses`)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course.course_id;
-                    option.textContent = course.course_name;
-                    courseSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading courses:', error);
-            });
-    }
-    
-    // Load batches for selected program
-    function loadBatches(programId) {
-        fetch(`/api/programs/${programId}/batches`)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(batch => {
-                    const option = document.createElement('option');
-                    option.value = batch.batch_id;
-                    option.textContent = batch.batch_name;
-                    batchSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading batches:', error);
-            });
-    }
-    
-    // Handle file selection
-    function handleFiles(files) {
-        Array.from(files).forEach(file => {
-            if (isValidFile(file)) {
-                addFileToList(file);
-            } else {
-                alert(`Invalid file type: ${file.name}. Please select a valid file.`);
+// Enhanced file upload functionality
+const fileInput = document.getElementById('attachment');
+const selectedFileDiv = document.getElementById('selectedFile');
+const fileNameSpan = document.getElementById('fileName');
+const submitBtn = document.getElementById('submitBtn');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const fileUploadArea = document.getElementById('fileUploadArea');
+const contentLinkInput = document.getElementById('contentLink');
+const contentTypeSelect = document.getElementById('contentType');
+const studentSubmissionToggle = document.getElementById('studentSubmissionToggle');
+const assignmentDueDateGroup = document.getElementById('assignmentDueDateGroup');
+const assignmentDueDateInput = document.getElementById('assignmentDueDate');
+
+// File selection handler (multiple files)
+fileInput.addEventListener('change', function(e) {
+    displaySelectedFiles();
+});
+
+function displaySelectedFiles() {
+    const files = fileInput.files;
+    if (files && files.length > 0) {
+        let names = [];
+        let valid = true;
+        for (let i = 0; i < files.length; i++) {
+            if (!validateFile(files[i])) {
+                valid = false;
+                break;
             }
-        });
+            names.push(`${files[i].name} (${formatFileSize(files[i].size)})`);
+        }
+        if (valid) {
+            fileNameSpan.textContent = names.join(', ');
+            selectedFileDiv.style.display = 'block';
+        } else {
+            clearFile();
+        }
+    } else {
+        selectedFileDiv.style.display = 'none';
     }
-    
-    // Validate file type
-    function isValidFile(file) {
-        const validTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'video/mp4',
-            'audio/mpeg',
-            'image/jpeg',
-            'image/png'
-        ];
-        return validTypes.includes(file.type);
+}
+
+// File validation (multiple files)
+function validateFile(file) {
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    const allowedTypes = ['pdf', 'doc', 'docx', 'zip', 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
+    const extension = file.name.split('.').pop().toLowerCase();
+    if (file.size > maxSize) {
+        alert('File is too large. Maximum size allowed is 100MB.');
+        return false;
     }
-    
-    // Add file to list
-    function addFileToList(file) {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        fileItem.innerHTML = `
-            <div class="file-item-info">
-                <div class="file-icon">
-                    <i class="bi bi-file-earmark"></i>
-                </div>
-                <div class="file-details">
-                    <h6>${file.name}</h6>
-                    <small>${formatFileSize(file.size)}</small>
-                </div>
-            </div>
-            <div class="file-actions">
-                <button type="button" class="btn-remove-file" onclick="this.parentElement.parentElement.remove()">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-        `;
-        fileList.appendChild(fileItem);
+    if (!allowedTypes.includes(extension)) {
+        alert('Invalid file type. Please select a supported file format.');
+        return false;
     }
-    
-    // Format file size
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return true;
+}
+
+// Clear file selection
+function clearFile() {
+    fileInput.value = '';
+    selectedFileDiv.style.display = 'none';
+}
+
+// Drag and drop support
+fileUploadArea.addEventListener('click', function() {
+    fileInput.click();
+});
+fileUploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    fileUploadArea.classList.add('file-upload-area-hover');
+});
+fileUploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    fileUploadArea.classList.remove('file-upload-area-hover');
+});
+fileUploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    fileUploadArea.classList.remove('file-upload-area-hover');
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        displaySelectedFiles();
     }
 });
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Dynamic dropdown functionality
+const nonModalProgramSelect = document.getElementById('nonModalProgramSelect');
+const nonModalModuleSelect = document.getElementById('nonModalModuleSelect');
+const nonModalCourseSelect = document.getElementById('nonModalCourseSelect');
+
+// Helper to get query params
+function getQueryParam(name) {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name);
+}
+
+// Auto-select from query params if present
+const preselectProgramId = getQueryParam('program_id');
+const preselectModuleId = getQueryParam('module_id');
+const preselectCourseId = getQueryParam('course_id');
+
+// Initialize dropdowns when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Course content upload page loaded');
+    
+    if (preselectProgramId) {
+        console.log('Pre-selecting program ID:', preselectProgramId);
+        nonModalProgramSelect.value = preselectProgramId;
+        populateModules(preselectProgramId, preselectModuleId, preselectCourseId);
+    } else {
+        // If only one program, select it
+        if (nonModalProgramSelect.options.length === 2) { // 1 placeholder + 1 real
+            nonModalProgramSelect.selectedIndex = 1;
+            populateModules(nonModalProgramSelect.value);
+        }
+    }
+
+    // Show/hide student submission toggle based on content type
+    contentTypeSelect.addEventListener('change', function() {
+        if (this.value === 'assignment') {
+            studentSubmissionToggle.style.display = 'block';
+            assignmentDueDateGroup.style.display = 'block';
+            assignmentDueDateInput.setAttribute('required', 'required');
+        } else {
+            studentSubmissionToggle.style.display = 'none';
+            document.getElementById('enableSubmission').checked = false;
+            assignmentDueDateGroup.style.display = 'none';
+            assignmentDueDateInput.removeAttribute('required');
+        }
+    });
+});
+
+nonModalProgramSelect.addEventListener('change', function() {
+    console.log('Program selected:', this.value);
+    populateModules(this.value);
+});
+
+nonModalModuleSelect.addEventListener('change', function() {
+    console.log('Module selected:', this.value);
+    populateCourses(this.value);
+});
+
+function addLoadingState(element) {
+    element.parentElement.classList.add('select-loading');
+}
+
+function removeLoadingState(element) {
+    element.parentElement.classList.remove('select-loading');
+}
+
+// Enhance populateModules to auto-select if only one module
+function populateModules(programId, moduleToSelect, courseToSelect) {
+    nonModalModuleSelect.innerHTML = '<option value="">Loading...</option>';
+    nonModalModuleSelect.disabled = true;
+    nonModalCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+    nonModalCourseSelect.disabled = true;
+    addLoadingState(nonModalModuleSelect);
+    if (programId) {
+        fetch('/professor/modules/by-program?program_id=' + programId)
+            .then(response => response.json())
+            .then(data => {
+                nonModalModuleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+                if (data.success && data.modules && data.modules.length > 0) {
+                    data.modules.forEach(module => {
+                        const option = document.createElement('option');
+                        option.value = module.modules_id;
+                        option.textContent = module.module_name;
+                        nonModalModuleSelect.appendChild(option);
+                    });
+                    nonModalModuleSelect.disabled = false;
+                    if (moduleToSelect) {
+                        nonModalModuleSelect.value = moduleToSelect;
+                        populateCourses(moduleToSelect, courseToSelect);
+                    } else if (data.modules.length === 1) {
+                        nonModalModuleSelect.selectedIndex = 1;
+                        populateCourses(nonModalModuleSelect.value);
+                    }
+                } else {
+                    nonModalModuleSelect.innerHTML = '<option value="">No modules available</option>';
+                }
+            })
+            .catch(() => {
+                nonModalModuleSelect.innerHTML = '<option value="">Error loading modules</option>';
+            })
+            .finally(() => {
+                removeLoadingState(nonModalModuleSelect);
+            });
+    } else {
+        nonModalModuleSelect.innerHTML = '<option value="">-- Select Module --</option>';
+        nonModalModuleSelect.disabled = true;
+        removeLoadingState(nonModalModuleSelect);
+    }
+}
+
+// Enhance populateCourses to auto-select if only one course
+function populateCourses(moduleId, courseToSelect) {
+    nonModalCourseSelect.innerHTML = '<option value="">Loading...</option>';
+    nonModalCourseSelect.disabled = true;
+    addLoadingState(nonModalCourseSelect);
+    if (moduleId) {
+        fetch('/professor/modules/' + moduleId + '/courses')
+            .then(response => response.json())
+            .then(data => {
+                nonModalCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+                if (data.success && data.courses && data.courses.length > 0) {
+                    data.courses.forEach(course => {
+                        const option = document.createElement('option');
+                        option.value = course.subject_id;
+                        option.textContent = course.subject_name;
+                        nonModalCourseSelect.appendChild(option);
+                    });
+                    nonModalCourseSelect.disabled = false;
+                    if (courseToSelect) {
+                        nonModalCourseSelect.value = courseToSelect;
+                    } else if (data.courses.length === 1) {
+                        nonModalCourseSelect.selectedIndex = 1;
+                    }
+                } else {
+                    nonModalCourseSelect.innerHTML = '<option value="">No courses available</option>';
+                }
+            })
+            .catch(() => {
+                nonModalCourseSelect.innerHTML = '<option value="">Error loading courses</option>';
+            })
+            .finally(() => {
+                removeLoadingState(nonModalCourseSelect);
+            });
+    } else {
+        nonModalCourseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+        nonModalCourseSelect.disabled = true;
+        removeLoadingState(nonModalCourseSelect);
+    }
+}
+
+// Enhanced form submission
+document.getElementById('nonModalContentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const files = fileInput.files;
+    const link = contentLinkInput.value.trim();
+    if ((!files || files.length === 0) && !link) {
+        alert('Please upload at least one file or provide a content link.');
+        return;
+    }
+    if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+            if (!validateFile(files[i])) {
+                return;
+            }
+        }
+    }
+    
+    // Update UI for upload
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+    progressBar.style.display = 'block';
+    
+    // Simulate upload progress (in a real scenario, you'd get this from the server)
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 30;
+        if (progress > 90) {
+            clearInterval(progressInterval);
+        }
+        progressFill.style.width = Math.min(progress, 90) + '%';
+    }, 200);
+    
+    // Submit form
+    fetch(this.action, {
+        method: 'POST',
+        body: new FormData(this),
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(async response => {
+        const responseText = await response.text();
+        try {
+            const data = JSON.parse(responseText);
+            if (response.ok && data.success) {
+                // Success animation
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Upload Complete!';
+                submitBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                
+                // Show success message
+                setTimeout(() => {
+                    alert('Content uploaded successfully!');
+                    // Redirect back to professor modules
+                    window.location.href = '{{ route("professor.modules.index") }}';
+                }, 1000);
+            } else {
+                throw new Error(data.message || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Invalid JSON response:', responseText);
+            throw new Error('Unexpected server response');
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+        
+        // Reset form state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-upload"></i> Upload Content';
+        progressBar.style.display = 'none';
+        progressFill.style.width = '0%';
+    });
+});
 </script>
-@endpush
 @endsection 

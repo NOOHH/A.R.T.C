@@ -1707,13 +1707,27 @@ Route::middleware(['professor.auth'])
     Route::get('/modules/archived', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archived'])
          ->name('modules.archived');
     
+    // Professor Course Content Upload Routes
+    Route::get('/modules/course-content-upload', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'showCourseContentUploadPage'])
+         ->name('modules.course-content-upload');
+    Route::post('/modules/course-content-store', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'courseContentStore'])
+         ->name('modules.course-content-store');
+    
     // Professor Module AJAX Routes
     Route::get('/modules/by-program', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModulesByProgram'])
          ->name('modules.by-program');
     Route::get('/modules/batches', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getBatchesByProgram'])
          ->name('modules.batches');
-    Route::get('/modules/courses', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCoursesByModule'])
-         ->name('modules.courses');
+    Route::get('/modules/{moduleId}/courses', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCoursesByModule'])
+         ->name('modules.module.courses');
+    Route::get('/modules/{moduleId}/content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModuleContent'])
+         ->name('modules.module.content');
+    Route::get('/courses/{courseId}/content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCourseContent'])
+         ->name('courses.content');
+    
+    // Professor Course Routes
+    Route::post('/courses/store', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'storeCourse'])
+         ->name('courses.store');
     
     // Content API routes
     Route::get('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getContent'])
@@ -1803,20 +1817,30 @@ Route::middleware(['professor.auth'])
                 }
             }
             
-            $text = trim($text);
-            
             return response()->json([
                 'success' => true,
-                'text_length' => strlen($text),
-                'text_preview' => substr($text, 0, 500) . '...',
-                'extension' => $extension
+                'text' => $text,
+                'length' => strlen($text)
             ]);
             
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('File extraction test failed', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('File extraction error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error processing file: ' . $e->getMessage()]);
         }
     })->name('quiz-generator.test-file-extraction');
+    
+    // Test session route for debugging
+    Route::get('/professor/test-session', function() {
+        return response()->json([
+            'session_logged_in' => session('logged_in'),
+            'session_professor_id' => session('professor_id'),
+            'session_user_role' => session('user_role'),
+            'session_user_type' => session('user_type'),
+            'session_user_id' => session('user_id'),
+            'auth_check' => auth()->check(),
+            'auth_user' => auth()->user()
+        ]);
+    })->name('professor.test-session');
     
     // API route to fetch quizzes for testing
     Route::get('/api/test-quizzes', function() {

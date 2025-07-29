@@ -11,13 +11,10 @@
         $user = Auth::user();
         // If Laravel Auth user is not available, fallback to session data
         if (!$user) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
             $sessionUser = (object) [
-                'id' => $_SESSION['user_id'] ?? session('user_id'),
-                'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
-                'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
+                'id' => session('user_id'),
+                'name' => session('user_name') ?? 'Guest',
+                'role' => session('user_role') ?? 'guest'
             ];
             if ($sessionUser->id) {
                 $user = $sessionUser;
