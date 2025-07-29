@@ -22,27 +22,46 @@ class ProfessorModuleController extends Controller
      */
     private function checkModulePermission()
     {
-        // Check if feature is enabled
-        $isEnabled = AdminSetting::getValue('professor_module_management_enabled', '0') === '1';
-        if (!$isEnabled) {
-            abort(403, 'Module management is not enabled for professors.');
-        }
+        try {
+            // Check if feature is enabled
+            $isEnabled = AdminSetting::getValue('professor_module_management_enabled', '0') === '1';
+            Log::info('ProfessorModuleController: Module management enabled check', ['enabled' => $isEnabled]);
 
-        // Check whitelist
-        $whitelist = AdminSetting::getValue('professor_module_management_whitelist', '');
-
-        $professor = Auth::guard('professor')->user();
-        if (!$professor) {
-            Log::error('ProfessorModuleController: Not authenticated as professor');
-            abort(403, 'You are not authenticated as a professor.');
-        }
-        $professorId = $professor->professor_id;
-
-        if (!empty($whitelist)) {
-            $whitelistedIds = array_map('trim', explode(',', $whitelist));
-            if (!in_array((string)$professorId, $whitelistedIds)) {
-                abort(403, 'You are not authorized to manage modules.');
+            if (!$isEnabled) {
+                Log::warning('ProfessorModuleController: Module management not enabled');
+                abort(403, 'Module management is not enabled for professors.');
             }
+
+            // Check whitelist
+            $whitelist = AdminSetting::getValue('professor_module_management_whitelist', '');
+            Log::info('ProfessorModuleController: Whitelist check', ['whitelist' => $whitelist]);
+
+            // Use session-based authentication instead of Auth guard
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: Not authenticated as professor via session');
+                abort(403, 'You are not authenticated as a professor.');
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Professor authenticated via session', ['professor_id' => $professorId]);
+
+            if (!empty($whitelist)) {
+                $whitelistedIds = array_map('trim', explode(',', $whitelist));
+                if (!in_array((string)$professorId, $whitelistedIds)) {
+                    Log::warning('ProfessorModuleController: Professor not in whitelist', [
+                        'professor_id' => $professorId,
+                        'whitelist' => $whitelistedIds
+                    ]);
+                    abort(403, 'You are not authorized to manage modules.');
+                }
+            }
+
+            Log::info('ProfessorModuleController: Permission check passed');
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController checkModulePermission error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 
@@ -51,31 +70,56 @@ class ProfessorModuleController extends Controller
      */
     public function index(Request $request)
     {
-        $this->checkModulePermission();
+        try {
+            $this->checkModulePermission();
 
-        $professor = Auth::guard('professor')->user();
-        
-        // Get only programs assigned to this professor
-        $programs = $professor->assignedPrograms()->get();
-        $modules = collect();
-        
-        if ($request->has('program_id') && $request->program_id != '') {
-            // Check if professor is assigned to this program
-            $assignedProgram = $programs->where('program_id', $request->program_id)->first();
-            if (!$assignedProgram) {
-                return redirect()->route('professor.modules.index')
-                               ->with('error', 'You are not assigned to this program.');
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in index');
+                return redirect()->route('login')->with('error', 'Please log in as a professor to access this page.');
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in index', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in index', ['professor_id' => $professorId]);
+                return redirect()->route('login')->with('error', 'Professor not found.');
             }
             
-            $modules = Module::where('program_id', $request->program_id)
-                           ->where('is_archived', false)
-                           ->with(['program', 'batch'])
-                           ->orderBy('module_order', 'asc')
-                           ->orderBy('created_at', 'desc')
-                           ->get();
-        }
+            Log::info('ProfessorModuleController: Professor found in index', [
+                'professor_id' => $professor->professor_id,
+                'professor_name' => $professor->professor_name
+            ]);
+            
+            // Get only programs assigned to this professor
+            $programs = $professor->assignedPrograms()->get();
+            $modules = collect();
+            
+            if ($request->has('program_id') && $request->program_id != '') {
+                // Check if professor is assigned to this program
+                $assignedProgram = $programs->where('program_id', $request->program_id)->first();
+                if (!$assignedProgram) {
+                    return redirect()->route('professor.modules.index')
+                                   ->with('error', 'You are not assigned to this program.');
+                }
+                
+                $modules = Module::where('program_id', $request->program_id)
+                               ->where('is_archived', false)
+                               ->with(['program', 'batch'])
+                               ->orderBy('module_order', 'asc')
+                               ->orderBy('created_at', 'desc')
+                               ->get();
+            }
 
-        return view('professor.modules.index', compact('programs', 'modules'));
+            return view('professor.modules.index', compact('programs', 'modules'));
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController index error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('login')->with('error', 'An error occurred while loading the page.');
+        }
     }
 
     /**
@@ -237,24 +281,54 @@ class ProfessorModuleController extends Controller
      */
     public function getModulesByProgram(Request $request)
     {
-        $this->checkModulePermission();
+        try {
+            $this->checkModulePermission();
 
-        $professor = Auth::guard('professor')->user();
-        $programId = $request->input('program_id');
-        
-        // Check if professor is assigned to this program
-        $assignedProgram = $professor->assignedPrograms()->where('program_id', $programId)->first();
-        if (!$assignedProgram) {
-            return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in getModulesByProgram');
+                return response()->json(['error' => 'Authentication failed'], 401);
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in getModulesByProgram', ['professor_id' => $professorId]);
+                return response()->json(['error' => 'Professor not found'], 404);
+            }
+            
+            Log::info('ProfessorModuleController: Professor found', [
+                'professor_id' => $professor->professor_id,
+                'professor_name' => $professor->professor_name
+            ]);
+
+            $programId = $request->input('program_id');
+            if (!$programId) {
+                return response()->json(['error' => 'Program ID is required'], 400);
+            }
+
+            // Check if professor is assigned to this program
+            $assignedProgram = $professor->assignedPrograms()->where('professor_program.program_id', $programId)->first();
+            if (!$assignedProgram) {
+                return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            }
+
+            $modules = Module::where('program_id', $programId)
+                            ->where('is_archived', false)
+                            ->with(['program', 'batch'])
+                            ->orderBy('module_order', 'asc')
+                            ->get();
+
+            return response()->json($modules);
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController getModulesByProgram error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'program_id' => $request->input('program_id')
+            ]);
+            return response()->json(['error' => 'Internal server error'], 500);
         }
-
-        $modules = Module::where('program_id', $programId)
-                        ->where('is_archived', false)
-                        ->with(['program', 'batch', 'contentItems'])
-                        ->orderBy('module_order', 'asc')
-                        ->get();
-
-        return response()->json($modules);
     }
 
     /**
@@ -262,19 +336,49 @@ class ProfessorModuleController extends Controller
      */
     public function getBatchesByProgram(Request $request)
     {
-        $this->checkModulePermission();
+        try {
+            $this->checkModulePermission();
 
-        $professor = Auth::guard('professor')->user();
-        $programId = $request->input('program_id');
-        
-        // Check if professor is assigned to this program
-        $assignedProgram = $professor->assignedPrograms()->where('program_id', $programId)->first();
-        if (!$assignedProgram) {
-            return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in getBatchesByProgram');
+                return response()->json(['error' => 'Authentication failed'], 401);
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in getBatchesByProgram', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in getBatchesByProgram', ['professor_id' => $professorId]);
+                return response()->json(['error' => 'Professor not found'], 404);
+            }
+            
+            Log::info('ProfessorModuleController: Professor found in getBatchesByProgram', [
+                'professor_id' => $professor->professor_id,
+                'professor_name' => $professor->professor_name
+            ]);
+
+            $programId = $request->input('program_id');
+            if (!$programId) {
+                return response()->json(['error' => 'Program ID is required'], 400);
+            }
+
+            // Check if professor is assigned to this program
+            $assignedProgram = $professor->assignedPrograms()->where('professor_program.program_id', $programId)->first();
+            if (!$assignedProgram) {
+                return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            }
+
+            $batches = StudentBatch::where('program_id', $programId)->get();
+            return response()->json($batches);
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController getBatchesByProgram error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'program_id' => $request->input('program_id')
+            ]);
+            return response()->json(['error' => 'Internal server error'], 500);
         }
-
-        $batches = StudentBatch::where('program_id', $programId)->get();
-        return response()->json($batches);
     }
 
     /**
@@ -327,40 +431,121 @@ class ProfessorModuleController extends Controller
     }
 
     /**
-     * Get courses for a specific module that the professor has access to
+     * Get courses for a specific module (AJAX)
      */
-    public function getCoursesByModule(Request $request)
+    public function getCoursesByModule($moduleId)
     {
-        $this->checkModulePermission();
-
         try {
-            $moduleId = $request->get('module_id');
-            $module = Module::findOrFail($moduleId);
-            
-            $professor = Auth::guard('professor')->user();
-            
-            // Check if professor is assigned to this program
-            $assignedProgram = $professor->assignedPrograms()->where('program_id', $module->program_id)->first();
-            if (!$assignedProgram) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You are not assigned to this program.'
-                ]);
+            $this->checkModulePermission();
+
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in getCoursesByModule');
+                return response()->json(['error' => 'Authentication failed'], 401);
             }
 
-            $courses = Course::where('module_id', $moduleId)
-                ->select('subject_id as course_id', 'subject_name as course_name')
-                ->get();
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in getCoursesByModule', ['professor_id' => $professorId]);
             
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in getCoursesByModule', ['professor_id' => $professorId]);
+                return response()->json(['error' => 'Professor not found'], 404);
+            }
+
+            // Find the module
+            $module = Module::find($moduleId);
+            if (!$module) {
+                return response()->json(['error' => 'Module not found'], 404);
+            }
+
+            // Check if professor is assigned to this program
+            $assignedProgram = $professor->assignedPrograms()->where('professor_program.program_id', $module->program_id)->first();
+            if (!$assignedProgram) {
+                return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            }
+
+            // Get courses for this module
+            $courses = Course::where('module_id', $moduleId)
+                ->where('is_active', true)
+                ->orderBy('subject_order', 'asc')
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'courses' => $courses
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error loading courses: ' . $e->getMessage()
+            Log::error('ProfessorModuleController getCoursesByModule error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'module_id' => $moduleId
             ]);
+            return response()->json(['error' => 'Internal server error'], 500);
+        }
+    }
+
+    /**
+     * Get content for a specific module (AJAX)
+     */
+    public function getModuleContent($moduleId)
+    {
+        try {
+            $this->checkModulePermission();
+
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in getModuleContent');
+                return response()->json(['error' => 'Authentication failed'], 401);
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in getModuleContent', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in getModuleContent', ['professor_id' => $professorId]);
+                return response()->json(['error' => 'Professor not found'], 404);
+            }
+
+            // Find the module
+            $module = Module::find($moduleId);
+            if (!$module) {
+                return response()->json(['error' => 'Module not found'], 404);
+            }
+
+            // Check if professor is assigned to this program
+            $assignedProgram = $professor->assignedPrograms()->where('professor_program.program_id', $module->program_id)->first();
+            if (!$assignedProgram) {
+                return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            }
+
+            // Get courses for this module with their content items
+            $courses = Course::where('module_id', $moduleId)
+                ->where('is_active', true)
+                ->with(['contentItems' => function($query) {
+                    $query->where('is_active', true)
+                          ->orderBy('content_order', 'asc');
+                }])
+                ->orderBy('subject_order', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'module' => [
+                    'module_id' => $module->modules_id,
+                    'module_name' => $module->module_name,
+                    'module_description' => $module->module_description,
+                    'type' => $module->content_type ?? 'Standard',
+                    'module_order' => $module->module_order
+                ],
+                'courses' => $courses
+            ]);
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController getModuleContent error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'module_id' => $moduleId
+            ]);
+            return response()->json(['error' => 'Internal server error'], 500);
         }
     }
 
@@ -369,11 +554,30 @@ class ProfessorModuleController extends Controller
      */
     public function getContent($id)
     {
-        $this->checkModulePermission();
-
         try {
+            $this->checkModulePermission();
+
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in getContent');
+                return response()->json(['error' => 'Authentication failed'], 401);
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in getContent', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in getContent', ['professor_id' => $professorId]);
+                return response()->json(['error' => 'Professor not found'], 404);
+            }
+            
+            Log::info('ProfessorModuleController: Professor found in getContent', [
+                'professor_id' => $professor->professor_id,
+                'professor_name' => $professor->professor_name
+            ]);
+
             $contentItem = ContentItem::findOrFail($id);
-            $professor = Auth::guard('professor')->user();
             
             // Check if professor has access to this content via the course/module
             $course = $contentItem->course;
@@ -406,6 +610,10 @@ class ProfessorModuleController extends Controller
                 'content_html' => $this->formatContentForDisplay($contentItem)
             ]);
         } catch (\Exception $e) {
+            Log::error('ProfessorModuleController getContent error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'content_id' => $id
+            ]);
             return response()->json(['error' => 'Content not found.'], 404);
         }
     }
@@ -573,5 +781,302 @@ class ProfessorModuleController extends Controller
         return $url; // Return original if not a YouTube URL
     }
 
+    /**
+     * Show the course content upload page for professors
+     */
+    public function showCourseContentUploadPage(Request $request)
+    {
+        try {
+            $this->checkModulePermission();
+
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in showCourseContentUploadPage');
+                abort(403, 'You are not authenticated as a professor.');
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in showCourseContentUploadPage', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in showCourseContentUploadPage', ['professor_id' => $professorId]);
+                abort(404, 'Professor not found');
+            }
+            
+            // Get only programs assigned to this professor
+            $programs = $professor->assignedPrograms()->get();
+            
+            Log::info('ProfessorModuleController: Successfully loaded course content upload page', [
+                'professor_id' => $professorId,
+                'programs_count' => $programs->count()
+            ]);
+            
+            return view('professor.modules.course-content-upload', [
+                'programs' => $programs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController showCourseContentUploadPage error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_params' => $request->all()
+            ]);
+            abort(500, 'Internal server error occurred while loading the page.');
+        }
+    }
+
+    /**
+     * Store course content uploaded by professors
+     */
+    public function courseContentStore(Request $request)
+    {
+        $this->checkModulePermission();
+
+        $request->validate([
+            'program_id' => 'required|exists:programs,program_id',
+            'module_id' => 'required|exists:modules,modules_id',
+            'course_id' => 'required|exists:courses,subject_id',
+            'content_title' => 'required|string|max:255',
+            'content_description' => 'nullable|string',
+            'content_type' => 'required|in:lesson,video,assignment,quiz,test,link',
+            'content_order' => 'nullable|integer|min:1',
+            'content_url' => 'nullable|url',
+            'attachment' => 'nullable|file|max:10240', // 10MB max
+            'enable_submission' => 'nullable|boolean',
+            'allowed_file_types' => 'nullable|string',
+            'max_file_size' => 'nullable|integer|min:1|max:100',
+            'submission_instructions' => 'nullable|string',
+            'allow_multiple_submissions' => 'nullable|boolean'
+        ]);
+
+        // Use session-based authentication
+        if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+            Log::error('ProfessorModuleController: No authenticated professor found via session in courseContentStore');
+            return response()->json(['error' => 'Authentication failed'], 401);
+        }
+
+        $professorId = session('professor_id');
+        $professor = Professor::find($professorId);
+        if (!$professor) {
+            Log::error('ProfessorModuleController: Professor not found in database in courseContentStore', ['professor_id' => $professorId]);
+            return response()->json(['error' => 'Professor not found'], 404);
+        }
+        
+        // Check if professor is assigned to this program
+        $assignedProgram = $professor->assignedPrograms()->where('program_id', $request->program_id)->first();
+        if (!$assignedProgram) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not assigned to this program.'
+            ], 403);
+        }
+
+        try {
+            $contentItem = new ContentItem();
+            $contentItem->module_id = $request->module_id;
+            $contentItem->course_id = $request->course_id;
+            $contentItem->content_title = $request->content_title;
+            $contentItem->content_description = $request->content_description;
+            $contentItem->content_type = $request->content_type;
+            $contentItem->content_order = $request->content_order ?? 1;
+            $contentItem->content_url = $request->content_url;
+            
+            // Handle file upload
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('content', $fileName, 'public');
+                $contentItem->attachment_path = $path;
+            }
+
+            // Handle submission settings
+            if ($request->content_type === 'assignment' && $request->enable_submission) {
+                $contentItem->enable_submission = true;
+                $contentItem->allowed_file_types = $request->allowed_file_types;
+                $contentItem->max_file_size = $request->max_file_size ?? 10;
+                $contentItem->submission_instructions = $request->submission_instructions;
+                $contentItem->allow_multiple_submissions = $request->allow_multiple_submissions ?? false;
+            }
+
+            $contentItem->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content uploaded successfully!',
+                'content_id' => $contentItem->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error storing course content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error uploading content. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get content items for a specific course (AJAX)
+     */
+    public function getCourseContent($courseId)
+    {
+        try {
+            $this->checkModulePermission();
+
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in getCourseContent');
+                return response()->json(['error' => 'Authentication failed'], 401);
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in getCourseContent', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in getCourseContent', ['professor_id' => $professorId]);
+                return response()->json(['error' => 'Professor not found'], 404);
+            }
+
+            // Find the course
+            $course = Course::find($courseId);
+            if (!$course) {
+                return response()->json(['error' => 'Course not found'], 404);
+            }
+
+            // Get the module for this course
+            $module = Module::find($course->module_id);
+            if (!$module) {
+                return response()->json(['error' => 'Module not found'], 404);
+            }
+
+            // Check if professor is assigned to this program
+            $assignedProgram = $professor->assignedPrograms()->where('professor_program.program_id', $module->program_id)->first();
+            if (!$assignedProgram) {
+                return response()->json(['error' => 'You are not assigned to this program.'], 403);
+            }
+
+            // Get content items for this course
+            $contentItems = ContentItem::where('course_id', $courseId)
+                ->where('is_active', true)
+                ->orderBy('content_order', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'course' => [
+                    'course_id' => $course->subject_id,
+                    'subject_name' => $course->subject_name,
+                    'subject_description' => $course->subject_description,
+                    'type' => $course->content_type ?? 'Standard'
+                ],
+                'content' => $contentItems
+            ]);
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController getCourseContent error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'course_id' => $courseId
+            ]);
+            return response()->json(['error' => 'Internal server error'], 500);
+        }
+    }
+
+    /**
+     * Store a new course
+     */
+    public function storeCourse(Request $request)
+    {
+        try {
+            $this->checkModulePermission();
+
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                Log::error('ProfessorModuleController: No authenticated professor found via session in storeCourse');
+                return response()->json(['success' => false, 'message' => 'Not authenticated'], 403);
+            }
+
+            $professorId = session('professor_id');
+            Log::info('ProfessorModuleController: Session professor_id in storeCourse', ['professor_id' => $professorId]);
+            
+            $professor = Professor::find($professorId);
+            if (!$professor) {
+                Log::error('ProfessorModuleController: Professor not found in database in storeCourse', ['professor_id' => $professorId]);
+                return response()->json(['success' => false, 'message' => 'Professor not found'], 404);
+            }
+
+            // Validate request
+            $request->validate([
+                'program_id' => 'required|exists:programs,program_id',
+                'module_id' => 'required|exists:modules,modules_id',
+                'subject_name' => 'required|string|max:255',
+                'subject_description' => 'nullable|string',
+                'subject_price' => 'required|numeric|min:0',
+                'is_required' => 'nullable|boolean'
+            ]);
+
+            // Check if professor has access to this program
+            $hasAccess = $professor->assignedPrograms()
+                                  ->where('program_id', $request->program_id)
+                                  ->exists();
+
+            if (!$hasAccess) {
+                Log::warning('ProfessorModuleController: Professor does not have access to program in storeCourse', [
+                    'professor_id' => $professorId,
+                    'program_id' => $request->program_id
+                ]);
+                return response()->json(['success' => false, 'message' => 'Access denied to this program'], 403);
+            }
+
+            // Check if module belongs to the specified program
+            $module = Module::where('modules_id', $request->module_id)
+                           ->where('program_id', $request->program_id)
+                           ->first();
+
+            if (!$module) {
+                Log::warning('ProfessorModuleController: Module not found or does not belong to program in storeCourse', [
+                    'module_id' => $request->module_id,
+                    'program_id' => $request->program_id
+                ]);
+                return response()->json(['success' => false, 'message' => 'Invalid module for this program'], 400);
+            }
+
+            // Create the course
+            $course = Course::create([
+                'module_id' => $request->module_id,
+                'subject_name' => $request->subject_name,
+                'subject_description' => $request->subject_description,
+                'subject_price' => $request->subject_price,
+                'is_required' => $request->has('is_required') ? 1 : 0,
+                'is_active' => 1,
+                'subject_order' => Course::where('module_id', $request->module_id)->max('subject_order') + 1
+            ]);
+
+            Log::info('ProfessorModuleController: Successfully created course', [
+                'professor_id' => $professorId,
+                'course_id' => $course->subject_id,
+                'course_name' => $course->subject_name,
+                'module_id' => $course->module_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Course created successfully',
+                'course' => [
+                    'subject_id' => $course->subject_id,
+                    'subject_name' => $course->subject_name,
+                    'subject_description' => $course->subject_description,
+                    'subject_price' => $course->subject_price,
+                    'is_required' => $course->is_required,
+                    'is_active' => $course->is_active,
+                    'subject_order' => $course->subject_order
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('ProfessorModuleController storeCourse error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
+        }
+    }
 
 }

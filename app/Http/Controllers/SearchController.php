@@ -28,8 +28,8 @@ class SearchController extends Controller
         $limit = $request->get('limit', 10);
         
         // Use session-based authentication instead of Laravel Auth
-        $userId = session('user_id');
-        $userRole = session('user_role', session('user_type'));
+        $userId = session('user_id') ?? session('admin_id') ?? session('directors_id') ?? session('professor_id');
+        $userRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
         
         Log::info("SearchController DEBUG: Main search called", [
             'query' => $query,
@@ -37,6 +37,12 @@ class SearchController extends Controller
             'limit' => $limit,
             'session_user_id' => $userId,
             'session_user_role' => $userRole,
+            'session_user_type' => session('user_type'),
+            'session_role' => session('role'),
+            'session_type' => session('type'),
+            'session_admin_id' => session('admin_id'),
+            'session_directors_id' => session('directors_id'),
+            'session_professor_id' => session('professor_id'),
             'auth_user_id' => Auth::id(),
             'auth_user_role' => Auth::user() ? Auth::user()->role : 'null'
         ]);
@@ -384,7 +390,7 @@ class SearchController extends Controller
                 'programs' => $programs->toArray(),
                 'avatar' => $this->getUserAvatar($student),
                 'status' => isset($student->is_online) && $student->is_online ? 'Online' : 'Offline',
-                'profile_url' => $student->student ? route('admin.students.show', $studentId) : '#',
+                'profile_url' => $student->student ? $this->getStudentProfileUrl($studentId) : '#',
                 'student_id' => $studentId
             ];
         })->toArray();
@@ -700,7 +706,7 @@ class SearchController extends Controller
                 // We need to find the student_id for the route
                 $student = $user->student;
                 if ($student) {
-                    return route('admin.students.show', $student->student_id);
+                    return $this->getStudentProfileUrl($student->student_id);
                 }
                 return '#';
             case 'professor':
@@ -708,6 +714,30 @@ class SearchController extends Controller
                 return '#';
             default:
                 return '#';
+        }
+    }
+
+    /**
+     * Get student profile URL based on current user role
+     */
+    private function getStudentProfileUrl($studentId)
+    {
+        // Check multiple session variables for user role
+        $currentUserRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
+        
+        Log::info("SearchController DEBUG: getStudentProfileUrl", [
+            'studentId' => $studentId,
+            'currentUserRole' => $currentUserRole,
+            'session_user_role' => session('user_role'),
+            'session_user_type' => session('user_type'),
+            'session_role' => session('role'),
+            'session_type' => session('type')
+        ]);
+        
+        if ($currentUserRole === 'professor') {
+            return route('professor.students.index');
+        } else {
+            return route('admin.students.show', $studentId);
         }
     }
 
@@ -722,7 +752,7 @@ class SearchController extends Controller
                 'role' => 'Student',
                 'avatar' => $this->getUserAvatar($student),
                 'status' => isset($student->is_online) && $student->is_online ? 'Online' : 'Offline',
-                'profile_url' => route('admin.students.show', $student->user_id ?? '')
+                'profile_url' => $this->getStudentProfileUrl($student->user_id ?? '')
             ];
         })->toArray();
     }
