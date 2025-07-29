@@ -1,52 +1,71 @@
-@extends('professor.layout')
+@extends('professor.professor-layouts.professor-layout')
 
 @section('title', 'Dashboard')
 
 @section('content')
 <style>
-/* 0) Reset & full viewport */
-html, body, .admin-container, .main-wrapper {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+/* Reset overflow for professor dashboard */
+html, body {
+  overflow-x: hidden;
+  overflow-y: auto !important;
 }
 
-/* 1) Fixed header */
-.main-header {
-  position: fixed;
-  top: 0; left: 0;
+.professor-container {
+  overflow: visible !important;
+  min-height: 100vh;
+}
+
+.main-content-area {
+  overflow: visible !important;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100vh;
+  padding: 1rem;
+  background: #f8f9fa;
+  position: relative;
   width: 100%;
-  z-index: 1000;
-  height: 56px; /* match your header height */
 }
 
-/* 2) Sidebar under header */
-.main-sidebar {
-  position: fixed;
-  top: 56px;      /* header height */
-  bottom: 0;
-  width: 250px;   /* default expanded width */
-  overflow-y: auto;
-  background: #343a40;
-  z-index: 999;
-  transition: width .3s ease;
+/* Ensure the dashboard content can scroll */
+.content-wrapper .container-fluid {
+  overflow: visible !important;
+  height: auto !important;
+  padding: 0 15px;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-/* 3) Main content flex container */
-.content-below-search {
-  display: flex;
-  height: calc(100% - 56px); /* fill below header */
-  margin-top: 56px;
-  margin-bottom: 5px;
+/* Ensure proper Bootstrap container behavior */
+.content-wrapper .container-fluid .row {
+  margin-left: -15px;
+  margin-right: -15px;
 }
 
-/* 4) Scrollable page-content */
-.page-content {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* we'll scroll the inner wrapper */
+.content-wrapper .container-fluid .col-12,
+.content-wrapper .container-fluid .col-md-3,
+.content-wrapper .container-fluid .col-md-4,
+.content-wrapper .container-fluid .col-xl-3 {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* Override any conflicting navbar container-fluid styles */
+.navbar .container-fluid {
+  max-width: 100%;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* Force scrolling on the main content */
+.main-content-area .content-wrapper {
+  overflow-y: scroll !important;
+  max-height: none !important;
 }
 
 /* Custom announcement card styling */
@@ -60,25 +79,49 @@ html, body, .admin-container, .main-wrapper {
   transition: all 0.3s ease;
 }
 
-/* 5) YOUR real scrolling area */
-.content-wrapper {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 1rem;      /* your container-fluid padding */
-  background: #fff;
-  margin-left: 0;
+/* Stats card styling */
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
-/* 6) Collapse sidebar toggling */
-body.sidebar-collapse .main-sidebar {
-  width: 60px !important;
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
-body.sidebar-collapse .main-header {
-  left: 60px;
-  width: calc(100% - 60px);
+
+/* Ensure proper spacing */
+.content-wrapper .row {
+  margin-bottom: 1.5rem;
 }
-body.sidebar-collapse .content-below-search {
-  margin-left: 60px;
+
+.content-wrapper .card {
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.content-wrapper .card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* Ensure proper content spacing */
+.content-wrapper {
+  padding: 1.5rem;
+}
+
+/* Fix any potential margin issues */
+.content-wrapper > *:first-child {
+  margin-top: 0;
+}
+
+.content-wrapper > *:last-child {
+  margin-bottom: 0;
 }
 
 </style>
