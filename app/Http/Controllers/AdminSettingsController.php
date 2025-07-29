@@ -1258,9 +1258,7 @@ class AdminSettingsController extends Controller
             'manage_enrollments',
             'view_analytics',
             'manage_professors',
-            'manage_batches',
-            'view_chat_logs',
-            'manage_settings'
+            'manage_batches'
         ];
 
         try {
@@ -1290,8 +1288,6 @@ class AdminSettingsController extends Controller
                 'view_analytics' => AdminSetting::where('setting_key', 'director_view_analytics')->value('setting_value') !== 'false',
                 'manage_professors' => AdminSetting::where('setting_key', 'director_manage_professors')->value('setting_value') !== 'false',
                 'manage_batches' => AdminSetting::where('setting_key', 'director_manage_batches')->value('setting_value') !== 'false',
-                'view_chat_logs' => AdminSetting::where('setting_key', 'director_view_chat_logs')->value('setting_value') !== 'false',
-                'manage_settings' => AdminSetting::where('setting_key', 'director_manage_settings')->value('setting_value') === 'true',
             ];
             return response()->json(['success' => true, 'settings' => $features]);
         } catch (\Exception $e) {

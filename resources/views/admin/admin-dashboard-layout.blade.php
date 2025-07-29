@@ -143,12 +143,13 @@
                  || (session('user_type') === 'director')
                  || ($user && isset($user->role) && $user->role === 'director');
         $directorFeatures = [
+            'view_students' => AdminSetting::getValue('director_view_students', 'true') === 'true' || AdminSetting::getValue('director_view_students', '1') === '1',
             'manage_programs' => AdminSetting::getValue('director_manage_programs', 'false') === 'true' || AdminSetting::getValue('director_manage_programs', '0') === '1',
             'manage_modules' => AdminSetting::getValue('director_manage_modules', 'false') === 'true' || AdminSetting::getValue('director_manage_modules', '0') === '1',
             'manage_professors' => AdminSetting::getValue('director_manage_professors', 'false') === 'true' || AdminSetting::getValue('director_manage_professors', '0') === '1',
             'manage_batches' => AdminSetting::getValue('director_manage_batches', 'false') === 'true' || AdminSetting::getValue('director_manage_batches', '0') === '1',
-            'manage_settings' => AdminSetting::getValue('director_manage_settings', 'false') === 'true' || AdminSetting::getValue('director_manage_settings', '0') === '1',
             'view_analytics' => AdminSetting::getValue('director_view_analytics', 'false') === 'true' || AdminSetting::getValue('director_view_analytics', '0') === '1',
+            'manage_enrollments' => AdminSetting::getValue('director_manage_enrollments', 'true') === 'true' || AdminSetting::getValue('director_manage_enrollments', '1') === '1',
         ];
     @endphp
     
@@ -264,6 +265,11 @@
                         </div>
 
                         <!-- Registration Management -->
+                        @php
+                            $registrationMenuVisible = $isAdmin || 
+                                ($isDirector && ($directorFeatures['manage_enrollments'] || $directorFeatures['manage_batches']));
+                        @endphp
+                        @if($registrationMenuVisible)
                         <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) active @endif">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#registrationMenu">
                                 <i class="bi bi-person-plus"></i>
@@ -272,6 +278,7 @@
                             </a>
                             <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.student.registration')) show @endif" id="registrationMenu">
                                 <div class="submenu">
+                                    @if($isAdmin || ($isDirector && $directorFeatures['manage_enrollments']))
                                     <a href="{{ route('admin.student.registration.pending') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.student.registration.pending') active @endif">
                                         <i class="bi bi-clock"></i>
                                         <span>Pending</span>
@@ -288,21 +295,28 @@
                                         <i class="bi bi-receipt"></i>
                                         <span>Payment History</span>
                                     </a>
+                                    <a href="{{ route('admin.enrollments.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
+                                        <i class="bi bi-book"></i>
+                                        <span>Assign Course to Student</span>
+                                    </a>
+                                    @endif
                                     @if($isAdmin || ($isDirector && $directorFeatures['manage_batches']))
                                     <a href="{{ route('admin.batches.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
                                         <i class="bi bi-people"></i>
                                         <span>Batch Enroll</span>
                                     </a>
                                     @endif
-                                    <a href="{{ route('admin.enrollments.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
-                                        <i class="bi bi-book"></i>
-                                        <span>Assign Course to Student</span>
-                                    </a>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Account Management -->
+                        @php
+                            $accountsMenuVisible = $isAdmin || 
+                                ($isDirector && ($directorFeatures['view_students'] || $directorFeatures['manage_professors']));
+                        @endphp
+                        @if($accountsMenuVisible)
                         <div class="nav-item dropdown-nav">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#accountsMenu">
                                 <i class="bi bi-people"></i>
@@ -311,10 +325,12 @@
                             </a>
                             <div class="collapse" id="accountsMenu">
                                 <div class="submenu">
+                                    @if($isAdmin || ($isDirector && $directorFeatures['view_students']))
                                     <a href="{{ route('admin.students.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.students.index') active @endif">
                                         <i class="bi bi-person"></i>
                                         <span>Students</span>
                                     </a>
+                                    @endif
                                     @if($isAdmin)
                                     <a href="{{ route('admin.directors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.directors')) active @endif">
                                         <i class="bi bi-person-badge"></i>
@@ -330,8 +346,14 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Programs & Packages -->
+                        @php
+                            $programsMenuVisible = $isAdmin || 
+                                ($isDirector && ($directorFeatures['manage_programs'] || $directorFeatures['manage_modules'] || $directorFeatures['manage_batches']));
+                        @endphp
+                        @if($programsMenuVisible)
                         <div class="nav-item dropdown-nav @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') active @endif">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#programsMenu">
                                 <i class="bi bi-mortarboard"></i>
@@ -367,6 +389,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Analytics -->
                         @if($isAdmin || ($isDirector && $directorFeatures['view_analytics']))
@@ -395,7 +418,7 @@
                         </div>
 
                         <!-- Settings -->
-                        @if($isAdmin || ($isDirector && $directorFeatures['manage_settings']))
+                        @if($isAdmin)
                         <div class="nav-item">
                             <a href="{{ route('admin.settings.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.settings.index') active @endif">
                                 <i class="bi bi-gear"></i>

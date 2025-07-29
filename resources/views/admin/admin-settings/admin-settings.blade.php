@@ -715,15 +715,7 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                             </div>
                                         </div>
                                         
-                                        <div class="col-md-6">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="attendanceLogsEnabled" name="attendance_logs_enabled" checked>
-                                                <label class="form-check-label" for="attendanceLogsEnabled">
-                                                    <strong>Advanced Attendance Logs</strong><br>
-                                                    <small class="text-muted">Track meeting link clicks and drag-drop attendance</small>
-                                                </label>
-                                            </div>
-                                        </div>
+
                                     </div>
                                     
                                     <div class="mt-4">
@@ -1032,6 +1024,8 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                                 </label>
                                             </div>
                                         </div>
+                                        
+
                                     </div>
                                     
                                     <div class="mt-4">
