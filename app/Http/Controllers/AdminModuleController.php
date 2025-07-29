@@ -11,9 +11,31 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Models\AdminSetting;
 
 class AdminModuleController extends Controller
 {
+    public function __construct()
+    {
+        $user = Auth::user();
+        $director = Auth::guard('director')->user();
+        $isDirector = $director !== null;
+        Log::info('AdminModuleController access', [
+            'isDirector' => $isDirector,
+            'manage_modules' => \App\Models\AdminSetting::getValue('director_manage_modules', 'false'),
+            'auth_user' => $user,
+            'auth_director' => $director,
+            'auth_user_role' => $user && isset($user->role) ? $user->role : null,
+            'auth_director_id' => $director ? $director->directors_id : null,
+        ]);
+        if ($isDirector) {
+            $canManage = \App\Models\AdminSetting::getValue('director_manage_modules', 'false') === 'true' || \App\Models\AdminSetting::getValue('director_manage_modules', '0') === '1';
+            if (!$canManage) {
+                abort(403, 'Access denied: You do not have permission to manage modules.');
+            }
+        }
+    }
+
     /**
      * Display a listing of modules.
      */
@@ -1528,7 +1550,7 @@ class AdminModuleController extends Controller
             $validator = \Validator::make($validationData, [
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video,document',
+                'type' => 'required|string|in:lesson,assignment,pdf,link,quiz,test,video',
                 'attachment' => 'nullable|file', // Remove size limit for testing
                 'link' => 'nullable|url',
                 'sort_order' => 'nullable|integer|min:0',

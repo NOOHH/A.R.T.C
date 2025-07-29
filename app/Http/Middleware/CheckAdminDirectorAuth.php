@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CheckAdminDirectorAuth
 {
@@ -24,12 +25,16 @@ class CheckAdminDirectorAuth
 
         // Check PHP session first (primary method)
         $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
-        $isAdminOrDirector = isset($_SESSION['user_type']) && in_array($_SESSION['user_type'], ['admin', 'director']);
+        $userType = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : null;
+        $isAdmin = $userType === 'admin';
+        $isDirector = $userType === 'director';
 
         // Fallback to Laravel session if PHP session not found
         if (!$isLoggedIn) {
             $isLoggedIn = session('logged_in') && session('user_id');
-            $isAdminOrDirector = in_array(session('user_role'), ['admin', 'director']);
+            $userType = session('user_role');
+            $isAdmin = $userType === 'admin';
+            $isDirector = $userType === 'director';
         }
 
         // Check if user is logged in
@@ -38,8 +43,31 @@ class CheckAdminDirectorAuth
         }
 
         // Check if user is an admin or director
-        if (!$isAdminOrDirector) {
+        if (!$isAdmin && !$isDirector) {
             return redirect()->route('student.dashboard')->with('error', 'Access denied. Admin or Director privileges required.');
+        }
+
+        // If director, check feature flag
+        if ($isDirector) {
+            $path = $request->path();
+            $featureMap = [
+                'admin/programs' => 'director_manage_programs',
+                'admin/professors' => 'director_manage_professors',
+                'admin/batches' => 'director_manage_batches',
+                'admin/settings' => 'director_manage_settings',
+                'admin/enrollments' => 'director_manage_enrollments',
+                'admin/analytics' => 'director_view_analytics',
+                'admin/modules' => 'director_manage_modules',
+                'admin/students' => 'director_view_students',
+            ];
+            foreach ($featureMap as $prefix => $settingKey) {
+                if (str_starts_with($path, $prefix)) {
+                    $canAccess = \App\Models\AdminSetting::getValue($settingKey, 'false') === 'true' || \App\Models\AdminSetting::getValue($settingKey, '0') === '1';
+                    if (!$canAccess) {
+                        abort(403, 'Access denied: You do not have permission to access this section.');
+                    }
+                }
+            }
         }
 
         return $next($request);

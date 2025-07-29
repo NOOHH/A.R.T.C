@@ -1032,26 +1032,6 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                                 </label>
                                             </div>
                                         </div>
-                                        
-                                        <div class="col-md-6">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="directorViewChatLogs" name="view_chat_logs">
-                                                <label class="form-check-label" for="directorViewChatLogs">
-                                                    <strong>View Chat Logs</strong><br>
-                                                    <small class="text-muted">Allow directors to view chat history and logs</small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="directorManageSettings" name="manage_settings">
-                                                <label class="form-check-label" for="directorManageSettings">
-                                                    <strong>Manage Settings</strong><br>
-                                                    <small class="text-muted">Allow directors to access admin settings</small>
-                                                </label>
-                                            </div>
-                                        </div>
                                     </div>
                                     
                                     <div class="mt-4">
@@ -3069,13 +3049,13 @@ function saveDirectorSettings() {
     const form = document.getElementById('directorFeaturesForm');
     const formData = new FormData(form);
     
-    // Add unchecked checkboxes as false
+    // Add unchecked checkboxes as '0', checked as '1'
     const checkboxes = form.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
         if (!checkbox.checked) {
-            formData.set(checkbox.name, 'false');
+            formData.set(checkbox.name, '0');
         } else {
-            formData.set(checkbox.name, 'true');
+            formData.set(checkbox.name, '1');
         }
     });
 

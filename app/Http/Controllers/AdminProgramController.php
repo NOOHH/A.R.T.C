@@ -11,9 +11,28 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\AdminSetting;
 
 class AdminProgramController extends Controller
 {
+    public function __construct()
+    {
+        $user = \Auth::user();
+        $isDirector = $user && isset($user->role) && $user->role === 'director';
+        \Log::info('AdminProgramController access', [
+            'isDirector' => $isDirector,
+            'manage_programs' => \App\Models\AdminSetting::getValue('director_manage_programs', 'false'),
+            'auth_user' => $user,
+            'auth_user_role' => $user && isset($user->role) ? $user->role : null
+        ]);
+        if ($isDirector) {
+            $canManage = \App\Models\AdminSetting::getValue('director_manage_programs', 'false') === 'true' || \App\Models\AdminSetting::getValue('director_manage_programs', '0') === '1';
+            if (!$canManage) {
+                abort(403, 'Access denied: You do not have permission to manage programs.');
+            }
+        }
+    }
+
     /**
      * Display a listing of active programs.
      */

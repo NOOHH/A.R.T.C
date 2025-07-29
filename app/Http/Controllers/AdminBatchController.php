@@ -9,9 +9,23 @@ use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\AdminSetting;
 
 class AdminBatchController extends Controller
 {
+    public function __construct()
+    {
+        // Only apply to directors
+        $isDirector = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'director')
+            || (session('user_type') === 'director');
+        if ($isDirector) {
+            $canManage = AdminSetting::getValue('director_manage_batches', 'false') === 'true' || AdminSetting::getValue('director_manage_batches', '0') === '1';
+            if (!$canManage) {
+                abort(403, 'Access denied: You do not have permission to manage batches.');
+            }
+        }
+    }
+
     /**
      * Display a listing of batches
      */

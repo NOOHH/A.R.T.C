@@ -10,9 +10,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\AdminSetting;
 
 class AdminProfessorController extends Controller
 {
+    public function __construct()
+    {
+        // Only apply to directors
+        $isDirector = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'director')
+            || (session('user_type') === 'director');
+        if ($isDirector) {
+            $canManage = AdminSetting::getValue('director_manage_professors', 'false') === 'true' || AdminSetting::getValue('director_manage_professors', '0') === '1';
+            if (!$canManage) {
+                abort(403, 'Access denied: You do not have permission to manage professors.');
+            }
+        }
+    }
+
     public function index()
     {
         $professors = Professor::with('programs')->active()->paginate(10);

@@ -18,6 +18,19 @@ use Illuminate\Support\Facades\Schema;
 
 class AdminSettingsController extends Controller
 {
+    public function __construct()
+    {
+        // Only apply to directors
+        $isDirector = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'director')
+            || (session('user_type') === 'director');
+        if ($isDirector) {
+            $canManage = AdminSetting::getValue('director_manage_settings', 'false') === 'true' || AdminSetting::getValue('director_manage_settings', '0') === '1';
+            if (!$canManage) {
+                abort(403, 'Access denied: You do not have permission to manage settings.');
+            }
+        }
+    }
+
     public function index()
     {
         // Check if user is admin
@@ -1238,67 +1251,28 @@ class AdminSettingsController extends Controller
 
     public function updateDirectorFeatures(Request $request)
     {
-        $request->validate([
-            'view_students' => 'nullable|boolean',
-            'manage_programs' => 'nullable|boolean',
-            'manage_modules' => 'nullable|boolean',
-            'manage_enrollments' => 'nullable|boolean',
-            'view_analytics' => 'nullable|boolean',
-            'manage_professors' => 'nullable|boolean',
-            'manage_batches' => 'nullable|boolean',
-            'view_chat_logs' => 'nullable|boolean',
-            'manage_settings' => 'nullable|boolean',
-        ]);
+        $settings = [
+            'view_students',
+            'manage_programs',
+            'manage_modules',
+            'manage_enrollments',
+            'view_analytics',
+            'manage_professors',
+            'manage_batches',
+            'view_chat_logs',
+            'manage_settings'
+        ];
 
         try {
-            // Use AdminSetting model to store director feature settings
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_view_students'],
-                ['setting_value' => $request->input('view_students', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_manage_programs'],
-                ['setting_value' => $request->input('manage_programs', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_manage_modules'],
-                ['setting_value' => $request->input('manage_modules', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_manage_enrollments'],
-                ['setting_value' => $request->input('manage_enrollments', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_view_analytics'],
-                ['setting_value' => $request->input('view_analytics', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_manage_professors'],
-                ['setting_value' => $request->input('manage_professors', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_manage_batches'],
-                ['setting_value' => $request->input('manage_batches', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_view_chat_logs'],
-                ['setting_value' => $request->input('view_chat_logs', true) ? 'true' : 'false']
-            );
-
-            AdminSetting::updateOrCreate(
-                ['setting_key' => 'director_manage_settings'],
-                ['setting_value' => $request->input('manage_settings', false) ? 'true' : 'false']
-            );
-
+            foreach ($settings as $key) {
+                $value = $request->input($key, 'true');
+                $boolValue = ($value === true || $value === 'true' || $value === 1 || $value === '1');
+                \App\Models\AdminSetting::updateOrCreate(
+                    ['setting_key' => "director_{$key}"],
+                    ['setting_value' => $boolValue ? 'true' : 'false']
+                );
+            }
             return response()->json(['success' => true, 'message' => 'Director feature settings updated successfully!']);
-
         } catch (\Exception $e) {
             Log::error('Error updating director feature settings: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Failed to update settings. Please try again.'], 500);
@@ -1319,9 +1293,7 @@ class AdminSettingsController extends Controller
                 'view_chat_logs' => AdminSetting::where('setting_key', 'director_view_chat_logs')->value('setting_value') !== 'false',
                 'manage_settings' => AdminSetting::where('setting_key', 'director_manage_settings')->value('setting_value') === 'true',
             ];
-
-            return response()->json($features);
-
+            return response()->json(['success' => true, 'settings' => $features]);
         } catch (\Exception $e) {
             Log::error('Error getting director features: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to load settings'], 500);
