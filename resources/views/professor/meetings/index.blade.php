@@ -1,4 +1,4 @@
-@extends('professor.layout')
+@extends('professor.professor-layouts.professor-layout')
 
 @section('title', 'My Meetings')
 
