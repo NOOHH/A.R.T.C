@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * UnifiedLoginController
@@ -251,6 +252,9 @@ class UnifiedLoginController extends Controller
         if (!$passwordMatches) {
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
+
+        // Authenticate director with Laravel Auth (multi-auth guard)
+        Auth::guard('director')->login($director);
 
         // Create session using PHP sessions (not Laravel sessions)
         if (session_status() === PHP_SESSION_NONE) {

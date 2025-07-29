@@ -38,15 +38,62 @@
         if (!$isLoggedIn) {
             $user = null;
         }
+        use App\Models\AdminSetting;
     @endphp
 
     <!-- Global Variables for JavaScript - Must be loaded first -->
     <script>
         // Global variables accessible throughout the page
-        window.myId = @json($isLoggedIn && $user ? $user->id : null);
-        window.myName = @json($isLoggedIn && $user ? $user->name : 'Guest');
-        window.isAuthenticated = @json($isLoggedIn && (bool) $user);
-        window.userRole = @json($isLoggedIn && $user ? $user->role : 'guest');
+        @php
+            $user = Auth::user();
+            $director = Auth::guard('director')->user();
+            $role = null;
+            $id = null;
+            $name = null;
+            if ($director) {
+                $role = 'director';
+                $id = $director->directors_id;
+                $name = $director->directors_name ?? ($director->directors_first_name . ' ' . $director->directors_last_name);
+            } elseif ($user) {
+                // Professor
+                if (property_exists($user, 'professor_id')) {
+                    $role = 'professor';
+                    $id = $user->professor_id;
+                    $name = $user->professor_name ?? ($user->professor_first_name . ' ' . $user->professor_last_name);
+                }
+                // Admin
+                elseif (property_exists($user, 'admin_id')) {
+                    $role = 'admin';
+                    $id = $user->admin_id;
+                    $name = $user->admin_name ?? ($user->admin_first_name . ' ' . $user->admin_last_name);
+                }
+                // Student/User
+                elseif (property_exists($user, 'user_id')) {
+                    $role = $user->role ?? 'student';
+                    $id = $user->user_id;
+                    $name = $user->user_firstname . ' ' . $user->user_lastname;
+                }
+                // Fallback for any Auth user
+                if (!$id && method_exists($user, 'getKey')) {
+                    $id = $user->getKey();
+                }
+                if (!$name) {
+                    $name = $user->name ?? $user->full_name ?? null;
+                }
+                if (!$role && property_exists($user, 'role')) {
+                    $role = $user->role;
+                }
+            }
+        @endphp
+        window.myId = @json($id);
+        window.myName = @json($name);
+        window.userRole = @json($role);
+        window.isAuthenticated = @json($user !== null || $director !== null);
+        // DEBUG: show the full Auth::user() and director guard user for troubleshooting
+        window._authUserDebug = @json($user);
+        window._authDirectorDebug = @json($director);
+        console.log('DEBUG Auth::user()', window._authUserDebug);
+        console.log('DEBUG Auth::guard("director")->user()', window._authDirectorDebug);
         window.csrfToken = @json(csrf_token());
         
         // Global chat state
@@ -71,7 +118,19 @@
             session_start();
         }
         $isAdmin = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin')
-                 || (session('user_type') === 'admin');
+                 || (session('user_type') === 'admin')
+                 || ($user && isset($user->role) && $user->role === 'admin');
+        $isDirector = (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'director')
+                 || (session('user_type') === 'director')
+                 || ($user && isset($user->role) && $user->role === 'director');
+        $directorFeatures = [
+            'manage_programs' => AdminSetting::getValue('director_manage_programs', 'false') === 'true' || AdminSetting::getValue('director_manage_programs', '0') === '1',
+            'manage_modules' => AdminSetting::getValue('director_manage_modules', 'false') === 'true' || AdminSetting::getValue('director_manage_modules', '0') === '1',
+            'manage_professors' => AdminSetting::getValue('director_manage_professors', 'false') === 'true' || AdminSetting::getValue('director_manage_professors', '0') === '1',
+            'manage_batches' => AdminSetting::getValue('director_manage_batches', 'false') === 'true' || AdminSetting::getValue('director_manage_batches', '0') === '1',
+            'manage_settings' => AdminSetting::getValue('director_manage_settings', 'false') === 'true' || AdminSetting::getValue('director_manage_settings', '0') === '1',
+            'view_analytics' => AdminSetting::getValue('director_view_analytics', 'false') === 'true' || AdminSetting::getValue('director_view_analytics', '0') === '1',
+        ];
     @endphp
     
     <!-- Bootstrap & Icons -->
@@ -164,6 +223,12 @@
             <aside class="modern-sidebar" id="modernSidebar">
                 <div class="sidebar-content">
                     <nav class="sidebar-nav">
+                        @if($isAdmin || $isDirector)
+                        <div style="background:#ffeeba;color:#856404;padding:8px 12px;margin-bottom:8px;font-size:13px;border-radius:4px;">
+                            <strong>DEBUG:</strong> userRole = {{ $isAdmin ? 'admin' : ($isDirector ? 'director' : 'other') }}<br>
+                            <strong>directorFeatures:</strong> <pre style="margin:0;">{{ json_encode($directorFeatures, JSON_PRETTY_PRINT) }}</pre>
+                        </div>
+                        @endif
                         <!-- Dashboard -->
                         <div class="nav-item">
                             <a href="{{ route('admin.dashboard') }}" class="nav-link @if(Route::currentRouteName() === 'admin.dashboard') active @endif">
@@ -204,10 +269,12 @@
                                         <i class="bi bi-receipt"></i>
                                         <span>Payment History</span>
                                     </a>
+                                    @if($isAdmin || ($isDirector && $directorFeatures['manage_batches']))
                                     <a href="{{ route('admin.batches.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
                                         <i class="bi bi-people"></i>
                                         <span>Batch Enroll</span>
                                     </a>
+                                    @endif
                                     <a href="{{ route('admin.enrollments.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
                                         <i class="bi bi-book"></i>
                                         <span>Assign Course to Student</span>
@@ -235,10 +302,12 @@
                                         <span>Directors</span>
                                     </a>
                                     @endif
+                                    @if($isAdmin || ($isDirector && $directorFeatures['manage_professors']))
                                     <a href="{{ route('admin.professors.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.professors')) active @endif">
                                         <i class="bi bi-person-workspace"></i>
                                         <span>Professors</span>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -252,14 +321,24 @@
                             </a>
                             <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') show @endif" id="programsMenu">
                                 <div class="submenu">
+                                    @if($isAdmin || ($isDirector && $directorFeatures['manage_programs']))
                                     <a href="{{ route('admin.programs.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.programs.index') active @endif">
                                         <i class="bi bi-collection"></i>
                                         <span>Manage Programs</span>
                                     </a>
+                                    @endif
+                                    @if($isAdmin || ($isDirector && $directorFeatures['manage_modules']))
                                     <a href="{{ route('admin.modules.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.modules')) active @endif">
                                         <i class="bi bi-puzzle"></i>
                                         <span>Manage Modules</span>
                                     </a>
+                                    @endif
+                                    @if($isAdmin || ($isDirector && $directorFeatures['manage_batches']))
+                                    <a href="{{ route('admin.batches.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
+                                        <i class="bi bi-people"></i>
+                                        <span>Manage Batches</span>
+                                    </a>
+                                    @endif
                                     @if($isAdmin)
                                     <a href="{{ route('admin.packages.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.packages.index') active @endif">
                                         <i class="bi bi-box-seam"></i>
@@ -271,7 +350,7 @@
                         </div>
 
                         <!-- Analytics -->
-                        @if($isAdmin || session('user_type') === 'director')
+                        @if($isAdmin || ($isDirector && $directorFeatures['view_analytics']))
                         <div class="nav-item">
                             <a href="{{ route('admin.analytics.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.analytics.index') active @endif">
                                 <i class="bi bi-graph-up"></i>
@@ -279,14 +358,6 @@
                             </a>
                         </div>
                         @endif
-                        
-                        <!-- Chat Management -->
-                        <div class="nav-item">
-                            <a href="{{ route('admin.chat.index', ['default' => 'true']) }}" class="nav-link @if(Route::currentRouteName() === 'admin.chat.index') active @endif">
-                                <i class="bi bi-chat-dots"></i>
-                                <span>Chat Logs</span>
-                            </a>
-                        </div>
                         
                         <!-- FAQ Management -->
                         <div class="nav-item">
@@ -305,7 +376,7 @@
                         </div>
 
                         <!-- Settings -->
-                        @if($isAdmin)
+                        @if($isAdmin || ($isDirector && $directorFeatures['manage_settings']))
                         <div class="nav-item">
                             <a href="{{ route('admin.settings.index') }}" class="nav-link @if(Route::currentRouteName() === 'admin.settings.index') active @endif">
                                 <i class="bi bi-gear"></i>
@@ -820,7 +891,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 {{-- 1) Include the chat HTML offcanvas --}}
-    @include('components.global-chat')
+    {{-- Chat component removed --}}
 
     <!-- Core JS: Bootstrap bundle + jQuery -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

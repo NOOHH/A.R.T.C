@@ -52,6 +52,12 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
+        // DIRECTOR GUARD
+        'director' => [
+            'driver' => 'session',
+            'provider' => 'directors',
+        ],
     ],
 
 
@@ -88,6 +94,12 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model'  => App\Models\Admin::class,
+        ],
+
+        // DIRECTOR PROVIDER
+        'directors' => [
+            'driver' => 'eloquent',
+            'model'  => App\Models\Director::class,
         ],
     ],
 

@@ -808,52 +808,19 @@ Route::get('/admin/enrollment/{id}/payment-details', [AdminController::class, 'g
 |--------------------------------------------------------------------------
 */
 // Programs list
-Route::get('/admin/programs', [AdminProgramController::class, 'index'])
-     ->name('admin.programs.index');
-
-// Show "Add New Program" form
-Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])
-     ->name('admin.programs.create');
-
-// Store new program
-Route::post('/admin/programs', [AdminProgramController::class, 'store'])
-     ->name('admin.programs.store');
-
-// Batch store programs
-Route::post('/admin/programs/batch-store', [AdminProgramController::class, 'batchStore'])
-     ->name('admin.programs.batch-store');
-
-// Delete a program (used only by archived programs view)
-Route::delete('/admin/programs/{id}', [AdminProgramController::class, 'destroy'])
-     ->name('admin.programs.delete');
-
-// Toggle archive status
-Route::post('/admin/programs/{program}/toggle-archive', [AdminProgramController::class, 'toggleArchive'])
-     ->name('admin.programs.toggle-archive');
-
-// Archive a program (used by main programs view)
-Route::post('/admin/programs/{id}/archive', [AdminProgramController::class, 'archive'])
-     ->name('admin.programs.archive');
-
-// Batch delete programs (used only by archived programs view)
-Route::post('/admin/programs/batch-delete', [AdminProgramController::class, 'batchDelete'])
-     ->name('admin.programs.batch-delete');
-
-// View archived programs
-Route::get('/admin/programs/archived', [AdminProgramController::class, 'archived'])
-     ->name('admin.programs.archived');
-
-// View enrollments for a program
-Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])
-     ->name('admin.programs.enrollments');
-
-// Assign program to student
-Route::post('/admin/programs/assign', [AdminProgramController::class, 'assignProgram'])
-     ->name('admin.programs.assign');
-
-// Enrollment management page
-Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])
-     ->name('admin.enrollments.index');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/programs', [AdminProgramController::class, 'index'])->name('admin.programs.index');
+    Route::get('/admin/programs/create', [AdminProgramController::class, 'create'])->name('admin.programs.create');
+    Route::post('/admin/programs', [AdminProgramController::class, 'store'])->name('admin.programs.store');
+    Route::post('/admin/programs/batch-store', [AdminProgramController::class, 'batchStore'])->name('admin.programs.batch-store');
+    Route::delete('/admin/programs/{id}', [AdminProgramController::class, 'destroy'])->name('admin.programs.delete');
+    Route::post('/admin/programs/{program}/toggle-archive', [AdminProgramController::class, 'toggleArchive'])->name('admin.programs.toggle-archive');
+    Route::post('/admin/programs/{id}/archive', [AdminProgramController::class, 'archive'])->name('admin.programs.archive');
+    Route::post('/admin/programs/batch-delete', [AdminProgramController::class, 'batchDelete'])->name('admin.programs.batch-delete');
+    Route::get('/admin/programs/archived', [AdminProgramController::class, 'archived'])->name('admin.programs.archived');
+    Route::get('/admin/programs/{id}/enrollments', [AdminProgramController::class, 'enrollments'])->name('admin.programs.enrollments');
+    Route::post('/admin/programs/assign', [AdminProgramController::class, 'assignProgram'])->name('admin.programs.assign');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -888,41 +855,28 @@ Route::middleware(['admin.auth'])->group(function () {
 | Admin Modules
 |--------------------------------------------------------------------------
 */
-// Modules list
-Route::get('/admin/modules', [AdminModuleController::class, 'index'])
-     ->name('admin.modules.index');
-
-// Store new module
-Route::post('/admin/modules', [AdminModuleController::class, 'store'])
-     ->name('admin.modules.store');
-
-// Edit module
-Route::get('/admin/modules/{id}/edit', [AdminModuleController::class, 'edit'])
-     ->name('admin.modules.edit');
-
-// Update module
-Route::put('/admin/modules/{id}', [AdminModuleController::class, 'update'])
-     ->name('admin.modules.update');
-
-// Upload video for module
-Route::post('/admin/modules/{id}/upload-video', [AdminModuleController::class, 'uploadVideo'])
-     ->name('admin.modules.upload-video');
-
-// Add content to module
-Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'addContent'])
-     ->name('admin.modules.add-content');
-
-// Batch store modules
-Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])
-     ->name('admin.modules.batch-store');
-
-// Show course content upload page
-Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])
-     ->name('admin.modules.course-content-upload');
-
-// Store course content
-Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])
-     ->name('admin.modules.course-content-store');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/modules', [AdminModuleController::class, 'index'])->name('admin.modules.index');
+    Route::post('/admin/modules', [AdminModuleController::class, 'store'])->name('admin.modules.store');
+    Route::get('/admin/modules/{id}/edit', [AdminModuleController::class, 'edit'])->name('admin.modules.edit');
+    Route::put('/admin/modules/{id}', [AdminModuleController::class, 'update'])->name('admin.modules.update');
+    Route::post('/admin/modules/{id}/upload-video', [AdminModuleController::class, 'uploadVideo'])->name('admin.modules.upload-video');
+    Route::post('/admin/modules/{id}/add-content', [AdminModuleController::class, 'addContent'])->name('admin.modules.add-content');
+    Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])->name('admin.modules.batch-store');
+    Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])->name('admin.modules.course-content-upload');
+    Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])->name('admin.modules.course-content-store');
+    Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive');
+    Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])->name('admin.modules.batch-delete');
+    Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])->name('admin.modules.archived');
+    Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
+    Route::get('/admin/modules/by-program', [AdminModuleController::class, 'getModulesByProgram'])->name('admin.modules.by-program');
+    Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updateOrder'])->name('admin.modules.update-order');
+    Route::post('/admin/modules/{id}/toggle-admin-override', [AdminModuleController::class, 'toggleAdminOverride'])->name('admin.modules.toggle-admin-override');
+    Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, 'getBatchesForProgram'])->name('admin.programs.batches');
+    Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])->name('admin.programs.courses');
+    Route::get('/admin/modules/{module}/courses', [AdminModuleController::class, 'getCoursesByModule'])->name('admin.modules.courses');
+    Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])->name('admin.modules.batches.by-program');
+});
 
 // Test upload route
 Route::get('/test-upload', function() {
@@ -1388,8 +1342,10 @@ Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminD
      ->name('admin.directors.unassign-program');
 
 // Director Dashboard Routes
-Route::get('/director/dashboard', [DirectorController::class, 'dashboard'])
-     ->name('director.dashboard');
+Route::get('/director/dashboard', function() {
+    return redirect('/admin-dashboard');
+})->name('director.dashboard');
+
 Route::get('/director/profile', [DirectorController::class, 'profile'])
      ->name('director.profile');
 Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
@@ -1401,40 +1357,10 @@ Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
 |--------------------------------------------------------------------------
 */
 // Students list
-Route::get('/admin/students', [AdminStudentListController::class, 'index'])
-     ->name('admin.students.index');
-
-// Export students to CSV
-Route::get('/admin/students/export', [AdminStudentListController::class, 'export'])
-     ->name('admin.students.export');
-
-// View archived students (must come before dynamic routes)
-Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])
-     ->name('admin.students.archived');
-
-// Show student details
-Route::get('/admin/students/{student:student_id}', [AdminStudentListController::class, 'show'])
-     ->name('admin.students.show');
-
-// Approve student
-Route::patch('/admin/students/{student:student_id}/approve', [AdminStudentListController::class, 'approve'])
-     ->name('admin.students.approve');
-
-// Disapprove student 
-Route::patch('/admin/students/{student:student_id}/disapprove', [AdminStudentListController::class, 'disapprove'])
-     ->name('admin.students.disapprove');
-
-// Archive student
-Route::patch('/admin/students/{student:student_id}/archive', [AdminStudentListController::class, 'archive'])
-     ->name('admin.students.archive');
-
-// Restore archived student
-Route::patch('/admin/students/{student:student_id}/restore', [AdminStudentListController::class, 'restore'])
-     ->name('admin.students.restore');
-
-// Delete student permanently
-Route::delete('/admin/students/{student:student_id}', [AdminStudentListController::class, 'destroy'])
-     ->name('admin.students.destroy');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/students', [AdminStudentListController::class, 'index'])->name('admin.students.index');
+    // ...add any other /admin/students routes here...
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -1442,8 +1368,15 @@ Route::delete('/admin/students/{student:student_id}', [AdminStudentListControlle
 |--------------------------------------------------------------------------
 */
 // Professor routes
-Route::get('/admin/professors', [AdminProfessorController::class, 'index'])
-     ->name('admin.professors.index');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/professors', [AdminProfessorController::class, 'index'])->name('admin.professors.index');
+    Route::get('/admin/professors/create', [AdminProfessorController::class, 'create'])->name('admin.professors.create');
+    Route::post('/admin/professors', [AdminProfessorController::class, 'store'])->name('admin.professors.store');
+    Route::get('/admin/professors/{id}', [AdminProfessorController::class, 'show'])->name('admin.professors.show');
+    Route::put('/admin/professors/{id}', [AdminProfessorController::class, 'update'])->name('admin.professors.update');
+    Route::delete('/admin/professors/{id}', [AdminProfessorController::class, 'destroy'])->name('admin.professors.delete');
+    // ...add any other /admin/professors routes here...
+});
 
 Route::get('/admin/professors/archived', [AdminProfessorController::class, 'archived'])
      ->name('admin.professors.archived');
@@ -2632,4 +2565,22 @@ Route::post('/test-ai-generate', function() {
             'message' => 'Error generating AI quiz'
         ]);
     }
+});
+
+// Admin Enrollments
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])->name('admin.enrollments.index');
+    // ...add any other /admin/enrollments routes here...
+});
+
+// Admin Analytics
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics.index');
+    // ...add any other /admin/analytics routes here...
+});
+
+// Admin Settings
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
+    // ...add any other /admin/settings routes here...
 });
