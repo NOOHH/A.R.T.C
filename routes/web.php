@@ -717,7 +717,7 @@ Route::post('/student/payment/upload-proof', [StudentPaymentModalController::cla
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
 // Admin dashboard and admin routes with middleware
-Route::middleware(['check.session', 'role.dashboard'])->group(function () {
+Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
          ->name('admin.dashboard');
 

@@ -45,55 +45,74 @@
     <script>
         // Global variables accessible throughout the page
         @php
-            $user = Auth::user();
-            $director = Auth::guard('director')->user();
+            // Get user data from session since Auth::user() is not working
+            $user = null;
+            $director = null;
             $role = null;
             $id = null;
             $name = null;
-            if ($director) {
-                $role = 'director';
-                $id = $director->directors_id;
-                $name = $director->directors_name ?? ($director->directors_first_name . ' ' . $director->directors_last_name);
-            } elseif ($user) {
-                // Professor
-                if (property_exists($user, 'professor_id')) {
-                    $role = 'professor';
-                    $id = $user->professor_id;
-                    $name = $user->professor_name ?? ($user->professor_first_name . ' ' . $user->professor_last_name);
-                }
-                // Admin
-                elseif (property_exists($user, 'admin_id')) {
+            
+            // Check session data first
+            if (session('logged_in') && session('user_id')) {
+                $user = (object) [
+                    'id' => session('user_id'),
+                    'name' => session('user_name'),
+                    'role' => session('user_role') ?? session('role'),
+                    'user_type' => session('user_type')
+                ];
+            }
+            
+            // Check PHP session as fallback
+            if (!$user && isset($_SESSION['logged_in']) && $_SESSION['logged_in']) {
+                $user = (object) [
+                    'id' => $_SESSION['user_id'],
+                    'name' => $_SESSION['user_name'],
+                    'role' => $_SESSION['user_type'],
+                    'user_type' => $_SESSION['user_type']
+                ];
+            }
+            
+            // Set role and ID based on user type
+            if ($user) {
+                if ($user->user_type === 'director' || $user->role === 'director') {
+                    $role = 'director';
+                    $id = $user->id;
+                    $name = $user->name;
+                } elseif ($user->user_type === 'admin' || $user->role === 'admin') {
                     $role = 'admin';
-                    $id = $user->admin_id;
-                    $name = $user->admin_name ?? ($user->admin_first_name . ' ' . $user->admin_last_name);
-                }
-                // Student/User
-                elseif (property_exists($user, 'user_id')) {
+                    $id = $user->id;
+                    $name = $user->name;
+                } elseif ($user->user_type === 'professor' || $user->role === 'professor') {
+                    $role = 'professor';
+                    $id = $user->id;
+                    $name = $user->name;
+                } else {
                     $role = $user->role ?? 'student';
-                    $id = $user->user_id;
-                    $name = $user->user_firstname . ' ' . $user->user_lastname;
-                }
-                // Fallback for any Auth user
-                if (!$id && method_exists($user, 'getKey')) {
-                    $id = $user->getKey();
-                }
-                if (!$name) {
-                    $name = $user->name ?? $user->full_name ?? null;
-                }
-                if (!$role && property_exists($user, 'role')) {
-                    $role = $user->role;
+                    $id = $user->id;
+                    $name = $user->name;
                 }
             }
+            
+            // Prepare debug data
+            $debugData = [
+                'session_user_id' => session('user_id'),
+                'session_logged_in' => session('logged_in'),
+                'session_role' => session('user_role'),
+                'session_type' => session('user_type'),
+                'php_session_user_id' => $_SESSION['user_id'] ?? null,
+                'php_session_logged_in' => $_SESSION['logged_in'] ?? null,
+                'php_session_type' => $_SESSION['user_type'] ?? null
+            ];
         @endphp
         window.myId = @json($id);
         window.myName = @json($name);
         window.userRole = @json($role);
-        window.isAuthenticated = @json($user !== null || $director !== null);
-        // DEBUG: show the full Auth::user() and director guard user for troubleshooting
-        window._authUserDebug = @json($user);
-        window._authDirectorDebug = @json($director);
-        console.log('DEBUG Auth::user()', window._authUserDebug);
-        console.log('DEBUG Auth::guard("director")->user()', window._authDirectorDebug);
+        window.isAuthenticated = @json($user !== null);
+        // DEBUG: show the session data for troubleshooting
+        window._sessionDebug = @json($debugData);
+        console.log('DEBUG Session data:', window._sessionDebug);
+        console.log('DEBUG Auth::user()', @json(Auth::user()));
+        console.log('DEBUG Auth::guard("director")->user()', @json(Auth::guard('director')->user()));
         window.csrfToken = @json(csrf_token());
         
         // Global chat state
@@ -158,7 +177,7 @@
             </button>
             
             <a href="{{ route('home') }}" class="brand-link">
-                <img src="{{ App\Helpers\UIHelper::getGlobalLogo() }}" alt="Logo">
+                <img src="{{ asset('images/ARTC_Logo.png') }}" alt="ARTC Logo">
                 <div class="brand-text">Ascendo Review<br>and Training Center</div>
             </a>
         </div>
@@ -1112,5 +1131,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     {{-- 2) Finally, dump the chat component’s JS (and any other @push('scripts')) --}}
     @stack('scripts')
+    
+    {{-- Include the chat component --}}
+    @include('components.global-chat-clean')
 </body>
 </html>
