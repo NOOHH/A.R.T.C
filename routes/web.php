@@ -1363,6 +1363,14 @@ Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
 // Students list
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/students', [AdminStudentListController::class, 'index'])->name('admin.students.index');
+    Route::get('/admin/students/{student}', [AdminStudentListController::class, 'show'])->name('admin.students.show');
+    Route::post('/admin/students/{student}/approve', [AdminStudentListController::class, 'approve'])->name('admin.students.approve');
+    Route::post('/admin/students/{student}/disapprove', [AdminStudentListController::class, 'disapprove'])->name('admin.students.disapprove');
+    Route::patch('/admin/students/{student}/archive', [AdminStudentListController::class, 'archive'])->name('admin.students.archive');
+    Route::patch('/admin/students/{student}/restore', [AdminStudentListController::class, 'restore'])->name('admin.students.restore');
+    Route::delete('/admin/students/{student}', [AdminStudentListController::class, 'destroy'])->name('admin.students.destroy');
+    Route::get('/admin/students/export', [AdminStudentListController::class, 'export'])->name('admin.students.export');
+    Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])->name('admin.students.archived');
     // ...add any other /admin/students routes here...
 });
 
@@ -2618,3 +2626,46 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
 });
+
+// Temporary debug route to check session state
+Route::get('/debug-session', function() {
+    return response()->json([
+        'session_logged_in' => session('logged_in'),
+        'session_professor_id' => session('professor_id'),
+        'session_user_role' => session('user_role'),
+        'session_user_type' => session('user_type'),
+        'session_user_id' => session('user_id'),
+        'session_directors_id' => session('directors_id'),
+        'session_admin_id' => session('admin_id'),
+        'auth_check' => auth()->check(),
+        'auth_user' => auth()->user()
+    ]);
+})->name('debug.session');
+
+// Professor logout route
+Route::post('/professor/logout', [UnifiedLoginController::class, 'logout'])->name('professor.logout');
+
+// Simple logout route for testing
+Route::get('/logout-test', function() {
+    session()->flush();
+    return redirect()->route('login')->with('success', 'Session cleared. Please log in again.');
+})->name('logout.test');
+
+// Debug route to check professor data
+Route::get('/debug-professor', function() {
+    $professorId = session('professor_id');
+    $professor = null;
+    
+    if ($professorId) {
+        $professor = \App\Models\Professor::find($professorId);
+    }
+    
+    return response()->json([
+        'session_professor_id' => session('professor_id'),
+        'session_user_id' => session('user_id'),
+        'session_user_role' => session('user_role'),
+        'professor_data' => $professor,
+        'auth_user' => auth()->user(),
+        'auth_guard' => auth()->getDefaultDriver()
+    ]);
+})->name('debug.professor');

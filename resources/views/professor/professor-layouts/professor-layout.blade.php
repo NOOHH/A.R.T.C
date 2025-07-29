@@ -23,6 +23,31 @@
                 $user = $sessionUser;
             }
         }
+        
+        // For professors, ensure we use the professor_id from session
+        if (session('user_role') === 'professor' && session('professor_id')) {
+            // Use professor_id as the primary ID for professors
+            $user = (object) [
+                'id' => session('professor_id'),
+                'name' => session('user_name') ?? 'Professor',
+                'role' => 'professor'
+            ];
+            
+            // Ensure session variables are consistent
+            session([
+                'user_id' => session('professor_id'),
+                'user_role' => 'professor',
+                'user_type' => 'professor'
+            ]);
+        }
+        
+        // Force professor role for professor pages
+        if ($user && (session('user_role') === 'professor' || session('user_type') === 'professor' || 
+            (isset($user->role) && $user->role === 'professor'))) {
+            $user->role = 'professor';
+            session(['user_role' => 'professor', 'user_type' => 'professor']);
+        }
+        
         // Ensure moduleManagementEnabled is always available
         if (!isset($moduleManagementEnabled)) {
             $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
@@ -50,6 +75,16 @@
         var csrfToken = window.csrfToken;
         var currentChatType = window.currentChatType;
         var currentChatUser = window.currentChatUser;
+        
+        // Debug session information
+        console.log('Session Debug Info:', {
+            sessionUserRole: @json(session('user_role')),
+            sessionUserType: @json(session('user_type')),
+            sessionUserId: @json(session('user_id')),
+            sessionProfessorId: @json(session('professor_id')),
+            sessionLoggedIn: @json(session('logged_in')),
+            userObject: @json($user)
+        });
         
         console.log('Professor Global variables initialized:', { myId, myName, isAuthenticated, userRole });
     </script>
@@ -722,7 +757,7 @@
 
     .header-right {
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         gap: 1.5rem;
     }
 
