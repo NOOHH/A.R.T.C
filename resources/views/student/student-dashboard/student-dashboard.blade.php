@@ -1651,7 +1651,101 @@ window.emergencyCleanup = function() {
 // Load meetings data on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadMeetingsData();
+    
+    // Handle calendar redirects
+    handleCalendarRedirects();
 });
+
+// Handle calendar redirects (announcements, assignments, lessons)
+function handleCalendarRedirects() {
+    // Check if we should open an announcement modal
+    const shouldOpenAnnouncementModal = sessionStorage.getItem('openAnnouncementModal');
+    if (shouldOpenAnnouncementModal === 'true') {
+        const announcementId = sessionStorage.getItem('calendarAnnouncementId');
+        const announcementTitle = sessionStorage.getItem('calendarAnnouncementTitle');
+        const announcementContent = sessionStorage.getItem('calendarAnnouncementContent');
+        const announcementType = sessionStorage.getItem('calendarAnnouncementType');
+        const announcementTime = sessionStorage.getItem('calendarAnnouncementTime');
+        
+        if (announcementId && announcementTitle) {
+            // Clear the session storage
+            sessionStorage.removeItem('openAnnouncementModal');
+            sessionStorage.removeItem('calendarAnnouncementId');
+            sessionStorage.removeItem('calendarAnnouncementTitle');
+            sessionStorage.removeItem('calendarAnnouncementContent');
+            sessionStorage.removeItem('calendarAnnouncementType');
+            sessionStorage.removeItem('calendarAnnouncementTime');
+            
+            // Open the announcement modal after a short delay
+            setTimeout(() => {
+                openAnnouncementModal(announcementId, announcementTitle, announcementContent, announcementType, announcementTime);
+            }, 500);
+        }
+    }
+    
+    // Check if we should scroll to a specific assignment or lesson
+    const calendarAssignmentId = sessionStorage.getItem('calendarAssignmentId');
+    const calendarLessonId = sessionStorage.getItem('calendarLessonId');
+    
+    if (calendarAssignmentId || calendarLessonId) {
+        // Clear the session storage
+        sessionStorage.removeItem('calendarAssignmentId');
+        sessionStorage.removeItem('calendarProgramName');
+        sessionStorage.removeItem('calendarLessonId');
+        sessionStorage.removeItem('calendarProgramId');
+        sessionStorage.removeItem('calendarModuleId');
+        sessionStorage.removeItem('calendarCourseId');
+        
+        // Show a notification that the user was redirected from calendar
+        showNotification('Redirected from calendar', 'info');
+    }
+}
+
+// Function to open announcement modal (if it exists)
+function openAnnouncementModal(id, title, content, type, time) {
+    console.log('Opening announcement modal from calendar redirect:', { id, title, type });
+    
+    // Try to find and open the announcement modal
+    const modal = document.getElementById('announcementModal');
+    if (modal) {
+        const modalTitle = modal.querySelector('.announcement-modal-title');
+        const modalContent = modal.querySelector('.announcement-modal-text');
+        const modalTime = modal.querySelector('.announcement-modal-time');
+        const modalBadge = modal.querySelector('.announcement-modal-badge');
+        
+        if (modalTitle) modalTitle.textContent = title;
+        if (modalContent) modalContent.textContent = content;
+        if (modalTime) modalTime.textContent = time || new Date().toLocaleString();
+        if (modalBadge) modalBadge.innerHTML = `<i class="bi bi-megaphone"></i>${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        
+        // Show the modal
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+    } else {
+        // Fallback: show a simple alert
+        alert(`Announcement: ${title}\n\n${content}`);
+    }
+}
+
+// Function to show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
 
 function loadMeetingsData() {
     fetch('{{ route("student.meetings.upcoming") }}')

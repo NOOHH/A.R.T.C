@@ -372,6 +372,67 @@
             card.style.transition = `all 0.6s ease ${index * 0.1}s`;
             observer.observe(card);
         });
+        
+        // Handle calendar redirects
+        handleCalendarRedirects();
     });
+    
+    // Handle calendar redirects (assignments, lessons)
+    function handleCalendarRedirects() {
+        // Check if we were redirected from calendar
+        const calendarAssignmentId = sessionStorage.getItem('calendarAssignmentId');
+        const calendarLessonId = sessionStorage.getItem('calendarLessonId');
+        const calendarProgramName = sessionStorage.getItem('calendarProgramName');
+        const calendarProgramId = sessionStorage.getItem('calendarProgramId');
+        const calendarModuleId = sessionStorage.getItem('calendarModuleId');
+        const calendarCourseId = sessionStorage.getItem('calendarCourseId');
+        
+        if (calendarAssignmentId || calendarLessonId) {
+            // Clear the session storage
+            sessionStorage.removeItem('calendarAssignmentId');
+            sessionStorage.removeItem('calendarProgramName');
+            sessionStorage.removeItem('calendarLessonId');
+            sessionStorage.removeItem('calendarProgramId');
+            sessionStorage.removeItem('calendarModuleId');
+            sessionStorage.removeItem('calendarCourseId');
+            
+            // Show notification about the redirect
+            let message = 'Redirected from calendar';
+            if (calendarAssignmentId) {
+                message = `Looking for assignment in ${calendarProgramName || 'your courses'}`;
+            } else if (calendarLessonId) {
+                message = `Looking for lesson in ${calendarProgramName || 'your courses'}`;
+            }
+            
+            showNotification(message, 'info');
+            
+            // If we have specific IDs, try to navigate to the course
+            if (calendarCourseId && calendarCourseId !== '') {
+                setTimeout(() => {
+                    window.location.href = `/student/course/${calendarCourseId}`;
+                }, 2000);
+            }
+        }
+    }
+    
+    // Function to show notification
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
 </script>
 @endpush

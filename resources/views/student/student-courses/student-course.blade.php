@@ -51,6 +51,116 @@
         
         // Define storage URL for file access
         const storageUrl = '{{ url("storage") }}';
+        
+        // Handle calendar redirects
+        document.addEventListener('DOMContentLoaded', function() {
+            handleCalendarRedirects();
+        });
+        
+        // Handle calendar redirects (assignments, lessons)
+        function handleCalendarRedirects() {
+            // Check if we were redirected from calendar
+            const calendarAssignmentId = sessionStorage.getItem('calendarAssignmentId');
+            const calendarLessonId = sessionStorage.getItem('calendarLessonId');
+            const calendarContentType = sessionStorage.getItem('calendarContentType');
+            const calendarProgramName = sessionStorage.getItem('calendarProgramName');
+            
+            if (calendarAssignmentId || calendarLessonId) {
+                // Clear the session storage
+                sessionStorage.removeItem('calendarAssignmentId');
+                sessionStorage.removeItem('calendarProgramName');
+                sessionStorage.removeItem('calendarLessonId');
+                sessionStorage.removeItem('calendarProgramId');
+                sessionStorage.removeItem('calendarModuleId');
+                sessionStorage.removeItem('calendarCourseId');
+                sessionStorage.removeItem('calendarContentType');
+                
+                // Show notification about the redirect
+                let message = 'Redirected from calendar';
+                if (calendarAssignmentId) {
+                    message = `Looking for assignment in ${calendarProgramName || 'this course'}`;
+                } else if (calendarLessonId) {
+                    message = `Looking for lesson in ${calendarProgramName || 'this course'}`;
+                }
+                
+                showNotification(message, 'info');
+                
+                // Highlight the specific content item
+                const contentId = calendarAssignmentId || calendarLessonId;
+                if (contentId) {
+                    setTimeout(() => {
+                        highlightContentItem(contentId, calendarContentType);
+                    }, 1000);
+                }
+            }
+        }
+        
+        // Function to highlight a specific content item
+        function highlightContentItem(contentId, contentType) {
+            console.log(`🎯 Highlighting content item: ${contentId} (${contentType})`);
+            
+            // Find the content item in the DOM
+            const contentElement = document.querySelector(`[data-content-id="${contentId}"]`);
+            if (contentElement) {
+                // Scroll to the content item
+                contentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Add highlight animation
+                contentElement.style.transition = 'all 0.3s ease';
+                contentElement.style.backgroundColor = '#fff3cd';
+                contentElement.style.border = '2px solid #ffc107';
+                contentElement.style.borderRadius = '8px';
+                contentElement.style.padding = '10px';
+                contentElement.style.margin = '5px 0';
+                
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                    contentElement.style.backgroundColor = '';
+                    contentElement.style.border = '';
+                    contentElement.style.borderRadius = '';
+                    contentElement.style.padding = '';
+                    contentElement.style.margin = '';
+                }, 3000);
+                
+                console.log(`✅ Content item highlighted: ${contentId}`);
+            } else {
+                console.log(`⚠️ Content item not found: ${contentId}`);
+                // Try to find by content title or other attributes
+                const contentItems = document.querySelectorAll('.content-item, .lesson-item, .assignment-item');
+                contentItems.forEach(item => {
+                    const title = item.querySelector('.content-title, .lesson-title, .assignment-title');
+                    if (title && title.textContent.includes(contentId)) {
+                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        item.style.backgroundColor = '#fff3cd';
+                        item.style.border = '2px solid #ffc107';
+                        setTimeout(() => {
+                            item.style.backgroundColor = '';
+                            item.style.border = '';
+                        }, 3000);
+                    }
+                });
+            }
+        }
+        
+        // Function to show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
     </script>
 
     <!-- Course Header -->

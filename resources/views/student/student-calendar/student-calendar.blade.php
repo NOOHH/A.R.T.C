@@ -970,9 +970,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            // Add visit button for assignments - redirect to student course page
+            // Extract assignment ID and program info for intelligent redirect
+            const assignmentId = event.id.replace('assignment_', '');
+            const programName = event.program || '';
+            const courseId = event.course_id || '';
+            
+            // Add visit button for assignments - redirect to specific course
             modalActions.innerHTML = `
-                <a href="/student/enrolled-courses" class="custom-modal-btn custom-modal-btn-primary">
+                <a href="/student/enrolled-courses" class="custom-modal-btn custom-modal-btn-primary" onclick="redirectToAssignmentFromCalendar('${assignmentId}', '${programName}', '${courseId}')">
                     <i class="bi bi-file-earmark-text"></i>View Assignment
                 </a>
             `;
@@ -988,10 +993,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            // Add visit button for announcements - redirect to student dashboard
+            // Extract announcement ID and data for modal opening
+            const announcementId = event.id.replace('announcement_', '');
+            const announcementTitle = event.title || '';
+            const announcementContent = event.content || event.description || '';
+            const announcementType = event.announcement_type || 'general';
+            const announcementTime = event.time || '';
+            
+            // Add visit button for announcements - redirect to dashboard and open modal
             modalActions.innerHTML = `
-                <a href="/student/dashboard" class="custom-modal-btn custom-modal-btn-primary">
-                    <i class="bi bi-megaphone"></i>View Announcements
+                <a href="/student/dashboard" class="custom-modal-btn custom-modal-btn-primary" onclick="redirectToAnnouncementFromCalendar('${announcementId}', '${announcementTitle.replace(/'/g, "\\'")}', '${announcementContent.replace(/'/g, "\\'")}', '${announcementType}', '${announcementTime}')">
+                    <i class="bi bi-megaphone"></i>View Announcement
+                </a>
+            `;
+        } else if (event.type === 'lesson') {
+            bodyHtml += `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Program:</strong> ${event.program || 'N/A'}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Module:</strong> ${event.module || 'N/A'}
+                    </div>
+                </div>
+            `;
+            
+            // Extract lesson details for intelligent redirect
+            const lessonId = event.id.replace('lesson_', '');
+            const programId = event.program_id || '';
+            const moduleId = event.module_id || '';
+            const courseId = event.course_id || '';
+            
+            // Add visit button for lessons - redirect to specific course content
+            modalActions.innerHTML = `
+                <a href="/student/enrolled-courses" class="custom-modal-btn custom-modal-btn-primary" onclick="redirectToLessonFromCalendar('${lessonId}', '${programId}', '${moduleId}', '${courseId}')">
+                    <i class="bi bi-book"></i>View Lesson
                 </a>
             `;
         }
@@ -1098,6 +1134,89 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`📅 Updated calendar icon to: ${dayIcons[dayOfWeek]} for day ${dayOfWeek}`);
         }
     }
+
+    // Function to redirect to assignment from calendar
+    window.redirectToAssignmentFromCalendar = function(assignmentId, programName, courseId) {
+        console.log(`🔗 Redirecting to assignment ${assignmentId} in program: ${programName} for course: ${courseId}`);
+        
+        // Close the modal first
+        const modal = document.getElementById('eventModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+        
+        // Store assignment info in sessionStorage for the course page to use
+        sessionStorage.setItem('calendarAssignmentId', assignmentId);
+        sessionStorage.setItem('calendarProgramName', programName);
+        sessionStorage.setItem('calendarCourseId', courseId);
+        sessionStorage.setItem('calendarContentType', 'assignment');
+        
+        // If we have a specific course ID, navigate directly to that course
+        if (courseId && courseId !== '' && courseId !== 'null') {
+            console.log(`🎯 Navigating directly to course: ${courseId}`);
+            window.location.href = `/student/course/${courseId}`;
+        } else {
+            // Fallback to enrolled courses page
+            console.log(`⚠️ No specific course ID, redirecting to enrolled courses`);
+            window.location.href = '/student/enrolled-courses';
+        }
+    };
+
+    // Function to redirect to announcement from calendar
+    window.redirectToAnnouncementFromCalendar = function(announcementId, title, content, type, time) {
+        console.log(`🔗 Redirecting to announcement ${announcementId} with title: ${title}`);
+        
+        // Close the modal first
+        const modal = document.getElementById('eventModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+        
+        // Store announcement data in sessionStorage for the dashboard to use
+        sessionStorage.setItem('calendarAnnouncementId', announcementId);
+        sessionStorage.setItem('calendarAnnouncementTitle', title);
+        sessionStorage.setItem('calendarAnnouncementContent', content);
+        sessionStorage.setItem('calendarAnnouncementType', type);
+        sessionStorage.setItem('calendarAnnouncementTime', time);
+        sessionStorage.setItem('openAnnouncementModal', 'true');
+        
+        // Redirect to the dashboard
+        window.location.href = '/student/dashboard';
+    };
+
+    // Function to redirect to lesson from calendar
+    window.redirectToLessonFromCalendar = function(lessonId, programId, moduleId, courseId) {
+        console.log(`🔗 Redirecting to lesson ${lessonId} in program ${programId}, module ${moduleId}, course ${courseId}`);
+        
+        // Close the modal first
+        const modal = document.getElementById('eventModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+        
+        // Store lesson info in sessionStorage for the course page to use
+        sessionStorage.setItem('calendarLessonId', lessonId);
+        sessionStorage.setItem('calendarProgramId', programId);
+        sessionStorage.setItem('calendarModuleId', moduleId);
+        sessionStorage.setItem('calendarCourseId', courseId);
+        sessionStorage.setItem('calendarContentType', 'lesson');
+        
+        // If we have a specific course ID, navigate directly to that course
+        if (courseId && courseId !== '' && courseId !== 'null') {
+            console.log(`🎯 Navigating directly to course: ${courseId}`);
+            window.location.href = `/student/course/${courseId}`;
+        } else {
+            // Fallback to enrolled courses page
+            console.log(`⚠️ No specific course ID, redirecting to enrolled courses`);
+            window.location.href = '/student/enrolled-courses';
+        }
+    };
 });
 </script>
 @endpush
