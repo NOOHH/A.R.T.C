@@ -520,6 +520,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log(`📅 Current date: ${currentDate.toISOString()}`);
     console.log(`📅 Initializing calendar for: ${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`);
     
+    // Update calendar icon based on current day
+    updateCalendarIcon();
+    
     // Initialize calendar
     generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
     loadTodaySchedule();
@@ -967,7 +970,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            modalActions.innerHTML = '';
+            // Add visit button for assignments - redirect to student course page
+            modalActions.innerHTML = `
+                <a href="/student/enrolled-courses" class="custom-modal-btn custom-modal-btn-primary">
+                    <i class="bi bi-file-earmark-text"></i>View Assignment
+                </a>
+            `;
         } else if (event.type === 'announcement') {
             bodyHtml += `
                 <div class="row">
@@ -980,7 +988,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            modalActions.innerHTML = '';
+            // Add visit button for announcements - redirect to student dashboard
+            modalActions.innerHTML = `
+                <a href="/student/dashboard" class="custom-modal-btn custom-modal-btn-primary">
+                    <i class="bi bi-megaphone"></i>View Announcements
+                </a>
+            `;
         }
         
         modalBody.innerHTML = bodyHtml;
@@ -1063,6 +1076,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make showEventDetails available globally
     window.showEventDetails = showEventDetails;
+    
+    // Function to update calendar icon based on current day
+    function updateCalendarIcon() {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        
+        const dayIcons = {
+            0: 'bi-calendar-sun',      // Sunday
+            1: 'bi-calendar-week',     // Monday
+            2: 'bi-calendar-week',     // Tuesday
+            3: 'bi-calendar-week',     // Wednesday
+            4: 'bi-calendar-week',     // Thursday
+            5: 'bi-calendar-week',     // Friday
+            6: 'bi-calendar-sun'       // Saturday
+        };
+        
+        const calendarIcon = document.querySelector('.bi-calendar-day');
+        if (calendarIcon) {
+            calendarIcon.className = `bi ${dayIcons[dayOfWeek]} me-2`;
+            console.log(`📅 Updated calendar icon to: ${dayIcons[dayOfWeek]} for day ${dayOfWeek}`);
+        }
+    }
 });
 </script>
 @endpush
