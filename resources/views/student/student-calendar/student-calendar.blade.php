@@ -1150,8 +1150,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Store assignment info in sessionStorage for the course page to use
         sessionStorage.setItem('calendarAssignmentId', assignmentId);
         sessionStorage.setItem('calendarProgramName', programName);
-        sessionStorage.setItem('calendarCourseId', courseId);
-        sessionStorage.setItem('calendarContentType', 'assignment');
+        sessionStorage.setItem('calendarCourseId', courseId); // Store courseId
         
         // If we have a specific course ID, navigate directly to that course
         if (courseId && courseId !== '' && courseId !== 'null') {
@@ -1205,7 +1204,6 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.setItem('calendarProgramId', programId);
         sessionStorage.setItem('calendarModuleId', moduleId);
         sessionStorage.setItem('calendarCourseId', courseId);
-        sessionStorage.setItem('calendarContentType', 'lesson');
         
         // If we have a specific course ID, navigate directly to that course
         if (courseId && courseId !== '' && courseId !== 'null') {

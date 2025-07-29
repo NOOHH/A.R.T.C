@@ -182,19 +182,14 @@ class StudentCalendarController extends Controller
                         'time' => $assignment->due_date->format('g:i A'),
                         'course_id' => $assignment->course_id ?? '',
                         'program_id' => $assignment->course->module->program->program_id ?? '',
-                        'module_id' => $assignment->course->module->modules_id ?? '',
-                        'program_name' => $assignment->course->module->program->program_name ?? '',
-                        'module_name' => $assignment->course->module->module_name ?? '',
-                        'course_name' => $assignment->course->course_name ?? ''
+                        'module_id' => $assignment->course->module->modules_id ?? ''
                     ]);
                 }
                 
-                // Get lessons from content_items table - only if they have a scheduled date
+                // Get lessons from content_items table
                 $lessons = ContentItem::with(['course.module.program'])
                     ->whereIn('course_id', $enrolledCourseIds)
                     ->where('content_type', 'lesson')
-                    ->whereNotNull('scheduled_date') // Only lessons with scheduled dates
-                    ->whereBetween('scheduled_date', [$startDate, $endDate])
                     ->where('is_active', true)
                     ->get();
 
@@ -202,7 +197,7 @@ class StudentCalendarController extends Controller
                     $events->push([
                         'id' => 'lesson_' . $lesson->id,
                         'title' => $lesson->content_title,
-                        'start' => $lesson->scheduled_date->toISOString(),
+                        'start' => $lesson->created_at->toISOString(),
                         'type' => 'lesson',
                         'description' => $lesson->content_description ?? '',
                         'program' => $lesson->course->module->program->program_name ?? '',
@@ -211,10 +206,7 @@ class StudentCalendarController extends Controller
                         'program_id' => $lesson->course->module->program->program_id ?? '',
                         'module_id' => $lesson->course->module->modules_id ?? '',
                         'course_id' => $lesson->course_id ?? '',
-                        'time' => $lesson->scheduled_date->format('g:i A'),
-                        'program_name' => $lesson->course->module->program->program_name ?? '',
-                        'module_name' => $lesson->course->module->module_name ?? '',
-                        'course_name' => $lesson->course->course_name ?? ''
+                        'time' => $lesson->created_at->format('g:i A')
                     ]);
                 }
             }
@@ -356,28 +348,24 @@ class StudentCalendarController extends Controller
                         'time' => $assignment->due_date->format('g:i A'),
                         'course_id' => $assignment->course_id ?? '',
                         'program_id' => $assignment->course->module->program->program_id ?? '',
-                        'module_id' => $assignment->course->module->modules_id ?? '',
-                        'program_name' => $assignment->course->module->program->program_name ?? '',
-                        'module_name' => $assignment->course->module->module_name ?? '',
-                        'course_name' => $assignment->course->course_name ?? ''
+                        'module_id' => $assignment->course->module->modules_id ?? ''
                     ]);
                 }
                 
-                // Get today's lessons from content_items table - only if they have a scheduled date
+                // Get today's lessons from content_items table
                 $lessons = ContentItem::with(['course.module.program'])
                     ->whereIn('course_id', $enrolledCourseIds)
                     ->where('content_type', 'lesson')
-                    ->whereNotNull('scheduled_date') // Only lessons with scheduled dates
-                    ->whereDate('scheduled_date', $today)
+                    ->whereDate('created_at', $today)
                     ->where('is_active', true)
-                    ->orderBy('scheduled_date', 'asc')
+                    ->orderBy('created_at', 'asc')
                     ->get();
 
                 foreach ($lessons as $lesson) {
                     $events->push([
                         'id' => 'lesson_' . $lesson->id,
                         'title' => $lesson->content_title,
-                        'start' => $lesson->scheduled_date->toISOString(),
+                        'start' => $lesson->created_at->toISOString(),
                         'type' => 'lesson',
                         'description' => $lesson->content_description ?? '',
                         'program' => $lesson->course->module->program->program_name ?? '',
@@ -386,10 +374,7 @@ class StudentCalendarController extends Controller
                         'program_id' => $lesson->course->module->program->program_id ?? '',
                         'module_id' => $lesson->course->module->modules_id ?? '',
                         'course_id' => $lesson->course_id ?? '',
-                        'time' => $lesson->scheduled_date->format('g:i A'),
-                        'program_name' => $lesson->course->module->program->program_name ?? '',
-                        'module_name' => $lesson->course->module->module_name ?? '',
-                        'course_name' => $lesson->course->course_name ?? ''
+                        'time' => $lesson->created_at->format('g:i A')
                     ]);
                 }
             }
@@ -470,10 +455,7 @@ class StudentCalendarController extends Controller
                         'instructions' => $assignment->content_data['assignment_instructions'] ?? '',
                         'course_id' => $assignment->course_id ?? '',
                         'program_id' => $assignment->course->module->program->program_id ?? '',
-                        'module_id' => $assignment->course->module->modules_id ?? '',
-                        'program_name' => $assignment->course->module->program->program_name ?? '',
-                        'module_name' => $assignment->course->module->module_name ?? '',
-                        'course_name' => $assignment->course->course_name ?? ''
+                        'module_id' => $assignment->course->module->modules_id ?? ''
                     ];
                 }
                 break;
@@ -502,7 +484,7 @@ class StudentCalendarController extends Controller
                     $event = [
                         'id' => 'lesson_' . $lesson->id,
                         'title' => $lesson->content_title,
-                        'start' => $lesson->scheduled_date ? $lesson->scheduled_date->toISOString() : $lesson->created_at->toISOString(),
+                        'start' => $lesson->created_at->toISOString(),
                         'type' => 'lesson',
                         'description' => $lesson->content_description ?? '',
                         'program' => $lesson->course->module->program->program_name ?? '',
@@ -511,10 +493,7 @@ class StudentCalendarController extends Controller
                         'program_id' => $lesson->course->module->program->program_id ?? '',
                         'module_id' => $lesson->course->module->modules_id ?? '',
                         'course_id' => $lesson->course_id ?? '',
-                        'content_data' => $lesson->content_data ?? [],
-                        'program_name' => $lesson->course->module->program->program_name ?? '',
-                        'module_name' => $lesson->course->module->module_name ?? '',
-                        'course_name' => $lesson->course->course_name ?? ''
+                        'content_data' => $lesson->content_data ?? []
                     ];
                 }
                 break;
