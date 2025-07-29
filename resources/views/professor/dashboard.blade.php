@@ -140,6 +140,7 @@ body.sidebar-collapse .content-below-search {
     <!-- Quick Actions -->
     @php
         $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
+        $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
     @endphp
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
@@ -208,6 +209,18 @@ body.sidebar-collapse .content-below-search {
                 </div>
             </div>
         </div>
+        @if($moduleManagementEnabled)
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-journals text-success" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Module Management</h5>
+                    <p class="card-text">Create and manage modules for your assigned programs.</p>
+                    <a href="{{ route('professor.modules.index') }}" class="btn btn-success">Manage Modules</a>
+                </div>
+            </div>
+        </div>
+        @endif
         @if($aiQuizEnabled ?? false)
         <div class="col-md-4 mb-3">
             <div class="card text-center">

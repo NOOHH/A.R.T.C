@@ -157,17 +157,10 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
-        // Create session using PHP sessions (not Laravel sessions)
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-        $_SESSION['user_id'] = $professor->professor_id;
-        $_SESSION['user_type'] = 'professor';
-        $_SESSION['user_name'] = $professor->full_name;
-        $_SESSION['user_email'] = $professor->professor_email;
-        $_SESSION['logged_in'] = true;
+        // Authenticate using Laravel's professor guard
+        \Auth::guard('professor')->login($professor);
 
-        // Also set Laravel session for middleware compatibility
+        // (Optional: keep legacy session variables for compatibility)
         session([
             'professor_id' => $professor->professor_id,
             'user_id' => $professor->professor_id,

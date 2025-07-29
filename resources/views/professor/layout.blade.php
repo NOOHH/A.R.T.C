@@ -9,24 +9,23 @@
     @php
         // Get user info for global variables
         $user = Auth::user();
-        
         // If Laravel Auth user is not available, fallback to session data
         if (!$user) {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
-            
-            // Create a fake user object from session data for consistency
             $sessionUser = (object) [
                 'id' => $_SESSION['user_id'] ?? session('user_id'),
                 'name' => $_SESSION['user_name'] ?? session('user_name') ?? 'Guest',
                 'role' => $_SESSION['user_type'] ?? session('user_role') ?? 'guest'
             ];
-            
-            // Only use session user if we have valid session data
             if ($sessionUser->id) {
                 $user = $sessionUser;
             }
+        }
+        // Ensure moduleManagementEnabled is always available
+        if (!isset($moduleManagementEnabled)) {
+            $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
         }
     @endphp
 
@@ -62,9 +61,227 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- Admin CSS (reused for consistency) -->
-    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
+    <!-- Professor-specific CSS (overriding admin CSS conflicts) -->
+    <style>
+    /* Override admin CSS conflicts */
+    .admin-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .main-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 68px);
+        overflow: hidden;
+    }
+    
+    .page-content {
+        position: relative;
+        z-index: 1;
+        background: #f8f9fa;
+        min-height: calc(100vh - 68px);
+        margin-left: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .content-wrapper {
+        position: relative;
+        z-index: 1;
+        background: #f8f9fa;
+        padding: 1rem;
+        min-height: calc(100vh - 68px);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Ensure header stays at top and doesn't interfere with content */
+    .main-header {
+        position: relative;
+        z-index: 1000;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        height: 68px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        padding: 0 2rem;
+    }
+    .brand-container {
+        min-width: 320px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        height: 68px;
+    }
+    .brand-logo {
+        height: 56px;
+        width: auto;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .brand-text-area {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .brand-text {
+        font-size: 1.25rem;
+        color: #764ba2;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+    .brand-subtext {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    /* Navbar improvements */
+    .header-center {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    .search-container {
+        width: 100%;
+        max-width: 400px;
+    }
+    .profile-icon {
+        font-size: 1.5rem;
+        color: #764ba2;
+        background: #fff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .main-header .btn-link {
+        color: #764ba2;
+        font-size: 1.5rem;
+        background: none;
+        border: none;
+        padding: 0;
+        margin-left: 1rem;
+        transition: color 0.2s;
+    }
+    .main-header .btn-link:hover {
+        color: #5b3b91;
+    }
+    
+    /* Ensure content is not rendered inside header */
+    .main-header .content-wrapper,
+    .main-header .page-content,
+    .main-header .modules-container {
+        display: none !important;
+    }
+    
+    /* Force proper content positioning */
+    .content-wrapper > * {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* Professor-specific sidebar styles */
+    .modern-sidebar {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Additional professor layout styles */
+    .content-below-search {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        height: calc(100vh - 68px);
+    }
+    
+    /* Ensure proper flex layout */
+    .admin-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* Sidebar positioning */
+    .modern-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        z-index: 1001;
+        overflow-y: auto;
+        transition: all 0.3s ease;
+    }
+    
+    .modern-sidebar.collapsed {
+        width: 70px;
+    }
+    
+    .modern-sidebar.active {
+        transform: translateX(0);
+    }
+    
+    @media (max-width: 768px) {
+        .modern-sidebar {
+            transform: translateX(-100%);
+            width: 280px;
+        }
+    }
+    
+    /* Main content area */
+    .main-content {
+        margin-left: 280px;
+        transition: margin-left 0.3s ease;
+    }
+    
+    .main-content.sidebar-collapsed {
+        margin-left: 70px;
+    }
+    
+    @media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+        }
+    }
+    
+    /* Overlay for mobile */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    </style>
 
     {{-- Global UI Styles --}}
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
@@ -291,6 +508,7 @@
             display: flex;
             flex: 1;
             min-height: 0;
+            height: calc(100vh - 68px); /* Subtract header height */
         }
         /* Main content area fills height below header */
         .page-content {
@@ -299,7 +517,8 @@
             flex-direction: column;
             overflow-y: auto;
             min-height: 0;
-            height: calc(100vh - 68px);
+            height: 100%;
+            margin-left: 0;
         }
         /* Inner wrapper for page content padding and scrolling */
         .content-wrapper {
@@ -307,7 +526,45 @@
             padding: 1rem;
             overflow-y: auto;
             min-height: 0;
-            margin-left: 100px
+            margin-left: 0;
+            background: #f8f9fa;
+        }
+        
+        /* Ensure header stays at top */
+        .main-header {
+            position: relative;
+            z-index: 1000;
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        /* Ensure main wrapper doesn't overlap header */
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 68px);
+            overflow: hidden;
+        }
+        
+        /* Override any admin dashboard CSS that might interfere */
+        .admin-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Ensure content is not rendered inside header */
+        .main-header .content-wrapper,
+        .main-header .page-content,
+        .main-header .modules-container {
+            display: none !important;
+        }
+        
+        /* Force proper content positioning */
+        .content-wrapper > * {
+            position: relative !important;
+            z-index: 1 !important;
         }
     </style>
     <style>
@@ -414,9 +671,12 @@
     <header class="main-header">
         <div class="header-left">
             <!-- Brand Logo and Text -->
-            <div class="brand-container">
-                <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo">
-                <span class="brand-text">Ascendo Review and Training Center</span>
+            <div class="brand-container d-flex align-items-center gap-3" style="height:68px;">
+                <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo" style="height:56px; width:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); background:#fff;">
+                <div class="brand-text-area d-flex flex-column justify-content-center">
+                    <span class="brand-text fw-bold" style="font-size:1.25rem; color:#764ba2; letter-spacing:1px;">Ascendo Review &amp; Training Center</span>
+                    <span class="brand-subtext text-muted" style="font-size:0.9rem;">Professor Portal</span>
+                </div>
             </div>
         </div>
 
@@ -491,6 +751,15 @@
                                 <span>Dashboard</span>
                             </a>
                         </div>
+                        <!-- Module Management -->
+                        @if(!empty($moduleManagementEnabled) && $moduleManagementEnabled)
+                        <div class="nav-item">
+                            <a href="{{ route('professor.modules.index') }}" class="nav-link @if(Route::currentRouteName() === 'professor.modules.index') active @endif">
+                                <i class="bi bi-journals"></i>
+                                <span>Module Management</span>
+                            </a>
+                        </div>
+                        @endif
                         <!-- Meetings -->
                         <div class="nav-item">
                             <a href="{{ route('professor.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.meetings') active @endif">
@@ -568,6 +837,7 @@
             <!-- Main Content -->
             <main class="page-content">
                 <div class="content-wrapper">
+                    <!-- Debug: Content should render here -->
                     @yield('content')
                 </div>
             </main>

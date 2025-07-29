@@ -52,6 +52,12 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
+        // PROFESSOR GUARD
+        'professor' => [
+            'driver' => 'session',
+            'provider' => 'professors',
+        ],
     ],
 
 
@@ -88,6 +94,12 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model'  => App\Models\Admin::class,
+        ],
+
+        // PROFESSOR PROVIDER
+        'professors' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Professor::class,
         ],
     ],
 

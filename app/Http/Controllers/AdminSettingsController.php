@@ -1122,6 +1122,7 @@ class AdminSettingsController extends Controller
             'attendance_enabled' => 'nullable',
             'view_programs_enabled' => 'nullable',
             'meeting_creation_enabled' => 'nullable',
+            'professor_module_management_enabled' => 'nullable',
         ]);
 
         try {
@@ -1133,6 +1134,7 @@ class AdminSettingsController extends Controller
             $viewProgramsEnabled = filter_var($request->input('view_programs_enabled', true), FILTER_VALIDATE_BOOLEAN);
         // Determine meeting creation toggle (default false if unchecked)
         $meetingCreationEnabled = filter_var($request->input('meeting_creation_enabled', false), FILTER_VALIDATE_BOOLEAN);
+        $moduleManagementEnabled = filter_var($request->input('professor_module_management_enabled', false), FILTER_VALIDATE_BOOLEAN);
 
 
             // Save AI Quiz Enabled setting
@@ -1149,6 +1151,15 @@ class AdminSettingsController extends Controller
                 ['setting_key' => 'meeting_creation_enabled'],
                 [
                     'setting_value' => $meetingCreationEnabled ? '1' : '0',
+                    'is_active' => 1
+                ]
+            );
+
+            // Save Module Management Enabled setting
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'professor_module_management_enabled'],
+                [
+                    'setting_value' => $moduleManagementEnabled ? '1' : '0',
                     'is_active' => 1
                 ]
             );
@@ -1777,6 +1788,35 @@ class AdminSettingsController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to update meeting whitelist: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update module management whitelist settings
+     */
+    public function updateModuleManagementWhitelist(Request $request)
+    {
+        try {
+            $whitelistedProfessors = $request->input('whitelist_module_professors', []);
+            $whitelistString = implode(',', $whitelistedProfessors);
+            
+            // Save to database using AdminSetting model
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'professor_module_management_whitelist'],
+                ['setting_value' => $whitelistString]
+            );
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Module management whitelist updated successfully',
+                'count' => count($whitelistedProfessors)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating module management whitelist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update module management whitelist: ' . $e->getMessage()
             ], 500);
         }
     }

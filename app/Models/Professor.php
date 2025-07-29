@@ -328,4 +328,9 @@ class Professor extends Authenticatable
     {
         return $this->classMeetings()->today()->orderBy('meeting_date', 'asc');
     }
+
+    public function assignedPrograms()
+    {
+        return $this->belongsToMany(\App\Models\Program::class, 'professor_program', 'professor_id', 'program_id');
+    }
 }

@@ -701,6 +701,22 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                         
                                         <div class="col-md-6">
                                             <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="professorModuleManagementEnabled" name="professor_module_management_enabled"
+                                                       {{ DB::table('admin_settings')->where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1' ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="professorModuleManagementEnabled">
+                                                    <strong>Module Management</strong><br>
+                                                    <small class="text-muted">Allow professors to create and manage modules for their assigned programs</small>
+                                                </label>
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#moduleManagementWhitelistModal">
+                                                        <i class="fas fa-users me-1"></i>View Whitelist
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" id="attendanceLogsEnabled" name="attendance_logs_enabled" checked>
                                                 <label class="form-check-label" for="attendanceLogsEnabled">
                                                     <strong>Advanced Attendance Logs</strong><br>
@@ -835,6 +851,94 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-success" onclick="saveMeetingWhitelist()">
+                                <i class="fas fa-save me-2"></i>Save Whitelist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Management Whitelist Modal -->
+            <div class="modal fade" id="moduleManagementWhitelistModal" tabindex="-1" aria-labelledby="moduleManagementWhitelistModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="moduleManagementWhitelistModalLabel">
+                                <i class="fas fa-users me-2"></i>Module Management Whitelist
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>About Whitelist:</strong> Select specific professors who can manage modules. If no professors are selected, the global "Module Management" setting applies to all professors.
+                            </div>
+                            
+                            <form id="moduleManagementWhitelistForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Whitelisted Professors</label>
+                                    <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                        @php
+                                            $professors = \App\Models\Professor::where('professor_archived', 0)->get();
+                                            $whitelistedModuleProfessors = explode(',', \App\Models\AdminSetting::getValue('professor_module_management_whitelist', ''));
+                                        @endphp
+                                        @forelse($professors as $professor)
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="module_professor_{{ $professor->professor_id }}" 
+                                                       name="whitelist_module_professors[]" 
+                                                       value="{{ $professor->professor_id }}"
+                                                       {{ in_array($professor->professor_id, $whitelistedModuleProfessors) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="module_professor_{{ $professor->professor_id }}">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3">
+                                                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                                {{ substr($professor->first_name ?? 'P', 0, 1) }}{{ substr($professor->last_name ?? 'P', 0, 1) }}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{{ $professor->first_name ?? 'Unknown' }} {{ $professor->last_name ?? 'Professor' }}</strong>
+                                                            <br>
+                                                            <small class="text-muted">{{ $professor->email ?? 'No email' }}</small>
+                                                            @if($professor->programs && $professor->programs->count() > 0)
+                                                                <br>
+                                                                <small class="text-primary">
+                                                                    Programs: {{ $professor->programs->pluck('program_name')->join(', ') }}
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        @empty
+                                            <div class="text-center py-3">
+                                                <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No active professors found.</p>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    <small class="text-muted">Select professors who should be allowed to manage modules, regardless of the global setting.</small>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllModuleProfessors()">
+                                            <i class="fas fa-check-double me-1"></i>Select All
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllModuleProfessors()">
+                                            <i class="fas fa-times me-1"></i>Clear All
+                                        </button>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <span id="selectedModuleCount">{{ count(array_filter($whitelistedModuleProfessors)) }}</span> professors selected
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="saveModuleManagementWhitelist()">
                                 <i class="fas fa-save me-2"></i>Save Whitelist
                             </button>
                         </div>
@@ -2791,6 +2895,7 @@ function saveProfessorSettings() {
         attendance_enabled: form.querySelector('input[name="attendance_enabled"]')?.checked ? 'true' : 'false',
         view_programs_enabled: form.querySelector('input[name="view_programs_enabled"]')?.checked ? 'true' : 'false',
         meeting_creation_enabled: form.querySelector('input[name="meeting_creation_enabled"]')?.checked ? 'true' : 'false',
+        professor_module_management_enabled: form.querySelector('input[name="professor_module_management_enabled"]')?.checked ? 'true' : 'false',
     };
 
     fetch('/admin/settings/professor-features', {
@@ -2874,7 +2979,60 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedCount);
     });
+    
+    // Update count for module management checkboxes
+    const moduleCheckboxes = document.querySelectorAll('input[name="whitelist_module_professors[]"]');
+    moduleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedModuleCount);
+    });
 });
+
+// Module Management Whitelist Functions
+function selectAllModuleProfessors() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_module_professors[]"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    updateSelectedModuleCount();
+}
+
+function clearAllModuleProfessors() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_module_professors[]"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    updateSelectedModuleCount();
+}
+
+function updateSelectedModuleCount() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_module_professors[]"]:checked');
+    const count = checkboxes.length;
+    document.getElementById('selectedModuleCount').textContent = count;
+}
+
+function saveModuleManagementWhitelist() {
+    const form = document.getElementById('moduleManagementWhitelistForm');
+    const formData = new FormData(form);
+    
+    fetch('/admin/settings/module-management-whitelist', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Module management whitelist saved successfully!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('moduleManagementWhitelistModal'));
+            modal.hide();
+        } else {
+            showAlert(data.error || 'Error saving whitelist', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving whitelist:', error);
+        showAlert('Error saving whitelist: ' + error.message, 'danger');
+    });
+}
 
 // Director Settings Functions
 function loadDirectorSettings() {

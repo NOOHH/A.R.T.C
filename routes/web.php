@@ -1166,6 +1166,10 @@ Route::post('/admin/settings/referral', [AdminSettingsController::class, 'saveRe
 Route::post('/admin/settings/meeting-whitelist', [AdminSettingsController::class, 'updateMeetingWhitelist'])
      ->name('admin.settings.meeting.whitelist');
 
+// Module management whitelist settings
+Route::post('/admin/settings/module-management-whitelist', [AdminSettingsController::class, 'updateModuleManagementWhitelist'])
+     ->name('admin.settings.module.management.whitelist');
+
 // Plan Management Routes (Learning Mode Configuration)
 Route::prefix('admin/plans')->middleware(['admin.auth'])->group(function () {
     Route::get('/', [AdminSettingsController::class, 'planSettings'])->name('admin.plans.index');
@@ -1747,6 +1751,36 @@ Route::middleware(['professor.auth'])
         $controller = new \App\Http\Controllers\Professor\QuizGeneratorController($geminiService);
         return $controller->generate($request);
     })->name('quiz-generator.test-generate');
+    
+    // Professor Module Management Routes
+    Route::get('/modules', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'index'])
+         ->name('modules.index');
+    Route::post('/modules', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'store'])
+         ->name('modules.store');
+    Route::put('/modules/{module}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'update'])
+         ->name('modules.update');
+    Route::post('/modules/add-content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'addContent'])
+         ->name('modules.add-content');
+    Route::post('/modules/{module}/toggle-archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'toggleArchive'])
+         ->name('modules.toggle-archive');
+    Route::get('/modules/archived', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archived'])
+         ->name('modules.archived');
+    
+    // Professor Module AJAX Routes
+    Route::get('/modules/by-program', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModulesByProgram'])
+         ->name('modules.by-program');
+    Route::get('/modules/batches', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getBatchesByProgram'])
+         ->name('modules.batches');
+    Route::get('/modules/courses', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCoursesByModule'])
+         ->name('modules.courses');
+    
+    // Content API routes
+    Route::get('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getContent'])
+         ->name('content.get');
+    Route::put('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'updateContent'])
+         ->name('content.update');
+    Route::delete('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'deleteContent'])
+         ->name('content.delete');
     
     // Test file extraction route
     Route::post('/quiz-generator/test-file-extraction', function(\Illuminate\Http\Request $request) {
