@@ -1363,14 +1363,6 @@ Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
 // Students list
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/students', [AdminStudentListController::class, 'index'])->name('admin.students.index');
-    Route::get('/admin/students/{student}', [AdminStudentListController::class, 'show'])->name('admin.students.show');
-    Route::post('/admin/students/{student}/approve', [AdminStudentListController::class, 'approve'])->name('admin.students.approve');
-    Route::post('/admin/students/{student}/disapprove', [AdminStudentListController::class, 'disapprove'])->name('admin.students.disapprove');
-    Route::patch('/admin/students/{student}/archive', [AdminStudentListController::class, 'archive'])->name('admin.students.archive');
-    Route::patch('/admin/students/{student}/restore', [AdminStudentListController::class, 'restore'])->name('admin.students.restore');
-    Route::delete('/admin/students/{student}', [AdminStudentListController::class, 'destroy'])->name('admin.students.destroy');
-    Route::get('/admin/students/export', [AdminStudentListController::class, 'export'])->name('admin.students.export');
-    Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])->name('admin.students.archived');
     // ...add any other /admin/students routes here...
 });
 
@@ -1694,39 +1686,49 @@ Route::middleware(['professor.auth'])
     })->name('quiz-generator.test-generate');
     
     // Professor Module Management Routes
-    Route::get('/modules', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'index'])
+    Route::get('modules', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'index'])
          ->name('modules.index');
-    Route::post('/modules', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'store'])
+    Route::post('modules', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'store'])
          ->name('modules.store');
-    Route::put('/modules/{module}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'update'])
+    Route::put('modules/{module}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'update'])
          ->name('modules.update');
-    Route::post('/modules/add-content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'addContent'])
+    Route::get('modules/{module}/edit', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'edit'])
+         ->name('modules.edit');
+    Route::post('modules/add-content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'addContent'])
          ->name('modules.add-content');
-    Route::post('/modules/{module}/toggle-archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'toggleArchive'])
+    // Course content upload page - only need one route since we're inside the professor prefix group
+    Route::get('modules/course-content-upload', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'showCourseContentUploadPage'])
+         ->name('modules.course-content-upload');
+
+    // Store new course content (for form action in Blade view)
+    Route::post('modules/course-content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'storeCourseContent'])
+         ->name('modules.course-content-store');
+    Route::post('modules/{module}/toggle-archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'toggleArchive'])
          ->name('modules.toggle-archive');
-    Route::get('/modules/archived', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archived'])
+    Route::get('modules/archived', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archived'])
          ->name('modules.archived');
     
-    // Professor Course Content Upload Routes
-    Route::get('/modules/course-content-upload', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'showCourseContentUploadPage'])
-         ->name('modules.course-content-upload');
-    Route::post('/modules/course-content-store', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'courseContentStore'])
-         ->name('modules.course-content-store');
-    
     // Professor Module AJAX Routes
-    Route::get('/modules/by-program', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModulesByProgram'])
+    // This route expects a 'program_id' query parameter, not 'module_id'.
+    Route::get('modules/by-program', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModulesByProgram'])
          ->name('modules.by-program');
-    Route::get('/modules/batches', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getBatchesByProgram'])
+    Route::get('modules/batches', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getBatchesByProgram'])
          ->name('modules.batches');
-    Route::get('/modules/{moduleId}/courses', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCoursesByModule'])
-         ->name('modules.module.courses');
-    Route::get('/modules/{moduleId}/content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModuleContent'])
-         ->name('modules.module.content');
-    Route::get('/courses/{courseId}/content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCourseContent'])
+    Route::get('modules/courses', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCoursesByModule'])
+         ->name('modules.courses');
+    // Dynamic module-specific AJAX routes for courses and content
+    Route::get('modules/{module}/courses', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCoursesByModule'])
+         ->name('modules.courses.by-module');
+    Route::get('modules/{module}/content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getModuleContent'])
+         ->name('modules.content');
+    // Course-specific content routes - maintain both URLs for compatibility
+    Route::get('courses/{course}/content', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'getCourseContent'])
          ->name('courses.content');
-    
-    // Professor Course Routes
-    Route::post('/courses/store', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'storeCourse'])
+    // This route is accessed from the front-end JavaScript
+    Route::get('courses/{course}/edit', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'editCourse'])
+         ->name('courses.edit');
+    // Professor Courses Store Route (for Blade form action)
+    Route::post('courses', [\App\Http\Controllers\Professor\ProfessorCourseController::class, 'store'])
          ->name('courses.store');
     
     // Content API routes
@@ -1817,30 +1819,20 @@ Route::middleware(['professor.auth'])
                 }
             }
             
+            $text = trim($text);
+            
             return response()->json([
                 'success' => true,
-                'text' => $text,
-                'length' => strlen($text)
+                'text_length' => strlen($text),
+                'text_preview' => substr($text, 0, 500) . '...',
+                'extension' => $extension
             ]);
             
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('File extraction error', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error processing file: ' . $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('File extraction test failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     })->name('quiz-generator.test-file-extraction');
-    
-    // Test session route for debugging
-    Route::get('/professor/test-session', function() {
-        return response()->json([
-            'session_logged_in' => session('logged_in'),
-            'session_professor_id' => session('professor_id'),
-            'session_user_role' => session('user_role'),
-            'session_user_type' => session('user_type'),
-            'session_user_id' => session('user_id'),
-            'auth_check' => auth()->check(),
-            'auth_user' => auth()->user()
-        ]);
-    })->name('professor.test-session');
     
     // API route to fetch quizzes for testing
     Route::get('/api/test-quizzes', function() {
@@ -2650,46 +2642,3 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
 });
-
-// Temporary debug route to check session state
-Route::get('/debug-session', function() {
-    return response()->json([
-        'session_logged_in' => session('logged_in'),
-        'session_professor_id' => session('professor_id'),
-        'session_user_role' => session('user_role'),
-        'session_user_type' => session('user_type'),
-        'session_user_id' => session('user_id'),
-        'session_directors_id' => session('directors_id'),
-        'session_admin_id' => session('admin_id'),
-        'auth_check' => auth()->check(),
-        'auth_user' => auth()->user()
-    ]);
-})->name('debug.session');
-
-// Professor logout route
-Route::post('/professor/logout', [UnifiedLoginController::class, 'logout'])->name('professor.logout');
-
-// Simple logout route for testing
-Route::get('/logout-test', function() {
-    session()->flush();
-    return redirect()->route('login')->with('success', 'Session cleared. Please log in again.');
-})->name('logout.test');
-
-// Debug route to check professor data
-Route::get('/debug-professor', function() {
-    $professorId = session('professor_id');
-    $professor = null;
-    
-    if ($professorId) {
-        $professor = \App\Models\Professor::find($professorId);
-    }
-    
-    return response()->json([
-        'session_professor_id' => session('professor_id'),
-        'session_user_id' => session('user_id'),
-        'session_user_role' => session('user_role'),
-        'professor_data' => $professor,
-        'auth_user' => auth()->user(),
-        'auth_guard' => auth()->getDefaultDriver()
-    ]);
-})->name('debug.professor');
