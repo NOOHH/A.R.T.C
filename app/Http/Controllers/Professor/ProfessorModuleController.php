@@ -699,6 +699,30 @@ class ProfessorModuleController extends Controller
                 return response()->json(['error' => 'You are not assigned to this program.'], 403);
             }
 
+            // Parse attachment_path if it's JSON
+            $attachmentPath = $contentItem->attachment_path;
+            $parsedAttachments = null;
+            $attachmentUrls = null;
+            
+            if ($attachmentPath) {
+                $parsedAttachments = json_decode($attachmentPath, true);
+                if (is_array($parsedAttachments)) {
+                    $attachmentUrls = [];
+                    foreach ($parsedAttachments as $path) {
+                        $attachmentUrls[] = asset('storage/' . $path);
+                    }
+                } else {
+                    $attachmentUrls = asset('storage/' . $attachmentPath);
+                }
+            }
+
+            // Parse file names if they're JSON
+            $fileNames = null;
+            if ($contentItem->file_name) {
+                $parsedNames = json_decode($contentItem->file_name, true);
+                $fileNames = is_array($parsedNames) ? $parsedNames : $contentItem->file_name;
+            }
+
             return response()->json([
                 'success' => true,
                 'content_id' => $contentItem->id,
@@ -708,6 +732,11 @@ class ProfessorModuleController extends Controller
                 'content_data' => $contentItem->content_data,
                 'content_url' => $contentItem->content_url,
                 'attachment_path' => $contentItem->attachment_path,
+                'attachment_urls' => $attachmentUrls,
+                'file_names' => $fileNames,
+                'has_multiple_files' => $contentItem->has_multiple_files,
+                'file_size' => $contentItem->file_size,
+                'file_mime' => $contentItem->file_mime,
                 'course_name' => $course->subject_name,
                 'module_name' => $module->module_name,
                 'content_html' => $this->formatContentForDisplay($contentItem)
@@ -888,8 +917,28 @@ class ProfessorModuleController extends Controller
 
         if ($contentItem->attachment_path) {
             $html .= '<div class="attachment-container mt-3">';
-            $html .= '<a href="' . asset('storage/' . $contentItem->attachment_path) . '" target="_blank" class="btn btn-outline-secondary">';
-            $html .= '<i class="bi bi-paperclip"></i> Download Attachment</a>';
+            
+            // Check if attachment_path is a JSON array of paths
+            $attachmentPaths = json_decode($contentItem->attachment_path, true);
+            
+            if (is_array($attachmentPaths)) {
+                // Multiple files
+                $fileNames = $contentItem->file_name ? json_decode($contentItem->file_name, true) : null;
+                
+                foreach ($attachmentPaths as $index => $path) {
+                    $displayName = (is_array($fileNames) && isset($fileNames[$index])) ? 
+                        $fileNames[$index] : "Attachment " . ($index + 1);
+                    
+                    $html .= '<div class="attachment-item mb-3">';
+                    $html .= $this->getFilePreviewHtml($path, $displayName);
+                    $html .= '</div>';
+                }
+            } else {
+                // Single file (not JSON)
+                $displayName = $contentItem->file_name ?? "Attachment";
+                $html .= $this->getFilePreviewHtml($contentItem->attachment_path, $displayName);
+            }
+            
             $html .= '</div>';
         }
 
@@ -909,6 +958,41 @@ class ProfessorModuleController extends Controller
         }
         
         return $url; // Return original if not a YouTube URL
+    }
+    
+    /**
+     * Helper function to handle file preview based on file type
+     */
+    private function getFilePreviewHtml($path, $displayName = 'Attachment')
+    {
+        $html = '';
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        
+        if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+            // Image preview
+            $html .= '<div class="mb-2"><img src="' . asset('storage/' . $path) . '" class="img-fluid" alt="' . htmlspecialchars($displayName) . '"></div>';
+        } elseif ($extension === 'pdf') {
+            // PDF preview
+            $html .= '<div class="mb-2 pdf-container"><iframe src="' . asset('storage/' . $path) . '" width="100%" height="500px"></iframe></div>';
+        } elseif (in_array($extension, ['mp4', 'webm', 'ogg'])) {
+            // Video preview
+            $html .= '<div class="mb-2 video-container"><video width="100%" controls><source src="' . asset('storage/' . $path) . '" type="video/' . $extension . '">Your browser does not support the video tag.</video></div>';
+        } elseif (in_array($extension, ['mp3', 'wav'])) {
+            // Audio preview
+            $html .= '<div class="mb-2 audio-container"><audio controls><source src="' . asset('storage/' . $path) . '" type="audio/' . $extension . '">Your browser does not support the audio tag.</audio></div>';
+        } elseif (in_array($extension, ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'])) {
+            // Document - just provide download link, no preview
+            $html .= '<div class="mb-2"><i class="bi bi-file-earmark"></i> ' . htmlspecialchars($displayName) . ' (' . $extension . ' file)</div>';
+        } else {
+            // Other file types - just note the file type
+            $html .= '<div class="mb-2"><i class="bi bi-file-earmark"></i> ' . htmlspecialchars($displayName) . ' (.' . $extension . ')</div>';
+        }
+        
+        // Always add download button
+        $html .= '<a href="' . asset('storage/' . $path) . '" target="_blank" class="btn btn-outline-secondary mb-2">';
+        $html .= '<i class="bi bi-download"></i> Download ' . htmlspecialchars($displayName) . '</a>';
+        
+        return $html;
     }
 
     /**
@@ -970,7 +1054,7 @@ class ProfessorModuleController extends Controller
             'content_type' => 'required|in:lesson,video,assignment,quiz,test,link',
             'content_order' => 'nullable|integer|min:1',
             'content_url' => 'nullable|url',
-            'attachment' => 'nullable|file|max:10240', // 10MB max
+            'attachment.*' => 'nullable|file|max:102400', // 100MB max per file
             'enable_submission' => 'nullable|boolean',
             'allowed_file_types' => 'nullable|string',
             'max_file_size' => 'nullable|integer|min:1|max:100',
@@ -1012,10 +1096,49 @@ class ProfessorModuleController extends Controller
             
             // Handle file upload
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $fileName = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('content', $fileName, 'public');
-                $contentItem->attachment_path = $path;
+                $attachmentPaths = [];
+                $fileNames = [];
+                $totalSize = 0;
+                $files = $request->file('attachment');
+                
+                if (!is_array($files)) {
+                    $files = [$files]; // Convert single file to array for consistent handling
+                }
+                
+                foreach ($files as $file) {
+                    if ($file->isValid()) {
+                        $originalName = $file->getClientOriginalName();
+                        $fileName = time() . '_' . preg_replace('/[^A-Za-z0-9\-\.]/', '_', $originalName);
+                        $path = $file->storeAs('content', $fileName, 'public');
+                        
+                        $attachmentPaths[] = $path;
+                        $fileNames[] = $originalName;
+                        $totalSize += $file->getSize();
+                        
+                        Log::info('ProfessorModuleController: File uploaded successfully', [
+                            'original_name' => $originalName,
+                            'stored_path' => $path,
+                            'size' => $file->getSize(),
+                            'mime' => $file->getMimeType()
+                        ]);
+                    } else {
+                        Log::error('ProfessorModuleController: File upload failed', [
+                            'error' => $file->getError(),
+                            'original_name' => $file->getClientOriginalName()
+                        ]);
+                    }
+                }
+                
+                // Store file paths (always as JSON array for consistency)
+                if (count($attachmentPaths) > 0) {
+                    $contentItem->attachment_path = json_encode($attachmentPaths);
+                    $contentItem->file_name = count($fileNames) > 1 ? json_encode($fileNames) : $fileNames[0];
+                    $contentItem->file_size = $totalSize;
+                    $contentItem->file_mime = count($attachmentPaths) == 1 ? 
+                        $files[0]->getMimeType() : 
+                        'application/json';
+                    $contentItem->has_multiple_files = count($attachmentPaths) > 1;
+                }
             }
 
             // Handle submission settings

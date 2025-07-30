@@ -1939,43 +1939,194 @@ if (addSubmissionBtn) {
                     // Check if there's an attachment to display
                     let attachmentSection = '';
                     if (data.content.attachment_path && data.content.attachment_path.trim() !== '') {
-                        const fileUrl = storageUrl + '/' + data.content.attachment_path;
-                        const fileName = data.content.attachment_path.split('/').pop();
-                        const isPdf = fileUrl.toLowerCase().includes('.pdf');
+                        // Check if we have multiple attachments
+                        const hasMultipleFiles = data.content.has_multiple_files || 
+                                               (data.content.attachment_urls && Array.isArray(data.content.attachment_urls) && data.content.attachment_urls.length > 1);
                         
-                        attachmentSection = `
-                            <div class="mt-4">
-                                <h5><i class="bi bi-paperclip me-2"></i>Attachment</h5>
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="me-3">
-                                        <i class="bi bi-file-earmark-text text-primary" style="font-size: 2rem;"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">${fileName}</h6>
-                                        <small class="text-muted">${isPdf ? 'PDF Document' : 'Document'}</small>
-                                    </div>
-                                    <div>
-                                        ${isPdf ? `<button class="btn btn-outline-primary me-2" onclick="viewDocumentInline('${data.content.id}')">
+                        if (hasMultipleFiles && data.content.attachment_urls && Array.isArray(data.content.attachment_urls)) {
+                            // Multiple files
+                            attachmentSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-paperclip me-2"></i>Attachments (${data.content.attachment_urls.length})</h5>
+                                    <div class="attachment-list">
+                            `;
+                            
+                            data.content.attachment_urls.forEach((fileUrl, index) => {
+                                const fileName = data.content.file_names && data.content.file_names[index] 
+                                    ? data.content.file_names[index] 
+                                    : fileUrl.split('/').pop();
+                                
+                                const fileExt = fileName.split('.').pop().toLowerCase();
+                                const isPdf = fileExt === 'pdf';
+                                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                                const isVideo = ['mp4', 'webm', 'ogg', 'mov'].includes(fileExt);
+                                
+                                let fileIcon = 'bi-file-earmark-text';
+                                let fileType = 'Document';
+                                
+                                if (isPdf) {
+                                    fileIcon = 'bi-file-earmark-pdf';
+                                    fileType = 'PDF Document';
+                                } else if (isImage) {
+                                    fileIcon = 'bi-file-earmark-image';
+                                    fileType = 'Image';
+                                } else if (isVideo) {
+                                    fileIcon = 'bi-file-earmark-play';
+                                    fileType = 'Video';
+                                }
+                                
+                                attachmentSection += `
+                                    <div class="d-flex align-items-center mb-3 attachment-item">
+                                        <div class="me-3">
+                                            <i class="bi ${fileIcon} text-primary" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">${fileName}</h6>
+                                            <small class="text-muted">${fileType}</small>
+                                        </div>
+                                        <div>
+                                `;
+                                
+                                // Add appropriate preview buttons based on file type
+                                if (isPdf) {
+                                    attachmentSection += `
+                                        <button class="btn btn-outline-primary me-2" onclick="viewDocumentInline('${data.content.id}-${index}', '${fileUrl}')">
                                             <i class="bi bi-eye"></i> View
-                                        </button>` : ''}
-                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary">
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
+                                        </button>
+                                    `;
+                                } else if (isImage) {
+                                    attachmentSection += `
+                                        <button class="btn btn-outline-primary me-2" onclick="viewImageInline('${fileUrl}')">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>
+                                    `;
+                                } else if (isVideo) {
+                                    attachmentSection += `
+                                        <button class="btn btn-outline-primary me-2" onclick="viewVideoInline('${fileUrl}')">
+                                            <i class="bi bi-play"></i> Play
+                                        </button>
+                                    `;
+                                }
+                                
+                                attachmentSection += `
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                // Add preview container for PDFs
+                                if (isPdf) {
+                                    attachmentSection += `
+                                        <div id="inline-document-${data.content.id}-${index}" style="display: none;">
+                                            <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                    style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 0.5rem;"
+                                                    frameborder="0">
+                                                <p>Your browser does not support PDFs. 
+                                                   <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
+                                                </p>
+                                            </iframe>
+                                        </div>
+                                    `;
+                                }
+                            });
+                            
+                            attachmentSection += `
                                     </div>
                                 </div>
-                                ${isPdf ? `
+                            `;
+                        } else {
+                            // Single file
+                            const fileUrl = data.content.attachment_urls && data.content.attachment_urls[0] 
+                                ? data.content.attachment_urls[0] 
+                                : storageUrl + '/' + data.content.attachment_path;
+                                
+                            const fileName = data.content.file_names && data.content.file_names[0]
+                                ? data.content.file_names[0]
+                                : fileUrl.split('/').pop();
+                                
+                            const fileExt = fileName.split('.').pop().toLowerCase();
+                            const isPdf = fileExt === 'pdf';
+                            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                            const isVideo = ['mp4', 'webm', 'ogg', 'mov'].includes(fileExt);
+                            
+                            let fileIcon = 'bi-file-earmark-text';
+                            let fileType = 'Document';
+                            
+                            if (isPdf) {
+                                fileIcon = 'bi-file-earmark-pdf';
+                                fileType = 'PDF Document';
+                            } else if (isImage) {
+                                fileIcon = 'bi-file-earmark-image';
+                                fileType = 'Image';
+                            } else if (isVideo) {
+                                fileIcon = 'bi-file-earmark-play';
+                                fileType = 'Video';
+                            }
+                            
+                            attachmentSection = `
+                                <div class="mt-4">
+                                    <h5><i class="bi bi-paperclip me-2"></i>Attachment</h5>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <i class="bi ${fileIcon} text-primary" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">${fileName}</h6>
+                                            <small class="text-muted">${fileType}</small>
+                                        </div>
+                                        <div>
+                            `;
+                            
+                            // Add appropriate preview buttons based on file type
+                            if (isPdf) {
+                                attachmentSection += `
+                                    <button class="btn btn-outline-primary me-2" onclick="viewDocumentInline('${data.content.id}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                `;
+                            } else if (isImage) {
+                                attachmentSection += `
+                                    <button class="btn btn-outline-primary me-2" onclick="viewImageInline('${fileUrl}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                `;
+                            } else if (isVideo) {
+                                attachmentSection += `
+                                    <button class="btn btn-outline-primary me-2" onclick="viewVideoInline('${fileUrl}')">
+                                        <i class="bi bi-play"></i> Play
+                                    </button>
+                                `;
+                            }
+                            
+                            attachmentSection += `
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                            `;
+                            
+                            // Add preview container for PDFs
+                            if (isPdf) {
+                                attachmentSection += `
                                     <div id="inline-document-${data.content.id}" style="display: none;">
                                         <iframe src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
-                                                style="width: 100%; height: 1000px; border: 1px solid #ddd; border-radius: 0.5rem;"
+                                                style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 0.5rem;"
                                                 frameborder="0">
                                             <p>Your browser does not support PDFs. 
                                                <a href="${fileUrl}" target="_blank">Download the PDF</a> to view it.
                                             </p>
                                         </iframe>
                                     </div>
-                                ` : ''}
-                            </div>
-                        `;
+                                `;
+                            }
+                            
+                            attachmentSection += `
+                                </div>
+                            `;
+                        }
                     }
                     
                     // Check if there's a content URL to display
@@ -2036,7 +2187,7 @@ if (addSubmissionBtn) {
         }
 
         // Helper function to toggle inline document view
-        function viewDocumentInline(contentId) {
+        function viewDocumentInline(contentId, fileUrl = null) {
             const inlineDoc = document.getElementById(`inline-document-${contentId}`);
             if (inlineDoc) {
                 if (inlineDoc.style.display === 'none') {
@@ -2045,6 +2196,95 @@ if (addSubmissionBtn) {
                     inlineDoc.style.display = 'none';
                 }
             }
+        }
+        
+        // View image in a modal
+        function viewImageInline(imageUrl) {
+            // Create a modal if it doesn't exist
+            let imageModal = document.getElementById('imageViewerModal');
+            if (!imageModal) {
+                imageModal = document.createElement('div');
+                imageModal.id = 'imageViewerModal';
+                imageModal.className = 'modal fade';
+                imageModal.setAttribute('tabindex', '-1');
+                imageModal.setAttribute('role', 'dialog');
+                imageModal.setAttribute('aria-hidden', 'true');
+                
+                imageModal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Image Viewer</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center p-0">
+                                <img id="modalImage" src="" class="img-fluid" style="max-height: 80vh;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(imageModal);
+            }
+            
+            // Set the image source
+            const modalImage = document.getElementById('modalImage');
+            if (modalImage) {
+                modalImage.src = imageUrl;
+            }
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(imageModal);
+            modal.show();
+        }
+        
+        // View video in a modal
+        function viewVideoInline(videoUrl) {
+            // Create a modal if it doesn't exist
+            let videoModal = document.getElementById('videoViewerModal');
+            if (!videoModal) {
+                videoModal = document.createElement('div');
+                videoModal.id = 'videoViewerModal';
+                videoModal.className = 'modal fade';
+                videoModal.setAttribute('tabindex', '-1');
+                videoModal.setAttribute('role', 'dialog');
+                videoModal.setAttribute('aria-hidden', 'true');
+                
+                videoModal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Video Player</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <video id="modalVideo" controls class="w-100" style="max-height: 80vh;">
+                                    <source id="modalVideoSource" src="" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(videoModal);
+            }
+            
+            // Set the video source
+            const modalVideoSource = document.getElementById('modalVideoSource');
+            if (modalVideoSource) {
+                modalVideoSource.src = videoUrl;
+                
+                // Reload the video element
+                const modalVideo = document.getElementById('modalVideo');
+                if (modalVideo) {
+                    modalVideo.load();
+                }
+            }
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(videoModal);
+            modal.show();
         }
 
         // Submit assignment

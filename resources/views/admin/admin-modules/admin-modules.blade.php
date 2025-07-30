@@ -985,40 +985,152 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                 switch(contentType) {
                     case 'video':
                         if (content.content_url || content.attachment_path) {
-                            const videoUrl = content.content_url || `/storage/${content.attachment_path}`;
-                            let videoPlayer = '';
-                            
-                            // Check if it's a YouTube or Vimeo URL
-                            if (content.content_url && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com'))) {
-                                let embedUrl = content.content_url;
+                            // Handle content URL if available
+                            if (content.content_url) {
+                                const videoUrl = content.content_url;
+                                let videoPlayer = '';
                                 
-                                // Convert YouTube URLs to embed format
-                                if (content.content_url.includes('youtube.com/watch?v=')) {
-                                    const videoId = content.content_url.split('v=')[1].split('&')[0];
-                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                                } else if (content.content_url.includes('youtu.be/')) {
-                                    const videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
-                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                                } else if (content.content_url.includes('vimeo.com/')) {
-                                    const videoId = content.content_url.split('vimeo.com/')[1].split('/')[0];
-                                    embedUrl = `https://player.vimeo.com/video/${videoId}`;
+                                // Check if it's a YouTube or Vimeo URL
+                                if (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com')) {
+                                    let embedUrl = content.content_url;
+                                    
+                                    // Convert YouTube URLs to embed format
+                                    if (content.content_url.includes('youtube.com/watch?v=')) {
+                                        const videoId = content.content_url.split('v=')[1].split('&')[0];
+                                        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                                    } else if (content.content_url.includes('youtu.be/')) {
+                                        const videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
+                                        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                                    } else if (content.content_url.includes('vimeo.com/')) {
+                                        const videoId = content.content_url.split('vimeo.com/')[1].split('/')[0];
+                                        embedUrl = `https://player.vimeo.com/video/${videoId}`;
+                                    }
+                                    
+                                    videoPlayer = `
+                                        <div class="video-container">
+                                            <iframe class="content-frame" src="${embedUrl}" style="width: 100%; height: 450px; border: 1px solid #ddd;" allowfullscreen></iframe>
+                                        </div>
+                                    `;
+                                } else {
+                                    // External video URL
+                                    videoPlayer = `
+                                        <div class="video-container">
+                                            <video controls style="width: 100%; max-height: 450px;" class="border">
+                                                <source src="${videoUrl}" type="video/mp4">
+                                                <source src="${videoUrl}" type="video/webm">
+                                                <source src="${videoUrl}" type="video/ogg">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    `;
                                 }
                                 
-                                videoPlayer = `
-                                    <div class="video-container">
-                                        <iframe class="content-frame" src="${embedUrl}" style="width: 100%; height: 450px; border: 1px solid #ddd;" allowfullscreen></iframe>
+                                contentHtml = `
+                                    <div class="content-display">
+                                        ${videoPlayer}
+                                        <div class="content-details mt-3">
+                                            <h5>Video Details</h5>
+                                            <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                            <p><strong>Source:</strong> <a href="${videoUrl}" target="_blank">External Link</a></p>
+                                        </div>
                                     </div>
                                 `;
-                            } else {
-                                // Local video file
-                                videoPlayer = `
-                                    <div class="video-container">
-                                        <video controls style="width: 100%; max-height: 450px;" class="border">
-                                            <source src="${videoUrl}" type="video/mp4">
-                                            <source src="${videoUrl}" type="video/webm">
-                                            <source src="${videoUrl}" type="video/ogg">
-                                            Your browser does not support the video tag.
-                                        </video>
+                            } 
+                            // Handle attachment path
+                            else if (content.attachment_path) {
+                                // Check if attachment_path is a JSON array
+                                let attachmentPaths = [];
+                                try {
+                                    const parsedPath = JSON.parse(content.attachment_path);
+                                    if (Array.isArray(parsedPath)) {
+                                        attachmentPaths = parsedPath;
+                                    } else {
+                                        attachmentPaths = [content.attachment_path];
+                                    }
+                                } catch (e) {
+                                    // Not JSON, treat as a single file
+                                    attachmentPaths = [content.attachment_path];
+                                }
+                                
+                                // Process each file and detect file type
+                                let videoPlayers = '';
+                                
+                                for (let i = 0; i < attachmentPaths.length; i++) {
+                                    const path = attachmentPaths[i];
+                                    const fileUrl = `/storage/${path}`;
+                                    const fileName = path.split('/').pop();
+                                    const fileExtension = fileName.split('.').pop().toLowerCase();
+                                    
+                                    // Only create video player for video files
+                                    if (['mp4', 'webm', 'ogg', 'mov'].includes(fileExtension)) {
+                                        videoPlayers += `
+                                            <div class="video-container mb-3">
+                                                <h6>${fileName}</h6>
+                                                <video controls style="width: 100%; max-height: 450px;" class="border">
+                                                    <source src="${fileUrl}" type="video/${fileExtension}">
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                                <div class="mt-2">
+                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    // For non-video files, show appropriate preview based on file type
+                                    else if (fileExtension === 'pdf') {
+                                        videoPlayers += `
+                                            <div class="pdf-container mb-3">
+                                                <h6>${fileName}</h6>
+                                                <iframe src="${fileUrl}" style="width: 100%; height: 400px; border: 1px solid #ddd;"></iframe>
+                                                <div class="mt-2">
+                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                                        videoPlayers += `
+                                            <div class="image-container mb-3">
+                                                <h6>${fileName}</h6>
+                                                <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+                                                <div class="mt-2">
+                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    else {
+                                        videoPlayers += `
+                                            <div class="file-container mb-3">
+                                                <h6>${fileName}</h6>
+                                                <div class="p-4 border text-center">
+                                                    <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+                                                    <p>File preview not available for this type</p>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                }
+                                
+                                contentHtml = `
+                                    <div class="content-display">
+                                        ${videoPlayers}
+                                        <div class="content-details mt-3">
+                                            <h5>Content Details</h5>
+                                            <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                            <p><strong>Files:</strong> ${attachmentPaths.length} file(s) attached</p>
+                                        </div>
                                     </div>
                                 `;
                             }
@@ -1039,13 +1151,13 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                         break;
                     
                     case 'lesson':
-                        // Display lesson video if available, otherwise show description
+                        // Display lesson content (video, PDF, etc.)
                         let lessonHtml = '';
-                        if (content.content_url || content.attachment_path) {
-                            const videoUrl = content.content_url || `/storage/${content.attachment_path}`;
-                            
+                        
+                        // Handle external URL content first
+                        if (content.content_url) {
                             // Check if it's a YouTube or Vimeo URL
-                            if (content.content_url && (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com'))) {
+                            if (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com')) {
                                 let embedUrl = content.content_url;
                                 
                                 // Convert YouTube URLs to embed format
@@ -1066,63 +1178,211 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else {
-                                // Local video file
+                                // External URL
                                 lessonHtml = `
-                                    <div class="video-container">
-                                        <video controls style="width: 100%; max-height: 450px;" class="border">
-                                            <source src="${videoUrl}" type="video/mp4">
-                                            <source src="${videoUrl}" type="video/webm">
-                                            <source src="${videoUrl}" type="video/ogg">
-                                            Your browser does not support the video tag.
-                                        </video>
+                                    <div class="link-container">
+                                        <div class="alert alert-info">
+                                            <p><strong>External Content:</strong> This lesson contains an external resource.</p>
+                                            <a href="${content.content_url}" target="_blank" class="btn btn-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> Open External Content
+                                            </a>
+                                        </div>
                                     </div>
                                 `;
                             }
                         }
                         
+                        // Handle attachment files
+                        if (content.attachment_path) {
+                            // Check if attachment_path is a JSON array
+                            let attachmentPaths = [];
+                            try {
+                                const parsedPath = JSON.parse(content.attachment_path);
+                                if (Array.isArray(parsedPath)) {
+                                    attachmentPaths = parsedPath;
+                                } else {
+                                    attachmentPaths = [content.attachment_path];
+                                }
+                            } catch (e) {
+                                // Not JSON, treat as a single file
+                                attachmentPaths = [content.attachment_path];
+                            }
+                            
+                            // Get file names if available
+                            let fileNames = [];
+                            if (content.file_name) {
+                                try {
+                                    const parsedNames = JSON.parse(content.file_name);
+                                    if (Array.isArray(parsedNames)) {
+                                        fileNames = parsedNames;
+                                    } else {
+                                        fileNames = [content.file_name];
+                                    }
+                                } catch (e) {
+                                    // Not JSON, treat as a single file name
+                                    fileNames = [content.file_name];
+                                }
+                            } else {
+                                // Extract file names from paths
+                                fileNames = attachmentPaths.map(path => path.split('/').pop());
+                            }
+                            
+                            // Create preview for each attachment
+                            lessonHtml += `<div class="attachments-container">`;
+                            
+                            for (let i = 0; i < attachmentPaths.length; i++) {
+                                const path = attachmentPaths[i];
+                                const fileUrl = `/storage/${path}`;
+                                const fileName = fileNames[i] || path.split('/').pop();
+                                const fileExtension = fileName.split('.').pop().toLowerCase();
+                                
+                                lessonHtml += `<div class="attachment-item mb-4">`;
+                                lessonHtml += `<h6>${fileName}</h6>`;
+                                
+                                if (fileExtension === 'pdf') {
+                                    lessonHtml += `
+                                        <div class="pdf-preview">
+                                            <iframe src="${fileUrl}" style="width: 100%; height: 500px; border: 1px solid #ddd;"></iframe>
+                                            <div class="mt-2">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download PDF
+                                                </a>
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
+                                                    <i class="bi bi-eye"></i> View Full Screen
+                                                </a>
+                                            </div>
+                                        </div>
+                                    `;
+                                } else if (['mp4', 'webm', 'ogg', 'mov'].includes(fileExtension)) {
+                                    lessonHtml += `
+                                        <div class="video-preview">
+                                            <video controls style="width: 100%; max-height: 450px;" class="border">
+                                                <source src="${fileUrl}" type="video/${fileExtension}">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                            <div class="mt-2">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download Video
+                                                </a>
+                                            </div>
+                                        </div>
+                                    `;
+                                } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                                    lessonHtml += `
+                                        <div class="image-preview text-center">
+                                            <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+                                            <div class="mt-2">
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-download"></i> Download Image
+                                                </a>
+                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
+                                                    <i class="bi bi-eye"></i> View Full Size
+                                                </a>
+                                            </div>
+                                        </div>
+                                    `;
+                                } else {
+                                    lessonHtml += `
+                                        <div class="file-preview p-4 border text-center">
+                                            <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+                                            <p>Preview not available for this file type</p>
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-download"></i> Download File
+                                            </a>
+                                        </div>
+                                    `;
+                                }
+                                
+                                lessonHtml += `</div>`;
+                            }
+                            
+                            lessonHtml += `</div>`;
+                        }
+                        
                         contentHtml = `
                             <div class="content-display">
-                                ${lessonHtml}
+                                ${lessonHtml || '<div class="alert alert-info">No media content available for this lesson.</div>'}
                                 <div class="content-details mt-3">
                                     <h5>Lesson Details</h5>
                                     <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
-                                    ${content.content_url ? `<p><strong>Video URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>` : ''}
+                                    ${content.content_url ? `<p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>` : ''}
+                                    ${content.content_text ? `<div class="lesson-text mt-3"><h6>Lesson Text:</h6>${content.content_text}</div>` : ''}
                                 </div>
                             </div>
                         `;
                         break;
                     
                     case 'pdf':
+                    case 'lesson': // Handle lesson type too since it's frequently used for PDFs
                         if (content.attachment_path) {
-                            const fileUrl = `/storage/${content.attachment_path}`;
-                            const fileName = content.attachment_path.split('/').pop();
-                            const fileExtension = fileName.split('.').pop().toLowerCase();
+                            // Check if attachment_path is a JSON array
+                            let attachmentPaths = [];
+                            try {
+                                const parsedPath = JSON.parse(content.attachment_path);
+                                if (Array.isArray(parsedPath)) {
+                                    attachmentPaths = parsedPath;
+                                } else {
+                                    attachmentPaths = [content.attachment_path];
+                                }
+                            } catch (e) {
+                                // Not JSON, treat as a single file
+                                attachmentPaths = [content.attachment_path];
+                            }
+                            
+                            // Get file names if available
+                            let fileNames = [];
+                            if (content.file_name) {
+                                try {
+                                    const parsedNames = JSON.parse(content.file_name);
+                                    if (Array.isArray(parsedNames)) {
+                                        fileNames = parsedNames;
+                                    } else {
+                                        fileNames = [content.file_name];
+                                    }
+                                } catch (e) {
+                                    // Not JSON, treat as a single file name
+                                    fileNames = [content.file_name];
+                                }
+                            } else {
+                                // Extract file names from paths
+                                fileNames = attachmentPaths.map(path => path.split('/').pop());
+                            }
                             
                             let fileViewer = '';
                             
-                            // Handle different file types
-                            if (fileExtension === 'pdf') {
-                                fileViewer = `
-                                    <div class="pdf-viewer">
-                                        <div class="pdf-controls mb-2">
-                                            <div class="btn-group">
-                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-fullscreen"></i> Full Screen
-                                                </a>
-                                                <a href="${fileUrl}" download class="btn btn-outline-primary btn-sm">
-                                                    <i class="bi bi-download"></i> Download
-                                                </a>
+                            // Process each attachment
+                            for (let i = 0; i < attachmentPaths.length; i++) {
+                                const path = attachmentPaths[i];
+                                const fileUrl = `/storage/${path}`;
+                                const fileName = fileNames[i] || path.split('/').pop();
+                                const fileExtension = fileName.split('.').pop().toLowerCase();
+                                
+                                // Add header for each file
+                                fileViewer += `<h5 class="mt-3 mb-2">${fileName}</h5>`;
+                                
+                                // Handle different file types
+                                if (fileExtension === 'pdf') {
+                                    fileViewer += `
+                                        <div class="pdf-viewer">
+                                            <div class="pdf-controls mb-2">
+                                                <div class="btn-group">
+                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-fullscreen"></i> Full Screen
+                                                    </a>
+                                                    <a href="${fileUrl}" download class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                </div>
                                             </div>
+                                            <iframe class="content-frame" src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                    style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
+                                                    allowfullscreen>
+                                                <p>Your browser does not support PDFs. 
+                                                   <a href="${fileUrl}" target="_blank">Download the PDF</a>
+                                                </p>
+                                            </iframe>
                                         </div>
-                                        <iframe class="content-frame" src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
-                                                style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
-                                                allowfullscreen>
-                                            <p>Your browser does not support PDFs. 
-                                               <a href="${fileUrl}" target="_blank">Download the PDF</a>
-                                            </p>
-                                        </iframe>
-                                    </div>
-                                `;
+                                    `;
                             } else if (['doc', 'docx'].includes(fileExtension)) {
                                 fileViewer = `
                                     <div class="document-viewer">
@@ -1300,48 +1560,98 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                         
                         // Handle attachments for any content type
                         if (content.attachment_path) {
-                            const fileUrl = `/storage/${content.attachment_path}`;
-                            const fileName = content.attachment_path.split('/').pop();
-                            const fileExtension = fileName.split('.').pop().toLowerCase();
+                            // Check if attachment_path is a JSON array
+                            let attachmentPaths = [];
+                            try {
+                                const parsedPath = JSON.parse(content.attachment_path);
+                                if (Array.isArray(parsedPath)) {
+                                    attachmentPaths = parsedPath;
+                                } else {
+                                    attachmentPaths = [content.attachment_path];
+                                }
+                            } catch (e) {
+                                // Not JSON, treat as a single file
+                                attachmentPaths = [content.attachment_path];
+                            }
                             
+                            // Get file names if available
+                            let fileNames = [];
+                            if (content.file_name) {
+                                try {
+                                    const parsedNames = JSON.parse(content.file_name);
+                                    if (Array.isArray(parsedNames)) {
+                                        fileNames = parsedNames;
+                                    } else {
+                                        fileNames = [content.file_name];
+                                    }
+                                } catch (e) {
+                                    // Not JSON, treat as a single file name
+                                    fileNames = [content.file_name];
+                                }
+                            } else {
+                                // Extract file names from paths
+                                fileNames = attachmentPaths.map(path => path.split('/').pop());
+                            }
+                            
+                            // Create a file preview for each attachment
                             let filePreview = '';
                             
-                            if (fileExtension === 'pdf') {
-                                filePreview = `
-                                    <div class="file-preview mt-3">
-                                        <iframe src="${fileUrl}" style="width: 100%; height: 400px; border: 1px solid #ddd;"></iframe>
-                                    </div>
-                                `;
-                            } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
-                                filePreview = `
-                                    <div class="file-preview mt-3 text-center">
-                                        <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
-                                    </div>
-                                `;
-                            } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                                filePreview = `
-                                    <div class="file-preview mt-3">
-                                        <video controls style="width: 100%; max-height: 400px;" class="border">
-                                            <source src="${fileUrl}" type="video/${fileExtension}">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    </div>
-                                `;
-                            } else if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
-                                filePreview = `
-                                    <div class="file-preview mt-3">
-                                        <audio controls style="width: 100%;" class="border">
-                                            <source src="${fileUrl}" type="audio/${fileExtension}">
-                                            Your browser does not support the audio tag.
-                                        </audio>
-                                    </div>
-                                `;
-                            } else {
-                                filePreview = `
-                                    <div class="file-preview mt-3 text-center p-4 border bg-light">
-                                        <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
-                                        <p class="mt-2 mb-0">Preview not available for this file type</p>
-                                        <small class="text-muted">${fileName}</small>
+                            for (let i = 0; i < attachmentPaths.length; i++) {
+                                const path = attachmentPaths[i];
+                                const fileUrl = `/storage/${path}`;
+                                const fileName = fileNames[i] || path.split('/').pop();
+                                const fileExtension = fileName.split('.').pop().toLowerCase();
+                                
+                                filePreview += `<h6 class="mt-3 mb-2">File ${i+1}: ${fileName}</h6>`;
+                                
+                                if (fileExtension === 'pdf') {
+                                    filePreview += `
+                                        <div class="file-preview mt-2 mb-3">
+                                            <iframe src="${fileUrl}" style="width: 100%; height: 400px; border: 1px solid #ddd;"></iframe>
+                                        </div>
+                                    `;
+                                } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                                    filePreview += `
+                                        <div class="file-preview mt-2 mb-3 text-center">
+                                            <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+                                        </div>
+                                    `;
+                                } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                                    filePreview += `
+                                        <div class="file-preview mt-2 mb-3">
+                                            <video controls style="width: 100%; max-height: 400px;" class="border">
+                                                <source src="${fileUrl}" type="video/${fileExtension}">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    `;
+                                } else if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
+                                    filePreview += `
+                                        <div class="file-preview mt-2 mb-3">
+                                            <audio controls style="width: 100%;" class="border">
+                                                <source src="${fileUrl}" type="audio/${fileExtension}">
+                                                Your browser does not support the audio tag.
+                                            </audio>
+                                        </div>
+                                    `;
+                                } else {
+                                    filePreview += `
+                                        <div class="file-preview mt-2 mb-3 text-center p-4 border bg-light">
+                                            <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+                                            <p class="mt-2 mb-0">Preview not available for this file type</p>
+                                            <small class="text-muted">${fileName}</small>
+                                        </div>
+                                    `;
+                                }
+                                
+                                filePreview += `
+                                    <div class="mb-3">
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
+                                            <i class="bi bi-eye"></i> View in New Tab
+                                        </a>
                                     </div>
                                 `;
                             }
@@ -1377,11 +1687,35 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                         contentHtml = defaultContentHtml;
                 }
                 
+                // Add debugging info if needed
+                if (window.location.search.includes('debug=true')) {
+                    contentHtml += `
+                        <div class="mt-4 p-3 border border-info rounded bg-light">
+                            <h6 class="text-primary"><i class="bi bi-info-circle"></i> Debug Information</h6>
+                            <p><strong>Content Type:</strong> ${content.content_type}</p>
+                            <p><strong>Attachment Path:</strong> ${content.attachment_path || 'None'}</p>
+                            <p><strong>Has Multiple Files:</strong> ${content.has_multiple_files ? 'Yes' : 'No'}</p>
+                            <p><strong>File Name(s):</strong> ${content.file_names ? JSON.stringify(content.file_names) : 'None'}</p>
+                            <p><strong>File MIME:</strong> ${content.file_mime || 'None'}</p>
+                            <p><strong>Content URL:</strong> ${content.content_url || 'None'}</p>
+                            
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-info" onclick="console.log('Content data:', ${JSON.stringify(content)})">
+                                    Log Content Data to Console
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 viewerBody.innerHTML = contentHtml;
                 
                 // Mark content item as active
                 document.querySelectorAll('.content-item').forEach(el => el.classList.remove('active'));
-                document.querySelector(`[data-content-id="${contentId}"]`).classList.add('active');
+                const activeItem = document.querySelector(`[data-content-id="${contentId}"]`);
+                if (activeItem) {
+                    activeItem.classList.add('active');
+                }
                 
             } else {
                 viewerBody.innerHTML = '<div class="alert alert-danger">Failed to load content</div>';

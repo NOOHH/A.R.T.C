@@ -2103,6 +2103,36 @@ class StudentDashboardController extends Controller
                 }
             }
 
+            // Parse attachment_path if it's JSON
+            $attachmentPath = $content->attachment_path ?? '';
+            $attachmentUrls = [];
+            $fileNames = [];
+            
+            if ($attachmentPath) {
+                $parsedAttachments = json_decode($attachmentPath, true);
+                if (is_array($parsedAttachments)) {
+                    // Handle multiple files
+                    foreach ($parsedAttachments as $path) {
+                        $attachmentUrls[] = asset('storage/' . $path);
+                    }
+                    
+                    // Get file names if available
+                    if ($content->file_name) {
+                        $parsedNames = json_decode($content->file_name, true);
+                        $fileNames = is_array($parsedNames) ? $parsedNames : [$content->file_name];
+                    } else {
+                        // Extract filenames from paths if no names are stored
+                        foreach ($parsedAttachments as $path) {
+                            $fileNames[] = basename($path);
+                        }
+                    }
+                } else {
+                    // Single file
+                    $attachmentUrls = [asset('storage/' . $attachmentPath)];
+                    $fileNames = [$content->file_name ?? basename($attachmentPath)];
+                }
+            }
+            
             $response = [
                 'success' => true,
                 'content' => [
@@ -2113,6 +2143,9 @@ class StudentDashboardController extends Controller
                     'content_text' => $content->content_text ?? '',
                     'content_url' => $content->content_url ?? '',
                     'attachment_path' => $content->attachment_path ?? '',
+                    'attachment_urls' => $attachmentUrls,
+                    'file_names' => $fileNames,
+                    'has_multiple_files' => is_array(json_decode($content->attachment_path ?? '[]', true)),
                     'due_date' => $content->due_date ?? null,
                     'content_data' => $contentData,
                     'enable_submission' => $content->enable_submission ?? false,
