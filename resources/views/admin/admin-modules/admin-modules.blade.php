@@ -827,6 +827,7 @@ function toggleCourse(moduleId, courseId) {
     // Load course content in viewer
     loadCourseContentInViewer(moduleId, courseId);
 }
+window.toggleCourse = toggleCourse;
 
 // Load module content in the content viewer
 function loadModuleContentInViewer(moduleId) {
@@ -1134,183 +1135,12 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             }
-                            
-                            contentHtml = `
-                                <div class="content-display">
-                                    ${videoPlayer}
-                                    <div class="content-details mt-3">
-                                        <h5>Video Details</h5>
-                                        <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
-                                        <p><strong>Source:</strong> <a href="${videoUrl}" target="_blank">${content.content_url ? 'External Link' : 'Uploaded File'}</a></p>
-                                    </div>
-                                </div>
-                            `;
+                            // Note: No additional contentHtml assignment here, each branch handles its own assignment
                         } else {
                             contentHtml = '<div class="alert alert-warning">Video URL not available</div>';
                         }
                         break;
                     
-                    case 'lesson':
-                        // Display lesson content (video, PDF, etc.)
-                        let lessonHtml = '';
-                        
-                        // Handle external URL content first
-                        if (content.content_url) {
-                            // Check if it's a YouTube or Vimeo URL
-                            if (content.content_url.includes('youtube.com') || content.content_url.includes('youtu.be') || content.content_url.includes('vimeo.com')) {
-                                let embedUrl = content.content_url;
-                                
-                                // Convert YouTube URLs to embed format
-                                if (content.content_url.includes('youtube.com/watch?v=')) {
-                                    const videoId = content.content_url.split('v=')[1].split('&')[0];
-                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                                } else if (content.content_url.includes('youtu.be/')) {
-                                    const videoId = content.content_url.split('youtu.be/')[1].split('?')[0];
-                                    embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                                } else if (content.content_url.includes('vimeo.com/')) {
-                                    const videoId = content.content_url.split('vimeo.com/')[1].split('/')[0];
-                                    embedUrl = `https://player.vimeo.com/video/${videoId}`;
-                                }
-                                
-                                lessonHtml = `
-                                    <div class="video-container">
-                                        <iframe class="content-frame" src="${embedUrl}" style="width: 100%; height: 450px; border: 1px solid #ddd;" allowfullscreen></iframe>
-                                    </div>
-                                `;
-                            } else {
-                                // External URL
-                                lessonHtml = `
-                                    <div class="link-container">
-                                        <div class="alert alert-info">
-                                            <p><strong>External Content:</strong> This lesson contains an external resource.</p>
-                                            <a href="${content.content_url}" target="_blank" class="btn btn-primary">
-                                                <i class="bi bi-box-arrow-up-right"></i> Open External Content
-                                            </a>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                        }
-                        
-                        // Handle attachment files
-                        if (content.attachment_path) {
-                            // Check if attachment_path is a JSON array
-                            let attachmentPaths = [];
-                            try {
-                                const parsedPath = JSON.parse(content.attachment_path);
-                                if (Array.isArray(parsedPath)) {
-                                    attachmentPaths = parsedPath;
-                                } else {
-                                    attachmentPaths = [content.attachment_path];
-                                }
-                            } catch (e) {
-                                // Not JSON, treat as a single file
-                                attachmentPaths = [content.attachment_path];
-                            }
-                            
-                            // Get file names if available
-                            let fileNames = [];
-                            if (content.file_name) {
-                                try {
-                                    const parsedNames = JSON.parse(content.file_name);
-                                    if (Array.isArray(parsedNames)) {
-                                        fileNames = parsedNames;
-                                    } else {
-                                        fileNames = [content.file_name];
-                                    }
-                                } catch (e) {
-                                    // Not JSON, treat as a single file name
-                                    fileNames = [content.file_name];
-                                }
-                            } else {
-                                // Extract file names from paths
-                                fileNames = attachmentPaths.map(path => path.split('/').pop());
-                            }
-                            
-                            // Create preview for each attachment
-                            lessonHtml += `<div class="attachments-container">`;
-                            
-                            for (let i = 0; i < attachmentPaths.length; i++) {
-                                const path = attachmentPaths[i];
-                                const fileUrl = `/storage/${path}`;
-                                const fileName = fileNames[i] || path.split('/').pop();
-                                const fileExtension = fileName.split('.').pop().toLowerCase();
-                                
-                                lessonHtml += `<div class="attachment-item mb-4">`;
-                                lessonHtml += `<h6>${fileName}</h6>`;
-                                
-                                if (fileExtension === 'pdf') {
-                                    lessonHtml += `
-                                        <div class="pdf-preview">
-                                            <iframe src="${fileUrl}" style="width: 100%; height: 500px; border: 1px solid #ddd;"></iframe>
-                                            <div class="mt-2">
-                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-download"></i> Download PDF
-                                                </a>
-                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
-                                                    <i class="bi bi-eye"></i> View Full Screen
-                                                </a>
-                                            </div>
-                                        </div>
-                                    `;
-                                } else if (['mp4', 'webm', 'ogg', 'mov'].includes(fileExtension)) {
-                                    lessonHtml += `
-                                        <div class="video-preview">
-                                            <video controls style="width: 100%; max-height: 450px;" class="border">
-                                                <source src="${fileUrl}" type="video/${fileExtension}">
-                                                Your browser does not support the video tag.
-                                            </video>
-                                            <div class="mt-2">
-                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-download"></i> Download Video
-                                                </a>
-                                            </div>
-                                        </div>
-                                    `;
-                                } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
-                                    lessonHtml += `
-                                        <div class="image-preview text-center">
-                                            <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
-                                            <div class="mt-2">
-                                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-download"></i> Download Image
-                                                </a>
-                                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
-                                                    <i class="bi bi-eye"></i> View Full Size
-                                                </a>
-                                            </div>
-                                        </div>
-                                    `;
-                                } else {
-                                    lessonHtml += `
-                                        <div class="file-preview p-4 border text-center">
-                                            <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
-                                            <p>Preview not available for this file type</p>
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                <i class="bi bi-download"></i> Download File
-                                            </a>
-                                        </div>
-                                    `;
-                                }
-                                
-                                lessonHtml += `</div>`;
-                            }
-                            
-                            lessonHtml += `</div>`;
-                        }
-                        
-                        contentHtml = `
-                            <div class="content-display">
-                                ${lessonHtml || '<div class="alert alert-info">No media content available for this lesson.</div>'}
-                                <div class="content-details mt-3">
-                                    <h5>Lesson Details</h5>
-                                    <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
-                                    ${content.content_url ? `<p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>` : ''}
-                                    ${content.content_text ? `<div class="lesson-text mt-3"><h6>Lesson Text:</h6>${content.content_text}</div>` : ''}
-                                </div>
-                            </div>
-                        `;
-                        break;
                     
                     case 'pdf':
                     case 'lesson': // Handle lesson type too since it's frequently used for PDFs
@@ -1351,40 +1181,38 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                             let fileViewer = '';
                             
                             // Process each attachment
-                            for (let i = 0; i < attachmentPaths.length; i++) {
-                                const path = attachmentPaths[i];
-                                const fileUrl = `/storage/${path}`;
-                                const fileName = fileNames[i] || path.split('/').pop();
-                                const fileExtension = fileName.split('.').pop().toLowerCase();
-                                
-                                // Add header for each file
-                                fileViewer += `<h5 class="mt-3 mb-2">${fileName}</h5>`;
-                                
-                                // Handle different file types
-                                if (fileExtension === 'pdf') {
-                                    fileViewer += `
-                                        <div class="pdf-viewer">
-                                            <div class="pdf-controls mb-2">
-                                                <div class="btn-group">
-                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-fullscreen"></i> Full Screen
-                                                    </a>
-                                                    <a href="${fileUrl}" download class="btn btn-outline-primary btn-sm">
-                                                        <i class="bi bi-download"></i> Download
-                                                    </a>
+                                for (let i = 0; i < attachmentPaths.length; i++) {
+                                    const path = attachmentPaths[i];
+                                    const fileUrl = `/storage/${path}`;
+                                    const fileName = fileNames[i] || path.split('/').pop();
+                                    const fileExtension = fileName.split('.').pop().toLowerCase();
+                                    // Add header for each file
+                                    fileViewer += `<h5 class="mt-3 mb-2">${fileName}</h5>`;
+                                    // Handle different file types
+                                    if (fileExtension === 'pdf') {
+                                        fileViewer += `
+                                            <div class="pdf-viewer">
+                                                <div class="pdf-controls mb-2">
+                                                    <div class="btn-group">
+                                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                                            <i class="bi bi-fullscreen"></i> Full Screen
+                                                        </a>
+                                                        <a href="${fileUrl}" download class="btn btn-outline-primary btn-sm">
+                                                            <i class="bi bi-download"></i> Download
+                                                        </a>
+                                                    </div>
                                                 </div>
+                                                <iframe class="content-frame" src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
+                                                        style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
+                                                        allowfullscreen>
+                                                    <p>Your browser does not support PDFs. 
+                                                       <a href="${fileUrl}" target="_blank">Download the PDF</a>
+                                                    </p>
+                                                </iframe>
                                             </div>
-                                            <iframe class="content-frame" src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
-                                                    style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
-                                                    allowfullscreen>
-                                                <p>Your browser does not support PDFs. 
-                                                   <a href="${fileUrl}" target="_blank">Download the PDF</a>
-                                                </p>
-                                            </iframe>
-                                        </div>
-                                    `;
-                            } else if (['doc', 'docx'].includes(fileExtension)) {
-                                fileViewer = `
+                                        `;
+                                } else if (['doc', 'docx'].includes(fileExtension)) {
+                                    fileViewer += `
                                     <div class="document-viewer">
                                         <div class="document-controls mb-2">
                                             <div class="btn-group">
@@ -1407,7 +1235,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else if (['ppt', 'pptx'].includes(fileExtension)) {
-                                fileViewer = `
+                                fileViewer += `
                                     <div class="presentation-viewer">
                                         <div class="presentation-controls mb-2">
                                             <div class="btn-group">
@@ -1430,7 +1258,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else if (['xls', 'xlsx'].includes(fileExtension)) {
-                                fileViewer = `
+                                fileViewer += `
                                     <div class="spreadsheet-viewer">
                                         <div class="spreadsheet-controls mb-2">
                                             <div class="btn-group">
@@ -1453,7 +1281,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
-                                fileViewer = `
+                                fileViewer += `
                                     <div class="image-viewer text-center">
                                         <img src="${fileUrl}" class="img-fluid" alt="${fileName}" 
                                              style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;
@@ -1462,7 +1290,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                                fileViewer = `
+                                fileViewer += `
                                     <div class="video-viewer">
                                         <video controls style="width: 100%; max-height: 600px; border-radius: 5px;" class="border">
                                             <source src="${fileUrl}" type="video/${fileExtension}">
@@ -1471,7 +1299,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else if (['mp3', 'wav', 'ogg'].includes(fileExtension)) {
-                                fileViewer = `
+                                fileViewer += `
                                     <div class="audio-viewer">
                                         <audio controls style="width: 100%; border-radius: 5px;" class="border">
                                             <source src="${fileUrl}" type="audio/${fileExtension}">
@@ -1480,7 +1308,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             } else {
-                                fileViewer = `
+                                fileViewer += `
                                     <div class="file-preview text-center p-4 border">
                                         <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
                                         <p class="mt-2">File preview not available for this format</p>
@@ -1488,6 +1316,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     </div>
                                 `;
                             }
+                            } // End of for loop
                             
                             contentHtml = `
                                 <div class="content-display">
@@ -1495,15 +1324,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     <div class="content-details mt-3">
                                         <h5>Document Details</h5>
                                         <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
-                                        <p><strong>File:</strong> ${fileName}</p>
-                                        <div class="mt-2">
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                <i class="bi bi-download"></i> Download
-                                            </a>
-                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
-                                                <i class="bi bi-eye"></i> View in New Tab
-                                            </a>
-                                        </div>
+                                        <p><strong>Files:</strong> ${attachmentPaths.length} file(s) attached</p>
                                     </div>
                                 </div>
                             `;
@@ -1658,17 +1479,6 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                             
                             defaultContentHtml += `
                                 ${filePreview}
-                                <div class="mt-3">
-                                    <p><strong>File:</strong> ${fileName}</p>
-                                    <div class="file-actions">
-                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
-                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
-                                            <i class="bi bi-eye"></i> View in New Tab
-                                        </a>
-                                    </div>
-                                </div>
                             `;
                         }
                         
@@ -1726,6 +1536,7 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
             viewerBody.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
         });
 }
+window.loadContentInViewer = loadContentInViewer;
 
 // Load courses for a module
 function loadModuleCourses(moduleId) {
@@ -2042,28 +1853,22 @@ function editModule(moduleId) {
         });
 }
 
-function deleteModule(moduleId) {
-    if (confirm('Are you sure you want to delete this module? This action cannot be undone.')) {
-        fetch(`/admin/modules/${moduleId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + (data.message || 'Failed to delete module'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the module');
-        });
+function toggleModule(moduleId) {
+    const content = document.getElementById(`module-content-${moduleId}`);
+    const icon = content.previousElementSibling.querySelector('.module-toggle-icon');
+    
+    if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        icon.classList.remove('expanded');
+    } else {
+        content.classList.add('expanded');
+        icon.classList.add('expanded');
+        loadModuleCourses(moduleId);
     }
+    // Load module content in viewer
+    loadModuleContentInViewer(moduleId);
 }
+window.toggleModule = toggleModule;
 
 // Helper function to update module details
 function updateModuleDetails(moduleId, newName, newDescription) {
