@@ -671,22 +671,34 @@
   display: none;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 99999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
 }
 
 .modal-bg.show {
   display: flex;
+  opacity: 1;
+  visibility: visible;
 }
 
 .modal {
   background: white;
   border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  transform: scale(0.9);
+  transition: transform 0.3s;
+  z-index: 100000;
+}
+
+.modal-bg.show .modal {
+  transform: scale(1);
 }
 
 .modal-header {
@@ -1485,7 +1497,12 @@ function loadModuleContentInViewer(moduleId) {
     
     // Fetch module content
     fetch(`/professor/modules/${moduleId}/content`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 titleElement.textContent = data.module.module_name;
@@ -1544,7 +1561,12 @@ function loadCourseContentInViewer(moduleId, courseId) {
     
     // Fetch course content
     fetch(`/professor/courses/${courseId}/content`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 titleElement.textContent = data.course.subject_name;
@@ -1650,7 +1672,12 @@ function loadCourseContent(moduleId, courseId) {
     
     // Fetch content for this course
     fetch(`/professor/courses/${courseId}/content`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success && data.content.length > 0) {
                 let contentHtml = '';
@@ -1786,6 +1813,7 @@ function showAddContentModal(moduleId, courseId, courseName = '') {
     if (courseId) urlParams.append('course_id', courseId);
     const baseUrl = '/professor/modules/course-content-upload';
     const fullUrl = urlParams.toString() ? `${baseUrl}?${urlParams.toString()}` : baseUrl;
+    console.log('Opening course content upload page:', fullUrl);
     window.location.href = fullUrl;
 }
 
@@ -1880,6 +1908,15 @@ const closeAddCourseModalBtn = document.getElementById('closeAddCourseModalBtn')
 if (addCourseModalBtn) {
     addCourseModalBtn.addEventListener('click', function() {
         addCourseModalBg.classList.add('show');
+    });
+}
+
+if (addCourseModalBg) {
+    addCourseModalBg.addEventListener('click', function(e) {
+        // Close modal when clicking outside the modal content
+        if (e.target === addCourseModalBg) {
+            addCourseModalBg.classList.remove('show');
+        }
     });
 }
 

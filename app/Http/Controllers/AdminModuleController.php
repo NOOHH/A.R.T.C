@@ -1442,6 +1442,49 @@ class AdminModuleController extends Controller
         try {
             $content = ContentItem::with(['course.module'])->findOrFail($id);
             
+            // Parse attachment_path if it's JSON
+            $attachmentPath = $content->attachment_path;
+            $attachmentUrls = [];
+            $fileNames = [];
+            $hasMultipleFiles = false;
+            
+            if ($attachmentPath) {
+                $parsedAttachments = json_decode($attachmentPath, true);
+                if (is_array($parsedAttachments)) {
+                    // Multiple files
+                    $hasMultipleFiles = true;
+                    foreach ($parsedAttachments as $path) {
+                        $attachmentUrls[] = asset('storage/' . $path);
+                    }
+                    
+                    // Parse file names if they're stored as JSON
+                    if ($content->file_name) {
+                        $parsedNames = json_decode($content->file_name, true);
+                        $fileNames = is_array($parsedNames) ? $parsedNames : [$content->file_name];
+                    } else {
+                        // Extract filenames from paths if no names are stored
+                        foreach ($parsedAttachments as $path) {
+                            $fileNames[] = basename($path);
+                        }
+                    }
+                } else {
+                    // Single file
+                    $attachmentUrls = [asset('storage/' . $attachmentPath)];
+                    $fileNames = [$content->file_name ?? basename($attachmentPath)];
+                    $hasMultipleFiles = false;
+                }
+            }
+            
+            // Log for debugging
+            \Log::info('AdminModuleController: Processing content item', [
+                'content_id' => $content->id,
+                'attachment_path' => $content->attachment_path,
+                'parsed_attachments' => $parsedAttachments ?? null,
+                'has_multiple_files' => $hasMultipleFiles,
+                'file_names' => $fileNames,
+                'is_attachment_json' => is_array($parsedAttachments)
+            ]);
+            
             return response()->json([
                 'success' => true,
                 'content' => [
@@ -1454,6 +1497,12 @@ class AdminModuleController extends Controller
                     'content_type' => $content->content_type,
                     'file_path' => $content->attachment_path,
                     'attachment_path' => $content->attachment_path,
+                    'attachment_urls' => $attachmentUrls,
+                    'file_names' => $fileNames,
+                    'has_multiple_files' => $hasMultipleFiles || $content->has_multiple_files,
+                    'content_text' => $content->content_text ?? '',
+                    'file_mime' => $content->file_mime,
+                    'file_size' => $content->file_size,
                     'link' => $content->content_url,
                     'content_url' => $content->content_url,
                     'sort_order' => $content->sort_order,
