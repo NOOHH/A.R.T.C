@@ -332,7 +332,7 @@
         <div class="col-xl-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-list-task me-2"></i>Student Progress Distribution</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-task me-2"></i>Number of Students</h5>
                 </div>
                 <div class="card-body p-2 overflow-auto" style="min-height:180px;max-height:240px;">
                     <canvas id="progressDistributionChart" height="180" style="width:100%;max-width:100%;display:block;"></canvas>
@@ -411,35 +411,6 @@
                                 </tr>
                             </thead>
                             <tbody id="recentlyCompletedTable">
-                                <!-- Data will be populated via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Students Needing Attention (unchanged) -->
-        <div class="col-xl-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header d-flex justify-content-between align-items-center bg-light">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Students Needing Attention</h5>
-                    <button class="btn btn-sm btn-outline-warning" onclick="viewAllStudents('bottom')">
-                        View All <i class="bi bi-arrow-right ms-1"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Student</th>
-                                    <th>Program</th>
-                                    <th>Score</th>
-                                    <th>Issues</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bottomPerformersTable">
                                 <!-- Data will be populated via AJAX -->
                             </tbody>
                         </table>
@@ -975,10 +946,6 @@ function updateTables(tableData) {
     
     // Only update tables that actually exist in the HTML
     try {
-        // Update bottom performers table (students needing attention)
-        if (tableData.bottomPerformers) {
-            updateBottomPerformersTable(tableData.bottomPerformers);
-        }
         
         // Update new tables
         if (tableData.recentlyEnrolled) {
@@ -1035,7 +1002,7 @@ function updateBottomPerformersTable(data) {
             tbody.appendChild(row);
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No students needing attention</td></tr>';
+      
     }
 }
 
