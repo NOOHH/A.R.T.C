@@ -1438,7 +1438,8 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])->name('admin.students.archived');
     Route::post('/admin/students/{id}/archive', [AdminStudentListController::class, 'archive'])->name('admin.students.archive');
     Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
-    // ...add any other /admin/students routes here...
+    // Admin: Show a single student profile
+    Route::get('/admin/students/{student}', [App\Http\Controllers\AdminStudentListController::class, 'show'])->name('admin.students.show');
 });
 
 /*
