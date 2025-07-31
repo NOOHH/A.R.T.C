@@ -178,8 +178,7 @@
                                             <select class="form-select" id="aiQuestionType">
                                                 <option value="multiple_choice">Multiple Choice</option>
                                                 <option value="true_false">True/False</option>
-                                                <option value="short_answer">Short Answer</option>
-                                                <option value="essay">Essay</option>
+                                                <option value="mixed">Mixed</option>
                                             </select>
                                         </div>
                                         <div class="col-md-2">
@@ -684,8 +683,12 @@ async function generateAIQuestions() {
     // Show loading state and disable button
     generateBtn.disabled = true;
     generateBtn.classList.add('disabled');
-    spinner.classList.remove('d-none');
-    btnText.textContent = 'Generating Questions...';
+    if (spinner) {
+        spinner.classList.remove('d-none');
+    }
+    if (btnText) {
+        btnText.textContent = 'Generating Questions...';
+    }
 
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);

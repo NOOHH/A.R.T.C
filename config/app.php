@@ -194,4 +194,19 @@ return [
         // ...
     ])->toArray(),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Application Timeouts
+    |--------------------------------------------------------------------------
+    |
+    | These values control the timeout settings for various operations in the
+    | application, especially for API calls and long-running processes.
+    |
+    */
+
+    'timeouts' => [
+        'api_request' => env('API_REQUEST_TIMEOUT', 90),
+        'quiz_generation' => env('QUIZ_GENERATION_TIMEOUT', 120),
+    ],
+
 ];
