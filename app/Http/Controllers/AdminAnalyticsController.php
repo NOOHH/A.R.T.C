@@ -684,27 +684,42 @@ class AdminAnalyticsController extends Controller
     
     public function getStudentsList()
     {
+        // Check if user is admin or director
+        $userType = session('user_type');
+        if (!$userType || ($userType !== 'admin' && $userType !== 'director')) {
+            return response()->json(['error' => 'Access denied. Analytics is only available for admins and directors.'], 403);
+        }
+
         try {
-            $students = User::where('role', 'student')
-                ->select('id', 'name', 'student_id')
-                ->with(['registrations' => function($query) {
-                    $query->select('user_id', 'program', 'batch_number');
-                }])
+            // Use the correct database structure with students and users tables
+            $students = DB::table('students')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('enrollments', 'students.student_id', '=', 'enrollments.student_id')
+                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->select(
+                    'students.student_id as id',
+                    DB::raw("CONCAT(users.user_firstname, ' ', users.user_lastname) as name"),
+                    'students.student_id',
+                    'programs.program_name as program'
+                )
+                ->where('users.role', 'student')
+                ->groupBy('students.student_id', 'users.user_firstname', 'users.user_lastname', 'programs.program_name')
+                ->orderBy('users.user_firstname')
                 ->get()
                 ->map(function($student) {
-                    $registration = $student->registrations->first();
                     return [
                         'id' => $student->id,
                         'name' => $student->name,
                         'student_id' => $student->student_id,
-                        'program' => $registration ? $registration->program : 'N/A'
+                        'program' => $student->program ?: 'N/A'
                     ];
                 });
             
             return response()->json($students);
             
         } catch (\Exception $e) {
-            return response()->json([]);
+            Log::error('Get students list error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load students list'], 500);
         }
     }
 
