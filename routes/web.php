@@ -1357,11 +1357,18 @@ Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 
      ->name('admin.analytics.subject-report');
 
 // Board Passer Routes
-Route::post('/analytics/upload-board-passers', [AdminAnalyticsController::class, 'uploadBoardPassers']);
-Route::post('/analytics/add-board-passer', [AdminAnalyticsController::class, 'addBoardPasser']);
-Route::get('/analytics/download-template', [AdminAnalyticsController::class, 'downloadTemplate']);
-Route::get('/analytics/board-passer-stats', [AdminAnalyticsController::class, 'getBoardPasserStats']);
-Route::get('/analytics/students-list', [AdminAnalyticsController::class, 'getStudentsList']);
+Route::post('/admin/analytics/upload-board-passers', [AdminAnalyticsController::class, 'uploadBoardPassers'])
+     ->name('admin.analytics.upload-board-passers');
+Route::post('/admin/analytics/add-board-passer', [AdminAnalyticsController::class, 'addBoardPasser'])
+     ->name('admin.analytics.add-board-passer');
+Route::get('/admin/analytics/download-template', [AdminAnalyticsController::class, 'downloadTemplate'])
+     ->name('admin.analytics.download-template');
+Route::get('/admin/analytics/board-passer-stats', [AdminAnalyticsController::class, 'getBoardPasserStats'])
+     ->name('admin.analytics.board-passer-stats');
+Route::get('/admin/analytics/students-list', [AdminAnalyticsController::class, 'getStudentsList'])
+     ->name('admin.analytics.students-list');
+Route::get('/admin/analytics/export-complete', [AdminAnalyticsController::class, 'exportComplete'])
+     ->name('admin.analytics.export-complete');
 
 /*
 |--------------------------------------------------------------------------

@@ -9,7 +9,7 @@
 @endpush
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="container-fluid py-4" id="metricsSection">
     <!-- Summary Cards Row (like the image) -->
     <div class="row g-3 mb-4">
         <div class="col-md-3 col-6">
@@ -338,6 +338,16 @@
                 </div>
             </div>
         </div>
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Subject Performance</h5>
+                </div>
+                <div class="card-body p-2 overflow-auto" style="min-height:180px;max-height:240px;">
+                    <canvas id="subjectPerformanceChart" height="180" style="width:100%;max-width:100%;display:block;"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Recently Enrolled and Recent Payments -->
@@ -353,8 +363,8 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Student</th>
-                                    <th>Program</th>
-                                    <th>Enrollment Date</th>
+                                    <th>Program / Type</th>
+                                    <th>Date</th>
                                 </tr>
                             </thead>
                             <tbody id="recentlyEnrolledTable">
@@ -643,6 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadBatches();
     loadSubjects();
     loadAnalyticsData();
+    loadBoardPasserStats();
 });
 
 function initializeAnalytics() {
@@ -729,6 +740,29 @@ function loadSubjects() {
         })
         .catch(error => {
             console.error('Error loading subjects:', error);
+        });
+}
+
+function updateBoardPasserStats() {
+    loadBoardPasserStats(); // Refresh the stats display
+}
+
+function loadBoardPasserStats() {
+    fetch('/admin/analytics/board-passer-stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalPassers').textContent = data.total_passers || '0';
+            document.getElementById('totalNonPassers').textContent = data.total_non_passers || '0';
+            document.getElementById('overallPassRate').textContent = (data.pass_rate || 0) + '%';
+            document.getElementById('lastUpdated').textContent = data.last_updated || 'Never';
+        })
+        .catch(error => {
+            console.error('Error loading board passer stats:', error);
+            // Set default values on error
+            document.getElementById('totalPassers').textContent = '0';
+            document.getElementById('totalNonPassers').textContent = '0';
+            document.getElementById('overallPassRate').textContent = '0%';
+            document.getElementById('lastUpdated').textContent = 'Error loading';
         });
 }
 
@@ -923,7 +957,10 @@ function updateRecentlyEnrolledTable(data) {
                     <div class="fw-bold">${enrollment.student_name}</div>
                     <small class="text-muted">${enrollment.student_id}</small>
                 </td>
-                <td><span class="badge bg-info">${enrollment.program}</span></td>
+                <td>
+                    <div class="fw-bold">${enrollment.program}</div>
+                    <small class="text-muted"><span class="badge bg-secondary">${enrollment.enrollment_type || 'Full'}</span></small>
+                </td>
                 <td><small>${enrollment.enrollment_date}</small></td>
             `;
             tbody.appendChild(row);
@@ -1369,6 +1406,10 @@ function updateBoardPasserStats() {
     .catch(error => {
         console.error('Error updating board passer stats:', error);
     });
+}
+
+function showAlert(message, type = 'info') {
+    showNotification(message, type); // Use the same notification system
 }
 
 function showNotification(message, type = 'info') {
