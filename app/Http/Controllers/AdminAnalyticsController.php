@@ -119,6 +119,23 @@ class AdminAnalyticsController extends Controller
         }
     }
 
+    public function getPrograms()
+    {
+        try {
+            // Get programs from programs table using DB facade for reliability
+            $programs = DB::table('programs')
+                ->select('program_id as id', 'program_name as name')
+                ->where('is_archived', 0)
+                ->orderBy('program_name')
+                ->get();
+
+            return response()->json($programs);
+        } catch (\Exception $e) {
+            Log::error('Get programs error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load programs'], 500);
+        }
+    }
+
     public function getStudentDetail($id)
     {
         try {
@@ -159,10 +176,14 @@ class AdminAnalyticsController extends Controller
             $format = $request->get('format', 'pdf');
             $filters = $this->getFilters($request);
             
+            // Get table data but exclude topPerformers
+            $tableData = $this->getTableData($filters);
+            unset($tableData['topPerformers']); // Remove top performers from export
+            
             $data = [
                 'metrics' => $this->getMetrics($filters),
                 'charts' => $this->getChartData($filters),
-                'tables' => $this->getTableData($filters),
+                'tables' => $tableData,
                 'filters' => $filters,
                 'generated_at' => now()->format('Y-m-d H:i:s'),
                 'exported_by' => session('user_name') ?? 'Admin',
@@ -193,8 +214,12 @@ class AdminAnalyticsController extends Controller
                 'Completion Rate' => $data['metrics']['completionRate'] . '%',
             ],
             'top_performers' => $data['tables']['topPerformers'] ?? [],
-            'bottom_performers' => $data['tables']['bottomPerformers'] ?? [],
             'subject_breakdown' => $data['tables']['subjectBreakdown'] ?? [],
+            'recently_enrolled' => $data['tables']['recentlyEnrolled'] ?? [],
+            'recently_completed' => $data['tables']['recentlyCompleted'] ?? [],
+            'recent_payments' => $data['tables']['recentPayments'] ?? [],
+            'board_passers' => $data['tables']['boardPassers'] ?? [],
+            'batch_performance' => $data['tables']['batchPerformance'] ?? [],
             'metadata' => [
                 'Generated At' => $data['generated_at'],
                 'Exported By' => $data['exported_by'],
@@ -247,16 +272,69 @@ class AdminAnalyticsController extends Controller
                 fputcsv($file, []); // Empty row
             }
 
-            // Write bottom performers
-            if (!empty($data['tables']['bottomPerformers'])) {
-                fputcsv($file, ['STUDENTS NEEDING SUPPORT']);
-                fputcsv($file, ['Rank', 'Name', 'Score', 'Program']);
-                foreach ($data['tables']['bottomPerformers'] as $index => $student) {
+            // Write recently enrolled students
+            if (!empty($data['tables']['recentlyEnrolled'])) {
+                fputcsv($file, ['RECENTLY ENROLLED STUDENTS']);
+                fputcsv($file, ['Name', 'Email', 'Program', 'Plan', 'Enrollment Date', 'Status']);
+                foreach ($data['tables']['recentlyEnrolled'] as $student) {
                     fputcsv($file, [
-                        $index + 1,
                         $student['name'] ?? 'N/A',
-                        ($student['score'] ?? 0) . '%',
-                        $student['program'] ?? 'N/A'
+                        $student['email'] ?? 'N/A',
+                        $student['program'] ?? 'N/A',
+                        $student['plan'] ?? 'N/A',
+                        $student['enrollment_date'] ?? 'N/A',
+                        $student['status'] ?? 'N/A'
+                    ]);
+                }
+                fputcsv($file, []); // Empty row
+            }
+
+            // Write recently completed students
+            if (!empty($data['tables']['recentlyCompleted'])) {
+                fputcsv($file, ['RECENTLY COMPLETED STUDENTS']);
+                fputcsv($file, ['Name', 'Email', 'Program', 'Plan', 'Completion Date', 'Final Score']);
+                foreach ($data['tables']['recentlyCompleted'] as $student) {
+                    fputcsv($file, [
+                        $student['name'] ?? 'N/A',
+                        $student['email'] ?? 'N/A',
+                        $student['program'] ?? 'N/A',
+                        $student['plan'] ?? 'N/A',
+                        $student['completion_date'] ?? 'N/A',
+                        ($student['final_score'] ?? 0) . '%'
+                    ]);
+                }
+                fputcsv($file, []); // Empty row
+            }
+
+            // Write board passers
+            if (!empty($data['tables']['boardPassers'])) {
+                fputcsv($file, ['BOARD EXAM PASSERS']);
+                fputcsv($file, ['Student ID', 'Full Name', 'Program', 'Exam Date', 'Result', 'Rating']);
+                foreach ($data['tables']['boardPassers'] as $passer) {
+                    fputcsv($file, [
+                        $passer['student_id'] ?? 'N/A',
+                        $passer['full_name'] ?? 'N/A',
+                        $passer['program'] ?? 'N/A',
+                        $passer['exam_date'] ?? 'N/A',
+                        $passer['result'] ?? 'N/A',
+                        $passer['rating'] ? $passer['rating'] . '%' : 'N/A'
+                    ]);
+                }
+                fputcsv($file, []); // Empty row
+            }
+
+            // Write batch performance
+            if (!empty($data['tables']['batchPerformance'])) {
+                fputcsv($file, ['BATCH PERFORMANCE ANALYSIS']);
+                fputcsv($file, ['Batch', 'Number of Students', 'Average Score', 'Pass Rate', 'Completion Rate', 'Status']);
+                foreach ($data['tables']['batchPerformance'] as $batch) {
+                    fputcsv($file, [
+                        $batch['batch_name'] ?? 'N/A',
+                        $batch['student_count'] ?? 0,
+                        ($batch['average_score'] ?? 0) . '%',
+                        ($batch['pass_rate'] ?? 0) . '%',
+                        ($batch['completion_rate'] ?? 0) . '%',
+                        $batch['status'] ?? 'N/A'
                     ]);
                 }
                 fputcsv($file, []); // Empty row
@@ -590,7 +668,7 @@ class AdminAnalyticsController extends Controller
     public function addBoardPasser(Request $request)
     {
         $request->validate([
-            'student_id' => 'required|exists:users,id',
+            'student_id' => 'required|exists:students,student_id',
             'board_exam' => 'required|string|max:50',
             'exam_date' => 'required|date',
             'result' => 'required|in:PASS,FAIL',
@@ -598,6 +676,46 @@ class AdminAnalyticsController extends Controller
         ]);
         
         try {
+            // Get student name and program from database with proper joins
+            $student = DB::table('students')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('enrollments', 'students.student_id', '=', 'enrollments.student_id')
+                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->where('students.student_id', $request->student_id)
+                ->select([
+                    DB::raw("CONCAT(users.user_firstname, ' ', users.user_lastname) as name"),
+                    'students.program_name as student_program_name',
+                    'programs.program_name as enrolled_program_name'
+                ])
+                ->orderBy('enrollments.created_at', 'desc') // Get the most recent enrollment
+                ->first();
+            
+            $studentName = $student ? $student->name : 'Unknown Student';
+            
+            // Get program name with priority: enrolled program > student's program_name > null
+            $programName = '';
+            if ($student) {
+                if ($student->enrolled_program_name) {
+                    $programName = $student->enrolled_program_name;
+                } elseif ($student->student_program_name) {
+                    $programName = $student->student_program_name;
+                }
+            }
+            
+            // If still no program found, try to get it from the most recent enrollment
+            if (empty($programName)) {
+                $recentEnrollment = DB::table('enrollments')
+                    ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                    ->where('enrollments.student_id', $request->student_id)
+                    ->orderBy('enrollments.created_at', 'desc')
+                    ->select('programs.program_name')
+                    ->first();
+                
+                if ($recentEnrollment) {
+                    $programName = $recentEnrollment->program_name;
+                }
+            }
+            
             BoardPasser::updateOrCreate(
                 [
                     'student_id' => $request->student_id,
@@ -605,6 +723,8 @@ class AdminAnalyticsController extends Controller
                     'exam_year' => date('Y', strtotime($request->exam_date))
                 ],
                 [
+                    'student_name' => $studentName,
+                    'program' => $programName ?: null,
                     'exam_date' => $request->exam_date,
                     'result' => $request->result,
                     'notes' => $request->notes,
@@ -723,6 +843,63 @@ class AdminAnalyticsController extends Controller
         }
     }
 
+    public function getBoardExams()
+    {
+        // Check if user is admin or director
+        $userType = session('user_type');
+        if (!$userType || ($userType !== 'admin' && $userType !== 'director')) {
+            return response()->json(['error' => 'Access denied. Analytics is only available for admins and directors.'], 403);
+        }
+
+        try {
+            // Get distinct board exams from the database
+            $exams = DB::table('board_passers')
+                ->select('board_exam')
+                ->distinct()
+                ->whereNotNull('board_exam')
+                ->where('board_exam', '!=', '')
+                ->orderBy('board_exam')
+                ->pluck('board_exam')
+                ->toArray();
+
+            // If no exams in database, provide default options based on common programs
+            if (empty($exams)) {
+                $exams = [
+                    'NURSE' => 'Nursing Board Exam',
+                    'CPA' => 'CPA (Certified Public Accountant)',
+                    'LET' => 'LET (Licensure Examination for Teachers)',
+                    'CE' => 'CE (Civil Engineer)',
+                    'ME' => 'ME (Mechanical Engineer)',
+                    'EE' => 'EE (Electrical Engineer)',
+                    'OTHER' => 'Other'
+                ];
+            } else {
+                // Convert to associative array with display names
+                $examDisplayNames = [
+                    'NURSE' => 'Nursing Board Exam',
+                    'CPA' => 'CPA (Certified Public Accountant)',
+                    'LET' => 'LET (Licensure Examination for Teachers)',
+                    'CE' => 'CE (Civil Engineer)',
+                    'ME' => 'ME (Mechanical Engineer)',
+                    'EE' => 'EE (Electrical Engineer)',
+                    'OTHER' => 'Other'
+                ];
+                
+                $formattedExams = [];
+                foreach ($exams as $exam) {
+                    $formattedExams[$exam] = $examDisplayNames[$exam] ?? $exam;
+                }
+                $exams = $formattedExams;
+            }
+            
+            return response()->json($exams);
+            
+        } catch (\Exception $e) {
+            Log::error('Get board exams error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load board exams'], 500);
+        }
+    }
+
     private function getFilters(Request $request)
     {
         return [
@@ -749,10 +926,6 @@ class AdminAnalyticsController extends Controller
             $totalStudents = $studentsQuery->count();
             $studentsTrend = $this->calculateTrend('students', $filters);
             
-            // Average Quiz Score
-            $avgQuizScore = $this->calculateAverageQuizScore($filters);
-            $quizScoreTrend = $this->calculateTrend('quiz_score', $filters);
-            
             // Completion Rate
             $completionRate = $this->calculateCompletionRate($filters);
             $completionTrend = $this->calculateTrend('completion', $filters);
@@ -760,11 +933,9 @@ class AdminAnalyticsController extends Controller
             return [
                 'boardPassRate' => round($boardPassRate, 1),
                 'totalStudents' => $totalStudents,
-                'avgQuizScore' => round($avgQuizScore, 1),
                 'completionRate' => round($completionRate, 1),
                 'boardPassTrend' => $boardPassTrend,
                 'studentsTrend' => $studentsTrend,
-                'quizScoreTrend' => $quizScoreTrend,
                 'completionTrend' => $completionTrend
             ];
         } catch (\Exception $e) {
@@ -772,11 +943,9 @@ class AdminAnalyticsController extends Controller
             return [
                 'boardPassRate' => 0,
                 'totalStudents' => 0,
-                'avgQuizScore' => 0,
                 'completionRate' => 0,
                 'boardPassTrend' => ['value' => 0, 'period' => 'this period'],
                 'studentsTrend' => ['value' => 0, 'period' => 'this period'],
-                'quizScoreTrend' => ['value' => 0, 'period' => 'this period'],
                 'completionTrend' => ['value' => 0, 'period' => 'this period']
             ];
             
@@ -811,48 +980,54 @@ class AdminAnalyticsController extends Controller
         try {
             return [
                 'topPerformers' => $this->getTopPerformers($filters),
-                'bottomPerformers' => $this->getBottomPerformers($filters),
                 'subjectBreakdown' => $this->getSubjectBreakdown($filters),
                 'recentlyEnrolled' => $this->getRecentlyEnrolled($filters),
                 'recentPayments' => $this->getRecentPayments($filters),
-                'recentlyCompleted' => $this->getRecentlyCompleted($filters)
+                'recentlyCompleted' => $this->getRecentlyCompleted($filters),
+                'boardPassers' => $this->getBoardPassers($filters),
+                'batchPerformance' => $this->getBatchPerformance($filters)
             ];
         } catch (\Exception $e) {
             Log::error('Table data error: ' . $e->getMessage());
             return [
                 'topPerformers' => [],
-                'bottomPerformers' => [],
                 'subjectBreakdown' => [],
                 'recentlyEnrolled' => [],
                 'recentPayments' => [],
-                'recentlyCompleted' => []
+                'recentlyCompleted' => [],
+                'boardPassers' => [],
+                'batchPerformance' => []
             ];
         }
     }
 
     private function buildStudentsQuery($filters)
     {
-        $query = User::where('role', 'student');
+        $query = DB::table('students')
+            ->join('users', 'students.user_id', '=', 'users.user_id')
+            ->leftJoin('enrollments', 'students.student_id', '=', 'enrollments.student_id')
+            ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+            ->where('users.role', 'student');
 
         if (!empty($filters['year'])) {
-            $query->whereYear('created_at', $filters['year']);
+            $query->whereYear('enrollments.created_at', $filters['year']);
         }
 
         if (!empty($filters['month'])) {
-            $query->whereMonth('created_at', $filters['month']);
+            $query->whereMonth('enrollments.created_at', $filters['month']);
         }
 
         if (!empty($filters['program'])) {
-            $query->whereHas('registration', function($q) use ($filters) {
-                $q->where('enrollment_type', $filters['program']);
-            });
+            // Map program filter to the actual program names
+            if ($filters['program'] === 'full') {
+                $query->where('programs.program_name', 'LIKE', '%Full%');
+            } elseif ($filters['program'] === 'modular') {
+                $query->where('programs.program_name', 'LIKE', '%Modular%');
+            }
         }
 
         if (!empty($filters['batch'])) {
-            // Assuming there's a batch relationship - adjust as needed
-            $query->whereHas('enrollment', function($q) use ($filters) {
-                $q->where('batch_id', $filters['batch']);
-            });
+            $query->where('enrollments.batch_id', $filters['batch']);
         }
 
         return $query;
@@ -861,17 +1036,31 @@ class AdminAnalyticsController extends Controller
     private function calculateBoardPassRate($filters)
     {
         try {
-            // Mock calculation - you'll need to implement based on your actual board exam results
+            // Check if we have actual student data
             $studentsQuery = $this->buildStudentsQuery($filters);
             $totalStudents = $studentsQuery->count();
             
-            if ($totalStudents == 0) return 88; // Default fallback
+            // If no students, return 0 instead of mock data
+            if ($totalStudents == 0) return 0;
             
-            // For demo purposes, using a mock pass rate
-            return 88.5; // Mock board pass rate
+            // Check for actual board pass data
+            if (DB::getSchemaBuilder()->hasTable('board_passers')) {
+                $passedStudents = DB::table('board_passers')
+                    ->where('result', 'PASS')
+                    ->count();
+                    
+                $totalBoardPassers = DB::table('board_passers')->count();
+                
+                if ($totalBoardPassers > 0) {
+                    return ($passedStudents / $totalBoardPassers) * 100;
+                }
+            }
+            
+            // If no board pass data available, return 0
+            return 0;
         } catch (\Exception $e) {
             Log::error('Board pass rate calculation error: ' . $e->getMessage());
-            return 88; // Default fallback
+            return 0; // Return 0 instead of fake data
         }
     }
 
@@ -950,10 +1139,10 @@ class AdminAnalyticsController extends Controller
                 }
             }
             
-            return $avgScore ?? 78.5; // Default fallback with realistic score
+            return $avgScore ?? 0; // Return 0 when no data instead of fake score
         } catch (\Exception $e) {
             Log::error('Average quiz score calculation error: ' . $e->getMessage());
-            return 78.5; // Default fallback with realistic score
+            return 0; // Return 0 instead of fake data
         }
     }
 
@@ -1033,15 +1222,15 @@ class AdminAnalyticsController extends Controller
     private function calculateTrend($metric, $filters)
     {
         try {
-            // Mock trend calculation - implement based on your needs
-            $trends = [
-                'board_pass' => ['value' => 5.2, 'period' => 'from last period'],
-                'students' => ['value' => 12, 'period' => 'this month'],
-                'quiz_score' => ['value' => 3.1, 'period' => 'improvement'],
-                'completion' => ['value' => 7.8, 'period' => 'this quarter']
-            ];
+            // First check if we have any students - if not, return zero trends
+            $studentCount = DB::table('students')->count();
+            if ($studentCount == 0) {
+                return ['value' => 0, 'period' => 'no data available'];
+            }
             
-            return $trends[$metric] ?? ['value' => 0, 'period' => 'this period'];
+            // TODO: Implement actual trend calculation based on historical data
+            // For now, return neutral trend when students exist but no historical data
+            return ['value' => 0, 'period' => 'this period'];
         } catch (\Exception $e) {
             Log::error('Trend calculation error: ' . $e->getMessage());
             return ['value' => 0, 'period' => 'this period'];
@@ -1118,10 +1307,10 @@ class AdminAnalyticsController extends Controller
                 $data[] = $item->count;
             }
             
-            // Add fallback data if no results
+            // Return empty data if no results instead of fake data
             if (empty($labels)) {
-                $labels = ['Full Program', 'Modular'];
-                $data = [60, 40];
+                $labels = [];
+                $data = [];
             }
             
             return [
@@ -1130,7 +1319,7 @@ class AdminAnalyticsController extends Controller
             ];
         } catch (\Exception $e) {
             Log::error('Program distribution data error: ' . $e->getMessage());
-            return ['labels' => ['Full Program', 'Modular'], 'data' => [60, 40]];
+            return ['labels' => [], 'data' => []];
         }
     }
 
@@ -1171,9 +1360,9 @@ class AdminAnalyticsController extends Controller
                     }
                 }
                 
-                // Use mock data if no real data
+                // Don't use mock data - use 0 if no real data
                 if ($performance == 0) {
-                    $performance = rand(70, 95);
+                    $performance = 0;
                 }
                 
                 $data[] = $performance;
@@ -1192,15 +1381,48 @@ class AdminAnalyticsController extends Controller
     private function getProgressDistributionData($filters)
     {
         try {
-            $labels = ['0-25%', '26-50%', '51-75%', '76-100%'];
+            // Get actual student counts by program instead of fake progress data
+            $studentCount = DB::table('students')->count();
+            if ($studentCount == 0) {
+                return [
+                    'labels' => [],
+                    'data' => []
+                ];
+            }
             
-            // Mock data - implement actual progress calculation
-            $data = [
-                rand(5, 15),   // 0-25%
-                rand(10, 25),  // 26-50%
-                rand(20, 40),  // 51-75%
-                rand(30, 50)   // 76-100%
-            ];
+            // Get student distribution by program
+            $query = DB::table('students')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('enrollments', 'students.student_id', '=', 'enrollments.student_id')
+                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->where('users.role', 'student');
+                
+            // Apply filters
+            if (!empty($filters['year'])) {
+                $query->whereYear('enrollments.created_at', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $query->whereMonth('enrollments.created_at', $filters['month']);
+            }
+            
+            $distribution = $query->select('programs.program_name', DB::raw('count(DISTINCT students.student_id) as student_count'))
+                ->groupBy('programs.program_name')
+                ->get();
+            
+            $labels = [];
+            $data = [];
+            
+            foreach ($distribution as $item) {
+                $programName = $item->program_name ?? 'No Program';
+                $labels[] = $programName;
+                $data[] = $item->student_count;
+            }
+            
+            // If no program-based distribution, show total student count
+            if (empty($labels)) {
+                $labels = ['Total Students'];
+                $data = [$studentCount];
+            }
             
             return [
                 'labels' => $labels,
@@ -1215,14 +1437,25 @@ class AdminAnalyticsController extends Controller
     private function getBatchPerformanceData($filters)
     {
         try {
-            $batches = Batch::take(10)->get();
+            // Check if batches table exists and if we have student data
+            if (!DB::getSchemaBuilder()->hasTable('batches')) {
+                return ['labels' => [], 'data' => []];
+            }
+            
+            $studentCount = DB::table('students')->count();
+            if ($studentCount == 0) {
+                return ['labels' => [], 'data' => []];
+            }
+            
+            $batches = DB::table('batches')->take(10)->get();
             
             $labels = [];
             $data = [];
             
             foreach ($batches as $batch) {
-                $labels[] = $batch->batch_name;
-                $data[] = rand(75, 95); // Mock performance data
+                $labels[] = $batch->batch_name ?? 'Unknown Batch';
+                // TODO: Calculate actual performance data
+                $data[] = 0; // Return 0 instead of fake data
             }
             
             return [
@@ -1263,50 +1496,30 @@ class AdminAnalyticsController extends Controller
         }
     }
 
-    private function getBottomPerformers($filters)
-    {
-        try {
-            $students = $this->buildStudentsQuery($filters)
-                ->with('registration')
-                ->take(5)
-                ->get();
-            
-            $performers = [];
-            
-            foreach ($students as $student) {
-                $performers[] = [
-                    'id' => $student->user_id,
-                    'name' => ($student->user_firstname ?? '') . ' ' . ($student->user_lastname ?? ''),
-                    'email' => $student->email,
-                    'program' => $student->registration->enrollment_type ?? 'N/A',
-                    'score' => rand(40, 65), // Mock score
-                    'issues' => 'Low Attendance' // Mock issue
-                ];
-            }
-            
-            return $performers;
-        } catch (\Exception $e) {
-            Log::error('Bottom performers data error: ' . $e->getMessage());
-            return [];
-        }
-    }
+
 
     private function getSubjectBreakdown($filters)
     {
         try {
-            $subjects = Module::take(10)->get();
+            // First check if we have any students
+            $studentCount = DB::table('students')->count();
+            if ($studentCount == 0) {
+                return [];
+            }
+            
+            $subjects = DB::table('modules')->take(10)->get();
             
             $breakdown = [];
             
             foreach ($subjects as $subject) {
                 $breakdown[] = [
-                    'id' => $subject->modules_id,
+                    'id' => $subject->modules_id ?? $subject->module_id,
                     'name' => $subject->module_name,
-                    'totalStudents' => rand(50, 200),
-                    'avgScore' => rand(70, 95),
-                    'passRate' => rand(75, 95),
-                    'difficulty' => ['Easy', 'Medium', 'Hard'][rand(0, 2)],
-                    'trend' => rand(-5, 10)
+                    'totalStudents' => 0, // TODO: Calculate actual student count per module
+                    'avgScore' => 0,     // TODO: Calculate actual average score
+                    'passRate' => 0,     // TODO: Calculate actual pass rate  
+                    'difficulty' => 'Unknown', // TODO: Calculate difficulty from data
+                    'trend' => 0         // TODO: Calculate actual trend
                 ];
             }
             
@@ -1339,8 +1552,10 @@ class AdminAnalyticsController extends Controller
                 ->select([
                     'users.user_firstname',
                     'users.user_lastname', 
+                    'users.email',
                     'students.student_id',
                     'programs.program_name',
+                    'enrollments.enrollment_type',
                     'enrollments.created_at as enrollment_date',
                     'enrollments.enrollment_status'
                 ])
@@ -1357,9 +1572,9 @@ class AdminAnalyticsController extends Controller
             }
             if (!empty($filters['program'])) {
                 if ($filters['program'] === 'full') {
-                    $query->where('enrollments.enrollment_type', 'full');
+                    $query->where('enrollments.enrollment_type', 'Full');
                 } elseif ($filters['program'] === 'modular') {
-                    $query->where('enrollments.enrollment_type', 'modular');
+                    $query->where('enrollments.enrollment_type', 'Modular');
                 }
             }
 
@@ -1368,9 +1583,11 @@ class AdminAnalyticsController extends Controller
             $result = [];
             foreach ($enrollments as $enrollment) {
                 $result[] = [
-                    'student_name' => trim(($enrollment->user_firstname ?? '') . ' ' . ($enrollment->user_lastname ?? '')),
+                    'name' => trim(($enrollment->user_firstname ?? '') . ' ' . ($enrollment->user_lastname ?? '')),
+                    'email' => $enrollment->email ?? 'N/A',
                     'student_id' => $enrollment->student_id,
                     'program' => $enrollment->program_name ?? 'Unknown Program',
+                    'plan' => $enrollment->enrollment_type ?? 'N/A',
                     'enrollment_date' => $enrollment->enrollment_date ? 
                         Carbon::parse($enrollment->enrollment_date)->format('M d, Y') : 'N/A',
                     'status' => ucfirst($enrollment->enrollment_status ?? 'pending')
@@ -1387,45 +1604,54 @@ class AdminAnalyticsController extends Controller
     private function getRecentPayments($filters)
     {
         try {
-            // Get recent payments from payments table
-            $query = DB::table('payments')
-                ->join('enrollments', 'payments.enrollment_id', '=', 'enrollments.enrollment_id')
-                ->join('students', 'enrollments.student_id', '=', 'students.student_id')
-                ->join('users', 'students.user_id', '=', 'users.user_id')
-                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
-                ->select([
-                    'users.user_firstname',
-                    'users.user_lastname',
-                    'students.student_id',
-                    'programs.program_name',
-                    'payments.amount',
-                    'payments.payment_date',
-                    'payments.payment_status'
-                ])
-                ->where('payments.payment_status', '!=', 'failed')
-                ->orderBy('payments.payment_date', 'desc')
-                ->limit(10);
-
+            // Use raw query to avoid collation issues
+            $sql = "
+                SELECT p.student_id, p.amount, p.created_at as payment_date,
+                       p.payment_status, p.payment_method,
+                       u.user_firstname, u.user_lastname,
+                       pr.program_name
+                FROM payments p
+                LEFT JOIN students s ON CAST(p.student_id AS CHAR) = CAST(s.student_id AS CHAR)
+                LEFT JOIN users u ON s.user_id = u.user_id
+                LEFT JOIN enrollments e ON CAST(s.student_id AS CHAR) = CAST(e.student_id AS CHAR)
+                LEFT JOIN programs pr ON e.program_id = pr.program_id
+                WHERE p.payment_status IN ('paid', 'approved', 'verified')
+            ";
+            
             // Apply filters
+            $params = [];
             if (!empty($filters['year'])) {
-                $query->whereYear('payments.payment_date', $filters['year']);
+                $sql .= " AND YEAR(p.created_at) = ?";
+                $params[] = $filters['year'];
             }
             if (!empty($filters['month'])) {
-                $query->whereMonth('payments.payment_date', $filters['month']);
+                $sql .= " AND MONTH(p.created_at) = ?";
+                $params[] = $filters['month'];
             }
-
-            $payments = $query->get();
+            
+            $sql .= " ORDER BY p.created_at DESC LIMIT 10";
+            
+            $payments = DB::select($sql, $params);
 
             $result = [];
             foreach ($payments as $payment) {
+                $studentName = trim(($payment->user_firstname ?? '') . ' ' . ($payment->user_lastname ?? ''));
+                $programName = $payment->program_name ?? 'Unknown Program';
+                
+                // Clean up weird names or use student ID if name is missing/invalid
+                if (empty($studentName) || preg_match('/^\d+\s+\d+$/', $studentName)) {
+                    $studentName = 'Student ' . $payment->student_id;
+                }
+                
                 $result[] = [
-                    'student_name' => trim(($payment->user_firstname ?? '') . ' ' . ($payment->user_lastname ?? '')),
+                    'student_name' => $studentName,
                     'student_id' => $payment->student_id,
-                    'program' => $payment->program_name ?? 'Unknown Program',
+                    'program' => $programName,
                     'amount' => number_format($payment->amount ?? 0, 2),
                     'payment_date' => $payment->payment_date ? 
                         Carbon::parse($payment->payment_date)->format('M d, Y') : 'N/A',
-                    'status' => ucfirst($payment->payment_status ?? 'pending')
+                    'status' => ucfirst($payment->payment_status ?? 'pending'),
+                    'payment_method' => ucfirst($payment->payment_method ?? 'N/A')
                 ];
             }
 
@@ -1433,37 +1659,29 @@ class AdminAnalyticsController extends Controller
         } catch (\Exception $e) {
             Log::error('Recent payments data error: ' . $e->getMessage());
             
-            // Fallback: try to get from student_payment_history or other payment tables
+            // Simple fallback - just get payments without student info
             try {
-                if (DB::getSchemaBuilder()->hasTable('payment_history')) {
-                    $query = DB::table('payment_history')
-                        ->join('students', 'payment_history.student_id', '=', 'students.student_id')
-                        ->join('users', 'students.user_id', '=', 'users.user_id')
-                        ->select([
-                            'users.user_firstname',
-                            'users.user_lastname',
-                            'students.student_id',
-                            'payment_history.amount',
-                            'payment_history.created_at as payment_date'
-                        ])
-                        ->orderBy('payment_history.created_at', 'desc')
-                        ->limit(10);
-
-                    $payments = $query->get();
-                    $result = [];
-                    foreach ($payments as $payment) {
-                        $result[] = [
-                            'student_name' => trim(($payment->user_firstname ?? '') . ' ' . ($payment->user_lastname ?? '')),
-                            'student_id' => $payment->student_id,
-                            'program' => 'N/A',
-                            'amount' => number_format($payment->amount ?? 0, 2),
-                            'payment_date' => $payment->payment_date ? 
-                                Carbon::parse($payment->payment_date)->format('M d, Y') : 'N/A',
-                            'status' => 'Completed'
-                        ];
-                    }
-                    return $result;
+                $payments = DB::table('payments')
+                    ->select(['student_id', 'amount', 'created_at as payment_date', 'payment_status'])
+                    ->whereIn('payment_status', ['paid', 'approved', 'verified'])
+                    ->orderBy('created_at', 'desc')
+                    ->limit(10)
+                    ->get();
+                
+                $result = [];
+                foreach ($payments as $payment) {
+                    $result[] = [
+                        'student_name' => 'Student ' . $payment->student_id,
+                        'student_id' => $payment->student_id,
+                        'program' => 'N/A',
+                        'amount' => number_format($payment->amount ?? 0, 2),
+                        'payment_date' => $payment->payment_date ? 
+                            Carbon::parse($payment->payment_date)->format('M d, Y') : 'N/A',
+                        'status' => ucfirst($payment->payment_status ?? 'pending'),
+                        'payment_method' => 'N/A'
+                    ];
                 }
+                return $result;
             } catch (\Exception $fallbackE) {
                 Log::error('Payment fallback error: ' . $fallbackE->getMessage());
             }
@@ -1475,73 +1693,298 @@ class AdminAnalyticsController extends Controller
     private function getRecentlyCompleted($filters)
     {
         try {
-            // Get recently completed enrollments/modules
-            $query = DB::table('enrollments')
-                ->join('students', 'enrollments.student_id', '=', 'students.student_id')
+            $studentCompletions = [];
+            
+            // Get recent module completions with simplified joins
+            $moduleCompletions = DB::table('module_completions')
+                ->join('students', 'module_completions.student_id', '=', 'students.student_id')
                 ->join('users', 'students.user_id', '=', 'users.user_id')
-                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->leftJoin('modules', 'module_completions.modules_id', '=', 'modules.modules_id')
                 ->select([
                     'users.user_firstname',
                     'users.user_lastname',
+                    'users.email',
                     'students.student_id',
-                    'programs.program_name',
-                    'enrollments.updated_at as completion_date'
+                    'students.program_name',
+                    'students.enrollment_type',
+                    'modules.module_name',
+                    'module_completions.completed_at as completion_date'
                 ])
-                ->where('enrollments.enrollment_status', 'completed')
-                ->orderBy('enrollments.updated_at', 'desc')
-                ->limit(10);
+                ->whereNotNull('module_completions.completed_at');
 
             // Apply filters
             if (!empty($filters['year'])) {
-                $query->whereYear('enrollments.updated_at', $filters['year']);
+                $moduleCompletions->whereYear('module_completions.completed_at', $filters['year']);
             }
             if (!empty($filters['month'])) {
-                $query->whereMonth('enrollments.updated_at', $filters['month']);
+                $moduleCompletions->whereMonth('module_completions.completed_at', $filters['month']);
+            }
+            if (!empty($filters['program'])) {
+                $moduleCompletions->where('students.enrollment_type', $filters['program']);
             }
 
-            $completions = $query->get();
+            $moduleCompletions = $moduleCompletions->orderBy('module_completions.completed_at', 'desc')
+                ->get();
 
-            // If no completed enrollments, try module completions
-            if ($completions->isEmpty() && DB::getSchemaBuilder()->hasTable('module_completions')) {
-                $query = DB::table('module_completions')
-                    ->join('students', 'module_completions.student_id', '=', 'students.student_id')
-                    ->join('users', 'students.user_id', '=', 'users.user_id')
-                    ->leftJoin('modules', 'module_completions.modules_id', '=', 'modules.modules_id')
-                    ->select([
-                        'users.user_firstname',
-                        'users.user_lastname',
-                        'students.student_id',
-                        'modules.module_name as program_name',
-                        'module_completions.completed_at as completion_date'
-                    ])
-                    ->whereNotNull('module_completions.completed_at')
-                    ->orderBy('module_completions.completed_at', 'desc')
-                    ->limit(10);
-
-                if (!empty($filters['year'])) {
-                    $query->whereYear('module_completions.completed_at', $filters['year']);
+            // Group module completions by student
+            foreach ($moduleCompletions as $completion) {
+                $studentId = $completion->student_id;
+                $studentName = trim(($completion->user_firstname ?? '') . ' ' . ($completion->user_lastname ?? ''));
+                
+                if (!isset($studentCompletions[$studentId])) {
+                    $studentCompletions[$studentId] = [
+                        'name' => $studentName ?: $studentId,
+                        'email' => $completion->email ?? 'N/A',
+                        'student_id' => $studentId,
+                        'program' => $completion->program_name ?? 'N/A',
+                        'plan' => $completion->enrollment_type ?? 'N/A',
+                        'completion_date' => $completion->completion_date ? 
+                            Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A',
+                        'modules' => [],
+                        'courses' => [],
+                        'last_completion' => $completion->completion_date
+                    ];
                 }
-                if (!empty($filters['month'])) {
-                    $query->whereMonth('module_completions.completed_at', $filters['month']);
+                
+                if ($completion->module_name) {
+                    $studentCompletions[$studentId]['modules'][] = $completion->module_name;
                 }
-
-                $completions = $query->get();
+                
+                // Update last completion date
+                if ($completion->completion_date > $studentCompletions[$studentId]['last_completion']) {
+                    $studentCompletions[$studentId]['last_completion'] = $completion->completion_date;
+                    $studentCompletions[$studentId]['completion_date'] = Carbon::parse($completion->completion_date)->format('M d, Y');
+                }
             }
+
+            // Get recent course completions with simplified joins
+            $courseCompletions = DB::table('course_completions')
+                ->join('students', 'course_completions.student_id', '=', 'students.student_id')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('courses', 'course_completions.course_id', '=', 'courses.subject_id')
+                ->select([
+                    'users.user_firstname',
+                    'users.user_lastname',
+                    'users.email',
+                    'students.student_id',
+                    'students.program_name',
+                    'students.enrollment_type',
+                    'courses.subject_name as course_name',
+                    'course_completions.completed_at as completion_date'
+                ])
+                ->whereNotNull('course_completions.completed_at');
+
+            // Apply filters
+            if (!empty($filters['year'])) {
+                $courseCompletions->whereYear('course_completions.completed_at', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $courseCompletions->whereMonth('course_completions.completed_at', $filters['month']);
+            }
+            if (!empty($filters['program'])) {
+                $courseCompletions->where('students.enrollment_type', $filters['program']);
+            }
+
+            $courseCompletions = $courseCompletions->orderBy('course_completions.completed_at', 'desc')
+                ->get();
+
+            // Group course completions by student
+            foreach ($courseCompletions as $completion) {
+                $studentId = $completion->student_id;
+                $studentName = trim(($completion->user_firstname ?? '') . ' ' . ($completion->user_lastname ?? ''));
+                
+                if (!isset($studentCompletions[$studentId])) {
+                    $studentCompletions[$studentId] = [
+                        'name' => $studentName ?: $studentId,
+                        'email' => $completion->email ?? 'N/A',
+                        'student_id' => $studentId,
+                        'program' => $completion->program_name ?? 'N/A',
+                        'plan' => $completion->enrollment_type ?? 'N/A',
+                        'completion_date' => $completion->completion_date ? 
+                            Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A',
+                        'modules' => [],
+                        'courses' => [],
+                        'last_completion' => $completion->completion_date
+                    ];
+                }
+                
+                if ($completion->course_name) {
+                    $studentCompletions[$studentId]['courses'][] = $completion->course_name;
+                }
+                
+                // Update last completion date
+                if ($completion->completion_date > $studentCompletions[$studentId]['last_completion']) {
+                    $studentCompletions[$studentId]['last_completion'] = $completion->completion_date;
+                    $studentCompletions[$studentId]['completion_date'] = Carbon::parse($completion->completion_date)->format('M d, Y');
+                }
+            }
+
+            // Convert to final format
+            $result = [];
+            foreach ($studentCompletions as $student) {
+                $completedItems = [];
+                
+                // Add modules
+                if (!empty($student['modules'])) {
+                    $modules = array_unique($student['modules']);
+                    $completedItems[] = 'Modules: ' . implode(', ', $modules);
+                }
+                
+                // Add courses
+                if (!empty($student['courses'])) {
+                    $courses = array_unique($student['courses']);
+                    $completedItems[] = 'Courses: ' . implode(', ', $courses);
+                }
+                
+                $result[] = [
+                    'name' => $student['name'],
+                    'email' => $student['email'],
+                    'student_id' => $student['student_id'],
+                    'program' => $student['program'],
+                    'plan' => $student['plan'],
+                    'completion_date' => $student['completion_date'],
+                    'final_score' => !empty($completedItems) ? implode(' | ', $completedItems) : 'No completions'
+                ];
+            }
+
+            // Sort by completion date and limit to 10 most recent
+            usort($result, function($a, $b) {
+                $dateA = $a['completion_date'] !== 'N/A' ? strtotime($a['completion_date']) : 0;
+                $dateB = $b['completion_date'] !== 'N/A' ? strtotime($b['completion_date']) : 0;
+                return $dateB - $dateA;
+            });
+
+            return array_slice($result, 0, 10);
+            
+        } catch (\Exception $e) {
+            Log::error('Recently completed data error: ' . $e->getMessage());
+            return [];
+            return array_slice($result, 0, 10);
+            
+        } catch (\Exception $e) {
+            Log::error('Recently completed data error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getBoardPassers($filters)
+    {
+        try {
+            // Query board_passers table directly since it contains all the data we need
+            $query = DB::table('board_passers')
+                ->select([
+                    'student_id',
+                    'student_name',
+                    'program',
+                    'board_exam',
+                    'exam_date',
+                    'exam_year',
+                    'result',
+                    'rating'
+                ])
+                ->orderBy('exam_date', 'desc')
+                ->limit(20);
+
+            // Apply filters only if they exist
+            if (!empty($filters['year'])) {
+                $query->whereYear('exam_date', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $query->whereMonth('exam_date', $filters['month']);
+            }
+
+            $passers = $query->get();
 
             $result = [];
-            foreach ($completions as $completion) {
+            foreach ($passers as $passer) {
+                // Get student name
+                $studentName = $passer->student_name ?: $passer->student_id;
+                
+                // Get program name
+                $programName = $passer->program ?: 'N/A';
+                
+                // Get exam year
+                $examYear = $passer->exam_year ?: 'N/A';
+
                 $result[] = [
-                    'student_name' => trim(($completion->user_firstname ?? '') . ' ' . ($completion->user_lastname ?? '')),
-                    'student_id' => $completion->student_id,
-                    'program' => $completion->program_name ?? 'Unknown Program',
-                    'completion_date' => $completion->completion_date ? 
-                        Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A'
+                    'student_id' => $passer->student_id,
+                    'full_name' => $studentName,
+                    'program_name' => $programName,
+                    'board_exam' => $passer->board_exam,
+                    'exam_date' => $passer->exam_date ? 
+                        Carbon::parse($passer->exam_date)->format('M d, Y') : 'N/A',
+                    'exam_year' => $examYear,
+                    'result' => $passer->result,
+                    'rating' => $passer->rating ? number_format($passer->rating, 1) : 'N/A'
                 ];
             }
 
             return $result;
         } catch (\Exception $e) {
-            Log::error('Recently completed data error: ' . $e->getMessage());
+            Log::error('Board passers data error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getBatchPerformance($filters)
+    {
+        try {
+            // First check if we have actual student data
+            $studentCount = DB::table('students')->count();
+            $enrollmentCount = DB::table('enrollments')->count();
+            
+            // If no students or enrollments, return empty data
+            if ($studentCount == 0 || $enrollmentCount == 0) {
+                return [];
+            }
+            
+            // Check if batches table exists
+            if (!DB::getSchemaBuilder()->hasTable('batches')) {
+                // No batches table and no students - return empty
+                return [];
+            }
+
+            $query = DB::table('batches')
+                ->leftJoin('enrollments', 'batches.batch_id', '=', 'enrollments.batch_id')
+                ->leftJoin('students', 'enrollments.student_id', '=', 'students.student_id')
+                ->select([
+                    'batches.batch_name',
+                    'batches.batch_id',
+                    DB::raw('COUNT(DISTINCT enrollments.student_id) as student_count'),
+                    DB::raw('AVG(enrollments.progress_percentage) as average_score'),
+                    DB::raw('COUNT(CASE WHEN enrollments.enrollment_status = "completed" THEN 1 END) * 100.0 / COUNT(DISTINCT enrollments.student_id) as completion_rate'),
+                    DB::raw('COUNT(CASE WHEN enrollments.progress_percentage >= 75 THEN 1 END) * 100.0 / COUNT(DISTINCT enrollments.student_id) as pass_rate'),
+                    'batches.status'
+                ])
+                ->groupBy('batches.batch_id', 'batches.batch_name', 'batches.status')
+                ->orderBy('batches.batch_name')
+                ->limit(15);
+
+            // Apply filters
+            if (!empty($filters['year'])) {
+                $query->whereYear('enrollments.created_at', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $query->whereMonth('enrollments.created_at', $filters['month']);
+            }
+
+            $batches = $query->get();
+
+            $result = [];
+            foreach ($batches as $batch) {
+                $result[] = [
+                    'batch_name' => $batch->batch_name ?? 'Unknown Batch',
+                    'student_count' => $batch->student_count ?? 0,
+                    'average_score' => round($batch->average_score ?? 0, 1),
+                    'pass_rate' => round($batch->pass_rate ?? 0, 1),
+                    'completion_rate' => round($batch->completion_rate ?? 0, 1),
+                    'status' => $batch->status ?? 'Active'
+                ];
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Batch performance data error: ' . $e->getMessage());
             return [];
         }
     }

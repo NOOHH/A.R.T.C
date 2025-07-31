@@ -37,18 +37,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-6">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-center align-items-center mb-2">
-                        <span class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-bar-chart-line fs-5"></i></span>
-                    </div>
-                    <div class="fw-bold fs-4" id="avgQuizScore">--%</div>
-                    <div class="text-muted small">Avg Quiz Score</div>
-                    <div class="text-success small" id="quizScoreTrend"><i class="bi bi-arrow-up"></i> +3.1% improvement</div>
-                </div>
-            </div>
-        </div>
+
         <div class="col-md-3 col-6">
             <div class="card shadow-sm text-center h-100">
                 <div class="card-body p-3">
@@ -150,6 +139,25 @@
                                 <button type="button" class="btn btn-outline-primary" onclick="refreshData()" title="Refresh Data">
                                     <i class="bi bi-arrow-clockwise me-1"></i>Refresh
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Management Tools (Admin Only) -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card border border-info shadow-sm">
+                        <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1"><i class="bi bi-gear me-2"></i>Management Tools</h6>
+                                <p class="text-muted small mb-0">Access data management and specialized interfaces.</p>
+                            </div>
+                            <div class="btn-group ms-auto">
+                                <a href="{{ route('admin.board-passers.index') }}" class="btn btn-info" title="Manage Board Exam Passers">
+                                    <i class="bi bi-trophy me-1"></i>Manage Board Passers
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -292,14 +300,6 @@
         </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div class="d-flex justify-content-center align-items-center my-4" id="loadingSpinner" style="display:none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <span class="ms-3">Loading analytics data...</span>
-    </div>
-
     <!-- Charts Section -->
     <div class="row g-4 mb-4">
         <div class="col-xl-8">
@@ -332,7 +332,7 @@
         <div class="col-xl-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-list-task me-2"></i>Student Progress Distribution</h5>
+                    <h5 class="mb-0"><i class="bi bi-list-task me-2"></i>Number of Students</h5>
                 </div>
                 <div class="card-body p-2 overflow-auto" style="min-height:180px;max-height:240px;">
                     <canvas id="progressDistributionChart" height="180" style="width:100%;max-width:100%;display:block;"></canvas>
@@ -355,6 +355,7 @@
                                 <tr>
                                     <th>Student</th>
                                     <th>Program</th>
+                                    <th>Plan</th>
                                     <th>Enrollment Date</th>
                                 </tr>
                             </thead>
@@ -406,8 +407,11 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Student</th>
+                                    <th>Email</th>
                                     <th>Program</th>
+                                    <th>Plan</th>
                                     <th>Completion Date</th>
+                                    <th>Final Score</th>
                                 </tr>
                             </thead>
                             <tbody id="recentlyCompletedTable">
@@ -418,14 +422,15 @@
                 </div>
             </div>
         </div>
-        <!-- Students Needing Attention (unchanged) -->
+
+        <!-- Board Exam Passers Section -->
         <div class="col-xl-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header d-flex justify-content-between align-items-center bg-light">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Students Needing Attention</h5>
-                    <button class="btn btn-sm btn-outline-warning" onclick="viewAllStudents('bottom')">
-                        View All <i class="bi bi-arrow-right ms-1"></i>
-                    </button>
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Board Exam Passers</h5>
+                    <a href="{{ route('admin.board-passers.index') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-gear me-1"></i>Manage
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -434,12 +439,12 @@
                                 <tr>
                                     <th>Student</th>
                                     <th>Program</th>
-                                    <th>Score</th>
-                                    <th>Issues</th>
-                                    <th>Action</th>
+                                    <th>Board Exam</th>
+                                    <th>Result</th>
+                                    <th>Year</th>
                                 </tr>
                             </thead>
-                            <tbody id="bottomPerformersTable">
+                            <tbody id="boardPassersTable">
                                 <!-- Data will be populated via AJAX -->
                             </tbody>
                         </table>
@@ -448,6 +453,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Batch Performance Analysis -->
     <div class="card my-4" style="max-width:900px;margin:auto;min-height:180px;max-height:260px;">
@@ -516,13 +522,7 @@
                             <label for="boardExam" class="form-label">Board Exam Type</label>
                             <select class="form-select" id="boardExam" name="board_exam" required>
                                 <option value="">Select Exam</option>
-                                <option value="CPA">CPA (Certified Public Accountant)</option>
-                                <option value="LET">LET (Licensure Examination for Teachers)</option>
-                                <option value="CE">CE (Civil Engineer)</option>
-                                <option value="ME">ME (Mechanical Engineer)</option>
-                                <option value="EE">EE (Electrical Engineer)</option>
-                                <option value="NURSE">Nursing Board Exam</option>
-                                <option value="OTHER">Other</option>
+                                <!-- Options will be loaded dynamically from programs table -->
                             </select>
                         </div>
                         <div class="mb-3" id="otherExamDiv" style="display: none;">
@@ -580,13 +580,7 @@
                                     <label for="manualBoardExam" class="form-label">Board Exam</label>
                                     <select class="form-select" id="manualBoardExam" name="board_exam" required>
                                         <option value="">Select Exam</option>
-                                        <option value="CPA">CPA (Certified Public Accountant)</option>
-                                        <option value="LET">LET (Licensure Examination for Teachers)</option>
-                                        <option value="CE">CE (Civil Engineer)</option>
-                                        <option value="ME">ME (Mechanical Engineer)</option>
-                                        <option value="EE">EE (Electrical Engineer)</option>
-                                        <option value="NURSE">Nursing Board Exam</option>
-                                        <option value="OTHER">Other</option>
+                                        <!-- Options will be loaded dynamically from programs table -->
                                     </select>
                                 </div>
                             </div>
@@ -696,9 +690,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if required elements exist
     const requiredElements = [
         'yearFilter', 'monthFilter', 'programFilter', 'batchFilter', 'subjectFilter',
-        'boardPassRate', 'totalStudents', 'avgQuizScore', 'completionRate',
-        'recentlyEnrolledTable', 'recentPaymentsTable', 'recentlyCompletedTable',
-        'bottomPerformersTable', 'loadingSpinner'
+        'boardPassRate', 'totalStudents', 'completionRate',
+        'recentlyEnrolledTable', 'recentPaymentsTable', 'recentlyCompletedTable', 'boardPassersTable'
     ];
     
     let missingElements = [];
@@ -743,8 +736,91 @@ function initializeAnalytics() {
     initializeProgressChart();
     initializeBatchChart();
     
+    // Load programs for board exam dropdowns
+    loadPrograms();
+    
     // Set up event listeners
     setupEventListeners();
+}
+
+function loadPrograms() {
+    console.log('Loading programs from API...');
+    fetch('/admin/analytics/programs')
+        .then(response => {
+            console.log('Programs API response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(programs => {
+            console.log('Programs received:', programs);
+            const boardExamSelect = document.getElementById('boardExam');
+            const manualBoardExamSelect = document.getElementById('manualBoardExam');
+            
+            // Clear existing options (keep the first "Select" option)
+            if (boardExamSelect) {
+                console.log('Updating boardExam dropdown');
+                boardExamSelect.innerHTML = '<option value="">Select Exam</option>';
+                programs.forEach(program => {
+                    const option = document.createElement('option');
+                    option.value = program.name;
+                    option.textContent = program.name + ' Board Exam';
+                    boardExamSelect.appendChild(option);
+                    console.log('Added option:', program.name + ' Board Exam');
+                });
+                
+                // Add "Other" option at the end
+                const otherOption = document.createElement('option');
+                otherOption.value = 'OTHER';
+                otherOption.textContent = 'Other';
+                boardExamSelect.appendChild(otherOption);
+            }
+            
+            if (manualBoardExamSelect) {
+                console.log('Updating manualBoardExam dropdown');
+                manualBoardExamSelect.innerHTML = '<option value="">Select Exam</option>';
+                programs.forEach(program => {
+                    const option = document.createElement('option');
+                    option.value = program.name;
+                    option.textContent = program.name + ' Board Exam';
+                    manualBoardExamSelect.appendChild(option);
+                    console.log('Added manual option:', program.name + ' Board Exam');
+                });
+                
+                // Add "Other" option at the end
+                const otherOption = document.createElement('option');
+                otherOption.value = 'OTHER';
+                otherOption.textContent = 'Other';
+                manualBoardExamSelect.appendChild(otherOption);
+            }
+            
+            console.log('Programs loaded successfully');
+        })
+        .catch(error => {
+            console.error('Failed to load programs:', error);
+            console.log('Using fallback options');
+            // Fallback to basic options based on database programs if fetch fails
+            const fallbackOptions = [
+                { value: 'Nursing', text: 'Nursing Board Exam' },
+                { value: 'Mechanical Engineer', text: 'Mechanical Engineer Board Exam' },
+                { value: 'OTHER', text: 'Other' }
+            ];
+            
+            [document.getElementById('boardExam'), document.getElementById('manualBoardExam')].forEach(select => {
+                if (select) {
+                    console.log('Setting fallback options for', select.id);
+                    select.innerHTML = '<option value="">Select Exam</option>';
+                    fallbackOptions.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt.value;
+                        option.textContent = opt.text;
+                        select.appendChild(option);
+                        console.log('Added fallback option:', opt.text);
+                    });
+                }
+            });
+        });
 }
 
 function setupEventListeners() {
@@ -768,29 +844,20 @@ function updateFilters() {
 
 function applyFilters() {
     updateFilters();
-    showLoading();
     loadAnalyticsData();
 }
 
 function showLoading() {
-    const loadingSpinner = document.getElementById('loadingSpinner');
     const metricsSection = document.getElementById('metricsSection');
     
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'block';
-    }
     if (metricsSection) {
         metricsSection.style.opacity = '0.5';
     }
 }
 
 function hideLoading() {
-    const loadingSpinner = document.getElementById('loadingSpinner');
     const metricsSection = document.getElementById('metricsSection');
     
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'none';
-    }
     if (metricsSection) {
         metricsSection.style.opacity = '1';
     }
@@ -843,6 +910,7 @@ function loadAnalyticsData() {
     const queryParams = new URLSearchParams(currentFilters);
     const url = `/admin/analytics/data?${queryParams}`;
     console.log('Fetching URL:', url);
+    console.log('Current filters:', currentFilters);
     
     fetch(url)
         .then(response => {
@@ -890,11 +958,15 @@ function loadAnalyticsData() {
                 console.warn('No charts data received');
             }
             
-            if (data.tables) {
-                updateTables(data.tables);
-            } else {
-                console.warn('No tables data received');
-            }
+                    if (data.tables) {
+            console.log('Tables data received:', data.tables);
+            console.log('Board passers in tables:', data.tables.boardPassers);
+            console.log('Board passers type:', typeof data.tables.boardPassers);
+            console.log('Board passers length:', data.tables.boardPassers ? data.tables.boardPassers.length : 'undefined');
+            updateTables(data.tables);
+        } else {
+            console.warn('No tables data received');
+        }
             
             hideLoading();
         })
@@ -906,7 +978,6 @@ function loadAnalyticsData() {
             // Show fallback message in the dashboard
             document.getElementById('boardPassRate').textContent = 'Error';
             document.getElementById('totalStudents').textContent = 'Error';
-            document.getElementById('avgQuizScore').textContent = 'Error';
             document.getElementById('completionRate').textContent = 'Error';
         });
 }
@@ -914,13 +985,11 @@ function loadAnalyticsData() {
 function updateMetrics(metrics) {
     document.getElementById('boardPassRate').textContent = metrics.boardPassRate + '%';
     document.getElementById('totalStudents').textContent = metrics.totalStudents.toLocaleString();
-    document.getElementById('avgQuizScore').textContent = metrics.avgQuizScore + '%';
     document.getElementById('completionRate').textContent = metrics.completionRate + '%';
     
     // Update trends
     updateTrend('boardPassTrend', metrics.boardPassTrend);
     updateTrend('studentsTrend', metrics.studentsTrend);
-    updateTrend('quizScoreTrend', metrics.quizScoreTrend);
     updateTrend('completionTrend', metrics.completionTrend);
 }
 
@@ -971,71 +1040,38 @@ function updateCharts(chartData) {
 }
 
 function updateTables(tableData) {
-    console.log('Updating tables with data:', tableData);
+    console.log('updateTables called with data:', tableData);
+    console.log('tableData keys:', Object.keys(tableData));
     
     // Only update tables that actually exist in the HTML
     try {
-        // Update bottom performers table (students needing attention)
-        if (tableData.bottomPerformers) {
-            updateBottomPerformersTable(tableData.bottomPerformers);
-        }
-        
         // Update new tables
         if (tableData.recentlyEnrolled) {
+            console.log('Updating recently enrolled table with', tableData.recentlyEnrolled.length, 'records');
             updateRecentlyEnrolledTable(tableData.recentlyEnrolled);
         }
         
         if (tableData.recentPayments) {
+            console.log('Updating recent payments table with', tableData.recentPayments.length, 'records');
             updateRecentPaymentsTable(tableData.recentPayments);
         }
         
         if (tableData.recentlyCompleted) {
+            console.log('Updating recently completed table with', tableData.recentlyCompleted.length, 'records');
             updateRecentlyCompletedTable(tableData.recentlyCompleted);
+        }
+        
+        if (tableData.boardPassers) {
+            console.log('Updating board passers table with', tableData.boardPassers.length, 'records');
+            console.log('Board passers data:', tableData.boardPassers);
+            updateBoardPassersTable(tableData.boardPassers);
+        } else {
+            console.log('No board passers data in tableData');
+            console.log('Available keys in tableData:', Object.keys(tableData));
         }
     } catch (error) {
         console.error('Error updating tables:', error);
-    }
-}
-
-function updateBottomPerformersTable(data) {
-    const tbody = document.getElementById('bottomPerformersTable');
-    if (!tbody) {
-        console.warn('bottomPerformersTable element not found');
-        return;
-    }
-    
-    tbody.innerHTML = '';
-    
-    if (data && data.length > 0) {
-        data.forEach(student => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center me-2">
-                            <i class="bi bi-person text-white"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold">${student.name || 'Unknown'}</div>
-                            <small class="text-muted">${student.email || student.student_id || ''}</small>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="badge bg-info">${student.program || 'N/A'}</span></td>
-                <td><span class="fw-bold text-warning">${student.score || 0}%</span></td>
-                <td>
-                    <span class="badge bg-warning">${student.issues || 'Low Performance'}</span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewStudentDetail(${student.id || 0})">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No students needing attention</td></tr>';
+        console.error('Error stack:', error.stack);
     }
 }
 
@@ -1054,16 +1090,17 @@ function updateRecentlyEnrolledTable(data) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
-                    <div class="fw-bold">${enrollment.student_name}</div>
-                    <small class="text-muted">${enrollment.student_id}</small>
+                    <div class="fw-bold">${enrollment.name || 'Unknown'}</div>
+                    <small class="text-muted">${enrollment.student_id || ''}</small>
                 </td>
-                <td><span class="badge bg-info">${enrollment.program}</span></td>
-                <td><small>${enrollment.enrollment_date}</small></td>
+                <td><span class="badge bg-info">${enrollment.program || 'N/A'}</span></td>
+                <td><span class="badge bg-primary">${enrollment.plan || 'N/A'}</span></td>
+                <td><small>${enrollment.enrollment_date || 'N/A'}</small></td>
             `;
             tbody.appendChild(row);
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent enrollments</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No recent enrollments</td></tr>';
     }
 }
 
@@ -1109,16 +1146,56 @@ function updateRecentlyCompletedTable(data) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
-                    <div class="fw-bold">${completion.student_name || 'Unknown'}</div>
+                    <div class="fw-bold">${completion.name || 'Unknown'}</div>
                     <small class="text-muted">${completion.student_id || ''}</small>
                 </td>
+                <td><small>${completion.email || 'N/A'}</small></td>
                 <td><span class="badge bg-success">${completion.program || 'N/A'}</span></td>
+                <td><span class="badge bg-primary">${completion.plan || 'N/A'}</span></td>
                 <td><small>${completion.completion_date || 'N/A'}</small></td>
+                <td><span class="badge bg-info">${completion.final_score || 'N/A'}</span></td>
             `;
             tbody.appendChild(row);
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent completions</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No recent completions</td></tr>';
+    }
+}
+
+function updateBoardPassersTable(data) {
+    console.log('updateBoardPassersTable called with data:', data);
+    
+    const tbody = document.getElementById('boardPassersTable');
+    if (!tbody) {
+        console.warn('boardPassersTable element not found');
+        return;
+    }
+    
+    console.log('Found boardPassersTable element, updating...');
+    tbody.innerHTML = '';
+    
+    if (data && data.length > 0) {
+        console.log('Processing', data.length, 'board passers');
+        data.forEach((passer, index) => {
+            console.log('Processing passer', index + 1, ':', passer);
+            const row = document.createElement('tr');
+            const resultBadge = passer.result === 'PASS' ? 'bg-success' : 'bg-danger';
+            row.innerHTML = `
+                <td>
+                    <div class="fw-bold">${passer.full_name || passer.student_name || 'Unknown'}</div>
+                    <small class="text-muted">${passer.student_id || ''}</small>
+                </td>
+                <td><span class="badge bg-info">${passer.program_name || passer.program || 'N/A'}</span></td>
+                <td><span class="badge bg-secondary">${passer.board_exam || 'N/A'}</span></td>
+                <td><span class="badge ${resultBadge}">${passer.result || 'N/A'}</span></td>
+                <td><small>${passer.exam_year || 'N/A'}</small></td>
+            `;
+            tbody.appendChild(row);
+        });
+        console.log('Board passers table updated successfully');
+    } else {
+        console.log('No board passers data, showing empty message');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No board passer data</td></tr>';
     }
 }
 
@@ -1356,6 +1433,37 @@ function exportCompleteData(format) {
     }
 }
 
+function printReport() {
+    var isAdmin = {{ isset($isAdmin) && $isAdmin ? 'true' : 'false' }};
+    if (!isAdmin) {
+        showAlert('Print functionality is restricted to administrators only.', 'error');
+        return;
+    }
+    
+    showAlert('Preparing report for printing...', 'info');
+    
+    try {
+        const queryParams = new URLSearchParams(currentFilters);
+        queryParams.append('format', 'pdf');
+        const printUrl = `/admin/analytics/export?${queryParams}`;
+        
+        // Open PDF in new window for printing
+        const printWindow = window.open(printUrl, '_blank');
+        
+        // Add event listener to trigger print dialog when PDF loads
+        printWindow.onload = function() {
+            setTimeout(function() {
+                printWindow.print();
+            }, 1000);
+        };
+        
+        showAlert('Print dialog will open when the report is ready.', 'success');
+    } catch (error) {
+        console.error('Print error:', error);
+        showAlert('Print preparation failed. Please try again.', 'error');
+    }
+}
+
 // Additional functions
 function refreshData() {
     showAlert('Refreshing analytics data...', 'info');
@@ -1412,8 +1520,6 @@ function uploadCSV() {
         return;
     }
     
-    showLoadingSpinner();
-    
     fetch('/admin/analytics/upload-board-passers', {
         method: 'POST',
         body: formData,
@@ -1423,7 +1529,6 @@ function uploadCSV() {
     })
     .then(response => response.json())
     .then(data => {
-        hideLoadingSpinner();
         if (data.success) {
             showNotification('Board passer data uploaded successfully!', 'success');
             $('#uploadModal').modal('hide');
@@ -1434,7 +1539,6 @@ function uploadCSV() {
         }
     })
     .catch(error => {
-        hideLoadingSpinner();
         console.error('Upload error:', error);
         showNotification('An error occurred during upload', 'error');
     });
@@ -1629,6 +1733,8 @@ function initializeStudentSelect() {
                     const option = document.createElement('option');
                     option.value = student.id;
                     option.textContent = `${student.name} (${student.student_id}) - ${student.program}`;
+                    // Store program information in data attribute for later use
+                    option.setAttribute('data-program', student.program);
                     studentSelect.appendChild(option);
                 });
                 console.log('Student select populated with', data.length, 'students');
@@ -1648,9 +1754,109 @@ function initializeStudentSelect() {
     });
 }
 
+// Function to update board exam dropdown based on selected student's program
+function updateBoardExamDropdown() {
+    const studentSelect = document.getElementById('studentSelect');
+    const boardExamSelect = document.getElementById('manualBoardExam');
+    
+    if (!studentSelect || !boardExamSelect) {
+        console.error('Required select elements not found');
+        return;
+    }
+    
+    const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        // Reset to all options if no student selected
+        resetBoardExamDropdown();
+        return;
+    }
+    
+    const studentProgram = selectedOption.getAttribute('data-program');
+    console.log('Selected student program:', studentProgram);
+    
+    // Fetch board exams from database
+    fetch('/admin/analytics/board-exams')
+        .then(response => response.json())
+        .then(exams => {
+            // Clear current options
+            boardExamSelect.innerHTML = '<option value="">Select Exam</option>';
+            
+            // Filter exams based on student's program
+            const programBoardExams = {
+                'Nursing': ['NURSE'],
+                'Mechanical Engineer': ['ME'],
+                'Civil Engineer': ['CE'],
+                'Electrical Engineer': ['EE'],
+                'Accountancy': ['CPA'],
+                'Education': ['LET'],
+                'Teacher': ['LET'],
+                'Teaching': ['LET']
+            };
+            
+            const allowedExams = programBoardExams[studentProgram] || Object.keys(exams);
+            
+            // Add filtered options
+            Object.entries(exams).forEach(([examCode, examName]) => {
+                if (allowedExams.includes(examCode) || allowedExams.includes('OTHER')) {
+                    boardExamSelect.innerHTML += `<option value="${examCode}">${examName}</option>`;
+                }
+            });
+            
+            console.log('Board exam dropdown updated for program:', studentProgram);
+        })
+        .catch(error => {
+            console.error('Error loading board exams:', error);
+            // Fallback to hardcoded options
+            resetBoardExamDropdown();
+        });
+}
+
+// Function to reset board exam dropdown to show all options
+function resetBoardExamDropdown() {
+    const boardExamSelect = document.getElementById('manualBoardExam');
+    if (!boardExamSelect) return;
+    
+    // Fetch all board exams from database
+    fetch('/admin/analytics/board-exams')
+        .then(response => response.json())
+        .then(exams => {
+            boardExamSelect.innerHTML = '<option value="">Select Exam</option>';
+            
+            // Add all available exams
+            Object.entries(exams).forEach(([examCode, examName]) => {
+                boardExamSelect.innerHTML += `<option value="${examCode}">${examName}</option>`;
+            });
+        })
+        .catch(error => {
+            console.error('Error loading board exams:', error);
+            // Fallback to hardcoded options
+            boardExamSelect.innerHTML = `
+                <option value="">Select Exam</option>
+                <option value="CPA">CPA (Certified Public Accountant)</option>
+                <option value="LET">LET (Licensure Examination for Teachers)</option>
+                <option value="CE">CE (Civil Engineer)</option>
+                <option value="ME">ME (Mechanical Engineer)</option>
+                <option value="EE">EE (Electrical Engineer)</option>
+                <option value="NURSE">Nursing Board Exam</option>
+                <option value="OTHER">Other</option>
+            `;
+        });
+}
+
 // Initialize when manual entry modal is shown
 $('#manualEntryModal').on('show.bs.modal', function() {
     initializeStudentSelect();
+    resetBoardExamDropdown(); // Reset board exam dropdown when modal opens
+});
+
+// Add event listener for student selection change
+document.addEventListener('DOMContentLoaded', function() {
+    const studentSelect = document.getElementById('studentSelect');
+    if (studentSelect) {
+        studentSelect.addEventListener('change', function() {
+            updateBoardExamDropdown();
+        });
+    }
 });
 
 // Referral Analytics Functions
@@ -1711,21 +1917,6 @@ function exportReferralData() {
         console.error('Error exporting referral data:', error);
         showNotification('Failed to export referral data', 'error');
     });
-}
-
-// Helper functions for loading states
-function showLoadingSpinner() {
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'block';
-    }
-}
-
-function hideLoadingSpinner() {
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'none';
-    }
 }
 
 // Load referral analytics on page load if admin

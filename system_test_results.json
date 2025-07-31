@@ -11,7 +11,7 @@
         "connection": "OK",
         "tables": {
             "students": 8,
-            "enrollments": 14,
+            "enrollments": 2,
             "programs": 2,
             "users": 4,
             "certificates": 0
@@ -24,9 +24,9 @@
     "progress": {
         "sample_student": {
             "name": "Vince Michael Dela Vega",
-            "progress": "0.00",
+            "progress": "100.00",
             "status": "approved",
-            "eligible": false
+            "eligible": true
         }
     },
     "storage": {

@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\EducationLevelController;
 use App\Http\Controllers\AdminProfessorController;
 use App\Http\Controllers\AdminBatchController;
 use App\Http\Controllers\AdminAnalyticsController;
+use App\Http\Controllers\BoardPassersController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\ProfessorMeetingController;
@@ -1347,6 +1348,9 @@ Route::get('/admin/analytics/batches', [AdminAnalyticsController::class, 'getBat
 Route::get('/admin/analytics/subjects', [AdminAnalyticsController::class, 'getSubjects'])
      ->name('admin.analytics.subjects');
 
+Route::get('/admin/analytics/programs', [AdminAnalyticsController::class, 'getPrograms'])
+     ->name('admin.analytics.programs');
+
 Route::get('/admin/analytics/student/{id}', [AdminAnalyticsController::class, 'getStudentDetail'])
      ->name('admin.analytics.student');
 
@@ -1363,6 +1367,8 @@ Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 
 // Board Passer Routes  
 Route::get('/admin/analytics/students-list', [AdminAnalyticsController::class, 'getStudentsList'])
      ->name('admin.analytics.students-list');
+Route::get('/admin/analytics/board-exams', [AdminAnalyticsController::class, 'getBoardExams'])
+     ->name('admin.analytics.board-exams');
 Route::post('/admin/analytics/upload-board-passers', [AdminAnalyticsController::class, 'uploadBoardPassers'])
      ->name('admin.analytics.upload-board-passers');
 Route::post('/admin/analytics/add-board-passer', [AdminAnalyticsController::class, 'addBoardPasser'])
@@ -1371,6 +1377,18 @@ Route::get('/admin/analytics/download-template', [AdminAnalyticsController::clas
      ->name('admin.analytics.download-template');
 Route::get('/admin/analytics/board-passer-stats', [AdminAnalyticsController::class, 'getBoardPasserStats'])
      ->name('admin.analytics.board-passer-stats');
+
+// Board Passers Management Routes
+Route::prefix('admin/board-passers')->name('admin.board-passers.')->group(function () {
+    Route::get('/', [App\Http\Controllers\BoardPassersController::class, 'index'])->name('index');
+    Route::post('/', [App\Http\Controllers\BoardPassersController::class, 'store'])->name('store');
+    Route::get('/{id}', [App\Http\Controllers\BoardPassersController::class, 'show'])->name('show');
+    Route::put('/{id}', [App\Http\Controllers\BoardPassersController::class, 'update'])->name('update');
+    Route::delete('/{id}', [App\Http\Controllers\BoardPassersController::class, 'destroy'])->name('destroy');
+    Route::get('/api/stats', [App\Http\Controllers\BoardPassersController::class, 'getStats'])->name('stats');
+    Route::get('/api/students', [App\Http\Controllers\BoardPassersController::class, 'getStudentsList'])->name('students-list');
+    Route::get('/download/template', [App\Http\Controllers\BoardPassersController::class, 'downloadTemplate'])->name('download-template');
+});
 
 /*
 |--------------------------------------------------------------------------
