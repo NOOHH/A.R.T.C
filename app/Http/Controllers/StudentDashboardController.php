@@ -557,6 +557,12 @@ class StudentDashboardController extends Controller
 
     public function course($courseId)
     {
+        // DEBUG: Test log to verify logging is working
+        Log::info('🎯 Course page accessed', [
+            'courseId' => $courseId,
+            'session_data' => session()->all()
+        ]);
+        
         // Get user data from session
         $user = (object) [
             'user_id' => session('user_id'),
@@ -2173,6 +2179,109 @@ class StudentDashboardController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * View individual content item on separate page
+     */
+    public function viewContent($contentId)
+    {
+        try {
+            // Find the content item with relationships
+            $content = ContentItem::with(['course.module.program'])->find($contentId);
+            
+            if (!$content) {
+                return response()->json(['error' => 'Content not found', 'content_id' => $contentId]);
+            }
+
+            // Get course information
+            $course = $content->course;
+
+            // Get module and program information for breadcrumb
+            $module = $course ? $course->module : null;
+            $program = $module ? $module->program : null;
+
+            // Parse attachment data
+            $attachmentUrls = [];
+            $fileNames = [];
+            
+            if ($content->attachment_path) {
+                $parsedAttachments = json_decode($content->attachment_path, true);
+                if (is_array($parsedAttachments)) {
+                    foreach ($parsedAttachments as $path) {
+                        $attachmentUrls[] = asset('storage/' . $path);
+                        $fileNames[] = basename($path);
+                    }
+                } else {
+                    $attachmentUrls[] = asset('storage/' . $content->attachment_path);
+                    $fileNames[] = basename($content->attachment_path);
+                }
+            }
+
+            // Get current student
+            $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+            
+            // Check if content is completed
+            $isCompleted = DB::table('content_completions')
+                ->where('student_id', $student->student_id ?? 0)
+                ->where('content_id', $contentId)
+                ->exists();
+
+            // Get existing submissions for this content
+            $submissions = DB::table('assignment_submissions')
+                ->where('content_id', $contentId)
+                ->where('student_id', $student->student_id ?? 0)
+                ->get();
+
+            // Prepare content data
+            $contentData = [];
+            if ($content->content_data) {
+                if (is_array($content->content_data)) {
+                    $contentData = $content->content_data;
+                } else {
+                    try {
+                        $contentData = json_decode($content->content_data, true) ?? [];
+                    } catch (\Exception $e) {
+                        $contentData = [];
+                    }
+                }
+            }
+
+            // Add program information to content object for breadcrumb
+            if ($program) {
+                $content->program_name = $program->program_name;
+                $content->program_id = $program->program_id;
+            } else {
+                $content->program_name = 'Unknown Program';
+                $content->program_id = null;
+            }
+
+            // Add module information if available
+            if ($module) {
+                $content->module_name = $module->module_name;
+                $content->module_id = $module->modules_id;
+            } else {
+                $content->module_name = 'Unknown Module';
+                $content->module_id = null;
+            }
+
+            return view('student.content.view', compact(
+                'content',
+                'course',
+                'student',
+                'attachmentUrls',
+                'fileNames',
+                'isCompleted',
+                'submissions',
+                'contentData'
+            ));
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        }
+    }
+
+
+
 
     public function getAssignmentSubmissions($moduleId)
     {

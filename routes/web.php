@@ -365,6 +365,22 @@ Route::get('/test-all-fixes', function() {
     return view('test-all-fixes');
 })->name('test.all.fixes');
 
+// Debug redirect test
+Route::get('/debug-redirect', function() {
+    return view('debug-redirect');
+});
+
+// Debug session test
+Route::get('/debug-session', function() {
+    return response()->json([
+        'session_data' => session()->all(),
+        'user_id' => session('user_id'),
+        'user_role' => session('user_role'),
+        'role' => session('role'),
+        'logged_in' => session('logged_in')
+    ]);
+});
+
 // CSRF token endpoint for testing
 Route::get('/csrf-token', function() {
     return response()->json([
@@ -454,15 +470,9 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     
     // Assignment submission routes
     Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
-    
-    // Assignment submission routes
-    Route::post('/student/assignment/submit', [StudentDashboardController::class, 'submitAssignment'])->name('student.assignment.submit');
     Route::post('/student/submit-assignment', [StudentDashboardController::class, 'submitAssignmentFile'])->name('student.submit-assignment');
-    Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
-    Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
-    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
     
-    // Quiz routes
+    // Quiz routes inside middleware
     Route::get('/student/quiz/{moduleId}/start', [StudentDashboardController::class, 'startQuiz'])->name('student.quiz.start');
     Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
     Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
@@ -471,43 +481,103 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/ai-quiz/{quizId}/start', [StudentDashboardController::class, 'startAiQuiz'])->name('student.ai-quiz.start');
     Route::post('/student/ai-quiz/{quizId}/submit', [StudentDashboardController::class, 'submitAiQuiz'])->name('student.ai-quiz.submit');
     
-    // Payment routes
-    Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
-    Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
-    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
-    Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
-    
-    // Rejected Registration Management Routes
-    Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
-    Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
-    Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
-    Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
-    Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
+    // Completion routes - moved inside middleware for proper authentication
     Route::post('/student/complete-course', [\App\Http\Controllers\CompletionController::class, 'markCourseComplete']);
     Route::post('/student/complete-content', [\App\Http\Controllers\CompletionController::class, 'markContentComplete']);
     Route::post('/student/complete-module', [App\Http\Controllers\CompletionController::class, 'markModuleComplete']);
     Route::post('/student/module/{moduleId}/check-completion', [App\Http\Controllers\CompletionController::class, 'checkModuleCompletion']);
-    Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
-    Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
-    Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
-    Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
     
-    // Update overdue deadlines (can be called by admin or cron job)
-    Route::post('/student/update-overdue-deadlines', [App\Http\Controllers\StudentDashboardController::class, 'updateOverdueDeadlines']);
-    
-    // API endpoint to get program ID for a module
-    Route::get('/api/module/{moduleId}/program', function($moduleId) {
-        $module = \App\Models\Module::find($moduleId);
-        if ($module) {
-            return response()->json(['program_id' => $module->program_id]);
+    // Content view route - moved back inside middleware for authentication
+    Route::get('/student/content/{contentId}/view', [StudentDashboardController::class, 'viewContent'])->name('student.content.view');
+}); // END OF MIDDLEWARE GROUP
+
+// Simple test route
+Route::get('/test-content-view/{contentId}', function($contentId) {
+    try {
+        $content = \Illuminate\Support\Facades\DB::table('content_items')->where('id', $contentId)->first();
+        if (!$content) {
+            return response()->json(['error' => 'Content not found', 'content_id' => $contentId]);
         }
-        return response()->json(['error' => 'Module not found'], 404);
-    });
+        
+        // Test controller method
+        $controller = new \App\Http\Controllers\StudentDashboardController();
+        return $controller->viewContent($contentId);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(), 
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+});
+
+Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
+Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
+Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
+Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
+Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
+
+// AI-generated quiz routes
+Route::get('/student/ai-quiz/{quizId}/start', [StudentDashboardController::class, 'startAiQuiz'])->name('student.ai-quiz.start');
+Route::post('/student/ai-quiz/{quizId}/submit', [StudentDashboardController::class, 'submitAiQuiz'])->name('student.ai-quiz.submit');
+
+// Payment routes
+Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
+Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
+Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
+Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
+
+// Rejected Registration Management Routes
+Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
+Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
+Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
+Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
+Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
+Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
+Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
+Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
+Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
+
+// Update overdue deadlines (can be called by admin or cron job)
+Route::post('/student/update-overdue-deadlines', [App\Http\Controllers\StudentDashboardController::class, 'updateOverdueDeadlines']);
+
+// API endpoint to get program ID for a module
+Route::get('/api/module/{moduleId}/program', function($moduleId) {
+    $module = \App\Models\Module::find($moduleId);
+    if ($module) {
+        return response()->json(['program_id' => $module->program_id]);
+    }
+    return response()->json(['error' => 'Module not found'], 404);
 });
 
 // Test routes for debugging rejection details
 Route::get('/test-rejection-details', function () {
     return view('test-rejection-details');
+});
+
+// Include comprehensive database test
+require __DIR__ . '/test-db-check.php';
+
+// Comprehensive test page
+Route::get('/test-comprehensive', function () {
+    return view('test-comprehensive');
+});
+
+// Test content view without authentication
+Route::get('/test-content/{contentId}', function ($contentId) {
+    // Simulate a logged-in student (assuming user ID 1 is a student)
+    $user = \App\Models\User::find(1);
+    if (!$user) {
+        return response()->json(['error' => 'No test user found'], 404);
+    }
+    
+    // Manually authenticate the user for testing
+    Auth::login($user);
+    
+    // Call the controller method
+    $controller = new \App\Http\Controllers\StudentDashboardController();
+    return $controller->viewContent($contentId);
 });
 
 Route::get('/test-database-structure', function () {
