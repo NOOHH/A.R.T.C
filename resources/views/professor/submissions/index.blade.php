@@ -249,31 +249,37 @@
     border-left: 3px solid #667eea;
   }
 
-  /* Grading Modal */
-  .modal-bg {
+  /* Grading Modal - Complete Custom Implementation */
+  #grading-modal-overlay {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
     align-items: center;
     justify-content: center;
   }
 
-  .modal-bg.show {
-    display: flex;
+  #grading-modal-overlay.show {
+    display: flex !important;
   }
 
-  .modal {
+  #grading-modal-container {
     background: white;
-    padding: 30px;
-    border-radius: 15px;
-    max-width: 500px;
+    border-radius: 12px;
+    max-width: 600px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+  }
+
+  #grading-modal-inner {
+    padding: 30px;
   }
 
   .modal h3 {
@@ -433,7 +439,7 @@
                                         </a>
                                     @endif
                                     
-                                    <button class="btn btn-primary btn-sm" onclick="openGradingModal({{ $submission->id }}, '{{ $submission->student->firstname ?? 'Student' }}', {{ $submission->grade ?? 'null' }}, '{{ addslashes($submission->feedback ?? '') }}')">
+                                    <button class="btn btn-primary btn-sm" onclick="openGradingModal({{ $submission->id }})">
                                         <i class="fas fa-{{ $submission->grade !== null ? 'edit' : 'star' }} me-1"></i>{{ $submission->grade !== null ? 'Edit Grade' : 'Grade' }}
                                     </button>
                                 </div>
@@ -454,18 +460,50 @@
 </div>
 
 <!-- Grading Modal -->
-<div class="modal-bg" id="gradingModal">
-    <div class="modal">
-        <h3 id="gradingModalTitle">Grade Assignment</h3>
+<div id="grading-modal-overlay" class="custom-modal-bg">
+    <div id="grading-modal-container" class="custom-modal-content">
+        <div id="grading-modal-inner">
+            <h3 id="gradingModalTitle">Grade Assignment</h3>
+            
+            <!-- Assignment Details Section -->
+            <div class="assignment-details mb-3" id="assignmentDetails" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h5>Assignment Information</h5>
+            <p><strong>Title:</strong> <span id="assignmentTitle"></span></p>
+            <p><strong>Description:</strong> <span id="assignmentDescription"></span></p>
+            <p><strong>Max Points:</strong> <span id="assignmentMaxPoints"></span></p>
+            <p><strong>Due Date:</strong> <span id="assignmentDueDate"></span></p>
+        </div>
+
+        <!-- Student Submission Details -->
+        <div class="submission-details mb-3" id="submissionDetails" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h5>Student Submission</h5>
+            <p><strong>Student:</strong> <span id="studentName"></span></p>
+            <p><strong>Submitted:</strong> <span id="submissionDate"></span></p>
+            <p><strong>Files:</strong> <span id="submissionFiles"></span></p>
+            <p><strong>Comments:</strong> <span id="submissionComments"></span></p>
+        </div>
+
         <form id="gradingForm">
             @csrf
             <input type="hidden" id="submissionId" name="submission_id">
             
-            <label for="grade">Grade:</label>
-            <input type="number" id="grade" name="grade" step="0.1" min="0" required>
+            <div class="form-group mb-3">
+                <label for="grade">Grade (out of <span id="maxPointsLabel"></span>):</label>
+                <input type="number" id="grade" name="grade" step="0.1" min="0" class="form-control" required>
+            </div>
             
-            <label for="feedback">Feedback (optional):</label>
-            <textarea id="feedback" name="feedback" placeholder="Provide feedback to the student..."></textarea>
+            <div class="form-group mb-3">
+                <label for="status">Status:</label>
+                <select id="status" name="status" class="form-control" required>
+                    <option value="graded">Graded</option>
+                    <option value="reviewed">Reviewed (Needs Revision)</option>
+                </select>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="feedback">Feedback (optional):</label>
+                <textarea id="feedback" name="feedback" class="form-control" rows="4" placeholder="Provide feedback to the student..."></textarea>
+            </div>
             
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeGradingModal()">Cancel</button>
@@ -478,20 +516,120 @@
 
 @push('scripts')
 <script>
-function openGradingModal(submissionId, studentName, currentGrade, currentFeedback) {
-    document.getElementById('submissionId').value = submissionId;
-    document.getElementById('gradingModalTitle').textContent = `Grade Assignment - ${studentName}`;
+function openGradingModal(submissionId) {
+    console.log('openGradingModal called with ID:', submissionId);
     
-    if (currentGrade !== null) {
-        document.getElementById('grade').value = currentGrade;
+    // Check if modal element exists
+    const modal = document.getElementById('grading-modal-overlay');
+    if (!modal) {
+        console.error('Modal element not found!');
+        alert('Modal element not found!');
+        return;
     }
-    document.getElementById('feedback').value = currentFeedback || '';
     
-    document.getElementById('gradingModal').classList.add('show');
+    console.log('Modal element found:', modal);
+    
+    // Show loading in modal
+    const titleElement = document.getElementById('gradingModalTitle');
+    if (titleElement) {
+        titleElement.textContent = 'Loading...';
+    }
+    
+    // Show modal
+    modal.classList.add('show');
+    console.log('Modal should now be visible');
+    
+    // Fetch submission details
+    console.log('Fetching submission details from:', `/professor/submissions/${submissionId}/details`);
+    fetch(`/professor/submissions/${submissionId}/details`)
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                populateGradingModal(data.submission);
+            } else {
+                alert('Error loading submission details: ' + data.message);
+                closeGradingModal();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading submission details: ' + error.message);
+            closeGradingModal();
+        });
+}
+
+function populateGradingModal(submission) {
+    // Set form values
+    document.getElementById('submissionId').value = submission.id;
+    document.getElementById('gradingModalTitle').textContent = `Grade Assignment - ${submission.student.firstname} ${submission.student.lastname}`;
+    
+    // Assignment details
+    if (submission.content_item) {
+        document.getElementById('assignmentTitle').textContent = submission.content_item.content_title || 'Assignment';
+        document.getElementById('assignmentDescription').textContent = submission.content_item.content_description || 'No description';
+        
+        // Handle content_data - could be string or already parsed object
+        let contentData = {};
+        if (submission.content_item.content_data) {
+            if (typeof submission.content_item.content_data === 'string') {
+                try {
+                    contentData = JSON.parse(submission.content_item.content_data);
+                } catch (e) {
+                    console.warn('Failed to parse content_data:', e);
+                    contentData = {};
+                }
+            } else if (typeof submission.content_item.content_data === 'object') {
+                contentData = submission.content_item.content_data;
+            }
+        }
+        
+        const maxPoints = contentData.max_points || 100;
+        document.getElementById('assignmentMaxPoints').textContent = maxPoints;
+        document.getElementById('maxPointsLabel').textContent = maxPoints;
+        document.getElementById('assignmentDueDate').textContent = contentData.due_date || 'No due date';
+        
+        // Set max value for grade input
+        document.getElementById('grade').setAttribute('max', maxPoints);
+    } else {
+        document.getElementById('assignmentTitle').textContent = submission.module.module_name + ' Assignment';
+        document.getElementById('assignmentDescription').textContent = 'Module assignment';
+        document.getElementById('assignmentMaxPoints').textContent = '100';
+        document.getElementById('maxPointsLabel').textContent = '100';
+        document.getElementById('assignmentDueDate').textContent = 'No due date';
+        document.getElementById('grade').setAttribute('max', 100);
+    }
+    
+    // Student submission details
+    document.getElementById('studentName').textContent = submission.student.firstname + ' ' + submission.student.lastname;
+    document.getElementById('submissionDate').textContent = new Date(submission.submitted_at).toLocaleString();
+    
+    // Files
+    let filesText = 'No files';
+    if (submission.processed_files && submission.processed_files.length > 0) {
+        filesText = submission.processed_files.map(file => file.original_name || file.name).join(', ');
+    }
+    document.getElementById('submissionFiles').textContent = filesText;
+    
+    // Comments
+    document.getElementById('submissionComments').textContent = submission.comments || 'No comments';
+    
+    // Current grade and feedback if exists
+    if (submission.grade !== null) {
+        document.getElementById('grade').value = submission.grade;
+    }
+    document.getElementById('feedback').value = submission.feedback || '';
+    document.getElementById('status').value = submission.status || 'graded';
 }
 
 function closeGradingModal() {
-    document.getElementById('gradingModal').classList.remove('show');
+    const modal = document.getElementById('grading-modal-overlay');
+    if (modal) {
+        modal.classList.remove('show');
+    }
     document.getElementById('gradingForm').reset();
 }
 
@@ -520,12 +658,12 @@ document.getElementById('gradingForm').addEventListener('submit', function(e) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while saving the grade.');
+        alert('Error saving grade');
     });
 });
 
 // Click outside modal to close
-document.getElementById('gradingModal').addEventListener('click', function(e) {
+document.getElementById('grading-modal-overlay').addEventListener('click', function(e) {
     if (e.target === this) {
         closeGradingModal();
     }
@@ -607,21 +745,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 
-                // Insert after the assignment info card
-                const assignmentCard = document.querySelector('.card.mb-4');
-                if (assignmentCard) {
-                    assignmentCard.insertAdjacentElement('afterend', emptyState);
+                // Insert after the page header
+                const pageHeader = document.querySelector('.page-header, .d-flex.justify-content-between');
+                if (pageHeader) {
+                    pageHeader.insertAdjacentElement('afterend', emptyState);
                 }
             }
             emptyState.style.display = 'block';
         } else if (emptyState) {
             emptyState.style.display = 'none';
         }
-    }
-    
-    // Initialize search placeholder
-    if (searchInput) {
-        searchInput.placeholder = 'Search submissions by student name, email, or content...';
     }
 });
 </script>
@@ -1142,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             @endif
 
                             <div class="text-center mt-3">
-                                <button class="btn btn-outline-primary btn-action" onclick="editGrade({{ $submission->id }}, {{ $submission->grade }}, '{{ addslashes($submission->feedback ?? '') }}', '{{ $submission->status }}')">
+                                <button class="btn btn-outline-primary btn-action" onclick="openGradingModal({{ $submission->id }})">
                                     <i class="bi bi-pencil me-1"></i>Edit Grade
                                 </button>
                             </div>
@@ -1152,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <h6 class="text-muted mb-3">
                                     <i class="bi bi-exclamation-circle me-1"></i>This submission has not been graded yet
                                 </h6>
-                                <button class="btn btn-grade btn-action" onclick="gradeSubmission({{ $submission->id }})">
+                                <button class="btn btn-grade btn-action" onclick="openGradingModal({{ $submission->id }})">
                                     <i class="bi bi-plus-circle me-1"></i>Grade Submission
                                 </button>
                             </div>
@@ -1239,109 +1372,3 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-// Grade submission function
-function gradeSubmission(submissionId) {
-    document.getElementById('submissionId').value = submissionId;
-    document.getElementById('gradeInput').value = '';
-    document.getElementById('feedbackInput').value = '';
-    document.getElementById('statusInput').value = 'graded';
-    
-    const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
-    modal.show();
-}
-
-// Edit existing grade
-function editGrade(submissionId, currentGrade, currentFeedback, currentStatus) {
-    document.getElementById('submissionId').value = submissionId;
-    document.getElementById('gradeInput').value = currentGrade;
-    document.getElementById('feedbackInput').value = currentFeedback;
-    document.getElementById('statusInput').value = currentStatus;
-    
-    const modal = new bootstrap.Modal(document.getElementById('gradeModal'));
-    modal.show();
-}
-
-// Submit grade
-function submitGrade() {
-    const form = document.getElementById('gradeForm');
-    const formData = new FormData(form);
-    const submissionId = document.getElementById('submissionId').value;
-
-    // Show loading state
-    const submitBtn = event.target;
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-    submitBtn.disabled = true;
-
-    fetch(`/professor/submissions/${submissionId}/grade`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
-            
-            // Show success message
-            showAlert('Grade saved successfully!', 'success');
-            
-            // Reload page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        } else {
-            showAlert('Error: ' + data.message, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('An error occurred while saving the grade.', 'danger');
-    })
-    .finally(() => {
-        // Restore button state
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
-}
-
-// Refresh submissions
-function refreshSubmissions() {
-    window.location.reload();
-}
-
-// Show alert function
-function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alertDiv);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-
-// Initialize tooltips
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
-@endpush

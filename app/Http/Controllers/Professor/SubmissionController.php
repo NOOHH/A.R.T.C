@@ -54,7 +54,9 @@ class SubmissionController extends Controller
                     $q->with('user');
                 }, 
                 'program', 
-                'module'
+                'module',
+                'contentItem',
+                'gradedByProfessor'
             ])->whereIn('program_id', $assignedProgramIds)
               ->orderBy('submitted_at', 'desc');
 
@@ -144,9 +146,70 @@ class SubmissionController extends Controller
             ));
 
         } catch (\Exception $e) {
-            Log::error('Professor submissions error: ' . $e->getMessage());
+            Log::error('Professor submissions error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'professor_id' => session('professor_id'),
+                'assigned_program_ids' => $assignedProgramIds ?? []
+            ]);
             return redirect()->route('professor.dashboard')
-                ->with('error', 'Error loading submissions: ' . $e->getMessage());
+                ->with('error', 'Error loading submissions. Please contact support if this persists.');
+        }
+    }
+
+    public function details($id)
+    {
+        try {
+            // Check if professor is properly authenticated
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                return response()->json(['success' => false, 'message' => 'Authentication required.'], 401);
+            }
+
+            // Get current professor
+            $professor = Professor::where('professor_id', session('professor_id'))->first();
+            
+            if (!$professor) {
+                return response()->json(['success' => false, 'message' => 'Professor not found.'], 403);
+            }
+
+            // Get submission with all relationships
+            $submission = AssignmentSubmission::with([
+                'student' => function($q) {
+                    $q->with('user');
+                }, 
+                'program', 
+                'module',
+                'contentItem',
+                'gradedByProfessor'
+            ])->findOrFail($id);
+            
+            // Check if this submission belongs to professor's assigned programs
+            $assignedProgramIds = $professor->assignedPrograms()->pluck('programs.program_id')->toArray();
+            
+            if (!in_array($submission->program_id, $assignedProgramIds)) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
+            }
+
+            // Process files data
+            if ($submission->files) {
+                // Files are already cast to array in the model
+                $submission->processed_files = is_array($submission->files) ? $submission->files : json_decode($submission->files, true);
+            } else {
+                $submission->processed_files = [];
+            }
+
+            return response()->json([
+                'success' => true,
+                'submission' => $submission
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('SubmissionController details error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading submission details: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -175,7 +238,7 @@ class SubmissionController extends Controller
             $submission = AssignmentSubmission::findOrFail($id);
             
             // Check if this submission belongs to professor's assigned programs
-            $assignedProgramIds = $professor->assignedPrograms()->pluck('program_id')->toArray();
+            $assignedProgramIds = $professor->assignedPrograms()->pluck('programs.program_id')->toArray();
             
             if (!in_array($submission->program_id, $assignedProgramIds)) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
@@ -228,7 +291,7 @@ class SubmissionController extends Controller
             }
 
             // Check if professor has access to this submission's program
-            $assignedProgramIds = $professor->assignedPrograms()->pluck('program_id')->toArray();
+            $assignedProgramIds = $professor->assignedPrograms()->pluck('programs.program_id')->toArray();
             if (!in_array($submission->program_id, $assignedProgramIds)) {
                 abort(403, 'Access denied to this submission.');
             }

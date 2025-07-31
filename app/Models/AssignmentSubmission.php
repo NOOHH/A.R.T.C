@@ -46,4 +46,14 @@ class AssignmentSubmission extends Model
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
+
+    public function contentItem()
+    {
+        return $this->belongsTo(\App\Models\ContentItem::class, 'content_id', 'id');
+    }
+
+    public function gradedByProfessor()
+    {
+        return $this->belongsTo(Professor::class, 'graded_by', 'professor_id');
+    }
 }

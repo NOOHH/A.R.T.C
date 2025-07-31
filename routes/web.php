@@ -1956,6 +1956,8 @@ Route::middleware(['professor.auth'])
     // Professor Submissions Routes
     Route::get('/submissions', [\App\Http\Controllers\Professor\SubmissionController::class, 'index'])
          ->name('submissions.index');
+    Route::get('/submissions/{id}/details', [\App\Http\Controllers\Professor\SubmissionController::class, 'details'])
+         ->name('submissions.details');
     Route::get('/submissions/{id}/download', [\App\Http\Controllers\Professor\SubmissionController::class, 'download'])
          ->name('submissions.download');
     Route::post('/submissions/{id}/grade', [\App\Http\Controllers\Professor\SubmissionController::class, 'gradeSubmission'])
