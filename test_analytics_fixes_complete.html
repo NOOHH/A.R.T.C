@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Analytics Fix Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .metric { margin: 10px 0; }
+        .chart-data { margin: 10px 0; }
+        .table-data { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Analytics Fix Verification</h1>
+    <div id="results">Loading analytics data...</div>
+    
+    <script>
+    function checkValue(name, value, expectedWhenEmpty) {
+        const isCorrect = (value === expectedWhenEmpty || 
+                          (Array.isArray(value) && value.length === 0) ||
+                          (typeof value === 'object' && Object.keys(value).length === 0));
+        const status = isCorrect ? 'success' : 'error';
+        const icon = isCorrect ? '✅' : '❌';
+        return `<div class="metric ${status}">${icon} ${name}: ${JSON.stringify(value)} ${isCorrect ? '(CORRECT)' : '(STILL HAS FAKE DATA)'}</div>`;
+    }
+    
+    // Test the analytics endpoint
+    $.ajax({
+        url: '/admin/analytics/data',
+        type: 'GET',
+        success: function(data) {
+            console.log('Full analytics data:', data);
+            
+            let html = '<h2>Analytics Data Fix Results:</h2>';
+            
+            // Check metrics
+            html += '<div class="section"><h3>Metrics (should all be 0 or neutral):</h3>';
+            html += checkValue('Board Pass Rate', data.metrics.boardPassRate, 0);
+            html += checkValue('Total Students', data.metrics.totalStudents, 0);
+            html += checkValue('Avg Quiz Score', data.metrics.avgQuizScore, 0);
+            html += checkValue('Completion Rate', data.metrics.completionRate, 0);
+            html += '</div>';
+            
+            // Check trends
+            html += '<div class="section"><h3>Trends (should all be neutral/zero):</h3>';
+            html += checkValue('Board Pass Trend', data.metrics.boardPassTrend.value, 0);
+            html += checkValue('Students Trend', data.metrics.studentsTrend.value, 0);
+            html += checkValue('Quiz Score Trend', data.metrics.quizScoreTrend.value, 0);
+            html += checkValue('Completion Trend', data.metrics.completionTrend.value, 0);
+            html += '</div>';
+            
+            // Check charts
+            html += '<div class="section"><h3>Chart Data (should all be empty arrays):</h3>';
+            html += checkValue('Program Distribution Labels', data.charts.programDistribution.labels, []);
+            html += checkValue('Program Distribution Data', data.charts.programDistribution.data, []);
+            html += checkValue('Progress Distribution Data', data.charts.progressDistribution.data, []);
+            html += checkValue('Batch Performance Labels', data.charts.batchPerformance.labels, []);
+            html += checkValue('Batch Performance Data', data.charts.batchPerformance.data, []);
+            html += '</div>';
+            
+            // Check tables
+            html += '<div class="section"><h3>Table Data (should be empty arrays):</h3>';
+            html += checkValue('Top Performers', data.tables.topPerformers, []);
+            html += checkValue('Recently Enrolled', data.tables.recentlyEnrolled, []);
+            html += checkValue('Recent Payments', data.tables.recentPayments, []);
+            html += checkValue('Recently Completed', data.tables.recentlyCompleted, []);
+            html += checkValue('Board Passers', data.tables.boardPassers, []);
+            html += checkValue('Batch Performance Table', data.tables.batchPerformance, []);
+            
+            // Subject breakdown might still have modules but should have zero values
+            if (data.tables.subjectBreakdown && data.tables.subjectBreakdown.length > 0) {
+                html += '<h4>Subject Breakdown (modules may exist but values should be 0):</h4>';
+                data.tables.subjectBreakdown.forEach((subject, index) => {
+                    html += `<div>Module ${index + 1}: ${subject.name}</div>`;
+                    html += checkValue(`  Total Students`, subject.totalStudents, 0);
+                    html += checkValue(`  Avg Score`, subject.avgScore, 0);
+                    html += checkValue(`  Pass Rate`, subject.passRate, 0);
+                    html += checkValue(`  Trend`, subject.trend, 0);
+                });
+            } else {
+                html += checkValue('Subject Breakdown', data.tables.subjectBreakdown, []);
+            }
+            html += '</div>';
+            
+            // Overall assessment
+            const allGood = data.metrics.boardPassRate === 0 && 
+                           data.metrics.totalStudents === 0 && 
+                           data.metrics.avgQuizScore === 0 &&
+                           data.charts.programDistribution.data.length === 0 &&
+                           data.tables.topPerformers.length === 0;
+                           
+            html += '<div class="section">';
+            if (allGood) {
+                html += '<h2 class="success">🎉 SUCCESS! All fake data has been removed!</h2>';
+                html += '<p>The analytics dashboard now accurately reflects the empty database state.</p>';
+            } else {
+                html += '<h2 class="error">⚠️ Some fake data still remains</h2>';
+                html += '<p>Check the failed items above for remaining issues.</p>';
+            }
+            html += '</div>';
+            
+            $('#results').html(html);
+        },
+        error: function(xhr, status, error) {
+            $('#results').html('<div class="error">Error loading analytics: ' + error + '</div>');
+            console.error('Error:', error);
+        }
+    });
+    </script>
+</body>
+</html>

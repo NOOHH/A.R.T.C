@@ -131,27 +131,27 @@
     </div>
 
     <div class="section">
-        <h2>Top Performers</h2>
+        <h2>Recently Enrolled Students</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Rank</th>
                     <th>Student Name</th>
                     <th>Email</th>
                     <th>Program</th>
-                    <th>Score</th>
-                    <th>Progress</th>
+                    <th>Plan</th>
+                    <th>Enrollment Date</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['topPerformers'] as $index => $student)
+                @foreach($tables['recentlyEnrolled'] as $student)
                 <tr>
-                    <td>{{ $index + 1 }}</td>
                     <td>{{ $student['name'] }}</td>
                     <td>{{ $student['email'] }}</td>
                     <td>{{ $student['program'] }}</td>
-                    <td>{{ $student['score'] }}%</td>
-                    <td>{{ $student['progress'] }}%</td>
+                    <td>{{ $student['plan'] }}</td>
+                    <td>{{ $student['enrollment_date'] }}</td>
+                    <td>{{ $student['status'] }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -159,25 +159,27 @@
     </div>
 
     <div class="section">
-        <h2>Students Needing Attention</h2>
+        <h2>Recently Completed Students</h2>
         <table>
             <thead>
                 <tr>
                     <th>Student Name</th>
                     <th>Email</th>
                     <th>Program</th>
-                    <th>Score</th>
-                    <th>Issues</th>
+                    <th>Plan</th>
+                    <th>Completion Date</th>
+                    <th>Final Score</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['bottomPerformers'] as $student)
+                @foreach($tables['recentlyCompleted'] as $student)
                 <tr>
                     <td>{{ $student['name'] }}</td>
                     <td>{{ $student['email'] }}</td>
                     <td>{{ $student['program'] }}</td>
-                    <td>{{ $student['score'] }}%</td>
-                    <td>{{ $student['issues'] }}</td>
+                    <td>{{ $student['plan'] }}</td>
+                    <td>{{ $student['completion_date'] }}</td>
+                    <td>{{ $student['final_score'] }}%</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -185,27 +187,83 @@
     </div>
 
     <div class="section">
-        <h2>Subject Performance Breakdown</h2>
+        <h2>Recent Payments</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Subject</th>
-                    <th>Total Students</th>
-                    <th>Avg Score</th>
+                    <th>Student Name</th>
+                    <th>Program</th>
+                    <th>Amount</th>
+                    <th>Payment Date</th>
+                    <th>Status</th>
+                    <th>Payment Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($tables['recentPayments'] as $payment)
+                <tr>
+                    <td>{{ $payment['student_name'] }}</td>
+                    <td>{{ $payment['program'] }}</td>
+                    <td>₱{{ number_format($payment['amount'], 2) }}</td>
+                    <td>{{ $payment['payment_date'] }}</td>
+                    <td>{{ $payment['status'] }}</td>
+                    <td>{{ $payment['payment_method'] }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Board Exam Passers</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Program</th>
+                    <th>Exam Date</th>
+                    <th>Result</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($tables['boardPassers'] as $passer)
+                <tr>
+                    <td>{{ $passer['student_id'] }}</td>
+                    <td>{{ $passer['full_name'] }}</td>
+                    <td>{{ $passer['program_name'] ?? $passer['program'] ?? 'Unknown Program' }}</td>
+                    <td>{{ $passer['exam_date'] }}</td>
+                    <td>{{ $passer['result'] }}</td>
+                    <td>{{ $passer['rating'] ? $passer['rating'] . '%' : 'N/A' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Batch Performance Analysis</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Batch</th>
+                    <th>Number of Students</th>
+                    <th>Average Score</th>
                     <th>Pass Rate</th>
-                    <th>Difficulty</th>
-                    <th>Trend</th>
+                    <th>Completion Rate</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['subjectBreakdown'] as $subject)
+                @foreach($tables['batchPerformance'] as $batch)
                 <tr>
-                    <td>{{ $subject['name'] }}</td>
-                    <td>{{ $subject['totalStudents'] }}</td>
-                    <td>{{ $subject['avgScore'] }}%</td>
-                    <td>{{ $subject['passRate'] }}%</td>
-                    <td>{{ $subject['difficulty'] }}</td>
-                    <td>{{ $subject['trend'] > 0 ? '+' : '' }}{{ $subject['trend'] }}%</td>
+                    <td>{{ $batch['batch_name'] }}</td>
+                    <td>{{ $batch['student_count'] }}</td>
+                    <td>{{ $batch['average_score'] }}%</td>
+                    <td>{{ $batch['pass_rate'] }}%</td>
+                    <td>{{ $batch['completion_rate'] }}%</td>
+                    <td>{{ $batch['status'] }}</td>
                 </tr>
                 @endforeach
             </tbody>

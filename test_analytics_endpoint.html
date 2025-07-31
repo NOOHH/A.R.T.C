@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analytics Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Analytics Data Test</h1>
+    <div id="results"></div>
+    
+    <script>
+    // Test the analytics endpoint
+    $.ajax({
+        url: '/admin/analytics/data',
+        type: 'GET',
+        success: function(data) {
+            console.log('Analytics data:', data);
+            
+            var html = '<h2>Analytics Results:</h2>';
+            
+            if (data.batchPerformance) {
+                html += '<h3>Batch Performance:</h3>';
+                if (data.batchPerformance.length === 0) {
+                    html += '<p style="color: green;">✅ SUCCESS: No batch data (empty array)</p>';
+                } else {
+                    html += '<p style="color: red;">❌ ISSUE: Still showing batch data:</p>';
+                    html += '<ul>';
+                    data.batchPerformance.forEach(function(batch) {
+                        html += '<li>' + batch.name + ': ' + batch.students + ' students</li>';
+                    });
+                    html += '</ul>';
+                }
+            }
+            
+            // Check other data sections too
+            if (data.enrollmentTrends) {
+                html += '<h3>Enrollment Trends:</h3>';
+                html += '<p>Data points: ' + data.enrollmentTrends.length + '</p>';
+            }
+            
+            if (data.subjectPerformance) {
+                html += '<h3>Subject Performance:</h3>';
+                html += '<p>Subjects: ' + data.subjectPerformance.length + '</p>';
+            }
+            
+            $('#results').html(html);
+        },
+        error: function(xhr, status, error) {
+            $('#results').html('<p style="color: red;">Error: ' + error + '</p>');
+            console.error('Error:', error);
+        }
+    });
+    </script>
+</body>
+</html>
