@@ -1,21 +1,37 @@
+        * { box-sizing: border-box; }
+
+        body.registration-page {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f9 0%, #d9dfe7 100%);
+            color: #1f2d3a;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        
+        
         /* Multi-step form styles */
         .form-container {
-            min-height: 100vh;
-            background: none !important;
-            padding: 2rem 0;
-
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* or center if vertical centering needed */
+            padding: 2.5rem 1rem;
+            width: 100%;
+            gap: 1rem;
         }
         
-        .form-wrapper {
-            max-width: 800px;
-            width: 800px;
-            margin: 2rem auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            position: relative;
-        }
+            .form-wrapper {
+                width: 100%;
+                max-width: 900px;
+                background: #ffffff;
+                border-radius: 18px;
+                box-shadow: 0 25px 50px rgba(0,0,0,0.08);
+                overflow: hidden;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+            }
         
         /* Stepper styles */
         .stepper-progress {
@@ -50,15 +66,15 @@
         /* Step Content Container - Bootstrap 5 Compatible */
         .step-content {
             display: none;
-            padding: 2rem;
-              min-height: var(--stepper‐height);
-                max-height: var(--stepper‐height);
-                overflow-y: auto;         /* scroll if content overflows */
-                transition: opacity 0.4s ease,
-                            transform 0.4s ease; /* keep your nice slide/ fade */
+            padding: 3rem;
+            width: 100%;
+            box-sizing: border-box;
             opacity: 0;
             transform: translateX(50px);
             transition: all 0.4s ease;
+            background: white;
+            margin: 0 auto;
+            max-width: 800px;
         }
         
         .step-content.active {
@@ -926,3 +942,4 @@
     margin-top: 1.1rem;   
     transition: margin-top 0.3s ease;
   }
+

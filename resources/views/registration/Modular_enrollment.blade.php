@@ -1017,6 +1017,11 @@
                 // Module selection step - load modules for selected program
                 loadModules();
                 break;
+             case 4:
+            // Module selection: ensure modules load when arriving here
+            loadModules();
+            break;
+
             case 5:
                 setupAccountForm();
                 break;
@@ -1249,83 +1254,80 @@
     }
     
     // Load modules
-    function loadModules() {
-        const grid = document.getElementById('modulesGrid');
-        const limitSpan = document.getElementById('moduleLimit');
-        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading modules...</div>';
-        limitSpan.textContent = packageModuleLimit;
-        
-        // Collect modules from all selected programs
-        let allModules = [];
-        let modulesToFetch = [];
-        
-        if (selectedProgramIds.length > 0) {
-            selectedProgramIds.forEach(programId => {
-                const program = window.availableProgramsForModular.find(p => p.program_id == programId);
-                if (program) {
-                    if (program.modules && program.modules.length > 0) {
-                        // Modules are already loaded with the program
-                        const programModules = program.modules.map(module => ({
-                            ...module,
-                            program_name: program.program_name,
-                            program_id: program.program_id
-                        }));
-                        allModules = allModules.concat(programModules);
-                    } else {
-                        // Need to fetch modules separately
-                        modulesToFetch.push(program);
-                    }
-                }
-            });
-        } else {
-            // Fallback to single selection for backward compatibility
-            const program = window.availableProgramsForModular.find(p => p.program_id == selectedProgramId);
+function loadModules() {
+    const grid = document.getElementById('modulesGrid');
+    const limitSpan = document.getElementById('moduleLimit');
+    grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading modules...</div>';
+    limitSpan.textContent = packageModuleLimit;
+
+    let allModules = [];
+    let modulesToFetch = [];
+
+    if (selectedProgramIds.length > 0) {
+        selectedProgramIds.forEach(programId => {
+            const program = window.availableProgramsForModular.find(p => p.program_id == programId);
             if (program) {
                 if (program.modules && program.modules.length > 0) {
-                    allModules = program.modules.map(module => ({
+                    const programModules = program.modules.map(module => ({
                         ...module,
                         program_name: program.program_name,
                         program_id: program.program_id
                     }));
+                    allModules = allModules.concat(programModules);
                 } else {
                     modulesToFetch.push(program);
                 }
             }
-        }
-        
-        // If we need to fetch modules separately, do it
-        if (modulesToFetch.length > 0) {
-            Promise.all(modulesToFetch.map(program => 
-                fetch(`/api/programs/${program.program_id}/modules`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.modules) {
-                            return data.modules.map(module => ({
-                                ...module,
-                                id: module.modules_id || module.id,
-                                name: module.module_name || module.name,
-                                description: module.module_description || module.description,
-                                program_name: program.program_name,
-                                program_id: program.program_id
-                            }));
-                        }
-                        return [];
-                    })
-                    .catch(error => {
-                        console.error(`Error fetching modules for program ${program.program_id}:`, error);
-                        return [];
-                    })
-            )).then(moduleArrays => {
-                // Combine all fetched modules with already loaded ones
-                moduleArrays.forEach(modules => {
-                    allModules = allModules.concat(modules);
-                });
-                processAndDisplayModules(allModules);
-            });
-        } else {
-            processAndDisplayModules(allModules);
+        });
+    } else if (selectedProgramId) {
+        const program = window.availableProgramsForModular.find(p => p.program_id == selectedProgramId);
+        if (program) {
+            if (program.modules && program.modules.length > 0) {
+                allModules = program.modules.map(module => ({
+                    ...module,
+                    program_name: program.program_name,
+                    program_id: program.program_id
+                }));
+            } else {
+                modulesToFetch.push(program);
+            }
         }
     }
+
+    if (modulesToFetch.length > 0) {
+        return Promise.all(modulesToFetch.map(program =>
+            fetch(`/api/programs/${program.program_id}/modules`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.modules) {
+                        return data.modules.map(module => ({
+                            ...module,
+                            id: module.modules_id || module.id,
+                            name: module.module_name || module.name,
+                            description: module.module_description || module.description,
+                            program_name: program.program_name,
+                            program_id: program.program_id,
+                            module_id: module.module_id || module.id
+                        }));
+                    }
+                    return [];
+                })
+                .catch(error => {
+                    console.error(`Error fetching modules for program ${program.program_id}:`, error);
+                    return [];
+                })
+        )).then(moduleArrays => {
+            moduleArrays.forEach(mods => {
+                allModules = allModules.concat(mods);
+            });
+            processAndDisplayModules(allModules);
+        });
+    } else {
+        processAndDisplayModules(allModules);
+        return Promise.resolve();
+    }
+}
+
     
     function processAndDisplayModules(allModules) {
         if (allModules.length === 0) {
