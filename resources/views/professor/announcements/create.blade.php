@@ -1,10 +1,8 @@
-@extends('admin.admin-dashboard-layout')
+@extends('professor.professor-layouts.professor-layout')
 
 @section('title', 'Create Announcement')
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
 .form-card {
     border: none;
@@ -74,20 +72,17 @@
     padding: 0.375rem 0.75rem;
 }
 
-.editor-toolbar {
-    border: 1px solid #ced4da;
-    border-bottom: none;
-    background: #f8f9fa;
-    padding: 0.5rem;
-    border-radius: 0.375rem 0.375rem 0 0;
+.program-batches {
+    border: 1px solid #e3e6f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
 }
 
-.editor-content {
-    border: 1px solid #ced4da;
-    border-top: none;
-    border-radius: 0 0 0.375rem 0.375rem;
-    min-height: 150px;
-    padding: 0.75rem;
+.program-batches h6 {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e3e6f0;
 }
 </style>
 @endpush
@@ -103,16 +98,16 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                        <a href="{{ route('professor.dashboard') }}">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{{ route('admin.announcements.index') }}">Announcements</a>
+                        <a href="{{ route('professor.announcements.index') }}">Announcements</a>
                     </li>
                     <li class="breadcrumb-item active">Create</li>
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('admin.announcements.index') }}" class="btn btn-secondary">
+        <a href="{{ route('professor.announcements.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-2"></i>Back to List
         </a>
     </div>
@@ -130,7 +125,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.announcements.store') }}" method="POST" id="announcementForm">
+    <form action="{{ route('professor.announcements.store') }}" method="POST" id="announcementForm">
         @csrf
         
         <div class="row">
@@ -199,76 +194,64 @@
                                 <input class="form-check-input" type="radio" name="target_scope" id="scope_all" 
                                        value="all" {{ old('target_scope', 'all') === 'all' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="scope_all">
-                                    <strong>All Users</strong> - Send to everyone in the system
+                                    <strong>All Students</strong> - Send to all students in your assigned programs
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="target_scope" id="scope_specific" 
                                        value="specific" {{ old('target_scope') === 'specific' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="scope_specific">
-                                    <strong>Specific Groups</strong> - Target specific users and programs
+                                    <strong>Specific Groups</strong> - Target specific programs and batches
                                 </label>
                             </div>
                         </div>
 
                         <div class="targeting-options" id="targetingOptions">
-                            <!-- User Types -->
+                            <!-- User Types (Students Only for Professors) -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Target User Types:</label>
                                 <div class="checkbox-group">
                                     <div class="checkbox-item">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="target_users[]" 
-                                                   value="students" id="target_students"
-                                                   {{ in_array('students', old('target_users', [])) ? 'checked' : '' }}>
+                                                   value="students" id="target_students" checked
+                                                   {{ in_array('students', old('target_users', ['students'])) ? 'checked' : '' }}>
                                             <label class="form-check-label" for="target_students">
                                                 <i class="bi bi-person-badge me-2"></i>Students
                                             </label>
                                         </div>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="target_users[]" 
-                                                   value="professors" id="target_professors"
-                                                   {{ in_array('professors', old('target_users', [])) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="target_professors">
-                                                <i class="bi bi-person-workspace me-2"></i>Professors
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="target_users[]" 
-                                                   value="directors" id="target_directors"
-                                                   {{ in_array('directors', old('target_users', [])) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="target_directors">
-                                                <i class="bi bi-person-fill me-2"></i>Directors
-                                            </label>
-                                        </div>
+                                        <small class="text-muted">You can only target students in your assigned programs</small>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Programs -->
+                            <!-- Programs (Only Assigned Programs) -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Target Programs (optional):</label>
-                                <div class="checkbox-group">
-                                    @foreach($programs as $program)
-                                        <div class="checkbox-item">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="target_programs[]" 
-                                                       value="{{ $program->program_id }}" id="program_{{ $program->program_id }}"
-                                                       {{ in_array($program->program_id, old('target_programs', [])) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="program_{{ $program->program_id }}">
-                                                    {{ $program->program_name }}
-                                                </label>
+                                @if($programs->count() > 0)
+                                    <div class="checkbox-group">
+                                        @foreach($programs as $program)
+                                            <div class="checkbox-item">
+                                                <div class="form-check">
+                                                    <input class="form-check-input program-checkbox" type="checkbox" name="target_programs[]" 
+                                                           value="{{ $program->program_id }}" id="program_{{ $program->program_id }}"
+                                                           {{ in_array($program->program_id, old('target_programs', [])) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="program_{{ $program->program_id }}">
+                                                        {{ $program->program_name }}
+                                                    </label>
+                                                </div>
                                             </div>
-                                        </div>
-                                    @endforeach
-                                </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        You are not assigned to any programs. Please contact an administrator.
+                                    </div>
+                                @endif
                             </div>
 
-                            <!-- Batches -->
+                            <!-- Batches (Dynamic based on selected programs) -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Target Batches (optional):</label>
                                 <div id="batchesContainer" class="checkbox-group">
@@ -296,7 +279,7 @@
                                                    value="modular" id="plan_modular"
                                                    {{ in_array('modular', old('target_plans', [])) ? 'checked' : '' }}>
                                             <label class="form-check-label" for="plan_modular">
-                                                <i class="bi bi-puzzle me-2"></i>Modular Program
+                                                <i class="bi bi-puzzle me-2"></i>Modular
                                             </label>
                                         </div>
                                     </div>
@@ -305,42 +288,47 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Sidebar -->
-            <div class="col-lg-4">
                 <!-- Publishing Options -->
                 <div class="card form-card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="bi bi-calendar3 me-2"></i>Publishing Options
+                            <i class="bi bi-calendar me-2"></i>Publishing Options
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="form-check form-switch mb-3">
-                            <input type="hidden" name="is_published" value="0">
-                            <input class="form-check-input" type="checkbox" id="is_published" name="is_published" value="1"
-                                   {{ old('is_published', true) ? 'checked' : '' }}>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="datetime-local" class="form-control" id="publish_date" name="publish_date" 
+                                           value="{{ old('publish_date') }}">
+                                    <label for="publish_date">Publish Date (optional)</label>
+                                    <div class="form-text">Leave empty to publish immediately</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="datetime-local" class="form-control" id="expire_date" name="expire_date" 
+                                           value="{{ old('expire_date') }}">
+                                    <label for="expire_date">Expire Date (optional)</label>
+                                    <div class="form-text">Leave empty for no expiration</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_published" id="is_published" 
+                                   value="1" {{ old('is_published', true) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_published">
-                                Publish immediately
+                                Publish immediately (uncheck to save as draft)
                             </label>
-                        </div>
-
-                        <div class="form-floating mb-3">
-                            <input type="datetime-local" class="form-control" id="publish_date" name="publish_date" 
-                                   value="{{ old('publish_date') }}">
-                            <label for="publish_date">Publish Date (optional)</label>
-                        </div>
-
-                        <div class="form-floating mb-3">
-                            <input type="datetime-local" class="form-control" id="expire_date" name="expire_date" 
-                                   value="{{ old('expire_date') }}">
-                            <label for="expire_date">Expiry Date (optional)</label>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Preview -->
+            <!-- Preview Section -->
+            <div class="col-lg-4">
                 <div class="card form-card">
                     <div class="card-header">
                         <h5 class="mb-0">
@@ -369,7 +357,7 @@
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-check-circle me-2"></i>Create Announcement
                     </button>
-                    <a href="{{ route('admin.announcements.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('professor.announcements.index') }}" class="btn btn-secondary">
                         <i class="bi bi-x-circle me-2"></i>Cancel
                     </a>
                 </div>
@@ -392,15 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const targetingOptions = document.getElementById('targetingOptions');
 
     function toggleTargetingOptions() {
-        console.log('Toggle function called');
-        console.log('Scope specific checked:', scopeSpecific.checked);
-        
         if (scopeSpecific.checked) {
             targetingOptions.classList.add('show');
-            console.log('Showing targeting options');
         } else {
             targetingOptions.classList.remove('show');
-            console.log('Hiding targeting options');
         }
     }
 
@@ -410,13 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initialize
         toggleTargetingOptions();
-        console.log('Initialized targeting options toggle');
-    } else {
-        console.error('Some targeting elements not found:', {
-            scopeAll: !!scopeAll,
-            scopeSpecific: !!scopeSpecific,
-            targetingOptions: !!targetingOptions
-        });
     }
 
     // Handle program selection for dynamic batch loading
@@ -450,15 +426,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const program = @json($programs).find(p => p.program_id == programId);
             const batches = batchesByProgram[programId];
             
-            html += `<div class="program-batches mb-3">
-                        <h6 class="text-primary mb-2"><i class="bi bi-collection"></i> ${program.program_name}</h6>
+            html += `<div class="program-batches">
+                        <h6 class="text-primary"><i class="bi bi-collection"></i> ${program.program_name}</h6>
                         <div class="row">`;
             
             batches.forEach(batch => {
                 const oldBatches = @json(old('target_batches', []));
                 const isChecked = oldBatches.includes(batch.batch_id) ? 'checked' : '';
                 
-                html += `<div class="col-md-6 mb-2">
+                html += `<div class="col-md-12 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="target_batches[]" 
                                        value="${batch.batch_id}" id="batch_${batch.batch_id}" ${isChecked}>
@@ -521,20 +497,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
 
-        // If specific targeting is selected, at least one user type should be selected
+        // If specific targeting is selected, validate that students is selected
         if (scopeSpecific.checked) {
-            const userTypes = document.querySelectorAll('input[name="target_users[]"]:checked');
-            console.log('Specific targeting selected, user types checked:', userTypes.length);
-            
-            if (userTypes.length === 0) {
+            const studentsCheckbox = document.getElementById('target_students');
+            if (!studentsCheckbox.checked) {
                 e.preventDefault();
-                alert('Please select at least one user type for specific targeting.');
+                alert('You must target students when using specific targeting.');
                 return false;
             }
-            
-            // Log what user types are selected
-            const selectedTypes = Array.from(userTypes).map(input => input.value);
-            console.log('Selected user types:', selectedTypes);
         }
     });
 });

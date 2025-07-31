@@ -394,7 +394,7 @@
                                                        name="batch_ids[]" value="{{ $batch->batch_id }}" 
                                                        id="batch_{{ $batch->batch_id }}">
                                                 <label class="form-check-label" for="batch_{{ $batch->batch_id }}">
-                                                    <span class="badge bg-primary me-2">{{ $batch->program->program_name }}</span>
+                                                    <span class="badge bg-primary me-2">{{ $batch->program ? $batch->program->program_name : 'Unknown Program' }}</span>
                                                     {{ $batch->batch_name }}
                                                 </label>
                                             </div>

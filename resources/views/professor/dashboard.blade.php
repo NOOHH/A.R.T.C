@@ -199,10 +199,20 @@ html, body {
         <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">
-                    <i class="bi bi-check2-square text-success" style="font-size: 3rem;"></i>
+                    <i class="bi bi-calendar-event text-success" style="font-size: 3rem;"></i>
                     <h5 class="card-title mt-3">Meetings</h5>
                     <p class="card-text">Track and Manage Class Meetings.</p>
                     <a href="{{ route('professor.meetings') }}" class="btn btn-success">Manage Meetings</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-megaphone text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Announcements</h5>
+                    <p class="card-text">View and manage your announcements.</p>
+                    <a href="{{ route('professor.announcements.index') }}" class="btn btn-warning">View Announcements</a>
                 </div>
             </div>
         </div>

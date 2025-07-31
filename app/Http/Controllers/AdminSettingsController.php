@@ -1136,6 +1136,7 @@ class AdminSettingsController extends Controller
             'view_programs_enabled' => 'nullable',
             'meeting_creation_enabled' => 'nullable',
             'professor_module_management_enabled' => 'nullable',
+            'professor_announcement_management_enabled' => 'nullable',
         ]);
 
         try {
@@ -1148,6 +1149,7 @@ class AdminSettingsController extends Controller
         // Determine meeting creation toggle (default false if unchecked)
         $meetingCreationEnabled = filter_var($request->input('meeting_creation_enabled', false), FILTER_VALIDATE_BOOLEAN);
         $moduleManagementEnabled = filter_var($request->input('professor_module_management_enabled', false), FILTER_VALIDATE_BOOLEAN);
+        $announcementManagementEnabled = filter_var($request->input('professor_announcement_management_enabled', false), FILTER_VALIDATE_BOOLEAN);
 
 
             // Save AI Quiz Enabled setting
@@ -1173,6 +1175,15 @@ class AdminSettingsController extends Controller
                 ['setting_key' => 'professor_module_management_enabled'],
                 [
                     'setting_value' => $moduleManagementEnabled ? '1' : '0',
+                    'is_active' => 1
+                ]
+            );
+
+            // Save Announcement Management Enabled setting
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'professor_announcement_management_enabled'],
+                [
+                    'setting_value' => $announcementManagementEnabled ? '1' : '0',
                     'is_active' => 1
                 ]
             );
@@ -1236,6 +1247,9 @@ class AdminSettingsController extends Controller
                 'upload_videos_enabled' => AdminSetting::where('setting_key', 'upload_videos_enabled')->value('setting_value') !== 'false',
                 'attendance_enabled' => AdminSetting::where('setting_key', 'attendance_enabled')->value('setting_value') !== 'false',
                 'view_programs_enabled' => AdminSetting::where('setting_key', 'view_programs_enabled')->value('setting_value') !== 'false',
+                'meeting_creation_enabled' => AdminSetting::where('setting_key', 'meeting_creation_enabled')->value('setting_value') === '1',
+                'professor_module_management_enabled' => AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1',
+                'professor_announcement_management_enabled' => AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1',
             ];
 
             return response()->json([
@@ -1258,7 +1272,8 @@ class AdminSettingsController extends Controller
             'manage_enrollments',
             'view_analytics',
             'manage_professors',
-            'manage_batches'
+            'manage_batches',
+            'manage_announcements'
         ];
 
         try {
@@ -1288,6 +1303,7 @@ class AdminSettingsController extends Controller
                 'view_analytics' => AdminSetting::where('setting_key', 'director_view_analytics')->value('setting_value') !== 'false',
                 'manage_professors' => AdminSetting::where('setting_key', 'director_manage_professors')->value('setting_value') !== 'false',
                 'manage_batches' => AdminSetting::where('setting_key', 'director_manage_batches')->value('setting_value') !== 'false',
+                'manage_announcements' => AdminSetting::where('setting_key', 'director_manage_announcements')->value('setting_value') !== 'false',
             ];
             return response()->json(['success' => true, 'settings' => $features]);
         } catch (\Exception $e) {
@@ -1785,6 +1801,35 @@ class AdminSettingsController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to update module management whitelist: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update announcement management whitelist settings
+     */
+    public function updateAnnouncementManagementWhitelist(Request $request)
+    {
+        try {
+            $whitelistedProfessors = $request->input('whitelist_announcement_professors', []);
+            $whitelistString = implode(',', $whitelistedProfessors);
+            
+            // Save to database using AdminSetting model
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'professor_announcement_management_whitelist'],
+                ['setting_value' => $whitelistString]
+            );
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Announcement management whitelist updated successfully',
+                'count' => count($whitelistedProfessors)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating announcement management whitelist: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update announcement management whitelist: ' . $e->getMessage()
             ], 500);
         }
     }

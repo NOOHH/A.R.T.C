@@ -47,7 +47,6 @@
                     <span>Dashboard</span>
                 </a>
             </div>
-            
             <!-- Module Management -->
             @if(!empty($moduleManagementEnabled) && $moduleManagementEnabled)
             <div class="nav-item">
@@ -57,7 +56,6 @@
                 </a>
             </div>
             @endif
-            
             <!-- Meetings -->
             <div class="nav-item">
                 <a href="{{ route('professor.meetings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.meetings') active @endif">
@@ -65,7 +63,13 @@
                     <span>Meetings</span>
                 </a>
             </div>
-            
+            <!-- Announcements -->
+            <div class="nav-item">
+                <a href="{{ route('professor.announcements.index') }}" class="nav-link @if(str_starts_with(Route::currentRouteName(), 'professor.announcements')) active @endif">
+                    <i class="bi bi-megaphone"></i>
+                    <span>Announcements</span>
+                </a>
+            </div>
             <!-- Students Dropdown -->
             <div class="nav-item">
                 <a class="nav-link dropdown-toggle" href="#studentsMenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="studentsMenu">
@@ -86,7 +90,6 @@
                     </div>
                 </div>
             </div>
-            
             <!-- Programs -->
             <div class="nav-item">
                 <a href="{{ route('professor.programs') }}" class="nav-link @if(Route::currentRouteName() === 'professor.programs') active @endif">
@@ -94,7 +97,6 @@
                     <span>My Programs</span>
                 </a>
             </div>
-            
             <!-- Assignments Dropdown -->
             <div class="nav-item">
                 <a class="nav-link dropdown-toggle" href="#assignmentsMenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="assignmentsMenu">

@@ -1,10 +1,8 @@
-@extends('admin.admin-dashboard-layout')
+@extends('professor.professor-layouts.professor-layout')
 
-@section('title', 'Announcement Management')
+@section('title', 'My Announcements')
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
 .announcement-card {
     transition: all 0.3s ease;
@@ -67,11 +65,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800">
-                <i class="bi bi-megaphone me-2"></i>Announcement Management
+                <i class="bi bi-megaphone me-2"></i>My Announcements
             </h1>
-            <p class="text-muted">Create and manage system announcements</p>
+            <p class="text-muted">Create and manage your announcements for students</p>
         </div>
-        <a href="{{ route('admin.announcements.create') }}" class="btn btn-primary">
+        <a href="{{ route('professor.announcements.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Create Announcement
         </a>
     </div>
@@ -80,6 +78,14 @@
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <!-- Error Message -->
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -169,7 +175,7 @@
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <h6 class="m-0 font-weight-bold text-primary">
-                <i class="bi bi-list-ul me-2"></i>All Announcements
+                <i class="bi bi-list-ul me-2"></i>My Announcements
             </h6>
         </div>
         <div class="card-body">
@@ -194,13 +200,13 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             @php
-                                                $currentUserId = auth('admin')->id();
+                                                $currentUserId = session('user_id');
                                                 $creator = $announcement->getCreator();
                                                 $creatorName = $announcement->getCreatorName();
                                                 $creatorAvatar = $announcement->getCreatorAvatar();
                                                 $isCurrentUser = false;
                                                 
-                                                if ($announcement->admin_id && $announcement->admin_id == $currentUserId) {
+                                                if ($announcement->professor_id && $announcement->professor_id == $currentUserId) {
                                                     $isCurrentUser = true;
                                                 }
                                             @endphp
@@ -233,7 +239,7 @@
                                     <td>
                                         <div class="target-info">
                                             @if($announcement->target_scope === 'all')
-                                                <span class="badge bg-secondary">All Users</span>
+                                                <span class="badge bg-secondary">All Students</span>
                                             @else
                                                 @php
                                                     // Handle both array (new format) and JSON string (old format)
@@ -286,11 +292,11 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('admin.announcements.show', $announcement->announcement_id) }}" 
+                                            <a href="{{ route('professor.announcements.show', $announcement->announcement_id) }}" 
                                                class="btn btn-outline-info" title="View">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="{{ route('admin.announcements.edit', $announcement->announcement_id) }}" 
+                                            <a href="{{ route('professor.announcements.edit', $announcement->announcement_id) }}" 
                                                class="btn btn-outline-primary" title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
@@ -317,7 +323,7 @@
                     <i class="bi bi-megaphone text-muted" style="font-size: 3rem;"></i>
                     <h4 class="text-muted mt-3">No announcements found</h4>
                     <p class="text-muted">Create your first announcement to get started.</p>
-                    <a href="{{ route('admin.announcements.create') }}" class="btn btn-primary">
+                    <a href="{{ route('professor.announcements.create') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>Create Announcement
                     </a>
                 </div>
@@ -361,8 +367,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = this.dataset.id;
             const type = this.dataset.type;
             const url = type === 'status' 
-                ? `/admin/announcements/${id}/toggle-status`
-                : `/admin/announcements/${id}/toggle-published`;
+                ? `/professor/announcements/${id}/toggle-status`
+                : `/professor/announcements/${id}/toggle-published`;
             
             fetch(url, {
                 method: 'POST',
@@ -398,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const title = this.dataset.title;
             
             document.getElementById('deleteAnnouncementTitle').textContent = title;
-            document.getElementById('deleteForm').action = `/admin/announcements/${id}`;
+            document.getElementById('deleteForm').action = `/professor/announcements/${id}`;
             
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
         });

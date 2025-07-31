@@ -715,6 +715,22 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                             </div>
                                         </div>
                                         
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="professorAnnouncementManagementEnabled" name="professor_announcement_management_enabled"
+                                                       {{ DB::table('admin_settings')->where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1' ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="professorAnnouncementManagementEnabled">
+                                                    <strong>Announcement Management</strong><br>
+                                                    <small class="text-muted">Allow professors to create and manage announcements for their assigned programs</small>
+                                                </label>
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#announcementManagementWhitelistModal">
+                                                        <i class="fas fa-users me-1"></i>View Whitelist
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
 
                                     </div>
                                     
@@ -938,6 +954,93 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                 </div>
             </div>
 
+            <!-- Announcement Management Whitelist Modal -->
+            <div class="modal fade" id="announcementManagementWhitelistModal" tabindex="-1" aria-labelledby="announcementManagementWhitelistModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="announcementManagementWhitelistModalLabel">
+                                <i class="fas fa-users me-2"></i>Announcement Management Whitelist
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>About Whitelist:</strong> Select specific professors who can manage announcements. If no professors are selected, the global "Announcement Management" setting applies to all professors.
+                            </div>
+                            
+                            <form id="announcementManagementWhitelistForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Whitelisted Professors</label>
+                                    <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                        @php
+                                            $whitelistedAnnouncementProfessors = explode(',', \App\Models\AdminSetting::getValue('professor_announcement_management_whitelist', ''));
+                                        @endphp
+                                        @forelse($professors as $professor)
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="announcement_professor_{{ $professor->professor_id }}" 
+                                                       name="whitelist_announcement_professors[]" 
+                                                       value="{{ $professor->professor_id }}"
+                                                       {{ in_array($professor->professor_id, $whitelistedAnnouncementProfessors) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="announcement_professor_{{ $professor->professor_id }}">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3">
+                                                            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                                {{ substr($professor->first_name ?? 'P', 0, 1) }}{{ substr($professor->last_name ?? 'P', 0, 1) }}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{{ $professor->first_name ?? 'Unknown' }} {{ $professor->last_name ?? 'Professor' }}</strong>
+                                                            <br>
+                                                            <small class="text-muted">{{ $professor->email ?? 'No email' }}</small>
+                                                            @if($professor->programs && $professor->programs->count() > 0)
+                                                                <br>
+                                                                <small class="text-primary">
+                                                                    Programs: {{ $professor->programs->pluck('program_name')->join(', ') }}
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        @empty
+                                            <div class="text-center py-3">
+                                                <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No active professors found.</p>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    <small class="text-muted">Select professors who should be allowed to manage announcements, regardless of the global setting.</small>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllAnnouncementProfessors()">
+                                            <i class="fas fa-check-double me-1"></i>Select All
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllAnnouncementProfessors()">
+                                            <i class="fas fa-times me-1"></i>Clear All
+                                        </button>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <span id="selectedAnnouncementCount">{{ count(array_filter($whitelistedAnnouncementProfessors)) }}</span> professors selected
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="saveAnnouncementManagementWhitelist()">
+                                <i class="fas fa-save me-2"></i>Save Whitelist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Director Tab --}}
             <div class="tab-pane fade" id="director" role="tabpanel">
                 <div class="row g-4">
@@ -1011,6 +1114,16 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                                 <label class="form-check-label" for="directorManageProfessors">
                                                     <strong>Manage Professors</strong><br>
                                                     <small class="text-muted">Allow directors to manage professor accounts</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="directorManageAnnouncements" name="manage_announcements" checked>
+                                                <label class="form-check-label" for="directorManageAnnouncements">
+                                                    <strong>Manage Announcements</strong><br>
+                                                    <small class="text-muted">Allow directors to create and manage announcements</small>
                                                 </label>
                                             </div>
                                         </div>
@@ -2959,6 +3072,12 @@ document.addEventListener('DOMContentLoaded', function() {
     moduleCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedModuleCount);
     });
+    
+    // Update count for announcement management checkboxes
+    const announcementCheckboxes = document.querySelectorAll('input[name="whitelist_announcement_professors[]"]');
+    announcementCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedAnnouncementCount);
+    });
 });
 
 // Module Management Whitelist Functions
@@ -2997,6 +3116,53 @@ function saveModuleManagementWhitelist() {
             showAlert('Module management whitelist saved successfully!', 'success');
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('moduleManagementWhitelistModal'));
+            modal.hide();
+        } else {
+            showAlert(data.error || 'Error saving whitelist', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving whitelist:', error);
+        showAlert('Error saving whitelist: ' + error.message, 'danger');
+    });
+}
+
+// Announcement Management Whitelist Functions
+function selectAllAnnouncementProfessors() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_announcement_professors[]"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    updateSelectedAnnouncementCount();
+}
+
+function clearAllAnnouncementProfessors() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_announcement_professors[]"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    updateSelectedAnnouncementCount();
+}
+
+function updateSelectedAnnouncementCount() {
+    const checkboxes = document.querySelectorAll('input[name="whitelist_announcement_professors[]"]:checked');
+    const count = checkboxes.length;
+    document.getElementById('selectedAnnouncementCount').textContent = count;
+}
+
+function saveAnnouncementManagementWhitelist() {
+    const form = document.getElementById('announcementManagementWhitelistForm');
+    const formData = new FormData(form);
+    
+    fetch('/admin/settings/announcement-management-whitelist', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Announcement management whitelist saved successfully!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('announcementManagementWhitelistModal'));
             modal.hide();
         } else {
             showAlert(data.error || 'Error saving whitelist', 'danger');

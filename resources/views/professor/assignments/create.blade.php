@@ -1,4 +1,4 @@
-@extends('layouts.professor')
+@extends('professor.professor-layouts.professor-layout')
 
 @section('title', 'Create Assignment')
 

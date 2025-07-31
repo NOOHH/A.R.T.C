@@ -18,7 +18,7 @@ class AnnouncementController extends Controller
 {
     public function index()
     {
-        $announcements = Announcement::with(['program'])
+        $announcements = Announcement::with(['program', 'admin', 'professor'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
@@ -57,7 +57,7 @@ class AnnouncementController extends Controller
         ]);
 
         $announcement = new Announcement();
-        $announcement->admin_id = Auth::id(); // Add the admin who created it
+        $announcement->admin_id = session('user_id'); // Get admin ID from session
         $announcement->title = $request->title;
         $announcement->content = $request->content;
         $announcement->description = $request->description;

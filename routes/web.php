@@ -42,6 +42,7 @@ use App\Http\Controllers\DirectorController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\StudentModuleController;
 use App\Http\Controllers\ProgramController;
+use App\Http\Controllers\Professor\AnnouncementController as ProfessorAnnouncementController;
 
 // routes/web.php
 
@@ -1124,6 +1125,10 @@ Route::post('/admin/settings/meeting-whitelist', [AdminSettingsController::class
 Route::post('/admin/settings/module-management-whitelist', [AdminSettingsController::class, 'updateModuleManagementWhitelist'])
      ->name('admin.settings.module.management.whitelist');
 
+// Announcement management whitelist settings
+Route::post('/admin/settings/announcement-management-whitelist', [AdminSettingsController::class, 'updateAnnouncementManagementWhitelist'])
+     ->name('admin.settings.announcement.management.whitelist');
+
 // Plan Management Routes (Learning Mode Configuration)
 Route::prefix('admin/plans')->middleware(['admin.auth'])->group(function () {
     Route::get('/', [AdminSettingsController::class, 'planSettings'])->name('admin.plans.index');
@@ -1852,6 +1857,24 @@ Route::middleware(['professor.auth'])
     // ...existing professor routes...
     Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])->name('grading.auto-grade-quizzes');
     Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])->name('assignments.create');
+    
+    // Professor Announcements Routes
+    Route::get('/announcements', [ProfessorAnnouncementController::class, 'index'])
+         ->name('announcements.index');
+    Route::get('/announcements/create', [ProfessorAnnouncementController::class, 'create'])
+         ->name('announcements.create');
+    Route::post('/announcements', [ProfessorAnnouncementController::class, 'store'])
+         ->name('announcements.store');
+    Route::get('/announcements/{announcement}', [ProfessorAnnouncementController::class, 'show'])
+         ->name('announcements.show');
+    Route::get('/announcements/{announcement}/edit', [ProfessorAnnouncementController::class, 'edit'])
+         ->name('announcements.edit');
+    Route::put('/announcements/{announcement}', [ProfessorAnnouncementController::class, 'update'])
+         ->name('announcements.update');
+    Route::delete('/announcements/{announcement}', [ProfessorAnnouncementController::class, 'destroy'])
+         ->name('announcements.destroy');
+    Route::patch('/announcements/{announcement}/toggle-status', [ProfessorAnnouncementController::class, 'toggleStatus'])
+         ->name('announcements.toggle-status');
 });
 
 // API routes for student and professor data

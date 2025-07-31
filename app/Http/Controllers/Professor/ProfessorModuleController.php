@@ -45,9 +45,15 @@ class ProfessorModuleController extends Controller
             $professorId = session('professor_id');
             Log::info('ProfessorModuleController: Professor authenticated via session', ['professor_id' => $professorId]);
 
-            if (!empty($whitelist)) {
-                $whitelistedIds = array_map('trim', explode(',', $whitelist));
-                if (!in_array((string)$professorId, $whitelistedIds)) {
+            // If whitelist is not empty and has actual professor IDs, check if professor is in whitelist
+            if (!empty($whitelist) && trim($whitelist) !== '') {
+                $whitelistedIds = array_filter(array_map('trim', explode(',', $whitelist)), function($id) {
+                    return !empty($id) && $id !== '';
+                });
+                
+                Log::info('ProfessorModuleController: Parsed whitelist IDs', ['whitelisted_ids' => $whitelistedIds]);
+                
+                if (!empty($whitelistedIds) && !in_array((string)$professorId, $whitelistedIds)) {
                     Log::warning('ProfessorModuleController: Professor not in whitelist', [
                         'professor_id' => $professorId,
                         'whitelist' => $whitelistedIds
