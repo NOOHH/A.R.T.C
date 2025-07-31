@@ -1345,6 +1345,9 @@ Route::get('/admin/analytics/batches', [AdminAnalyticsController::class, 'getBat
 Route::get('/admin/analytics/subjects', [AdminAnalyticsController::class, 'getSubjects'])
      ->name('admin.analytics.subjects');
 
+Route::get('/admin/analytics/programs', [AdminAnalyticsController::class, 'getPrograms'])
+     ->name('admin.analytics.programs');
+
 Route::get('/admin/analytics/student/{id}', [AdminAnalyticsController::class, 'getStudentDetail'])
      ->name('admin.analytics.student');
 

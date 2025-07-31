@@ -522,13 +522,7 @@
                             <label for="boardExam" class="form-label">Board Exam Type</label>
                             <select class="form-select" id="boardExam" name="board_exam" required>
                                 <option value="">Select Exam</option>
-                                <option value="CPA">CPA (Certified Public Accountant)</option>
-                                <option value="LET">LET (Licensure Examination for Teachers)</option>
-                                <option value="CE">CE (Civil Engineer)</option>
-                                <option value="ME">ME (Mechanical Engineer)</option>
-                                <option value="EE">EE (Electrical Engineer)</option>
-                                <option value="NURSE">Nursing Board Exam</option>
-                                <option value="OTHER">Other</option>
+                                <!-- Options will be loaded dynamically from programs table -->
                             </select>
                         </div>
                         <div class="mb-3" id="otherExamDiv" style="display: none;">
@@ -586,13 +580,7 @@
                                     <label for="manualBoardExam" class="form-label">Board Exam</label>
                                     <select class="form-select" id="manualBoardExam" name="board_exam" required>
                                         <option value="">Select Exam</option>
-                                        <option value="CPA">CPA (Certified Public Accountant)</option>
-                                        <option value="LET">LET (Licensure Examination for Teachers)</option>
-                                        <option value="CE">CE (Civil Engineer)</option>
-                                        <option value="ME">ME (Mechanical Engineer)</option>
-                                        <option value="EE">EE (Electrical Engineer)</option>
-                                        <option value="NURSE">Nursing Board Exam</option>
-                                        <option value="OTHER">Other</option>
+                                        <!-- Options will be loaded dynamically from programs table -->
                                     </select>
                                 </div>
                             </div>
@@ -748,8 +736,91 @@ function initializeAnalytics() {
     initializeProgressChart();
     initializeBatchChart();
     
+    // Load programs for board exam dropdowns
+    loadPrograms();
+    
     // Set up event listeners
     setupEventListeners();
+}
+
+function loadPrograms() {
+    console.log('Loading programs from API...');
+    fetch('/admin/analytics/programs')
+        .then(response => {
+            console.log('Programs API response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(programs => {
+            console.log('Programs received:', programs);
+            const boardExamSelect = document.getElementById('boardExam');
+            const manualBoardExamSelect = document.getElementById('manualBoardExam');
+            
+            // Clear existing options (keep the first "Select" option)
+            if (boardExamSelect) {
+                console.log('Updating boardExam dropdown');
+                boardExamSelect.innerHTML = '<option value="">Select Exam</option>';
+                programs.forEach(program => {
+                    const option = document.createElement('option');
+                    option.value = program.name;
+                    option.textContent = program.name + ' Board Exam';
+                    boardExamSelect.appendChild(option);
+                    console.log('Added option:', program.name + ' Board Exam');
+                });
+                
+                // Add "Other" option at the end
+                const otherOption = document.createElement('option');
+                otherOption.value = 'OTHER';
+                otherOption.textContent = 'Other';
+                boardExamSelect.appendChild(otherOption);
+            }
+            
+            if (manualBoardExamSelect) {
+                console.log('Updating manualBoardExam dropdown');
+                manualBoardExamSelect.innerHTML = '<option value="">Select Exam</option>';
+                programs.forEach(program => {
+                    const option = document.createElement('option');
+                    option.value = program.name;
+                    option.textContent = program.name + ' Board Exam';
+                    manualBoardExamSelect.appendChild(option);
+                    console.log('Added manual option:', program.name + ' Board Exam');
+                });
+                
+                // Add "Other" option at the end
+                const otherOption = document.createElement('option');
+                otherOption.value = 'OTHER';
+                otherOption.textContent = 'Other';
+                manualBoardExamSelect.appendChild(otherOption);
+            }
+            
+            console.log('Programs loaded successfully');
+        })
+        .catch(error => {
+            console.error('Failed to load programs:', error);
+            console.log('Using fallback options');
+            // Fallback to basic options based on database programs if fetch fails
+            const fallbackOptions = [
+                { value: 'Nursing', text: 'Nursing Board Exam' },
+                { value: 'Mechanical Engineer', text: 'Mechanical Engineer Board Exam' },
+                { value: 'OTHER', text: 'Other' }
+            ];
+            
+            [document.getElementById('boardExam'), document.getElementById('manualBoardExam')].forEach(select => {
+                if (select) {
+                    console.log('Setting fallback options for', select.id);
+                    select.innerHTML = '<option value="">Select Exam</option>';
+                    fallbackOptions.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt.value;
+                        option.textContent = opt.text;
+                        select.appendChild(option);
+                        console.log('Added fallback option:', opt.text);
+                    });
+                }
+            });
+        });
 }
 
 function setupEventListeners() {

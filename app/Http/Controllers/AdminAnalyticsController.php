@@ -119,6 +119,23 @@ class AdminAnalyticsController extends Controller
         }
     }
 
+    public function getPrograms()
+    {
+        try {
+            // Get programs from programs table using DB facade for reliability
+            $programs = DB::table('programs')
+                ->select('program_id as id', 'program_name as name')
+                ->where('is_archived', 0)
+                ->orderBy('program_name')
+                ->get();
+
+            return response()->json($programs);
+        } catch (\Exception $e) {
+            Log::error('Get programs error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load programs'], 500);
+        }
+    }
+
     public function getStudentDetail($id)
     {
         try {
@@ -1676,7 +1693,7 @@ class AdminAnalyticsController extends Controller
     private function getRecentlyCompleted($filters)
     {
         try {
-            $result = [];
+            $studentCompletions = [];
             
             // Get recent module completions with simplified joins
             $moduleCompletions = DB::table('module_completions')
@@ -1707,22 +1724,37 @@ class AdminAnalyticsController extends Controller
             }
 
             $moduleCompletions = $moduleCompletions->orderBy('module_completions.completed_at', 'desc')
-                ->limit(10)
                 ->get();
 
+            // Group module completions by student
             foreach ($moduleCompletions as $completion) {
+                $studentId = $completion->student_id;
                 $studentName = trim(($completion->user_firstname ?? '') . ' ' . ($completion->user_lastname ?? ''));
                 
-                $result[] = [
-                    'name' => $studentName ?: $completion->student_id,
-                    'email' => $completion->email ?? 'N/A',
-                    'student_id' => $completion->student_id,
-                    'program' => $completion->program_name ?? 'N/A',
-                    'plan' => $completion->enrollment_type ?? 'N/A',
-                    'completion_date' => $completion->completion_date ? 
-                        Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A',
-                    'final_score' => 'Module: ' . ($completion->module_name ?? 'N/A')
-                ];
+                if (!isset($studentCompletions[$studentId])) {
+                    $studentCompletions[$studentId] = [
+                        'name' => $studentName ?: $studentId,
+                        'email' => $completion->email ?? 'N/A',
+                        'student_id' => $studentId,
+                        'program' => $completion->program_name ?? 'N/A',
+                        'plan' => $completion->enrollment_type ?? 'N/A',
+                        'completion_date' => $completion->completion_date ? 
+                            Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A',
+                        'modules' => [],
+                        'courses' => [],
+                        'last_completion' => $completion->completion_date
+                    ];
+                }
+                
+                if ($completion->module_name) {
+                    $studentCompletions[$studentId]['modules'][] = $completion->module_name;
+                }
+                
+                // Update last completion date
+                if ($completion->completion_date > $studentCompletions[$studentId]['last_completion']) {
+                    $studentCompletions[$studentId]['last_completion'] = $completion->completion_date;
+                    $studentCompletions[$studentId]['completion_date'] = Carbon::parse($completion->completion_date)->format('M d, Y');
+                }
             }
 
             // Get recent course completions with simplified joins
@@ -1754,21 +1786,64 @@ class AdminAnalyticsController extends Controller
             }
 
             $courseCompletions = $courseCompletions->orderBy('course_completions.completed_at', 'desc')
-                ->limit(10)
                 ->get();
 
+            // Group course completions by student
             foreach ($courseCompletions as $completion) {
+                $studentId = $completion->student_id;
                 $studentName = trim(($completion->user_firstname ?? '') . ' ' . ($completion->user_lastname ?? ''));
                 
+                if (!isset($studentCompletions[$studentId])) {
+                    $studentCompletions[$studentId] = [
+                        'name' => $studentName ?: $studentId,
+                        'email' => $completion->email ?? 'N/A',
+                        'student_id' => $studentId,
+                        'program' => $completion->program_name ?? 'N/A',
+                        'plan' => $completion->enrollment_type ?? 'N/A',
+                        'completion_date' => $completion->completion_date ? 
+                            Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A',
+                        'modules' => [],
+                        'courses' => [],
+                        'last_completion' => $completion->completion_date
+                    ];
+                }
+                
+                if ($completion->course_name) {
+                    $studentCompletions[$studentId]['courses'][] = $completion->course_name;
+                }
+                
+                // Update last completion date
+                if ($completion->completion_date > $studentCompletions[$studentId]['last_completion']) {
+                    $studentCompletions[$studentId]['last_completion'] = $completion->completion_date;
+                    $studentCompletions[$studentId]['completion_date'] = Carbon::parse($completion->completion_date)->format('M d, Y');
+                }
+            }
+
+            // Convert to final format
+            $result = [];
+            foreach ($studentCompletions as $student) {
+                $completedItems = [];
+                
+                // Add modules
+                if (!empty($student['modules'])) {
+                    $modules = array_unique($student['modules']);
+                    $completedItems[] = 'Modules: ' . implode(', ', $modules);
+                }
+                
+                // Add courses
+                if (!empty($student['courses'])) {
+                    $courses = array_unique($student['courses']);
+                    $completedItems[] = 'Courses: ' . implode(', ', $courses);
+                }
+                
                 $result[] = [
-                    'name' => $studentName ?: $completion->student_id,
-                    'email' => $completion->email ?? 'N/A',
-                    'student_id' => $completion->student_id,
-                    'program' => $completion->program_name ?? 'N/A',
-                    'plan' => $completion->enrollment_type ?? 'N/A',
-                    'completion_date' => $completion->completion_date ? 
-                        Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A',
-                    'final_score' => 'Course: ' . ($completion->course_name ?? 'N/A')
+                    'name' => $student['name'],
+                    'email' => $student['email'],
+                    'student_id' => $student['student_id'],
+                    'program' => $student['program'],
+                    'plan' => $student['plan'],
+                    'completion_date' => $student['completion_date'],
+                    'final_score' => !empty($completedItems) ? implode(' | ', $completedItems) : 'No completions'
                 ];
             }
 
@@ -1779,6 +1854,11 @@ class AdminAnalyticsController extends Controller
                 return $dateB - $dateA;
             });
 
+            return array_slice($result, 0, 10);
+            
+        } catch (\Exception $e) {
+            Log::error('Recently completed data error: ' . $e->getMessage());
+            return [];
             return array_slice($result, 0, 10);
             
         } catch (\Exception $e) {
