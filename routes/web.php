@@ -2762,6 +2762,22 @@ Route::post('/test-ai-generate', function() {
     }
 });
 
+// Test page for quiz generator
+Route::get('/test-quiz-generator', function() {
+    return view('test-quiz-generator');
+});
+
+// Test session setup
+Route::post('/test-set-session', function(\Illuminate\Http\Request $request) {
+    session([
+        'logged_in' => $request->logged_in,
+        'professor_id' => $request->professor_id,
+        'user_role' => $request->user_role
+    ]);
+    
+    return response()->json(['success' => true, 'message' => 'Session configured']);
+});
+
 // Admin Enrollments
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])->name('admin.enrollments.index');

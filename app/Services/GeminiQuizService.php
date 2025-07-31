@@ -13,9 +13,146 @@ class GeminiQuizService
      * Google Generative AI API key and model configuration
      */
     protected $apiKey;
-    protected $model = 'gemini-pro';
+    protected $model = 'gemini-1.5-flash';
     // Google Gemini API endpoint
     protected $apiEndpoint = 'https://generativelanguage.googleapis.com/v1';
+
+    /**
+     * Safe JSON encoding that handles UTF-8 issues
+     */
+    protected function safeJsonEncode($data)
+    {
+        // Clean any string values in the data recursively
+        $cleanData = $this->cleanUtf8Recursive($data);
+        
+        $json = json_encode($cleanData);
+        if ($json === false) {
+            return 'JSON encoding failed: ' . json_last_error_msg();
+        }
+        return $json;
+    }
+
+    /**
+     * Recursively clean UTF-8 issues in data structures
+     */
+    protected function cleanUtf8Recursive($data)
+    {
+        if (is_string($data)) {
+            $data = mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+            $data = iconv('UTF-8', 'UTF-8//IGNORE', $data);
+            return preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', ' ', $data);
+        } elseif (is_array($data)) {
+            return array_map([$this, 'cleanUtf8Recursive'], $data);
+        } elseif (is_object($data)) {
+            foreach ($data as $key => $value) {
+                $data->$key = $this->cleanUtf8Recursive($value);
+            }
+            return $data;
+        }
+        return $data;
+    }
+
+    /**
+     * Enhanced PDF content extraction with multiple methods including OCR
+     */
+    protected function extractPdfContent($filePath)
+    {
+        $content = '';
+        $methods = [];
+        
+        Log::info("Extracting PDF content from: " . basename($filePath));
+        
+        // Method 1: Smalot PDF Parser (traditional text extraction)
+        try {
+            $parser = new \Smalot\PdfParser\Parser();
+            $pdf = $parser->parseFile($filePath);
+            $smalotContent = $pdf->getText();
+            
+            if (strlen(trim($smalotContent)) > 100) {
+                $content = $smalotContent;
+                $methods[] = 'Smalot PDF Parser';
+                Log::info("Smalot PDF Parser extracted " . strlen($content) . " characters");
+            }
+        } catch (Exception $e) {
+            Log::warning("Smalot PDF Parser failed: " . $e->getMessage());
+        }
+        
+        // Method 2: Spatie PDF-to-Text (uses pdftotext)
+        if (strlen(trim($content)) < 100) {
+            try {
+                $spatieContent = \Spatie\PdfToText\Pdf::getText($filePath);
+                
+                if (strlen(trim($spatieContent)) > 100) {
+                    $content = $spatieContent;
+                    $methods[] = 'Spatie PDF-to-Text';
+                    Log::info("Spatie PDF-to-Text extracted " . strlen($content) . " characters");
+                }
+            } catch (Exception $e) {
+                Log::warning("Spatie PDF-to-Text failed: " . $e->getMessage());
+            }
+        }
+        
+        // Method 3: Tesseract OCR (for scanned PDFs/images)
+        if (strlen(trim($content)) < 100) {
+            try {
+                // Convert PDF to images first, then use OCR
+                $ocrContent = $this->extractWithOCR($filePath);
+                
+                if (strlen(trim($ocrContent)) > 100) {
+                    $content = $ocrContent;
+                    $methods[] = 'Tesseract OCR';
+                    Log::info("Tesseract OCR extracted " . strlen($content) . " characters");
+                }
+            } catch (Exception $e) {
+                Log::warning("Tesseract OCR failed: " . $e->getMessage());
+            }
+        }
+        
+        // Method 4: Fallback - try reading as plain text
+        if (strlen(trim($content)) < 100) {
+            try {
+                $rawContent = file_get_contents($filePath);
+                // Look for readable text patterns
+                if (preg_match_all('/[a-zA-Z0-9\s\.\,\;\:\!\?]{10,}/', $rawContent, $matches)) {
+                    $fallbackContent = implode(' ', $matches[0]);
+                    if (strlen(trim($fallbackContent)) > 100) {
+                        $content = $fallbackContent;
+                        $methods[] = 'Raw text extraction';
+                        Log::info("Raw text extraction found " . strlen($content) . " characters");
+                    }
+                }
+            } catch (Exception $e) {
+                Log::warning("Raw text extraction failed: " . $e->getMessage());
+            }
+        }
+        
+        Log::info("PDF extraction completed using methods: " . implode(', ', $methods));
+        
+        return $content;
+    }
+    
+    /**
+     * Extract text using Tesseract OCR
+     */
+    protected function extractWithOCR($filePath)
+    {
+        try {
+            // For PDFs, we need to convert to images first
+            // This is a simplified approach - in production you'd use ImageMagick or similar
+            
+            // Try direct OCR on the PDF (some OCR tools can handle PDFs directly)
+            $ocr = new \thiagoalessio\TesseractOCR\TesseractOCR($filePath);
+            $ocrText = $ocr->lang('eng')
+                          ->configFile('pdf')
+                          ->run();
+            
+            return $ocrText;
+            
+        } catch (Exception $e) {
+            Log::warning("OCR extraction failed: " . $e->getMessage());
+            return '';
+        }
+    }
 
     /**
      * Constructor that initializes API key from environment
@@ -47,11 +184,8 @@ class GeminiQuizService
                     $content = file_get_contents($filePath);
                     break;
                 case 'pdf':
-                    // Requires the PDF parser library
-                    // Install via: composer require smalot/pdfparser
-                    $parser = new \Smalot\PdfParser\Parser();
-                    $pdf = $parser->parseFile($filePath);
-                    $content = $pdf->getText();
+                    // Enhanced PDF processing with multiple extraction methods
+                    $content = $this->extractPdfContent($filePath);
                     break;
                 case 'csv':
                     // Handle CSV files
@@ -95,6 +229,13 @@ class GeminiQuizService
                 throw new Exception("No content could be extracted from the document");
             }
             
+            // Fix UTF-8 encoding issues
+            $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+            $content = iconv('UTF-8', 'UTF-8//IGNORE', $content);
+            
+            // Remove non-printable characters except basic punctuation and spaces
+            $content = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', ' ', $content);
+            
             // Trim excessive whitespace and normalize line endings
             $content = preg_replace('/\s+/', ' ', trim($content));
             
@@ -133,7 +274,7 @@ class GeminiQuizService
             try {
                 Log::info("Quiz generation attempt {$attempt} of {$maxRetries}");
                 $result = $this->attemptQuizGeneration($documentContent, $minMcq, $minTf, $attempt);
-                Log::info("Attempt {$attempt} results: " . json_encode([
+                Log::info("Attempt {$attempt} results: " . $this->safeJsonEncode([
                     'mcq_count' => count($result['mcqs'] ?? []),
                     'tf_count' => count($result['true_false'] ?? []),
                     'has_error' => !empty($result['error']),
@@ -209,11 +350,11 @@ class GeminiQuizService
                 throw new Exception('Document content is too short to generate meaningful questions. Minimum 500 characters required.');
             }
             
-            // Limit content size to avoid timeouts (around 15k characters is a good balance)
+            // Limit content size to avoid timeouts (around 25k characters for larger documents)
             $contentLength = strlen(trim($combinedContent));
-            if ($contentLength > 15000) {
-                Log::info("Document content too large, trimming from {$contentLength} to 15000 characters");
-                $combinedContent = substr(trim($combinedContent), 0, 15000);
+            if ($contentLength > 25000) {
+                Log::info("Document content too large, trimming from {$contentLength} to 25000 characters");
+                $combinedContent = substr(trim($combinedContent), 0, 25000);
                 Log::info("Content trimmed, new length: " . strlen($combinedContent));
             }
             
@@ -434,8 +575,7 @@ class GeminiQuizService
                     'temperature' => 0.5 + ($attempt * 0.1),
                     'topK' => 30 + ($attempt * 10),
                     'topP' => 0.7 + ($attempt * 0.1),
-                    'maxOutputTokens' => 4096, // Reduced from 8192 to make responses faster
-                    'responseFormat' => ["text"] // Explicitly requesting text format for better compatibility
+                    'maxOutputTokens' => 4096 // Reduced from 8192 to make responses faster
                 ],
                 'safetySettings' => [
                     [
@@ -512,12 +652,20 @@ class GeminiQuizService
             }
             
             // Log the structure to help debug future issues
-            Log::info('Gemini API response structure: ' . json_encode(array_keys($result)));
+            Log::info('Gemini API response structure: ' . $this->safeJsonEncode(array_keys($result)));
             
             if (empty($generatedText)) {
-                Log::error('Empty response from Gemini API. Full response: ' . json_encode($result));
+                Log::error('Empty response from Gemini API. Full response: ' . $this->safeJsonEncode($result));
                 throw new Exception('Empty response from Gemini API');
             }
+            
+            // Clean UTF-8 in the API response text
+            $generatedText = mb_convert_encoding($generatedText, 'UTF-8', 'UTF-8');
+            $generatedText = iconv('UTF-8', 'UTF-8//IGNORE', $generatedText);
+            $generatedText = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', ' ', $generatedText);
+            
+            // Log the actual response for debugging
+            Log::info('Gemini API Generated Text (first 500 chars): ' . substr($generatedText, 0, 500));
             
             return $this->parseQuizContent($generatedText);
             
@@ -702,103 +850,255 @@ class GeminiQuizService
     }
 
     /**
-     * Parse the quiz content from Gemini API response (fallback method)
-     * @param string $content
-     * @return array
+     * Enhanced quiz content parsing with multiple strategies
      */
+    
     protected function parseQuizContent($content)
     {
+        Log::info('Starting quiz content parsing...');
         $mcqs = [];
         $trueFalse = [];
         $answerKey = [];
         $disclaimer = '';
         
         try {
-            // Split content by sections
-            if (preg_match('/\*\*I\.\s+Multiple-Choice\s+Questions\*\*(.*?)(?:\*\*II\.\s+True\/False\s+Statements\*\*)/s', $content, $mcqMatch)) {
-                $mcqContent = trim($mcqMatch[1]);
-                
-                // Parse MCQs
-                preg_match_all('/(\d+)\.\s+(.*?)\s+A\.\s+(.*?)\s+B\.\s+(.*?)\s+C\.\s+(.*?)\s+D\.\s+(.*?)(?=\d+\.|$)/s', $mcqContent, $matches, PREG_SET_ORDER);
-                
-                foreach ($matches as $match) {
-                    $questionNumber = trim($match[1]);
-                    $questionText = trim($match[2]);
-                    
-                    $mcqs[] = [
-                        'number' => $questionNumber,
-                        'text' => $questionText,
-                        'options' => [
-                            'A' => trim($match[3]),
-                            'B' => trim($match[4]),
-                            'C' => trim($match[5]),
-                            'D' => trim($match[6])
-                        ]
-                    ];
-                }
+            // Try multiple parsing approaches
+            $result = $this->tryStructuredParsing($content);
+            if (!empty($result['mcqs']) || !empty($result['true_false'])) {
+                Log::info('Structured parsing successful');
+                return $result;
             }
             
-            // Extract True/False statements
-            if (preg_match('/\*\*II\.\s+True\/False\s+Statements\*\*(.*?)(?:\*\*III\.\s+Answer\s+Key\*\*)/s', $content, $tfMatch)) {
-                $tfContent = trim($tfMatch[1]);
-                
-                preg_match_all('/(\d+)\.\s+(.*?)(?=\d+\.|$)/s', $tfContent, $matches, PREG_SET_ORDER);
-                
-                foreach ($matches as $match) {
-                    $questionNumber = trim($match[1]);
-                    $statementText = trim($match[2]);
-                    
-                    $trueFalse[] = [
-                        'number' => $questionNumber,
-                        'statement' => $statementText
-                    ];
-                }
+            $result = $this->tryFlexibleParsing($content);
+            if (!empty($result['mcqs']) || !empty($result['true_false'])) {
+                Log::info('Flexible parsing successful');
+                return $result;
             }
             
-            // Extract Answer Key
-            if (preg_match('/\*\*III\.\s+Answer\s+Key\*\*(.*)/s', $content, $keyMatch)) {
-                $keyContent = trim($keyMatch[1]);
-                
-                preg_match_all('/(\d+)\.\s+([A-D]|True|False|[^—]+?)(?:\s+—\s+(.*?))?(?=\d+\.|$)/s', $keyContent, $matches, PREG_SET_ORDER);
-                
-                foreach ($matches as $match) {
-                    $questionNumber = trim($match[1]);
-                    $answer = trim($match[2]);
-                    $explanation = isset($match[3]) ? trim($match[3]) : '';
-                    
-                    $answerKey[] = [
-                        'number' => $questionNumber,
-                        'answer' => $answer,
-                        'explanation' => $explanation
-                    ];
-                }
+            $result = $this->trySimpleParsing($content);
+            if (!empty($result['mcqs']) || !empty($result['true_false'])) {
+                Log::info('Simple parsing successful');
+                return $result;
             }
             
-            // Check for disclaimer
-            if (preg_match('/Only\s+(\d+)\s+MCQs\s+and\s+(\d+)\s+True\/False\s+could\s+be\s+generated.*?/i', $content, $disclaimerMatch)) {
-                $disclaimer = $disclaimerMatch[0];
-            }
-            
+            Log::warning('All parsing methods failed');
             return [
-                'mcqs' => $mcqs,
-                'true_false' => $trueFalse,
-                'answer_key' => $answerKey,
-                'disclaimer' => $disclaimer,
-                'raw_content' => $content // Store raw content for debugging
+                'mcqs' => [],
+                'true_false' => [],
+                'answer_key' => [],
+                'disclaimer' => '',
+                'error' => 'Could not parse quiz content with any method',
+                'raw_content' => $content
             ];
             
         } catch (Exception $e) {
             Log::error('Error parsing quiz content: ' . $e->getMessage());
             
             return [
-                'mcqs' => $mcqs,
-                'true_false' => $trueFalse,
-                'answer_key' => $answerKey,
-                'disclaimer' => $disclaimer,
+                'mcqs' => [],
+                'true_false' => [],
+                'answer_key' => [],
+                'disclaimer' => '',
                 'error' => 'Error parsing quiz content: ' . $e->getMessage(),
                 'raw_content' => $content
             ];
         }
+    }
+    
+    /**
+     * Try structured parsing (original method)
+     */
+    protected function tryStructuredParsing($content)
+    {
+        $mcqs = [];
+        $trueFalse = [];
+        $answerKey = [];
+        $disclaimer = '';
+        
+        // Split content by sections
+        if (preg_match('/\*\*I\.\s+Multiple-Choice\s+Questions\*\*(.*?)(?:\*\*II\.\s+True\/False\s+Statements\*\*)/s', $content, $mcqMatch)) {
+            $mcqContent = trim($mcqMatch[1]);
+            
+            // Parse MCQs
+            preg_match_all('/(\d+)\.\s+(.*?)\s+A\.\s+(.*?)\s+B\.\s+(.*?)\s+C\.\s+(.*?)\s+D\.\s+(.*?)(?=\d+\.|$)/s', $mcqContent, $matches, PREG_SET_ORDER);
+            
+            foreach ($matches as $match) {
+                $questionNumber = trim($match[1]);
+                $questionText = trim($match[2]);
+                
+                $mcqs[] = [
+                    'number' => $questionNumber,
+                    'text' => $questionText,
+                    'options' => [
+                        'A' => trim($match[3]),
+                        'B' => trim($match[4]),
+                        'C' => trim($match[5]),
+                        'D' => trim($match[6])
+                    ]
+                ];
+            }
+        }
+        
+        // Extract True/False statements
+        if (preg_match('/\*\*II\.\s+True\/False\s+Statements\*\*(.*?)(?:\*\*III\.\s+Answer\s+Key\*\*)/s', $content, $tfMatch)) {
+            $tfContent = trim($tfMatch[1]);
+            
+            preg_match_all('/(\d+)\.\s+(.*?)(?=\d+\.|$)/s', $tfContent, $matches, PREG_SET_ORDER);
+            
+            foreach ($matches as $match) {
+                $questionNumber = trim($match[1]);
+                $statementText = trim($match[2]);
+                
+                $trueFalse[] = [
+                    'number' => $questionNumber,
+                    'statement' => $statementText
+                ];
+            }
+        }
+        
+        // Extract Answer Key
+        if (preg_match('/\*\*III\.\s+Answer\s+Key\*\*(.*)/s', $content, $keyMatch)) {
+            $keyContent = trim($keyMatch[1]);
+            
+            preg_match_all('/(\d+)\.\s+([A-D]|True|False|[^—]+?)(?:\s+—\s+(.*?))?(?=\d+\.|$)/s', $keyContent, $matches, PREG_SET_ORDER);
+            
+            foreach ($matches as $match) {
+                $questionNumber = trim($match[1]);
+                $answer = trim($match[2]);
+                $explanation = isset($match[3]) ? trim($match[3]) : '';
+                
+                $answerKey[] = [
+                    'number' => $questionNumber,
+                    'answer' => $answer,
+                    'explanation' => $explanation
+                ];
+            }
+        }
+        
+        return [
+            'mcqs' => $mcqs,
+            'true_false' => $trueFalse,
+            'answer_key' => $answerKey,
+            'disclaimer' => $disclaimer
+        ];
+    }
+    
+    /**
+     * Try flexible parsing for various formats
+     */
+    protected function tryFlexibleParsing($content)
+    {
+        $mcqs = [];
+        $trueFalse = [];
+        $answerKey = [];
+        
+        // Look for question patterns with more flexibility
+        // Pattern: "1. Question text" followed by options A. B. C. D.
+        preg_match_all('/(\d+)\.\s*(.+?)(?=\d+\.|$)/s', $content, $questionBlocks, PREG_SET_ORDER);
+        
+        foreach ($questionBlocks as $block) {
+            $questionNum = trim($block[1]);
+            $questionContent = trim($block[2]);
+            
+            // Check if it's a multiple choice question (has A. B. C. D. options)
+            if (preg_match('/A\.\s*(.+?)\s*B\.\s*(.+?)\s*C\.\s*(.+?)\s*D\.\s*(.+?)(?:\s*(?:Answer|Correct)|$)/s', $questionContent, $mcqMatch)) {
+                // Extract question text (before options)
+                $questionText = preg_replace('/A\.\s*.+/s', '', $questionContent);
+                $questionText = trim($questionText);
+                
+                $mcqs[] = [
+                    'number' => $questionNum,
+                    'text' => $questionText,
+                    'options' => [
+                        'A' => trim($mcqMatch[1]),
+                        'B' => trim($mcqMatch[2]),
+                        'C' => trim($mcqMatch[3]),
+                        'D' => trim($mcqMatch[4])
+                    ]
+                ];
+            }
+            // Check if it's a True/False question
+            elseif (preg_match('/true|false/i', $questionContent) && !preg_match('/A\.|B\.|C\.|D\./', $questionContent)) {
+                $trueFalse[] = [
+                    'number' => $questionNum,
+                    'statement' => $questionContent
+                ];
+            }
+        }
+        
+        return [
+            'mcqs' => $mcqs,
+            'true_false' => $trueFalse,
+            'answer_key' => $answerKey,
+            'disclaimer' => ''
+        ];
+    }
+    
+    /**
+     * Try simple parsing for basic formats
+     */
+    protected function trySimpleParsing($content)
+    {
+        $mcqs = [];
+        $lines = explode("\n", $content);
+        $currentQuestion = null;
+        $options = [];
+        $questionCounter = 1;
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
+            
+            // Look for question patterns
+            if (preg_match('/^(\d+)\.?\s*(.+)/', $line, $match)) {
+                // Save previous question if exists
+                if ($currentQuestion && count($options) >= 4) {
+                    $mcqs[] = [
+                        'number' => $questionCounter,
+                        'text' => $currentQuestion,
+                        'options' => [
+                            'A' => $options[0] ?? '',
+                            'B' => $options[1] ?? '',
+                            'C' => $options[2] ?? '',
+                            'D' => $options[3] ?? ''
+                        ]
+                    ];
+                    $questionCounter++;
+                }
+                
+                $currentQuestion = trim($match[2]);
+                $options = [];
+            }
+            // Look for option patterns
+            elseif (preg_match('/^[A-D]\.?\s*(.+)/', $line, $match)) {
+                $options[] = trim($match[1]);
+            }
+            // Add to current question if no pattern matches
+            elseif ($currentQuestion && !preg_match('/^[A-D]\./', $line)) {
+                $currentQuestion .= ' ' . $line;
+            }
+        }
+        
+        // Save last question
+        if ($currentQuestion && count($options) >= 4) {
+            $mcqs[] = [
+                'number' => $questionCounter,
+                'text' => $currentQuestion,
+                'options' => [
+                    'A' => $options[0] ?? '',
+                    'B' => $options[1] ?? '',
+                    'C' => $options[2] ?? '',
+                    'D' => $options[3] ?? ''
+                ]
+            ];
+        }
+        
+        return [
+            'mcqs' => $mcqs,
+            'true_false' => [],
+            'answer_key' => [],
+            'disclaimer' => ''
+        ];
     }
     
     /**
@@ -1012,7 +1312,7 @@ EOT;
             $questions[] = [
                 'question_text' => $mcq['text'],
                 'question_type' => 'multiple_choice',
-                'options' => json_encode($mcq['options']),
+                'options' => $this->safeJsonEncode($mcq['options']),
                 'correct_answer' => $correctOption,
                 'explanation' => $explanation,
                 'question_source' => 'gemini_structured',
@@ -1038,7 +1338,7 @@ EOT;
             $questions[] = [
                 'question_text' => $tf['statement'],
                 'question_type' => 'true_false',
-                'options' => json_encode(['True', 'False']),
+                'options' => $this->safeJsonEncode(['True', 'False']),
                 'correct_answer' => $correctAnswer,
                 'explanation' => $explanation,
                 'question_source' => 'gemini_structured',

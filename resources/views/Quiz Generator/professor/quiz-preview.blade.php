@@ -50,15 +50,15 @@
                     
                     @if($question->question_type === 'multiple_choice')
                         <div class="options">
-                            @if($question->options)
+                            @if($question->options && is_array($question->options))
                                 @foreach($question->options as $optionIndex => $option)
                                     @php $letter = chr(65 + $optionIndex); @endphp
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" disabled 
-                                               @if($option->is_correct ?? false) checked @endif>
+                                        <input class="form-check-input" type="radio" name="question_{{ $question->id }}" disabled 
+                                               @if($question->correct_answer === $letter || $question->correct_answer === $option) checked @endif>
                                         <label class="form-check-label">
-                                            <strong>{{ $letter }}.</strong> {{ $option->option_text }}
-                                            @if($option->is_correct ?? false)
+                                            <strong>{{ $letter }}.</strong> {{ $option }}
+                                            @if($question->correct_answer === $letter || $question->correct_answer === $option)
                                                 <span class="badge bg-success ms-2">Correct</span>
                                             @endif
                                         </label>
@@ -69,17 +69,23 @@
                     @elseif($question->question_type === 'true_false')
                         <div class="options">
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" disabled 
-                                       @if($question->correct_answer === 'true') checked @endif>
+                                <input class="form-check-input" type="radio" name="question_{{ $question->id }}" disabled 
+                                       @if(strtolower($question->correct_answer) === 'true' || $question->correct_answer === 'A' || $question->correct_answer === 'True') checked @endif>
                                 <label class="form-check-label">
-                                    True @if($question->correct_answer === 'true') <span class="badge bg-success ms-2">Correct</span> @endif
+                                    True 
+                                    @if(strtolower($question->correct_answer) === 'true' || $question->correct_answer === 'A' || $question->correct_answer === 'True') 
+                                        <span class="badge bg-success ms-2">Correct</span> 
+                                    @endif
                                 </label>
                             </div>
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" disabled 
-                                       @if($question->correct_answer === 'false') checked @endif>
+                                <input class="form-check-input" type="radio" name="question_{{ $question->id }}" disabled 
+                                       @if(strtolower($question->correct_answer) === 'false' || $question->correct_answer === 'B' || $question->correct_answer === 'False') checked @endif>
                                 <label class="form-check-label">
-                                    False @if($question->correct_answer === 'false') <span class="badge bg-success ms-2">Correct</span> @endif
+                                    False 
+                                    @if(strtolower($question->correct_answer) === 'false' || $question->correct_answer === 'B' || $question->correct_answer === 'False') 
+                                        <span class="badge bg-success ms-2">Correct</span> 
+                                    @endif
                                 </label>
                             </div>
                         </div>
@@ -87,6 +93,12 @@
                         <div class="form-group">
                             <label class="form-label"><strong>Expected Answer:</strong></label>
                             <div class="alert alert-info">{{ $question->correct_answer }}</div>
+                        </div>
+                    @endif
+                    
+                    @if($question->explanation)
+                        <div class="explanation mt-3 p-2 bg-light rounded">
+                            <strong>Explanation:</strong> {{ $question->explanation }}
                         </div>
                     @endif
                     
@@ -104,39 +116,3 @@
     </div>
 </div>
 @endsection
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="question_{{ $question->id }}" disabled>
-                            <label class="form-check-label">
-                                False
-                                @if($question->correct_answer === 'B' || $question->correct_answer === 'False')
-                                    <span class="text-success"><i class="bi bi-check-circle"></i> Correct</span>
-                                @endif
-                            </label>
-                        </div>
-                    </div>
-                @elseif($question->question_type === 'short_answer')
-                    <div class="answer-preview">
-                        <strong>Expected Answer:</strong> {{ $question->correct_answer }}
-                    </div>
-                @elseif($question->question_type === 'essay')
-                    <div class="answer-preview">
-                        <strong>Sample Answer/Rubric:</strong>
-                        <p class="text-muted">{{ $question->correct_answer }}</p>
-                    </div>
-                @endif
-                
-                @if($question->explanation)
-                    <div class="explanation mt-3 p-2 bg-light rounded">
-                        <strong>Explanation:</strong> {{ $question->explanation }}
-                    </div>
-                @endif
-                
-                <div class="question-meta mt-2">
-                    <small class="text-muted">Points: {{ $question->points ?? 1 }}</small>
-                </div>
-            </div>
-        @endforeach
-    </div>
-</div>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Quiz Generator API</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
+        .error { background-color: #ffe6e6; }
+        .success { background-color: #e6ffe6; }
+    </style>
+</head>
+<body>
+    <h1>Test Quiz Generator API</h1>
+    
+    <form id="testForm">
+        <div>
+            <label>Select file:</label>
+            <input type="file" name="file" accept=".pdf,.txt,.csv,.doc,.docx" required>
+        </div>
+        <div>
+            <label>Number of questions:</label>
+            <input type="number" name="num_questions" value="3" min="1" max="10">
+        </div>
+        <div>
+            <label>Question type:</label>
+            <select name="question_type">
+                <option value="multiple_choice">Multiple Choice</option>
+                <option value="true_false">True/False</option>
+                <option value="mixed">Mixed</option>
+            </select>
+        </div>
+        <button type="button" onclick="testAPI()">Generate Questions</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const form = document.getElementById('testForm');
+            const formData = new FormData(form);
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<div class="result">Testing API...</div>';
+            
+            try {
+                const response = await fetch('/professor/quiz-generator/generate-ai-questions', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    let html = '<div class="result success"><h3>✅ Success!</h3>';
+                    html += `<strong>Generated ${data.questions.length} questions:</strong>\n\n`;
+                    
+                    data.questions.forEach((q, i) => {
+                        html += `Question ${i + 1}: ${q.question}\n`;
+                        html += `Type: ${q.type}\n`;
+                        html += `Correct Answer: ${q.correct_answer}\n`;
+                        if (q.options) {
+                            html += `Options: ${q.options.join(', ')}\n`;
+                        }
+                        html += `Explanation: ${q.explanation}\n\n`;
+                    });
+                    
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error"><h3>❌ Error</h3>Status: ${response.status}\nMessage: ${data.message || 'Unknown error'}\nResponse: ${JSON.stringify(data, null, 2)}</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error"><h3>❌ Network Error</h3>${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
