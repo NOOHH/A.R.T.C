@@ -1,0 +1,44 @@
+{
+    "routes": {
+        "admin.students.archived": "OK",
+        "admin.students.index": "OK",
+        "admin.students.export": "OK",
+        "admin.certificates": "OK",
+        "certificate.show": "OK",
+        "certificate.download": "OK"
+    },
+    "database": {
+        "connection": "OK",
+        "tables": {
+            "students": 8,
+            "enrollments": 14,
+            "programs": 2,
+            "users": 4,
+            "certificates": 0
+        }
+    },
+    "controllers": {
+        "CertificateController": "OK",
+        "AdminStudentListController": "OK"
+    },
+    "progress": {
+        "sample_student": {
+            "name": "Vince Michael Dela Vega",
+            "progress": "0.00",
+            "status": "approved",
+            "eligible": false
+        }
+    },
+    "storage": {
+        "writable": "OK",
+        "certificates_dir": "OK"
+    },
+    "certificate": {
+        "template": "OK",
+        "management_view": "OK"
+    },
+    "auto_progress": {
+        "method": "OK",
+        "progress_logic": "OK"
+    }
+}

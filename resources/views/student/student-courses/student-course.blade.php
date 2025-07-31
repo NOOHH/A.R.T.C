@@ -99,7 +99,14 @@
         function highlightContentItem(contentId, contentType) {
             console.log(`🎯 Highlighting content item: ${contentId} (${contentType})`);
             
-            // Find the content item in the DOM
+            // Since we're now using separate pages for content, redirect directly to content view
+            if (contentId) {
+                console.log(`✅ Redirecting to content page: ${contentId}`);
+                window.location.href = `/student/content/${contentId}/view`;
+                return;
+            }
+            
+            // Fallback: Find the content item in the DOM (if still on course page)
             const contentElement = document.querySelector(`[data-content-id="${contentId}"]`);
             if (contentElement) {
                 // Scroll to the content item
@@ -1300,7 +1307,7 @@
                 const isQuiz = item.content_type === 'quiz';
 
                 let itemHtml = `
-                    <div class="content-item d-flex justify-content-between align-items-center" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
+                    <div class="content-item d-flex justify-content-between align-items-center" data-content-id="${item.id}" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
                         <div class="d-flex align-items-center flex-grow-1">
                             <div class="item-header">
                                 <div class="item-icon ${icon.class}">
@@ -1359,47 +1366,18 @@
         // Open content item
         function openContent(contentId, contentType) {
             console.log('Opening content:', contentId, 'Type:', contentType);
-            currentContent = contentId;
             
-            // Update active content
-            const contentItems = document.querySelectorAll('.content-item');
-            contentItems.forEach(item => item.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-
-            // Handle different content types
-            switch (contentType?.toLowerCase()) {
-                case 'video':
-                    console.log('Opening as video content');
-                    openVideoContent(contentId);
-                    break;
-                case 'lesson':
-                    console.log('Opening as lesson content');
-                    openGenericContent(contentId);
-                    break;
-                case 'assignment':
-                    console.log('Opening as assignment content');
-                    openAssignmentViewer(contentId);
-                    break;
-                case 'quiz':
-                    console.log('Opening as quiz content');
-                    openGenericContent(contentId);
-                    break;
-                case 'test':
-                    console.log('Opening as test content');
-                    openGenericContent(contentId);
-                    break;
-                case 'link':
-                    console.log('Opening as link content');
-                    openGenericContent(contentId);
-                    break;
-                case 'pdf':
-                    console.log('Opening as document content');
-                    openDocumentContent(contentId);
-                    break;
-                default:
-                    console.log('Opening as generic content');
-                    openGenericContent(contentId);
-                    break;
+            // Add error tracking
+            try {
+                // For debugging
+                const url = '/student/content/' + contentId + '/view';
+                console.log('Attempting to navigate to:', url);
+                
+                // Redirect to individual content page
+                window.location.href = url;
+            } catch (e) {
+                console.error('Error in openContent:', e);
+                alert('Error redirecting: ' + e.message);
             }
         }
 

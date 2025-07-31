@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content View Testing - A.R.T.C</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-link { display: inline-block; margin: 5px; padding: 8px 15px; background: #007cba; color: white; text-decoration: none; border-radius: 3px; }
+        .test-link:hover { background: #005a87; }
+    </style>
+</head>
+<body>
+    <h1>A.R.T.C Content View System - Testing Summary</h1>
+    
+    <div class="test-section">
+        <h2>✅ COMPLETED DATABASE FIXES</h2>
+        <ul>
+            <li class="success">✓ Fixed courses table column reference from 'course_id' to 'subject_id'</li>
+            <li class="success">✓ Created and populated student_progress table</li>
+            <li class="success">✓ Fixed assignment_submissions table name references</li>
+            <li class="success">✓ Updated content_id column references in queries</li>
+            <li class="success">✓ Verified all required database tables exist</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 CONTENT VIEW FUNCTIONALITY</h2>
+        <p class="info">The content view system has been implemented with the following features:</p>
+        <ul>
+            <li>✓ Separate page view for each content item</li>
+            <li>✓ Content access via URL: <code>/student/content/{contentId}/view</code></li>
+            <li>✓ Database integration with proper table relationships</li>
+            <li>✓ Authentication support</li>
+            <li>✓ File attachment handling</li>
+            <li>✓ Submission tracking</li>
+            <li>✓ Progress completion tracking</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧪 TEST LINKS</h2>
+        <p>Click these links to test content viewing:</p>
+        <div id="test-links">
+            <p class="info">Loading content items...</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 NEXT STEPS FOR CALENDAR INTEGRATION</h2>
+        <p class="info">To complete the user's request for calendar assignment redirection:</p>
+        <ol>
+            <li>Ensure calendar assignments link to <code>/student/content/{contentId}/view</code></li>
+            <li>Verify authentication middleware is properly configured</li>
+            <li>Test the complete flow: Calendar → Content View → Submissions</li>
+        </ol>
+    </div>
+    
+    <script>
+        // Load content items for testing
+        fetch('/test_users_and_content.php')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const contentSection = doc.querySelector('h2:nth-of-type(2)');
+                if (contentSection) {
+                    const nextSibling = contentSection.nextElementSibling;
+                    if (nextSibling) {
+                        document.getElementById('test-links').innerHTML = nextSibling.innerHTML;
+                    }
+                }
+            })
+            .catch(error => {
+                document.getElementById('test-links').innerHTML = 
+                    '<p class="error">Error loading content items: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>

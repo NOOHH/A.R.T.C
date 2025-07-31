@@ -977,9 +977,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add visit button for assignments - redirect to specific course
             modalActions.innerHTML = `
-                <a href="/student/enrolled-courses" class="custom-modal-btn custom-modal-btn-primary" onclick="redirectToAssignmentFromCalendar('${assignmentId}', '${programName}', '${courseId}')">
+                <button type="button" class="custom-modal-btn custom-modal-btn-primary" onclick="redirectToAssignmentFromCalendar('${assignmentId}', '${programName}', '${courseId}')">
                     <i class="bi bi-file-earmark-text"></i>View Assignment
-                </a>
+                </button>
             `;
         } else if (event.type === 'announcement') {
             bodyHtml += `
@@ -1152,9 +1152,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.setItem('calendarProgramName', programName);
         sessionStorage.setItem('calendarCourseId', courseId); // Store courseId
         
-        // If we have a specific course ID, navigate directly to that course
-        if (courseId && courseId !== '' && courseId !== 'null') {
-            console.log(`🎯 Navigating directly to course: ${courseId}`);
+        // If we have a specific assignment ID, navigate directly to the content page
+        if (assignmentId && assignmentId !== '' && assignmentId !== 'null') {
+            console.log(`🎯 Navigating directly to content: ${assignmentId}`);
+            window.location.href = `/student/content/${assignmentId}/view`;
+        } else if (courseId && courseId !== '' && courseId !== 'null') {
+            console.log(`🎯 Navigating to course: ${courseId}`);
             window.location.href = `/student/course/${courseId}`;
         } else {
             // Fallback to enrolled courses page
@@ -1205,9 +1208,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.setItem('calendarModuleId', moduleId);
         sessionStorage.setItem('calendarCourseId', courseId);
         
-        // If we have a specific course ID, navigate directly to that course
-        if (courseId && courseId !== '' && courseId !== 'null') {
-            console.log(`🎯 Navigating directly to course: ${courseId}`);
+        // If we have a specific lesson ID, navigate directly to the content page
+        if (lessonId && lessonId !== '' && lessonId !== 'null') {
+            console.log(`🎯 Navigating directly to content: ${lessonId}`);
+            window.location.href = `/student/content/${lessonId}/view`;
+        } else if (courseId && courseId !== '' && courseId !== 'null') {
+            console.log(`🎯 Navigating to course: ${courseId}`);
             window.location.href = `/student/course/${courseId}`;
         } else {
             // Fallback to enrolled courses page

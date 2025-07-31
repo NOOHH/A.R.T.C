@@ -417,6 +417,8 @@
         overflow-y: auto;
         outline: 0;
         background-color: rgba(0, 0, 0, 0.5) !important;
+        
+        
     }
     
     .modal-backdrop {
@@ -438,18 +440,13 @@
     /* Ensure modal content is above backdrop */
     .modal-dialog {
         z-index: 1060 !important;
+        margin: auto;
     }
     
     .modal.show {
         display: block !important;
     }
     
-    .modal-dialog {
-        position: relative;
-        width: auto;
-        margin: 1.75rem;
-        pointer-events: none;
-    }
     
     .modal-content {
         position: relative;
@@ -463,6 +460,7 @@
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.15);
         outline: 0;
+    
     }
     
     .modal-header {
@@ -1099,7 +1097,18 @@
     
     .modal.fade.show {
         z-index: 9999 !important;
+          display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+
     }
+
+    #paymentModal .modal-dialog {
+  margin: 0; /* override your earlier `margin: 1.75rem;` */
+  max-width: 960px;
+  width: 100%;
+}
 </style>
 @endpush
 
@@ -1426,7 +1435,7 @@
 
 <!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="paymentModalLabel">Complete Payment</h5>
