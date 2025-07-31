@@ -628,18 +628,15 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/admin-analytics.js') }}"></script>
 <script>
-// Global variables
+// Global variables for charts
 let boardPassChart, programChart, subjectChart, progressChart, batchChart;
 let currentFilters = {
     year: '',
     month: '',
     program: '',
     batch: '',
-    subject: '',
-    period: 'monthly',
-    batchView: 'overview'
+    subject: ''
 };
 
 // Declare functions that are called from onclick handlers immediately
@@ -1037,6 +1034,24 @@ function updateBottomPerformersTable(data) {
     } else {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No students needing attention</td></tr>';
     }
+}
+                        <small class="text-muted">${student.email}</small>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge bg-info">${student.program}</span></td>
+            <td><span class="fw-bold text-warning">${student.score}%</span></td>
+            <td>
+                <span class="badge bg-warning">${student.issues}</span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewStudentDetail(${student.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
 // New table update functions
@@ -1711,21 +1726,6 @@ function exportReferralData() {
         console.error('Error exporting referral data:', error);
         showNotification('Failed to export referral data', 'error');
     });
-}
-
-// Helper functions for loading states
-function showLoadingSpinner() {
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'block';
-    }
-}
-
-function hideLoadingSpinner() {
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'none';
-    }
 }
 
 // Load referral analytics on page load if admin
