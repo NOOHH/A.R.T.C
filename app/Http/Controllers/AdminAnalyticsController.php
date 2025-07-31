@@ -554,17 +554,13 @@ class AdminAnalyticsController extends Controller
                     // Create or update board passer record
                     BoardPasser::updateOrCreate(
                         [
-                            'student_id' => $student->student_id ?? $student->id,
+                            'student_id' => $student->id,
                             'board_exam' => $examType,
                             'exam_year' => $request->exam_year
                         ],
                         [
-                            'student_name' => isset($record['Student Name']) ? $record['Student Name'] : 
-                                            trim(($student->user_firstname ?? '') . ' ' . ($student->user_lastname ?? '')),
-                            'program' => isset($record['Program']) ? $record['Program'] : 'Unknown Program',
                             'exam_date' => isset($record['Exam Date']) ? $record['Exam Date'] : null,
                             'result' => strtoupper($record['Result']),
-                            'rating' => isset($record['Rating']) ? floatval($record['Rating']) : null,
                             'created_at' => now(),
                             'updated_at' => now()
                         ]
@@ -602,31 +598,13 @@ class AdminAnalyticsController extends Controller
         ]);
         
         try {
-            // Get student information
-            $user = User::find($request->student_id);
-            
-            // Get student's program from enrollment
-            $studentProgram = 'Unknown Program';
-            $enrollment = DB::table('enrollments')
-                ->join('programs', 'enrollments.program_id', '=', 'programs.program_id')
-                ->where('enrollments.user_id', $request->student_id)
-                ->orWhere('enrollments.student_id', $user->student_id ?? '')
-                ->orderBy('enrollments.created_at', 'desc')
-                ->first();
-                
-            if ($enrollment) {
-                $studentProgram = $enrollment->program_name;
-            }
-            
             BoardPasser::updateOrCreate(
                 [
-                    'student_id' => $user->student_id ?? $user->id,
+                    'student_id' => $request->student_id,
                     'board_exam' => $request->board_exam,
                     'exam_year' => date('Y', strtotime($request->exam_date))
                 ],
                 [
-                    'student_name' => trim(($user->user_firstname ?? '') . ' ' . ($user->user_lastname ?? '')),
-                    'program' => $studentProgram,
                     'exam_date' => $request->exam_date,
                     'result' => $request->result,
                     'notes' => $request->notes,
@@ -868,78 +846,17 @@ class AdminAnalyticsController extends Controller
     private function calculateBoardPassRate($filters)
     {
         try {
-            // Get board passers data from the board_passers table
-            $totalPassersQuery = DB::table('board_passers');
-            $passersQuery = DB::table('board_passers')->where('result', 'PASS');
-            
-            // Apply filters if provided
-            if (!empty($filters['year'])) {
-                $totalPassersQuery->where('exam_year', $filters['year']);
-                $passersQuery->where('exam_year', $filters['year']);
-            }
-            
-            if (!empty($filters['program'])) {
-                $totalPassersQuery->where('program', 'LIKE', '%' . $filters['program'] . '%');
-                $passersQuery->where('program', 'LIKE', '%' . $filters['program'] . '%');
-            }
-            
-            $totalExaminees = $totalPassersQuery->count();
-            $totalPassers = $passersQuery->count();
-            
-            if ($totalExaminees == 0) {
-                // If no board passer data, calculate based on student performance metrics
-                return $this->calculateEstimatedPassRate($filters);
-            }
-            
-            return ($totalPassers / $totalExaminees) * 100;
-            
-        } catch (\Exception $e) {
-            Log::error('Board pass rate calculation error: ' . $e->getMessage());
-            return $this->calculateEstimatedPassRate($filters);
-        }
-    }
-
-    private function calculateEstimatedPassRate($filters)
-    {
-        try {
-            // Estimate pass rate based on student performance in the system
+            // Mock calculation - you'll need to implement based on your actual board exam results
             $studentsQuery = $this->buildStudentsQuery($filters);
             $totalStudents = $studentsQuery->count();
             
-            if ($totalStudents == 0) return 85.0; // Default fallback
+            if ($totalStudents == 0) return 88; // Default fallback
             
-            // Get students with good performance (high quiz scores, completion rates)
-            $goodPerformersCount = 0;
-            
-            // Check quiz performance if available
-            if (DB::getSchemaBuilder()->hasTable('quiz_results')) {
-                $goodPerformersCount = DB::table('quiz_results')
-                    ->join('users', 'quiz_results.user_id', '=', 'users.user_id')
-                    ->where('users.role', 'student')
-                    ->where('quiz_results.score', '>=', 75)
-                    ->distinct('quiz_results.user_id')
-                    ->count();
-            }
-            
-            // Check completion rates if available
-            if (DB::getSchemaBuilder()->hasTable('enrollments')) {
-                $completedEnrollments = DB::table('enrollments')
-                    ->where('enrollment_status', 'completed')
-                    ->orWhere('progress_percentage', '>=', 80)
-                    ->count();
-                    
-                $goodPerformersCount = max($goodPerformersCount, $completedEnrollments);
-            }
-            
-            if ($goodPerformersCount > 0 && $totalStudents > 0) {
-                return min(($goodPerformersCount / $totalStudents) * 100, 95); // Cap at 95%
-            }
-            
-            return 85.0; // Default estimated pass rate
-            
+            // For demo purposes, using a mock pass rate
+            return 88.5; // Mock board pass rate
         } catch (\Exception $e) {
-            Log::error('Estimated pass rate calculation error: ' . $e->getMessage());
-            return 85.0;
+            Log::error('Board pass rate calculation error: ' . $e->getMessage());
+            return 88; // Default fallback
         }
     }
 
@@ -1409,10 +1326,8 @@ class AdminAnalyticsController extends Controller
                     'users.user_lastname', 
                     'students.student_id',
                     'programs.program_name',
-                    'enrollments.enrollment_type',
                     'enrollments.created_at as enrollment_date',
-                    'enrollments.enrollment_status',
-                    'enrollments.enrollment_id'
+                    'enrollments.enrollment_status'
                 ])
                 ->where('enrollments.enrollment_status', '!=', 'rejected')
                 ->orderBy('enrollments.created_at', 'desc')
@@ -1437,29 +1352,10 @@ class AdminAnalyticsController extends Controller
 
             $result = [];
             foreach ($enrollments as $enrollment) {
-                $enrollmentType = ucfirst($enrollment->enrollment_type ?? 'Full');
-                $programDisplay = $enrollment->program_name ?? 'Unknown Program';
-                
-                // For modular enrollments, get the enrolled courses
-                if (strtolower($enrollment->enrollment_type) === 'modular') {
-                    $enrolledCourses = DB::table('enrollment_courses')
-                        ->join('courses', 'enrollment_courses.course_id', '=', 'courses.subject_id')
-                        ->where('enrollment_courses.enrollment_id', $enrollment->enrollment_id)
-                        ->where('enrollment_courses.is_active', true)
-                        ->pluck('courses.subject_name')
-                        ->toArray();
-                    
-                    if (!empty($enrolledCourses)) {
-                        $courseCount = count($enrolledCourses);
-                        $programDisplay .= " ($courseCount " . ($courseCount === 1 ? 'course' : 'courses') . ")";
-                    }
-                }
-                
                 $result[] = [
                     'student_name' => trim(($enrollment->user_firstname ?? '') . ' ' . ($enrollment->user_lastname ?? '')),
                     'student_id' => $enrollment->student_id,
-                    'program' => $programDisplay,
-                    'enrollment_type' => $enrollmentType,
+                    'program' => $enrollment->program_name ?? 'Unknown Program',
                     'enrollment_date' => $enrollment->enrollment_date ? 
                         Carbon::parse($enrollment->enrollment_date)->format('M d, Y') : 'N/A',
                     'status' => ucfirst($enrollment->enrollment_status ?? 'pending')
