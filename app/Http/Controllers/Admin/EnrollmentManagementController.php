@@ -17,8 +17,8 @@ class EnrollmentManagementController extends Controller
         $data = [
             'totalEnrollments' => Enrollment::count(),
             'activeStudents' => Student::where('status', 'active')->count(),
-            'pendingRegistrations' => Enrollment::where('status', 'pending')->count(),
-            'completedCourses' => Enrollment::where('status', 'completed')->count(),
+            'pendingRegistrations' => Enrollment::where('enrollment_status', 'pending')->count(),
+            'completedCourses' => Enrollment::where('enrollment_status', 'completed')->count(),
             'batches' => BatchEnrollment::with('program')->get(),
             'students' => Student::all(),
             'programs' => Program::active()->get()

@@ -797,14 +797,20 @@ class AdminAnalyticsController extends Controller
             return [
                 'topPerformers' => $this->getTopPerformers($filters),
                 'bottomPerformers' => $this->getBottomPerformers($filters),
-                'subjectBreakdown' => $this->getSubjectBreakdown($filters)
+                'subjectBreakdown' => $this->getSubjectBreakdown($filters),
+                'recentlyEnrolled' => $this->getRecentlyEnrolled($filters),
+                'recentPayments' => $this->getRecentPayments($filters),
+                'recentlyCompleted' => $this->getRecentlyCompleted($filters)
             ];
         } catch (\Exception $e) {
             Log::error('Table data error: ' . $e->getMessage());
             return [
                 'topPerformers' => [],
                 'bottomPerformers' => [],
-                'subjectBreakdown' => []
+                'subjectBreakdown' => [],
+                'recentlyEnrolled' => [],
+                'recentPayments' => [],
+                'recentlyCompleted' => []
             ];
         }
     }
@@ -1303,6 +1309,224 @@ class AdminAnalyticsController extends Controller
             return $this->getSubjectBreakdown($filters);
         } catch (\Exception $e) {
             Log::error('Subject analytics error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getRecentlyEnrolled($filters)
+    {
+        try {
+            // Get recently enrolled students from enrollments table
+            $query = DB::table('enrollments')
+                ->join('students', 'enrollments.student_id', '=', 'students.student_id')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->select([
+                    'users.user_firstname',
+                    'users.user_lastname', 
+                    'students.student_id',
+                    'programs.program_name',
+                    'enrollments.created_at as enrollment_date',
+                    'enrollments.enrollment_status'
+                ])
+                ->where('enrollments.enrollment_status', '!=', 'rejected')
+                ->orderBy('enrollments.created_at', 'desc')
+                ->limit(10);
+
+            // Apply filters
+            if (!empty($filters['year'])) {
+                $query->whereYear('enrollments.created_at', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $query->whereMonth('enrollments.created_at', $filters['month']);
+            }
+            if (!empty($filters['program'])) {
+                if ($filters['program'] === 'full') {
+                    $query->where('enrollments.enrollment_type', 'full');
+                } elseif ($filters['program'] === 'modular') {
+                    $query->where('enrollments.enrollment_type', 'modular');
+                }
+            }
+
+            $enrollments = $query->get();
+
+            $result = [];
+            foreach ($enrollments as $enrollment) {
+                $result[] = [
+                    'student_name' => trim(($enrollment->user_firstname ?? '') . ' ' . ($enrollment->user_lastname ?? '')),
+                    'student_id' => $enrollment->student_id,
+                    'program' => $enrollment->program_name ?? 'Unknown Program',
+                    'enrollment_date' => $enrollment->enrollment_date ? 
+                        Carbon::parse($enrollment->enrollment_date)->format('M d, Y') : 'N/A',
+                    'status' => ucfirst($enrollment->enrollment_status ?? 'pending')
+                ];
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Recently enrolled data error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getRecentPayments($filters)
+    {
+        try {
+            // Get recent payments from payments table
+            $query = DB::table('payments')
+                ->join('enrollments', 'payments.enrollment_id', '=', 'enrollments.enrollment_id')
+                ->join('students', 'enrollments.student_id', '=', 'students.student_id')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->select([
+                    'users.user_firstname',
+                    'users.user_lastname',
+                    'students.student_id',
+                    'programs.program_name',
+                    'payments.amount',
+                    'payments.payment_date',
+                    'payments.payment_status'
+                ])
+                ->where('payments.payment_status', '!=', 'failed')
+                ->orderBy('payments.payment_date', 'desc')
+                ->limit(10);
+
+            // Apply filters
+            if (!empty($filters['year'])) {
+                $query->whereYear('payments.payment_date', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $query->whereMonth('payments.payment_date', $filters['month']);
+            }
+
+            $payments = $query->get();
+
+            $result = [];
+            foreach ($payments as $payment) {
+                $result[] = [
+                    'student_name' => trim(($payment->user_firstname ?? '') . ' ' . ($payment->user_lastname ?? '')),
+                    'student_id' => $payment->student_id,
+                    'program' => $payment->program_name ?? 'Unknown Program',
+                    'amount' => number_format($payment->amount ?? 0, 2),
+                    'payment_date' => $payment->payment_date ? 
+                        Carbon::parse($payment->payment_date)->format('M d, Y') : 'N/A',
+                    'status' => ucfirst($payment->payment_status ?? 'pending')
+                ];
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Recent payments data error: ' . $e->getMessage());
+            
+            // Fallback: try to get from student_payment_history or other payment tables
+            try {
+                if (DB::getSchemaBuilder()->hasTable('payment_history')) {
+                    $query = DB::table('payment_history')
+                        ->join('students', 'payment_history.student_id', '=', 'students.student_id')
+                        ->join('users', 'students.user_id', '=', 'users.user_id')
+                        ->select([
+                            'users.user_firstname',
+                            'users.user_lastname',
+                            'students.student_id',
+                            'payment_history.amount',
+                            'payment_history.created_at as payment_date'
+                        ])
+                        ->orderBy('payment_history.created_at', 'desc')
+                        ->limit(10);
+
+                    $payments = $query->get();
+                    $result = [];
+                    foreach ($payments as $payment) {
+                        $result[] = [
+                            'student_name' => trim(($payment->user_firstname ?? '') . ' ' . ($payment->user_lastname ?? '')),
+                            'student_id' => $payment->student_id,
+                            'program' => 'N/A',
+                            'amount' => number_format($payment->amount ?? 0, 2),
+                            'payment_date' => $payment->payment_date ? 
+                                Carbon::parse($payment->payment_date)->format('M d, Y') : 'N/A',
+                            'status' => 'Completed'
+                        ];
+                    }
+                    return $result;
+                }
+            } catch (\Exception $fallbackE) {
+                Log::error('Payment fallback error: ' . $fallbackE->getMessage());
+            }
+            
+            return [];
+        }
+    }
+
+    private function getRecentlyCompleted($filters)
+    {
+        try {
+            // Get recently completed enrollments/modules
+            $query = DB::table('enrollments')
+                ->join('students', 'enrollments.student_id', '=', 'students.student_id')
+                ->join('users', 'students.user_id', '=', 'users.user_id')
+                ->leftJoin('programs', 'enrollments.program_id', '=', 'programs.program_id')
+                ->select([
+                    'users.user_firstname',
+                    'users.user_lastname',
+                    'students.student_id',
+                    'programs.program_name',
+                    'enrollments.updated_at as completion_date'
+                ])
+                ->where('enrollments.enrollment_status', 'completed')
+                ->orderBy('enrollments.updated_at', 'desc')
+                ->limit(10);
+
+            // Apply filters
+            if (!empty($filters['year'])) {
+                $query->whereYear('enrollments.updated_at', $filters['year']);
+            }
+            if (!empty($filters['month'])) {
+                $query->whereMonth('enrollments.updated_at', $filters['month']);
+            }
+
+            $completions = $query->get();
+
+            // If no completed enrollments, try module completions
+            if ($completions->isEmpty() && DB::getSchemaBuilder()->hasTable('module_completions')) {
+                $query = DB::table('module_completions')
+                    ->join('students', 'module_completions.student_id', '=', 'students.student_id')
+                    ->join('users', 'students.user_id', '=', 'users.user_id')
+                    ->leftJoin('modules', 'module_completions.modules_id', '=', 'modules.modules_id')
+                    ->select([
+                        'users.user_firstname',
+                        'users.user_lastname',
+                        'students.student_id',
+                        'modules.module_name as program_name',
+                        'module_completions.completed_at as completion_date'
+                    ])
+                    ->whereNotNull('module_completions.completed_at')
+                    ->orderBy('module_completions.completed_at', 'desc')
+                    ->limit(10);
+
+                if (!empty($filters['year'])) {
+                    $query->whereYear('module_completions.completed_at', $filters['year']);
+                }
+                if (!empty($filters['month'])) {
+                    $query->whereMonth('module_completions.completed_at', $filters['month']);
+                }
+
+                $completions = $query->get();
+            }
+
+            $result = [];
+            foreach ($completions as $completion) {
+                $result[] = [
+                    'student_name' => trim(($completion->user_firstname ?? '') . ' ' . ($completion->user_lastname ?? '')),
+                    'student_id' => $completion->student_id,
+                    'program' => $completion->program_name ?? 'Unknown Program',
+                    'completion_date' => $completion->completion_date ? 
+                        Carbon::parse($completion->completion_date)->format('M d, Y') : 'N/A'
+                ];
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Recently completed data error: ' . $e->getMessage());
             return [];
         }
     }

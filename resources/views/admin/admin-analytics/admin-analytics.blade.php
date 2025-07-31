@@ -805,6 +805,11 @@ function updateTables(tableData) {
     
     // Update subject breakdown table
     updateSubjectBreakdownTable(tableData.subjectBreakdown);
+    
+    // Update new tables
+    updateRecentlyEnrolledTable(tableData.recentlyEnrolled);
+    updateRecentPaymentsTable(tableData.recentPayments);
+    updateRecentlyCompletedTable(tableData.recentlyCompleted);
 }
 
 function updateTopPerformersTable(data) {
@@ -901,6 +906,80 @@ function updateSubjectBreakdownTable(data) {
         `;
         tbody.appendChild(row);
     });
+}
+
+// New table update functions
+function updateRecentlyEnrolledTable(data) {
+    const tbody = document.getElementById('recentlyEnrolledTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (data && data.length > 0) {
+        data.forEach(enrollment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="fw-bold">${enrollment.student_name}</div>
+                    <small class="text-muted">${enrollment.student_id}</small>
+                </td>
+                <td><span class="badge bg-info">${enrollment.program}</span></td>
+                <td><small>${enrollment.enrollment_date}</small></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent enrollments</td></tr>';
+    }
+}
+
+function updateRecentPaymentsTable(data) {
+    const tbody = document.getElementById('recentPaymentsTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (data && data.length > 0) {
+        data.forEach(payment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="fw-bold">${payment.student_name}</div>
+                    <small class="text-muted">${payment.student_id}</small>
+                </td>
+                <td><span class="badge bg-info">${payment.program}</span></td>
+                <td><span class="fw-bold text-success">₱${payment.amount}</span></td>
+                <td><small>${payment.payment_date}</small></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No recent payments</td></tr>';
+    }
+}
+
+function updateRecentlyCompletedTable(data) {
+    const tbody = document.getElementById('recentlyCompletedTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (data && data.length > 0) {
+        data.forEach(completion => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="fw-bold">${completion.student_name}</div>
+                    <small class="text-muted">${completion.student_id}</small>
+                </td>
+                <td><span class="badge bg-success">${completion.program}</span></td>
+                <td><small>${completion.completion_date}</small></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent completions</td></tr>';
+    }
 }
 
 // Chart initialization functions

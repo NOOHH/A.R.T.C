@@ -83,6 +83,12 @@ class Student extends Model
         return $this->hasMany(\App\Models\ModuleCompletion::class, 'student_id', 'student_id');
     }
     
+    // Course completions relationship
+    public function courseCompletions()
+    {
+        return $this->hasMany(\App\Models\CourseCompletion::class, 'student_id', 'student_id');
+    }
+    
     // Get attendance records for this student
     public function attendanceRecords()
     {

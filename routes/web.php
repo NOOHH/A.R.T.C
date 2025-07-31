@@ -18,6 +18,7 @@ use App\Http\Controllers\AdminDirectorController;
 use App\Http\Controllers\AdminStudentListController;
 use App\Http\Controllers\AdminPackageController;    // ← NEW
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\CertificateController;
 
 // Chat search route  
 Route::post('/api/chat/session/search', [App\Http\Controllers\ChatController::class, 'sessionSearch'])->middleware('web')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
@@ -1433,6 +1434,10 @@ Route::put('/director/profile', [DirectorController::class, 'updateProfile'])
 // Students list
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/students', [AdminStudentListController::class, 'index'])->name('admin.students.index');
+    Route::get('/admin/students/export', [AdminStudentListController::class, 'export'])->name('admin.students.export');
+    Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])->name('admin.students.archived');
+    Route::post('/admin/students/{id}/archive', [AdminStudentListController::class, 'archive'])->name('admin.students.archive');
+    Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
     // ...add any other /admin/students routes here...
 });
 
@@ -1546,9 +1551,16 @@ Route::post('/admin/submissions/{id}/grade', [AdminController::class, 'gradeSubm
 | Admin Certificates
 |--------------------------------------------------------------------------
 */
-// View certificates
-Route::get('/admin/certificates', [CertificateController::class, 'index'])
-     ->name('admin.certificates');
+// Complete Certificate Management Routes
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/certificates', [CertificateController::class, 'index'])->name('admin.certificates');
+    Route::get('/admin/certificates/{student}/preview', [CertificateController::class, 'preview'])->name('admin.certificates.preview');
+    Route::post('/admin/certificates/{student}/generate', [CertificateController::class, 'generate'])->name('admin.certificates.generate');
+    Route::post('/admin/certificates/{student}/approve', [CertificateController::class, 'approve'])->name('admin.certificates.approve');
+    Route::post('/admin/certificates/{student}/reject', [CertificateController::class, 'reject'])->name('admin.certificates.reject');
+    Route::get('/admin/certificates/{student}/download', [CertificateController::class, 'adminDownload'])->name('admin.certificates.download');
+    Route::post('/admin/certificates/bulk-approve', [CertificateController::class, 'bulkApprove'])->name('admin.certificates.bulk-approve');
+});
 
 }); // End of admin middleware group
 
@@ -2489,12 +2501,11 @@ Route::prefix('test-api/test')->group(function () {
     Route::get('/course-enrollment', [\App\Http\Controllers\CourseTestController::class, 'testCreateCourseEnrollment']);
 });
 
-// Certificate Management Route
-Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates');
-
-// Certificate viewing and downloading
-Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
-Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');
+// Certificate viewing and downloading for students
+Route::middleware(['web'])->group(function () {
+    Route::get('/certificate', [App\Http\Controllers\CertificateController::class, 'show'])->name('certificate.show');
+    Route::get('/certificate/download', [App\Http\Controllers\CertificateController::class, 'download'])->name('certificate.download');
+});
 
 // Test upload page for debugging
 Route::get('/test-upload', function() {
