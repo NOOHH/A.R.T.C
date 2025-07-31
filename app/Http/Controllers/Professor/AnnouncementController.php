@@ -21,19 +21,6 @@ class AnnouncementController extends Controller
     private function checkAnnouncementPermission()
     {
         try {
-            // Check if feature is enabled
-            $isEnabled = AdminSetting::getValue('professor_announcement_management_enabled', '0') === '1';
-            Log::info('ProfessorAnnouncementController: Announcement management enabled check', ['enabled' => $isEnabled]);
-
-            if (!$isEnabled) {
-                Log::warning('ProfessorAnnouncementController: Announcement management not enabled');
-                abort(403, 'Announcement management is not enabled for professors.');
-            }
-
-            // Check whitelist
-            $whitelist = AdminSetting::getValue('professor_announcement_management_whitelist', '');
-            Log::info('ProfessorAnnouncementController: Whitelist check', ['whitelist' => $whitelist]);
-
             // Use session-based authentication instead of Auth guard
             if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
                 Log::error('ProfessorAnnouncementController: Not authenticated as professor via session');
@@ -43,24 +30,55 @@ class AnnouncementController extends Controller
             $professorId = session('professor_id');
             Log::info('ProfessorAnnouncementController: Professor authenticated via session', ['professor_id' => $professorId]);
 
-            // If whitelist is not empty and has actual professor IDs, check if professor is in whitelist
-            if (!empty($whitelist) && trim($whitelist) !== '') {
+            // Check if feature is globally enabled
+            $isEnabled = AdminSetting::getValue('professor_announcement_management_enabled', '0') === '1';
+            Log::info('ProfessorAnnouncementController: Announcement management enabled check', ['enabled' => $isEnabled]);
+
+            // Check whitelist
+            $whitelist = AdminSetting::getValue('professor_announcement_management_whitelist', '');
+            Log::info('ProfessorAnnouncementController: Whitelist check', ['whitelist' => $whitelist]);
+
+            // If feature is globally enabled
+            if ($isEnabled) {
+                // If whitelist is empty, allow all professors
+                if (empty($whitelist) || trim($whitelist) === '') {
+                    Log::info('ProfessorAnnouncementController: Feature enabled, whitelist empty - allowing all professors', ['professor_id' => $professorId]);
+                    return;
+                }
+                
+                // If whitelist has IDs, check if professor is in whitelist
                 $whitelistedIds = array_filter(array_map('trim', explode(',', $whitelist)), function($id) {
                     return !empty($id) && $id !== '';
                 });
                 
-                Log::info('ProfessorAnnouncementController: Parsed whitelist IDs', ['whitelisted_ids' => $whitelistedIds]);
-                
                 if (!empty($whitelistedIds) && !in_array((string)$professorId, $whitelistedIds)) {
-                    Log::warning('ProfessorAnnouncementController: Professor not in whitelist', [
+                    Log::warning('ProfessorAnnouncementController: Feature enabled but professor not in whitelist', [
                         'professor_id' => $professorId,
                         'whitelist' => $whitelistedIds
                     ]);
                     abort(403, 'You are not authorized to manage announcements.');
                 }
+                
+                Log::info('ProfessorAnnouncementController: Feature enabled and professor in whitelist', ['professor_id' => $professorId]);
+                return;
             }
+            
+            // If feature is globally disabled, check if professor is specifically whitelisted
+            if (!empty($whitelist) && trim($whitelist) !== '') {
+                $whitelistedIds = array_filter(array_map('trim', explode(',', $whitelist)), function($id) {
+                    return !empty($id) && $id !== '';
+                });
+                
+                if (!empty($whitelistedIds) && in_array((string)$professorId, $whitelistedIds)) {
+                    Log::info('ProfessorAnnouncementController: Feature disabled but professor whitelisted - allowing access', ['professor_id' => $professorId]);
+                    return;
+                }
+            }
+            
+            // Feature is disabled and professor is not whitelisted
+            Log::warning('ProfessorAnnouncementController: Announcement management not enabled and professor not whitelisted');
+            abort(403, 'Announcement management is not enabled for professors.');
 
-            Log::info('ProfessorAnnouncementController: Permission check passed');
         } catch (\Exception $e) {
             Log::error('ProfessorAnnouncementController checkAnnouncementPermission error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -69,13 +87,53 @@ class AnnouncementController extends Controller
         }
     }
 
+    /**
+     * Check if professor can create/edit announcements (stricter check)
+     */
+    private function checkAnnouncementCreationPermission()
+    {
+        $this->checkAnnouncementPermission(); // This includes the whitelist check
+    }
+
+    /**
+     * Check if professor can view announcements (always allow viewing)
+     */
+    private function checkAnnouncementViewPermission()
+    {
+        try {
+            // Always allow viewing - no feature check needed
+            // Use session-based authentication
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                abort(403, 'You are not authenticated as a professor.');
+            }
+        } catch (\Exception $e) {
+            Log::error('ProfessorAnnouncementController checkAnnouncementViewPermission error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
     public function index()
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementViewPermission(); // Allow viewing if authenticated
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         if (!$professor) {
             return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
+        }
+        
+        // Check if professor can create announcements using the new logic
+        $canCreateAnnouncements = false;
+        try {
+            $this->checkAnnouncementCreationPermission();
+            $canCreateAnnouncements = true;
+            Log::info('AnnouncementController index: Professor can create announcements', ['professor_id' => $professor->professor_id]);
+        } catch (\Exception $e) {
+            // Professor can view but not create announcements
+            Log::info('AnnouncementController index: Professor cannot create announcements', [
+                'professor_id' => $professor->professor_id,
+                'error' => $e->getMessage()
+            ]);
+            $canCreateAnnouncements = false;
         }
         
         // Get announcements created by this professor
@@ -84,13 +142,13 @@ class AnnouncementController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
-        return view('professor.announcements.index', compact('announcements'));
+        return view('professor.announcements.index', compact('announcements', 'canCreateAnnouncements'));
     }
 
     public function create()
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementCreationPermission(); // Use stricter check for creation
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         if (!$professor) {
             return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
@@ -111,8 +169,8 @@ class AnnouncementController extends Controller
 
     public function store(Request $request)
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementCreationPermission(); // Use stricter check for creation
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         if (!$professor) {
             return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
@@ -134,8 +192,7 @@ class AnnouncementController extends Controller
             'target_plans.*' => 'in:full,modular',
             'publish_date' => 'nullable|date|after_or_equal:today',
             'expire_date' => 'nullable|date|after:publish_date',
-            'video_link' => 'nullable|url',
-            'is_published' => 'boolean'
+            'video_link' => 'nullable|url'
         ]);
 
         // Validate that selected programs are assigned to this professor
@@ -169,8 +226,6 @@ class AnnouncementController extends Controller
         $announcement->type = $request->type;
         $announcement->target_scope = $request->target_scope;
         $announcement->video_link = $request->video_link;
-        $announcement->is_published = filter_var($request->input('is_published', false), FILTER_VALIDATE_BOOLEAN);
-        $announcement->is_active = true;
         
         // Handle targeting options
         if ($request->target_scope === 'specific') {
@@ -209,8 +264,8 @@ class AnnouncementController extends Controller
 
     public function show(Announcement $announcement)
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementViewPermission(); // Use lenient check for viewing
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -222,8 +277,8 @@ class AnnouncementController extends Controller
 
     public function edit(Announcement $announcement)
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementCreationPermission(); // Use stricter check for editing
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -245,8 +300,8 @@ class AnnouncementController extends Controller
 
     public function update(Request $request, Announcement $announcement)
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementCreationPermission(); // Use stricter check for updating
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -269,8 +324,7 @@ class AnnouncementController extends Controller
             'target_plans.*' => 'in:full,modular',
             'publish_date' => 'nullable|date',
             'expire_date' => 'nullable|date|after:publish_date',
-            'video_link' => 'nullable|url',
-            'is_published' => 'boolean'
+            'video_link' => 'nullable|url'
         ]);
 
         // Validate that selected programs are assigned to this professor
@@ -302,7 +356,6 @@ class AnnouncementController extends Controller
         $announcement->type = $request->type;
         $announcement->target_scope = $request->target_scope;
         $announcement->video_link = $request->video_link;
-        $announcement->is_published = filter_var($request->input('is_published', false), FILTER_VALIDATE_BOOLEAN);
         
         // Handle targeting options
         if ($request->target_scope === 'specific') {
@@ -334,8 +387,8 @@ class AnnouncementController extends Controller
 
     public function destroy(Announcement $announcement)
     {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
+        $this->checkAnnouncementCreationPermission(); // Use stricter check for deletion
+        $professor = Professor::where('professor_id', session('professor_id'))->first();
         
         // Check if this professor owns the announcement
         if ($announcement->professor_id !== $professor->professor_id) {
@@ -346,45 +399,5 @@ class AnnouncementController extends Controller
 
         return redirect()->route('professor.announcements.index')
             ->with('success', 'Announcement deleted successfully!');
-    }
-
-    public function toggleStatus(Announcement $announcement)
-    {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
-        
-        // Check if this professor owns the announcement
-        if ($announcement->professor_id !== $professor->professor_id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized access.']);
-        }
-        
-        $announcement->is_active = !$announcement->is_active;
-        $announcement->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Announcement status updated successfully!',
-            'is_active' => $announcement->is_active
-        ]);
-    }
-
-    public function togglePublished(Announcement $announcement)
-    {
-        $this->checkAnnouncementPermission();
-        $professor = Professor::where('professor_id', session('user_id'))->first();
-        
-        // Check if this professor owns the announcement
-        if ($announcement->professor_id !== $professor->professor_id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized access.']);
-        }
-        
-        $announcement->is_published = !$announcement->is_published;
-        $announcement->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Announcement publication status updated successfully!',
-            'is_published' => $announcement->is_published
-        ]);
     }
 }

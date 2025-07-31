@@ -23,19 +23,6 @@ class ProfessorModuleController extends Controller
     private function checkModulePermission()
     {
         try {
-            // Check if feature is enabled
-            $isEnabled = AdminSetting::getValue('professor_module_management_enabled', '0') === '1';
-            Log::info('ProfessorModuleController: Module management enabled check', ['enabled' => $isEnabled]);
-
-            if (!$isEnabled) {
-                Log::warning('ProfessorModuleController: Module management not enabled');
-                abort(403, 'Module management is not enabled for professors.');
-            }
-
-            // Check whitelist
-            $whitelist = AdminSetting::getValue('professor_module_management_whitelist', '');
-            Log::info('ProfessorModuleController: Whitelist check', ['whitelist' => $whitelist]);
-
             // Use session-based authentication instead of Auth guard
             if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
                 Log::error('ProfessorModuleController: Not authenticated as professor via session');
@@ -45,24 +32,55 @@ class ProfessorModuleController extends Controller
             $professorId = session('professor_id');
             Log::info('ProfessorModuleController: Professor authenticated via session', ['professor_id' => $professorId]);
 
-            // If whitelist is not empty and has actual professor IDs, check if professor is in whitelist
-            if (!empty($whitelist) && trim($whitelist) !== '') {
+            // Check if feature is globally enabled
+            $isEnabled = AdminSetting::getValue('professor_module_management_enabled', '0') === '1';
+            Log::info('ProfessorModuleController: Module management enabled check', ['enabled' => $isEnabled]);
+
+            // Check whitelist
+            $whitelist = AdminSetting::getValue('professor_module_management_whitelist', '');
+            Log::info('ProfessorModuleController: Whitelist check', ['whitelist' => $whitelist]);
+
+            // If feature is globally enabled
+            if ($isEnabled) {
+                // If whitelist is empty, allow all professors
+                if (empty($whitelist) || trim($whitelist) === '') {
+                    Log::info('ProfessorModuleController: Feature enabled, whitelist empty - allowing all professors', ['professor_id' => $professorId]);
+                    return;
+                }
+                
+                // If whitelist has IDs, check if professor is in whitelist
                 $whitelistedIds = array_filter(array_map('trim', explode(',', $whitelist)), function($id) {
                     return !empty($id) && $id !== '';
                 });
                 
-                Log::info('ProfessorModuleController: Parsed whitelist IDs', ['whitelisted_ids' => $whitelistedIds]);
-                
                 if (!empty($whitelistedIds) && !in_array((string)$professorId, $whitelistedIds)) {
-                    Log::warning('ProfessorModuleController: Professor not in whitelist', [
+                    Log::warning('ProfessorModuleController: Feature enabled but professor not in whitelist', [
                         'professor_id' => $professorId,
                         'whitelist' => $whitelistedIds
                     ]);
                     abort(403, 'You are not authorized to manage modules.');
                 }
+                
+                Log::info('ProfessorModuleController: Feature enabled and professor in whitelist', ['professor_id' => $professorId]);
+                return;
             }
+            
+            // If feature is globally disabled, check if professor is specifically whitelisted
+            if (!empty($whitelist) && trim($whitelist) !== '') {
+                $whitelistedIds = array_filter(array_map('trim', explode(',', $whitelist)), function($id) {
+                    return !empty($id) && $id !== '';
+                });
+                
+                if (!empty($whitelistedIds) && in_array((string)$professorId, $whitelistedIds)) {
+                    Log::info('ProfessorModuleController: Feature disabled but professor whitelisted - allowing access', ['professor_id' => $professorId]);
+                    return;
+                }
+            }
+            
+            // Feature is disabled and professor is not whitelisted
+            Log::warning('ProfessorModuleController: Module management not enabled and professor not whitelisted');
+            abort(403, 'Module management is not enabled for professors.');
 
-            Log::info('ProfessorModuleController: Permission check passed');
         } catch (\Exception $e) {
             Log::error('ProfessorModuleController checkModulePermission error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()

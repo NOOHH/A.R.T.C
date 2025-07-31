@@ -18,7 +18,7 @@ class AnnouncementController extends Controller
 {
     public function index()
     {
-        $announcements = Announcement::with(['program', 'admin', 'professor'])
+        $announcements = Announcement::with(['program', 'admin', 'professor', 'director'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
@@ -52,20 +52,43 @@ class AnnouncementController extends Controller
             'target_plans.*' => 'in:full,modular',
             'publish_date' => 'nullable|date|after_or_equal:today',
             'expire_date' => 'nullable|date|after:publish_date',
-            'video_link' => 'nullable|url',
-            'is_published' => 'boolean'
+            'video_link' => 'nullable|url'
         ]);
 
         $announcement = new Announcement();
-        $announcement->admin_id = session('user_id'); // Get admin ID from session
+        
+        // Check if this is a director creating the announcement
+        if (session('user_role') === 'director' || session('session_role') === 'director') {
+            // For directors, we'll store them as admin but with special handling
+            // Get the director's associated admin_id from the directors table
+            $directorId = session('user_id') ?? session('session_user_id');
+            $director = Director::find($directorId);
+            
+            if ($director && $director->admin_id) {
+                $announcement->admin_id = $director->admin_id;
+                Log::info('Director creating announcement', [
+                    'director_id' => $directorId,
+                    'director_name' => $director->directors_name,
+                    'admin_id' => $director->admin_id
+                ]);
+            } else {
+                // Fallback: use session user_id as admin_id
+                $announcement->admin_id = $directorId;
+                Log::warning('Director without valid admin_id creating announcement', [
+                    'director_id' => $directorId,
+                    'using_fallback_admin_id' => $directorId
+                ]);
+            }
+        } else {
+            // Regular admin creating announcement
+            $announcement->admin_id = session('user_id'); // Get admin ID from session
+        }
         $announcement->title = $request->title;
         $announcement->content = $request->content;
         $announcement->description = $request->description;
         $announcement->type = $request->type;
         $announcement->target_scope = $request->target_scope;
         $announcement->video_link = $request->video_link;
-        $announcement->is_published = filter_var($request->input('is_published', false), FILTER_VALIDATE_BOOLEAN);
-        $announcement->is_active = true;
         
         // Handle targeting options
         if ($request->target_scope === 'specific') {
@@ -137,8 +160,7 @@ class AnnouncementController extends Controller
             'target_plans.*' => 'in:full,modular',
             'publish_date' => 'nullable|date',
             'expire_date' => 'nullable|date|after:publish_date',
-            'video_link' => 'nullable|url',
-            'is_published' => 'boolean'
+            'video_link' => 'nullable|url'
         ]);
 
         $announcement = Announcement::findOrFail($id);
@@ -148,7 +170,6 @@ class AnnouncementController extends Controller
         $announcement->type = $request->type;
         $announcement->target_scope = $request->target_scope;
         $announcement->video_link = $request->video_link;
-        $announcement->is_published = filter_var($request->input('is_published', false), FILTER_VALIDATE_BOOLEAN);
         
         // Handle targeting options
         if ($request->target_scope === 'specific') {
@@ -185,32 +206,6 @@ class AnnouncementController extends Controller
 
         return redirect()->route('admin.announcements.index')
             ->with('success', 'Announcement deleted successfully!');
-    }
-
-    public function toggleStatus($id)
-    {
-        $announcement = Announcement::findOrFail($id);
-        $announcement->is_active = !$announcement->is_active;
-        $announcement->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Announcement status updated successfully!',
-            'is_active' => $announcement->is_active
-        ]);
-    }
-
-    public function togglePublished($id)
-    {
-        $announcement = Announcement::findOrFail($id);
-        $announcement->is_published = !$announcement->is_published;
-        $announcement->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Announcement publish status updated successfully!',
-            'is_published' => $announcement->is_published
-        ]);
     }
 
     private function getAnnouncementStats($announcement)

@@ -829,7 +829,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
 |--------------------------------------------------------------------------
 */
 // Announcements routes
-Route::middleware(['admin.auth'])->group(function () {
+Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/announcements', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])
          ->name('admin.announcements.index');
     Route::get('/admin/announcements/create', [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])
@@ -844,10 +844,6 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.announcements.update');
     Route::delete('/admin/announcements/{id}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])
          ->name('admin.announcements.destroy');
-    Route::post('/admin/announcements/{id}/toggle-status', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleStatus'])
-         ->name('admin.announcements.toggle-status');
-    Route::post('/admin/announcements/{id}/toggle-published', [\App\Http\Controllers\Admin\AnnouncementController::class, 'togglePublished'])
-         ->name('admin.announcements.toggle-published');
 });
 
 
@@ -1873,8 +1869,12 @@ Route::middleware(['professor.auth'])
          ->name('announcements.update');
     Route::delete('/announcements/{announcement}', [ProfessorAnnouncementController::class, 'destroy'])
          ->name('announcements.destroy');
-    Route::patch('/announcements/{announcement}/toggle-status', [ProfessorAnnouncementController::class, 'toggleStatus'])
-         ->name('announcements.toggle-status');
+
+    // Professor Submissions Routes
+    Route::get('/submissions', [\App\Http\Controllers\Professor\SubmissionController::class, 'index'])
+         ->name('submissions.index');
+    Route::post('/submissions/{id}/grade', [\App\Http\Controllers\Professor\SubmissionController::class, 'gradeSubmission'])
+         ->name('submissions.grade');
 });
 
 // API routes for student and professor data

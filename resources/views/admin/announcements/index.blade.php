@@ -26,10 +26,6 @@
 .announcement-type-event { background-color: #f39c12; }
 .announcement-type-system { background-color: #9b59b6; }
 
-.status-toggle {
-    cursor: pointer;
-}
-
 .target-info {
     background: #f8f9fa;
     border-radius: 8px;
@@ -105,26 +101,6 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Published
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $announcements->where('is_published', true)->count() }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-check-circle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -182,8 +158,6 @@
                                 <th>Title</th>
                                 <th>Type</th>
                                 <th>Target Audience</th>
-                                <th>Status</th>
-                                <th>Published</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -263,22 +237,6 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input status-toggle" type="checkbox" 
-                                                   data-id="{{ $announcement->announcement_id }}" 
-                                                   data-type="status"
-                                                   {{ $announcement->is_active ? 'checked' : '' }}>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input status-toggle" type="checkbox" 
-                                                   data-id="{{ $announcement->announcement_id }}" 
-                                                   data-type="published"
-                                                   {{ $announcement->is_published ? 'checked' : '' }}>
-                                        </div>
-                                    </td>
-                                    <td>
                                         <div class="announcement-meta">
                                             {{ $announcement->created_at->format('M d, Y') }}<br>
                                             <small>{{ $announcement->created_at->format('g:i A') }}</small>
@@ -355,42 +313,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle status toggles
-    document.querySelectorAll('.status-toggle').forEach(function(toggle) {
-        toggle.addEventListener('change', function() {
-            const id = this.dataset.id;
-            const type = this.dataset.type;
-            const url = type === 'status' 
-                ? `/admin/announcements/${id}/toggle-status`
-                : `/admin/announcements/${id}/toggle-published`;
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Optionally show a success message
-                    console.log(data.message);
-                } else {
-                    // Revert toggle on error
-                    this.checked = !this.checked;
-                    alert('Error updating status');
-                }
-            })
-            .catch(error => {
-                // Revert toggle on error
-                this.checked = !this.checked;
-                console.error('Error:', error);
-                alert('Error updating status');
-            });
-        });
-    });
-
     // Handle delete buttons
     document.querySelectorAll('.delete-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {

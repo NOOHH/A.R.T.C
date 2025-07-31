@@ -55,20 +55,37 @@ class Announcement extends Model
         return $this->belongsTo(Admin::class, 'admin_id', 'admin_id');
     }
 
+    public function director()
+    {
+        return $this->belongsTo(Director::class, 'admin_id', 'directors_id');
+    }
+
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
     }
 
     /**
-     * Get the creator of the announcement (either admin or professor)
+     * Get the creator of the announcement (admin, professor, or director)
      */
     public function getCreator()
     {
-        if ($this->admin_id) {
-            return $this->admin;
-        } elseif ($this->professor_id) {
+        if ($this->professor_id) {
             return $this->professor;
+        } elseif ($this->admin_id) {
+            // First try to get admin
+            $admin = $this->admin;
+            if ($admin) {
+                return $admin;
+            }
+            
+            // If no admin found, check if this admin_id might be a director
+            $director = Director::find($this->admin_id);
+            if ($director) {
+                return $director;
+            }
+            
+            return $admin; // Return null if neither found
         }
         return null;
     }
@@ -83,13 +100,25 @@ class Announcement extends Model
             return 'Unknown';
         }
 
-        if ($this->admin_id) {
-            return $creator->admin_name ?? ($creator->first_name && $creator->last_name ? $creator->first_name . ' ' . $creator->last_name : $creator->email);
-        } elseif ($this->professor_id) {
-            return $creator->professor_name ?? ($creator->professor_first_name && $creator->professor_last_name ? $creator->professor_first_name . ' ' . $creator->professor_last_name : ($creator->first_name && $creator->last_name ? $creator->first_name . ' ' . $creator->last_name : $creator->email));
+        // Check if it's a director (by checking if it has directors_name property)
+        if (isset($creator->directors_name)) {
+            return $creator->directors_name ?? ($creator->directors_first_name && $creator->directors_last_name ? 
+                $creator->directors_first_name . ' ' . $creator->directors_last_name : 
+                $creator->directors_email ?? 'Unknown Director');
         }
-
-        return 'Unknown';
+        // Check if it's a professor
+        elseif ($this->professor_id) {
+            return $creator->professor_name ?? ($creator->professor_first_name && $creator->professor_last_name ? 
+                $creator->professor_first_name . ' ' . $creator->professor_last_name : 
+                ($creator->first_name && $creator->last_name ? $creator->first_name . ' ' . $creator->last_name : 
+                $creator->email ?? 'Unknown Professor'));
+        }
+        // Must be an admin
+        else {
+            return $creator->admin_name ?? ($creator->first_name && $creator->last_name ? 
+                $creator->first_name . ' ' . $creator->last_name : 
+                $creator->email ?? 'Unknown Admin');
+        }
     }
 
     /**

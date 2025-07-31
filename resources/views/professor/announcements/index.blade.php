@@ -24,10 +24,6 @@
 .announcement-type-event { background-color: #f39c12; }
 .announcement-type-system { background-color: #9b59b6; }
 
-.status-toggle {
-    cursor: pointer;
-}
-
 .target-info {
     background: #f8f9fa;
     border-radius: 8px;
@@ -69,9 +65,15 @@
             </h1>
             <p class="text-muted">Create and manage your announcements for students</p>
         </div>
+        @if($canCreateAnnouncements)
         <a href="{{ route('professor.announcements.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>Create Announcement
         </a>
+        @else
+        <button type="button" class="btn btn-secondary" disabled title="Announcement creation is disabled by administrator">
+            <i class="bi bi-lock me-2"></i>Create Announcement (Disabled)
+        </button>
+        @endif
     </div>
 
     <!-- Success Message -->
@@ -188,8 +190,6 @@
                                 <th>Title</th>
                                 <th>Type</th>
                                 <th>Target Audience</th>
-                                <th>Status</th>
-                                <th>Published</th>
                                 <th>Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -269,22 +269,6 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input status-toggle" type="checkbox" 
-                                                   data-id="{{ $announcement->announcement_id }}" 
-                                                   data-type="status"
-                                                   {{ $announcement->is_active ? 'checked' : '' }}>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input status-toggle" type="checkbox" 
-                                                   data-id="{{ $announcement->announcement_id }}" 
-                                                   data-type="published"
-                                                   {{ $announcement->is_published ? 'checked' : '' }}>
-                                        </div>
-                                    </td>
-                                    <td>
                                         <div class="announcement-meta">
                                             {{ $announcement->created_at->format('M d, Y') }}<br>
                                             <small>{{ $announcement->created_at->format('g:i A') }}</small>
@@ -322,10 +306,15 @@
                 <div class="text-center py-5">
                     <i class="bi bi-megaphone text-muted" style="font-size: 3rem;"></i>
                     <h4 class="text-muted mt-3">No announcements found</h4>
-                    <p class="text-muted">Create your first announcement to get started.</p>
-                    <a href="{{ route('professor.announcements.create') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-2"></i>Create Announcement
-                    </a>
+                    @if($canCreateAnnouncements)
+                        <p class="text-muted">Create your first announcement to get started.</p>
+                        <a href="{{ route('professor.announcements.create') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Create Announcement
+                        </a>
+                    @else
+                        <p class="text-muted">You can view announcements here once you create them.<br>
+                        <small>Contact your administrator to enable announcement creation.</small></p>
+                    @endif
                 </div>
             @endif
         </div>
@@ -361,42 +350,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle status toggles
-    document.querySelectorAll('.status-toggle').forEach(function(toggle) {
-        toggle.addEventListener('change', function() {
-            const id = this.dataset.id;
-            const type = this.dataset.type;
-            const url = type === 'status' 
-                ? `/professor/announcements/${id}/toggle-status`
-                : `/professor/announcements/${id}/toggle-published`;
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Optionally show a success message
-                    console.log(data.message);
-                } else {
-                    // Revert toggle on error
-                    this.checked = !this.checked;
-                    alert('Error updating status');
-                }
-            })
-            .catch(error => {
-                // Revert toggle on error
-                this.checked = !this.checked;
-                console.error('Error:', error);
-                alert('Error updating status');
-            });
-        });
-    });
-
     // Handle delete buttons
     document.querySelectorAll('.delete-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {

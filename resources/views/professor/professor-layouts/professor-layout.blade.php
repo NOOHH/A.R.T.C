@@ -49,6 +49,11 @@
         if (!isset($moduleManagementEnabled)) {
             $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
         }
+        
+        // Ensure announcementManagementEnabled is always available
+        if (!isset($announcementManagementEnabled)) {
+            $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
+        }
     @endphp
 
     <!-- Global Variables for JavaScript - Must be loaded first -->

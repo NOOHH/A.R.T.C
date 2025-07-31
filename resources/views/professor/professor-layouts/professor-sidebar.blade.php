@@ -104,7 +104,7 @@
                     <span>Assignments</span>
                     <i class="bi bi-chevron-down dropdown-arrow"></i>
                 </a>
-                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.assignments')) show @endif" id="assignmentsMenu">
+                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.assignments') || str_starts_with(Route::currentRouteName(), 'professor.submissions')) show @endif" id="assignmentsMenu">
                     <div class="submenu">
                         <a href="{{ route('professor.grading') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.index') active @endif">
                             <i class="bi bi-list-task"></i>
@@ -113,6 +113,10 @@
                         <a href="{{ route('professor.assignments.create') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.create') active @endif">
                             <i class="bi bi-plus-circle"></i>
                             <span>Create New</span>
+                        </a>
+                        <a href="{{ route('professor.submissions.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'professor.submissions')) active @endif">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span>Student Submissions</span>
                         </a>
                     </div>
                 </div>

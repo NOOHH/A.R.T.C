@@ -184,6 +184,7 @@ html, body {
     @php
         $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
         $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
+        $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
     @endphp
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
@@ -206,6 +207,7 @@ html, body {
                 </div>
             </div>
         </div>
+        @if(!empty($announcementManagementEnabled) && $announcementManagementEnabled)
         <div class="col-md-3 mb-3">
             <div class="card text-center">
                 <div class="card-body">
@@ -216,6 +218,7 @@ html, body {
                 </div>
             </div>
         </div>
+        @endif
         @if($gradingEnabled)
         <div class="col-md-3 mb-3">
             <div class="card text-center">
@@ -340,7 +343,7 @@ html, body {
     </div>
 
     <!-- Announcements Section -->
-    @if(isset($announcements) && $announcements->count() > 0)
+    @if(!empty($announcementManagementEnabled) && $announcementManagementEnabled && isset($announcements) && $announcements->count() > 0)
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">

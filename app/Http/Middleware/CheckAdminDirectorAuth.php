@@ -59,6 +59,7 @@ class CheckAdminDirectorAuth
                 'admin/analytics' => 'director_view_analytics',
                 'admin/modules' => 'director_manage_modules',
                 'admin/students' => 'director_view_students',
+                'admin/announcements' => 'director_manage_announcements',
             ];
             foreach ($featureMap as $prefix => $settingKey) {
                 if (str_starts_with($path, $prefix)) {

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 27, 2025 at 09:31 PM
+-- Generation Time: Jul 30, 2025 at 09:53 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -85,14 +85,25 @@ CREATE TABLE `admin_settings` (
 
 INSERT INTO `admin_settings` (`setting_id`, `setting_key`, `setting_value`, `setting_description`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'ai_quiz_enabled', 'true', 'Enable or disable AI Quiz Generator feature for professors', 1, '2025-07-07 07:17:23', '2025-07-07 07:17:23'),
-(2, 'meeting_creation_enabled', '0', 'Enable or disable meeting creation for professors', 1, '2025-07-18 12:52:43', '2025-07-21 23:24:06'),
+(2, 'meeting_creation_enabled', '1', 'Enable or disable meeting creation for professors', 1, '2025-07-18 12:52:43', '2025-07-29 10:59:29'),
 (100, 'referral_enabled', '1', 'Enable/disable referral code field in registration', 1, NULL, NULL),
 (101, 'referral_required', '0', 'Make referral code required in registration', 1, NULL, NULL),
-(102, 'grading_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-21 23:24:23'),
+(102, 'grading_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-29 10:24:59'),
 (103, 'upload_videos_enabled', 'true', NULL, 1, '2025-07-18 05:00:49', '2025-07-18 05:00:49'),
-(104, 'attendance_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-21 23:24:18'),
+(104, 'attendance_enabled', 'false', NULL, 1, '2025-07-18 05:00:49', '2025-07-29 10:24:59'),
 (106, 'meeting_whitelist_professors', '', NULL, 1, '2025-07-18 05:49:04', '2025-07-21 23:23:58'),
-(108, 'view_programs_enabled', 'false', NULL, 1, '2025-07-18 06:14:52', '2025-07-18 07:28:40');
+(108, 'view_programs_enabled', 'false', NULL, 1, '2025-07-18 06:14:52', '2025-07-18 07:28:40'),
+(109, 'professor_module_management_enabled', '1', 'Enable/disable module management for professors', 1, '2025-07-29 05:22:19', '2025-07-29 12:07:00'),
+(110, 'professor_module_management_whitelist', '', 'Comma-separated list of professor IDs allowed to manage modules', 1, '2025-07-29 05:22:19', '2025-07-29 05:22:19'),
+(111, 'director_view_students', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:39:27'),
+(112, 'director_manage_programs', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:44'),
+(113, 'director_manage_modules', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:32'),
+(114, 'director_manage_enrollments', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:39:27'),
+(115, 'director_view_analytics', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:52'),
+(116, 'director_manage_professors', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:39:28'),
+(117, 'director_manage_batches', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:52'),
+(118, 'director_view_chat_logs', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21'),
+(119, 'director_manage_settings', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21');
 
 -- --------------------------------------------------------
 
@@ -259,8 +270,21 @@ CREATE TABLE `chats` (
 --
 
 INSERT INTO `chats` (`chat_id`, `sender_id`, `receiver_id`, `body_cipher`, `is_read`, `is_encrypted`, `sent_at`, `read_at`, `created_at`, `updated_at`) VALUES
-(31, 112, 8, 'test1', 0, 1, '2025-07-13 07:17:13', NULL, '2025-07-13 07:17:13', '2025-07-13 07:17:13'),
-(32, 111, 112, 'eyJpdiI6IlAvQkpYdW83TXBwb2hJZHZYNlAwZkE9PSIsInZhbHVlIjoiYWh0VnZZOGFpeHNDQm1zV2M1UUg3RmNEaUtZMjNXTmZxQlhsQkdud1Jhd2RtRFdlTjNBbnFxNGpzQThkQXlNZiIsIm1hYyI6Ijk0OTAzMzhlMTE4MGM2ODA3ZmQ0ZjI5MWMwMjViY2I3ZTVkNWFjMjY2MGEwOGRkNmQ0ODZjMmVkMjNmNmNkZmMiLCJ0YWciOiIifQ==', 0, 1, '2025-07-13 15:45:40', NULL, '2025-07-13 07:45:40', '2025-07-13 07:45:40');
+(55, 179, 8, 'eyJpdiI6Ijdtekg1RmhkWm9XZTNBNkdIME82THc9PSIsInZhbHVlIjoiTVZFRGpvbWVjcElPME1ZUng2YSt4QT09IiwibWFjIjoiZjM1MmE1OWRmMWU2YTZkOTgwM2YxMTEyMzBkODMzZGM5ZWMyMGJhNmU3NWY0MWUzNzRkYWNkOGIzMzQ4YTYxMSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:28:43', NULL, '2025-07-28 07:28:43', '2025-07-28 07:28:43'),
+(56, 179, 8, 'eyJpdiI6Im5ZRUpQWFQ0c055YWhib2RmT0VEamc9PSIsInZhbHVlIjoiZ2oxWVBUMzNCWTAxMGZMakxNK2pzUT09IiwibWFjIjoiMjg1NjgzYmMyMTk4YjhhNGM5NTIyYTdlNDkyYzVjMGU2MjBiZDI2Y2U3MmQzNDVjYjdkODc0OGFiNzNhN2EwMCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:03', NULL, '2025-07-28 07:56:03', '2025-07-28 07:56:03'),
+(57, 179, 8, 'eyJpdiI6ImE0S0VTcmxwOW01S3ZvT01qSHg3RkE9PSIsInZhbHVlIjoiTCtxNXhHYVhUUkk0WDM1ek9QbU4zdz09IiwibWFjIjoiYTU1NTAzOTgzZWNhN2RjOTFjNTM2MTRiNDM1NmI4MGQ1ZDRlOGJlN2M0MzIwNDllZGZlNzUyMTEzMWYwMWYzOCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:09', NULL, '2025-07-28 07:56:09', '2025-07-28 07:56:09'),
+(58, 179, 8, 'eyJpdiI6IkVVc2ZHSElrWDNZK2pBNUxZcTlKRkE9PSIsInZhbHVlIjoibER2MmtFYlN5ZUkxZzRYbndBeEpqQT09IiwibWFjIjoiYjQ4NTI3NmU3YjE5ZWM3YTQ0NTNiZDNmMWFmYjljZmM3ZTFjMmUxYTFhZmI4NjkwZjQ5ODk5Y2VkZDI4NjdlMCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:10', NULL, '2025-07-28 07:56:10', '2025-07-28 07:56:10'),
+(59, 179, 8, 'eyJpdiI6IjVlOG1yUlRSNGpFeTg1NXFUYlNsNlE9PSIsInZhbHVlIjoiblFZQnNtSXF4MGhVb2Fxak5jU0xqdz09IiwibWFjIjoiNjgzYmVhZDZlOGI4N2U4MDEzMjE0ZTUzMTkzOGUxOTE1NTAwNDE1MzMyOGIzMTNkZDViMjJlOTA4NWM2MWRkMSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:11', NULL, '2025-07-28 07:56:11', '2025-07-28 07:56:11'),
+(60, 179, 8, 'eyJpdiI6IldBSnFHV29jcGJLSTJmRXF2aGViUUE9PSIsInZhbHVlIjoibE1MWUwrUnh5VjlSNzVPTXo3c3V0Zz09IiwibWFjIjoiNDgzNjU2Y2M3MjE3ZDJlZWJlMTUyNGJlYjVhNGVlM2YxYjc0YWI5Y2E1YTFjYmUyOTFlZDViNDU1YjJlNDE3NSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:11', NULL, '2025-07-28 07:56:11', '2025-07-28 07:56:11'),
+(61, 179, 8, 'eyJpdiI6IlBFQzVZWGVLLy9qY0FLQUM4ZUNSK0E9PSIsInZhbHVlIjoiKzJzR1F5dGFxQVBsZ295TFJzczY1UT09IiwibWFjIjoiYzNmYmU3ODFkZTk3ZTVlODVhZTBlMjFlNGU0MzU0M2FiYTZiM2VmYjBiMDM1Njk2NDZlYTEwNjdhYjUwMWQ3ZSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:00:45', NULL, '2025-07-28 08:00:45', '2025-07-28 08:00:45'),
+(62, 179, 8, 'eyJpdiI6IkFEdWZrdFEzMVBXMUJBVTl4d2J1Q1E9PSIsInZhbHVlIjoiRFA3M1ZYdmgzV2diSEoyRlZ4WUZTQT09IiwibWFjIjoiMmJiNzkxMWJkNzdlODkyZmVmOThiMjIyMDRjM2Q2MmNhN2M1ZTg5YmM1NzJlOGNjYTdiZmU5MzJlOTI4ZjkxMSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:33:11', NULL, '2025-07-28 08:33:11', '2025-07-28 08:33:11'),
+(63, 179, 8, 'eyJpdiI6ImlTVkgvN08vaWxUWjJIYUpGY2JWMmc9PSIsInZhbHVlIjoieUNJUVUwcFpudVVJMStzSmwxSy9hZz09IiwibWFjIjoiNzMwMTY0MzdiNmFkNjU1ZWZkOWQ1MGZhYmJkNjdkMTFhNWQwYmQxZWYwNzNmY2I3NTYwN2I4Y2EwOWVjZmRkNiIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:47', NULL, '2025-07-28 08:40:47', '2025-07-28 08:40:47'),
+(64, 179, 8, 'eyJpdiI6IktOa0hLU0ZnbUxxZHB2ekd6M3VKWXc9PSIsInZhbHVlIjoiTGIrR3pEVHpqUGxhZldidEJoZjBIUT09IiwibWFjIjoiZTM5YmJhMmYwNGNiOTFlYmI1OGE5ZjMzNWY3MTU3ZWM3ZWQxOGUzYzVkNjc1YWM5ZmI3NmI0MDAzZGVmMDI2OSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:50', NULL, '2025-07-28 08:40:50', '2025-07-28 08:40:50'),
+(65, 179, 8, 'eyJpdiI6Ikx3ZWh4aDFrUUxZWVQ0S3FEVWhRbnc9PSIsInZhbHVlIjoiQzZKSVIxT0Q0TWpxSHdRQWxXZlNKdz09IiwibWFjIjoiNWU3MDJmMTUxNzFiNzZjZjEyZWJlY2VhMDZmOTVlNDg4YTUyMDJmYjk1OGRiMWZiYTI5MGY0NzZlZGM1Mzk4OSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:53', NULL, '2025-07-28 08:40:53', '2025-07-28 08:40:53'),
+(66, 179, 8, 'eyJpdiI6InhWWXFHTWluZXZrQmw0S2dYR3dPWkE9PSIsInZhbHVlIjoiVXUzdmRnMyt3bG0vS1FCdkNWVmhzZz09IiwibWFjIjoiY2Y5ZWYwZGFiYjllOTBiNDQyODJjMTBlZmNmYmI1NmQyNjdjNDM1MGRkNDQ3M2ZjMGFhMjgzNjdiNDk5ODYyMiIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:57', NULL, '2025-07-28 08:40:57', '2025-07-28 08:40:57'),
+(67, 179, 8, 'eyJpdiI6Ii9QcGhyQi9WMHdmTENZSkFhbEt2cHc9PSIsInZhbHVlIjoiRnNlUXFoL0UrTDFMWi9Xb0ZGY2Vudz09IiwibWFjIjoiZmUxM2U4NjQ4YjFiZThiZWU2N2RiYWVkMGY3YWQ2MDMzY2M4N2IzODBlM2UwZWY5NmM5ODNiN2Y1MGI3ZGI3YyIsInRhZyI6IiJ9', 0, 1, '2025-07-28 09:28:37', NULL, '2025-07-28 09:28:37', '2025-07-28 09:28:37'),
+(68, 179, 8, 'eyJpdiI6IjE4SER2NFc5aFlETnQzRzZpRUtDUlE9PSIsInZhbHVlIjoiWTJrSVd1S1gxWjgxOEtNdmhiM09adz09IiwibWFjIjoiZWY5MjkwYzYwNjNhMGRkOGVjM2MyOGMxNmM2OWEwNjU1NzM4MWY0NzRlZDEyZWRmYjBiNDU3MGI3OWI4ZmM2YSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 09:28:39', NULL, '2025-07-28 09:28:39', '2025-07-28 09:28:39'),
+(69, 179, 8, 'eyJpdiI6IktZZUlUNG5DeDNYU0FqZG9BZjFRMlE9PSIsInZhbHVlIjoiZksvZ3hjYTZNUEVlS01ud2FJdnY5dz09IiwibWFjIjoiNzQ1YWMzMDQ3NjI4YWY4NWQwMjQ0MzM5NmRlYmRhYzA1ZWQ3MjRmNzIzMWUyODEwMzkyNTk0YmIwYTg0ZWFjZCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 09:28:53', NULL, '2025-07-28 09:28:53', '2025-07-28 09:28:53');
 
 -- --------------------------------------------------------
 
@@ -350,6 +374,7 @@ CREATE TABLE `content_items` (
   `lesson_id` bigint(20) UNSIGNED DEFAULT NULL,
   `course_id` bigint(20) UNSIGNED DEFAULT NULL,
   `content_type` enum('assignment','quiz','test','link','video','document','lesson') DEFAULT NULL,
+  `created_by_professor_id` bigint(20) UNSIGNED DEFAULT NULL,
   `content_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`content_data`)),
   `content_url` varchar(255) DEFAULT NULL,
   `attachment_path` varchar(255) DEFAULT NULL,
@@ -366,6 +391,9 @@ CREATE TABLE `content_items` (
   `order` int(11) NOT NULL DEFAULT 0,
   `is_required` tinyint(1) NOT NULL DEFAULT 1,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `is_archived` tinyint(1) NOT NULL DEFAULT 0,
+  `archived_at` timestamp NULL DEFAULT NULL,
+  `archived_by_professor_id` bigint(20) UNSIGNED DEFAULT NULL,
   `admin_override` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`admin_override`)),
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -375,37 +403,28 @@ CREATE TABLE `content_items` (
   `release_date` timestamp NULL DEFAULT NULL,
   `completion_criteria` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`completion_criteria`)),
   `lock_reason` varchar(255) DEFAULT NULL,
-  `locked_by` bigint(20) UNSIGNED DEFAULT NULL
+  `locked_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `file_path` varchar(255) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `file_size` bigint(20) DEFAULT NULL,
+  `file_mime` varchar(255) DEFAULT NULL,
+  `has_multiple_files` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `content_items`
 --
 
-INSERT INTO `content_items` (`id`, `content_title`, `content_description`, `lesson_id`, `course_id`, `content_type`, `content_data`, `content_url`, `attachment_path`, `max_points`, `due_date`, `time_limit`, `content_order`, `sort_order`, `enable_submission`, `allowed_file_types`, `max_file_size`, `submission_instructions`, `allow_multiple_submissions`, `order`, `is_required`, `is_active`, `admin_override`, `created_at`, `updated_at`, `is_locked`, `requires_prerequisite`, `prerequisite_content_id`, `release_date`, `completion_criteria`, `lock_reason`, `locked_by`) VALUES
-(39, 'Lessons 1', NULL, NULL, 33, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753471465_BRAVO-MANUSCRIPT (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 11:24:25', '2025-07-25 11:24:25', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(40, 'KKKKKKK', NULL, NULL, 33, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753471501_BRAVO-MANUSCRIPT (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 11:25:01', '2025-07-25 11:25:01', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(41, 'Lessons 2', NULL, NULL, 33, 'assignment', '{\"assignment_instructions\":null,\"due_date\":\"2025-08-01T03:32\",\"max_points\":0}', NULL, '[\"content\\/1753471823_BRAVO-MANUSCRIPT (1).pdf\"]', 0.00, '2025-08-01 03:32:00', NULL, 0, 0, 1, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 11:30:23', '2025-07-25 11:30:23', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(42, 'Lessons 2', NULL, NULL, 36, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753474104_BRAVO-MANUSCRIPT (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 12:08:24', '2025-07-25 12:08:24', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(43, 'ww', NULL, NULL, 38, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753485427_docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 15:17:07', '2025-07-25 15:17:07', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(44, 'Lessons 1', NULL, NULL, 39, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753486464_UPDATED-DOCUMENTATION.docx\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 15:34:25', '2025-07-25 15:34:25', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(45, 'Mechanics Lessons 1', NULL, NULL, 40, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753486517_TEST 2.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 15:35:17', '2025-07-25 15:35:17', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(46, 'Lessons 2', NULL, NULL, 39, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753486571_sSPow3zrbc7h_large.jpg\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 15:36:11', '2025-07-25 15:36:11', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(47, 'NANI 1', NULL, NULL, 39, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753486595_491270782_554141481038451_2825109347402010649_n.png\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-25 15:36:35', '2025-07-25 15:36:35', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(48, 'Lessons 1', NULL, NULL, 44, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753520304_TEST 2.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-26 00:58:24', '2025-07-26 00:58:24', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(49, 'Lessons 2', NULL, NULL, 43, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753520322_TEST 2.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-26 00:58:43', '2025-07-26 00:58:43', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(50, 'Lessons 2', NULL, NULL, 45, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753520342_docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-26 00:59:02', '2025-07-26 00:59:02', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(51, 'Lessons 2', NULL, NULL, 44, 'assignment', '{\"assignment_instructions\":null,\"due_date\":\"2025-08-01T19:32\",\"max_points\":0}', NULL, '[\"content\\/1753525893_BRAVO-MANUSCRIPT (1).pdf\"]', 0.00, '2025-08-01 19:32:00', NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-26 02:31:33', '2025-07-26 02:31:33', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(52, 'Lessons 1', NULL, NULL, 44, 'assignment', '{\"assignment_instructions\":null,\"due_date\":\"2025-07-07T19:50\",\"max_points\":0}', NULL, '[\"content\\/1753616891_final-docu.pdf\"]', 0.00, '2025-07-07 19:50:00', NULL, 0, 0, 1, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 03:48:11', '2025-07-27 03:48:11', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(53, 'Lessons 1', NULL, NULL, 46, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753625855_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:17:35', '2025-07-27 06:17:35', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(54, 'Lessons 2', NULL, NULL, 46, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753625915_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:18:35', '2025-07-27 06:18:35', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(55, 'Lessons 1', NULL, NULL, 47, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753625949_BRAVO-MANUSCRIPT.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:19:09', '2025-07-27 06:19:09', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(56, 'Lessons 1', NULL, NULL, 48, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753626014_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:20:14', '2025-07-27 06:20:14', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(57, 'Lessons 2', NULL, NULL, 49, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753626031_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:20:31', '2025-07-27 06:20:31', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(58, 'Lessons 1', NULL, NULL, 50, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753626120_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:22:00', '2025-07-27 06:22:00', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(59, 'Lessons 1', NULL, NULL, 51, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753626150_BRAVO-MANUSCRIPT (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:22:30', '2025-07-27 06:22:30', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(60, 'Lessons 1', NULL, NULL, 52, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753626482_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:28:02', '2025-07-27 06:28:02', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(61, 'Lessons 2', NULL, NULL, 53, 'lesson', '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753626501_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, NULL, '2025-07-27 06:28:21', '2025-07-27 06:28:21', 0, 0, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `content_items` (`id`, `content_title`, `content_description`, `lesson_id`, `course_id`, `content_type`, `created_by_professor_id`, `content_data`, `content_url`, `attachment_path`, `max_points`, `due_date`, `time_limit`, `content_order`, `sort_order`, `enable_submission`, `allowed_file_types`, `max_file_size`, `submission_instructions`, `allow_multiple_submissions`, `order`, `is_required`, `is_active`, `is_archived`, `archived_at`, `archived_by_professor_id`, `admin_override`, `created_at`, `updated_at`, `is_locked`, `requires_prerequisite`, `prerequisite_content_id`, `release_date`, `completion_criteria`, `lock_reason`, `locked_by`, `file_path`, `file_name`, `file_size`, `file_mime`, `has_multiple_files`) VALUES
+(66, 'test 5', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 05:27:41', '2025-07-28 05:27:41', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(69, 'test 8', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 07:32:41', '2025-07-28 07:32:41', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(70, 'test 9', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":\"https:\\/\\/www.youtube.com\\/watch?v=AxE4TltnvjI\"}', 'https://www.youtube.com/watch?v=AxE4TltnvjI', NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 07:40:09', '2025-07-28 07:40:09', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(71, 'test 10', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753719078_2025-07-26 18-30-33.mp4\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 08:11:19', '2025-07-28 08:11:19', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(72, 'yest 12', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":\"https:\\/\\/www.youtube.com\\/watch?v=iJFyJcO8L0w&list=WL&index=4&t=1758s\"}', 'https://www.youtube.com/watch?v=iJFyJcO8L0w&list=WL&index=4&t=1758s', NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 09:56:37', '2025-07-28 09:56:37', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(73, 'PROFESSOR', NULL, NULL, 52, 'lesson', 8, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:21:34', '2025-07-30 11:21:34', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(74, 'PROFESSOR', NULL, NULL, 50, 'lesson', 8, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:39:47', '2025-07-30 11:39:47', 0, 0, NULL, NULL, NULL, NULL, NULL, 'course-content/1753904387_688a75035ace1_1753757055493_BRAVO_-_Chapter-2.docx', '1753757055493_BRAVO_-_Chapter-2.docx', 496092, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 0),
+(75, 'ADMIN', NULL, NULL, 53, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753904678_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:44:38', '2025-07-30 11:44:38', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(76, 'PROOOOF', NULL, NULL, 50, 'lesson', 8, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753904920_pngtree-brown-and-white-dog-png-image_10146522.png\"]', NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:48:40', '2025-07-30 11:48:40', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, 'pngtree-brown-and-white-dog-png-image_10146522.png', 35983, 'image/png', 0);
 
 -- --------------------------------------------------------
 
@@ -456,10 +475,10 @@ INSERT INTO `courses` (`subject_id`, `subject_name`, `subject_description`, `mod
 (43, 'Civil Engineering 101', NULL, 76, 2500.00, 1, 0, 0, 1, 0, NULL, '2025-07-26 00:57:43', '2025-07-26 00:57:43', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (44, 'Civil Engineering 1011', NULL, 75, 2500.00, 1, 0, 0, 1, 0, NULL, '2025-07-26 00:57:54', '2025-07-26 00:57:54', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (45, 'Civil Engineering Physics', NULL, 76, 2500.00, 2, 0, 0, 1, 0, NULL, '2025-07-26 00:58:10', '2025-07-26 00:58:10', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(46, 'Nursing', NULL, 77, 2500.00, 1, 0, 0, 1, 0, NULL, '2025-07-27 06:17:24', '2025-07-27 06:17:24', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(47, 'HRM', NULL, 77, 3000.00, 2, 0, 0, 1, 0, NULL, '2025-07-27 06:18:58', '2025-07-27 06:18:58', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(48, 'Chemistry', NULL, 77, 2500.00, 3, 0, 0, 1, 0, NULL, '2025-07-27 06:19:44', '2025-07-27 06:19:44', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(49, 'Math', NULL, 77, 2500.00, 4, 0, 0, 1, 0, NULL, '2025-07-27 06:19:52', '2025-07-27 06:19:52', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(46, 'Nursing', NULL, 77, 2500.00, 4, 0, 0, 1, 0, NULL, '2025-07-27 06:17:24', '2025-07-28 08:17:54', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(47, 'HRM', NULL, 77, 3000.00, 2, 0, 0, 1, 0, NULL, '2025-07-27 06:18:58', '2025-07-28 08:17:54', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(48, 'Chemistry', NULL, 77, 2500.00, 1, 0, 0, 1, 0, NULL, '2025-07-27 06:19:44', '2025-07-28 08:17:54', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(49, 'Math', NULL, 77, 2500.00, 3, 0, 0, 1, 0, NULL, '2025-07-27 06:19:52', '2025-07-28 08:17:54', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (50, 'Hospitality', NULL, 78, 2500.00, 1, 0, 0, 1, 0, NULL, '2025-07-27 06:21:47', '2025-07-27 06:21:47', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (51, 'Advance Hospitality Method', NULL, 78, 5000.00, 2, 0, 0, 1, 0, NULL, '2025-07-27 06:22:18', '2025-07-27 06:22:18', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (52, 'Mechanical Engineering 101', NULL, 79, 2500.00, 1, 0, 0, 1, 0, NULL, '2025-07-27 06:27:26', '2025-07-27 06:27:26', 0, 0, NULL, NULL, NULL, NULL, NULL),
@@ -894,7 +913,14 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (59, '2025_07_22_150000_add_file_upload_columns_to_registrations_table', 49),
 (60, '2025_07_25_000001_fix_course_completions_fk', 50),
 (61, '2025_07_25_202830_update_announcements_table_add_targeting_options', 51),
-(62, '2025_07_27_144425_add_profile_photo_to_students_table', 52);
+(62, '2025_07_27_144425_add_profile_photo_to_students_table', 52),
+(63, '2025_07_30_000001_add_admin_override_to_programs_table', 53),
+(64, '2025_07_26_122227_add_randomize_mc_options_to_quizzes_table', 54),
+(65, '2025_07_26_132905_add_randomize_mc_options_to_quizzes_table', 55),
+(66, '2025_07_26_224508_add_missing_columns_to_quizzes_table', 56),
+(67, '2025_07_27_192118_add_status_to_quizzes_table', 57),
+(68, '2025_07_30_191443_add_archiving_fields_to_content_items_table', 58),
+(69, '2025_07_31_000000_add_multiple_files_support_to_content_items', 59);
 
 -- --------------------------------------------------------
 
@@ -939,8 +965,8 @@ INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `progr
 (74, 'Modules 2', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-25 15:33:56', '2025-07-25 15:33:56', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (75, 'Modules 1', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-26 00:57:19', '2025-07-26 00:57:19', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (76, 'Modules 2', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-26 00:57:33', '2025-07-26 00:57:33', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(77, 'Modules 1', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:17:12', '2025-07-27 06:17:12', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(78, 'Modules 2', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, 'modules/1753626089_BRAVO-MANUSCRIPT.pdf', NULL, NULL, '2025-07-27 06:21:29', '2025-07-27 06:21:29', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(77, 'Modules 1', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:17:12', '2025-07-28 07:16:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2),
+(78, 'Modules 2', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, 'modules/1753626089_BRAVO-MANUSCRIPT.pdf', NULL, NULL, '2025-07-27 06:21:29', '2025-07-28 07:16:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
 (79, 'Modules 1', NULL, 41, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:27:10', '2025-07-27 06:27:10', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
@@ -1338,16 +1364,17 @@ CREATE TABLE `programs` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_active` int(11) NOT NULL,
   `is_archived` tinyint(1) DEFAULT 0,
-  `program_description` text DEFAULT NULL
+  `program_description` text DEFAULT NULL,
+  `admin_override` longtext DEFAULT NULL COMMENT 'overrides set by admins (stored as JSON)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `programs`
 --
 
-INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `director_id`, `created_at`, `updated_at`, `is_active`, `is_archived`, `program_description`) VALUES
-(40, 'Nursing', 1, NULL, '2025-07-27 05:44:50', '2025-07-27 05:44:50', 1, 0, 'Nurse'),
-(41, 'Mechanical Engineer', 1, NULL, '2025-07-27 06:26:58', '2025-07-27 06:26:58', 1, 0, NULL);
+INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `director_id`, `created_at`, `updated_at`, `is_active`, `is_archived`, `program_description`, `admin_override`) VALUES
+(40, 'Nursing', 1, NULL, '2025-07-27 05:44:50', '2025-07-27 05:44:50', 1, 0, 'Nurse', NULL),
+(41, 'Mechanical Engineer', 1, NULL, '2025-07-27 06:26:58', '2025-07-27 06:26:58', 1, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1376,6 +1403,7 @@ CREATE TABLE `quizzes` (
   `max_attempts` int(11) DEFAULT NULL,
   `is_draft` tinyint(1) NOT NULL DEFAULT 0,
   `randomize_order` tinyint(1) NOT NULL DEFAULT 0,
+  `randomize_mc_options` tinyint(1) NOT NULL DEFAULT 0,
   `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -1385,8 +1413,15 @@ CREATE TABLE `quizzes` (
 -- Dumping data for table `quizzes`
 --
 
-INSERT INTO `quizzes` (`quiz_id`, `professor_id`, `program_id`, `module_id`, `course_id`, `content_id`, `quiz_title`, `instructions`, `quiz_description`, `total_questions`, `time_limit`, `document_path`, `is_active`, `status`, `allow_retakes`, `instant_feedback`, `show_correct_answers`, `max_attempts`, `is_draft`, `randomize_order`, `tags`, `created_at`, `updated_at`) VALUES
-(30, 8, 38, 66, 36, 54, 'dsfgsdfgsdf', NULL, NULL, 10, 60, 'quiz-documents/3INOg6rDNGwwcKs2LWrIR6NnrI0dXubpncFRvJCP.pdf', 1, 'published', 1, 1, 1, NULL, 0, 1, '\"[]\"', '2025-07-26 05:00:30', '2025-07-26 05:00:57');
+INSERT INTO `quizzes` (`quiz_id`, `professor_id`, `program_id`, `module_id`, `course_id`, `content_id`, `quiz_title`, `instructions`, `quiz_description`, `total_questions`, `time_limit`, `document_path`, `is_active`, `status`, `allow_retakes`, `instant_feedback`, `show_correct_answers`, `max_attempts`, `is_draft`, `randomize_order`, `randomize_mc_options`, `tags`, `created_at`, `updated_at`) VALUES
+(30, 8, 38, 66, 36, 54, 'dsfgsdfgsdf', NULL, NULL, 10, 60, 'quiz-documents/3INOg6rDNGwwcKs2LWrIR6NnrI0dXubpncFRvJCP.pdf', 0, 'archived', 1, 1, 1, NULL, 0, 1, 0, '\"[]\"', '2025-07-26 05:00:30', '2025-07-28 10:30:44'),
+(31, 8, 41, 79, 53, NULL, 'tetetetet', '', 'sadfsafas', 1, 30, NULL, 0, 'draft', 0, 0, 0, 1, 0, 0, 0, '[]', '2025-07-27 11:37:06', '2025-07-27 11:37:06'),
+(32, 8, 41, 79, 52, NULL, 'ME batch Quiz', '', 'ASDFASFA', 1, 30, NULL, 0, 'draft', 0, 0, 0, 1, 0, 0, 0, '[]', '2025-07-27 11:37:58', '2025-07-27 11:37:58'),
+(34, 8, 41, 79, 52, NULL, 'yesss', '', 'asdgafsgdasdf', 1, 30, NULL, 0, 'draft', 0, 0, 0, 1, 0, 0, 0, '[]', '2025-07-27 12:05:03', '2025-07-27 12:05:03'),
+(35, 8, 40, 78, 50, NULL, 'fadssdfaasfd', '', 'asfdasdf', 1, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:28:44', '2025-07-28 10:28:44'),
+(36, 8, 40, 78, 50, NULL, 'fadssdfaasfd', '', 'asfdasdf', 1, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:28:55', '2025-07-28 10:28:55'),
+(37, 8, 40, 78, 50, NULL, 'fadssdfaasfd', '', 'asfdasdf', 1, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:28:58', '2025-07-28 10:28:58'),
+(38, 8, 40, 78, 51, NULL, '123123', '', '1231231', 10, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:30:38', '2025-07-28 10:30:38');
 
 -- --------------------------------------------------------
 
@@ -1406,37 +1441,6 @@ CREATE TABLE `quiz_attempts` (
   `completed_at` timestamp NULL DEFAULT NULL,
   `time_taken` int(11) DEFAULT NULL,
   `status` enum('in_progress','completed','abandoned') NOT NULL DEFAULT 'in_progress',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `quiz_drafts`
---
-
-CREATE TABLE `quiz_drafts` (
-  `draft_id` bigint(20) UNSIGNED NOT NULL,
-  `professor_id` int(10) UNSIGNED NOT NULL,
-  `program_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `module_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `course_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `content_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `quiz_title` varchar(255) NOT NULL,
-  `quiz_description` text DEFAULT NULL,
-  `instructions` text DEFAULT NULL,
-  `total_questions` int(11) NOT NULL DEFAULT 10,
-  `time_limit` int(11) DEFAULT NULL,
-  `document_path` varchar(255) DEFAULT NULL,
-  `allow_retakes` tinyint(1) NOT NULL DEFAULT 0,
-  `instant_feedback` tinyint(1) NOT NULL DEFAULT 0,
-  `show_correct_answers` tinyint(1) NOT NULL DEFAULT 1,
-  `max_attempts` int(11) DEFAULT NULL,
-  `randomize_order` tinyint(1) NOT NULL DEFAULT 0,
-  `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
-  `quiz_source` text DEFAULT NULL,
-  `quiz_settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`quiz_settings`)),
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -1491,7 +1495,17 @@ CREATE TABLE `quiz_questions` (
 
 INSERT INTO `quiz_questions` (`id`, `quiz_id`, `quiz_title`, `program_id`, `question_text`, `question_type`, `question_order`, `options`, `correct_answer`, `explanation`, `question_source`, `question_metadata`, `instructions`, `points`, `source_file`, `is_active`, `created_by_admin`, `created_by_professor`, `created_at`, `updated_at`) VALUES
 (373, 45, 'asdfas', NULL, 'test', 'multiple_choice', NULL, '\"{\\\"A\\\":\\\"\\\",\\\"B\\\":\\\"\\\",\\\"C\\\":\\\"\\\",\\\"D\\\":\\\"\\\"}\"', 'A', NULL, 'generated', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-27 05:55:06', '2025-07-27 05:55:06'),
-(374, 46, 'bruhh', NULL, 'br', 'multiple_choice', NULL, '\"{\\\"A\\\":\\\"\\\",\\\"B\\\":\\\"\\\",\\\"C\\\":\\\"\\\",\\\"D\\\":\\\"\\\"}\"', 'A', NULL, 'generated', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-27 06:02:10', '2025-07-27 06:02:10');
+(374, 46, 'bruhh', NULL, 'br', 'multiple_choice', NULL, '\"{\\\"A\\\":\\\"\\\",\\\"B\\\":\\\"\\\",\\\"C\\\":\\\"\\\",\\\"D\\\":\\\"\\\"}\"', 'A', NULL, 'generated', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-27 06:02:10', '2025-07-27 06:02:10'),
+(375, 38, '123123', 40, 'What is vulnerability?', 'multiple_choice', NULL, '[\"made public, leaving organizations unprotected\",\"A database security feature\",\"A type of firewall configuration\",\"A software development methodology\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(376, 38, '123123', 40, 'How would you define exploit?', 'multiple_choice', NULL, '[\"to zero, the less time it has to cause damage across various organizations\",\"A database security feature\",\"A network infrastructure component\",\"A method for encrypting sensitive data\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(377, 38, '123123', 40, 'According to the document, what does exploit refer to?', 'multiple_choice', NULL, '[\"considered preventable and technically is just an exploit versus a zero-day-day-day exploit\",\"A method for encrypting sensitive data\",\"A software development methodology\",\"A type of firewall configuration\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(378, 38, '123123', 40, 'Which statement best describes This security hole?', 'multiple_choice', NULL, '[\"then exploited by hackers before the vendor becomes aware and hurries to fix it\",\"A backup and recovery process\",\"A programming language security feature\",\"A network monitoring protocol\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(379, 38, '123123', 40, 'What is What?', 'multiple_choice', NULL, '[\"a zero-day-day day vulnerability\",\"A software development methodology\",\"A backup and recovery process\",\"A programming language security feature\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(380, 38, '123123', 40, 'How would you define Every organization?', 'multiple_choice', NULL, '[\"at risk for zero-day exploits regardless of size\",\"A type of firewall configuration\",\"A backup and recovery process\",\"A user authentication system\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(381, 38, '123123', 40, 'According to the document, what does These exploits refer to?', 'multiple_choice', NULL, '[\"often designed or purchased for those specic purposes by various organizations including governments and organized crime\",\"A user authentication system\",\"A software development methodology\",\"A method for encrypting sensitive data\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(382, 38, '123123', 40, 'Which statement best describes Life Span of zero-day-day-Day Exploit There?', 'multiple_choice', NULL, '[\"a nite life time of all zero-day exploits\",\"A user authentication system\",\"A type of firewall configuration\",\"A backup and recovery process\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(383, 38, '123123', 40, 'What is closer life span of zero-day-day-day exploit?', 'multiple_choice', NULL, '[\"to zero, the less time it has to cause damage across various organizations\",\"A network monitoring protocol\",\"A backup and recovery process\",\"A type of firewall configuration\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
+(384, 38, '123123', 40, 'Which statement accurately describes this concept?', 'multiple_choice', NULL, '[\"Zero Day Exploits ITEN11C Information Assurance and Security II a zero-day-day-day day vulnerabilityrefers to a hole in software that is unknown to the vendor\",\"This is only partially correct based on the document\",\"This statement contradicts the information provided\",\"All vulnerabilities are automatically patched within 24 hours\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38');
 
 -- --------------------------------------------------------
 
@@ -1762,7 +1776,7 @@ INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `las
 ('2025-07-00002', 175, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:47:28', '2025-07-25 08:47:28', '2025-07-25 08:47:28', '1234567ss8@gmail.com', 0, 33, 'Modular', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00003', 176, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:53:01', '2025-07-25 08:53:01', '2025-07-25 08:53:01', 'vince03handsome101@gmail.com', 0, 34, 'Package 33', NULL, NULL, 38, 'Graduate', 'Mechanical Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00004', 178, 'Bateman', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 02:26:57', '2025-07-26 02:26:57', '2025-07-26 02:26:57', '1@gmail.com', 0, 34, 'Package 33', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00005', 179, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_179_1753632565.jpg', NULL, '2025-07-26 10:53:32', '2025-07-26 02:53:32', '2025-07-27 08:09:25', 'vince03handsome11@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('2025-07-00005', 179, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_179_1753814839.png', NULL, '2025-07-26 10:53:32', '2025-07-26 02:53:32', '2025-07-29 10:47:19', 'vince03handsome11@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00006', 180, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_180_1753628223.jpg', NULL, '2025-07-26 10:46:50', '2025-07-26 10:46:50', '2025-07-27 06:57:04', '1@gmail.com', 0, 34, 'Package 33', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00007', 181, '12345678', NULL, '12345678', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 11:22:10', '2025-07-26 11:22:10', '2025-07-26 11:22:10', '12@gmail.com', 0, 34, 'Package 33', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('2025-07-00009', 182, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 11:47:37', '2025-07-26 11:47:37', '2025-07-26 12:04:09', 'vince03handsome@gmail.com', 0, 33, 'Modular', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -1911,6 +1925,22 @@ INSERT INTO `users` (`user_id`, `admin_id`, `directors_id`, `is_online`, `last_s
 (180, 1, NULL, 0, NULL, '1@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$rEX1vN3PGZmwp3CZX6nNke3cuRTEqH2XPpKbsHVs.JgCD7LwRJECK', 'student', 194, '2025-07-26 10:46:11', '2025-07-27 06:23:08'),
 (181, 1, NULL, 0, NULL, '12@gmail.com', '12345678', '12345678', '$2y$10$p2OczAtodDknEZTjlMCRP.Wr2W2F1T7TOcRuytMNcp6VIc4Ik7VpS', 'student', 188, '2025-07-26 11:13:20', '2025-07-26 11:13:20'),
 (182, 1, NULL, 0, NULL, 'vince03handsome@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$5PmOVFnGPaRFgwD9XUH/b.LhzZaetgzA/vYb9N/2iib259YTDvoWq', 'student', 192, '2025-07-26 11:47:20', '2025-07-26 12:18:11');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `websockets_statistics_entries`
+--
+
+CREATE TABLE `websockets_statistics_entries` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `app_id` varchar(255) NOT NULL,
+  `peak_connection_count` int(11) NOT NULL,
+  `websocket_message_count` int(11) NOT NULL,
+  `api_message_count` int(11) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Indexes for dumped tables
@@ -2251,12 +2281,6 @@ ALTER TABLE `quiz_attempts`
   ADD KEY `quiz_attempts_status_index` (`status`);
 
 --
--- Indexes for table `quiz_drafts`
---
-ALTER TABLE `quiz_drafts`
-  ADD PRIMARY KEY (`draft_id`);
-
---
 -- Indexes for table `quiz_options`
 --
 ALTER TABLE `quiz_options`
@@ -2319,6 +2343,12 @@ ALTER TABLE `users`
   ADD KEY `enrollment_id` (`enrollment_id`);
 
 --
+-- Indexes for table `websockets_statistics_entries`
+--
+ALTER TABLE `websockets_statistics_entries`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -2338,7 +2368,7 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `admin_settings`
 --
 ALTER TABLE `admin_settings`
-  MODIFY `setting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=109;
+  MODIFY `setting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=120;
 
 --
 -- AUTO_INCREMENT for table `announcements`
@@ -2368,7 +2398,7 @@ ALTER TABLE `batch_professors`
 -- AUTO_INCREMENT for table `chats`
 --
 ALTER TABLE `chats`
-  MODIFY `chat_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `chat_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT for table `class_meetings`
@@ -2386,7 +2416,7 @@ ALTER TABLE `content_completions`
 -- AUTO_INCREMENT for table `content_items`
 --
 ALTER TABLE `content_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT for table `courses`
@@ -2464,7 +2494,7 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT for table `modules`
@@ -2560,19 +2590,13 @@ ALTER TABLE `programs`
 -- AUTO_INCREMENT for table `quizzes`
 --
 ALTER TABLE `quizzes`
-  MODIFY `quiz_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `quiz_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `quiz_attempts`
 --
 ALTER TABLE `quiz_attempts`
   MODIFY `attempt_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `quiz_drafts`
---
-ALTER TABLE `quiz_drafts`
-  MODIFY `draft_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `quiz_options`
@@ -2584,7 +2608,7 @@ ALTER TABLE `quiz_options`
 -- AUTO_INCREMENT for table `quiz_questions`
 --
 ALTER TABLE `quiz_questions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=375;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=385;
 
 --
 -- AUTO_INCREMENT for table `referrals`
@@ -2615,6 +2639,12 @@ ALTER TABLE `ui_settings`
 --
 ALTER TABLE `users`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=183;
+
+--
+-- AUTO_INCREMENT for table `websockets_statistics_entries`
+--
+ALTER TABLE `websockets_statistics_entries`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
