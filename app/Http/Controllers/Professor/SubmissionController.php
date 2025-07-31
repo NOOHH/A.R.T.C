@@ -204,4 +204,129 @@ class SubmissionController extends Controller
             ], 500);
         }
     }
+
+    public function download($id)
+    {
+        try {
+            // Check if professor is properly authenticated
+            if (!session('logged_in') || !session('professor_id') || session('user_role') !== 'professor') {
+                return redirect()->route('login')->with('error', 'Please log in as a professor to access submissions.');
+            }
+
+            // Get current professor
+            $professor = Professor::where('professor_id', session('professor_id'))->first();
+            
+            if (!$professor) {
+                return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
+            }
+
+            // Get the submission
+            $submission = AssignmentSubmission::with(['student', 'program', 'module'])->find($id);
+            
+            if (!$submission) {
+                abort(404, 'Submission not found.');
+            }
+
+            // Check if professor has access to this submission's program
+            $assignedProgramIds = $professor->assignedPrograms()->pluck('program_id')->toArray();
+            if (!in_array($submission->program_id, $assignedProgramIds)) {
+                abort(403, 'Access denied to this submission.');
+            }
+
+            // Process files data similar to index method
+            $processedFiles = [];
+            
+            if (is_string($submission->files)) {
+                $decoded = json_decode($submission->files, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $processedFiles = $decoded;
+                } else {
+                    // If JSON decode fails, create a basic structure from other fields
+                    if ($submission->original_filename && $submission->file_path) {
+                        $processedFiles = [[
+                            'name' => $submission->original_filename,
+                            'original_name' => $submission->original_filename,
+                            'path' => $submission->file_path,
+                            'size' => 'Unknown'
+                        ]];
+                    }
+                }
+            } elseif (is_array($submission->files)) {
+                $processedFiles = $submission->files;
+            } else {
+                // If files is not an array or string, create basic structure
+                if ($submission->original_filename && $submission->file_path) {
+                    $processedFiles = [[
+                        'name' => $submission->original_filename,
+                        'original_name' => $submission->original_filename,
+                        'path' => $submission->file_path,
+                        'size' => 'Unknown'
+                    ]];
+                }
+            }
+            
+            // Ensure each file in the array has the necessary keys
+            if (is_array($processedFiles)) {
+                foreach ($processedFiles as &$file) {
+                    if (!isset($file['name']) && isset($file['original_filename'])) {
+                        $file['name'] = $file['original_filename'];
+                    }
+                    if (!isset($file['original_name']) && isset($file['original_filename'])) {
+                        $file['original_name'] = $file['original_filename'];
+                    }
+                    if (!isset($file['path']) && isset($file['file_path'])) {
+                        $file['path'] = $file['file_path'];
+                    }
+                    if (!isset($file['size'])) {
+                        $file['size'] = 'Unknown';
+                    }
+                }
+            }
+
+            // Check if submission has processed files
+            if (!$processedFiles || empty($processedFiles)) {
+                return redirect()->back()->with('error', 'No files available for download.');
+            }
+
+            // If there's only one file, download it directly
+            if (count($processedFiles) === 1) {
+                $file = $processedFiles[0];
+                $filePath = storage_path('app/public/' . $file['path']);
+
+                if (!file_exists($filePath)) {
+                    return redirect()->back()->with('error', 'File not found.');
+                }
+
+                return response()->download($filePath, $file['original_name'] ?? $file['name']);
+            }
+
+            // If multiple files, create a ZIP archive
+            $zip = new \ZipArchive();
+            $zipFileName = 'submission_' . $submission->id . '_files.zip';
+            $zipPath = storage_path('app/temp/' . $zipFileName);
+
+            // Create temp directory if it doesn't exist
+            if (!file_exists(dirname($zipPath))) {
+                mkdir(dirname($zipPath), 0755, true);
+            }
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+                foreach ($processedFiles as $file) {
+                    $filePath = storage_path('app/public/' . $file['path']);
+                    if (file_exists($filePath)) {
+                        $zip->addFile($filePath, $file['original_name'] ?? $file['name']);
+                    }
+                }
+                $zip->close();
+
+                return response()->download($zipPath, $zipFileName)->deleteFileAfterSend(true);
+            } else {
+                return redirect()->back()->with('error', 'Could not create archive.');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Professor download submission error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error downloading submission files.');
+        }
+    }
 }
