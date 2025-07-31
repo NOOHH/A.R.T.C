@@ -658,7 +658,7 @@ public function getContentByCourse($courseId)
         return json_encode(['csv_questions' => $questions]);
     }
 
-    private function generateQuestionsFromText($text, $numQuestions, $quizType)
+    private function generateQuestionsFromText($text, $numQuestions, $quizType, $isRegeneration = false)
     {
         Log::info('Starting question generation', [
             'text_length' => strlen($text),
@@ -684,32 +684,94 @@ public function getContentByCourse($courseId)
             return $this->generateCybersecurityQuestions($cleanText, $numQuestions, $quizType);
         }
         
-        // Extract meaningful content
+        // Extract meaningful content with better randomization
         $sentences = $this->extractMeaningfulSentences($cleanText);
         $definitions = $this->extractDefinitions($cleanText);
+        $keyConcepts = $this->extractKeyConcepts($cleanText);
         
-        $questions = [];
-        $questionPool = array_merge($definitions, $sentences);
+        // Create a diverse question pool with randomization
+        $questionPool = [];
+        
+        // Add sentences with randomization
+        if (!empty($sentences)) {
+            shuffle($sentences);
+            $questionPool = array_merge($questionPool, array_slice($sentences, 0, min(count($sentences), $numQuestions * 2)));
+        }
+        
+        // Add definitions with randomization
+        if (!empty($definitions)) {
+            shuffle($definitions);
+            $questionPool = array_merge($questionPool, array_slice($definitions, 0, min(count($definitions), $numQuestions * 2)));
+        }
+        
+        // Add key concepts with randomization
+        if (!empty($keyConcepts)) {
+            shuffle($keyConcepts);
+            $questionPool = array_merge($questionPool, array_slice($keyConcepts, 0, min(count($keyConcepts), $numQuestions * 2)));
+        }
+        
+        // Shuffle the entire pool to ensure randomness
+        shuffle($questionPool);
+        
+        // For regeneration, add extra randomization to ensure different questions
+        if ($isRegeneration) {
+            // Shuffle multiple times for more randomization
+            for ($i = 0; $i < 3; $i++) {
+                shuffle($questionPool);
+            }
+            // Add some additional randomization by reversing some content
+            $reversedContent = array_map(function($item) {
+                if (is_string($item)) {
+                    return strrev($item); // This will be cleaned up later
+                }
+                return $item;
+            }, array_slice($questionPool, 0, min(5, count($questionPool))));
+            $questionPool = array_merge($questionPool, $reversedContent);
+            shuffle($questionPool);
+        }
+        
+        // Remove duplicates based on content similarity
+        $questionPool = $this->removeDuplicateContent($questionPool);
         
         Log::info('Content extraction results', [
             'sentences' => count($sentences),
             'definitions' => count($definitions),
-            'total_pool' => count($questionPool)
+            'key_concepts' => count($keyConcepts),
+            'total_pool' => count($questionPool),
+            'unique_pool' => count($questionPool)
         ]);
         
-        // Generate questions from extracted content
-        for ($i = 0; $i < $numQuestions; $i++) {
+        $questions = [];
+        $usedContent = [];
+        $attempts = 0;
+        $maxAttempts = $numQuestions * 3; // Allow more attempts to find unique questions
+        
+        // Generate questions from extracted content with uniqueness check
+        for ($i = 0; $i < $numQuestions && $attempts < $maxAttempts; $i++) {
             $question = null;
+            $attempts++;
             
             try {
-                if ($i < count($questionPool)) {
-                    $sourceContent = $questionPool[$i];
+                if (!empty($questionPool)) {
+                    // Take content from the pool
+                    $sourceContent = array_shift($questionPool);
+                    
+                    // Check if this content is too similar to already used content
+                    if ($this->isContentTooSimilar($sourceContent, $usedContent)) {
+                        Log::info("Skipping similar content for question {$i}");
+                        $i--; // Retry this question
+                        continue;
+                    }
+                    
                     Log::info("Generating question {$i} from content", ['content_type' => gettype($sourceContent)]);
                     $question = $this->createQualityQuestion($sourceContent, $quizType, $cleanText);
+                    
+                    // Add to used content for similarity checking
+                    $usedContent[] = $sourceContent;
                 } else {
                     // Use fallback when we run out of source content
                     Log::info("Using fallback for question {$i}");
-                    $question = $this->generateContextualFallback($cleanText, $quizType);
+                    $question = $this->generateContextualFallback($cleanText, $quizType, $i);
                 }
             } catch (\Exception $e) {
                 Log::error("Error generating question {$i}: " . $e->getMessage(), [
@@ -719,14 +781,14 @@ public function getContentByCourse($courseId)
                 $question = null;
             }
             
-            if ($this->isValidQuestion($question)) {
+            if ($this->isValidQuestion($question) && !$this->isQuestionDuplicate($question, $questions)) {
                 $questions[] = $question;
                 Log::info("Question {$i} generated successfully", ['type' => $question['question_type']]);
             } else {
-                Log::warning("Question {$i} failed validation, using fallback");
+                Log::warning("Question {$i} failed validation or is duplicate, using fallback");
                 try {
-                    $fallback = $this->generateContextualFallback($cleanText, $quizType);
-                    if ($this->isValidQuestion($fallback)) {
+                    $fallback = $this->generateContextualFallback($cleanText, $quizType, $i);
+                    if ($this->isValidQuestion($fallback) && !$this->isQuestionDuplicate($fallback, $questions)) {
                         $questions[] = $fallback;
                         Log::info("Fallback question {$i} generated successfully");
                     }
@@ -736,17 +798,43 @@ public function getContentByCourse($courseId)
             }
         }
         
-        Log::info('Question generation completed', ['generated_count' => count($questions)]);
+        Log::info('Question generation completed', [
+            'generated_count' => count($questions),
+            'attempts' => $attempts,
+            'unique_questions' => count(array_unique(array_column($questions, 'question')))
+        ]);
+        
         return $questions;
     }
     
-    private function generateContextualFallback($text, $quizType)
+    private function generateContextualFallback($text, $quizType, $index = 0)
     {
         $questionType = $quizType === 'mixed' ? (rand(0, 1) ? 'multiple_choice' : 'true_false') : $quizType;
         
+        // Create more varied fallback questions based on index
+        $fallbackQuestions = [
+            'multiple_choice' => [
+                'According to the document, what is the main topic discussed?',
+                'Which of the following concepts is most important according to the text?',
+                'What is the primary focus of the material presented?',
+                'Based on the document, which approach is recommended?',
+                'What is the key principle discussed in this content?'
+            ],
+            'true_false' => [
+                'The document emphasizes the importance of security measures.',
+                'The content discusses multiple approaches to problem-solving.',
+                'The material covers both theoretical and practical aspects.',
+                'The document provides specific guidelines for implementation.',
+                'The content includes examples and case studies.'
+            ]
+        ];
+        
+        $questionIndex = $index % count($fallbackQuestions[$questionType]);
+        $questionText = $fallbackQuestions[$questionType][$questionIndex];
+        
         if ($questionType === 'multiple_choice') {
             return [
-                'question' => 'According to the document, what is the main topic discussed?',
+                'question' => $questionText,
                 'question_type' => 'multiple_choice',
                 'type' => 'multiple_choice',
                 'options' => [
@@ -783,6 +871,100 @@ public function getContentByCourse($courseId)
                is_array($question['options']) &&
                !empty($question['options']) &&
                isset($question['correct_answer']);
+    }
+    
+    /**
+     * Remove duplicate content from the question pool
+     */
+    private function removeDuplicateContent($contentPool)
+    {
+        $uniqueContent = [];
+        $seenContent = [];
+        
+        foreach ($contentPool as $content) {
+            $contentHash = $this->getContentHash($content);
+            if (!in_array($contentHash, $seenContent)) {
+                $uniqueContent[] = $content;
+                $seenContent[] = $contentHash;
+            }
+        }
+        
+        return $uniqueContent;
+    }
+    
+    /**
+     * Generate a hash for content to detect duplicates
+     */
+    private function getContentHash($content)
+    {
+        if (is_string($content)) {
+            return md5(strtolower(trim($content)));
+        } elseif (is_array($content) && isset($content['term'])) {
+            return md5(strtolower(trim($content['term'])));
+        }
+        return md5(serialize($content));
+    }
+    
+    /**
+     * Check if content is too similar to already used content
+     */
+    private function isContentTooSimilar($newContent, $usedContent)
+    {
+        if (empty($usedContent)) {
+            return false;
+        }
+        
+        $newHash = $this->getContentHash($newContent);
+        
+        foreach ($usedContent as $used) {
+            $usedHash = $this->getContentHash($used);
+            if ($newHash === $usedHash) {
+                return true;
+            }
+            
+            // Check for similarity using simple string comparison
+            if (is_string($newContent) && is_string($used)) {
+                $similarity = similar_text(
+                    strtolower(trim($newContent)), 
+                    strtolower(trim($used)), 
+                    $percent
+                );
+                if ($percent > 80) { // 80% similarity threshold
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if a question is duplicate of existing questions
+     */
+    private function isQuestionDuplicate($newQuestion, $existingQuestions)
+    {
+        if (empty($existingQuestions)) {
+            return false;
+        }
+        
+        $newQuestionText = strtolower(trim($newQuestion['question']));
+        
+        foreach ($existingQuestions as $existing) {
+            $existingQuestionText = strtolower(trim($existing['question']));
+            
+            // Check for exact match
+            if ($newQuestionText === $existingQuestionText) {
+                return true;
+            }
+            
+            // Check for high similarity
+            similar_text($newQuestionText, $existingQuestionText, $percent);
+            if ($percent > 85) { // 85% similarity threshold for questions
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     private function isCybersecurityContent($text)
@@ -2364,6 +2546,53 @@ public function getContentByCourse($courseId)
             return response()->json(['error' => 'Error loading questions: ' . $e->getMessage()], 500);
         }
     }
+    
+    /**
+     * API endpoint for getting quiz questions for the view modal
+     * Returns JSON data instead of HTML view
+     */
+    public function getQuestionsForModal($quizId)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return response()->json(['error' => 'Professor session not found.'], 401);
+            }
+
+            $quiz = Quiz::where('quiz_id', $quizId)
+                       ->where('professor_id', $professor->professor_id)
+                       ->with(['questions' => function($query) {
+                           $query->orderBy('id', 'asc');
+                       }])
+                       ->firstOrFail();
+                       
+            // Return JSON response with quiz and questions data
+            return response()->json([
+                'quiz' => [
+                    'quiz_id' => $quiz->quiz_id,
+                    'title' => $quiz->title,
+                    'description' => $quiz->description,
+                    'status' => $quiz->status,
+                    'created_at' => $quiz->created_at->format('Y-m-d H:i:s')
+                ],
+                'questions' => $quiz->questions->map(function($question) {
+                    return [
+                        'id' => $question->id,
+                        'question_text' => $question->question_text,
+                        'question_type' => $question->question_type,
+                        'options' => $question->options,
+                        'correct_answer' => $question->correct_answer,
+                        'explanation' => $question->explanation,
+                        'points' => $question->points,
+                        'question_source' => $question->question_source
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting questions for modal: ' . $e->getMessage());
+            return response()->json(['error' => 'Error loading questions: ' . $e->getMessage()], 500);
+        }
+    }
 
     public function getQuestionOptions(Request $request)
     {
@@ -2789,19 +3018,35 @@ public function getContentByCourse($courseId)
         try {
             Log::info('generateAIQuestions called', [
                 'request_data' => $request->except(['file', '_token']),
-                'has_file' => $request->hasFile('file')
+                'has_file' => $request->hasFile('file'),
+                'professor_id' => session('professor_id'),
+                'timestamp' => $request->input('timestamp'),
+                'is_regeneration' => $request->input('regenerate') === 'true'
             ]);
+
+            // Basic rate limiting - check if professor has generated questions recently
+            $professor = Professor::find(session('professor_id'));
+            if (!$professor) {
+                return response()->json(['success' => false, 'message' => 'Professor session not found.'], 401);
+            }
+
+            // Check for recent generation attempts (within last 30 seconds)
+            $recentAttempts = Quiz::where('professor_id', $professor->professor_id)
+                ->where('created_at', '>=', now()->subSeconds(30))
+                ->count();
+            
+            if ($recentAttempts > 0) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Please wait a moment before generating more questions. Rate limit exceeded.'
+                ], 429);
+            }
 
             $request->validate([
                 'file' => 'required|file|mimes:pdf,doc,docx,csv,txt|max:10240',
                 'num_questions' => 'required|integer|min:5|max:50',
                 'question_type' => 'required|in:multiple_choice,true_false,flashcard,mixed'
             ]);
-
-            $professor = Professor::find(session('professor_id'));
-            if (!$professor) {
-                return response()->json(['success' => false, 'message' => 'Professor session not found.'], 401);
-            }
 
             // Extract text from document
             $extractedText = $this->extractTextFromDocument($request->file('file'));
@@ -2814,7 +3059,8 @@ public function getContentByCourse($courseId)
             $generatedQuestions = $this->generateQuestionsFromText(
                 $extractedText,
                 $request->num_questions,
-                $request->question_type
+                $request->question_type,
+                $request->input('regenerate') === 'true' // Pass regeneration flag
             );
 
             if (empty($generatedQuestions)) {

@@ -561,6 +561,9 @@ Route::get('/test-rejection-details', function () {
 // Include comprehensive database test
 require __DIR__ . '/test-db-check.php';
 
+// Include Cloud Security Quiz routes
+require __DIR__ . '/cloud-security.php';
+
 // Comprehensive test page
 Route::get('/test-comprehensive', function () {
     return view('test-comprehensive');
@@ -1721,6 +1724,8 @@ Route::middleware(['professor.auth'])
     // Quiz generator question management routes
     Route::get('/quiz-generator/questions/{quiz}/modal-content', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getModalQuestions'])
          ->name('quiz-generator.questions.modal');
+    Route::get('/quiz-generator/api/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionsForModal'])
+         ->name('quiz-generator.api.questions');
     Route::post('/quiz-generator/save', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'save'])
          ->name('quiz-generator.save');
     Route::put('/quiz-generator/questions/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuestions'])

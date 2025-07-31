@@ -270,7 +270,7 @@
   #grading-modal-container {
     background: white;
     border-radius: 12px;
-    max-width: 600px;
+    max-width: 900px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
@@ -483,6 +483,47 @@
             <p><strong>Comments:</strong> <span id="submissionComments"></span></p>
         </div>
 
+        <!-- File Viewer Section -->
+        <div class="submission-file-viewer mb-3" id="fileViewerSection">
+            <h5>File Preview</h5>
+            <div class="file-preview-controls">
+                <select id="fileSelector" class="form-control mb-2" style="max-width: 300px;">
+                    <option value="">Select a file to view...</option>
+                </select>
+            </div>
+            
+            <div class="file-preview-container" id="filePreviewContainer" style="min-height: 400px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #f8f9fa; position: relative;">
+                <!-- PDF Viewer -->
+                <iframe id="pdfViewer" style="width: 100%; height: 500px; border: none; display: none;"></iframe>
+                
+                <!-- Image Viewer -->
+                <div id="imageViewer" style="width: 100%; height: 500px; display: none; text-align: center; overflow: auto;">
+                    <img id="imagePreview" style="max-width: 100%; max-height: 100%;" />
+                </div>
+                
+                <!-- Text Viewer -->
+                <pre id="textViewer" style="width: 100%; height: 500px; overflow: auto; display: none; padding: 15px; white-space: pre-wrap;"></pre>
+                
+                <!-- Unsupported File Type -->
+                <div id="unsupportedFileType" style="display: none; text-align: center; padding: 50px 0;">
+                    <i class="fas fa-file-alt fa-3x mb-3" style="color: #6c757d;"></i>
+                    <h5>Cannot Preview This File Type</h5>
+                    <p>Click the button below to download this file for viewing.</p>
+                    <a id="downloadFileLink" href="#" class="btn btn-info" target="_blank">
+                        <i class="fas fa-download me-1"></i> Download File
+                    </a>
+                </div>
+                
+                <!-- No Files Message -->
+                <div id="noFilesMessage" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #6c757d; text-align: center;">
+                    <div>
+                        <i class="fas fa-file-upload fa-3x mb-3"></i>
+                        <p>No files available for preview</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <form id="gradingForm">
             @csrf
             <input type="hidden" id="submissionId" name="submission_id">
@@ -609,9 +650,59 @@ function populateGradingModal(submission) {
     
     // Files
     let filesText = 'No files';
-    if (submission.processed_files && submission.processed_files.length > 0) {
-        filesText = submission.processed_files.map(file => file.original_name || file.name).join(', ');
+    const fileSelector = document.getElementById('fileSelector');
+    // Clear existing options except the first one
+    while (fileSelector.options.length > 1) {
+        fileSelector.remove(1);
     }
+    
+    // Hide all viewers initially
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('imageViewer').style.display = 'none';
+    document.getElementById('textViewer').style.display = 'none';
+    document.getElementById('unsupportedFileType').style.display = 'none';
+    document.getElementById('noFilesMessage').style.display = 'flex';
+    
+    if (submission.processed_files && submission.processed_files.length > 0) {
+        // Update files text
+        filesText = submission.processed_files.map(file => file.original_name || file.name).join(', ');
+        document.getElementById('noFilesMessage').style.display = 'none';
+        
+        // Populate file selector
+        submission.processed_files.forEach((file, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = file.original_name || file.name || `File ${index + 1}`;
+            fileSelector.appendChild(option);
+        });
+        
+        // Add event listener for file selection
+        fileSelector.onchange = function() {
+            const selectedIndex = this.value;
+            if (selectedIndex === '') {
+                // No file selected
+                document.getElementById('pdfViewer').style.display = 'none';
+                document.getElementById('imageViewer').style.display = 'none';
+                document.getElementById('textViewer').style.display = 'none';
+                document.getElementById('unsupportedFileType').style.display = 'none';
+                document.getElementById('noFilesMessage').style.display = 'flex';
+                return;
+            }
+            
+            const selectedFile = submission.processed_files[selectedIndex];
+            loadFilePreview(selectedFile, submission.id);
+        };
+        
+        // Automatically load the first file if available
+        if (submission.processed_files.length > 0) {
+            fileSelector.value = 0;
+            loadFilePreview(submission.processed_files[0], submission.id);
+        }
+    } else {
+        // No files available
+        document.getElementById('fileViewerSection').style.display = 'none';
+    }
+    
     document.getElementById('submissionFiles').textContent = filesText;
     
     // Comments
@@ -631,6 +722,61 @@ function closeGradingModal() {
         modal.classList.remove('show');
     }
     document.getElementById('gradingForm').reset();
+    
+    // Reset file viewers
+    document.getElementById('pdfViewer').src = '';
+    document.getElementById('imagePreview').src = '';
+    document.getElementById('textViewer').textContent = '';
+}
+
+// Function to load and display file preview
+function loadFilePreview(file, submissionId) {
+    // Hide all viewers first
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('imageViewer').style.display = 'none';
+    document.getElementById('textViewer').style.display = 'none';
+    document.getElementById('unsupportedFileType').style.display = 'none';
+    document.getElementById('noFilesMessage').style.display = 'none';
+    
+    const fileUrl = `/professor/submissions/${submissionId}/download?file=${encodeURIComponent(file.path || file.name)}`;
+    const downloadLink = document.getElementById('downloadFileLink');
+    downloadLink.href = fileUrl;
+    
+    // Detect file type based on extension or mime type
+    const fileName = file.original_name || file.name || '';
+    const fileExtension = fileName.split('.').pop().toLowerCase();
+    const mimeType = file.mime || '';
+    
+    // PDF files
+    if (fileExtension === 'pdf' || mimeType.includes('pdf')) {
+        document.getElementById('pdfViewer').src = fileUrl;
+        document.getElementById('pdfViewer').style.display = 'block';
+    }
+    // Image files
+    else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(fileExtension) || 
+             mimeType.includes('image/')) {
+        document.getElementById('imagePreview').src = fileUrl;
+        document.getElementById('imageViewer').style.display = 'block';
+    }
+    // Text files
+    else if (['txt', 'md', 'html', 'css', 'js', 'json', 'xml', 'csv'].includes(fileExtension) ||
+             mimeType.includes('text/')) {
+        // Fetch text content
+        fetch(fileUrl)
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('textViewer').textContent = text;
+                document.getElementById('textViewer').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error loading text file:', error);
+                document.getElementById('unsupportedFileType').style.display = 'block';
+            });
+    }
+    // Unsupported file types
+    else {
+        document.getElementById('unsupportedFileType').style.display = 'block';
+    }
 }
 
 // Handle grading form submission

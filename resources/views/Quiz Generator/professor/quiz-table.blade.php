@@ -61,18 +61,14 @@
                     </td>
                     <td>
                         <div class="btn-group-vertical btn-group-sm" role="group">
-                            <!-- View/Edit Questions -->
-                            <button class="btn btn-outline-secondary btn-sm view-questions-btn" data-quiz-id="{{ $quiz->quiz_id }}">
-                                <i class="bi bi-list-ul"></i> Questions
+                            <!-- View Questions (Modal) -->
+                            <button class="btn btn-outline-secondary btn-sm view-questions-modal-btn" data-quiz-id="{{ $quiz->quiz_id }}" data-bs-toggle="modal" data-bs-target="#viewQuestionsModal">
+                                <i class="bi bi-list-ul"></i> View Questions
                             </button>
                             
                             <!-- Preview Quiz -->
                             <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
                                 <i class="bi bi-eye"></i> Preview
-                            </button>
-                            <!-- Edit Quiz (available for all statuses) -->
-                            <button class="btn btn-outline-secondary btn-sm edit-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
-                                <i class="bi bi-pencil"></i> Edit Quiz
                             </button>
                             <!-- Status-specific actions -->
                             @if($status === 'draft')

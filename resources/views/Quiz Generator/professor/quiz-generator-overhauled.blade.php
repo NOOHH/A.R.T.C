@@ -170,7 +170,7 @@
                                     <div class="row align-items-end">
                                         <div class="col-md-4">
                                             <label for="ai_document" class="form-label">Upload Document</label>
-                                            <input type="file" class="form-control" id="ai_document" accept=".pdf,.doc,.docx,.csv,.txt,.jpg,.jpeg,.png">
+                                            <input type="file" class="form-control" id="ai_document" accept=".pdf,.doc,.docx,.csv,.txt,.jpg,.jpeg,.png" onchange="handleFileChange()">
                                             <small class="text-muted">Upload PDF, Word, CSV, TXT, or Image files. Max 10MB. Uses Gemini AI + Tesseract OCR.</small>
                                         </div>
                                         <div class="col-md-2">
@@ -190,6 +190,9 @@
                                             <button type="button" class="btn btn-info w-100" id="generateAIBtn" onclick="generateAIQuestions()">
                                                 <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                                 <i class="bi bi-magic"></i> <span id="generateBtnText">Generate Questions</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary w-100 mt-2" id="regenerateBtn" onclick="regenerateWithSameFile()" style="display: none;">
+                                                <i class="bi bi-arrow-clockwise"></i> Regenerate with Same File
                                             </button>
                                         </div>
                                     </div>
@@ -279,10 +282,51 @@
     </div>
 </div>
 
+<!-- View Questions Modal -->
+<div class="modal fade" id="viewQuestionsModal" tabindex="-1" aria-labelledby="viewQuestionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="viewQuestionsModalLabel"><i class="bi bi-list-ul"></i> Quiz Questions</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="questionsList">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('styles')
 <style>
+/* Modal styles for question view */
+#viewQuestionsModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.explanation-row {
+    background-color: #f8f9fa;
+    font-size: 0.9em;
+}
+
+.explanation-cell {
+    padding: 10px 15px;
+    border-top: none !important;
+    color: #6c757d;
+}
+
 /* Quiz Canvas Styles */
 .quiz-canvas {
     min-height: 400px;
@@ -411,6 +455,40 @@
     height: 1rem;
 }
 
+/* Button states */
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn.disabled {
+    pointer-events: none;
+}
+
+/* Progress bar for generation */
+.generation-progress {
+    width: 100%;
+    height: 4px;
+    background-color: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.generation-progress-bar {
+    height: 100%;
+    background-color: #007bff;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    animation: progress-animation 2s ease-in-out infinite;
+}
+
+@keyframes progress-animation {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .modal-fullscreen .col-4 {
@@ -439,6 +517,32 @@
     align-items: center;
     justify-content: center;
     color: #6c757d;
+}
+
+/* Regenerate button styles */
+#regenerateBtn {
+    transition: all 0.3s ease;
+}
+
+#regenerateBtn:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+#regenerateBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-pulse {
+    animation: pulse 1s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 </style>
 @endpush
@@ -486,6 +590,60 @@ function resetForm() {
     window.quizQuestions = {};
 }
 
+// Store the last uploaded file for regeneration
+let lastUploadedFile = null;
+
+// Handle file input change
+function handleFileChange() {
+    const fileInput = document.getElementById('ai_document');
+    const regenerateBtn = document.getElementById('regenerateBtn');
+    
+    console.log('handleFileChange called');
+    console.log('File input files:', fileInput.files);
+    
+    if (fileInput.files[0]) {
+        console.log('New file selected:', fileInput.files[0].name);
+        // Hide regenerate button when a new file is selected
+        regenerateBtn.style.display = 'none';
+        // Clear any existing AI questions
+        document.getElementById('aiQuestionsContainer').innerHTML = '';
+        // Reset lastUploadedFile to null since we have a new file
+        lastUploadedFile = null;
+        console.log('lastUploadedFile reset to null');
+    }
+}
+
+// Clear file input when modal is closed
+document.addEventListener('DOMContentLoaded', function() {
+    const createQuizModal = document.getElementById('createQuizModal');
+    if (createQuizModal) {
+        createQuizModal.addEventListener('hidden.bs.modal', function() {
+            console.log('Modal closed - resetting state');
+            // Clear file input
+            const fileInput = document.getElementById('ai_document');
+            if (fileInput) {
+                fileInput.value = '';
+                console.log('File input cleared');
+            }
+            // Reset regenerate button
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            if (regenerateBtn) {
+                regenerateBtn.style.display = 'none';
+                console.log('Regenerate button hidden');
+            }
+            // Clear AI questions
+            const aiContainer = document.getElementById('aiQuestionsContainer');
+            if (aiContainer) {
+                aiContainer.innerHTML = '';
+                console.log('AI container cleared');
+            }
+            // Reset last uploaded file
+            lastUploadedFile = null;
+            console.log('lastUploadedFile reset to null');
+        });
+    }
+});
+
 // Generate AI questions
 async function generateAIQuestions() {
     const fileInput = document.getElementById('ai_document');
@@ -494,13 +652,38 @@ async function generateAIQuestions() {
     const btnText = document.getElementById('generateBtnText');
     const spinner = generateBtn.querySelector('.spinner-border');
     
+    console.log('generateAIQuestions called');
+    console.log('File input element:', fileInput);
+    console.log('File input files:', fileInput?.files);
+    console.log('File input value:', fileInput?.value);
+    console.log('lastUploadedFile before:', lastUploadedFile);
+    
+    if (!fileInput) {
+        console.error('File input element not found');
+        alert('File input not found. Please refresh the page and try again.');
+        return;
+    }
+    
     if (!fileInput.files[0]) {
+        console.error('No file selected in input');
         alert('Please select a document to upload');
         return;
     }
 
-    // Show loading state
+    console.log('File selected:', fileInput.files[0].name, 'Size:', fileInput.files[0].size);
+
+    // Store the file for potential regeneration
+    lastUploadedFile = fileInput.files[0];
+    console.log('lastUploadedFile set to:', lastUploadedFile?.name);
+
+    // Prevent spamming - check if already generating
+    if (generateBtn.disabled) {
+        return;
+    }
+
+    // Show loading state and disable button
     generateBtn.disabled = true;
+    generateBtn.classList.add('disabled');
     spinner.classList.remove('d-none');
     btnText.textContent = 'Generating Questions...';
 
@@ -509,6 +692,9 @@ async function generateAIQuestions() {
     formData.append('num_questions', questionsCount);
     formData.append('question_type', document.getElementById('aiQuestionType').value);
     formData.append('_token', window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    
+    // Add timestamp to ensure unique generation
+    formData.append('timestamp', Date.now());
 
     // Show AI panel
     showAIPanel();
@@ -520,7 +706,16 @@ async function generateAIQuestions() {
                 <span class="visually-hidden">Generating...</span>
             </div>
             <h6 class="text-muted">Generating Questions</h6>
-            <p class="text-muted text-center small">Using Gemini AI to analyze your document and create quiz questions...</p>
+            <p class="text-muted text-center small">Using AI to analyze your document and create unique quiz questions...</p>
+            <div class="progress mt-3" style="width: 200px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+            </div>
+            <div class="mt-3 text-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    This may take a few moments. Please don't click the button again.
+                </small>
+            </div>
         </div>
     `;
 
@@ -530,7 +725,8 @@ async function generateAIQuestions() {
         console.log('FormData contents:', {
             file: fileInput.files[0]?.name,
             num_questions: questionsCount,
-            question_type: document.getElementById('aiQuestionType').value
+            question_type: document.getElementById('aiQuestionType').value,
+            timestamp: Date.now()
         });
         
         const response = await fetch('/professor/quiz-generator/generate-ai-questions', {
@@ -550,6 +746,12 @@ async function generateAIQuestions() {
         
         if (data.success && data.questions) {
             displayAIQuestions(data.questions);
+            // Show regenerate button after successful generation
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            regenerateBtn.style.display = 'block';
+            // Add a subtle animation to draw attention
+            regenerateBtn.classList.add('btn-pulse');
+            setTimeout(() => regenerateBtn.classList.remove('btn-pulse'), 2000);
         } else {
             document.getElementById('aiQuestionsContainer').innerHTML = `
                 <div class="alert alert-danger">
@@ -569,17 +771,131 @@ async function generateAIQuestions() {
             </div>
         `;
     } finally {
-        // Reset button state
-        if (generateBtn) {
-            generateBtn.disabled = false;
-            generateBtn.innerHTML = '<i class="bi bi-magic"></i> Generate Questions';
+        // Reset button state after a minimum delay to prevent rapid clicking
+        setTimeout(() => {
+            // Re-fetch elements to ensure they still exist in the DOM
+            const generateBtn = document.getElementById('generateAIBtn');
+            if (generateBtn) {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('disabled');
+                generateBtn.innerHTML = '<i class="bi bi-magic"></i> <span id="generateBtnText">Generate Questions</span>';
+            } else {
+                console.warn('Generate button element not found during cleanup');
+            }
+            
+            // Re-fetch spinner and btnText elements
+            const spinner = generateBtn ? generateBtn.querySelector('.spinner-border') : null;
+            const btnText = generateBtn ? generateBtn.querySelector('#generateBtnText') : null;
+            
+            if (spinner) {
+                spinner.classList.add('d-none');
+            }
+            if (btnText) {
+                btnText.textContent = 'Generate Questions';
+            }
+        }, 2000); // Minimum 2-second delay
+    }
+}
+
+// Regenerate questions with the same file
+async function regenerateWithSameFile() {
+    if (!lastUploadedFile) {
+        alert('No file available for regeneration. Please upload a file first.');
+        return;
+    }
+
+    const questionsCount = document.getElementById('ai_question_count').value;
+    const regenerateBtn = document.getElementById('regenerateBtn');
+    const generateBtn = document.getElementById('generateAIBtn');
+    
+    // Disable both buttons during regeneration
+    regenerateBtn.disabled = true;
+    generateBtn.disabled = true;
+    regenerateBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinner-border spinner-border-sm"></i> Regenerating...';
+
+    const formData = new FormData();
+    formData.append('file', lastUploadedFile);
+    formData.append('num_questions', questionsCount);
+    formData.append('question_type', document.getElementById('aiQuestionType').value);
+    formData.append('_token', window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    
+    // Add timestamp to ensure unique generation
+    formData.append('timestamp', Date.now());
+    formData.append('regenerate', 'true'); // Flag to indicate this is a regeneration
+
+    // Show loading in AI panel
+    document.getElementById('aiQuestionsContainer').innerHTML = `
+        <div class="d-flex flex-column align-items-center justify-content-center h-100">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Regenerating...</span>
+            </div>
+            <h6 class="text-muted">Regenerating Questions</h6>
+            <p class="text-muted text-center small">Creating new questions from the same document...</p>
+            <div class="progress mt-3" style="width: 200px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+            </div>
+            <div class="mt-3 text-center">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    This may take a few moments. Please don't click the button again.
+                </small>
+            </div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/professor/quiz-generator/generate-ai-questions', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.questions) {
+            displayAIQuestions(data.questions);
+        } else {
+            document.getElementById('aiQuestionsContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Regeneration Failed</strong><br>
+                    ${data.message || 'Failed to regenerate questions. Please try again.'}
+                </div>
+            `;
         }
-        if (spinner) {
-            spinner.classList.add('d-none');
-        }
-        if (btnText) {
-            btnText.textContent = 'Generate Questions';
-        }
+    } catch (error) {
+        console.error('AI Regeneration Error:', error);
+        document.getElementById('aiQuestionsContainer').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> 
+                <strong>Error</strong><br>
+                Network error occurred. Please check your connection and try again.
+            </div>
+        `;
+    } finally {
+        // Reset button state after a minimum delay
+        setTimeout(() => {
+            // Re-fetch elements to ensure they still exist in the DOM
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            const generateBtn = document.getElementById('generateAIBtn');
+            
+            if (regenerateBtn) {
+                regenerateBtn.disabled = false;
+                regenerateBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Regenerate with Same File';
+            } else {
+                console.warn('Regenerate button element not found during cleanup');
+            }
+            
+            if (generateBtn) {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('disabled');
+            } else {
+                console.warn('Generate button element not found during cleanup');
+            }
+        }, 2000); // Minimum 2-second delay
     }
 }
 
@@ -1740,12 +2056,12 @@ async function restoreQuiz(quizId) {
                 deleteQuiz(quizId);
             }
             
-            // View/Edit Questions button
-            if (e.target.classList.contains('view-questions-btn') || e.target.closest('.view-questions-btn')) {
+            // View Questions Modal button
+            if (e.target.classList.contains('view-questions-modal-btn') || e.target.closest('.view-questions-modal-btn')) {
                 e.preventDefault();
-                const btn = e.target.classList.contains('view-questions-btn') ? e.target : e.target.closest('.view-questions-btn');
+                const btn = e.target.classList.contains('view-questions-modal-btn') ? e.target : e.target.closest('.view-questions-modal-btn');
                 const quizId = btn.getAttribute('data-quiz-id');
-                editQuizQuestions(quizId);
+                loadQuizQuestionsForModal(quizId);
             }
             
             // Preview Quiz button
@@ -1767,6 +2083,110 @@ async function restoreQuiz(quizId) {
     });
 
     // Edit Quiz Questions
+    async function loadQuizQuestionsForModal(quizId) {
+        try {
+            const response = await fetch(`/professor/quiz-generator/api/questions/${quizId}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const questionsListEl = document.getElementById('questionsList');
+            
+            if (data.questions && data.questions.length > 0) {
+                let html = `
+                    <h4 class="mb-3">${data.quiz.title}</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Question</th>
+                                    <th>Type</th>
+                                    <th>Correct Answer</th>
+                                    <th>Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.questions.forEach((question, index) => {
+                    // Parse options if it's a JSON string
+                    let options = question.options;
+                    if (typeof options === 'string') {
+                        try {
+                            options = JSON.parse(options);
+                        } catch (e) {
+                            console.error('Error parsing options:', e);
+                        }
+                    }
+                    
+                    // Format the options display based on question type
+                    let optionsDisplay = '';
+                    if (question.question_type === 'multiple_choice') {
+                        if (Array.isArray(options)) {
+                            optionsDisplay = options.join(', ');
+                        } else if (typeof options === 'object') {
+                            optionsDisplay = Object.entries(options)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('<br>');
+                        }
+                    } else if (question.question_type === 'true_false') {
+                        optionsDisplay = 'True / False';
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${question.question_text}</td>
+                            <td>${question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'True/False'}</td>
+                            <td>${question.correct_answer}</td>
+                            <td>${question.points || 1}</td>
+                        </tr>
+                    `;
+                    
+                    // If there's an explanation, add it as a collapsible row
+                    if (question.explanation) {
+                        html += `
+                            <tr class="explanation-row">
+                                <td colspan="5" class="explanation-cell bg-light">
+                                    <strong>Explanation:</strong> ${question.explanation}
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                questionsListEl.innerHTML = html;
+            } else {
+                questionsListEl.innerHTML = '<div class="alert alert-info">No questions found for this quiz.</div>';
+            }
+            
+            // Show the modal
+            const viewQuestionsModal = new bootstrap.Modal(document.getElementById('viewQuestionsModal'));
+            viewQuestionsModal.show();
+            
+        } catch (error) {
+            console.error('Error loading quiz questions:', error);
+            document.getElementById('questionsList').innerHTML = `
+                <div class="alert alert-danger">
+                    Error loading questions: ${error.message}. Please try again.
+                </div>
+            `;
+            
+            const viewQuestionsModal = new bootstrap.Modal(document.getElementById('viewQuestionsModal'));
+            viewQuestionsModal.show();
+        }
+    }
+    
+    // This is kept for backward compatibility - some parts of the app may still reference it
     async function editQuizQuestions(quizId) {
         try {
             window.location.href = `/professor/quiz-generator/questions/${quizId}`;
