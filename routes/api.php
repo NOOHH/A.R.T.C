@@ -33,6 +33,7 @@ Route::middleware(['web'])->group(function () {
     Route::get('/chat/session/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
     Route::get('/chat/session/users', [App\Http\Controllers\ChatController::class, 'getSessionUsers']);
     Route::get('/chat/session/messages', [App\Http\Controllers\ChatController::class, 'getSessionMessages']);
+    Route::get('/chat/session/conversations', [App\Http\Controllers\ChatController::class, 'getPreviousConversations']);
     Route::post('/chat/session/send', [App\Http\Controllers\ChatController::class, 'sendSessionMessage']);
     Route::post('/chat/session/clear-history', [App\Http\Controllers\ChatController::class, 'clearSessionHistory']);
     

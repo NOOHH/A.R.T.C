@@ -3,7 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Http\Request;
+
+// Broadcasting Authentication (for Laravel Echo + Pusher)
+Broadcast::routes(['middleware' => ['web']]);
+
 // Admin: Delete a meeting for a professor
 Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
 use App\Http\Controllers\StudentController;
