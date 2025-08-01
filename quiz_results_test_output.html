@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="FsvYemQFFDRIUOQOXyqioCSuqmnwZcxIXy1al5eY">
+    <title>Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="http://127.0.0.1:8000/css/login.css">
+    <style>
+        
+                    body.login-page .left {
+                        background: #f8f9fa !important;
+                        background: linear-gradient(to bottom, #f8f9fa, #c6c7c8) !important;
+                    }
+                
+            body.login-page .right {
+                background-color: #ffffff !important;
+                color: #333333 !important;
+            }
+            
+            body.login-page .right h2,
+            body.login-page .right label,
+            body.login-page .right .brand-text {
+                color: #333333 !important;
+            }
+            
+            body.login-page .login-form input[type='text'],
+            body.login-page .login-form input[type='email'],
+            body.login-page .login-form input[type='password'] {
+                border-color: #dee2e6 !important;
+            }
+            
+            body.login-page .login-form input[type='text']:focus,
+            body.login-page .login-form input[type='email']:focus,
+            body.login-page .login-form input[type='password']:focus {
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+            }
+            
+            body.login-page .login-form button[type='submit'] {
+                background-color: #667eea !important;
+                border-color: #667eea !important;
+                color: #ffffff !important;
+            }
+            
+            body.login-page .login-form button[type='submit']:hover {
+                background-color: #5265bb !important;
+                border-color: #5265bb !important;
+            }
+            
+            body.login-page .login-form .google-btn {
+                background-color: #ffffff !important;
+                border-color: #888888 !important;
+                color: #222222 !important;
+            }
+            
+            body.login-page .login-form .google-btn:hover {
+                background-color: #f3f3f3 !important;
+                border-color: #667eea !important;
+            }
+        
+    </style>
+    <style>
+        
+            .btn-primary {
+                background-color: #667eea !important;
+                border-color: #667eea !important;
+                color: #ffffff !important;
+            }
+            
+            .btn-primary:hover {
+                background-color: #5a67d8 !important;
+                border-color: #5a67d8 !important;
+            }
+            
+            .btn-secondary {
+                background-color: #6c757d !important;
+                border-color: #6c757d !important;
+                color: #ffffff !important;
+            }
+            
+            .btn-secondary:hover {
+                background-color: #5a6268 !important;
+                border-color: #5a6268 !important;
+            }
+            
+            .btn-success {
+                background-color: #28a745 !important;
+                border-color: #28a745 !important;
+                color: #ffffff !important;
+            }
+            
+            .btn-success:hover {
+                background-color: #218838 !important;
+                border-color: #218838 !important;
+            }
+            
+            .btn-danger {
+                background-color: #dc3545 !important;
+                border-color: #dc3545 !important;
+                color: #ffffff !important;
+            }
+            
+            .btn-danger:hover {
+                background-color: #c82333 !important;
+                border-color: #c82333 !important;
+            }
+        
+    </style>
+</head>
+<body class="login-page">
+        <div class="left">
+        <div class="review-text">
+            Review Smarter.<br>Learn Better.<br>Succeed Faster.
+        </div>
+        <div class="copyright">
+            © Copyright Ascendo Review and Training Center.<br>All Rights Reserved.
+        </div>
+    </div>
+    <div class="right">
+        <div class="logo-row">
+            <img src="http://127.0.0.1:8000/images/ARTC_Logo.png" alt="Logo">
+                        <a href="http://127.0.0.1:8000" class="brand-text">Ascendo Review and Training Center</a>
+        </div>
+        <h2>Log in to your account.</h2>
+
+        
+        
+        
+        
+        <form class="login-form" method="POST" action="http://127.0.0.1:8000/login">
+            <input type="hidden" name="_token" value="FsvYemQFFDRIUOQOXyqioCSuqmnwZcxIXy1al5eY">            <input type="hidden" name="from_enrollment" value="false">
+            
+            <label for="email">Enter your email address</label>
+            <input type="email" id="email" name="email" placeholder="name@example.com" value="" required>
+
+            <label for="password">Enter your password</label>
+            <div class="input-row">
+                <input type="password" id="password" name="password" placeholder="at least 8 characters" required>
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+            
+            <a href="#" class="forgot">Forgot your password? Click here.</a>
+            <button type="submit">LOG IN</button>
+            <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
+            <div style="margin-top: 8px; font-size: 1em;">Don't have an account? <a href="http://127.0.0.1:8000/signup" class="register-link">Register here.</a></div>
+        </form>
+    </div>
+    <script>
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+            } else {
+                pwd.type = 'password';
+            }
+        }
+    </script>
+</body>
+</html>

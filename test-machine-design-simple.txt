@@ -1,0 +1,19 @@
+Machine Design Test Document
+
+This is a simple test document for machine design quiz generation.
+
+Key Topics:
+
+1. Material Properties
+Materials used in machine design must have adequate strength, stiffness, and durability. Common materials include steel, aluminum, and composites.
+
+2. Stress Analysis
+Engineers analyze stress distributions to ensure components can safely carry applied loads without failure.
+
+3. Safety Factors
+Safety factors are applied to account for uncertainties in loading, material properties, and manufacturing variations.
+
+4. Design Process
+The machine design process involves problem definition, concept generation, detailed analysis, and testing.
+
+This content should be sufficient to generate multiple choice questions about machine design fundamentals.

@@ -37,7 +37,7 @@
   justify-content: space-between;
   align-items: center;
   transition: all 0.3s ease;
-}
+}   
 
 .module-header:hover {
   background: linear-gradient(135deg, #5a6fd8 0%, #6b4190 100%);

@@ -492,6 +492,12 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     
     // Content view route - moved back inside middleware for authentication
     Route::get('/student/content/{contentId}/view', [StudentDashboardController::class, 'viewContent'])->name('student.content.view');
+    
+    // Quiz routes for students
+    Route::post('/student/quiz/{quizId}/start', [StudentDashboardController::class, 'startQuizAttempt'])->name('student.quiz.start');
+    Route::get('/student/quiz/attempt/{attemptId}/take', [StudentDashboardController::class, 'takeQuiz'])->name('student.quiz.take');
+    Route::post('/student/quiz/attempt/{attemptId}/submit', [StudentDashboardController::class, 'submitQuizAttempt'])->name('student.quiz.submit');
+    Route::get('/student/quiz/attempt/{attemptId}/results', [StudentDashboardController::class, 'showQuizResults'])->name('student.quiz.results');
 }); // END OF MIDDLEWARE GROUP
 
 // Simple test route
@@ -2795,3 +2801,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
 });
+
+// Quiz score fix routes
+Route::get('/admin/fix-quiz-score/{attemptId}', [App\Http\Controllers\FixQuizSubmissionController::class, 'fixAttemptScore']);
+Route::get('/admin/fix-all-quiz-scores', [App\Http\Controllers\FixQuizSubmissionController::class, 'fixAllAttempts']);

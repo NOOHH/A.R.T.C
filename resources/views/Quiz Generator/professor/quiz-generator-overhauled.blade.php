@@ -91,7 +91,7 @@
 
 <!-- Create/Edit Quiz Modal -->
 <div class="modal fade" id="createQuizModal" tabindex="-1" aria-labelledby="createQuizModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen" id="createQuizModalDialog">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" id="createQuizModalDialog">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="createQuizModalLabel">
@@ -220,7 +220,7 @@
                     </div>
                     
                     <!-- AI Generated Questions Side Panel -->
-                    <div class="col-4 bg-light border-start" id="aiQuestionsPanel" style="display: none;">
+                    <div class="col-lg-4 bg-light border-start" id="aiQuestionsPanel" style="display: none;">
                         <div class="p-3 h-100 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0"><i class="bi bi-robot"></i> Generated Questions</h6>
@@ -245,11 +245,6 @@
                 <button type="button" class="btn btn-primary" onclick="saveQuiz(true)">Save as Draft</button>
                 <button type="button" class="btn btn-success" onclick="saveQuiz(false)">Publish Quiz</button>
             </div>
-                                        <!-- Empty state -->
-                                        <div id="quizEmptyState" class="text-center">
-                                            <i class="bi bi-inbox" style="font-size: 2.5rem; color: #bdbdbd;"></i>
-                                            <div class="mt-2 text-muted">No questions added yet. Click <b>Add Question</b> or use AI Generate to get started.</div>
-                                        </div>
                                         <!-- Draggable manual questions will appear here -->
                                     </div>
                                 </div>
@@ -270,12 +265,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="saveQuiz()">
-                    <i class="bi bi-check-circle"></i> Save Quiz
-                </button>
             </div>
         </div>
     </div>
@@ -309,6 +298,25 @@
 
 @push('styles')
 <style>
+/* disable interaction and dim the sidebar */
+#modernSidebar.sidebar-disabled {
+  pointer-events: none;
+  opacity: 0.25;
+  filter: blur(1px);
+  transition: opacity .2s ease, filter .2s ease;
+}
+
+/* optionally fully hide instead of dimming (use only if you want it gone) */
+#modernSidebar.hide-sidebar {
+  display: none !important;
+}
+
+/* simplify scroll lock: avoid position:fixed side effects */
+body.modal-open {
+  overflow: hidden !important;
+  position: static !important;
+}
+
 /* Modal styles for question view */
 #viewQuestionsModal .modal-body {
     max-height: 70vh;
@@ -543,6 +551,14 @@
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+.modal-backdrop {
+  z-index: 1050 !important;
+}
+.modal {
+  z-index: 1060 !important;
+}
+
 </style>
 @endpush
 
@@ -551,6 +567,38 @@
 let currentQuizId = null;
 let questionCounter = 0;
 let aiQuestions = [];
+const quizModalEl = document.getElementById('createQuizModal');
+const sidebarEl = document.getElementById('modernSidebar');
+let savedScroll = 0;
+
+if (quizModalEl) {
+  quizModalEl.addEventListener('show.bs.modal', () => {
+    // save scroll position so we can restore
+    savedScroll = window.scrollY || document.documentElement.scrollTop;
+
+    // disable / dim sidebar
+    if (sidebarEl) {
+      sidebarEl.classList.add('sidebar-disabled');
+      // if you want to fully hide instead, use: sidebarEl.classList.add('hide-sidebar');
+    }
+
+    // lock background scrolling (Bootstrap does overflow hidden already; this is reinforcement)
+    document.body.classList.add('modal-open');
+  });
+
+  quizModalEl.addEventListener('hidden.bs.modal', () => {
+    // restore sidebar
+    if (sidebarEl) {
+      sidebarEl.classList.remove('sidebar-disabled');
+      // if you used hide-sidebar, also remove it:
+      // sidebarEl.classList.remove('hide-sidebar');
+    }
+
+    // restore scroll
+    document.body.classList.remove('modal-open');
+    window.scrollTo(0, savedScroll);
+  });
+}
 
 // Initialize when modal opens
 document.getElementById('createQuizModal').addEventListener('show.bs.modal', function (event) {
