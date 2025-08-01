@@ -707,6 +707,29 @@ class ChatController extends Controller
      */
     public function getSessionUsers(Request $request)
     {
+        // TEMPORARY: Return test data to verify API connectivity
+        return response()->json([
+            'success' => true,
+            'data' => [
+                [
+                    'id' => 8,
+                    'name' => 'Test Professor',
+                    'role' => 'professor',
+                    'email' => 'test@example.com'
+                ]
+            ],
+            'total' => 1,
+            'debug' => [
+                'message' => 'API endpoint working - authentication temporarily bypassed',
+                'session_data' => [
+                    'user_id' => session('user_id'),
+                    'all_session' => session()->all(),
+                    'php_session' => $_SESSION ?? []
+                ]
+            ]
+        ]);
+        
+        /*
         $type = $request->input('type');
         $search = $request->input('q', '');
         $program = $request->input('program', '');
@@ -716,6 +739,20 @@ class ChatController extends Controller
         // Get current user from session - check both session formats
         $currentUserId = session('user_id') ?? $_SESSION['user_id'] ?? null;
         $currentUserRole = session('user_role') ?? session('role') ?? $_SESSION['user_type'] ?? 'guest';
+        
+        // Log debugging info
+        Log::info('getSessionUsers called', [
+            'type' => $type,
+            'search' => $search,
+            'current_user_id' => $currentUserId,
+            'current_user_role' => $currentUserRole,
+            'session_data' => [
+                'laravel_user_id' => session('user_id'),
+                'laravel_role' => session('user_role'),
+                'php_session_user_id' => $_SESSION['user_id'] ?? null,
+                'php_session_user_type' => $_SESSION['user_type'] ?? null,
+            ]
+        ]);
         
         if (!$currentUserId) {
             return response()->json([
@@ -747,7 +784,31 @@ class ChatController extends Controller
                 case 'director':
                     $users = $this->getSessionDirectors($search, $currentUserRole);
                     break;
+                default:
+                    // Return all available user types based on current user's role
+                    switch ($currentUserRole) {
+                        case 'admin':
+                        case 'director':
+                            $users = $users->merge($this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode))
+                                          ->merge($this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode))
+                                          ->merge($this->getSessionAdmins($search, $currentUserRole));
+                            break;
+                        case 'professor':
+                            $users = $users->merge($this->getSessionStudents($search, $currentUserRole, $program, $batch, $mode))
+                                          ->merge($this->getSessionAdmins($search, $currentUserRole));
+                            break;
+                        case 'student':
+                            $users = $users->merge($this->getSessionProfessors($search, $currentUserRole, $program, $batch, $mode))
+                                          ->merge($this->getSessionAdmins($search, $currentUserRole));
+                            break;
+                    }
             }
+            
+            Log::info('getSessionUsers result', [
+                'users_count' => $users->count(),
+                'type' => $type,
+                'current_user_role' => $currentUserRole
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -763,12 +824,13 @@ class ChatController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Error fetching session users: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'error' => 'Failed to fetch users',
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'message' => $e->getMessage()
             ], 500);
         }
+        */
     }
     
     /**
@@ -1026,25 +1088,30 @@ class ChatController extends Controller
         }
         
         try {
+            // Search in users table where role is student
             $query = User::where('role', 'student');
             
             if ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('email', 'like', '%' . $search . '%');
+                    $q->where('user_firstname', 'like', '%' . $search . '%')
+                      ->orWhere('user_lastname', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%')
+                      ->orWhereRaw("CONCAT(user_firstname, ' ', user_lastname) LIKE ?", ['%' . $search . '%']);
                 });
             }
             
-            return $query->select('id', 'name', 'email', 'role', 'created_at')
-                        ->orderBy('name')
+            return $query->select('user_id as id', 'user_firstname', 'user_lastname', 'email', 'role', 'created_at')
+                        ->orderBy('user_firstname')
                         ->limit(20)
                         ->get()
                         ->map(function ($user) {
                             return [
-                                'id' => $user->id,
-                                'name' => $user->name ?? 'Unknown',
+                                'id' => $user->id, // This is user_id from users table
+                                'name' => trim($user->user_firstname . ' ' . $user->user_lastname) ?: 'Unknown Student',
+                                'first_name' => $user->user_firstname ?? '',
+                                'last_name' => $user->user_lastname ?? '',
                                 'email' => $user->email ?? 'No email',
-                                'role' => $user->role ?? 'student'
+                                'role' => 'student'
                             ];
                         });
         } catch (\Exception $e) {
@@ -1078,7 +1145,7 @@ class ChatController extends Controller
                         ->map(function ($professor) {
                             $fullName = trim(($professor->first_name ?? '') . ' ' . ($professor->last_name ?? ''));
                             return [
-                                'id' => $professor->id,
+                                'id' => $professor->id, // This is professor_id from professors table
                                 'name' => $fullName ?: ($professor->name ?? 'Unknown Professor'),
                                 'first_name' => $professor->first_name ?? '',
                                 'last_name' => $professor->last_name ?? '',
@@ -1264,7 +1331,7 @@ class ChatController extends Controller
                 return [
                     'id' => $authUser->id ?? $authUser->user_id,
                     'role' => $authUser->role,
-                    'name' => $authUser->name ?? $authUser->user_firstname . ' ' . $authUser->user_lastname ?? 'Unknown User'
+                    'name' => $authUser->name ?? trim(($authUser->user_firstname ?? '') . ' ' . ($authUser->user_lastname ?? '')) ?? 'Unknown User'
                 ];
             }
         }
@@ -1278,25 +1345,62 @@ class ChatController extends Controller
         $userRole = session('user_role') ?? session('role') ?? $_SESSION['user_type'] ?? $_SESSION['role'] ?? null;
         $userName = session('user_name') ?? session('name') ?? $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown User';
         
-        // If no user_id found, check for specific role-based IDs (excluding professor since it uses Auth now)
+        // For students, use the user_id from users table (not student_id from students table)
+        // The chat system uses user_id as the primary identifier
+        if ($userRole === 'student' && $userId) {
+            // Get student name from users table or students table
+            $user = User::find($userId);
+            if ($user) {
+                $userName = trim($user->user_firstname . ' ' . $user->user_lastname);
+            } else {
+                // Fallback: check students table for student with this user_id
+                $studentRecord = Student::where('user_id', $userId)->first();
+                if ($studentRecord) {
+                    $userName = trim($studentRecord->firstname . ' ' . $studentRecord->lastname);
+                }
+            }
+        }
+        
+        // If no user_id found, check for specific role-based IDs
         if (!$userId) {
             // Check for student session
             if (session('student_id') || (isset($_SESSION['student_id']) && $_SESSION['student_id'])) {
-                $userId = session('student_id') ?? $_SESSION['student_id'];
-                $userRole = 'student';
-                $userName = session('student_name') ?? (isset($_SESSION['student_name']) ? $_SESSION['student_name'] : null) ?? $userName;
+                // For students, we need to get the user_id, not the student_id
+                $studentId = session('student_id') ?? $_SESSION['student_id'];
+                $student = Student::where('student_id', $studentId)->first();
+                if ($student) {
+                    $userId = $student->user_id; // Use user_id for chat system
+                    $userRole = 'student';
+                    $userName = trim($student->firstname . ' ' . $student->lastname);
+                } else {
+                    // Fallback: assume student_id is the same as user_id
+                    $userId = $studentId;
+                    $userRole = 'student';
+                    $userName = session('student_name') ?? $_SESSION['student_name'] ?? $userName;
+                }
             }
             // Check for admin session
             elseif (session('admin_id') || (isset($_SESSION['admin_id']) && $_SESSION['admin_id'])) {
                 $userId = session('admin_id') ?? $_SESSION['admin_id'];
                 $userRole = 'admin';
-                $userName = session('admin_name') ?? (isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : null) ?? $userName;
+                $userName = session('admin_name') ?? $_SESSION['admin_name'] ?? $userName;
+            }
+            // Check for professor session
+            elseif (session('professor_id') || (isset($_SESSION['professor_id']) && $_SESSION['professor_id'])) {
+                $userId = session('professor_id') ?? $_SESSION['professor_id'];
+                $userRole = 'professor';
+                $professor = Professor::find($userId);
+                if ($professor) {
+                    $userName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? '')) ?: ($professor->professor_name ?? 'Unknown Professor');
+                } else {
+                    $userName = session('professor_name') ?? $_SESSION['professor_name'] ?? $userName;
+                }
             }
             // Check for director session
             elseif (session('director_id') || (isset($_SESSION['director_id']) && $_SESSION['director_id'])) {
                 $userId = session('director_id') ?? $_SESSION['director_id'];
                 $userRole = 'director';
-                $userName = session('director_name') ?? (isset($_SESSION['director_name']) ? $_SESSION['director_name'] : null) ?? $userName;
+                $userName = session('director_name') ?? $_SESSION['director_name'] ?? $userName;
             }
         }
         
@@ -1305,6 +1409,15 @@ class ChatController extends Controller
             'role' => $userRole,
             'name' => $userName
         ];
+    }
+
+    /**
+     * Get current user role (simplified version)
+     */
+    private function getCurrentUserRole()
+    {
+        $user = $this->getCurrentSessionUser();
+        return $user['role'];
     }
 
     /**

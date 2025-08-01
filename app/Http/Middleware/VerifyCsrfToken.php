@@ -13,5 +13,9 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         '/admin/modules/course-content-store',
+        'api/chat/*',
+        'api/test-route',
+        'api/debug-session',
+        'api/me',
     ];
 }

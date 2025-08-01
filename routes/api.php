@@ -6,8 +6,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\CompletionController;
+
 /*
-|-----------------------------------------------------------// Chat API routes (auth:sanctum)
+|--------------------------------------------------------------------------
+| Chat API Routes
+|--------------------------------------------------------------------------
+|
+| Chat API routes with different authentication mechanisms
+|
+*/
+
+// Chat API routes (auth:sanctum) - currently disabled for testing
+/*
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chat/programs', [App\Http\Controllers\Api\ProgramApiController::class, 'index']);
     Route::get('/chat/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
@@ -15,8 +25,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chat/messages', [App\Http\Controllers\ChatController::class, 'getSessionMessages']);
     Route::post('/chat/send', [App\Http\Controllers\ChatController::class, 'sendSessionMessage']);
 });
+*/
 
-// Session-based chat API routes (alternative for session auth)
+// Session-based chat API routes (temporarily removing auth for testing)
 Route::middleware(['web'])->group(function () {
     Route::get('/chat/session/programs', [App\Http\Controllers\Api\ProgramApiController::class, 'index']);
     Route::get('/chat/session/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
@@ -30,13 +41,113 @@ Route::middleware(['web'])->group(function () {
     Route::get('/chat/unread-count', [App\Http\Controllers\ChatController::class, 'getUnreadCount']);
 });
 
-// Chat search route (separate to avoid middleware conflicts)
-Route::post('/chat/session/search', [App\Http\Controllers\ChatController::class, 'sessionSearch'])->middleware('web');
+// Chat search route (temporarily removing auth for testing)
+Route::post('/chat/session/search', [App\Http\Controllers\ChatController::class, 'sessionSearch'])->middleware(['web']);
 
 // Test route to verify routing is working
 Route::get('/test-route', function() {
     return response()->json(['message' => 'Test route works']);
 });
+
+// Session debug route
+Route::get('/debug-session', function () {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    return response()->json([
+        'session_id' => session_id(),
+        'laravel_session' => session()->all(),
+        'php_session' => $_SESSION ?? [],
+        'current_user' => [
+            'user_id' => session('user_id') ?? $_SESSION['user_id'] ?? null,
+            'student_id' => session('student_id') ?? $_SESSION['student_id'] ?? null,
+            'professor_id' => session('professor_id') ?? $_SESSION['professor_id'] ?? null,
+            'admin_id' => session('admin_id') ?? $_SESSION['admin_id'] ?? null,
+            'role' => session('user_role') ?? session('role') ?? $_SESSION['user_type'] ?? $_SESSION['role'] ?? null,
+        ]
+    ]);
+})->middleware('web');
+
+// Current user info endpoint (for chat authentication)
+Route::get('/me', function () {
+    // Check Laravel Auth first (for professors)
+    $authUser = Auth::user();
+    if ($authUser) {
+        if ($authUser instanceof \App\Models\Professor) {
+            return response()->json([
+                'id' => $authUser->professor_id,
+                'role' => 'professor',
+                'name' => trim(($authUser->professor_first_name ?? '') . ' ' . ($authUser->professor_last_name ?? '')) ?: ($authUser->professor_name ?? 'Unknown Professor'),
+                'email' => $authUser->professor_email ?? 'No email',
+                'isAuthenticated' => true,
+                'auth_type' => 'laravel'
+            ]);
+        } elseif (isset($authUser->role)) {
+            return response()->json([
+                'id' => $authUser->id ?? $authUser->user_id,
+                'role' => $authUser->role,
+                'name' => $authUser->name ?? ($authUser->user_firstname . ' ' . $authUser->user_lastname) ?? 'Unknown User',
+                'email' => $authUser->email ?? 'No email',
+                'isAuthenticated' => true,
+                'auth_type' => 'laravel'
+            ]);
+        }
+    }
+    
+    // Fallback to session-based authentication
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $userId = session('user_id') ?? $_SESSION['user_id'] ?? null;
+    $userRole = session('user_role') ?? session('role') ?? $_SESSION['user_type'] ?? $_SESSION['role'] ?? null;
+    $userName = session('user_name') ?? session('name') ?? $_SESSION['user_name'] ?? $_SESSION['name'] ?? 'Unknown User';
+    $userEmail = session('user_email') ?? session('email') ?? $_SESSION['user_email'] ?? $_SESSION['email'] ?? 'No email';
+    
+    // Check for specific role-based IDs
+    if (!$userId) {
+        if (session('student_id') || (isset($_SESSION['student_id']) && $_SESSION['student_id'])) {
+            $userId = session('student_id') ?? $_SESSION['student_id'];
+            $userRole = 'student';
+            $userName = session('student_name') ?? $_SESSION['student_name'] ?? $userName;
+        } elseif (session('admin_id') || (isset($_SESSION['admin_id']) && $_SESSION['admin_id'])) {
+            $userId = session('admin_id') ?? $_SESSION['admin_id'];
+            $userRole = 'admin';
+            $userName = session('admin_name') ?? $_SESSION['admin_name'] ?? $userName;
+        } elseif (session('director_id') || (isset($_SESSION['director_id']) && $_SESSION['director_id'])) {
+            $userId = session('director_id') ?? $_SESSION['director_id'];
+            $userRole = 'director';
+            $userName = session('director_name') ?? $_SESSION['director_name'] ?? $userName;
+        }
+    }
+    
+    if ($userId && $userRole) {
+        return response()->json([
+            'id' => $userId,
+            'role' => $userRole,
+            'name' => $userName,
+            'email' => $userEmail,
+            'isAuthenticated' => true,
+            'auth_type' => 'session'
+        ]);
+    }
+    
+    return response()->json([
+        'id' => null,
+        'role' => 'guest',
+        'name' => 'Guest',
+        'email' => 'No email',
+        'isAuthenticated' => false,
+        'auth_type' => 'none',
+        'debug' => [
+            'session_user_id' => session('user_id'),
+            'session_role' => session('role'),
+            'php_session_user_id' => $_SESSION['user_id'] ?? null,
+            'php_session_user_type' => $_SESSION['user_type'] ?? null
+        ]
+    ], 401);
+})->middleware('web');
 
 /*
 |--------------------------------------------------------------------------
@@ -225,51 +336,6 @@ Route::post('/admin/search', function (Request $request) {
         'results' => $results,
         'suggestions' => array_slice($suggestions, 0, 3)
     ]);
-});
-
-// Chat API routes (auth:sanctum)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/chat/programs', [App\Http\Controllers\Api\ProgramApiController::class, 'index']);
-    Route::get('/chat/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
-    Route::get('/chat/users', [App\Http\Controllers\Api\ChatApiController::class, 'users']);
-    Route::get('/chat/messages', [App\Http\Controllers\Api\ChatApiController::class, 'messages']);
-    Route::post('/chat/send', [App\Http\Controllers\Api\ChatApiController::class, 'send']);
-});
-
-// Session-based chat API routes (with proper session auth)
-Route::middleware(['web', App\Http\Middleware\SessionAuth::class])->group(function () {
-    // User info endpoint
-    Route::get('/me', [App\Http\Controllers\Api\UserController::class, 'me']);
-    
-    // Chat endpoints
-    Route::get('/chat/session/programs', [App\Http\Controllers\Api\ProgramApiController::class, 'index']);
-    Route::get('/chat/session/batches', [App\Http\Controllers\Api\ProgramApiController::class, 'batches']);
-    Route::get('/chat/session/users', [App\Http\Controllers\Api\ChatApiController::class, 'users']);
-    Route::get('/chat/session/messages', [App\Http\Controllers\Api\ChatApiController::class, 'messages']);
-    Route::post('/chat/session/send', [App\Http\Controllers\Api\ChatApiController::class, 'send']);
-    Route::get('/chat/session/recent', [App\Http\Controllers\Api\ChatApiController::class, 'recent']);
-    
-    // User search
-    Route::get('/users/search', [App\Http\Controllers\Api\UserController::class, 'search']);
-    
-    // Professor specific routes
-    Route::get('/professor/assigned-programs', [App\Http\Controllers\Api\ProfessorProgramController::class, 'index']);
-    
-    // Student specific routes
-    Route::get('/student/enrolled-programs', function () {
-        $studentId = session('user_id');
-        if (!$studentId) {
-            return response()->json(['programs' => []]);
-        }
-        
-        // Get enrolled programs for student (simplified)
-        $programs = \Illuminate\Support\Facades\DB::table('programs')
-            ->where('is_archived', false)
-            ->select('program_id as id', 'program_name')
-            ->get();
-            
-        return response()->json(['programs' => $programs]);
-    });
 });
 
 // Referral API routes

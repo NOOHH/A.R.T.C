@@ -73,27 +73,54 @@
     height: 1rem;
 }
 
-.message {
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    border-radius: 12px;
-    max-width: 80%;
-    word-wrap: break-word;
+.message-card {
+    margin-bottom: 20px;
+    max-width: 85%;
+    position: relative;
+    transition: all 0.2s ease;
 }
 
-.message.user {
+.message-card.user-message {
+    margin-left: auto;
+}
+
+.message-card.other-message {
+    margin-right: auto;
+}
+
+/* Message card hover effect */
+.message-card:hover {
+    transform: translateY(-2px);
+}
+
+.message {
+    padding: 15px;
+    border-radius: 12px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.message.user-message {
     background-color: #007bff;
     color: white;
-    margin-left: auto;
-    text-align: right;
+    border-bottom-right-radius: 4px;
+    text-align: left;
 }
 
 .message.bot,
 .message.system {
     background-color: #f8f9fa;
     color: #333;
-    margin-right: auto;
+    border-bottom-left-radius: 4px;
     text-align: left;
+}
+
+.message.other-message {
+    background-color: #f8f9fa;
+    color: #333;
+    border-bottom-left-radius: 4px;
 }
 
 .message.other-message {
@@ -230,12 +257,22 @@
     font-size: 0.85em;
     opacity: 0.9;
     text-transform: capitalize;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.message-header {
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 10px !important;
 }
 
 .message-text {
     line-height: 1.5;
     font-size: 0.95em;
     word-break: break-word;
+    padding: 4px 0;
 }
 
 .message-time {
@@ -243,6 +280,13 @@
     opacity: 0.75;
     font-weight: 500;
     margin-top: 2px;
+}
+
+/* Role badges styling */
+.message-sender .badge {
+    font-size: 0.7em;
+    padding: 0.25em 0.5em;
+    font-weight: 500;
 }
 
 .user-message .message-sender,
@@ -481,25 +525,64 @@
     if (!users.length) {
       return c.innerHTML = '<div class="text-center text-muted py-3">No users found.</div>';
     }
-    c.innerHTML = users.map(u => `
-      <div class="user-item p-2 border-bottom" onclick="selectUserForChat(${u.id},'${u.name}','${u.role}')">
-        <div class="d-flex align-items-center">
-          <div class="avatar-circle me-2"><i class="bi bi-person-circle"></i></div>
-          <div class="flex-grow-1">
-            <div class="fw-bold">${u.name}</div>
-            <div class="text-muted small">${u.email}</div>
-            <div class="text-muted small text-capitalize">${u.role}</div>
+    
+    // Check if current user can communicate with these users
+    const filteredUsers = users.filter(u => {
+      const canChat = isCommunicationAllowed(u.role);
+      return canChat.allowed;
+    });
+    
+    if (!filteredUsers.length) {
+      return c.innerHTML = '<div class="text-center text-warning py-3">No authorized recipients found. Your role does not allow you to message any of these users.</div>';
+    }
+    
+    c.innerHTML = filteredUsers.map(u => {
+      // Get role-based styling
+      const roleColor = {
+        'student': 'primary',
+        'professor': 'success', 
+        'admin': 'warning',
+        'director': 'info'
+      }[u.role.toLowerCase()] || 'secondary';
+      
+      // Format name initials
+      const initials = u.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+      
+      // Return user card with proper ARIA roles
+      return `
+        <div class="user-item card p-2 border mb-2" onclick="selectUserForChat(${u.id},'${u.name}','${u.role}')" role="button" aria-label="Chat with ${u.name} (${u.role})">
+          <div class="d-flex align-items-center">
+            <div class="avatar-circle bg-${roleColor} me-3">${initials}</div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center">
+                <span class="fw-bold">${u.name}</span>
+                <span class="badge bg-${roleColor} ${roleColor === 'warning' ? 'text-dark' : ''} ms-2">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span>
+              </div>
+              <div class="text-muted small">${u.email || ''}</div>
+            </div>
+            <span class="badge ${u.is_online?'bg-success':'bg-secondary'} ms-2">
+              ${u.is_online?'Online':'Offline'}
+            </span>
           </div>
-          <span class="badge ${u.is_online?'bg-success':'bg-secondary'} ms-2">
-            ${u.is_online?'Online':'Offline'}
-          </span>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   // SELECT USER & LOAD MESSAGES
   window.selectUserForChat = function(userId, userName, userRole) {
+    // Stop any existing real-time chat polling
+    stopRealTimeChat();
+    
+    // Check if communication is allowed between these roles
+    const canCommunicate = isCommunicationAllowed(userRole);
+    
+    if (!canCommunicate.allowed) {
+      // Show an error message if communication is not allowed
+      alert(canCommunicate.message);
+      return;
+    }
+    
     currentChatUser = { id:userId, name:userName, role:userRole };
     document.getElementById('chatInterface').classList.remove('d-none');
     document.getElementById('availableUsers').classList.add('d-none');
@@ -509,17 +592,74 @@
     document.getElementById('chatWithName').textContent = userName;
     document.getElementById('chatStatus').textContent = 'Online';
     
-    // Update avatar in chat header
+    // Get role-based color class
+    const roleColorClass = {
+      'student': 'bg-primary',
+      'professor': 'bg-success',
+      'admin': 'bg-warning',
+      'director': 'bg-info'
+    }[userRole.toLowerCase()] || 'bg-secondary';
+    
+    // Update avatar in chat header with role-based styling
     const chatAvatar = document.querySelector('.chat-avatar');
     const initials = userName.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
     chatAvatar.innerHTML = `
-      <div class="avatar-circle">
+      <div class="avatar-circle ${roleColorClass}">
         ${initials}
       </div>
     `;
     
+    // Update recipient role badge
+    const recipientRoleBadge = document.getElementById('recipientRoleBadge');
+    if (recipientRoleBadge) {
+      recipientRoleBadge.textContent = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+      recipientRoleBadge.className = `badge ${roleColorClass === 'bg-warning' ? 'text-dark' : ''} ${roleColorClass}`;
+    }
+    
+    // Update chat status info
+    const chatStatusInfo = document.getElementById('chatStatusInfo');
+    if (chatStatusInfo) {
+      chatStatusInfo.innerHTML = `Chatting with <strong>${userRole}</strong> • <span class="text-success">Online</span>`;
+    }
+    
+    // Load existing messages and start real-time chat
     loadMessages(userId);
+    startRealTimeChat();
   };
+  
+  // Helper function to check if communication is allowed between roles
+  function isCommunicationAllowed(recipientRole) {
+    // Default to not allowed with a generic message
+    const result = { 
+      allowed: false, 
+      message: 'Communication with this user is not allowed based on your roles.' 
+    };
+    
+    // If role is not defined, deny
+    if (!userRole || !recipientRole) {
+      return result;
+    }
+    
+    // Define allowed communication flows
+    const allowedFlows = {
+      'student': ['professor', 'admin', 'director'],
+      'professor': ['student', 'admin', 'director'],
+      'admin': ['student', 'professor', 'director'],
+      'director': ['student', 'professor', 'admin']
+    };
+    
+    // Check if the flow is allowed
+    if (allowedFlows[userRole.toLowerCase()]?.includes(recipientRole.toLowerCase())) {
+      return { 
+        allowed: true, 
+        message: 'Communication allowed' 
+      };
+    }
+    
+    // Provide a specific error message based on the roles
+    result.message = `As a ${userRole}, you cannot send messages to ${recipientRole}s.`;
+    return result;
+  }
 
   function loadMessages(userId) {
     fetch(`/api/chat/session/messages?with=${userId}`, {
@@ -530,24 +670,75 @@
     .then(json => displayChatMessages(json.data || []))
     .catch(console.error);
   }
+  
   function displayChatMessages(msgs) {
     const c = document.getElementById('chatMessages');
     if (!msgs.length) {
       return c.innerHTML = '<div class="text-center text-muted py-3">No messages yet. Start the conversation!</div>';
     }
+    
+    // Format date helper function
+    const formatMessageDate = (dateString) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      
+      const time = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      
+      if (isToday) {
+        return `Today at ${time}`;
+      } else {
+        return `${date.toLocaleDateString([], {month: 'short', day: 'numeric'})} at ${time}`;
+      }
+    };
+    
     c.innerHTML = msgs.map(m => {
       const isMe = m.sender_id === myId;
       const cls = isMe ? 'user-message' : 'other-message';
-      const name = isMe ? 'You' : (m.sender?.name || 'Unknown');
-      const tm = new Date(m.sent_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      
+      // Get sender name and properly format with role
+      let name = isMe ? 'You' : (m.sender?.name || 'Unknown');
+      let role = m.sender_role || m.sender?.role || (isMe ? userRole : currentChatUser?.role || 'Unknown');
+      
+      // Capitalize role for display
+      const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+      
+      // Format timestamp
+      const formattedTime = formatMessageDate(m.sent_at);
+      
+      // Get initials for avatar
+      const nameForInitials = isMe ? myName : name;
+      const initials = nameForInitials.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+      
+      // Select background color class based on role
+      const roleColorClass = {
+        'student': 'bg-primary',
+        'professor': 'bg-success',
+        'admin': 'bg-warning',
+        'director': 'bg-info'
+      }[role.toLowerCase()] || 'bg-secondary';
+      
       return `
-        <div class="message ${cls}">
-          <div class="message-content">
-            <div class="message-sender">${name}</div>
-            <div class="message-text">${m.message}</div>
-            <div class="message-time">${tm}</div>
+        <article role="article" class="message-card ${cls}" aria-label="${isMe ? 'Your message' : `Message from ${name}`}">
+          <div class="message ${cls}">
+            <div class="message-header d-flex align-items-center mb-2">
+              <div class="avatar-circle ${roleColorClass} me-2" aria-hidden="true">
+                ${initials}
+              </div>
+              <div>
+                <div class="message-sender fw-bold">
+                  ${name} <span class="badge bg-secondary ms-1">${capitalizedRole}</span>
+                </div>
+                <div class="message-time text-muted">
+                  ${formattedTime}
+                </div>
+              </div>
+            </div>
+            <div class="message-content">
+              <div class="message-text">${m.message}</div>
+            </div>
           </div>
-        </div>
+        </article>
       `;
     }).join('');
     c.scrollTop = c.scrollHeight;
@@ -560,12 +751,29 @@
       const txt = document.getElementById('chatInput').value.trim();
       if (!txt || !currentChatUser) return;
       
+      // Check if communication is allowed between these roles
+      const canCommunicate = isCommunicationAllowed(currentChatUser.role);
+      
+      if (!canCommunicate.allowed) {
+        // Show error message
+        const errorHtml = `
+          <div class="alert alert-danger mx-auto my-3" style="max-width: 90%;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            ${canCommunicate.message}
+          </div>
+        `;
+        document.getElementById('chatMessages').insertAdjacentHTML('beforeend', errorHtml);
+        document.getElementById('chatInput').value = '';
+        return;
+      }
+      
       // Add message to UI immediately for better UX
       const tempMessage = {
         sender_id: myId,
         message: txt,
         sent_at: new Date(),
-        sender: { name: 'You' }
+        sender: { name: 'You' },
+        sender_role: userRole
       };
       addMessageToChat(tempMessage);
       document.getElementById('chatInput').value = '';
@@ -580,17 +788,41 @@
         credentials:'include',
         body: JSON.stringify({
           receiver_id: currentChatUser.id,
-          message: txt
+          message: txt,
+          sender_role: userRole,
+          receiver_role: currentChatUser.role
         })
       })
-      .then(r=>r.json())
-      .then(d=>{
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`Server responded with status: ${r.status}`);
+        }
+        return r.json();
+      })
+      .then(d => {
         if (!d.success) {
           console.error('Failed to send message:', d);
-          // Optionally show error message to user
+          // Show error message to user
+          const errorHtml = `
+            <div class="alert alert-danger mx-auto my-3" style="max-width: 90%;">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              ${d.error || 'Failed to send message. Please try again.'}
+            </div>
+          `;
+          document.getElementById('chatMessages').insertAdjacentHTML('beforeend', errorHtml);
         }
       })
-      .catch(console.error);
+      .catch(err => {
+        console.error('Error sending message:', err);
+        // Show error message to user
+        const errorHtml = `
+          <div class="alert alert-danger mx-auto my-3" style="max-width: 90%;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Message could not be sent. Please try again later.
+          </div>
+        `;
+        document.getElementById('chatMessages').insertAdjacentHTML('beforeend', errorHtml);
+      });
     }
   });
 
@@ -599,17 +831,51 @@
     const c = document.getElementById('chatMessages');
     const isMe = message.sender_id === myId;
     const cls = isMe ? 'user-message' : 'other-message';
-    const name = isMe ? 'You' : (message.sender?.name || 'Unknown');
-    const tm = new Date(message.sent_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    
+    // Get sender name and properly format with role
+    let name = isMe ? 'You' : (message.sender?.name || 'Unknown');
+    let role = message.sender_role || message.sender?.role || (isMe ? userRole : currentChatUser?.role || 'Unknown');
+    
+    // Capitalize role for display
+    const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+    
+    // Format timestamp
+    const date = new Date(message.sent_at);
+    const formattedTime = `Today at ${date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+    
+    // Get initials for avatar
+    const nameForInitials = isMe ? myName : name;
+    const initials = nameForInitials.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+    
+    // Select background color class based on role
+    const roleColorClass = {
+      'student': 'bg-primary',
+      'professor': 'bg-success',
+      'admin': 'bg-warning',
+      'director': 'bg-info'
+    }[role.toLowerCase()] || 'bg-secondary';
     
     const messageHtml = `
-      <div class="message ${cls}">
-        <div class="message-content">
-          <div class="message-sender">${name}</div>
-          <div class="message-text">${message.message}</div>
-          <div class="message-time">${tm}</div>
+      <article role="article" class="message-card ${cls}" aria-label="${isMe ? 'Your message' : `Message from ${name}`}">
+        <div class="message ${cls}">
+          <div class="message-header d-flex align-items-center mb-2">
+            <div class="avatar-circle ${roleColorClass} me-2" aria-hidden="true">
+              ${initials}
+            </div>
+            <div>
+              <div class="message-sender fw-bold">
+                ${name} <span class="badge bg-secondary ms-1">${capitalizedRole}</span>
+              </div>
+              <div class="message-time text-muted">
+                ${formattedTime}
+              </div>
+            </div>
+          </div>
+          <div class="message-content">
+            <div class="message-text">${message.message}</div>
+          </div>
         </div>
-      </div>
+      </article>
     `;
     
     c.insertAdjacentHTML('beforeend', messageHtml);
@@ -939,14 +1205,20 @@
                     </div>
                     <div>
                         <div class="fw-medium" id="chatWithName">Support Team</div>
-                        <small class="text-muted" id="chatStatus">Online</small>
+                        <div class="d-flex align-items-center">
+                            <span id="recipientRoleBadge" class="badge bg-secondary me-2">Unknown</span>
+                            <small class="text-muted" id="chatStatus">Online</small>
+                        </div>
                     </div>
                 </div>
                 <div class="chat-actions">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="backToSelection()">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="backToSelection()" aria-label="Back to selection">
                         <i class="bi bi-arrow-left"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="clearChatHistory()">
+                    <button class="btn btn-sm btn-outline-info" onclick="showChatRules()" aria-label="Show chat rules">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearChatHistory()" aria-label="Clear chat history">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
@@ -990,8 +1262,13 @@
                         class="form-control" 
                         placeholder="Type your message..."
                         required
+                        aria-label="Type your message"
                     >
-                    <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center" style="min-width: 45px;">
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary d-flex align-items-center justify-content-center" 
+                        style="min-width: 45px;"
+                        aria-label="Send message">
                         <i class="bi bi-send"></i>
                     </button>
                 </form>
@@ -999,8 +1276,8 @@
                     <small class="text-muted">
                         Press Enter to send
                     </small>
-                    <small class="text-muted">
-                        Real-time chat enabled
+                    <small class="text-muted" id="chatStatusInfo">
+                        Role-based chat system • <span class="text-success">Online</span>
                     </small>
                 </div>
             </div>
@@ -1023,6 +1300,13 @@ if (typeof window.chatPollingInterval === 'undefined') {
 }
 if (typeof window.lastMessageId === 'undefined') {
     window.lastMessageId = 0;
+}
+
+// Setup notification sound (disabled for now to avoid 404 errors)
+if (typeof window.chatNotificationSound === 'undefined') {
+    // Disable audio notifications for now
+    console.log('Audio notifications disabled - no sound file available');
+    window.chatNotificationSound = null;
 }
 
 function startRealTimeChat() {
@@ -1063,11 +1347,49 @@ function checkForNewMessages(userId) {
             // Add new messages to chat
             const chatMessages = document.getElementById('chatMessages');
             data.data.forEach(msg => {
-                // Append new message logic here
+                // Store the last message ID for subsequent polling
+                if (msg.id > window.lastMessageId) {
+                    window.lastMessageId = msg.id;
+                }
+                
+                // Don't show messages from blocked roles
+                const msgRole = msg.sender_role || msg.sender?.role || 'unknown';
+                const canReceive = isCommunicationAllowed(msgRole);
+                
+                if (canReceive.allowed) {
+                    // Add the message to the chat
+                    addMessageToChat(msg);
+                } else {
+                    console.warn('Blocked message from unauthorized role:', msgRole);
+                    
+                    // Optionally show a blocked message notification
+                    const chatMessages = document.getElementById('chatMessages');
+                    if (chatMessages && chatMessages.querySelector('.blocked-message-alert') === null) {
+                        chatMessages.insertAdjacentHTML('beforeend', `
+                            <div class="alert alert-warning text-center my-3 blocked-message-alert">
+                                <i class="bi bi-shield-exclamation me-2"></i>
+                                A message was blocked due to communication restrictions.
+                            </div>
+                        `);
+                        
+                        // Remove the alert after 5 seconds
+                        setTimeout(() => {
+                            const alertEl = chatMessages.querySelector('.blocked-message-alert');
+                            if (alertEl) {
+                                alertEl.remove();
+                            }
+                        }, 5000);
+                    }
+                }
             });
             
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Play notification sound if available
+            if (window.chatNotificationSound) {
+                window.chatNotificationSound.play().catch(err => console.log('Could not play notification sound'));
+            }
         }
     })
     .catch(error => {
@@ -1096,6 +1418,33 @@ function createGroupChat() {
     alert('Group chat feature coming soon!');
 }
 
+function showChatRules() {
+    const roleRules = {
+        student: ['professor', 'admin', 'director'],
+        professor: ['student', 'admin', 'director'],
+        admin: ['student', 'professor', 'director'],
+        director: ['student', 'professor', 'admin']
+    };
+    
+    let currentRules = roleRules[userRole.toLowerCase()] || [];
+    
+    if (currentRules.length === 0) {
+        alert('Chat rules not defined for your role.');
+        return;
+    }
+    
+    const rulesText = `
+    CHAT COMMUNICATION RULES
+    
+    As a ${userRole.toUpperCase()}, you can communicate with:
+    ${currentRules.map(r => `- ${r.charAt(0).toUpperCase() + r.slice(1)}s`).join('\n')}
+    
+    These rules are enforced by the system for proper educational hierarchy.
+    `;
+    
+    alert(rulesText);
+}
+
 function selectFAQ(type) {
     // FAQ responses mapping (should match admin FAQ management)
     const faqResponses = {
@@ -1107,17 +1456,36 @@ function selectFAQ(type) {
     };
     const chatMessages = document.getElementById('chatMessages');
     const response = faqResponses[type];
+    
     if (response) {
-        const messageElement = document.createElement('div');
-        messageElement.className = 'message bot me-auto';
-        messageElement.innerHTML = `
-            <div class="message-content">
-                <div class="message-sender">FAQ Bot</div>
-                <div class="message-text">${response.replace(/\n/g, '<br>')}</div>
-                <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-            </div>
+        // Format current time
+        const now = new Date();
+        const formattedTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        const messageHtml = `
+            <article role="article" class="message-card other-message" aria-label="FAQ Bot response">
+                <div class="message bot">
+                    <div class="message-header d-flex align-items-center mb-2">
+                        <div class="avatar-circle bg-warning me-2" aria-hidden="true">
+                            <i class="bi bi-question-circle"></i>
+                        </div>
+                        <div>
+                            <div class="message-sender fw-bold">
+                                FAQ Bot <span class="badge bg-warning text-dark ms-1">System</span>
+                            </div>
+                            <div class="message-time text-muted">
+                                Today at ${formattedTime}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">${response.replace(/\n/g, '<br>')}</div>
+                    </div>
+                </div>
+            </article>
         `;
-        chatMessages.appendChild(messageElement);
+        
+        chatMessages.insertAdjacentHTML('beforeend', messageHtml);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 }
