@@ -1,0 +1,17 @@
+Machine Design Principles and Engineering
+
+This document covers fundamental concepts in mechanical engineering design with special characters: résistance, torsión, and material symbols ©®™.
+
+Key Topics:
+1. Stress Analysis - Understanding how materials respond to forces
+2. Fatigue Design - Preventing failure under repeated loading
+3. Material Selection - Choosing appropriate materials for applications
+4. Safety Factors - Engineering margins for safe operation
+
+The design process involves multiple considerations including:
+- Load calculations and stress distribution
+- Material properties and behavioral characteristics  
+- Manufacturing constraints and cost considerations
+- Environmental factors and operating conditions
+
+This content should generate multiple choice questions about mechanical engineering design principles and methodologies used in practice.
