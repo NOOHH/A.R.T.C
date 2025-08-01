@@ -276,10 +276,6 @@ body.sidebar-collapsed .main-content-area {
             </a>
         @endif
         
-        <button onclick="goBack()" class="btn btn-info btn-lg">
-            <i class="bi bi-arrow-left-circle"></i> Back
-        </button>
-        
         <!-- Retake Quiz button removed as requested due to causing bugs -->
     </div>
     
@@ -442,15 +438,5 @@ body.sidebar-collapsed .main-content-area {
 @push('scripts')
 <script>
     // The retakeQuiz function has been removed as the button was causing bugs
-    
-    // Function to handle back button correctly
-    function goBack() {
-        // Navigate directly to content page if available, otherwise to dashboard
-        @if(isset($contentId) && $contentId)
-            window.location.href = "{{ route('student.content.view', $contentId ?? 0) }}";
-        @else
-            window.location.href = "{{ route('student.dashboard') }}";
-        @endif
-    }
 </script>
 @endpush

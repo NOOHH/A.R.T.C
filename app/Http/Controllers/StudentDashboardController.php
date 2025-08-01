@@ -485,11 +485,72 @@ class StudentDashboardController extends Controller
                     return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
                 });
 
+            // Add quiz deadlines from content_items
+            $quizDeadlines = \App\Models\ContentItem::where('content_type', 'quiz')
+                ->whereNotNull('due_date')
+                ->whereIn('course_id', $enrolledCourseIds)
+                ->get()
+                ->map(function($item) use ($student) {
+                    // Check if student has completed this quiz
+                    $contentData = is_string($item->content_data) ? json_decode($item->content_data, true) : $item->content_data;
+                    $quizId = $contentData['quiz_id'] ?? null;
+                    
+                    $completion = null;
+                    if ($quizId) {
+                        // Check for completed quiz attempts
+                        $completion = \App\Models\QuizAttempt::where('student_id', $student->student_id)
+                            ->where('quiz_id', $quizId)
+                            ->where('status', 'completed')
+                            ->orderBy('completed_at', 'desc')
+                            ->first();
+                    }
+                    
+                    // Determine status based on completion and due date
+                    $now = now();
+                    if ($completion) {
+                        $status = 'completed';
+                        $grade = $completion->score;
+                    } elseif ($item->due_date < $now) {
+                        $status = 'overdue';
+                        $grade = null;
+                    } else {
+                        $status = 'pending';
+                        $grade = null;
+                    }
+                    
+                    // Get course and program info for navigation and display
+                    $course = \App\Models\Course::find($item->course_id);
+                    $module = $course ? \App\Models\Module::find($course->module_id) : null;
+                    $program = $module ? \App\Models\Program::find($module->program_id) : null;
+                    
+                    return (object) [
+                        'title' => $item->content_title,
+                        'description' => $item->content_description ?? 'Quiz deadline',
+                        'due_date' => $item->due_date,
+                        'type' => 'quiz',
+                        'reference_id' => $item->id,
+                        'status' => $status,
+                        'feedback' => null,
+                        'grade' => $grade,
+                        'course_id' => $item->course_id,
+                        'module_id' => $module ? $module->modules_id : null,
+                        'course_name' => $course ? $course->subject_name : null,
+                        'module_name' => $module ? $module->module_name : null,
+                        'program_name' => $program ? $program->program_name : null,
+                        'program_id' => $program ? $program->program_id : null,
+                        'completion' => $completion
+                    ];
+                })
+                ->filter(function($deadline) {
+                    // Show upcoming deadlines and overdue quizzes
+                    return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
+                });
+
             // Auto-create missing deadline entries for assignments that don't have them
             $this->createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds);
 
             // Merge and sort deadlines by due date
-            $allDeadlines = $deadlines->concat($assignmentDeadlines)
+            $allDeadlines = $deadlines->concat($assignmentDeadlines)->concat($quizDeadlines)
                 ->sortBy('due_date')
                 ->take(5)
                 ->values();
@@ -2996,15 +3057,25 @@ class StudentDashboardController extends Controller
                     $isCorrect = false;
                     
                     if ($question->question_type === 'multiple_choice') {
-                        // Handle letter to index conversion if needed
+                        // Handle both letter and index formats
                         if (is_string($studentAnswer) && preg_match('/^[A-Z]$/', $studentAnswer)) {
                             // Convert letter (A, B, C) to index (0, 1, 2)
                             $convertedAnswer = (string)(ord($studentAnswer) - 65);
                             $isCorrect = $convertedAnswer === (string)$correctAnswer;
                         } else {
-                            // Direct comparison (both should be strings)
+                            // Direct comparison - handle both numeric and string indices
                             $isCorrect = (string)$studentAnswer === (string)$correctAnswer;
                         }
+                        
+                        // Enhanced logging for debugging
+                        Log::debug('Answer comparison', [
+                            'question_id' => $questionId,
+                            'student_answer' => $studentAnswer,
+                            'correct_answer' => $correctAnswer,
+                            'student_answer_type' => gettype($studentAnswer),
+                            'correct_answer_type' => gettype($correctAnswer),
+                            'is_correct' => $isCorrect
+                        ]);
                     } else {
                         // For other question types (true/false, etc.)
                         $isCorrect = $studentAnswer === $correctAnswer;

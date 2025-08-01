@@ -186,6 +186,31 @@ class StudentCalendarController extends Controller
                     ]);
                 }
                 
+                // Get quizzes from content_items table
+                $quizzes = ContentItem::with(['course.module.program'])
+                    ->whereIn('course_id', $enrolledCourseIds)
+                    ->where('content_type', 'quiz')
+                    ->whereNotNull('due_date')
+                    ->whereBetween('due_date', [$startDate, $endDate])
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($quizzes as $quiz) {
+                    $events->push([
+                        'id' => 'quiz_' . $quiz->id,
+                        'title' => $quiz->content_title,
+                        'start' => $quiz->due_date->toISOString(),
+                        'type' => 'quiz',
+                        'description' => $quiz->content_description ?? 'Quiz deadline',
+                        'program' => $quiz->course->module->program->program_name ?? '',
+                        'professor' => 'TBA', // Content items don't have direct professor association
+                        'time' => $quiz->due_date->format('g:i A'),
+                        'course_id' => $quiz->course_id ?? '',
+                        'program_id' => $quiz->course->module->program->program_id ?? '',
+                        'module_id' => $quiz->course->module->modules_id ?? ''
+                    ]);
+                }
+                
                 // Get lessons from content_items table
                 $lessons = ContentItem::with(['course.module.program'])
                     ->whereIn('course_id', $enrolledCourseIds)

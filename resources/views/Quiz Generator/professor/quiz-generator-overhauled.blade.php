@@ -156,6 +156,32 @@
                                                 <label for="max_attempts" class="form-label">Max Attempts</label>
                                                 <input type="number" class="form-control" id="max_attempts" name="max_attempts" value="1" min="1">
                                             </div>
+
+                                            <div class="col-md-4">
+                                                <label class="form-label">Retake Options</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="infinite_retakes" name="infinite_retakes">
+                                                    <label class="form-check-label" for="infinite_retakes">
+                                                        Allow Infinite Retakes
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="has_deadline" name="has_deadline">
+                                                    <label class="form-check-label" for="has_deadline">
+                                                        Set Quiz Deadline
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="due_date" class="form-label">Deadline Date & Time</label>
+                                                <input type="datetime-local" class="form-control" id="due_date" name="due_date" disabled>
+                                                <small class="form-text text-muted">Leave unchecked for no deadline</small>
+                                            </div>
                                         </div>
                                     </form>
                                 </div>
@@ -687,6 +713,34 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset last uploaded file
             lastUploadedFile = null;
             console.log('lastUploadedFile reset to null');
+        });
+    }
+
+    // Handle deadline checkbox functionality
+    const hasDeadlineCheckbox = document.getElementById('has_deadline');
+    const dueDateInput = document.getElementById('due_date');
+    const infiniteRetakesCheckbox = document.getElementById('infinite_retakes');
+    const maxAttemptsInput = document.getElementById('max_attempts');
+
+    if (hasDeadlineCheckbox && dueDateInput) {
+        hasDeadlineCheckbox.addEventListener('change', function() {
+            dueDateInput.disabled = !this.checked;
+            if (!this.checked) {
+                dueDateInput.value = '';
+            }
+        });
+    }
+
+    // Handle infinite retakes functionality
+    if (infiniteRetakesCheckbox && maxAttemptsInput) {
+        infiniteRetakesCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                maxAttemptsInput.disabled = true;
+                maxAttemptsInput.value = 999;
+            } else {
+                maxAttemptsInput.disabled = false;
+                maxAttemptsInput.value = 1;
+            }
         });
     }
 });
@@ -1484,6 +1538,9 @@ async function saveQuiz() {
         professor_id: professorId,
         time_limit: parseInt(document.getElementById('time_limit').value) || 60,
         max_attempts: parseInt(document.getElementById('max_attempts').value) || 1,
+        infinite_retakes: document.getElementById('infinite_retakes').checked,
+        has_deadline: document.getElementById('has_deadline').checked,
+        due_date: document.getElementById('has_deadline').checked ? document.getElementById('due_date').value : null,
         questions: questions,
         is_draft: true,
                         _token: window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content')

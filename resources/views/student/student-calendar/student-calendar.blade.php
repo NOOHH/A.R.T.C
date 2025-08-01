@@ -59,6 +59,7 @@
 
 .event-meeting { background-color: #007bff; }
 .event-assignment { background-color: #fd7e14; }
+.event-quiz { background-color: #dc3545; }
 .event-announcement { background-color: #20c997; }
 
 .event-counter {
@@ -459,6 +460,10 @@ body.modal-open {
                         <span>Assignment Due</span>
                     </div>
                     <div class="legend-item">
+                        <div class="legend-color event-quiz"></div>
+                        <span>Quiz Due</span>
+                    </div>
+                    <div class="legend-item">
                         <div class="legend-color event-announcement"></div>
                         <span>Announcements</span>
                     </div>
@@ -480,6 +485,10 @@ body.modal-open {
                     <div class="d-flex justify-content-between mb-2">
                         <span>Assignments:</span>
                         <span class="badge bg-warning" id="assignmentCount">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Quizzes:</span>
+                        <span class="badge bg-danger" id="quizCount">0</span>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span>Announcements:</span>
@@ -712,6 +721,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateStats(data.meta || {
                         meetings: data.events.filter(e => e.type === 'meeting').length,
                         assignments: data.events.filter(e => e.type === 'assignment').length,
+                        quizzes: data.events.filter(e => e.type === 'quiz').length,
                         announcements: data.events.filter(e => e.type === 'announcement').length
                     });
                     
@@ -720,12 +730,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('🔒 Authentication required - please log in');
                     currentEvents = [];
                     populateCalendarEvents();
-                    updateStats({ meetings: 0, assignments: 0, announcements: 0 });
+                    updateStats({ meetings: 0, assignments: 0, quizzes: 0, announcements: 0 });
                 } else {
                     console.log('ℹ️ No events found for this period');
                     currentEvents = [];
                     populateCalendarEvents();
-                    updateStats({ meetings: 0, assignments: 0, announcements: 0 });
+                    updateStats({ meetings: 0, assignments: 0, quizzes: 0, announcements: 0 });
                 }
             })
             .catch(error => {
@@ -733,7 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('❌ Error details:', error.message);
                 currentEvents = [];
                 populateCalendarEvents();
-                updateStats({ meetings: 0, assignments: 0, announcements: 0 });
+                updateStats({ meetings: 0, assignments: 0, quizzes: 0, announcements: 0 });
             });
     }
     
@@ -906,6 +916,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (meta) {
             document.getElementById('meetingCount').textContent = meta.meetings || 0;
             document.getElementById('assignmentCount').textContent = meta.assignments || 0;
+            document.getElementById('quizCount').textContent = meta.quizzes || 0;
             document.getElementById('announcementCount').textContent = meta.announcements || 0;
         }
     }
@@ -979,6 +990,27 @@ document.addEventListener('DOMContentLoaded', function() {
             modalActions.innerHTML = `
                 <button type="button" class="custom-modal-btn custom-modal-btn-primary" onclick="redirectToAssignmentFromCalendar('${assignmentId}', '${programName}', '${courseId}')">
                     <i class="bi bi-file-earmark-text"></i>View Assignment
+                </button>
+            `;
+        } else if (event.type === 'quiz') {
+            bodyHtml += `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Program:</strong> ${event.program || 'N/A'}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Professor:</strong> ${event.professor || 'N/A'}
+                    </div>
+                </div>
+            `;
+            
+            // Extract quiz ID for redirection
+            const quizId = event.id.replace('quiz_', '');
+            
+            // Add visit button for quizzes - redirect to content view
+            modalActions.innerHTML = `
+                <button type="button" class="custom-modal-btn custom-modal-btn-danger" onclick="redirectToQuizFromCalendar('${quizId}')">
+                    <i class="bi bi-clipboard-check"></i>Take Quiz
                 </button>
             `;
         } else if (event.type === 'announcement') {
@@ -1163,6 +1195,28 @@ document.addEventListener('DOMContentLoaded', function() {
             // Fallback to enrolled courses page
             console.log(`⚠️ No specific course ID, redirecting to enrolled courses`);
             window.location.href = '/student/enrolled-courses';
+        }
+    };
+
+    // Function to redirect to quiz from calendar
+    window.redirectToQuizFromCalendar = function(quizId) {
+        console.log(`🔗 Redirecting to quiz ${quizId}`);
+        
+        // Close the modal first
+        const modal = document.getElementById('eventModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+        
+        // Navigate directly to the quiz content page
+        if (quizId && quizId !== '' && quizId !== 'null') {
+            console.log(`🎯 Navigating directly to quiz content: ${quizId}`);
+            window.location.href = `/student/content/${quizId}/view`;
+        } else {
+            console.log(`⚠️ No quiz ID provided, redirecting to dashboard`);
+            window.location.href = '/student/dashboard';
         }
     };
 

@@ -3306,8 +3306,8 @@ function redirectToAssignment(referenceId, moduleId, type, programId) {
         }
     } else if (type === 'quiz') {
         if (referenceId) {
-            // Redirect to quiz start page using the module ID (referenceId for quizzes)
-            window.location.href = `/student/quiz/${referenceId}/start`;
+            // Redirect to content view page for quizzes (referenceId is content_id)
+            window.location.href = `/student/content/${referenceId}/view`;
         } else {
             console.warn('No reference ID provided for quiz');
             window.location.href = '/student/dashboard';
