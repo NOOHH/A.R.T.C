@@ -131,123 +131,417 @@
                         </div>
                     </div>
 
-                    <!-- Batches Table -->
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Batch Name</th>
-                                    <th>Program</th>
-                                    <th>Assigned Professor</th>
-                                    <th>Capacity</th>
-                                    <th>Status</th>
-                                    <th>Registration Deadline</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($batches as $batch)
-                                <tr>
-                                    <td>{{ $batch->batch_name }}</td>
-                                    <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
-                                    <td>
-                                        @if($batch->assignedProfessor)
-                                            <span class="badge bg-success me-1">
-                                                {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
-                                            </span>
-                                        @else
-                                            <span class="badge bg-secondary">Unassigned</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar" role="progressbar" 
-                                                 style="width: {{ $batch->current_capacity > 0 ? ($batch->current_capacity / $batch->max_capacity) * 100 : 0 }}%"
-                                                 aria-valuenow="{{ $batch->current_capacity }}" 
-                                                 aria-valuemin="0" 
-                                                 aria-valuemax="{{ $batch->max_capacity }}">
-                                                {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge 
-                                            @if($batch->batch_status === 'pending') bg-info
-                                            @elseif($batch->batch_status === 'available') bg-success
-                                            @elseif($batch->batch_status === 'ongoing') bg-warning
-                                            @elseif($batch->batch_status === 'completed') bg-secondary
-                                            @else bg-danger
-                                            @endif">
-                                            @if($batch->batch_status === 'pending')
-                                                Pending Admin Approval
-                                            @elseif($batch->batch_status === 'available')
-                                                Available
-                                            @elseif($batch->batch_status === 'ongoing')
-                                                Ongoing
-                                            @elseif($batch->batch_status === 'completed')
-                                                Completed
-                                            @else
-                                                Closed
-                                            @endif
-                                        </span>
-                                    </td>
-                                    <td>{{ \Carbon\Carbon::parse($batch->registration_deadline)->format('M d, Y') }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
-                                    <td>
-                                        @if($batch->end_date)
-                                            {{ \Carbon\Carbon::parse($batch->end_date)->format('M d, Y') }}
-                                        @else
-                                            <span class="text-muted">Ongoing</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            @if($batch->batch_status === 'pending')
-                                                <button type="button" class="btn btn-sm btn-info" 
-                                                        onclick="approveBatch({{ $batch->batch_id }})"
-                                                        title="Approve Batch">
-                                                    <i class="fas fa-check"></i> Approve
-                                                </button>
-                                            @endif
-                                            <button type="button" class="btn btn-sm btn-info" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#editBatchModal{{ $batch->batch_id }}"
-                                                    title="Edit Batch">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-success" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#manageBatchModal{{ $batch->batch_id }}"
-                                                    title="Manage Students">
-                                                <i class="fas fa-users"></i>
-                                            </button>
-                                            <a href="{{ route('admin.batches.export', $batch->batch_id) }}" 
-                                               class="btn btn-sm btn-warning"
-                                               title="Export Enrollments">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-primary" 
-                                                    onclick="toggleStatus({{ $batch->batch_id }})"
-                                                    title="Toggle Status">
-                                                <i class="fas fa-toggle-on"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-danger" 
-                                                    onclick="deleteBatch({{ $batch->batch_id }})"
-                                                    title="Delete Batch">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="8" class="text-center">No batches found</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <!-- Batch Management Tabs -->
+                    <nav>
+                        <div class="nav nav-tabs" id="batch-tabs" role="tablist">
+                            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="true">
+                                <i class="fas fa-clock"></i> Pending <span class="badge bg-info ms-1">{{ $batches->where('batch_status', 'pending')->count() }}</span>
+                            </button>
+                            <button class="nav-link" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button" role="tab" aria-controls="available" aria-selected="false">
+                                <i class="fas fa-check-circle"></i> Available <span class="badge bg-success ms-1">{{ $batches->where('batch_status', 'available')->count() }}</span>
+                            </button>
+                            <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing" type="button" role="tab" aria-controls="ongoing" aria-selected="false">
+                                <i class="fas fa-play-circle"></i> Ongoing <span class="badge bg-warning ms-1">{{ $batches->where('batch_status', 'ongoing')->count() }}</span>
+                            </button>
+                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab" aria-controls="completed" aria-selected="false">
+                                <i class="fas fa-trophy"></i> Completed <span class="badge bg-secondary ms-1">{{ $batches->where('batch_status', 'completed')->count() }}</span>
+                            </button>
+                            <button class="nav-link" id="closed-tab" data-bs-toggle="tab" data-bs-target="#closed" type="button" role="tab" aria-controls="closed" aria-selected="false">
+                                <i class="fas fa-times-circle"></i> Closed <span class="badge bg-danger ms-1">{{ $batches->where('batch_status', 'closed')->count() }}</span>
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div class="tab-content" id="batch-tabContent">
+                        <!-- Pending Batches Tab -->
+                        <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                            <div class="table-responsive mt-3">
+                                @php $pendingBatches = $batches->where('batch_status', 'pending') @endphp
+                                @if($pendingBatches->count() > 0)
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Batch Name</th>
+                                                <th>Program</th>
+                                                <th>Assigned Professor</th>
+                                                <th>Capacity</th>
+                                                <th>Registration Deadline</th>
+                                                <th>Start Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($pendingBatches as $batch)
+                                            <tr>
+                                                <td>{{ $batch->batch_name }}</td>
+                                                <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @if($batch->assignedProfessor)
+                                                        <span class="badge bg-success me-1">
+                                                            {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Unassigned</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: {{ $batch->current_capacity > 0 ? ($batch->current_capacity / $batch->max_capacity) * 100 : 0 }}%"
+                                                             aria-valuenow="{{ $batch->current_capacity }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ $batch->max_capacity }}">
+                                                            {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->registration_deadline)->format('M d, Y') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-success" 
+                                                                onclick="approveBatch({{ $batch->batch_id }})"
+                                                                title="Approve Batch">
+                                                            <i class="fas fa-check"></i> Approve
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-info" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#editBatchModal{{ $batch->batch_id }}"
+                                                                title="Edit Batch">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                                onclick="deleteBatch({{ $batch->batch_id }})"
+                                                                title="Delete Batch">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No Pending Batches</h5>
+                                        <p class="text-muted">All batches have been reviewed or none are pending approval.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Available Batches Tab -->
+                        <div class="tab-pane fade" id="available" role="tabpanel" aria-labelledby="available-tab">
+                            <div class="table-responsive mt-3">
+                                @php $availableBatches = $batches->where('batch_status', 'available') @endphp
+                                @if($availableBatches->count() > 0)
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Batch Name</th>
+                                                <th>Program</th>
+                                                <th>Assigned Professor</th>
+                                                <th>Capacity</th>
+                                                <th>Registration Deadline</th>
+                                                <th>Start Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($availableBatches as $batch)
+                                            <tr>
+                                                <td>{{ $batch->batch_name }}</td>
+                                                <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @if($batch->assignedProfessor)
+                                                        <span class="badge bg-success me-1">
+                                                            {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Unassigned</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" 
+                                                             style="width: {{ $batch->current_capacity > 0 ? ($batch->current_capacity / $batch->max_capacity) * 100 : 0 }}%"
+                                                             aria-valuenow="{{ $batch->current_capacity }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ $batch->max_capacity }}">
+                                                            {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->registration_deadline)->format('M d, Y') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-info" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#editBatchModal{{ $batch->batch_id }}"
+                                                                title="Edit Batch">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-success" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#manageBatchModal{{ $batch->batch_id }}"
+                                                                title="Manage Students">
+                                                            <i class="fas fa-users"></i>
+                                                        </button>
+                                                        <a href="{{ route('admin.batches.export', $batch->batch_id) }}" 
+                                                           class="btn btn-sm btn-warning"
+                                                           title="Export Enrollments">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No Available Batches</h5>
+                                        <p class="text-muted">No batches are currently available for enrollment.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Ongoing Batches Tab -->
+                        <div class="tab-pane fade" id="ongoing" role="tabpanel" aria-labelledby="ongoing-tab">
+                            <div class="table-responsive mt-3">
+                                @php $ongoingBatches = $batches->where('batch_status', 'ongoing') @endphp
+                                @if($ongoingBatches->count() > 0)
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Batch Name</th>
+                                                <th>Program</th>
+                                                <th>Assigned Professor</th>
+                                                <th>Capacity</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($ongoingBatches as $batch)
+                                            <tr>
+                                                <td>{{ $batch->batch_name }}</td>
+                                                <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @if($batch->assignedProfessor)
+                                                        <span class="badge bg-success me-1">
+                                                            {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Unassigned</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                             style="width: {{ $batch->current_capacity > 0 ? ($batch->current_capacity / $batch->max_capacity) * 100 : 0 }}%"
+                                                             aria-valuenow="{{ $batch->current_capacity }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ $batch->max_capacity }}">
+                                                            {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
+                                                <td>
+                                                    @if($batch->end_date)
+                                                        {{ \Carbon\Carbon::parse($batch->end_date)->format('M d, Y') }}
+                                                    @else
+                                                        <span class="text-muted">Ongoing</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-success" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#manageBatchModal{{ $batch->batch_id }}"
+                                                                title="Manage Students">
+                                                            <i class="fas fa-users"></i>
+                                                        </button>
+                                                        <a href="{{ route('admin.batches.export', $batch->batch_id) }}" 
+                                                           class="btn btn-sm btn-warning"
+                                                           title="Export Enrollments">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-primary" 
+                                                                onclick="completeBatch({{ $batch->batch_id }})"
+                                                                title="Mark as Completed">
+                                                            <i class="fas fa-flag-checkered"></i> Complete
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-play-circle fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No Ongoing Batches</h5>
+                                        <p class="text-muted">No batches are currently in progress.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Completed Batches Tab -->
+                        <div class="tab-pane fade" id="completed" role="tabpanel" aria-labelledby="completed-tab">
+                            <div class="table-responsive mt-3">
+                                @php $completedBatches = $batches->where('batch_status', 'completed') @endphp
+                                @if($completedBatches->count() > 0)
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Batch Name</th>
+                                                <th>Program</th>
+                                                <th>Assigned Professor</th>
+                                                <th>Capacity</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($completedBatches as $batch)
+                                            <tr>
+                                                <td>{{ $batch->batch_name }}</td>
+                                                <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @if($batch->assignedProfessor)
+                                                        <span class="badge bg-success me-1">
+                                                            {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Unassigned</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-secondary" role="progressbar" 
+                                                             style="width: {{ $batch->current_capacity > 0 ? ($batch->current_capacity / $batch->max_capacity) * 100 : 0 }}%"
+                                                             aria-valuenow="{{ $batch->current_capacity }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ $batch->max_capacity }}">
+                                                            {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->end_date)->format('M d, Y') }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-success" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#manageBatchModal{{ $batch->batch_id }}"
+                                                                title="View Students">
+                                                            <i class="fas fa-users"></i>
+                                                        </button>
+                                                        <a href="{{ route('admin.batches.export', $batch->batch_id) }}" 
+                                                           class="btn btn-sm btn-warning"
+                                                           title="Export Enrollments">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No Completed Batches</h5>
+                                        <p class="text-muted">No batches have been completed yet.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Closed Batches Tab -->
+                        <div class="tab-pane fade" id="closed" role="tabpanel" aria-labelledby="closed-tab">
+                            <div class="table-responsive mt-3">
+                                @php $closedBatches = $batches->where('batch_status', 'closed') @endphp
+                                @if($closedBatches->count() > 0)
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Batch Name</th>
+                                                <th>Program</th>
+                                                <th>Assigned Professor</th>
+                                                <th>Capacity</th>
+                                                <th>Start Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($closedBatches as $batch)
+                                            <tr>
+                                                <td>{{ $batch->batch_name }}</td>
+                                                <td>{{ $batch->program->program_name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @if($batch->assignedProfessor)
+                                                        <span class="badge bg-success me-1">
+                                                            {{ $batch->assignedProfessor->professor_first_name }} {{ $batch->assignedProfessor->professor_last_name }}
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Unassigned</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-danger" role="progressbar" 
+                                                             style="width: {{ $batch->current_capacity > 0 ? ($batch->current_capacity / $batch->max_capacity) * 100 : 0 }}%"
+                                                             aria-valuenow="{{ $batch->current_capacity }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="{{ $batch->max_capacity }}">
+                                                            {{ $batch->current_capacity }}/{{ $batch->max_capacity }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($batch->start_date)->format('M d, Y') }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-success" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#manageBatchModal{{ $batch->batch_id }}"
+                                                                title="View Students">
+                                                            <i class="fas fa-users"></i>
+                                                        </button>
+                                                        <a href="{{ route('admin.batches.export', $batch->batch_id) }}" 
+                                                           class="btn btn-sm btn-warning"
+                                                           title="Export Enrollments">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-primary" 
+                                                                onclick="reopenBatch({{ $batch->batch_id }})"
+                                                                title="Reopen Batch">
+                                                            <i class="fas fa-undo"></i> Reopen
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-times-circle fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No Closed Batches</h5>
+                                        <p class="text-muted">No batches have been closed.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -317,8 +611,26 @@
                         <input type="date" class="form-control" id="start_date" name="start_date" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Duration Calculator</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="duration_days" class="form-label">Days</label>
+                                <input type="number" class="form-control" id="duration_days" name="duration_days" min="0" value="0" onchange="calculateEndDate()">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="duration_months" class="form-label">Months</label>
+                                <input type="number" class="form-control" id="duration_months" name="duration_months" min="0" value="0" onchange="calculateEndDate()">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="duration_years" class="form-label">Years</label>
+                                <input type="number" class="form-control" id="duration_years" name="duration_years" min="0" value="0" onchange="calculateEndDate()">
+                            </div>
+                        </div>
+                        <div class="form-text">Set duration to automatically calculate end date from start date</div>
+                    </div>
+                    <div class="mb-3">
                         <label for="end_date" class="form-label">End Date (Optional)</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date">
+                        <input type="date" class="form-control" id="end_date" name="end_date" onchange="calculateDuration()">
                         <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
@@ -399,11 +711,29 @@
                     </div>
                     <div class="mb-3">
                         <label for="edit_start_date{{ $batch->batch_id }}" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="edit_start_date{{ $batch->batch_id }}" name="start_date" value="{{ $batch->start_date->format('Y-m-d') }}" required>
+                        <input type="date" class="form-control" id="edit_start_date{{ $batch->batch_id }}" name="start_date" value="{{ $batch->start_date->format('Y-m-d') }}" required onchange="calculateEditDuration('{{ $batch->batch_id }}')">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Duration Calculator</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="edit_duration_days{{ $batch->batch_id }}" class="form-label">Days</label>
+                                <input type="number" class="form-control" id="edit_duration_days{{ $batch->batch_id }}" name="duration_days" min="0" value="0" onchange="calculateEditEndDate('{{ $batch->batch_id }}')">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="edit_duration_months{{ $batch->batch_id }}" class="form-label">Months</label>
+                                <input type="number" class="form-control" id="edit_duration_months{{ $batch->batch_id }}" name="duration_months" min="0" value="0" onchange="calculateEditEndDate('{{ $batch->batch_id }}')">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="edit_duration_years{{ $batch->batch_id }}" class="form-label">Years</label>
+                                <input type="number" class="form-control" id="edit_duration_years{{ $batch->batch_id }}" name="duration_years" min="0" value="0" onchange="calculateEditEndDate('{{ $batch->batch_id }}')">
+                            </div>
+                        </div>
+                        <div class="form-text">Set duration to automatically calculate end date from start date</div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_end_date{{ $batch->batch_id }}" class="form-label">End Date (Optional)</label>
-                        <input type="date" class="form-control" id="edit_end_date{{ $batch->batch_id }}" name="end_date" value="{{ $batch->end_date ? $batch->end_date->format('Y-m-d') : '' }}">
+                        <input type="date" class="form-control" id="edit_end_date{{ $batch->batch_id }}" name="end_date" value="{{ $batch->end_date ? $batch->end_date->format('Y-m-d') : '' }}" onchange="calculateEditDuration('{{ $batch->batch_id }}')">
                         <div class="form-text">Leave empty for ongoing batches. When end date is reached, batch status becomes 'completed'.</div>
                     </div>
                     <div class="mb-3">
@@ -892,6 +1222,56 @@ function updateBatch(event, batchId) {
     });
 }
 
+function completeBatch(batchId) {
+    if(confirm('Are you sure you want to mark this batch as completed? This will change its status to "completed".')) {
+        fetch(`{{ url('admin/batches') }}/${batchId}/complete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error completing batch');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error completing batch');
+        });
+    }
+}
+
+function reopenBatch(batchId) {
+    if(confirm('Are you sure you want to reopen this batch? This will change its status to "available".')) {
+        fetch(`{{ url('admin/batches') }}/${batchId}/reopen`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error reopening batch');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error reopening batch');
+        });
+    }
+}
+
 function loadBatchStudents(batchId) {
     fetch(`{{ url('admin/batches') }}/${batchId}/students`)
         .then(response => response.json())
@@ -1312,6 +1692,176 @@ document.addEventListener('DOMContentLoaded', function() {
             loadBatchStudents(batchId);
         });
     });
+});
+
+function completeBatch(batchId) {
+    if (!confirm('Are you sure you want to mark this batch as completed? This will move it to the completed tab.')) {
+        return;
+    }
+    
+    fetch(`{{ url('admin/batches') }}/${batchId}/complete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Reload the page to update the UI
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Error completing batch', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error completing batch', 'danger');
+    });
+}
+
+// Update batch function for editing
+function updateBatch(event, batchId) {
+    event.preventDefault();
+    
+    const form = document.getElementById(`editBatchForm${batchId}`);
+    const formData = new FormData(form);
+    
+    // Add the PUT method override
+    formData.append('_method', 'PUT');
+    
+    fetch(`{{ url('admin/batches') }}/${batchId}/update`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById(`editBatchModal${batchId}`));
+            if (modal) {
+                modal.hide();
+            }
+            // Reload the page to update the UI
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Error updating batch', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error updating batch', 'danger');
+    });
+}
+
+// Duration calculation functions
+function calculateEndDate() {
+    const startDate = document.getElementById('start_date').value;
+    const days = parseInt(document.getElementById('duration_days').value) || 0;
+    const months = parseInt(document.getElementById('duration_months').value) || 0;
+    const years = parseInt(document.getElementById('duration_years').value) || 0;
+    
+    if (startDate && (days > 0 || months > 0 || years > 0)) {
+        const start = new Date(startDate);
+        const endDate = new Date(start);
+        
+        endDate.setFullYear(endDate.getFullYear() + years);
+        endDate.setMonth(endDate.getMonth() + months);
+        endDate.setDate(endDate.getDate() + days);
+        
+        document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    }
+}
+
+function calculateDuration() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (end > start) {
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const years = Math.floor(diffDays / 365);
+            const remainingDaysAfterYears = diffDays % 365;
+            const months = Math.floor(remainingDaysAfterYears / 30);
+            const days = remainingDaysAfterYears % 30;
+            
+            document.getElementById('duration_days').value = days;
+            document.getElementById('duration_months').value = months;
+            document.getElementById('duration_years').value = years;
+        }
+    }
+}
+
+// Edit form duration calculation functions
+function calculateEditEndDate(batchId) {
+    const startDate = document.getElementById(`edit_start_date${batchId}`).value;
+    const days = parseInt(document.getElementById(`edit_duration_days${batchId}`).value) || 0;
+    const months = parseInt(document.getElementById(`edit_duration_months${batchId}`).value) || 0;
+    const years = parseInt(document.getElementById(`edit_duration_years${batchId}`).value) || 0;
+    
+    if (startDate && (days > 0 || months > 0 || years > 0)) {
+        const start = new Date(startDate);
+        const endDate = new Date(start);
+        
+        endDate.setFullYear(endDate.getFullYear() + years);
+        endDate.setMonth(endDate.getMonth() + months);
+        endDate.setDate(endDate.getDate() + days);
+        
+        document.getElementById(`edit_end_date${batchId}`).value = endDate.toISOString().split('T')[0];
+    }
+}
+
+function calculateEditDuration(batchId) {
+    const startDate = document.getElementById(`edit_start_date${batchId}`).value;
+    const endDate = document.getElementById(`edit_end_date${batchId}`).value;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (end > start) {
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const years = Math.floor(diffDays / 365);
+            const remainingDaysAfterYears = diffDays % 365;
+            const months = Math.floor(remainingDaysAfterYears / 30);
+            const days = remainingDaysAfterYears % 30;
+            
+            document.getElementById(`edit_duration_days${batchId}`).value = days;
+            document.getElementById(`edit_duration_months${batchId}`).value = months;
+            document.getElementById(`edit_duration_years${batchId}`).value = years;
+        }
+    }
+}
+
+// Initialize duration calculations when modals are shown
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize edit modal duration calculations
+    document.querySelectorAll('[id^="editBatchModal"]').forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const batchId = this.id.replace('editBatchModal', '');
+            calculateEditDuration(batchId);
+        });
+    });
+    
+    // Also bind to start date changes for both create and edit forms
+    document.getElementById('start_date')?.addEventListener('change', calculateDuration);
 });
 </script>
 @endpush

@@ -220,6 +220,50 @@ class BatchEnrollmentController extends Controller
         ]);
     }
 
+    public function completeBatch($id)
+    {
+        // Authentication is handled by middleware
+
+        $batch = StudentBatch::find($id);
+        if (!$batch) {
+            return response()->json(['error' => 'Batch not found'], 404);
+        }
+
+        if (!in_array($batch->batch_status, ['ongoing', 'available'])) {
+            return response()->json(['error' => 'Only ongoing or available batches can be completed'], 400);
+        }
+
+        $batch->update(['batch_status' => 'completed']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Batch completed successfully',
+            'new_status' => 'completed'
+        ]);
+    }
+
+    public function reopenBatch($id)
+    {
+        // Authentication is handled by middleware
+
+        $batch = StudentBatch::find($id);
+        if (!$batch) {
+            return response()->json(['error' => 'Batch not found'], 404);
+        }
+
+        if (!in_array($batch->batch_status, ['completed', 'closed'])) {
+            return response()->json(['error' => 'Only completed or closed batches can be reopened'], 400);
+        }
+
+        $batch->update(['batch_status' => 'ongoing']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Batch reopened successfully',
+            'new_status' => 'ongoing'
+        ]);
+    }
+
     public function students($id)
     {
         // Authentication is handled by middleware
@@ -408,27 +452,61 @@ class BatchEnrollmentController extends Controller
         $request->validate([
             'batch_name' => 'required|string|max:255',
             'program_id' => 'required|exists:programs,program_id',
+            'professor_ids' => 'nullable|array',
+            'professor_ids.*' => 'exists:professors,professor_id',
             'max_capacity' => 'required|integer|min:1',
-            'registration_deadline' => 'required|date',
-            'start_date' => 'required|date|after:registration_deadline',
-            'description' => 'nullable|string'
+            'batch_status' => 'required|in:pending,available,ongoing,completed,closed',
+            'enrollment_deadline' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'batch_description' => 'nullable|string'
         ]);
 
         $batch = StudentBatch::findOrFail($id);
+        
+        // Check if max_capacity is not less than current enrollment
+        if ($request->max_capacity < $batch->current_capacity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Maximum capacity cannot be less than current enrollment count (' . $batch->current_capacity . ')'
+            ], 400);
+        }
         
         $batch->update([
             'batch_name' => $request->batch_name,
             'program_id' => $request->program_id,
             'max_capacity' => $request->max_capacity,
-            'registration_deadline' => Carbon::parse($request->registration_deadline),
-            'start_date' => Carbon::parse($request->start_date),
-            'description' => $request->description
+            'batch_status' => $request->batch_status,
+            'registration_deadline' => $request->enrollment_deadline ? \Carbon\Carbon::parse($request->enrollment_deadline) : null,
+            'start_date' => $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null,
+            'end_date' => $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null,
+            'description' => $request->batch_description
         ]);
+
+        // Update professor assignments if provided
+        if (isset($request->professor_ids)) {
+            // Remove existing assignments
+            $batch->professors()->detach();
+            
+            // Add new assignments
+            if (count($request->professor_ids) > 0) {
+                $professorData = [];
+                foreach ($request->professor_ids as $professorId) {
+                    $professorData[$professorId] = [
+                        'assigned_at' => now(),
+                        'assigned_by' => session('admin_id'),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+                }
+                $batch->professors()->attach($professorData);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Batch updated successfully',
-            'batch' => $batch->load('program')
+            'batch' => $batch->fresh()->load('program', 'professors')
         ]);
     }
 

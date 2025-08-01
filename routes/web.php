@@ -136,6 +136,8 @@ Route::prefix('admin/batches')->middleware(['admin.director.auth'])->group(funct
     Route::put('/{id}', [BatchEnrollmentController::class, 'update'])->name('admin.batches.update');
     Route::post('/{id}/toggle-status', [BatchEnrollmentController::class, 'toggleStatus'])->name('admin.batches.toggle-status');
     Route::post('/{id}/approve', [BatchEnrollmentController::class, 'approveBatch'])->name('admin.batches.approve');
+    Route::post('/{id}/complete', [BatchEnrollmentController::class, 'completeBatch'])->name('admin.batches.complete');
+    Route::post('/{id}/reopen', [BatchEnrollmentController::class, 'reopenBatch'])->name('admin.batches.reopen');
     Route::get('/{id}/students', [BatchEnrollmentController::class, 'students'])->name('admin.batches.students');
     
     // Additional batch management routes

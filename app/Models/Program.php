@@ -22,11 +22,13 @@ class Program extends Model
         'director_id',
         'is_archived',
         'is_active',
+        'auto_create_batch',
     ];
 
     protected $casts = [
         'is_archived' => 'boolean',
         'is_active' => 'boolean',
+        'auto_create_batch' => 'boolean',
     ];
 
     /**

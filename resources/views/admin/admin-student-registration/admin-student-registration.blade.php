@@ -797,6 +797,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="col-sm-4"><strong>Phone:</strong></div>
                                     <div class="col-sm-8">${na(data.contact_number || data.mobile_number)}</div>
                                 </div>
+                                ${data.telephone_number ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Telephone:</strong></div>
+                                    <div class="col-sm-8">${na(data.telephone_number)}</div>
+                                </div>
+                                ` : ''}
                                 <div class="row mb-2">
                                     <div class="col-sm-4"><strong>Emergency Contact:</strong></div>
                                     <div class="col-sm-8">${na(data.emergency_contact_number)}</div>
@@ -837,6 +843,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="col-sm-4"><strong>ZIP Code:</strong></div>
                                     <div class="col-sm-8">${na(data.zipcode)}</div>
                                 </div>
+                                ${data.school_name || data.student_school ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>School:</strong></div>
+                                    <div class="col-sm-8">${na(data.school_name || data.student_school)}</div>
+                                </div>
+                                ` : ''}
+                                ${data.referral_code ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Referral Code:</strong></div>
+                                    <div class="col-sm-8"><span class="badge bg-secondary">${na(data.referral_code)}</span></div>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -861,7 +879,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="row mb-2">
                                     <div class="col-sm-4"><strong>Plan Type:</strong></div>
                                     <div class="col-sm-8">${na(data.plan_type || data.enrollment_type)}</div>
-                                </div>`;
+                                </div>
+                                ${data.learning_mode ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Learning Mode:</strong></div>
+                                    <div class="col-sm-8"><span class="badge bg-info">${na(data.learning_mode)}</span></div>
+                                </div>
+                                ` : ''}
+                                ${data.registration_mode ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Registration Mode:</strong></div>
+                                    <div class="col-sm-8"><span class="badge bg-secondary">${na(data.registration_mode)}</span></div>
+                                </div>
+                                ` : ''}
+                                ${data.education_level ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Education Level:</strong></div>
+                                    <div class="col-sm-8">${na(data.education_level)}</div>
+                                </div>
+                                ` : ''}`;
                 
                 // Add course information for all enrollments
                 if (data.course_info && data.course_info !== 'Full') {
@@ -929,12 +965,77 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="col-sm-4"><strong>Valid ID:</strong></div>
                                     <div class="col-sm-8">${formatDocumentLink(data.valid_id, 'Valid ID')}</div>
                                 </div>
+                                ${data.birth_certificate ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Birth Certificate:</strong></div>
+                                    <div class="col-sm-8">${formatDocumentLink(data.birth_certificate, 'Birth Certificate')}</div>
+                                </div>
+                                ` : ''}
+                                ${data.diploma_certificate ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Diploma:</strong></div>
+                                    <div class="col-sm-8">${formatDocumentLink(data.diploma_certificate, 'Diploma')}</div>
+                                </div>
+                                ` : ''}
+                                ${data.Undergraduate ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Undergraduate Docs:</strong></div>
+                                    <div class="col-sm-8">${formatDocumentLink(data.Undergraduate, 'Undergraduate Documents')}</div>
+                                </div>
+                                ` : ''}
+                                ${data.Graduate ? `
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Graduate Docs:</strong></div>
+                                    <div class="col-sm-8">${formatDocumentLink(data.Graduate, 'Graduate Documents')}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Fields Section -->
+                        <div class="card mb-3" id="dynamicFieldsCard" style="display:none;">
+                            <div class="card-header bg-secondary text-white">
+                                <h6 class="mb-0"><i class="bi bi-gear"></i> Additional Information</h6>
+                            </div>
+                            <div class="card-body" id="dynamicFieldsContent">
                             </div>
                         </div>
                     </div>
                 `;
 
                 modalDetails.innerHTML = leftColumn + rightColumn;
+                
+                // Add dynamic fields that weren't explicitly handled
+                const handledFields = ['registration_id', 'firstname', 'middlename', 'lastname', 'email', 
+                    'contact_number', 'mobile_number', 'emergency_contact_number', 'telephone_number', 'gender', 
+                    'birthdate', 'age', 'street_address', 'address', 'city', 'state_province', 'province', 
+                    'zipcode', 'school_name', 'student_school', 'program_name', 'package_name', 'plan_name', 
+                    'plan_type', 'course_info', 'learning_mode', 'registration_mode', 'education_level', 
+                    'Start_Date', 'start_date', 'status', 'PSA', 'TOR', 'Course_Cert', 'good_moral', 
+                    'photo_2x2', 'birth_certificate', 'diploma_certificate', 'Cert_of_Grad', 'valid_id', 
+                    'Undergraduate', 'Graduate', 'referral_code', 'selected_modules', 'selected_courses_dynamic', 
+                    'created_at'];
+                    
+                let dynamicFieldsHtml = '';
+                let hasDynamicFields = false;
+                
+                for (const [key, value] of Object.entries(data)) {
+                    if (!handledFields.includes(key) && value && value !== 'N/A' && value !== '' && value !== null) {
+                        hasDynamicFields = true;
+                        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        dynamicFieldsHtml += `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>${label}:</strong></div>
+                                <div class="col-sm-8">${na(value)}</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (hasDynamicFields) {
+                    document.getElementById('dynamicFieldsContent').innerHTML = dynamicFieldsHtml;
+                    document.getElementById('dynamicFieldsCard').style.display = 'block';
+                }
 
                 // Setup action buttons based on status and view type
                 let actionButtons = '';

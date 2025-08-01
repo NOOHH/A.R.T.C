@@ -87,13 +87,40 @@ class AdminController extends Controller
         try {
             // Check if the id is a registration_id (like "2025-07-00005") or a database id (numeric)
             if (is_numeric($id)) {
-                $registration = Registration::with(['user', 'program', 'package', 'plan'])->findOrFail($id);
+                $registration = Registration::with(['user', 'program', 'package', 'plan', 'enrollments'])->findOrFail($id);
             } else {
                 // Try to find by registration_id
-                $registration = Registration::with(['user', 'program', 'package', 'plan'])
+                $registration = Registration::with(['user', 'program', 'package', 'plan', 'enrollments'])
                     ->where('registration_id', $id)
                     ->firstOrFail();
             }
+            
+            // Get dynamic fields from registration and merge with enrollment data
+            $dynamicFields = $registration->dynamic_fields ?? [];
+            
+            // Get enrollment data if available (for dynamic field inheritance)
+            $enrollmentData = [];
+            if ($registration->enrollments && $registration->enrollments->count() > 0) {
+                // Get the most recent enrollment
+                $latestEnrollment = $registration->enrollments->sortByDesc('created_at')->first();
+                if ($latestEnrollment && $latestEnrollment->inherited_registration_data) {
+                    $enrollmentData = $latestEnrollment->inherited_registration_data;
+                }
+            }
+            
+            // Helper function to get field value with priority: dynamic_fields > enrollment_data > static_field
+            $getFieldValue = function($staticValue, $dynamicKey, $enrollmentKey = null) use ($dynamicFields, $enrollmentData) {
+                // First check dynamic fields
+                if (isset($dynamicFields[$dynamicKey]) && !empty($dynamicFields[$dynamicKey])) {
+                    return $dynamicFields[$dynamicKey];
+                }
+                // Then check enrollment data
+                if ($enrollmentKey && isset($enrollmentData[$enrollmentKey]) && !empty($enrollmentData[$enrollmentKey])) {
+                    return $enrollmentData[$enrollmentKey];
+                }
+                // Finally use static value
+                return $staticValue ?? null;
+            };
             
             // Parse course selections if modular
             $courseInfo = 'Full';
@@ -130,40 +157,68 @@ class AdminController extends Controller
                 }
             }
             
-            return response()->json([
+            // Build response with dynamic field support
+            $response = [
                 'registration_id' => $registration->registration_id,
-                'firstname' => $registration->firstname,
-                'middlename' => $registration->middlename,
-                'lastname' => $registration->lastname,
-                'email' => $registration->user->email ?? $registration->email ?? 'N/A',
-                'mobile_number' => $registration->contact_number ?? $registration->phone_number ?? 'N/A',
-                'gender' => $registration->gender,
-                'birthdate' => $registration->birthdate,
-                'age' => $registration->birthdate ? now()->diffInYears($registration->birthdate) : 'N/A',
-                'address' => $registration->address ?? $registration->street_address ?? 'N/A',
-                'city' => $registration->city,
-                'state_province' => $registration->state_province,
-                'zipcode' => $registration->zipcode,
+                'firstname' => $getFieldValue($registration->firstname, 'firstname'),
+                'middlename' => $getFieldValue($registration->middlename, 'middlename'),
+                'lastname' => $getFieldValue($registration->lastname, 'lastname'),
+                'email' => $registration->user->email ?? $registration->email ?? $getFieldValue(null, 'email'),
+                'contact_number' => $getFieldValue($registration->contact_number, 'contact_number', 'contact_number'),
+                'mobile_number' => $getFieldValue($registration->contact_number ?? $registration->phone_number, 'mobile_number', 'mobile_number'),
+                'emergency_contact_number' => $getFieldValue($registration->emergency_contact_number, 'emergency_contact_number'),
+                'telephone_number' => $getFieldValue($registration->Telephone_Number, 'telephone_number'),
+                'gender' => $getFieldValue($registration->gender, 'gender'),
+                'birthdate' => $getFieldValue($registration->birthdate, 'birthdate'),
+                'age' => $registration->birthdate ? now()->diffInYears($registration->birthdate) : ($getFieldValue(null, 'age') ?? 'N/A'),
+                'street_address' => $getFieldValue($registration->street_address, 'street_address', 'address'),
+                'address' => $getFieldValue($registration->address ?? $registration->street_address, 'address', 'street_address'),
+                'city' => $getFieldValue($registration->city, 'city'),
+                'state_province' => $getFieldValue($registration->state_province, 'state_province', 'province'),
+                'province' => $getFieldValue($registration->state_province, 'province', 'state_province'),
+                'zipcode' => $getFieldValue($registration->zipcode, 'zipcode'),
+                'school_name' => $getFieldValue($registration->school_name, 'school_name'),
+                'student_school' => $getFieldValue($registration->student_school, 'student_school'),
                 'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
                 'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
                 'plan_name' => $registration->plan_name ?? ($registration->plan ? $registration->plan->plan_name : 'N/A'),
                 'plan_type' => $registration->enrollment_type ?? 'Full',
                 'course_info' => $courseInfo,
-                'learning_mode' => $registration->learning_mode,
-                'education_level' => $registration->education_level,
-                'Start_Date' => $registration->Start_Date,
+                'learning_mode' => $getFieldValue($registration->learning_mode, 'learning_mode'),
+                'registration_mode' => $getFieldValue(null, 'registration_mode'),
+                'education_level' => $getFieldValue($registration->education_level, 'education_level'),
+                'Start_Date' => $getFieldValue($registration->Start_Date, 'start_date', 'Start_Date'),
+                'start_date' => $getFieldValue($registration->start_date ?? $registration->Start_Date, 'start_date', 'start_date'),
                 'status' => $registration->status,
-                'PSA' => $registration->PSA,
-                'TOR' => $registration->TOR,
-                'Course_Cert' => $registration->Course_Cert,
-                'good_moral' => $registration->good_moral,
-                'photo_2x2' => $registration->photo_2x2,
-                'birth_certificate' => $registration->birth_certificate,
-                'diploma_certificate' => $registration->diploma_certificate,
-                'Cert_of_Grad' => $registration->Cert_of_Grad,
-                'valid_id' => $registration->valid_id,
+                // Document fields
+                'PSA' => $getFieldValue($registration->PSA, 'PSA'),
+                'TOR' => $getFieldValue($registration->TOR, 'TOR'),
+                'Course_Cert' => $getFieldValue($registration->Course_Cert, 'Course_Cert'),
+                'good_moral' => $getFieldValue($registration->good_moral, 'good_moral'),
+                'photo_2x2' => $getFieldValue($registration->photo_2x2, 'photo_2x2'),
+                'birth_certificate' => $getFieldValue($registration->birth_certificate, 'birth_certificate'),
+                'diploma_certificate' => $getFieldValue($registration->diploma_certificate, 'diploma_certificate'),
+                'Cert_of_Grad' => $getFieldValue($registration->Cert_of_Grad, 'Cert_of_Grad'),
+                'valid_id' => $getFieldValue($registration->valid_id, 'valid_id'),
+                'Undergraduate' => $getFieldValue($registration->Undergraduate, 'Undergraduate'),
+                'Graduate' => $getFieldValue($registration->Graduate, 'Graduate'),
+                // Additional dynamic fields that might be present
+                'referral_code' => $getFieldValue($registration->referral_code, 'referral_code'),
+                'selected_modules' => $getFieldValue($registration->selected_modules, 'selected_modules'),
+                'selected_courses_dynamic' => $getFieldValue($registration->selected_courses, 'selected_courses'),
                 'created_at' => $registration->created_at->format('M d, Y H:i')
-            ]);
+            ];
+            
+            // Add any additional dynamic fields that aren't covered above
+            if (is_array($dynamicFields)) {
+                foreach ($dynamicFields as $key => $value) {
+                    if (!isset($response[$key]) && !empty($value)) {
+                        $response[$key] = $value;
+                    }
+                }
+            }
+            
+            return response()->json($response);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Registration not found'], 404);
         }

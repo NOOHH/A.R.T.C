@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 30, 2025 at 09:53 PM
+-- Generation Time: Jul 31, 2025 at 09:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -204,14 +204,6 @@ CREATE TABLE `assignment_submissions` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `assignment_submissions`
---
-
-INSERT INTO `assignment_submissions` (`id`, `student_id`, `module_id`, `content_id`, `program_id`, `file_path`, `original_filename`, `files`, `comments`, `submitted_at`, `status`, `grade`, `feedback`, `graded_at`, `graded_by`, `created_at`, `updated_at`) VALUES
-(18, '2025-07-00001', 66, 34, 38, NULL, NULL, '[{\"path\":\"assignments\\/1753467977_2025-07-00001_BRAVO-MANUSCRIPT.pdf\",\"type\":\"application\\/pdf\",\"size\":1718203}]', NULL, '2025-07-25 20:06:49', 'graded', 0.10, 'w', '2025-07-25 12:06:49', 1, '2025-07-25 10:26:17', '2025-07-25 12:06:49'),
-(19, '2025-07-00001', 67, 41, 39, NULL, NULL, '[{\"path\":\"assignments\\/1753474031_2025-07-00001_Vince _Certificate.pdf\",\"type\":\"application\\/pdf\",\"size\":183238}]', NULL, '2025-07-25 20:07:38', 'graded', 23.00, 'w', '2025-07-25 12:07:38', 1, '2025-07-25 12:07:11', '2025-07-25 12:07:38');
-
 -- --------------------------------------------------------
 
 --
@@ -249,6 +241,64 @@ CREATE TABLE `batch_professors` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `board_passers`
+--
+
+CREATE TABLE `board_passers` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_id` varchar(255) DEFAULT NULL,
+  `student_name` varchar(255) NOT NULL,
+  `program` varchar(255) DEFAULT NULL,
+  `board_exam` varchar(255) NOT NULL,
+  `exam_year` int(11) NOT NULL,
+  `exam_date` date DEFAULT NULL,
+  `result` enum('PASS','FAIL','PENDING') NOT NULL DEFAULT 'PENDING',
+  `rating` decimal(5,2) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `board_passers`
+--
+
+INSERT INTO `board_passers` (`id`, `student_id`, `student_name`, `program`, `board_exam`, `exam_year`, `exam_date`, `result`, `rating`, `notes`, `created_at`, `updated_at`) VALUES
+(11, '2025-07-00001', 'Vince Michael Dela Vega', 'Mechanical Engineer', 'ME', 2025, '2025-08-01', 'PASS', NULL, 'W', '2025-07-31 08:32:30', '2025-07-31 08:32:30'),
+(12, '2025-07-00001', 'Vince Michael Dela Vega', 'Mechanical Engineer', 'CPA', 2025, '2025-08-02', 'FAIL', NULL, 'L', '2025-07-31 08:36:27', '2025-07-31 08:36:27');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `certificates`
+--
+
+CREATE TABLE `certificates` (
+  `certificate_id` bigint(20) UNSIGNED NOT NULL,
+  `student_id` varchar(255) NOT NULL,
+  `enrollment_id` bigint(20) UNSIGNED NOT NULL,
+  `program_id` bigint(20) UNSIGNED NOT NULL,
+  `certificate_number` varchar(255) NOT NULL,
+  `student_name` varchar(255) NOT NULL,
+  `program_name` varchar(255) NOT NULL,
+  `start_date` date NOT NULL,
+  `completion_date` date NOT NULL,
+  `final_score` decimal(5,2) DEFAULT NULL,
+  `certificate_type` varchar(255) NOT NULL DEFAULT 'completion',
+  `status` varchar(255) NOT NULL DEFAULT 'pending',
+  `certificate_data` text DEFAULT NULL,
+  `file_path` varchar(255) DEFAULT NULL,
+  `qr_code` varchar(255) DEFAULT NULL,
+  `issued_at` timestamp NULL DEFAULT NULL,
+  `issued_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `rejection_reason` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `chats`
 --
 
@@ -264,27 +314,6 @@ CREATE TABLE `chats` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `chats`
---
-
-INSERT INTO `chats` (`chat_id`, `sender_id`, `receiver_id`, `body_cipher`, `is_read`, `is_encrypted`, `sent_at`, `read_at`, `created_at`, `updated_at`) VALUES
-(55, 179, 8, 'eyJpdiI6Ijdtekg1RmhkWm9XZTNBNkdIME82THc9PSIsInZhbHVlIjoiTVZFRGpvbWVjcElPME1ZUng2YSt4QT09IiwibWFjIjoiZjM1MmE1OWRmMWU2YTZkOTgwM2YxMTEyMzBkODMzZGM5ZWMyMGJhNmU3NWY0MWUzNzRkYWNkOGIzMzQ4YTYxMSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:28:43', NULL, '2025-07-28 07:28:43', '2025-07-28 07:28:43'),
-(56, 179, 8, 'eyJpdiI6Im5ZRUpQWFQ0c055YWhib2RmT0VEamc9PSIsInZhbHVlIjoiZ2oxWVBUMzNCWTAxMGZMakxNK2pzUT09IiwibWFjIjoiMjg1NjgzYmMyMTk4YjhhNGM5NTIyYTdlNDkyYzVjMGU2MjBiZDI2Y2U3MmQzNDVjYjdkODc0OGFiNzNhN2EwMCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:03', NULL, '2025-07-28 07:56:03', '2025-07-28 07:56:03'),
-(57, 179, 8, 'eyJpdiI6ImE0S0VTcmxwOW01S3ZvT01qSHg3RkE9PSIsInZhbHVlIjoiTCtxNXhHYVhUUkk0WDM1ek9QbU4zdz09IiwibWFjIjoiYTU1NTAzOTgzZWNhN2RjOTFjNTM2MTRiNDM1NmI4MGQ1ZDRlOGJlN2M0MzIwNDllZGZlNzUyMTEzMWYwMWYzOCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:09', NULL, '2025-07-28 07:56:09', '2025-07-28 07:56:09'),
-(58, 179, 8, 'eyJpdiI6IkVVc2ZHSElrWDNZK2pBNUxZcTlKRkE9PSIsInZhbHVlIjoibER2MmtFYlN5ZUkxZzRYbndBeEpqQT09IiwibWFjIjoiYjQ4NTI3NmU3YjE5ZWM3YTQ0NTNiZDNmMWFmYjljZmM3ZTFjMmUxYTFhZmI4NjkwZjQ5ODk5Y2VkZDI4NjdlMCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:10', NULL, '2025-07-28 07:56:10', '2025-07-28 07:56:10'),
-(59, 179, 8, 'eyJpdiI6IjVlOG1yUlRSNGpFeTg1NXFUYlNsNlE9PSIsInZhbHVlIjoiblFZQnNtSXF4MGhVb2Fxak5jU0xqdz09IiwibWFjIjoiNjgzYmVhZDZlOGI4N2U4MDEzMjE0ZTUzMTkzOGUxOTE1NTAwNDE1MzMyOGIzMTNkZDViMjJlOTA4NWM2MWRkMSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:11', NULL, '2025-07-28 07:56:11', '2025-07-28 07:56:11'),
-(60, 179, 8, 'eyJpdiI6IldBSnFHV29jcGJLSTJmRXF2aGViUUE9PSIsInZhbHVlIjoibE1MWUwrUnh5VjlSNzVPTXo3c3V0Zz09IiwibWFjIjoiNDgzNjU2Y2M3MjE3ZDJlZWJlMTUyNGJlYjVhNGVlM2YxYjc0YWI5Y2E1YTFjYmUyOTFlZDViNDU1YjJlNDE3NSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 07:56:11', NULL, '2025-07-28 07:56:11', '2025-07-28 07:56:11'),
-(61, 179, 8, 'eyJpdiI6IlBFQzVZWGVLLy9qY0FLQUM4ZUNSK0E9PSIsInZhbHVlIjoiKzJzR1F5dGFxQVBsZ295TFJzczY1UT09IiwibWFjIjoiYzNmYmU3ODFkZTk3ZTVlODVhZTBlMjFlNGU0MzU0M2FiYTZiM2VmYjBiMDM1Njk2NDZlYTEwNjdhYjUwMWQ3ZSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:00:45', NULL, '2025-07-28 08:00:45', '2025-07-28 08:00:45'),
-(62, 179, 8, 'eyJpdiI6IkFEdWZrdFEzMVBXMUJBVTl4d2J1Q1E9PSIsInZhbHVlIjoiRFA3M1ZYdmgzV2diSEoyRlZ4WUZTQT09IiwibWFjIjoiMmJiNzkxMWJkNzdlODkyZmVmOThiMjIyMDRjM2Q2MmNhN2M1ZTg5YmM1NzJlOGNjYTdiZmU5MzJlOTI4ZjkxMSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:33:11', NULL, '2025-07-28 08:33:11', '2025-07-28 08:33:11'),
-(63, 179, 8, 'eyJpdiI6ImlTVkgvN08vaWxUWjJIYUpGY2JWMmc9PSIsInZhbHVlIjoieUNJUVUwcFpudVVJMStzSmwxSy9hZz09IiwibWFjIjoiNzMwMTY0MzdiNmFkNjU1ZWZkOWQ1MGZhYmJkNjdkMTFhNWQwYmQxZWYwNzNmY2I3NTYwN2I4Y2EwOWVjZmRkNiIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:47', NULL, '2025-07-28 08:40:47', '2025-07-28 08:40:47'),
-(64, 179, 8, 'eyJpdiI6IktOa0hLU0ZnbUxxZHB2ekd6M3VKWXc9PSIsInZhbHVlIjoiTGIrR3pEVHpqUGxhZldidEJoZjBIUT09IiwibWFjIjoiZTM5YmJhMmYwNGNiOTFlYmI1OGE5ZjMzNWY3MTU3ZWM3ZWQxOGUzYzVkNjc1YWM5ZmI3NmI0MDAzZGVmMDI2OSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:50', NULL, '2025-07-28 08:40:50', '2025-07-28 08:40:50'),
-(65, 179, 8, 'eyJpdiI6Ikx3ZWh4aDFrUUxZWVQ0S3FEVWhRbnc9PSIsInZhbHVlIjoiQzZKSVIxT0Q0TWpxSHdRQWxXZlNKdz09IiwibWFjIjoiNWU3MDJmMTUxNzFiNzZjZjEyZWJlY2VhMDZmOTVlNDg4YTUyMDJmYjk1OGRiMWZiYTI5MGY0NzZlZGM1Mzk4OSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:53', NULL, '2025-07-28 08:40:53', '2025-07-28 08:40:53'),
-(66, 179, 8, 'eyJpdiI6InhWWXFHTWluZXZrQmw0S2dYR3dPWkE9PSIsInZhbHVlIjoiVXUzdmRnMyt3bG0vS1FCdkNWVmhzZz09IiwibWFjIjoiY2Y5ZWYwZGFiYjllOTBiNDQyODJjMTBlZmNmYmI1NmQyNjdjNDM1MGRkNDQ3M2ZjMGFhMjgzNjdiNDk5ODYyMiIsInRhZyI6IiJ9', 0, 1, '2025-07-28 08:40:57', NULL, '2025-07-28 08:40:57', '2025-07-28 08:40:57'),
-(67, 179, 8, 'eyJpdiI6Ii9QcGhyQi9WMHdmTENZSkFhbEt2cHc9PSIsInZhbHVlIjoiRnNlUXFoL0UrTDFMWi9Xb0ZGY2Vudz09IiwibWFjIjoiZmUxM2U4NjQ4YjFiZThiZWU2N2RiYWVkMGY3YWQ2MDMzY2M4N2IzODBlM2UwZWY5NmM5ODNiN2Y1MGI3ZGI3YyIsInRhZyI6IiJ9', 0, 1, '2025-07-28 09:28:37', NULL, '2025-07-28 09:28:37', '2025-07-28 09:28:37'),
-(68, 179, 8, 'eyJpdiI6IjE4SER2NFc5aFlETnQzRzZpRUtDUlE9PSIsInZhbHVlIjoiWTJrSVd1S1gxWjgxOEtNdmhiM09adz09IiwibWFjIjoiZWY5MjkwYzYwNjNhMGRkOGVjM2MyOGMxNmM2OWEwNjU1NzM4MWY0NzRlZDEyZWRmYjBiNDU3MGI3OWI4ZmM2YSIsInRhZyI6IiJ9', 0, 1, '2025-07-28 09:28:39', NULL, '2025-07-28 09:28:39', '2025-07-28 09:28:39'),
-(69, 179, 8, 'eyJpdiI6IktZZUlUNG5DeDNYU0FqZG9BZjFRMlE9PSIsInZhbHVlIjoiZksvZ3hjYTZNUEVlS01ud2FJdnY5dz09IiwibWFjIjoiNzQ1YWMzMDQ3NjI4YWY4NWQwMjQ0MzM5NmRlYmRhYzA1ZWQ3MjRmNzIzMWUyODEwMzkyNTk0YmIwYTg0ZWFjZCIsInRhZyI6IiJ9', 0, 1, '2025-07-28 09:28:53', NULL, '2025-07-28 09:28:53', '2025-07-28 09:28:53');
 
 -- --------------------------------------------------------
 
@@ -352,14 +381,14 @@ CREATE TABLE `content_completions` (
 --
 
 INSERT INTO `content_completions` (`id`, `student_id`, `content_id`, `course_id`, `module_id`, `completed_at`, `created_at`, `updated_at`) VALUES
-(41, '2025-07-00001', 45, 40, 73, '2025-07-26 01:15:16', '2025-07-26 01:15:16', '2025-07-26 01:15:16'),
-(42, '2025-07-00001', 47, 39, 74, '2025-07-26 01:15:40', '2025-07-26 01:15:40', '2025-07-26 01:15:40'),
-(43, '2025-07-00004', 50, 45, 76, '2025-07-26 02:29:28', '2025-07-26 02:29:28', '2025-07-26 02:29:28'),
-(44, '2025-07-00009', 45, 40, 73, '2025-07-26 12:04:37', '2025-07-26 12:04:37', '2025-07-26 12:04:37'),
-(45, '2025-07-00005', 45, 40, 73, '2025-07-26 12:32:27', '2025-07-26 12:32:27', '2025-07-26 12:32:27'),
-(46, '2025-07-00006', 51, 44, 75, '2025-07-27 02:54:11', '2025-07-27 02:54:11', '2025-07-27 02:54:11'),
-(47, '2025-07-00006', 48, 44, 75, '2025-07-27 02:54:12', '2025-07-27 02:54:12', '2025-07-27 02:54:12'),
-(48, '2025-07-00006', 50, 45, 76, '2025-07-27 02:54:25', '2025-07-27 02:54:25', '2025-07-27 02:54:25');
+(57, '2025-07-00001', 83, 48, 77, '2025-07-31 07:17:05', '2025-07-31 07:17:05', '2025-07-31 07:17:05'),
+(58, '2025-07-00001', 81, 50, 78, '2025-07-31 07:17:13', '2025-07-31 07:17:13', '2025-07-31 07:17:13'),
+(59, '2025-07-00001', 78, 51, 78, '2025-07-31 07:17:19', '2025-07-31 07:17:19', '2025-07-31 07:17:19'),
+(60, '2025-07-00001', 80, 50, 78, '2025-07-31 07:17:27', '2025-07-31 07:17:27', '2025-07-31 07:17:27'),
+(61, '2025-07-00001', 79, 50, 78, '2025-07-31 07:17:37', '2025-07-31 07:17:37', '2025-07-31 07:17:37'),
+(62, '2025-07-00001', 82, 50, 78, '2025-07-31 07:17:46', '2025-07-31 07:17:46', '2025-07-31 07:17:46'),
+(63, '2025-07-00001', 77, 52, 79, '2025-07-31 07:18:19', '2025-07-31 07:18:19', '2025-07-31 07:18:19'),
+(64, '2025-07-00001', 87, 53, 79, '2025-07-31 07:19:22', '2025-07-31 07:19:22', '2025-07-31 07:19:22');
 
 -- --------------------------------------------------------
 
@@ -416,15 +445,17 @@ CREATE TABLE `content_items` (
 --
 
 INSERT INTO `content_items` (`id`, `content_title`, `content_description`, `lesson_id`, `course_id`, `content_type`, `created_by_professor_id`, `content_data`, `content_url`, `attachment_path`, `max_points`, `due_date`, `time_limit`, `content_order`, `sort_order`, `enable_submission`, `allowed_file_types`, `max_file_size`, `submission_instructions`, `allow_multiple_submissions`, `order`, `is_required`, `is_active`, `is_archived`, `archived_at`, `archived_by_professor_id`, `admin_override`, `created_at`, `updated_at`, `is_locked`, `requires_prerequisite`, `prerequisite_content_id`, `release_date`, `completion_criteria`, `lock_reason`, `locked_by`, `file_path`, `file_name`, `file_size`, `file_mime`, `has_multiple_files`) VALUES
-(66, 'test 5', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 05:27:41', '2025-07-28 05:27:41', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(69, 'test 8', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 07:32:41', '2025-07-28 07:32:41', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(70, 'test 9', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":\"https:\\/\\/www.youtube.com\\/watch?v=AxE4TltnvjI\"}', 'https://www.youtube.com/watch?v=AxE4TltnvjI', NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 07:40:09', '2025-07-28 07:40:09', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(71, 'test 10', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753719078_2025-07-26 18-30-33.mp4\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 08:11:19', '2025-07-28 08:11:19', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(72, 'yest 12', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":\"https:\\/\\/www.youtube.com\\/watch?v=iJFyJcO8L0w&list=WL&index=4&t=1758s\"}', 'https://www.youtube.com/watch?v=iJFyJcO8L0w&list=WL&index=4&t=1758s', NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-28 09:56:37', '2025-07-28 09:56:37', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(73, 'PROFESSOR', NULL, NULL, 52, 'lesson', 8, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:21:34', '2025-07-30 11:21:34', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(74, 'PROFESSOR', NULL, NULL, 50, 'lesson', 8, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:39:47', '2025-07-30 11:39:47', 0, 0, NULL, NULL, NULL, NULL, NULL, 'course-content/1753904387_688a75035ace1_1753757055493_BRAVO_-_Chapter-2.docx', '1753757055493_BRAVO_-_Chapter-2.docx', 496092, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 0),
-(75, 'ADMIN', NULL, NULL, 53, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753904678_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:44:38', '2025-07-30 11:44:38', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(76, 'PROOOOF', NULL, NULL, 50, 'lesson', 8, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753904920_pngtree-brown-and-white-dog-png-image_10146522.png\"]', NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 11:48:40', '2025-07-30 11:48:40', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, 'pngtree-brown-and-white-dog-png-image_10146522.png', 35983, 'image/png', 0);
+(77, 'Lessons 1', NULL, NULL, 52, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753907375_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 12:29:35', '2025-07-30 12:29:35', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(78, 'Lessons 1', NULL, NULL, 51, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753907633_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 12:33:53', '2025-07-30 12:33:53', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(79, 'LESSON 1 HOSPITALITY', NULL, NULL, 50, 'lesson', 8, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753908507_1753757055493_BRAVO_-_Chapter-2.docx\"]', NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 12:48:27', '2025-07-30 12:48:27', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, '1753757055493_BRAVO_-_Chapter-2.docx', 496092, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 0),
+(80, 'TEST VID', NULL, NULL, 50, 'lesson', NULL, '{\"lesson_video_url\":\"https:\\/\\/www.youtube.com\\/watch?v=Why0mFxXF08\"}', 'https://www.youtube.com/watch?v=Why0mFxXF08', NULL, 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 13:25:49', '2025-07-30 13:25:49', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(81, 'TEST VID2', NULL, NULL, 50, 'video', NULL, '{\"video_url\":\"https:\\/\\/www.youtube.com\\/watch?v=Why0mFxXF08\"}', 'https://www.youtube.com/watch?v=Why0mFxXF08', '[\"content\\/1753910811_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 13:26:51', '2025-07-30 13:26:51', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(82, 'Lessons 1', NULL, NULL, 50, 'assignment', NULL, '{\"assignment_instructions\":null,\"due_date\":\"2025-07-11T06:08\",\"max_points\":0}', NULL, '[\"content\\/1753913330_final-docu.pdf\"]', 0.00, '2025-07-11 06:08:00', NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 14:08:50', '2025-07-30 14:08:50', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(83, 'Lessons 1', NULL, NULL, 48, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929360_1753907633_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:36:01', '2025-07-30 18:36:01', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(84, 'Lessons 1', NULL, NULL, 47, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929387_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:36:27', '2025-07-30 18:36:27', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(85, 'Lessons 1', NULL, NULL, 49, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929402_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:36:42', '2025-07-30 18:36:42', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(86, 'Lessons 1', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929422_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:37:03', '2025-07-30 18:37:03', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(87, 'Lessons 1', 'W', NULL, 53, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753975145_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-31 07:19:05', '2025-07-31 07:19:05', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -506,18 +537,11 @@ CREATE TABLE `course_completions` (
 --
 
 INSERT INTO `course_completions` (`id`, `student_id`, `course_id`, `module_id`, `content_id`, `completed_at`, `created_at`, `updated_at`) VALUES
-(48, '2025-07-00001', 44, 75, NULL, '2025-07-26 01:12:29', '2025-07-26 01:11:14', '2025-07-26 01:12:29'),
-(49, '2025-07-00001', 43, 76, NULL, '2025-07-26 01:12:34', '2025-07-26 01:11:28', '2025-07-26 01:12:34'),
-(50, '2025-07-00001', 45, 76, NULL, '2025-07-26 01:12:34', '2025-07-26 01:12:20', '2025-07-26 01:12:34'),
-(51, '2025-07-00001', 40, 73, NULL, '2025-07-26 01:15:16', '2025-07-26 01:12:44', '2025-07-26 01:15:16'),
-(52, '2025-07-00001', 39, 74, NULL, '2025-07-26 01:13:08', '2025-07-26 01:12:53', '2025-07-26 01:13:08'),
-(53, '2025-07-00001', 41, 73, NULL, '2025-07-26 02:17:00', '2025-07-26 01:15:32', '2025-07-26 02:17:00'),
-(54, '2025-07-00004', 45, 76, NULL, '2025-07-26 02:30:05', '2025-07-26 02:29:28', '2025-07-26 02:30:05'),
-(55, '2025-07-00009', 40, 73, NULL, '2025-07-26 12:04:37', '2025-07-26 12:04:37', '2025-07-26 12:04:37'),
-(56, '2025-07-00005', 41, 73, NULL, '2025-07-26 12:32:19', '2025-07-26 12:32:19', '2025-07-26 12:32:19'),
-(57, '2025-07-00005', 40, 73, NULL, '2025-07-26 12:32:27', '2025-07-26 12:32:27', '2025-07-26 12:32:27'),
-(58, '2025-07-00006', 44, 75, NULL, '2025-07-27 02:54:12', '2025-07-27 02:54:12', '2025-07-27 02:54:12'),
-(59, '2025-07-00006', 45, 76, NULL, '2025-07-27 02:54:25', '2025-07-27 02:54:25', '2025-07-27 02:54:25');
+(65, '2025-07-00001', 48, 77, NULL, '2025-07-31 07:17:05', '2025-07-31 07:17:05', '2025-07-31 07:17:05'),
+(66, '2025-07-00001', 51, 78, NULL, '2025-07-31 07:17:19', '2025-07-31 07:17:19', '2025-07-31 07:17:19'),
+(67, '2025-07-00001', 50, 78, NULL, '2025-07-31 07:17:46', '2025-07-31 07:17:46', '2025-07-31 07:17:46'),
+(68, '2025-07-00001', 52, 79, NULL, '2025-07-31 07:18:19', '2025-07-31 07:18:19', '2025-07-31 07:18:19'),
+(69, '2025-07-00001', 53, 79, NULL, '2025-07-31 07:19:22', '2025-07-31 07:19:22', '2025-07-31 07:19:22');
 
 -- --------------------------------------------------------
 
@@ -629,9 +653,20 @@ CREATE TABLE `enrollments` (
   `individual_start_date` datetime DEFAULT NULL,
   `individual_end_date` datetime DEFAULT NULL,
   `enrollment_status` enum('pending','approved','rejected','completed') NOT NULL DEFAULT 'pending',
+  `progress_percentage` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `completion_date` timestamp NULL DEFAULT NULL,
+  `last_activity` timestamp NULL DEFAULT NULL,
+  `total_modules` int(11) NOT NULL DEFAULT 0,
+  `completed_modules` int(11) NOT NULL DEFAULT 0,
+  `total_courses` int(11) NOT NULL DEFAULT 0,
+  `completed_courses` int(11) NOT NULL DEFAULT 0,
+  `certificate_eligible` tinyint(1) NOT NULL DEFAULT 0,
+  `certificate_requested` tinyint(1) NOT NULL DEFAULT 0,
+  `certificate_issued` tinyint(1) NOT NULL DEFAULT 0,
   `payment_status` enum('pending','paid','failed','cancelled') DEFAULT 'pending',
   `batch_access_granted` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Grants dashboard access for batch students regardless of enrollment/payment status',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `start_date` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `school_id` varchar(255) DEFAULT NULL,
   `diploma` varchar(255) DEFAULT NULL,
@@ -659,21 +694,9 @@ CREATE TABLE `enrollments` (
 -- Dumping data for table `enrollments`
 --
 
-INSERT INTO `enrollments` (`enrollment_id`, `registration_id`, `student_id`, `user_id`, `program_id`, `package_id`, `enrollment_type`, `learning_mode`, `batch_id`, `individual_start_date`, `individual_end_date`, `enrollment_status`, `payment_status`, `batch_access_granted`, `created_at`, `updated_at`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `photo_2x2`, `diploma_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `passport_photo`, `medical_certificate`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `tor`, `good_moral`, `psa`) VALUES
-(177, 1753045105, '2025-07-00001', 174, 39, 34, 'Modular', 'Asynchronous', 16, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 01:13:57', '2025-07-26 10:42:29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(178, 1753045106, '2025-07-00001', 174, 38, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 01:14:51', '2025-07-26 01:15:05', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(183, 1753045111, '2025-07-00004', 178, 39, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 02:26:41', '2025-07-26 02:27:09', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(184, 1753045112, '2025-07-00004', 178, 39, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 02:28:43', '2025-07-26 02:29:00', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(185, 1753045113, '2025-07-00005', 179, 39, 29, 'Full', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 02:53:32', '2025-07-26 02:53:55', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(186, 1753045114, '2025-07-00006', 180, 39, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 10:46:11', '2025-07-26 10:47:09', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(188, 1753045116, '2025-07-00007', 181, 39, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 11:13:20', '2025-07-26 11:22:29', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(189, 1753045117, '2025-07-00008', 182, 39, 33, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 11:47:20', '2025-07-26 11:47:41', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(190, 1753045118, '2025-07-00008', 182, 39, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 12:03:08', '2025-07-26 12:03:26', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(191, 1753045119, '2025-07-00009', 182, 38, 29, 'Full', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 12:04:09', '2025-07-26 12:04:24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(192, 1753045120, '2025-07-00009', 182, 39, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 12:18:11', '2025-07-26 12:18:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(193, 1753045121, '2025-07-00005', 179, 38, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-26 12:31:51', '2025-07-26 12:32:12', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(194, 1753045122, '2025-07-00006', 180, 40, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-27 06:23:08', '2025-07-27 06:23:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(195, 1753045123, '2025-07-00005', 179, 40, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 'paid', 0, '2025-07-27 09:32:21', '2025-07-27 09:32:44', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `enrollments` (`enrollment_id`, `registration_id`, `student_id`, `user_id`, `program_id`, `package_id`, `enrollment_type`, `learning_mode`, `batch_id`, `individual_start_date`, `individual_end_date`, `enrollment_status`, `progress_percentage`, `completion_date`, `last_activity`, `total_modules`, `completed_modules`, `total_courses`, `completed_courses`, `certificate_eligible`, `certificate_requested`, `certificate_issued`, `payment_status`, `batch_access_granted`, `created_at`, `start_date`, `updated_at`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `photo_2x2`, `diploma_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `passport_photo`, `medical_certificate`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `tor`, `good_moral`, `psa`) VALUES
+(199, 1, '2025-07-00001', 1, 40, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'paid', 0, '2025-07-31 07:13:51', NULL, '2025-07-31 07:14:38', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(200, 2, '2025-07-00001', 1, 41, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'paid', 0, '2025-07-31 07:16:10', NULL, '2025-07-31 07:16:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -760,7 +783,18 @@ INSERT INTO `enrollment_courses` (`id`, `enrollment_id`, `course_id`, `module_id
 (64, 194, 50, 78, 'course', 0.00, 1, '2025-07-27 06:23:17', '2025-07-27 06:23:17'),
 (65, 195, 50, 78, 'course', 0.00, 1, '2025-07-27 09:32:39', '2025-07-27 09:32:39'),
 (66, 195, 51, 78, 'course', 0.00, 1, '2025-07-27 09:32:39', '2025-07-27 09:32:39'),
-(67, 195, 46, 77, 'course', 0.00, 1, '2025-07-27 09:32:39', '2025-07-27 09:32:39');
+(67, 195, 46, 77, 'course', 0.00, 1, '2025-07-27 09:32:39', '2025-07-27 09:32:39'),
+(68, 196, 52, 79, 'course', 0.00, 1, '2025-07-31 01:41:38', '2025-07-31 01:41:38'),
+(69, 196, 53, 79, 'course', 0.00, 1, '2025-07-31 01:41:38', '2025-07-31 01:41:38'),
+(70, 197, 48, 77, 'course', 0.00, 1, '2025-07-31 01:57:52', '2025-07-31 01:57:52'),
+(71, 197, 47, 77, 'course', 0.00, 1, '2025-07-31 01:57:52', '2025-07-31 01:57:52'),
+(72, 197, 50, 78, 'course', 0.00, 1, '2025-07-31 01:57:52', '2025-07-31 01:57:52'),
+(73, 197, 51, 78, 'course', 0.00, 1, '2025-07-31 01:57:52', '2025-07-31 01:57:52'),
+(74, 199, 50, 78, 'course', 0.00, 1, '2025-07-31 07:14:15', '2025-07-31 07:14:15'),
+(75, 199, 51, 78, 'course', 0.00, 1, '2025-07-31 07:14:15', '2025-07-31 07:14:15'),
+(76, 199, 48, 77, 'course', 0.00, 1, '2025-07-31 07:14:15', '2025-07-31 07:14:15'),
+(77, 200, 52, 79, 'course', 0.00, 1, '2025-07-31 07:16:21', '2025-07-31 07:16:21'),
+(78, 200, 53, 79, 'course', 0.00, 1, '2025-07-31 07:16:21', '2025-07-31 07:16:21');
 
 -- --------------------------------------------------------
 
@@ -920,7 +954,10 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (66, '2025_07_26_224508_add_missing_columns_to_quizzes_table', 56),
 (67, '2025_07_27_192118_add_status_to_quizzes_table', 57),
 (68, '2025_07_30_191443_add_archiving_fields_to_content_items_table', 58),
-(69, '2025_07_31_000000_add_multiple_files_support_to_content_items', 59);
+(69, '2025_07_31_000000_add_multiple_files_support_to_content_items', 59),
+(70, '2025_07_20_101518_create_student_progress_table', 60),
+(71, '2025_07_31_013337_add_progress_tracking_to_enrollments_table', 61),
+(72, '2025_07_10_173838_create_board_passers_table', 62);
 
 -- --------------------------------------------------------
 
@@ -965,8 +1002,8 @@ INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `progr
 (74, 'Modules 2', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-25 15:33:56', '2025-07-25 15:33:56', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (75, 'Modules 1', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-26 00:57:19', '2025-07-26 00:57:19', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (76, 'Modules 2', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-26 00:57:33', '2025-07-26 00:57:33', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(77, 'Modules 1', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:17:12', '2025-07-28 07:16:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2),
-(78, 'Modules 2', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, 'modules/1753626089_BRAVO-MANUSCRIPT.pdf', NULL, NULL, '2025-07-27 06:21:29', '2025-07-28 07:16:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
+(77, 'Modules 1', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:17:12', '2025-07-30 18:36:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
+(78, 'Modules 2', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, 'modules/1753626089_BRAVO-MANUSCRIPT.pdf', NULL, NULL, '2025-07-27 06:21:29', '2025-07-30 18:36:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2),
 (79, 'Modules 1', NULL, 41, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:27:10', '2025-07-27 06:27:10', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
@@ -991,11 +1028,8 @@ CREATE TABLE `module_completions` (
 --
 
 INSERT INTO `module_completions` (`id`, `student_id`, `program_id`, `modules_id`, `content_id`, `completed_at`, `created_at`, `updated_at`) VALUES
-(19, '2025-07-00001', 39, 75, NULL, '2025-07-26 01:11:14', '2025-07-26 01:11:14', '2025-07-26 01:11:14'),
-(20, '2025-07-00001', 39, 76, NULL, '2025-07-26 01:12:21', '2025-07-26 01:12:20', '2025-07-26 01:12:21'),
-(21, '2025-07-00001', 38, 73, NULL, '2025-07-26 01:15:32', '2025-07-26 01:15:32', '2025-07-26 01:15:32'),
-(22, '2025-07-00005', 38, 73, NULL, '2025-07-26 12:32:27', '2025-07-26 12:32:27', '2025-07-26 12:32:27'),
-(23, '2025-07-00006', 39, 75, NULL, '2025-07-27 02:54:13', '2025-07-27 02:54:12', '2025-07-27 02:54:13');
+(25, '2025-07-00001', 40, 78, NULL, '2025-07-31 07:17:46', '2025-07-31 07:17:46', '2025-07-31 07:17:46'),
+(26, '2025-07-00001', 41, 79, NULL, '2025-07-31 07:19:22', '2025-07-31 07:19:22', '2025-07-31 07:19:22');
 
 -- --------------------------------------------------------
 
@@ -1114,14 +1148,7 @@ CREATE TABLE `payments` (
 --
 
 INSERT INTO `payments` (`payment_id`, `enrollment_id`, `student_id`, `program_id`, `package_id`, `payment_method`, `amount`, `payment_status`, `rejection_reason`, `rejected_by`, `rejected_at`, `rejected_fields`, `resubmitted_at`, `resubmission_count`, `payment_details`, `verified_by`, `verified_at`, `receipt_number`, `reference_number`, `notes`, `created_at`, `updated_at`) VALUES
-(7, 165, '2025-07-00001', 39, 29, 'gcash', 399.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_165_1753451895.png\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T13:58:15.536577Z\\\"}\"', 1, '2025-07-25 05:58:31', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 05:58:15', '2025-07-25 05:58:31'),
-(8, 167, '2025-07-00002', 39, 33, 'gcash', 250.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_167_1753462074.png\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T16:47:54.448381Z\\\"}\"', 1, '2025-07-25 08:48:10', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 08:47:54', '2025-07-25 08:48:10'),
-(9, 168, '2025-07-00003', 38, 34, 'gcash', 2.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_168_1753462410.jfif\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T16:53:30.080629Z\\\"}\"', 1, '2025-07-25 08:53:47', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 08:53:30', '2025-07-25 08:53:47'),
-(10, 169, '2025-07-00003', 38, 34, 'gcash', 2.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_169_1753462997.png\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T17:03:17.638487Z\\\"}\"', 1, '2025-07-25 09:03:25', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 09:03:17', '2025-07-25 09:03:25'),
-(11, 171, '2025-07-00001', 38, 34, 'gcash', 2.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_171_1753464222.jfif\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T17:23:42.449235Z\\\"}\"', 1, '2025-07-25 09:23:51', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 09:23:42', '2025-07-25 09:23:51'),
-(12, 173, '2025-07-00001', 38, 33, 'gcash', 250.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_173_1753486219.png\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T23:30:19.714955Z\\\"}\"', 1, '2025-07-25 15:30:35', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 15:30:19', '2025-07-25 15:30:35'),
-(13, 174, '2025-07-00001', 38, 34, 'gcash', 2.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_174_1753486694.jfif\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-25T23:38:14.293677Z\\\"}\"', 1, '2025-07-25 15:38:23', NULL, NULL, 'Payment proof uploaded by student', '2025-07-25 15:38:14', '2025-07-25 15:38:23'),
-(14, 188, '2025-07-00007', 39, 34, 'gcash', 2.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_188_1753557743.png\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-26T19:22:23.477692Z\\\"}\"', 1, '2025-07-26 11:22:29', NULL, NULL, 'Payment proof uploaded by student', '2025-07-26 11:22:23', '2025-07-26 11:22:29');
+(15, 200, '2025-07-00001', 41, 34, 'gcash', 2.00, 'paid', NULL, NULL, NULL, NULL, NULL, 0, '\"{\\\"payment_proof_path\\\":\\\"payment_proofs\\\\\\/payment_proof_200_1753974992.png\\\",\\\"reference_number\\\":null,\\\"payment_method_name\\\":\\\"GCash\\\",\\\"uploaded_at\\\":\\\"2025-07-31T15:16:32.879586Z\\\"}\"', 1, '2025-07-31 07:16:40', NULL, NULL, 'Payment proof uploaded by student', '2025-07-31 07:16:32', '2025-07-31 07:16:40');
 
 -- --------------------------------------------------------
 
@@ -1151,27 +1178,7 @@ CREATE TABLE `payment_history` (
 --
 
 INSERT INTO `payment_history` (`payment_history_id`, `enrollment_id`, `user_id`, `student_id`, `program_id`, `package_id`, `amount`, `payment_status`, `payment_method`, `payment_notes`, `payment_date`, `processed_by_admin_id`, `created_at`, `updated_at`) VALUES
-(38, 158, 171, NULL, 36, 19, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-23 11:59:34', 1, '2025-07-23 11:59:34', '2025-07-23 11:59:34'),
-(40, 164, 169, '2025-07-00019', 35, 29, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-24 08:24:54', 1, '2025-07-24 08:24:54', '2025-07-24 08:24:54'),
-(41, 166, 174, NULL, 38, 33, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-25 08:54:33', 1, '2025-07-25 08:54:33', '2025-07-25 08:54:33'),
-(42, 172, 174, NULL, 38, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-25 09:34:09', 1, '2025-07-25 09:34:09', '2025-07-25 09:34:09'),
-(43, 170, 176, '2025-07-00003', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-25 09:34:12', 1, '2025-07-25 09:34:12', '2025-07-25 09:34:12'),
-(44, 175, 174, '2025-07-00001', 38, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-25 15:41:33', 1, '2025-07-25 15:41:33', '2025-07-25 15:41:33'),
-(45, 176, 174, '2025-07-00001', 38, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 00:53:54', 1, '2025-07-26 00:53:54', '2025-07-26 00:53:54'),
-(46, 177, 174, '2025-07-00001', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 01:14:16', 1, '2025-07-26 01:14:16', '2025-07-26 01:14:16'),
-(47, 178, 174, '2025-07-00001', 38, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 01:15:05', 1, '2025-07-26 01:15:05', '2025-07-26 01:15:05'),
-(48, 183, 178, '2025-07-00004', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 02:27:09', 1, '2025-07-26 02:27:09', '2025-07-26 02:27:09'),
-(49, 184, 178, '2025-07-00004', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 02:29:00', 1, '2025-07-26 02:29:00', '2025-07-26 02:29:00'),
-(50, 185, 179, '2025-07-00005', 39, 29, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 02:53:55', 1, '2025-07-26 02:53:55', '2025-07-26 02:53:55'),
-(51, 186, 180, '2025-07-00006', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 10:47:08', 1, '2025-07-26 10:47:08', '2025-07-26 10:47:08'),
-(52, 189, 182, '2025-07-00008', 39, 33, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 11:47:41', 1, '2025-07-26 11:47:41', '2025-07-26 11:47:41'),
-(53, 190, 182, '2025-07-00008', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 12:03:26', 1, '2025-07-26 12:03:26', '2025-07-26 12:03:26'),
-(54, 191, 182, '2025-07-00009', 38, 29, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 12:04:24', 1, '2025-07-26 12:04:24', '2025-07-26 12:04:24'),
-(55, 192, 182, '2025-07-00009', 39, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 12:18:31', 1, '2025-07-26 12:18:31', '2025-07-26 12:18:31'),
-(56, 187, 180, NULL, 38, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 12:18:35', 1, '2025-07-26 12:18:35', '2025-07-26 12:18:35'),
-(57, 193, 179, '2025-07-00005', 38, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-26 12:32:12', 1, '2025-07-26 12:32:12', '2025-07-26 12:32:12'),
-(58, 194, 180, '2025-07-00006', 40, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-27 06:23:21', 1, '2025-07-27 06:23:21', '2025-07-27 06:23:21'),
-(59, 195, 179, '2025-07-00005', 40, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-27 09:32:44', 1, '2025-07-27 09:32:44', '2025-07-27 09:32:44');
+(1, 199, 1, '2025-07-00001', 40, 34, NULL, 'paid', 'manual', 'Payment marked as paid by administrator', '2025-07-31 07:14:38', 1, '2025-07-31 07:14:38', '2025-07-31 07:14:38');
 
 -- --------------------------------------------------------
 
@@ -1636,37 +1643,8 @@ CREATE TABLE `registrations` (
 --
 
 INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `program_name`, `enrollment_type`, `learning_mode`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `dynamic_fields`, `photo_2x2`, `Start_Date`, `status`, `approved_by`, `approved_at`, `undo_reason`, `undone_at`, `undone_by`, `rejection_reason`, `rejected_fields`, `rejected_by`, `rejected_at`, `resubmitted_at`, `original_submission`, `created_at`, `updated_at`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `selected_courses`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `education_level`, `sync_async_mode`, `Test`, `last_name`, `referral_code`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `form_137`) VALUES
-(1753045093, 174, 29, NULL, NULL, NULL, 39, NULL, 'Full', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25', 'approved', NULL, '2025-07-25 05:58:01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 05:57:40', '2025-07-25 05:58:01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045094, 174, 33, 'Modular', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 09:08:03', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:00:34', '2025-07-25 09:08:03', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753459234_ETO NA.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":\\\"undefined\\\",\\\"name\\\":\\\"Modules 1\\\",\\\"selected_courses\\\":[]}]\"', '\"[]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045095, 175, 33, 'Modular', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753462016_BRAVO-MANUSCRIPT (1).pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 08:47:28', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:46:56', '2025-07-25 08:47:28', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753462016_ETO NA.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":66,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]},{\\\"id\\\":\\\"66\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]}]\"', '\"[\\\"34\\\",\\\"36\\\",\\\"34\\\",\\\"36\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045096, 176, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 08:53:01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:52:27', '2025-07-25 08:53:01', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":66,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]},{\\\"id\\\":\\\"66\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]}]\"', '\"[\\\"34\\\",\\\"36\\\",\\\"34\\\",\\\"36\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045097, 176, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 09:02:54', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 09:02:27', '2025-07-25 09:02:54', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":66,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]},{\\\"id\\\":\\\"66\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]}]\"', '\"[\\\"34\\\",\\\"36\\\",\\\"34\\\",\\\"36\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045098, 176, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 09:07:58', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 09:07:20', '2025-07-25 09:07:58', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":\\\"67\\\",\\\"name\\\":\\\"Modules 1\\\",\\\"selected_courses\\\":[\\\"33\\\"]}]\"', '\"[\\\"33\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045099, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 09:23:27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 09:23:09', '2025-07-25 09:23:27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":66,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"36\\\",\\\"34\\\"]},{\\\"id\\\":\\\"66\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"36\\\",\\\"34\\\"]}]\"', '\"[\\\"36\\\",\\\"34\\\",\\\"36\\\",\\\"34\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045100, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 09:34:23', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 09:33:51', '2025-07-25 09:34:23', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":69,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"35\\\"]},{\\\"id\\\":66,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]}]\"', '\"[\\\"35\\\",\\\"34\\\",\\\"36\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045101, 174, 33, 'Modular', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 15:30:05', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 15:29:44', '2025-07-25 15:30:05', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":66,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"34\\\",\\\"36\\\"]},{\\\"id\\\":69,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"35\\\"]}]\"', '\"[\\\"34\\\",\\\"36\\\",\\\"35\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045102, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 15:37:56', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 15:37:43', '2025-07-25 15:37:56', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":74,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"39\\\"]},{\\\"id\\\":73,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"40\\\"]}]\"', '\"[\\\"39\\\",\\\"40\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045103, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-25', 'approved', NULL, '2025-07-25 15:41:26', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 15:41:11', '2025-07-25 15:41:26', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":74,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"39\\\",\\\"42\\\"]},{\\\"id\\\":73,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"40\\\",\\\"40\\\"]}]\"', '\"[\\\"39\\\",\\\"42\\\",\\\"40\\\",\\\"40\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045104, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 00:53:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 00:53:36', '2025-07-26 00:53:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":74,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"42\\\"]},{\\\"id\\\":73,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"40\\\",\\\"41\\\"]}]\"', '\"[\\\"42\\\",\\\"40\\\",\\\"41\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045105, 174, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 01:14:11', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 01:13:57', '2025-07-26 01:14:11', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]},{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]}]\"', '\"[\\\"44\\\",\\\"43\\\",\\\"45\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045106, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 01:15:02', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 01:14:51', '2025-07-26 01:15:02', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":73,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"40\\\",\\\"41\\\"]},{\\\"id\\\":74,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"39\\\"]}]\"', '\"[\\\"40\\\",\\\"41\\\",\\\"39\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045107, 174, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 01:33:00', '2025-07-26 01:33:00', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]},{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]}]\"', '\"[\\\"43\\\",\\\"45\\\",\\\"44\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045108, 174, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 01:48:31', '2025-07-26 01:48:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":74,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"39\\\",\\\"42\\\"]},{\\\"id\\\":73,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"40\\\",\\\"41\\\"]}]\"', '\"[\\\"39\\\",\\\"42\\\",\\\"40\\\",\\\"41\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045109, 174, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 02:05:30', '2025-07-26 02:05:30', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]},{\\\"id\\\":76,\\\"name\\\":\\\"Modules 23 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"43\\\",\\\"45\\\"]}]\"', '\"[\\\"44\\\",\\\"43\\\",\\\"43\\\",\\\"45\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045110, 174, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'rejected', NULL, NULL, NULL, NULL, NULL, 'w', '\"[\\\"contact_number\\\"]\"', NULL, '2025-07-26 10:55:51', NULL, NULL, '2025-07-26 02:15:25', '2025-07-26 10:55:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753524925_ETO NA.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]},{\\\"id\\\":\\\"76\\\",\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]},{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]}]\"', '\"[\\\"43\\\",\\\"45\\\",\\\"43\\\",\\\"45\\\",\\\"44\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045111, 178, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Bateman', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753525601_TEST 2.pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 02:26:57', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 02:26:41', '2025-07-26 02:26:57', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753525601_TEST 1.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"43\\\"]},{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]}]\"', '\"[\\\"43\\\",\\\"44\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045112, 178, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Bateman', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 02:28:53', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 02:28:43', '2025-07-26 02:28:53', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753525723_TEST 2.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"45\\\"]},{\\\"id\\\":\\\"76\\\",\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"45\\\"]}]\"', '\"[\\\"45\\\",\\\"45\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045113, 179, 29, NULL, NULL, NULL, 39, NULL, 'Full', 'asynchronous', 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753527212_6884b3aca65fb_TEST 1.pdf', NULL, NULL, '2025-07-26', 'approved', NULL, '2025-07-26 02:53:52', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 02:53:32', '2025-07-27 08:09:08', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753527212_6884b3aca4903_TEST 1.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045114, 180, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753555570_final-docu.pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 10:46:50', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 10:46:11', '2025-07-27 06:56:22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753555570_final-docu.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"45\\\",\\\"43\\\"]},{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]}]\"', '\"[\\\"45\\\",\\\"43\\\",\\\"44\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045115, 180, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'rejected', NULL, NULL, NULL, NULL, NULL, 'w', '\"[\\\"zipcode\\\",\\\"PSA\\\",\\\"TOR\\\"]\"', NULL, '2025-07-26 10:57:08', NULL, NULL, '2025-07-26 10:56:45', '2025-07-26 10:57:08', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":74,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"39\\\",\\\"42\\\"]},{\\\"id\\\":73,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"40\\\"]}]\"', '\"[\\\"39\\\",\\\"42\\\",\\\"40\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045116, 181, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', '12345678', NULL, '12345678', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 11:22:10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 11:13:20', '2025-07-26 11:22:10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]},{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]}]\"', '\"[\\\"43\\\",\\\"45\\\",\\\"44\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045117, 182, 33, 'Modular', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 11:47:37', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 11:47:20', '2025-07-26 11:47:37', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":73,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"41\\\",\\\"40\\\"]},{\\\"id\\\":74,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"42\\\"]}]\"', '\"[\\\"41\\\",\\\"40\\\",\\\"42\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045118, 182, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 12:03:23', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 12:03:08', '2025-07-26 12:03:23', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]},{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]}]\"', '\"[\\\"43\\\",\\\"45\\\",\\\"44\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045119, 182, 29, NULL, NULL, NULL, 38, NULL, 'Full', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-30', 'approved', NULL, '2025-07-26 12:04:20', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 12:04:09', '2025-07-26 12:04:20', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045120, 182, 34, 'Package 33', NULL, NULL, 39, 'Civil Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 12:18:26', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 12:18:11', '2025-07-26 12:18:26', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":75,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"44\\\"]},{\\\"id\\\":76,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"43\\\",\\\"45\\\"]}]\"', '\"[\\\"44\\\",\\\"43\\\",\\\"45\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045121, 179, 34, 'Package 33', NULL, NULL, 38, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-26', 'approved', NULL, '2025-07-26 12:32:08', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 12:31:51', '2025-07-26 12:32:08', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":74,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"39\\\",\\\"42\\\"]},{\\\"id\\\":73,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"40\\\",\\\"41\\\"]}]\"', '\"[\\\"39\\\",\\\"42\\\",\\\"40\\\",\\\"41\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045122, 180, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-27', 'approved', NULL, '2025-07-27 06:23:17', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-27 06:23:08', '2025-07-27 06:23:17', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":77,\\\"name\\\":\\\"Modules 13 courses selected\\\",\\\"selected_courses\\\":[\\\"46\\\",\\\"47\\\",\\\"48\\\"]},{\\\"id\\\":78,\\\"name\\\":\\\"Modules 21 course selected\\\",\\\"selected_courses\\\":[\\\"50\\\"]}]\"', '\"[\\\"46\\\",\\\"47\\\",\\\"48\\\",\\\"50\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(1753045123, 179, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-27', 'approved', NULL, '2025-07-27 09:32:39', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-27 09:32:21', '2025-07-27 09:32:39', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":78,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"50\\\",\\\"51\\\"]},{\\\"id\\\":77,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"46\\\"]}]\"', '\"[\\\"50\\\",\\\"51\\\",\\\"46\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(1, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753974831_Vince _Certificate (1).pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:13:51', '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753974831_1753907633_final-docu.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":78,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"50\\\",\\\"51\\\"]},{\\\"id\\\":77,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"48\\\"]}]\"', '\"[\\\"50\\\",\\\"51\\\",\\\"48\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(2, 1, 34, 'Package 33', NULL, NULL, 41, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:16:10', '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":79,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]},{\\\"id\\\":\\\"79\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]}]\"', '\"[\\\"52\\\",\\\"53\\\",\\\"52\\\",\\\"53\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1772,14 +1750,7 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `photo_2x2`, `profile_photo`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `is_archived`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `education_level`, `program_name`, `enrollment_type`, `learning_mode`, `Undergraduate`, `Graduate`, `dynamic_fields`, `status`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `referral_code`, `ama_namin`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `Test`, `last_name`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`) VALUES
-('2025-07-00001', 174, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 13:57:40', '2025-07-25 05:57:40', '2025-07-25 05:57:40', 'vince03handsome11@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00002', 175, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:47:28', '2025-07-25 08:47:28', '2025-07-25 08:47:28', '1234567ss8@gmail.com', 0, 33, 'Modular', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00003', 176, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-25 08:53:01', '2025-07-25 08:53:01', '2025-07-25 08:53:01', 'vince03handsome101@gmail.com', 0, 34, 'Package 33', NULL, NULL, 38, 'Graduate', 'Mechanical Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00004', 178, 'Bateman', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 02:26:57', '2025-07-26 02:26:57', '2025-07-26 02:26:57', '1@gmail.com', 0, 34, 'Package 33', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00005', 179, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_179_1753814839.png', NULL, '2025-07-26 10:53:32', '2025-07-26 02:53:32', '2025-07-29 10:47:19', 'vince03handsome11@gmail.com', 0, NULL, NULL, NULL, NULL, NULL, 'Graduate', NULL, NULL, NULL, 0, 0, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00006', 180, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_180_1753628223.jpg', NULL, '2025-07-26 10:46:50', '2025-07-26 10:46:50', '2025-07-27 06:57:04', '1@gmail.com', 0, 34, 'Package 33', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00007', 181, '12345678', NULL, '12345678', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 11:22:10', '2025-07-26 11:22:10', '2025-07-26 11:22:10', '12@gmail.com', 0, 34, 'Package 33', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('2025-07-00009', 182, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-26 11:47:37', '2025-07-26 11:47:37', '2025-07-26 12:04:09', 'vince03handsome@gmail.com', 0, 33, 'Modular', NULL, NULL, 39, 'Graduate', 'Civil Engineer', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+('2025-07-00001', 1, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:14:15', '2025-07-31 07:14:15', '2025-07-31 07:14:15', 'vince03handsome11@gmail.com', 0, 34, 'Package 33', NULL, NULL, 40, 'Graduate', 'Nursing', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1831,6 +1802,24 @@ CREATE TABLE `student_grades` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_progress`
+--
+
+CREATE TABLE `student_progress` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `student_id` varchar(255) NOT NULL,
+  `content_id` bigint(20) UNSIGNED NOT NULL,
+  `course_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `module_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `is_completed` tinyint(1) NOT NULL DEFAULT 0,
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1921,10 +1910,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `admin_id`, `directors_id`, `is_online`, `last_seen`, `email`, `user_firstname`, `user_lastname`, `password`, `role`, `enrollment_id`, `created_at`, `updated_at`) VALUES
-(179, 1, 1, 0, NULL, 'vince03handsome11@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$1YxCX7B10mox15n6F3JgRuxLI.QmmIJpnEJWvdTzlOtZB1FxIxMl6', 'student', 195, '2025-07-26 02:53:32', '2025-07-27 09:32:21'),
-(180, 1, NULL, 0, NULL, '1@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$rEX1vN3PGZmwp3CZX6nNke3cuRTEqH2XPpKbsHVs.JgCD7LwRJECK', 'student', 194, '2025-07-26 10:46:11', '2025-07-27 06:23:08'),
-(181, 1, NULL, 0, NULL, '12@gmail.com', '12345678', '12345678', '$2y$10$p2OczAtodDknEZTjlMCRP.Wr2W2F1T7TOcRuytMNcp6VIc4Ik7VpS', 'student', 188, '2025-07-26 11:13:20', '2025-07-26 11:13:20'),
-(182, 1, NULL, 0, NULL, 'vince03handsome@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$5PmOVFnGPaRFgwD9XUH/b.LhzZaetgzA/vYb9N/2iib259YTDvoWq', 'student', 192, '2025-07-26 11:47:20', '2025-07-26 12:18:11');
+(1, 1, NULL, 0, NULL, 'vince03handsome11@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$M.UIDtIlXTUCaIrz/MF8W.DD0mCXhTHdlVKTMvqexuT0gxdxHbpWS', 'student', 200, '2025-07-31 07:13:51', '2025-07-31 07:16:10');
 
 -- --------------------------------------------------------
 
@@ -1996,6 +1982,26 @@ ALTER TABLE `attendance`
 --
 ALTER TABLE `batch_professors`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `board_passers`
+--
+ALTER TABLE `board_passers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `board_passers_student_id_board_exam_exam_year_index` (`student_id`,`board_exam`,`exam_year`),
+  ADD KEY `board_passers_result_exam_year_index` (`result`,`exam_year`),
+  ADD KEY `board_passers_program_index` (`program`);
+
+--
+-- Indexes for table `certificates`
+--
+ALTER TABLE `certificates`
+  ADD PRIMARY KEY (`certificate_id`),
+  ADD KEY `certificates_student_id_index` (`student_id`),
+  ADD KEY `certificates_enrollment_id_index` (`enrollment_id`),
+  ADD KEY `certificates_program_id_index` (`program_id`),
+  ADD KEY `certificates_status_index` (`status`),
+  ADD KEY `certificates_certificate_number_index` (`certificate_number`);
 
 --
 -- Indexes for table `chats`
@@ -2328,6 +2334,14 @@ ALTER TABLE `student_batches`
   ADD KEY `student_batches_created_by_foreign` (`created_by`);
 
 --
+-- Indexes for table `student_progress`
+--
+ALTER TABLE `student_progress`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_student_content_progress` (`student_id`,`content_id`),
+  ADD KEY `student_progress_content_id_foreign` (`content_id`);
+
+--
 -- Indexes for table `ui_settings`
 --
 ALTER TABLE `ui_settings`
@@ -2386,7 +2400,7 @@ ALTER TABLE `assignments`
 -- AUTO_INCREMENT for table `assignment_submissions`
 --
 ALTER TABLE `assignment_submissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `batch_professors`
@@ -2395,10 +2409,22 @@ ALTER TABLE `batch_professors`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `board_passers`
+--
+ALTER TABLE `board_passers`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- AUTO_INCREMENT for table `certificates`
+--
+ALTER TABLE `certificates`
+  MODIFY `certificate_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `chats`
 --
 ALTER TABLE `chats`
-  MODIFY `chat_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `chat_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
 
 --
 -- AUTO_INCREMENT for table `class_meetings`
@@ -2410,13 +2436,13 @@ ALTER TABLE `class_meetings`
 -- AUTO_INCREMENT for table `content_completions`
 --
 ALTER TABLE `content_completions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
 
 --
 -- AUTO_INCREMENT for table `content_items`
 --
 ALTER TABLE `content_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT for table `courses`
@@ -2428,7 +2454,7 @@ ALTER TABLE `courses`
 -- AUTO_INCREMENT for table `course_completions`
 --
 ALTER TABLE `course_completions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT for table `deadlines`
@@ -2458,13 +2484,13 @@ ALTER TABLE `education_levels`
 -- AUTO_INCREMENT for table `enrollments`
 --
 ALTER TABLE `enrollments`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=201;
 
 --
 -- AUTO_INCREMENT for table `enrollment_courses`
 --
 ALTER TABLE `enrollment_courses`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT for table `failed_jobs`
@@ -2494,7 +2520,7 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `modules`
@@ -2506,7 +2532,7 @@ ALTER TABLE `modules`
 -- AUTO_INCREMENT for table `module_completions`
 --
 ALTER TABLE `module_completions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `packages`
@@ -2530,13 +2556,13 @@ ALTER TABLE `package_modules`
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `payment_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `payment_history`
 --
 ALTER TABLE `payment_history`
-  MODIFY `payment_history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `payment_history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `payment_methods`
@@ -2620,13 +2646,19 @@ ALTER TABLE `referrals`
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
-  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1753045124;
+  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `student_batches`
 --
 ALTER TABLE `student_batches`
   MODIFY `batch_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
+-- AUTO_INCREMENT for table `student_progress`
+--
+ALTER TABLE `student_progress`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ui_settings`
@@ -2638,7 +2670,7 @@ ALTER TABLE `ui_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=183;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `websockets_statistics_entries`
@@ -2708,6 +2740,12 @@ ALTER TABLE `module_completions`
 --
 ALTER TABLE `payment_method_fields`
   ADD CONSTRAINT `payment_method_fields_payment_method_id_foreign` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_methods` (`payment_method_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `student_progress`
+--
+ALTER TABLE `student_progress`
+  ADD CONSTRAINT `student_progress_content_id_foreign` FOREIGN KEY (`content_id`) REFERENCES `content_items` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
