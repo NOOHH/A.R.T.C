@@ -259,14 +259,15 @@ body.sidebar-collapsed .main-content-area {
         </a>
         
         @php
-            $contentId = request()->query('content_id');
-            if (!$contentId) {
-                // Try to find content by quiz_id
-                $content = \App\Models\ContentItem::where('content_type', 'quiz')
-                    ->whereRaw("JSON_EXTRACT(content_data, '$.quiz_id') = ?", [$quiz->quiz_id])
-                    ->first();
-                $contentId = $content->id ?? null;
-            }
+            // contentId is now passed from the controller
+            // $contentId = request()->query('content_id');
+            // if (!$contentId) {
+            //     // Try to find content by quiz_id
+            //     $content = \App\Models\ContentItem::where('content_type', 'quiz')
+            //         ->whereRaw("JSON_EXTRACT(content_data, '$.quiz_id') = ?", [$quiz->quiz_id])
+            //         ->first();
+            //     $contentId = $content->id ?? null;
+            // }
         @endphp
         
         @if($contentId)
@@ -444,8 +445,7 @@ body.sidebar-collapsed .main-content-area {
     
     // Function to handle back button correctly
     function goBack() {
-        // Instead of using history.back() which might send user back to quiz taking page,
-        // navigate directly to dashboard or content page if available
+        // Navigate directly to content page if available, otherwise to dashboard
         @if(isset($contentId) && $contentId)
             window.location.href = "{{ route('student.content.view', $contentId ?? 0) }}";
         @else

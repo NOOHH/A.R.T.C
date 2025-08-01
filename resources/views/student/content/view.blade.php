@@ -455,7 +455,7 @@
                                                         </td>
                                                         <td>{{ $attempt->completed_at->format('M j, Y g:i A') }}</td>
                                                         <td>
-                                                            <a href="{{ route('student.quiz.results', $attempt->attempt_id) }}" 
+                                                            <a href="{{ route('student.quiz.results', ['attemptId' => $attempt->attempt_id, 'content_id' => $content->id]) }}" 
                                                                class="btn btn-sm btn-outline-primary">
                                                                 View Results
                                                             </a>

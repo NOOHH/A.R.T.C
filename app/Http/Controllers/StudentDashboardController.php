@@ -3087,17 +3087,53 @@ class StudentDashboardController extends Controller
             $questions = $quiz->questions;
             $studentAnswers = $attempt->answers;
 
+            // Find the content item associated with this quiz
+            $contentId = request()->query('content_id'); // First try to get from query params
+            if (!$contentId) {
+                // If not in query params, try to find by quiz_id
+                $content = \App\Models\ContentItem::where('content_type', 'quiz')
+                    ->whereRaw("JSON_EXTRACT(content_data, '$.quiz_id') = ?", [$quiz->quiz_id])
+                    ->first();
+                if ($content) {
+                    $contentId = $content->id;
+                }
+            }
+
             // Prepare detailed results
             $results = [];
             foreach ($questions as $question) {
                 $questionId = $question->id;
                 $studentAnswer = $studentAnswers[$questionId] ?? null;
                 
+                // Convert student answer to letter format for display if it's numeric
+                $studentAnswerDisplay = $studentAnswer;
+                $correctAnswerDisplay = $question->correct_answer;
+                
+                if ($question->question_type === 'multiple_choice') {
+                    // If student answer is numeric (0, 1, 2), convert to letter (A, B, C)
+                    if (is_numeric($studentAnswer)) {
+                        $studentAnswerDisplay = chr(65 + (int)$studentAnswer);
+                    }
+                    
+                    // If correct answer is numeric (0, 1, 2), convert to letter (A, B, C)
+                    if (is_numeric($correctAnswerDisplay)) {
+                        $correctAnswerDisplay = chr(65 + (int)$correctAnswerDisplay);
+                    }
+                    
+                    // For comparison, normalize both to the same format
+                    $normalizedStudentAnswer = is_numeric($studentAnswer) ? (string)$studentAnswer : (string)(ord($studentAnswer) - 65);
+                    $normalizedCorrectAnswer = is_numeric($question->correct_answer) ? (string)$question->correct_answer : (string)(ord($question->correct_answer) - 65);
+                    
+                    $isCorrect = $normalizedStudentAnswer === $normalizedCorrectAnswer;
+                } else {
+                    $isCorrect = $studentAnswer === $question->correct_answer;
+                }
+                
                 $results[] = [
                     'question' => $question,
-                    'student_answer' => $studentAnswer,
-                    'correct_answer' => $question->correct_answer,
-                    'is_correct' => $studentAnswer === $question->correct_answer
+                    'student_answer' => $studentAnswerDisplay,
+                    'correct_answer' => $correctAnswerDisplay,
+                    'is_correct' => $isCorrect
                 ];
             }
 
@@ -3105,7 +3141,8 @@ class StudentDashboardController extends Controller
                 'attempt',
                 'quiz',
                 'student',
-                'results'
+                'results',
+                'contentId'
             ));
 
         } catch (\Exception $e) {
