@@ -297,15 +297,17 @@
 </div>
 
 <!-- View Questions Modal -->
-<div class="modal fade" id="viewQuestionsModal" tabindex="-1" aria-labelledby="viewQuestionsModalLabel" aria-hidden="true">
+<div class="modal fade" id="viewQuestionsModal" tabindex="-1" aria-labelledby="viewQuestionsModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title" id="viewQuestionsModalLabel"><i class="bi bi-list-ul"></i> Quiz Questions</h5>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewQuestionsModalLabel">
+                    <i class="bi bi-list-ul"></i> Quiz Questions
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="questionsList">
+                <div id="questionsList" class="p-3">
                     <div class="d-flex justify-content-center">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -313,8 +315,10 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Close
+                </button>
             </div>
         </div>
     </div>
@@ -360,6 +364,76 @@ body.modal-open {
     color: #6c757d;
 }
 
+/* Mobile-responsive table improvements */
+.table-responsive {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.question-preview {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.options-preview {
+    font-size: 0.8em;
+    color: #6c757d;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mobile responsive buttons */
+@media (max-width: 768px) {
+    .d-flex.flex-wrap.gap-1 {
+        justify-content: center;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        margin: 1px;
+    }
+    
+    .question-preview {
+        max-width: 200px;
+    }
+    
+    .options-preview {
+        max-width: 150px;
+    }
+    
+    .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+
+/* Professional styling improvements */
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+}
+
+.table-primary > th {
+    background: linear-gradient(135deg, #b3d7ff 0%, #7bb3ff 100%) !important;
+    border-color: #92c5f7 !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+
 /* Quiz Canvas Styles */
 .quiz-canvas {
     min-height: 400px;
@@ -380,6 +454,20 @@ body.modal-open {
     border-radius: 8px;
     margin-bottom: 15px;
     padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.quiz-question-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Button consistency */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
     position: relative;
     cursor: move;
     transition: all 0.3s ease;
@@ -661,6 +749,86 @@ function resetForm() {
     closeSidePanel();
     questionCounter = 0;
     window.quizQuestions = {};
+}
+
+// Load quiz data for editing
+async function loadQuizData(quizId) {
+    try {
+        console.log('Loading quiz data for editing:', quizId);
+        const response = await fetch(`/professor/quiz-generator/api/questions/${quizId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Populate basic quiz information
+            document.getElementById('quizId').value = data.quiz.quiz_id;
+            document.getElementById('quiz_title').value = data.quiz.quiz_title || '';
+            document.getElementById('quiz_description').value = data.quiz.quiz_description || '';
+            document.getElementById('program_id').value = data.quiz.program_id || '';
+            
+            // Load modules and courses if available
+            if (data.quiz.program_id) {
+                await loadModules(data.quiz.program_id);
+                if (data.quiz.module_id) {
+                    document.getElementById('module_id').value = data.quiz.module_id;
+                    await loadCourses(data.quiz.module_id);
+                    if (data.quiz.course_id) {
+                        document.getElementById('course_id').value = data.quiz.course_id;
+                    }
+                }
+            }
+            
+            // Set quiz settings
+            document.getElementById('time_limit').value = data.quiz.time_limit || 60;
+            document.getElementById('max_attempts').value = data.quiz.max_attempts || 1;
+            document.getElementById('infinite_retakes').checked = data.quiz.infinite_retakes || false;
+            document.getElementById('has_deadline').checked = data.quiz.has_deadline || false;
+            
+            if (data.quiz.due_date) {
+                document.getElementById('due_date').value = data.quiz.due_date;
+            }
+            
+            // Load questions into canvas
+            const canvas = document.getElementById('quizCanvas');
+            canvas.innerHTML = '';
+            window.quizQuestions = {};
+            window.questionCounter = 0;
+            
+            if (data.questions && data.questions.length > 0) {
+                data.questions.forEach((question, index) => {
+                    const questionData = {
+                        id: question.id,
+                        question: question.question_text,
+                        type: question.question_type,
+                        options: question.options || ['', '', '', ''],
+                        correct_answer: question.correct_answer || 0,
+                        explanation: question.explanation || '',
+                        points: question.points || 1,
+                        order: question.question_order || index + 1
+                    };
+                    
+                    addQuestionToCanvas(questionData);
+                });
+            } else {
+                resetForm();
+            }
+            
+            updateQuestionCount();
+            console.log('Quiz data loaded successfully');
+            
+        } else {
+            throw new Error(data.message || 'Failed to load quiz data');
+        }
+        
+    } catch (error) {
+        console.error('Error loading quiz data:', error);
+        alert('Error loading quiz data: ' + error.message);
+        resetForm();
+    }
 }
 
 // Store the last uploaded file for regeneration
@@ -1549,11 +1717,13 @@ async function saveQuiz() {
     console.log('Quiz data being sent:', quizData);
 
     try {
-        const url = currentQuizId ? 
+        // Determine if this is an edit or create operation
+        const isEdit = currentQuizId && document.getElementById('quizId').value;
+        const url = isEdit ? 
             `/professor/quiz-generator/update-quiz/${currentQuizId}` : 
             '{{ route("professor.quiz-generator.save-manual") }}';
         
-        const method = currentQuizId ? 'PUT' : 'POST';    
+        const method = isEdit ? 'PUT' : 'POST';    
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -1567,17 +1737,17 @@ async function saveQuiz() {
         const data = await response.json();
         
         if (data.success) {
-            alert('Quiz saved successfully!');
+            showAlert('success', isEdit ? 'Quiz updated successfully!' : 'Quiz created successfully!');
             // Close modal and reload page
             const modal = bootstrap.Modal.getInstance(document.getElementById('createQuizModal'));
             modal.hide();
-            location.reload();
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Error saving quiz: ' + (data.message || 'Unknown error'));
+            showAlert('danger', 'Error saving quiz: ' + (data.message || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error saving quiz:', error);
-        alert('Error saving quiz. Please try again.');
+        showAlert('danger', 'Error saving quiz. Please try again.');
     }
 }
 
@@ -2204,16 +2374,19 @@ async function restoreQuiz(quizId) {
             
             if (data.questions && data.questions.length > 0) {
                 let html = `
-                    <h4 class="mb-3">${data.quiz.title}</h4>
+                    <h4 class="mb-3 d-flex align-items-center">
+                        <i class="bi bi-list-ul me-2 text-primary"></i>
+                        ${data.quiz.title}
+                        <span class="badge bg-secondary ms-2">${data.questions.length} Questions</span>
+                    </h4>
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table class="table table-hover">
+                            <thead class="table-primary">
                                 <tr>
-                                    <th>#</th>
+                                    <th style="width: 60px;">#</th>
                                     <th>Question</th>
-                                    <th>Type</th>
-                                    <th>Correct Answer</th>
-                                    <th>Points</th>
+                                    <th style="width: 140px;">Type</th>
+                                    <th style="width: 120px;">Correct Answer</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2246,11 +2419,19 @@ async function restoreQuiz(quizId) {
                     
                     html += `
                         <tr>
-                            <td>${index + 1}</td>
-                            <td>${question.question_text}</td>
-                            <td>${question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'True/False'}</td>
-                            <td>${question.correct_answer}</td>
-                            <td>${question.points || 1}</td>
+                            <td class="fw-semibold">${index + 1}</td>
+                            <td>
+                                <div class="question-preview">
+                                    ${question.question_text}
+                                </div>
+                                ${optionsDisplay ? `<div class="options-preview mt-2 small text-muted">${optionsDisplay}</div>` : ''}
+                            </td>
+                            <td>
+                                <span class="badge ${question.question_type === 'multiple_choice' ? 'bg-primary' : 'bg-info'}">
+                                    ${question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'True/False'}
+                                </span>
+                            </td>
+                            <td class="fw-semibold text-success">${question.correct_answer}</td>
                         </tr>
                     `;
                     
@@ -2354,11 +2535,18 @@ async function deleteQuiz(quizId) {
 }
 
 function showAlert(type, message) {
+    // Remove any existing alerts
+    const existingAlerts = document.querySelectorAll('.alert.position-fixed');
+    existingAlerts.forEach(alert => alert.remove());
+    
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
     alertDiv.innerHTML = `
-        ${message}
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'} me-2"></i>
+            <div>${message}</div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
     
@@ -2371,5 +2559,30 @@ function showAlert(type, message) {
         }
     }, 5000);
 }
+
+// Fix modal backdrop issues
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure modals close properly when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
+            const modal = bootstrap.Modal.getInstance(e.target);
+            if (modal) {
+                modal.hide();
+            }
+        }
+    });
+    
+    // Fix backdrop for viewQuestionsModal
+    const viewQuestionsModal = document.getElementById('viewQuestionsModal');
+    if (viewQuestionsModal) {
+        viewQuestionsModal.addEventListener('hidden.bs.modal', function() {
+            // Remove any lingering backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+        });
+    }
+});
 </script>
 @endpush

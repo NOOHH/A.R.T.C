@@ -60,37 +60,57 @@
                         <small class="text-muted">{{ $quiz->created_at->format('M j, Y') }}</small>
                     </td>
                     <td>
-                        <div class="btn-group-vertical btn-group-sm" role="group">
+                        <div class="d-flex flex-wrap gap-1" role="group">
                             <!-- View Questions (Modal) -->
-                            <button class="btn btn-outline-secondary btn-sm view-questions-modal-btn" data-quiz-id="{{ $quiz->quiz_id }}" data-bs-toggle="modal" data-bs-target="#viewQuestionsModal">
-                                <i class="bi bi-list-ul"></i> View Questions
+                            <button class="btn btn-outline-primary btn-sm view-questions-modal-btn" 
+                                    data-quiz-id="{{ $quiz->quiz_id }}" 
+                                    title="View Questions">
+                                <i class="bi bi-list-ul"></i>
+                                <span class="d-none d-md-inline ms-1">Questions</span>
                             </button>
                             
                             <!-- Preview Quiz -->
-                            <button class="btn btn-outline-primary btn-sm preview-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
-                                <i class="bi bi-eye"></i> Preview
+                            <button class="btn btn-outline-info btn-sm preview-quiz-btn" 
+                                    data-quiz-id="{{ $quiz->quiz_id }}"
+                                    title="Preview Quiz">
+                                <i class="bi bi-eye"></i>
+                                <span class="d-none d-md-inline ms-1">Preview</span>
                             </button>
+
                             <!-- Status-specific actions -->
                             @if($status === 'draft')
-                                <button class="btn btn-success btn-sm" onclick="publishQuiz('{{ $quiz->quiz_id }}')">
-                                    <i class="bi bi-check-circle"></i> Publish
+                                <!-- Edit Quiz -->
+                                <button class="btn btn-outline-warning btn-sm edit-quiz-btn" 
+                                        data-quiz-id="{{ $quiz->quiz_id }}"
+                                        data-edit-quiz="true"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#createQuizModal"
+                                        title="Edit Quiz">
+                                    <i class="bi bi-pencil"></i>
+                                    <span class="d-none d-md-inline ms-1">Edit</span>
                                 </button>
-                                <button class="btn btn-warning btn-sm" onclick="archiveQuiz('{{ $quiz->quiz_id }}')">
-                                    <i class="bi bi-archive"></i> Archive
+                                
+                                <button class="btn btn-success btn-sm" 
+                                        onclick="publishQuiz('{{ $quiz->quiz_id }}')"
+                                        title="Publish Quiz">
+                                    <i class="bi bi-check-circle"></i>
+                                    <span class="d-none d-md-inline ms-1">Publish</span>
                                 </button>
                             @elseif($status === 'published')
-                                <button class="btn btn-warning btn-sm" onclick="archiveQuiz('{{ $quiz->quiz_id }}')">
-                                    <i class="bi bi-archive"></i> Archive
+                                <button class="btn btn-warning btn-sm" 
+                                        onclick="archiveQuiz('{{ $quiz->quiz_id }}')"
+                                        title="Archive Quiz">
+                                    <i class="bi bi-archive"></i>
+                                    <span class="d-none d-md-inline ms-1">Archive</span>
                                 </button>
                             @elseif($status === 'archived')
-                                <button class="btn btn-info btn-sm" onclick="restoreQuiz('{{ $quiz->quiz_id }}')">
-                                    <i class="bi bi-arrow-clockwise"></i> Unarchive
+                                <button class="btn btn-info btn-sm" 
+                                        onclick="restoreQuiz('{{ $quiz->quiz_id }}')"
+                                        title="Restore Quiz">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    <span class="d-none d-md-inline ms-1">Restore</span>
                                 </button>
                             @endif
-                            <!-- Delete (available for all statuses) -->
-                            <button class="btn btn-danger btn-sm delete-quiz-btn" data-quiz-id="{{ $quiz->quiz_id }}">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
                         </div>
                     </td>
                 </tr>

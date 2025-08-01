@@ -1965,6 +1965,8 @@ Route::middleware(['professor.auth'])
          ->name('grading.student');
     Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz'])
          ->name('quiz-generator.save-manual');
+    Route::put('/quiz-generator/update-quiz/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuiz'])
+         ->name('quiz-generator.update-quiz');
     Route::post('/quiz-generator/question/options', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionOptions'])
          ->name('quiz-generator.question.options');
     // ...existing professor routes...
