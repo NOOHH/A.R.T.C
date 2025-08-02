@@ -951,10 +951,15 @@ class QuizGeneratorController extends Controller
     /**
      * Delete a quiz
      */
-    public function delete(Quiz $quiz)
+    public function delete($quizId)
     {
         try {
+            // Find the quiz by ID instead of relying on route model binding
+            $quiz = Quiz::findOrFail($quizId);
+            
             // Admin can delete any quiz (both admin and professor created)
+            
+            DB::beginTransaction();
             
             // Delete associated content item
             if ($quiz->content_id) {
@@ -966,6 +971,8 @@ class QuizGeneratorController extends Controller
 
             // Delete the quiz
             $quiz->delete();
+            
+            DB::commit();
 
             Log::info('Quiz deleted successfully (ADMIN)', ['quiz_id' => $quiz->quiz_id]);
 
@@ -975,9 +982,11 @@ class QuizGeneratorController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error deleting quiz (ADMIN)', [
-                'quiz_id' => $quiz->quiz_id,
-                'error' => $e->getMessage()
+                'quiz_id' => $quizId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'success' => false,

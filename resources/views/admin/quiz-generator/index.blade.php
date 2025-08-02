@@ -2135,40 +2135,5 @@ function changeQuizStatus(quizId, newStatus) {
         showAlert('danger', 'An error occurred while updating the quiz status');
     });
 }
-
-function deleteQuiz(quizId) {
-    console.log('Delete quiz:', quizId);
-    
-    if (!confirm('Are you sure you want to permanently delete this quiz? This action cannot be undone.')) {
-        return;
-    }
-    
-    // Send AJAX request to delete quiz
-    fetch(`/admin/quiz-generator/${quizId}/delete`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', data.message);
-            // Reload the page to update the quiz tables
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('danger', data.message || 'Failed to delete quiz');
-        }
-    })
-    .catch(error => {
-        console.error('Error deleting quiz:', error);
-        showAlert('danger', 'An error occurred while deleting the quiz');
-    });
-}
 </script>
 @endpush

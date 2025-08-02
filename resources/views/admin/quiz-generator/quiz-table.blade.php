@@ -87,9 +87,11 @@
                     </td>
                     <td>
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="editQuiz({{ $quiz->quiz_id }})" title="Edit Quiz">
-                                <i class="bi bi-pencil"></i>
-                            </button>
+                            @if($status !== 'archived')
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="editQuiz({{ $quiz->quiz_id }})" title="Edit Quiz">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            @endif
                             
                             @if($status === 'draft')
                                 <button type="button" class="btn btn-outline-success btn-sm" onclick="changeQuizStatus({{ $quiz->quiz_id }}, 'published')" title="Publish Quiz">
