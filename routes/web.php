@@ -1102,10 +1102,31 @@ Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'res
      ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
-Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
-     ->name('admin.quiz-generator');
-Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
-     ->name('admin.quiz-generator.generate');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/quiz-generator', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'index'])
+         ->name('admin.quiz-generator');
+    
+    // AJAX endpoints for form data
+    Route::get('/admin/quiz-generator/modules/{programId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getModulesByProgram']);
+    Route::get('/admin/quiz-generator/courses/{moduleId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getCoursesByModule']);
+    Route::get('/admin/quiz-generator/contents/{courseId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getContentByCourse']);
+    
+    // AI Question Generation
+    Route::post('/admin/quiz-generator/generate-ai-questions', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generateAIQuestions']);
+    
+    // Quiz CRUD operations
+    Route::post('/admin/quiz-generator/save', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'save']);
+    Route::post('/admin/quiz-generator/save-quiz', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'saveQuizWithQuestions']);
+    Route::post('/admin/quiz-generator/save-manual', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'saveManualQuiz']);
+    Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'updateQuiz']);
+    Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz']);
+    Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish']);
+    Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive']);
+    Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft']);
+    Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete']);
+    Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview']);
+    Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal']);
+});
 
 // Chat routes
 Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
@@ -2803,3 +2824,18 @@ Route::middleware(['admin.director.auth'])->group(function () {
 // Quiz score fix routes
 Route::get('/admin/fix-quiz-score/{attemptId}', [App\Http\Controllers\FixQuizSubmissionController::class, 'fixAttemptScore']);
 Route::get('/admin/fix-all-quiz-scores', [App\Http\Controllers\FixQuizSubmissionController::class, 'fixAllAttempts']);
+
+// Temporary test route for quiz generator
+Route::get('/test-quiz-link', function () {
+    return view('test-quiz-link');
+})->name('test.quiz.link');
+
+// Debug route for authentication issues
+Route::get('/admin/debug/auth', [App\Http\Controllers\Admin\DebugController::class, 'authDebug'])
+     ->name('admin.debug.auth');
+
+// Test auth routes with middleware
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/test/auth', [App\Http\Controllers\Admin\TestAuthController::class, 'checkAuth']);
+    Route::post('/admin/test/save', [App\Http\Controllers\Admin\TestAuthController::class, 'testSave']);
+});

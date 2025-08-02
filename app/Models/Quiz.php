@@ -14,6 +14,7 @@ class Quiz extends Model
 
     protected $fillable = [
         'professor_id',
+        'admin_id',
         'program_id',
         'module_id',
         'course_id', 
@@ -63,6 +64,16 @@ class Quiz extends Model
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    public function module()
+    {
+        return $this->belongsTo(Module::class, 'module_id', 'modules_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'subject_id');
     }
 
     public function questions()
