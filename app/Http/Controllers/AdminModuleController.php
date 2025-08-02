@@ -1418,6 +1418,7 @@ class AdminModuleController extends Controller
         try {
             $courses = Course::where('module_id', $moduleId)
                 ->where('is_active', true)
+                ->where('is_archived', false)
                 ->orderBy('subject_name')
                 ->get(['subject_id', 'subject_name', 'subject_description', 'subject_price']);
 
@@ -1987,5 +1988,34 @@ class AdminModuleController extends Controller
         return view('admin.admin-modules.course-content-upload', [
             'programs' => $programs
         ]);
+    }
+
+    /**
+     * Archive content item
+     */
+    public function archiveContent($id)
+    {
+        try {
+            $content = ContentItem::findOrFail($id);
+            
+            // Set archived status
+            $content->is_archived = true;
+            $content->archived_at = now();
+            $content->save();
+
+            Log::info("Content archived: {$content->content_title} (ID: {$id})");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content archived successfully!',
+                'content' => $content
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error archiving content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error archiving content: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -312,72 +312,94 @@
 /* Action Buttons */
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
 }
 
 .action-buttons .btn {
-  padding: 0.8rem 1.5rem;
+  padding: 1.2rem 2rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 12px;
   transition: all 0.3s ease;
   text-decoration: none;
   border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 180px;
+  position: relative;
+  overflow: hidden;
 }
 
-.add-module-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
+.action-buttons .btn i {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.add-module-btn:hover {
-  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-  transform: translateY(-2px);
-  color: white;
+.action-buttons .btn span {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
 }
 
-.add-course-btn {
-  background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
-  color: white;
+.action-buttons .btn small {
+  font-weight: 400;
+  opacity: 0.9;
 }
 
-.add-course-btn:hover {
-  background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
-  transform: translateY(-2px);
-  color: white;
+.action-buttons .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.action-buttons .btn:hover::before {
+  left: 100%;
 }
 
 .batch-upload-btn {
-  background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
 }
 
 .batch-upload-btn:hover {
-  background: linear-gradient(135deg, #e55a00 0%, #d91a72 100%);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
   color: white;
 }
 
 .view-archived-btn {
   background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
 }
 
 .view-archived-btn:hover {
   background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
   color: white;
 }
 
 .quiz-generator-btn {
   background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
 }
 
 .quiz-generator-btn:hover {
   background: linear-gradient(135deg, #5a2d91 0%, #d91a72 100%);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
   color: white;
 }
 
@@ -566,6 +588,41 @@
   border-radius: 10px;
   padding: 1.5rem;
   border-left: 4px solid #667eea;
+}
+
+.content-text {
+  margin-top: 1rem;
+}
+
+.content-text > div {
+  max-height: 400px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+/* Enhanced content viewer styles */
+.content-display {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-display .btn {
+  transition: all 0.2s ease;
+}
+
+.content-display .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 @media (max-width: 1200px) {
@@ -959,20 +1016,20 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-        <button type="button" class="add-module-btn" id="showAddModal">
-            <i class="bi bi-plus-circle"></i> Add New Content
-        </button>
-        <button type="button" class="add-course-btn" id="showAddCourseModal">
-            <i class="bi bi-journal-plus"></i> Add New Course
-        </button>
         <button type="button" class="batch-upload-btn" id="showBatchModal">
-            <i class="bi bi-upload"></i> Add Course Content
+            <i class="bi bi-cloud-upload-fill"></i> 
+            <span>Add Course Content</span>
+            <small class="d-block" style="font-size: 0.7rem; opacity: 0.9;">Upload materials & assignments</small>
         </button>
         <a href="{{ route('professor.modules.archived') }}" class="view-archived-btn">
-            <i class="bi bi-archive"></i> View Archived
+            <i class="bi bi-archive-fill"></i> 
+            <span>View Archived</span>
+            <small class="d-block" style="font-size: 0.7rem; opacity: 0.9;">Manage archived content</small>
         </a>
         <a href="{{ route('professor.quiz-generator') }}" class="quiz-generator-btn">
-            <i class="bi bi-robot"></i> AI Quiz Generator
+            <i class="bi bi-robot"></i> 
+            <span>AI Quiz Generator</span>
+            <small class="d-block" style="font-size: 0.7rem; opacity: 0.9;">Generate quizzes with AI</small>
         </a>
     </div>
 
@@ -1000,12 +1057,6 @@
                                         </div>
                                         
                                         <div class="module-actions" onclick="event.stopPropagation();">
-                                            <div class="action-btn-group">
-                                                <button class="action-btn-green" onclick="showAddCourseModal({{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-plus-circle"></i> Add Course</button>
-                                                <button class="action-btn-green" onclick="editModule({{ $module->modules_id }})"><i class="bi bi-pencil"></i></button>
-                                                <button class="action-btn-green" onclick="deleteModule({{ $module->modules_id }})"><i class="bi bi-trash"></i></button>
-                                                <button class="action-btn-green" onclick="openOverrideModal('module', {{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-sliders"></i> Override Settings</button>
-                                            </div>
                                         </div>
                                     </div>
                                     
@@ -1058,162 +1109,6 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Add New Content Modal -->
-<div class="modal-bg" id="addModalBg">
-    <div class="modal">
-        <div class="modal-header">
-            <h3><i class="bi bi-plus-circle"></i> Add New Content</h3>
-            <button type="button" class="modal-close" id="closeAddModal">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-        <form action="{{ route('professor.modules.course-content-store') }}" method="POST" enctype="multipart/form-data" id="addContentForm">
-            <div class="modal-body">
-                @csrf
-                <!-- 1. Program -->
-                <div class="form-group">
-                    <label for="modalProgramSelect">Select Program <span class="text-danger">*</span></label>
-                    <select id="modalProgramSelect" name="program_id" class="form-select" required style="min-height: 38px;">
-                        <option value="">-- Select Program --</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <!-- 2. Plan -->
-                <div class="form-group">
-                    <label for="planSelect">Select Plan <span class="text-danger">*</span></label>
-                    <select id="planSelect" name="plan" class="form-select" required>
-                        <option value="">-- Select Plan --</option>
-                        <option value="full">Full Plan</option>
-                        <option value="modular">Modular Plan</option>
-                        <option value="both">Both</option>
-                    </select>
-                </div>
-                <!-- Batch (only if Full Plan) -->
-                <div class="form-group" id="batchGroup" style="display:none;">
-                    <label for="batchSelect">Batch <span class="text-danger">*</span></label>
-                    <select id="batchSelect" class="form-select" style="min-height: 38px;">
-                        <option value="">-- Select Batch --</option>
-                        <!-- Options will be loaded dynamically based on selected program -->
-                    </select>
-                </div>
-                <!-- 3. Learning Mode -->
-                <div class="form-group">
-                    <label for="learningModeSelect">Select Learning Mode <span class="text-danger">*</span></label>
-                    <select id="learningModeSelect" name="learning_mode" class="form-select" required>
-                        <option value="">-- Select Learning Mode --</option>
-                        <option value="Synchronous">Synchronous</option>
-                        <option value="Asynchronous">Asynchronous</option>
-                    </select>
-                </div>
-                <!-- 4. Content Type -->
-                <div class="form-group">
-                    <label for="content_type">Content Type <span class="text-danger">*</span></label>
-                    <select id="content_type" name="content_type" class="form-select" required>
-                        <option value="lesson">📚 Lesson</option>
-                        <option value="video">🎥 Video</option>
-                        <option value="assignment">📝 Assignment</option>
-                        <option value="quiz">❓ Quiz</option>
-                        <option value="test">📋 Test</option>
-                        <option value="link">🔗 External Link</option>
-                    </select>
-                </div>
-                <!-- 5. Title -->
-                <div class="form-group">
-                    <label for="module_name">Title <span class="text-danger">*</span></label>
-                    <input type="text" id="module_name" name="module_name" class="form-control" required>
-                </div>
-                <!-- 6. Description -->
-                <div class="form-group">
-                    <label for="module_description">Description</label>
-                    <textarea id="module_description" name="module_description" class="form-control" rows="4"></textarea>
-                </div>
-                <!-- 7. Attachment -->
-                <div class="form-group">
-                    <label for="attachment">Attachment</label>
-                    <input type="file" id="attachment" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.mp4,.webm,.ogg">
-                    <small class="text-muted">Supported formats: PDF, DOC, DOCX, ZIP, Images, Videos</small>
-                </div>
-                <!-- 8. URL -->
-                <div class="form-group">
-                    <label for="any_url">URL</label>
-                    <input type="url" id="any_url" name="any_url" class="form-control" placeholder="https://...">
-                    <small class="text-muted">Enter any external link (including video URLs)</small>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="closeAddModalBtn">Cancel</button>
-                <button type="submit" class="add-btn">Create Content</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Add Course Modal -->
-<div class="modal-bg" id="addCourseModalBg">
-    <div class="modal">
-        <div class="modal-header">
-            <h3><i class="bi bi-journal-plus"></i> Add New Course</h3>
-            <button type="button" class="modal-close" id="closeAddCourseModal">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-        <form id="addCourseForm" action="{{ route('professor.courses.store') }}" method="POST">
-            <div class="modal-body">
-                @csrf
-
-                <div class="form-group">
-                    <label for="courseProgramSelect">Program <span class="text-danger">*</span></label>
-                    <select id="courseProgramSelect" name="program_id" class="form-select" required>
-                        <option value="">-- Select Program --</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="courseModuleSelect">Module <span class="text-danger">*</span></label>
-                    <select id="courseModuleSelect" name="module_id" class="form-select" required disabled>
-                        <option value="">-- Select Module --</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="courseName">Course Name <span class="text-danger">*</span></label>
-                    <input type="text" id="courseName" name="subject_name" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="courseDescription">Course Description</label>
-                    <textarea id="courseDescription" name="subject_description" class="form-control" rows="4"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="coursePrice">Course Price <span class="text-danger">*</span></label>
-                    <input type="number" id="coursePrice" name="subject_price" class="form-control" min="0" step="0.01" required>
-                </div>
-
-                <div class="form-group">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="courseRequired" name="is_required" value="1">
-                        <label class="form-check-label" for="courseRequired">
-                            <i class="bi bi-exclamation-circle"></i> This course is required
-                        </label>
-                    </div>
-                </div>
-
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="closeAddCourseModalBtn">Cancel</button>
-                <button type="submit" class="add-btn">Create Course</button>
-            </div>
-        </form>
     </div>
 </div>
 @endsection
@@ -1314,22 +1209,30 @@ function setupModalEventListeners() {
     });
     
     // Handle plan selection to show/hide batch field
-    document.getElementById('planSelect').addEventListener('change', function() {
-        const batchGroup = document.getElementById('batchGroup');
-        if (this.value === 'full') {
-            batchGroup.style.display = 'block';
-        } else {
-            batchGroup.style.display = 'none';
-        }
-    });
+    const planSelectElement = document.getElementById('planSelect');
+    if (planSelectElement) {
+        planSelectElement.addEventListener('change', function() {
+            const batchGroup = document.getElementById('batchGroup');
+            if (batchGroup) {
+                if (this.value === 'full') {
+                    batchGroup.style.display = 'block';
+                } else {
+                    batchGroup.style.display = 'none';
+                }
+            }
+        });
+    }
     
     // Handle program selection to load modules and batches
-    document.getElementById('modalProgramSelect').addEventListener('change', function() {
-        if (this.value) {
-            loadModulesForProgram(this.value);
-            loadBatchesForProgram(this.value);
-        }
-    });
+    const modalProgramSelectElement = document.getElementById('modalProgramSelect');
+    if (modalProgramSelectElement) {
+        modalProgramSelectElement.addEventListener('change', function() {
+            if (this.value) {
+                loadModulesForProgram(this.value);
+                loadBatchesForProgram(this.value);
+            }
+        });
+    }
 }
 
         // Load modules for selected program
@@ -1638,11 +1541,11 @@ function loadModuleCourses(moduleId) {
                                     <button class="btn btn-sm btn-outline-light" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')">
                                         <i class="bi bi-plus"></i> Add Content
                                     </button>
-                                    <button class="btn btn-sm btn-outline-light" onclick="editCourse(${course.subject_id})">
+                                    <button class="btn btn-sm btn-outline-light" onclick="editCourse(${course.subject_id})" title="Edit Course">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-light" onclick="deleteCourse(${course.subject_id})">
-                                        <i class="bi bi-trash"></i>
+                                    <button class="btn btn-sm btn-outline-light" onclick="archiveCourse(${course.subject_id})" title="Archive Course">
+                                        <i class="bi bi-archive"></i>
                                     </button>
                                 </div>
                             </div>
@@ -1683,7 +1586,7 @@ function loadCourseContent(moduleId, courseId) {
                 let contentHtml = '';
                 data.content.forEach(item => {
                     contentHtml += `
-                        <div class="content-item" onclick="viewContent(${item.id})">
+                        <div class="content-item" onclick="viewContent(${item.id}, '${item.content_type}', '${item.content_title}')">
                             <div class="content-item-info">
                                 <span class="content-item-type ${item.content_type}">${item.content_type}</span>
                                 <div>
@@ -1691,12 +1594,12 @@ function loadCourseContent(moduleId, courseId) {
                                     <br><small class="text-muted">${item.content_description || 'No description'}</small>
                                 </div>
                             </div>
-                            <div class="content-item-actions">
-                                <button class="btn btn-sm btn-primary" onclick="editContent(${item.id})">
+                            <div class="content-item-actions" onclick="event.stopPropagation();">
+                                <button class="btn btn-sm btn-primary" onclick="editContent(${item.id})" title="Edit Content">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteContent(${item.id})">
-                                    <i class="bi bi-trash"></i>
+                                <button class="btn btn-sm btn-warning" onclick="archiveContent(${item.id})" title="Archive Content">
+                                    <i class="bi bi-archive"></i>
                                 </button>
                             </div>
                         </div>
@@ -1739,14 +1642,17 @@ function loadCourseContent(moduleId, courseId) {
 }
 
 // Program selection handler
-document.getElementById('programSelect').addEventListener('change', function() {
-    const programId = this.value;
-    if (programId) {
-        window.location.href = `{{ route('professor.modules.index') }}?program_id=${programId}`;
-    } else {
-        window.location.href = `{{ route('professor.modules.index') }}`;
-    }
-});
+const programSelectElement = document.getElementById('programSelect');
+if (programSelectElement) {
+    programSelectElement.addEventListener('change', function() {
+        const programId = this.value;
+        if (programId) {
+            window.location.href = `{{ route('professor.modules.index') }}?program_id=${programId}`;
+        } else {
+            window.location.href = `{{ route('professor.modules.index') }}`;
+        }
+    });
+}
 
 // Show filter section when program is selected
 function showFilterSection() {
@@ -1824,13 +1730,14 @@ function openOverrideModal(type, id, name) {
 
 // Course action functions
 function editCourse(courseId) {
+    // Open edit course page
     window.location.href = `/professor/courses/${courseId}/edit`;
 }
 
-function deleteCourse(courseId) {
-    if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-        fetch(`/professor/courses/${courseId}`, {
-            method: 'DELETE',
+function archiveCourse(courseId) {
+    if (confirm('Are you sure you want to archive this course? It will be moved to archived courses but can be restored later.')) {
+        fetch(`/professor/courses/${courseId}/archive`, {
+            method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Content-Type': 'application/json',
@@ -1839,32 +1746,148 @@ function deleteCourse(courseId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Show success message
+                alert('Course archived successfully!');
                 location.reload();
             } else {
-                alert('Error deleting course: ' + data.message);
+                alert('Error archiving course: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error deleting course');
+            alert('Error archiving course');
         });
     }
 }
 
 // Content action functions
-function viewContent(contentId) {
-    // Implementation for viewing content
-    alert(`View content: ${contentId}`);
+function viewContent(contentId, contentType, contentTitle) {
+    const titleElement = document.getElementById('content-title');
+    const subtitleElement = document.getElementById('content-subtitle');
+    const viewerBody = document.getElementById('contentViewer');
+    
+    // Show loading state
+    titleElement.textContent = 'Loading Content...';
+    subtitleElement.textContent = 'Fetching content details';
+    viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
+    
+    // Fetch content details
+    fetch(`/professor/content/${contentId}/view`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                titleElement.textContent = data.content.content_title || contentTitle;
+                subtitleElement.textContent = `${contentType} • Content Item`;
+                
+                let contentHtml = `
+                    <div class="content-display">
+                        <div class="content-details">
+                            <h4>${data.content.content_title}</h4>
+                            <p><strong>Type:</strong> ${data.content.content_type}</p>
+                            <p><strong>Description:</strong> ${data.content.content_description || 'No description available'}</p>
+                `;
+                
+                // Display content based on type
+                if (data.content.content_type === 'pdf' && data.content.file_path) {
+                    contentHtml += `
+                        <div class="pdf-viewer mt-3">
+                            <iframe src="${data.content.file_path}" class="content-frame"></iframe>
+                        </div>
+                    `;
+                } else if (data.content.content_type === 'video' && data.content.file_path) {
+                    contentHtml += `
+                        <div class="video-container mt-3">
+                            <video controls class="w-100" style="max-height: 400px;">
+                                <source src="${data.content.file_path}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    `;
+                } else if (data.content.content_type === 'link' && data.content.content_url) {
+                    contentHtml += `
+                        <div class="link-preview mt-3">
+                            <h5>External Link</h5>
+                            <p><a href="${data.content.content_url}" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> Open Link
+                            </a></p>
+                            <small class="text-muted">URL: ${data.content.content_url}</small>
+                        </div>
+                    `;
+                } else if (data.content.content_type === 'assignment') {
+                    contentHtml += `
+                        <div class="assignment-preview mt-3">
+                            <h5>Assignment Details</h5>
+                            <p><strong>Instructions:</strong> ${data.content.content_text || 'No instructions provided'}</p>
+                            ${data.content.file_path ? `
+                                <p><a href="${data.content.file_path}" target="_blank" class="btn btn-secondary">
+                                    <i class="bi bi-download"></i> Download Assignment File
+                                </a></p>
+                            ` : ''}
+                        </div>
+                    `;
+                } else if (data.content.content_text) {
+                    contentHtml += `
+                        <div class="content-text mt-3">
+                            <h5>Content</h5>
+                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                                ${data.content.content_text}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                contentHtml += `
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="editContent(${contentId})">
+                                <i class="bi bi-pencil"></i> Edit Content
+                            </button>
+                            <button class="btn btn-warning ms-2" onclick="archiveContent(${contentId})">
+                                <i class="bi bi-archive"></i> Archive Content
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                viewerBody.innerHTML = contentHtml;
+            } else {
+                viewerBody.innerHTML = '<div class="alert alert-danger">Failed to load content details</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+            titleElement.textContent = contentTitle || 'Content';
+            subtitleElement.textContent = `${contentType} • Error loading`;
+            viewerBody.innerHTML = `
+                <div class="alert alert-warning">
+                    <h5>Content Preview Unavailable</h5>
+                    <p>Unable to load content preview. You can still edit or manage this content using the buttons below.</p>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" onclick="editContent(${contentId})">
+                            <i class="bi bi-pencil"></i> Edit Content
+                        </button>
+                        <button class="btn btn-warning ms-2" onclick="archiveContent(${contentId})">
+                            <i class="bi bi-archive"></i> Archive Content
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
 }
 
 function editContent(contentId) {
     window.location.href = `/professor/content/${contentId}/edit`;
 }
 
-function deleteContent(contentId) {
-    if (confirm('Are you sure you want to delete this content? This action cannot be undone.')) {
-        fetch(`/professor/content/${contentId}`, {
-            method: 'DELETE',
+function archiveContent(contentId) {
+    if (confirm('Are you sure you want to archive this content? It will be moved to archived content but can be restored later.')) {
+        fetch(`/professor/content/${contentId}/archive`, {
+            method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Content-Type': 'application/json',
@@ -1873,31 +1896,41 @@ function deleteContent(contentId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                alert('Content archived successfully!');
                 location.reload();
             } else {
-                alert('Error deleting content: ' + data.message);
+                alert('Error archiving content: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error deleting content');
+            alert('Error archiving content');
         });
     }
 }
 
 // Action button handlers
 // Always show modal when Add New Content is clicked (admin logic)
-document.getElementById('showAddModal').addEventListener('click', function() {
-    // Optionally pre-select the program if only one is available
-    const programSelect = document.getElementById('programSelect');
-    if (programSelect && programSelect.value) {
-        document.getElementById('modalProgramSelect').value = programSelect.value;
-        loadModulesForProgram(programSelect.value);
-        loadBatchesForProgram(programSelect.value);
-    }
-    // Show the modal regardless
-    document.getElementById('addModalBg').classList.add('show');
-});
+const showAddModalBtn = document.getElementById('showAddModal');
+if (showAddModalBtn) {
+    showAddModalBtn.addEventListener('click', function() {
+        // Optionally pre-select the program if only one is available
+        const programSelect = document.getElementById('programSelect');
+        if (programSelect && programSelect.value) {
+            const modalProgramSelect = document.getElementById('modalProgramSelect');
+            if (modalProgramSelect) {
+                modalProgramSelect.value = programSelect.value;
+                loadModulesForProgram(programSelect.value);
+                loadBatchesForProgram(programSelect.value);
+            }
+        }
+        // Show the modal regardless
+        const addModalBg = document.getElementById('addModalBg');
+        if (addModalBg) {
+            addModalBg.classList.add('show');
+        }
+    });
+}
 
 // Add Course Modal Event Listeners
 const addCourseModalBtn = document.getElementById('showAddCourseModal');
@@ -1932,10 +1965,13 @@ if (closeAddCourseModalBtn) {
     });
 }
 
-document.getElementById('showBatchModal').addEventListener('click', function() {
-    // Implementation for batch upload modal
-    alert('Batch upload content');
-});
+const showBatchModalBtn = document.getElementById('showBatchModal');
+if (showBatchModalBtn) {
+    showBatchModalBtn.addEventListener('click', function() {
+        // Implementation for batch upload modal
+        alert('Batch upload content');
+    });
+}
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {

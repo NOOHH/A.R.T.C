@@ -333,6 +333,7 @@ class Professor extends Authenticatable
 
     public function assignedPrograms()
     {
-        return $this->belongsToMany(\App\Models\Program::class, 'professor_program', 'professor_id', 'program_id');
+        return $this->belongsToMany(\App\Models\Program::class, 'professor_program', 'professor_id', 'program_id')
+                    ->withTimestamps();
     }
 }

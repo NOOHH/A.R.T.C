@@ -718,9 +718,6 @@ html, body {
                                             <i class="bi bi-check-circle me-1"></i>Video Added
                                         </span>
                                     @else
-                                        <span class="badge badge-modern" style="background-color: var(--warning-color); color: white;">
-                                            <i class="bi bi-exclamation-triangle me-1"></i>No Video
-                                        </span>
                                     @endif
                                     <a href="{{ route('professor.program.details', $program->program_id) }}" 
                                        class="btn btn-modern btn-primary-modern btn-sm">View Details</a>

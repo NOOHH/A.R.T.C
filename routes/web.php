@@ -959,6 +959,13 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])->name('admin.programs.courses');
     Route::get('/admin/modules/{module}/courses', [AdminModuleController::class, 'getCoursesByModule'])->name('admin.modules.courses');
     Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])->name('admin.modules.batches.by-program');
+    
+    // Archive a module (moved inside middleware group)
+    Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])->name('admin.modules.archive');
+    
+    // Admin override settings
+    Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])->name('admin.modules.get-override');
+    Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])->name('admin.modules.update-override');
 });
 
 // Test upload route
@@ -999,36 +1006,7 @@ Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updat
 Route::post('/admin/modules/{id}/toggle-admin-override', [AdminModuleController::class, 'toggleAdminOverride'])
      ->name('admin.modules.toggle-admin-override');
 
-// Get batches for a program (AJAX)
-Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, 'getBatchesForProgram'])
-     ->name('admin.programs.batches');
-
-// Get courses for a program (AJAX)
-Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])
-     ->name('admin.programs.courses');
-
-// Get courses by module ID (AJAX)
-Route::get('/admin/modules/{module}/courses', [AdminModuleController::class, 'getCoursesByModule'])
-     ->name('admin.modules.courses');
-
-// Get batches by program ID (AJAX)
-Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])
-     ->name('admin.modules.batches.by-program');
-
-// Archive a module
-Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
-     ->name('admin.modules.archive');
-
-// Admin override settings
-Route::get   ('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
-     ->name('admin.modules.get-override');
-Route::patch ('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
-     ->name('admin.modules.update-override');
-
-// Admin side API routes
-Route::get('admin/programs/{program}/batches',   [AdminModuleController::class, 'getBatchesForProgram']);
-Route::get('admin/programs/{program}/courses',   [AdminModuleController::class, 'getCoursesForProgram']);
-
+// These duplicate routes are now inside the admin.director.auth middleware group above
 
 // Admin Courses Routes
 Route::middleware(['admin.auth'])->group(function () {
@@ -1050,6 +1028,8 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.courses.update-order');
     Route::post('/admin/courses/move', [AdminCourseController::class, 'moveCourse'])
          ->name('admin.courses.move');
+    Route::post('/admin/courses/{id}/archive', [AdminCourseController::class, 'archive'])
+         ->name('admin.courses.archive');
 });
 
 // Admin Content Routes
@@ -1074,6 +1054,8 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.content.move');
     Route::post('/admin/content/move-to-module', [AdminModuleController::class, 'moveContentToModule'])
          ->name('admin.content.move-to-module');
+    Route::post('/admin/content/{id}/archive', [AdminModuleController::class, 'archiveContent'])
+         ->name('admin.content.archive');
 });
 
 // Admin Packages Routes
@@ -1865,6 +1847,8 @@ Route::middleware(['professor.auth'])
     // This route is accessed from the front-end JavaScript
     Route::get('courses/{course}/edit', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'editCourse'])
          ->name('courses.edit');
+    Route::put('courses/{course}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'updateCourse'])
+         ->name('courses.update');
     // Professor Courses Store Route (for Blade form action)
     Route::post('courses', [\App\Http\Controllers\Professor\ProfessorCourseController::class, 'store'])
          ->name('courses.store');
@@ -1876,6 +1860,16 @@ Route::middleware(['professor.auth'])
          ->name('content.update');
     Route::delete('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'deleteContent'])
          ->name('content.delete');
+    
+    // Additional content management routes
+    Route::get('/content/{id}/view', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'viewContent'])
+         ->name('content.view');
+    Route::get('/content/{id}/edit', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'editContent'])
+         ->name('content.edit');
+    Route::post('/content/{id}/archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archiveContent'])
+         ->name('content.archive');
+    Route::post('/courses/{id}/archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archiveCourse'])
+         ->name('courses.archive');
     
     // Test file extraction route
     Route::post('/quiz-generator/test-file-extraction', function(\Illuminate\Http\Request $request) {
@@ -2871,8 +2865,78 @@ Route::get('/api/quiz-status-summary', function () {
 Route::get('/admin/debug/auth', [App\Http\Controllers\Admin\DebugController::class, 'authDebug'])
      ->name('admin.debug.auth');
 
+// Test route for archive debugging
+Route::get('/test-archive', function() {
+    return view('test-archive');
+});
+
+// Auth debug route
+Route::get('/debug-auth', function() {
+    // Start PHP session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $data = [
+        'php_session' => $_SESSION ?? [],
+        'laravel_session' => session()->all(),
+        'auth_user' => Auth::user(),
+        'auth_director' => Auth::guard('director')->user(),
+        'auth_admin' => Auth::guard('admin')->user(),
+        'request_headers' => request()->headers->all(),
+        'middleware_check' => [
+            'php_logged_in' => isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'],
+            'php_user_type' => $_SESSION['user_type'] ?? null,
+            'laravel_logged_in' => session('logged_in') && session('user_id'),
+            'laravel_user_role' => session('user_role'),
+        ]
+    ];
+    
+    return response()->json($data, 200, [], JSON_PRETTY_PRINT);
+});
+
+// Test archive route (protected)
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::post('/test-archive-endpoint/{id}', function($id) {
+        try {
+            $controller = new \App\Http\Controllers\AdminModuleController();
+            $response = $controller->archive($id);
+            return $response;
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    });
+});
+
 // Test auth routes with middleware
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/test/auth', [App\Http\Controllers\Admin\TestAuthController::class, 'checkAuth']);
     Route::post('/admin/test/save', [App\Http\Controllers\Admin\TestAuthController::class, 'testSave']);
+});
+
+// Test routes for debugging (no middleware)
+Route::get('/simulate-admin-login', [App\Http\Controllers\AuthTestController::class, 'simulateAdminLogin']);
+Route::post('/test-archive-auth/{id}', [App\Http\Controllers\AuthTestController::class, 'testArchiveWithAuth']);
+
+// Force logout and re-login for testing
+Route::get('/force-relogin', function() {
+    // Clear all sessions
+    Auth::logout();
+    Auth::guard('admin')->logout();
+    Auth::guard('director')->logout();
+    Auth::guard('professor')->logout();
+    session()->flush();
+    session()->regenerate();
+    
+    // Clear PHP session
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    session_destroy();
+    
+    return redirect('/login')->with('message', 'Logged out. Please login again to test.');
 });

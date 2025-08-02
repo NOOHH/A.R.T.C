@@ -13,7 +13,10 @@ class AdminCourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::with('module', 'contentItems')->orderBy('subject_order')->get();
+        $courses = Course::with('module', 'contentItems')
+                        ->where('is_archived', false)
+                        ->orderBy('subject_order')
+                        ->get();
         return response()->json([
             'success' => true,
             'courses' => $courses
@@ -229,6 +232,31 @@ class AdminCourseController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error moving course: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function archive($id)
+    {
+        try {
+            $course = Course::findOrFail($id);
+            
+            // Set archived status
+            $course->is_archived = true;
+            $course->save();
+
+            Log::info("Course archived: {$course->subject_name} (ID: {$id})");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Course archived successfully!',
+                'course' => $course
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error archiving course: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error archiving course: ' . $e->getMessage()
             ], 500);
         }
     }

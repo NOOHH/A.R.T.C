@@ -24,6 +24,14 @@ class CheckAdminDirectorAuth
             session_start();
         }
 
+        // Log debug information
+        Log::info('CheckAdminDirectorAuth middleware triggered', [
+            'url' => $request->url(),
+            'method' => $request->method(),
+            'php_session' => $_SESSION ?? [],
+            'laravel_session' => session()->all()
+        ]);
+
         // Check PHP session first (primary method)
         $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
         $userType = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : null;
@@ -38,13 +46,41 @@ class CheckAdminDirectorAuth
             $isDirector = $userType === 'director';
         }
 
+        // Additional fallback: check if Laravel Auth has a user
+        $authUser = Auth::user();
+        $authAdminUser = Auth::guard('admin')->user();
+        $authDirectorUser = Auth::guard('director')->user();
+        
+        if (!$isLoggedIn && ($authUser || $authAdminUser || $authDirectorUser)) {
+            $isLoggedIn = true;
+            if ($authAdminUser) {
+                $isAdmin = true;
+                $userType = 'admin';
+            } elseif ($authDirectorUser) {
+                $isDirector = true;
+                $userType = 'director';
+            }
+        }
+
+        Log::info('Authentication check result', [
+            'isLoggedIn' => $isLoggedIn,
+            'userType' => $userType,
+            'isAdmin' => $isAdmin,
+            'isDirector' => $isDirector,
+            'auth_user' => $authUser ? $authUser->id : null,
+            'auth_admin' => $authAdminUser ? $authAdminUser->admin_id : null,
+            'auth_director' => $authDirectorUser ? $authDirectorUser->director_id : null
+        ]);
+
         // Check if user is logged in
         if (!$isLoggedIn) {
+            Log::warning('Access denied: User not logged in');
             return redirect()->route('login')->with('error', 'Please log in to access this page.');
         }
 
         // Check if user is an admin or director
         if (!$isAdmin && !$isDirector) {
+            Log::warning('Access denied: User not admin or director', ['userType' => $userType]);
             return redirect()->route('student.dashboard')->with('error', 'Access denied. Admin or Director privileges required.');
         }
 
