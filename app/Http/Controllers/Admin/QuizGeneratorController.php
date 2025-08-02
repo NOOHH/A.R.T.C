@@ -17,6 +17,7 @@ use App\Services\GeminiQuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class QuizGeneratorController extends Controller
 {
@@ -246,21 +247,72 @@ class QuizGeneratorController extends Controller
     {
         Log::info('=== Saving AI-Generated Quiz (ADMIN) ===', [
             'admin_id' => session('user_id'), // Admin login sets user_id
-            'request_data' => $request->except(['questions', '_token'])
+            'request_data' => $request->except(['questions', '_token']),
+            'has_questions' => $request->has('questions'),
+            'questions_count' => $request->has('questions') ? count($request->input('questions', [])) : 0
         ]);
 
         try {
+            // Handle both title and quiz_title fields
+            $title = $request->input('title') ?? $request->input('quiz_title');
+            if (!$title) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz title is required'
+                ], 422);
+            }
+            
+            // Ensure both title formats are available for validation
+            $request->merge(['title' => $title, 'quiz_title' => $title]);
+            
+            // Log the questions data for debugging
+            $questions = $request->input('questions', []);
+            Log::info('Questions data received:', [
+                'questions_count' => count($questions),
+                'first_question_keys' => !empty($questions) ? array_keys($questions[0]) : [],
+                'first_question_sample' => !empty($questions) ? $questions[0] : null
+            ]);
+            
+            // Normalize questions data to handle different field name conventions
+            $normalizedQuestions = [];
+            foreach ($questions as $index => $question) {
+                $normalizedQuestion = [
+                    'question_text' => $question['question_text'] ?? $question['question'] ?? '',
+                    'question_type' => $question['question_type'] ?? 'multiple_choice',
+                    'options' => $question['options'] ?? [],
+                    'correct_answer' => $question['correct_answer'] ?? null,
+                    'correct_answers' => $question['correct_answers'] ?? null,
+                    'explanation' => $question['explanation'] ?? '',
+                    'points' => $question['points'] ?? 1,
+                ];
+                
+                // Ensure we have a question text
+                if (empty($normalizedQuestion['question_text'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Question text is required for question " . ($index + 1)
+                    ], 422);
+                }
+                
+                $normalizedQuestions[] = $normalizedQuestion;
+            }
+            
+            // Replace the questions array with normalized data
+            $request->merge(['questions' => $normalizedQuestions]);
+            
             $validatedData = $request->validate([
-                'quiz_title' => 'required|string|max:255',
+                'title' => 'required|string|max:255',
                 'program_id' => 'required|exists:programs,program_id',
-                'module_id' => 'required|exists:modules,modules_id',
-                'course_id' => 'required|exists:courses,subject_id',
+                'module_id' => 'nullable|exists:modules,modules_id',
+                'course_id' => 'nullable|exists:courses,subject_id',
                 'questions' => 'required|array|min:1',
-                'questions.*.question' => 'required|string',
-                'questions.*.question_type' => 'required|string|in:multiple_choice,true_false',
-                'questions.*.options' => 'nullable|array',
-                'questions.*.correct_answer' => 'required|string',
+                'questions.*.question_text' => 'required|string',
+                'questions.*.question_type' => 'required|string|in:multiple_choice,true_false,short_answer,essay',
+                'questions.*.options' => 'nullable',
+                'questions.*.correct_answer' => 'nullable',
+                'questions.*.correct_answers' => 'nullable',
                 'questions.*.explanation' => 'nullable|string',
+                'questions.*.points' => 'nullable|numeric',
             ]);
 
             // Admin doesn't need to be found like professor
@@ -272,24 +324,49 @@ class QuizGeneratorController extends Controller
 
             DB::beginTransaction();
 
-            $quiz = Quiz::create([
+            // Check if infinite_retakes column exists in quizzes table
+            $hasInfiniteRetakesColumn = false;
+            try {
+                $columns = Schema::getColumnListing('quizzes');
+                $hasInfiniteRetakesColumn = in_array('infinite_retakes', $columns);
+            } catch (\Exception $e) {
+                Log::warning('Error checking for infinite_retakes column', ['error' => $e->getMessage()]);
+            }
+            
+            // Create base quiz data
+            $quizData = [
                 'professor_id' => null, // Admin created
                 'admin_id' => $adminId, // Set admin_id for admin created quizzes
                 'program_id' => $validatedData['program_id'],
                 'module_id' => $validatedData['module_id'],
                 'course_id' => $validatedData['course_id'],
-                'quiz_title' => $validatedData['quiz_title'],
-                'quiz_description' => 'AI-generated quiz.',
+                'quiz_title' => $validatedData['title'],
+                'quiz_description' => $request->input('description') ?? 'AI-generated quiz.',
                 'instructions' => 'Please answer the following questions.',
                 'status' => 'draft',
                 'is_draft' => true,
                 'is_active' => false,
+                'time_limit' => $request->input('time_limit') ?? 60,
+                'max_attempts' => $request->input('max_attempts') ?? 1,
+                'has_deadline' => $request->input('has_deadline') ?? false,
                 'total_questions' => count($validatedData['questions']),
                 'created_at' => now(),
-            ]);
+            ];
+            
+            // Add infinite_retakes if column exists
+            if ($hasInfiniteRetakesColumn) {
+                $quizData['infinite_retakes'] = $request->input('infinite_retakes') ?? false;
+            }
+            
+            // Add due_date if provided and has_deadline is true
+            if ($request->input('has_deadline') && $request->input('due_date')) {
+                $quizData['due_date'] = $request->input('due_date');
+            }
+            
+            $quiz = Quiz::create($quizData);
 
             $contentItem = ContentItem::create([
-                'content_title' => $validatedData['quiz_title'],
+                'content_title' => $validatedData['title'],
                 'content_description' => 'AI Generated Quiz',
                 'course_id' => $validatedData['course_id'],
                 'content_type' => 'quiz',
@@ -300,17 +377,29 @@ class QuizGeneratorController extends Controller
             $quiz->update(['content_id' => $contentItem->id]);
 
             foreach ($validatedData['questions'] as $questionData) {
+                // Handle both field naming conventions (question vs question_text)
+                $questionText = $questionData['question_text'] ?? $questionData['question'] ?? '';
+                
+                // Handle correct answer formats (could be string, array, or index)
+                $correctAnswer = null;
+                if (isset($questionData['correct_answer'])) {
+                    $correctAnswer = $questionData['correct_answer'];
+                } elseif (isset($questionData['correct_answers']) && is_array($questionData['correct_answers'])) {
+                    $correctAnswer = $questionData['correct_answers'][0] ?? 0;
+                }
+                
+                // Create the quiz question with properly mapped fields
                 QuizQuestion::create([
                     'quiz_id' => $quiz->quiz_id,
                     'quiz_title' => $quiz->quiz_title,
                     'program_id' => $quiz->program_id,
-                    'question_text' => $questionData['question'],
+                    'question_text' => $questionText,
                     'question_type' => $questionData['question_type'],
                     'options' => $questionData['options'] ?? [],
-                    'correct_answer' => $questionData['correct_answer'],
+                    'correct_answer' => $correctAnswer,
                     'explanation' => $questionData['explanation'] ?? '',
-                    'question_source' => 'generated',
-                    'points' => 1,
+                    'question_source' => 'manual',
+                    'points' => $questionData['points'] ?? 1,
                     'is_active' => true,
                     'created_by_professor' => null, // Admin created
                 ]);
@@ -331,9 +420,29 @@ class QuizGeneratorController extends Controller
             DB::rollBack();
             Log::error('An unexpected error occurred while saving AI quiz (ADMIN)', [
                 'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['success' => false, 'message' => 'An unexpected server error occurred while saving the quiz.'], 500);
+            
+            // Provide more specific error messages based on the exception
+            $errorMessage = 'An unexpected server error occurred while saving the quiz.';
+            
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $errorMessage = 'Validation error: ' . implode(', ', $e->errors());
+            } elseif ($e instanceof \Illuminate\Database\QueryException) {
+                if (strpos($e->getMessage(), 'Cannot add or update a child row') !== false) {
+                    $errorMessage = 'Database constraint error: Foreign key constraint failed.';
+                } elseif (strpos($e->getMessage(), 'Column cannot be null') !== false) {
+                    $errorMessage = 'Database error: Required field cannot be null. Check all question fields.';
+                }
+            }
+            
+            return response()->json([
+                'success' => false, 
+                'message' => $errorMessage,
+                'debug_info' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
     }
 
@@ -1550,10 +1659,10 @@ class QuizGeneratorController extends Controller
     /**
      * Update quiz based on input type (form or JSON)
      */
-    public function updateQuiz(Request $request, Quiz $quiz)
+    public function updateQuiz(Request $request, $quizId)
     {
         Log::info('=== Update Quiz Request (ADMIN) ===', [
-            'quiz_id' => $quiz->quiz_id,
+            'quiz_id' => $quizId,
             'admin_id' => session('user_id'), // Admin login sets user_id
             'method' => $request->method(),
             'content_type' => $request->header('Content-Type'),
@@ -1562,6 +1671,9 @@ class QuizGeneratorController extends Controller
         ]);
 
         try {
+            // Find the quiz
+            $quiz = Quiz::findOrFail($quizId);
+            
             // Admin can modify any quiz
             if ($quiz->professor_id !== null) {
                 return response()->json([

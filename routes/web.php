@@ -118,6 +118,11 @@ Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 // Test database structure
 Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection']);
 
+// Test admin quiz creation
+Route::get('/test-admin-quiz', function () {
+    return view('test_admin_quiz');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Batch Enrollment Routes
@@ -1133,6 +1138,11 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview']);
     Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal']);
     Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions']);
+    
+    // Test route for quiz save functionality
+    Route::get('/admin/test-quiz-save', function () {
+        return view('test-quiz-save');
+    });
 });
 
 // Chat routes
