@@ -1796,8 +1796,132 @@ console.log('Admin Quiz Generator JavaScript Loaded Successfully');
 // Quiz management functions for table actions
 function editQuiz(quizId) {
     console.log('Edit quiz:', quizId);
-    // TODO: Implement quiz editing functionality
-    alert('Quiz editing functionality coming soon!');
+    window.currentQuizId = quizId;
+    
+    // Reset the form
+    document.getElementById('quizForm').reset();
+    document.getElementById('quizId').value = quizId;
+    
+    // Clear existing questions
+    const quizCanvas = document.getElementById('quizCanvas');
+    quizCanvas.innerHTML = `
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 200px;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading quiz data...</p>
+        </div>
+    `;
+    
+    // Show the AI Generator section or hide it based on edit mode
+    document.getElementById('aiGeneratorSection').style.display = 'none';
+    
+    // Update modal title
+    document.getElementById('modalTitle').textContent = 'Edit Quiz';
+    
+    // Fetch quiz data
+    fetch(`/admin/quiz-generator/quiz/${quizId}`, {
+        headers: {
+            'X-CSRF-TOKEN': window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Quiz data loaded:', data);
+            
+            // Set form values
+            document.getElementById('quiz_title').value = data.quiz.title || data.quiz.quiz_title || '';
+            document.getElementById('quiz_description').value = data.quiz.quiz_description || '';
+            
+            // Set program, module, course selects
+            const programSelect = document.getElementById('program_id');
+            if (programSelect && data.quiz.program_id) {
+                programSelect.value = data.quiz.program_id;
+                programSelect.dispatchEvent(new Event('change')); // This should trigger loading modules
+                
+                // Need to set module and course after their options are loaded
+                setTimeout(() => {
+                    const moduleSelect = document.getElementById('module_id');
+                    if (moduleSelect && data.quiz.module_id) {
+                        moduleSelect.value = data.quiz.module_id;
+                        moduleSelect.dispatchEvent(new Event('change')); // This should trigger loading courses
+                        
+                        // Need to set course after its options are loaded
+                        setTimeout(() => {
+                            const courseSelect = document.getElementById('course_id');
+                            if (courseSelect && data.quiz.course_id) {
+                                courseSelect.value = data.quiz.course_id;
+                            }
+                        }, 500);
+                    }
+                }, 500);
+            }
+            
+            // Set quiz settings
+            document.getElementById('time_limit').value = data.quiz.time_limit || 60;
+            document.getElementById('max_attempts').value = data.quiz.max_attempts || 1;
+            document.getElementById('infinite_retakes').checked = data.quiz.infinite_retakes || false;
+            if (data.quiz.infinite_retakes) {
+                document.getElementById('max_attempts').disabled = true;
+            }
+            
+            document.getElementById('has_deadline').checked = data.quiz.has_deadline || false;
+            if (data.quiz.has_deadline && data.quiz.due_date) {
+                document.getElementById('due_date').disabled = false;
+                document.getElementById('due_date').value = data.quiz.due_date.slice(0, 16); // Format as YYYY-MM-DDTHH:MM
+            } else {
+                document.getElementById('due_date').disabled = true;
+            }
+            
+            // Add questions to canvas
+            window.quizQuestions = {};
+            window.questionCounter = 0;
+            
+            if (data.questions && data.questions.length > 0) {
+                quizCanvas.innerHTML = '';
+                quizCanvas.className = 'mb-3';
+                quizCanvas.style.cssText = 'min-height: auto; border: none; padding: 0;';
+                
+                data.questions.forEach(question => {
+                    addQuestionToCanvas({
+                        question: question.question_text,
+                        type: question.question_type,
+                        options: question.options || [],
+                        correct_answer: question.correct_answers[0] || '',
+                        explanation: question.explanation || '',
+                        points: question.points || 1
+                    });
+                });
+            }
+            
+            // Set save button text based on current status
+            const saveDraftText = document.getElementById('saveDraftText');
+            const publishText = document.getElementById('publishText');
+            
+            if (saveDraftText) {
+                saveDraftText.textContent = data.quiz.is_draft ? 'Save as Draft' : 'Move to Draft';
+            }
+            
+            if (publishText) {
+                publishText.textContent = data.quiz.is_draft ? 'Publish Quiz' : 'Update Quiz';
+            }
+            
+            // Show the modal
+            const quizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
+            quizModal.show();
+            
+        } else {
+            console.error('Failed to load quiz data:', data);
+            showAlert('danger', 'Failed to load quiz data. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching quiz data:', error);
+        showAlert('danger', 'Error loading quiz data. Please try again.');
+    });
 }
 
 function changeQuizStatus(quizId, newStatus) {
@@ -1825,6 +1949,10 @@ function changeQuizStatus(quizId, newStatus) {
             return;
     }
     
+    // Debug logs
+    console.log(`Sending POST request to: /admin/quiz-generator/${quizId}/${routeAction}`);
+    console.log('CSRF Token:', window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    
     // Send AJAX request to change status
     fetch(`/admin/quiz-generator/${quizId}/${routeAction}`, {
         method: 'POST',
@@ -1835,10 +1963,14 @@ function changeQuizStatus(quizId, newStatus) {
         },
         credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
-            showAlert('success', data.message);
+            showAlert('success', data.message || 'Quiz status changed successfully');
             // Reload the page to update the quiz tables
             setTimeout(() => {
                 window.location.reload();

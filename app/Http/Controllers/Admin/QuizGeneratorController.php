@@ -41,9 +41,8 @@ class QuizGeneratorController extends Controller
         // Get current admin ID from session
         $adminId = session('user_id'); // Admin login sets user_id to admin_id
         
-        // Get only admin-created quizzes
-        $allQuizzes = Quiz::where('admin_id', $adminId)
-                        ->with(['program', 'module', 'course', 'questions'])
+        // Get ALL quizzes (both admin and professor created) - Admin can see everything
+        $allQuizzes = Quiz::with(['program', 'module', 'course', 'questions'])
                         ->orderBy('created_at', 'desc')
                         ->get();
         
@@ -705,18 +704,15 @@ class QuizGeneratorController extends Controller
     /**
      * Publish a quiz
      */
-    public function publish(Quiz $quiz)
+    public function publish($quizId)
     {
+        Log::info('Admin trying to publish quiz', ['quiz_id' => $quizId]);
+        
         try {
-            // Admin can publish quiz if they created it or if it's admin-accessible
-            $adminId = session('user_id');
-            if ($quiz->admin_id !== $adminId && $quiz->admin_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
-
+            // Find the quiz by ID instead of relying on route model binding
+            $quiz = Quiz::findOrFail($quizId);
+            
+            // Admin can publish any quiz (both admin and professor created)
             $quiz->update([
                 'status' => 'published',
                 'is_draft' => false,
@@ -740,8 +736,9 @@ class QuizGeneratorController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error publishing quiz (ADMIN)', [
-                'quiz_id' => $quiz->quiz_id,
-                'error' => $e->getMessage()
+                'quiz_id' => $quizId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'success' => false,
@@ -753,18 +750,15 @@ class QuizGeneratorController extends Controller
     /**
      * Archive a quiz
      */
-    public function archive(Quiz $quiz)
+    public function archive($quizId)
     {
+        Log::info('Admin trying to archive quiz', ['quiz_id' => $quizId]);
+        
         try {
-            // Admin can archive quiz if they created it or if it's admin-accessible
-            $adminId = session('user_id');
-            if ($quiz->admin_id !== $adminId && $quiz->admin_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
-
+            // Find the quiz by ID instead of relying on route model binding
+            $quiz = Quiz::findOrFail($quizId);
+            
+            // Admin can archive any quiz (both admin and professor created)
             $quiz->update([
                 'status' => 'archived',
                 'is_draft' => false,
@@ -788,8 +782,9 @@ class QuizGeneratorController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error archiving quiz (ADMIN)', [
-                'quiz_id' => $quiz->quiz_id,
-                'error' => $e->getMessage()
+                'quiz_id' => $quizId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'success' => false,
@@ -801,18 +796,15 @@ class QuizGeneratorController extends Controller
     /**
      * Move quiz to draft
      */
-    public function draft(Quiz $quiz)
+    public function draft($quizId)
     {
+        Log::info('Admin trying to move quiz to draft', ['quiz_id' => $quizId]);
+        
         try {
-            // Admin can modify quiz if they created it or if it's admin-accessible
-            $adminId = session('user_id');
-            if ($quiz->admin_id !== $adminId && $quiz->admin_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
-
+            // Find the quiz by ID instead of relying on route model binding
+            $quiz = Quiz::findOrFail($quizId);
+            
+            // Admin can modify any quiz (both admin and professor created)
             $quiz->update([
                 'status' => 'draft',
                 'is_draft' => true,
@@ -836,8 +828,9 @@ class QuizGeneratorController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error moving quiz to draft (ADMIN)', [
-                'quiz_id' => $quiz->quiz_id,
-                'error' => $e->getMessage()
+                'quiz_id' => $quizId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'success' => false,
@@ -852,14 +845,8 @@ class QuizGeneratorController extends Controller
     public function delete(Quiz $quiz)
     {
         try {
-            // Admin can delete any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
-
+            // Admin can delete any quiz (both admin and professor created)
+            
             // Delete associated content item
             if ($quiz->content_id) {
                 ContentItem::where('id', $quiz->content_id)->delete();
@@ -1012,14 +999,8 @@ class QuizGeneratorController extends Controller
     public function deleteQuiz(Quiz $quiz)
     {
         try {
-            // Admin can delete any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
-
+            // Admin can delete any quiz (both admin and professor created)
+            
             DB::beginTransaction();
 
             // Delete content item if exists
@@ -1053,6 +1034,36 @@ class QuizGeneratorController extends Controller
                 'message' => 'Error deleting quiz: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Edit quiz questions (Admin can edit ANY quiz)
+     */
+    public function editQuestions(Quiz $quiz)
+    {
+        // Admin can edit any quiz (no ownership restriction)
+        $questions = $quiz->questions()->orderBy('question_order')->get();
+        $programs = Program::where('is_archived', false)->orderBy('program_name')->get();
+        
+        Log::info('Admin editing quiz questions', ['quiz_id' => $quiz->quiz_id, 'admin_id' => session('user_id')]);
+        
+        return view('admin.quiz-generator.quiz-questions-edit', compact('quiz', 'questions', 'programs'));
+    }
+
+    /**
+     * Edit quiz (alias for editQuestions)
+     */
+    public function editQuiz(Quiz $quiz)
+    {
+        return $this->editQuestions($quiz);
+    }
+
+    /**
+     * Get quiz data for editing (alternative method name)
+     */
+    public function getQuizForEdit(Quiz $quiz)
+    {
+        return $this->editQuestions($quiz);
     }
 
     /**
@@ -1474,6 +1485,68 @@ class QuizGeneratorController extends Controller
         }
     }
 
+    /**
+     * Get quiz data for editing in modal
+     */
+    public function getQuiz($quizId)
+    {
+        try {
+            Log::info('Admin fetching quiz data for editing', ['quiz_id' => $quizId]);
+            
+            // Find the quiz by ID
+            $quiz = Quiz::with('questions')->findOrFail($quizId);
+            
+            // Get the questions in correct order
+            $questions = $quiz->questions()->orderBy('question_order')->get();
+            
+            // Format the response data
+            return response()->json([
+                'success' => true,
+                'quiz' => [
+                    'quiz_id' => $quiz->quiz_id,
+                    'title' => $quiz->quiz_title,
+                    'quiz_title' => $quiz->quiz_title,
+                    'quiz_description' => $quiz->quiz_description,
+                    'program_id' => $quiz->program_id,
+                    'module_id' => $quiz->module_id,
+                    'course_id' => $quiz->course_id,
+                    'time_limit' => $quiz->time_limit,
+                    'max_attempts' => $quiz->max_attempts,
+                    'infinite_retakes' => $quiz->infinite_retakes,
+                    'has_deadline' => $quiz->has_deadline,
+                    'due_date' => $quiz->due_date,
+                    'instructions' => $quiz->instructions,
+                    'status' => $quiz->status,
+                    'is_draft' => $quiz->is_draft,
+                ],
+                'questions' => $questions->map(function ($question) {
+                    return [
+                        'id' => $question->id,
+                        'question_text' => $question->question_text,
+                        'question_type' => $question->question_type,
+                        'options' => $question->options,
+                        'correct_answers' => [$question->correct_answer],
+                        'explanation' => $question->explanation,
+                        'points' => $question->points,
+                        'order' => $question->question_order
+                    ];
+                })
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching quiz for editing', [
+                'quiz_id' => $quizId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading quiz data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
     /**
      * Update quiz based on input type (form or JSON)
      */

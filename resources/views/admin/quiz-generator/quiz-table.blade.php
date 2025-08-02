@@ -106,7 +106,7 @@
                                     <i class="bi bi-archive"></i>
                                 </button>
                             @elseif($status === 'archived')
-                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="changeQuizStatus({{ $quiz->quiz_id }}, 'drafted')" title="Restore to Draft">
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="changeQuizStatus({{ $quiz->quiz_id }}, 'draft')" title="Restore to Draft">
                                     <i class="bi bi-file-text"></i>
                                 </button>
                                 <button type="button" class="btn btn-outline-success btn-sm" onclick="changeQuizStatus({{ $quiz->quiz_id }}, 'published')" title="Publish Quiz">

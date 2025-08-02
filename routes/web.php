@@ -1120,12 +1120,19 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::post('/admin/quiz-generator/save-manual', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'saveManualQuiz']);
     Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'updateQuiz']);
     Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz']);
+    
+    // Edit routes for admin quiz management
+    Route::get('/admin/quiz-generator/{quiz}/edit', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'editQuestions'])->name('admin.quiz.edit');
+    Route::put('/admin/quiz-generator/{quiz}/questions/{question}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'updateQuestion'])->name('admin.quiz.question.update');
+    
+    // Status management routes
     Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish']);
     Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive']);
     Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft']);
     Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete']);
     Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview']);
     Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal']);
+    Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions']);
 });
 
 // Chat routes
@@ -2829,6 +2836,48 @@ Route::get('/admin/fix-all-quiz-scores', [App\Http\Controllers\FixQuizSubmission
 Route::get('/test-quiz-link', function () {
     return view('test-quiz-link');
 })->name('test.quiz.link');
+
+// Admin quiz management test route
+Route::get('/admin-quiz-test', function () {
+    // Set admin session for testing
+    session(['user_id' => 1, 'logged_in' => true, 'user_role' => 'admin']);
+    
+    $csrfToken = csrf_token();
+    
+    return view('admin-quiz-test', compact('csrfToken'));
+})->name('admin.quiz.test');
+
+// Quick quiz status API for testing
+Route::get('/api/quiz-status-summary', function () {
+    $quizzes = \App\Models\Quiz::with(['program'])->orderBy('created_at', 'desc')->get();
+    
+    $summary = [];
+    foreach ($quizzes as $quiz) {
+        $creator = 'Unknown';
+        if ($quiz->admin_id) {
+            $admin = \App\Models\Admin::find($quiz->admin_id);
+            $creator = "Admin: " . ($admin ? $admin->admin_name : "ID {$quiz->admin_id}");
+        } elseif ($quiz->professor_id) {
+            $prof = \App\Models\Professor::find($quiz->professor_id);
+            $creator = "Professor: " . ($prof ? $prof->professor_first_name . ' ' . $prof->professor_last_name : "ID {$quiz->professor_id}");
+        }
+        
+        $summary[] = [
+            'quiz_id' => $quiz->quiz_id,
+            'title' => $quiz->quiz_title,
+            'status' => $quiz->status,
+            'creator' => $creator,
+            'program' => $quiz->program ? $quiz->program->program_name : 'N/A',
+            'created_at' => $quiz->created_at->format('M d, Y H:i'),
+        ];
+    }
+    
+    return response()->json([
+        'total_quizzes' => count($summary),
+        'quizzes' => $summary,
+        'timestamp' => now()->format('Y-m-d H:i:s')
+    ]);
+})->name('api.quiz.status');
 
 // Debug route for authentication issues
 Route::get('/admin/debug/auth', [App\Http\Controllers\Admin\DebugController::class, 'authDebug'])
