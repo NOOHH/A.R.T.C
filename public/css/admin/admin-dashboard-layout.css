@@ -395,9 +395,9 @@ body, html {
 
 .nav-link i {
   margin-right: 12px;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 20px;
+  width: 18px;
   text-align: center;
   color: inherit;
 }
@@ -617,10 +617,11 @@ body, html {
 
 /* Icon alignment */
 .modern-sidebar .nav-link i {
-  min-width: 24px;
+  min-width: 20px;
   text-align: center;
   display: inline-block;
   vertical-align: middle;
+  font-size: 0.95rem;
 }
 
 /* Center icon when collapsed */

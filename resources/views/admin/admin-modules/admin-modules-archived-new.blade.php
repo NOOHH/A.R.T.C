@@ -161,11 +161,7 @@
                 <!-- Courses with Archived Content -->
                 @if(isset($archivedCourses) && $archivedCourses->count() > 0)
                     @foreach($archivedCourses as $course)
-                        @php
-                            $archivedContentItems = $course->contentItems->where('is_archived', true);
-                        @endphp
-                        @if($archivedContentItems->count() > 0)
-                            <div class="course-section collapsed" id="course-{{ $course->subject_id }}">
+                        <div class="course-section collapsed" id="course-{{ $course->subject_id }}">
                             <div class="course-header">
                                 <div class="course-title">
                                     <span class="course-icon"><i class="fas fa-book"></i></span>
@@ -179,7 +175,7 @@
                                         </span>
                                         <span class="course-stat">
                                             <i class="fas fa-archive"></i>
-                                            {{ $archivedContentItems->count() }} archived items
+                                            {{ $course->contentItems->count() }} archived items
                                         </span>
                                     </div>
                                     <div class="course-actions">
@@ -194,7 +190,7 @@
                             </div>
                             <div class="course-content">
                                 <div class="content-grid">
-                                    @foreach($archivedContentItems as $content)
+                                    @foreach($course->contentItems as $content)
                                         <div class="content-card {{ $content->content_type }}-content" 
                                              data-type="{{ $content->content_type }}" 
                                              data-name="{{ strtolower($content->content_title) }}">
@@ -223,7 +219,7 @@
                                             
                                             @if($content->content_data)
                                                 <div class="content-details">
-                                                    @php $data = is_array($content->content_data) ? $content->content_data : (json_decode($content->content_data, true) ?? []) @endphp
+                                                    @php $data = json_decode($content->content_data, true) ?? [] @endphp
                                                     @if($content->content_type === 'assignment' && !empty($data['due_date']))
                                                         <i class="fas fa-calendar"></i> Due: {{ \Carbon\Carbon::parse($data['due_date'])->format('M d, Y') }}
                                                     @elseif($content->content_type === 'quiz' && !empty($data['time_limit']))
@@ -258,102 +254,11 @@
                                 </div>
                             </div>
                         </div>
-                        @endif
                     @endforeach
                 @endif
 
-                <!-- Standalone Archived Content (not in courses/modules) -->
-                @if(isset($archivedContent) && $archivedContent->count() > 0)
-                    <div class="course-section expanded">
-                        <div class="course-header">
-                            <div class="course-title">
-                                <span class="course-icon"><i class="fas fa-archive"></i></span>
-                                Standalone Archived Content
-                            </div>
-                            <div class="course-meta">
-                                <div class="course-info">
-                                    <span class="course-stat">
-                                        <i class="fas fa-file-alt"></i>
-                                        {{ $archivedContent->count() }} items
-                                    </span>
-                                </div>
-                                <div class="course-actions">
-                                    <button class="expand-course-btn" onclick="toggleCourseSection(this)">
-                                        <i class="fas fa-chevron-up"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="course-content">
-                            <div class="content-grid">
-                                @foreach($archivedContent as $content)
-                                    <div class="content-card {{ $content->content_type }}-content" 
-                                         data-type="{{ $content->content_type }}" 
-                                         data-name="{{ strtolower($content->content_title) }}">
-                                        <div class="content-header">
-                                            <h3 class="content-title">{{ $content->content_title }}</h3>
-                                            <span class="content-type-icon {{ $content->content_type }}">
-                                                @switch($content->content_type)
-                                                    @case('assignment')
-                                                        <i class="fas fa-tasks"></i>
-                                                        @break
-                                                    @case('quiz')
-                                                        <i class="fas fa-question-circle"></i>
-                                                        @break
-                                                    @case('test')
-                                                        <i class="fas fa-clipboard-check"></i>
-                                                        @break
-                                                    @case('link')
-                                                        <i class="fas fa-link"></i>
-                                                        @break
-                                                    @default
-                                                        <i class="fas fa-file-alt"></i>
-                                                @endswitch
-                                            </span>
-                                        </div>
-                                        <p class="content-description">{{ $content->content_description }}</p>
-                                        
-                                        @if($content->content_data)
-                                            <div class="content-details">
-                                                @php $data = is_array($content->content_data) ? $content->content_data : (json_decode($content->content_data, true) ?? []) @endphp
-                                                @if($content->content_type === 'assignment' && !empty($data['due_date']))
-                                                    <i class="fas fa-calendar"></i> Due: {{ \Carbon\Carbon::parse($data['due_date'])->format('M d, Y') }}
-                                                @elseif($content->content_type === 'quiz' && !empty($data['time_limit']))
-                                                    <i class="fas fa-stopwatch"></i> {{ $data['time_limit'] }} minutes
-                                                @elseif($content->content_type === 'test' && !empty($data['test_date']))
-                                                    <i class="fas fa-calendar"></i> {{ \Carbon\Carbon::parse($data['test_date'])->format('M d, Y') }}
-                                                @endif
-                                            </div>
-                                        @endif
-                                        
-                                        <div class="content-footer">
-                                            <span class="archived-date">
-                                                <i class="fas fa-clock"></i>
-                                                {{ $content->archived_at ? \Carbon\Carbon::parse($content->archived_at)->diffForHumans() : 'Recently archived' }}
-                                            </span>
-                                            <div class="content-actions">
-                                                @if($content->attachment_path || $content->content_url)
-                                                    <button class="preview-btn" onclick="previewContent({{ $content->id }})">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                @endif
-                                                <button class="restore-btn" onclick="restoreContent({{ $content->id }})">
-                                                    <i class="fas fa-undo"></i>
-                                                </button>
-                                                <button class="delete-btn" onclick="deleteContent({{ $content->id }})">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
                 <!-- No archived content message -->
-                @if((!isset($archivedModules) || $archivedModules->count() == 0) && (!isset($archivedCourses) || $archivedCourses->count() == 0) && (!isset($archivedContent) || $archivedContent->count() == 0))
+                @if((!isset($archivedModules) || $archivedModules->count() == 0) && (!isset($archivedCourses) || $archivedCourses->count() == 0))
                     <div class="no-modules">
                         No archived content found for this program.
                     </div>

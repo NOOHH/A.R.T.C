@@ -275,24 +275,24 @@ class EnhancedChatController extends Controller
     {
         try {
             $query = DB::table('directors')
-                ->where('is_archived', false);
+                ->where('directors_archived', false);
 
             if ($search) {
                 $query->where(function($q) use ($search) {
-                    $q->where('director_name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                    $q->where('directors_name', 'like', "%{$search}%")
+                      ->orWhere('directors_email', 'like', "%{$search}%");
                 });
             }
 
             // Don't include current user
             if ($currentUser['role'] === 'director') {
-                $query->where('director_id', '!=', $currentUser['id']);
+                $query->where('directors_id', '!=', $currentUser['id']);
             }
 
             return $query->select(
-                'director_id as id',
-                'director_name as name',
-                'email',
+                'directors_id as id',
+                'directors_name as name',
+                'directors_email as email',
                 DB::raw("'director' as role")
             )
             ->limit(20)
@@ -518,9 +518,9 @@ class EnhancedChatController extends Controller
                 return $admin->admin_name;
             }
 
-            $director = DB::table('directors')->where('director_id', $userId)->first();
+            $director = DB::table('directors')->where('directors_id', $userId)->first();
             if ($director) {
-                return $director->director_name;
+                return $director->directors_name;
             }
 
             return 'Unknown User';

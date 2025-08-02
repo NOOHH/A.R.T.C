@@ -963,6 +963,12 @@ Route::middleware(['admin.director.auth'])->group(function () {
     // Archive a module (moved inside middleware group)
     Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])->name('admin.modules.archive');
     
+    // New archived content management routes
+    Route::post('/admin/modules/content/{id}/restore', [AdminModuleController::class, 'restoreContent'])->name('admin.modules.content.restore');
+    Route::post('/admin/modules/course/{courseId}/bulk-restore', [AdminModuleController::class, 'bulkRestoreCourseContent'])->name('admin.modules.course.bulk-restore');
+    Route::delete('/admin/modules/content/{id}/delete-archived', [AdminModuleController::class, 'deleteArchivedContent'])->name('admin.modules.content.delete-archived');
+    Route::get('/admin/modules/archived-stats', [AdminModuleController::class, 'getArchivedStats'])->name('admin.modules.archived-stats');
+    
     // Admin override settings
     Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])->name('admin.modules.get-override');
     Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])->name('admin.modules.update-override');

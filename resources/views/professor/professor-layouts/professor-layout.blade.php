@@ -764,13 +764,24 @@
     }
 
     /* Header styles */
-    .main-header {
-        background: white;
-        border-bottom: 1px solid #dee2e6;
-        padding: 1rem 2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
+.main-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;           /* vertical centering */
+    justify-content: space-between;/* left / center / right spacing */
+    gap: 0.5rem;
+    flex-wrap: nowrap;             /* keep everything on one line */
+    background: white;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;         /* adjust to taste */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
 
+.brand-container,
+.header-center,
+.header-right > * {
+    min-width: 0; /* critical to allow shrinking */
+}
     .brand-container {
         display: flex;
         align-items: center;
@@ -792,6 +803,9 @@
     }
 
     .brand-text {
+            white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
         font-size: 1.25rem;
         color: #764ba2;
         font-weight: bold;
@@ -804,36 +818,41 @@
         font-weight: 500;
     }
 
-    .header-center {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+.header-center {
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0; /* prevents overflow from pushing things out of line */
+}
+.search-container {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+}
 
-    .search-container {
-        width: 100%;
-        max-width: 400px;
-    }
 
-    .header-right {
-        display: flex;
-        align-items: flex-end;
-        gap: 1.5rem;
-    }
+.header-right {
+    display: flex;
+    align-items: center; /* proper vertical centering */
+    gap: 1.5rem;
+}
 
-    .profile-icon {
-        font-size: 1.5rem;
-        color: #764ba2;
-        background: #fff;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.header-right > * {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 1;
+}
+@media (max-width: 576px) {
+    .main-header {
+        padding: 0.5rem 0.75rem;
     }
+    .brand-text {
+        font-size: 1rem;
+    }
+}
+
 
     .main-header .btn-link {
         color: #764ba2;

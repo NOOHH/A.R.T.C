@@ -153,12 +153,16 @@
         ];
     @endphp
     
-    <!-- jQuery (required for dynamic dropdowns and AJAX in child views) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Your Admin CSS -->
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard-layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
+
+    {{-- Global UI Styles (e.g. from your helper) --}}
+    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
 
     <!-- Admin-specific CSS -->
     <style>
@@ -668,27 +672,6 @@
         border-bottom: 1px solid #dee2e6;
         padding: 1rem 2rem;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .header-left {
-        display: flex;
-        align-items: center;
-    }
-
-    .header-center {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
     }
 
     .brand-container {
@@ -724,10 +707,22 @@
         font-weight: 500;
     }
 
+    .header-center {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .search-container {
         width: 100%;
         max-width: 400px;
-        position: relative;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.5rem;
     }
 
     .profile-icon {
@@ -844,9 +839,6 @@
     }
     </style>
 
-    {{-- Global UI Styles (e.g. from your helper) --}}
-    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
-
     {{-- Chat CSS + any overrides --}}
     @stack('styles')
 </head>
@@ -866,7 +858,6 @@
         </div>
     </div>
 </div>
-
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -1128,5 +1119,566 @@ function displaySearchResults(data) {
 
 <!-- Include Real-time Chat Component -->
 @include('components.realtime-chat')
+</body>
+</html>
+    }
+    
+    showSearchLoading(true);
+    
+    // Use GET request to our SearchController endpoint
+    const params = new URLSearchParams({
+        query: searchQuery,
+        type: currentSearchType || 'all',
+        limit: 10
+    });
+    
+    fetch(`/search?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Search request failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        displaySearchResults(data);
+        showSearchLoading(false);
+    })
+    .catch(error => {
+        console.error('Search error:', error);
+        showSearchLoading(false);
+        // Display error message
+        const resultsContainer = document.getElementById('searchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Search temporarily unavailable
+                </div>
+            `;
+        }
+        showSearchDropdown();
+    });
+}
+
+function displaySearchResults(data) {
+    const resultsContainer = document.getElementById('searchResults');
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    // Clear previous results
+    resultsContainer.innerHTML = '';
+    if (suggestionsContainer) {
+        suggestionsContainer.innerHTML = '';
+    }
+    
+    // Check if we got the new format from SearchController
+    const results = data.results || data;
+    
+    // Show results
+    if (results && results.length > 0) {
+        resultsContainer.innerHTML = results.map(result => {
+            if (result.type === 'program') {
+                return `
+                    <div class="result-item" onclick="selectResult('program', '${result.id}')">
+                        <div class="result-icon">
+                            <i class="bi bi-collection text-primary"></i>
+                        </div>
+                        <div class="result-details">
+                            <div class="result-title">${result.name}</div>
+                            <div class="result-subtitle">${result.description || 'Program'}</div>
+                            <small class="text-muted">${result.modules_count || 0} modules • ${result.courses_count || 0} courses</small>
+                        </div>
+                        <div class="result-type">
+                            <span class="badge bg-info">Program</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // User result
+                const roleClass = getRoleClass(result.role);
+                return `
+                    <div class="result-item" onclick="selectResult('${result.type}', '${result.id}')">
+                        <div class="result-icon">
+                            <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="result-avatar">
+                        </div>
+                        <div class="result-details">
+                            <div class="result-title">${result.name}</div>
+                            <div class="result-subtitle">${result.email}</div>
+                            ${result.programs && result.programs.length > 0 ? 
+                                `<small class="text-muted">Programs: ${result.programs.join(', ')}</small>` : ''}
+                        </div>
+                        <div class="result-type">
+                            <span class="badge bg-${roleClass}">${result.role}</span>
+                            <br><small class="text-muted">${result.status}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+    } else {
+        resultsContainer.innerHTML = `
+            <div class="no-results">
+                <i class="bi bi-search me-2"></i>
+                No results found
+            </div>
+        `;
+    }
+    
+    showSearchDropdown();
+}
+
+function getResultIcon(type) {
+    switch(type) {
+        case 'student': return 'person-circle';
+        case 'professor': return 'person-badge';
+        case 'program': return 'book';
+        case 'batch': return 'people';
+        case 'admin': return 'shield-check';
+        default: return 'search';
+    }
+}
+
+function selectSuggestion(suggestion) {
+    const searchInput = document.getElementById('universalSearchInput');
+    searchInput.value = suggestion;
+    performSearch(suggestion);
+}
+
+// Get role class for badge styling
+function getRoleClass(role) {
+    switch(role ? role.toLowerCase() : '') {
+        case 'student': return 'primary';
+        case 'professor': return 'success';
+        case 'admin': return 'warning';
+        case 'director': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function selectResult(type, id) {
+    hideSearchDropdown();
+    if (type === 'program') {
+        window.location.href = `/profile/program/${id}`;
+    } else if (type === 'student') {
+        window.location.href = `/profile/user/${id}`;
+    } else if (type === 'professor') {
+        window.location.href = `/profile/professor/${id}`;
+    } else {
+        // For other user types (admin, director), use the existing modal
+        showUserModal(id);
+    }
+}
+
+// Show user profile modal
+function showUserModal(userId) {
+    fetch(`/search/profile?user_id=${userId}&type=user`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayUserProfileModal(data.profile);
+            } else {
+                alert('Unable to load user profile. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user profile:', error);
+            alert('Error loading user profile. Please try again.');
+        });
+}
+
+// Show program details modal (now redirects)
+function showProgramModal(programId) {
+    window.location.href = `/profile/program/${programId}`;
+}
+
+function showSearchDropdown() {
+    const dropdown = document.getElementById('searchResultsDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'block';
+    }
+}
+
+function hideSearchDropdown() {
+    // Add a small delay to allow for click events on results
+    setTimeout(() => {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    }, 200);
+}
+
+function showSearchLoading(show) {
+    const loading = document.getElementById('searchLoading');
+    if (loading) {
+        if (show) {
+            loading.classList.remove('d-none');
+        } else {
+            loading.classList.add('d-none');
+        }
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const searchContainer = document.querySelector('.header-search');
+    const dropdown = document.getElementById('searchResultsDropdown');
+    
+    if (searchContainer && !searchContainer.contains(event.target)) {
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    }
+});
+
+// Handle Enter key in search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('universalSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.search-dropdown-content {
+    padding: 8px;
+}
+
+.suggestions-header, .results-header {
+    font-weight: 600;
+    color: #666;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+
+.suggestion-item, .result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+.suggestion-item:hover, .result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.result-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.result-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.result-details {
+    flex: 1;
+}
+
+.result-title {
+    font-weight: 500;
+    color: #333;
+}
+
+.result-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.result-type {
+    font-size: 0.8rem;
+    color: #999;
+    text-transform: capitalize;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.search-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: #666;
+}
+
+.header-search {
+    position: relative;
+}
+
+.header-search .search-box {
+    position: relative;
+}
+</style>
+{{-- 1) Include the chat HTML offcanvas --}}
+    {{-- Chat component removed --}}
+
+    <!-- Core JS: Bootstrap bundle + jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    {{-- Your Admin‐page JS (logout handler, search, sidebar toggles…) --}}
+    <script>
+    function handleAdminLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            document.getElementById('admin-logout-form').submit();
+        }
+    }
+
+    // Display user profile modal
+    function displayUserProfileModal(profile) {
+        const modalContent = `
+            <div class="modal fade" id="userProfileModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-person-circle me-2"></i>User Profile
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <img src="${profile.avatar || '/images/default-avatar.png'}" 
+                                         alt="${profile.name}" 
+                                         class="rounded-circle mb-3" 
+                                         width="120" height="120">
+                                    <h5>${profile.name}</h5>
+                                    <span class="badge bg-${getRoleClass(profile.role)} mb-2">${profile.role}</span>
+                                    <p class="text-muted">${profile.status}</p>
+                                </div>
+                                <div class="col-md-8">
+                                    <h6>Contact Information</h6>
+                                    <p><strong>Email:</strong> ${profile.email}</p>
+                                    <p><strong>Joined:</strong> ${new Date(profile.created_at).toLocaleDateString()}</p>
+                                    
+                                    ${profile.enrollments ? `
+                                        <h6 class="mt-4">Program Enrollments</h6>
+                                        <div class="list-group">
+                                            ${profile.enrollments.map(enrollment => `
+                                                <div class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>${enrollment.program}</strong>
+                                                            <br><small class="text-muted">Enrolled: ${new Date(enrollment.enrolled_at).toLocaleDateString()}</small>
+                                                        </div>
+                                                        <span class="badge bg-success">${enrollment.status || 'Active'}</span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${profile.role === 'Professor' && profile.professor_id ? `
+                                        <h6 class="mt-4">Professor Information</h6>
+                                        <p><strong>Professor ID:</strong> ${profile.professor_id}</p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            ${profile.role === 'Student' ? `
+                                <button type="button" class="btn btn-primary" onclick="window.open('/admin/students/${profile.student_id ? profile.student_id : profile.id}', '_blank')">
+                                    <i class="bi bi-eye me-2"></i>View Full Student Profile
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="window.open('/profile/user/${profile.id}', '_blank')">
+                                    <i class="bi bi-user me-2"></i>Public Profile
+                                </button>
+                            ` : profile.role === 'Professor' && profile.professor_id ? `
+                                <button type="button" class="btn btn-success" onclick="window.open('/admin/professors/${profile.id}', '_blank')">
+                                    <i class="bi bi-eye me-2"></i>View Full Professor Profile
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="window.open('/profile/user/${profile.id}', '_blank')">
+                                    <i class="bi bi-user me-2"></i>Public Profile
+                                </button>
+                            ` : `
+                                <button type="button" class="btn btn-primary" onclick="window.open('/profile/user/${profile.id}', '_blank')">
+                                    <i class="bi bi-user me-2"></i>View Profile
+                                </button>
+                            `}
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('userProfileModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add new modal to body
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+        modal.show();
+    }
+
+    // Display program modal
+    function displayProgramModal(program) {
+        const modalContent = `
+            <div class="modal fade" id="programModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-collection me-2"></i>${program.name}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6>Program Description</h6>
+                                    <p>${program.description || 'No description available'}</p>
+                                    
+                                    <h6 class="mt-4">Modules & Courses</h6>
+                                    <div class="accordion" id="modulesAccordion">
+                                        ${program.modules.map((module, index) => `
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading${index}">
+                                                    <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                                            type="button" 
+                                                            data-bs-toggle="collapse" 
+                                                            data-bs-target="#collapse${index}">
+                                                        ${module.name}
+                                                        <span class="badge bg-secondary ms-2">${module.courses.length} courses</span>
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse${index}" 
+                                                     class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                                     data-bs-parent="#modulesAccordion">
+                                                    <div class="accordion-body">
+                                                        <p class="text-muted">${module.description || 'No description available'}</p>
+                                                        <div class="row">
+                                                            ${module.courses.map(course => `
+                                                                <div class="col-md-6 mb-2">
+                                                                    <div class="card">
+                                                                        <div class="card-body p-3">
+                                                                            <h6 class="card-title">${course.name}</h6>
+                                                                            <p class="card-text small text-muted">${course.description || 'No description'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Program Statistics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Total Modules:</span>
+                                                <span class="badge bg-primary">${program.total_modules}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Total Courses:</span>
+                                                <span class="badge bg-info">${program.total_courses}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Enrolled Students:</span>
+                                                <span class="badge bg-success">${program.total_students}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Created:</span>
+                                                <small class="text-muted">${new Date(program.created_at).toLocaleDateString()}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="window.open('/admin/programs/${program.id}', '_blank')">
+                                <i class="bi bi-eye me-2"></i>View Full Program
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="window.open('/profile/program/${program.id}', '_blank')">
+                                <i class="bi bi-collection me-2"></i>Public Profile
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('programModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add new modal to body
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('programModal'));
+        modal.show();
+    }
+    
+    // … your search and sidebar toggle scripts …
+    </script>
+
+    {{-- 2) Finally, dump the chat component’s JS (and any other @push('scripts')) --}}
+    @stack('scripts')
+    
+    {{-- Include the chat component --}}
+    @include('components.global-chat-clean')
 </body>
 </html>
