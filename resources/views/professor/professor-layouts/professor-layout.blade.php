@@ -157,6 +157,28 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        cursor: pointer;
+    }
+
+    /* Add subtle hover effect for sidebar background areas */
+    .modern-sidebar:hover {
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Remove cursor pointer and hover effects from navigation elements */
+    .modern-sidebar .nav-link,
+    .modern-sidebar .submenu-link,
+    .modern-sidebar button,
+    .modern-sidebar a,
+    .modern-sidebar form {
+        cursor: pointer;
+    }
+
+    .modern-sidebar .nav-link:hover,
+    .modern-sidebar .submenu-link:hover,
+    .modern-sidebar button:hover,
+    .modern-sidebar a:hover {
+        box-shadow: none;
     }
 
     .modern-sidebar.collapsed {
@@ -182,6 +204,11 @@
             transform: translateX(0);
         }
     }
+/* debug: outline all nav items so we can see if they’re in DOM */
+
+
+
+    }
 
     /* Sidebar Header */
     .sidebar-header {
@@ -194,6 +221,78 @@
         min-height: 0;
         transition: padding 0.3s;
         flex-shrink: 0;
+    }
+
+    /* Header Profile Styles */
+    .header-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .header-profile:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .header-profile-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        flex-shrink: 0;
+        object-fit: cover;
+        transition: border-color 0.3s ease;
+    }
+
+    .header-profile:hover .header-profile-avatar {
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .header-profile-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .header-profile-name {
+        font-weight: 600;
+        color: #fff;
+        font-size: 0.95rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .header-profile-role {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.8rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Collapsed state for header profile */
+    .modern-sidebar.collapsed .header-profile {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        justify-content: center;
+    }
+
+    .modern-sidebar.collapsed .header-profile-info {
+        display: none;
+    }
+
+    .modern-sidebar.collapsed .header-profile-avatar {
+        width: 32px;
+        height: 32px;
     }
 
     .modern-sidebar.collapsed .sidebar-header {
@@ -265,46 +364,6 @@
         height: 32px;
         width: auto;
         margin: 0 auto;
-    }
-
-    /* Sidebar Toggle Button */
-    .sidebar-toggle-btn {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1rem;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 4px;
-        transition: all 0.3s ease;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .modern-sidebar.collapsed .sidebar-toggle-btn {
-        transform: rotate(180deg);
-        position: absolute;
-        right: 4px;
-        top: 35px;
-        transform: translateY(-50%) rotate(180deg);
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        z-index: 10;
-        padding: 0;
-    }
-
-    .modern-sidebar.collapsed .sidebar-toggle-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
-
-    .sidebar-toggle-btn:hover {
-        background: var(--sidebar-hover);
     }
 
     /* User Profile Section */
@@ -822,7 +881,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('modernSidebar');
     const backdrop = document.getElementById('sidebarOverlay');
-    const toggleBtns = document.querySelectorAll('#sidebarToggleBtn, .sidebar-toggle-btn');
     const mobileToggle = document.getElementById('mobileSidebarToggle');
     const mainContentArea = document.getElementById('mainContentArea');
 
@@ -869,16 +927,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = 'auto';
     }
 
-    // Event listeners for main sidebar
-    toggleBtns.forEach(btn => {
-        if (btn) {
-            btn.addEventListener('click', function(e) {
+    // Make entire sidebar clickable to toggle
+    if (sidebar) {
+        sidebar.addEventListener('click', function(e) {
+            // Only toggle if we're not clicking on navigation links or forms
+            if (!e.target.closest('.nav-link') && 
+                !e.target.closest('.submenu-link') && 
+                !e.target.closest('form') && 
+                !e.target.closest('button') &&
+                !e.target.closest('a')) {
                 e.preventDefault();
                 e.stopPropagation();
                 toggleSidebar();
-            });
-        }
-    });
+            }
+        });
+    }
 
     // Mobile toggle button
     if (mobileToggle) {

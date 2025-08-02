@@ -4,10 +4,30 @@
 
 @section('content')
 <style>
+/* Modern Dashboard Styles */
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #7c3aed;
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --danger-color: #dc2626;
+  --info-color: #0891b2;
+  --dark-color: #1f2937;
+  --light-color: #f8fafc;
+  --border-radius: 16px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Reset overflow for professor dashboard */
 html, body {
   overflow-x: hidden;
   overflow-y: auto !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
 }
 
 .professor-container {
@@ -24,42 +44,372 @@ html, body {
   overflow-y: auto !important;
   height: auto !important;
   min-height: 100vh;
-  padding: 1rem;
-  background: #f8f9fa;
+  padding: 2rem;
+  background: transparent;
   position: relative;
   width: 100%;
 }
 
-/* Ensure the dashboard content can scroll */
+/* Modern container styling */
 .content-wrapper .container-fluid {
   overflow: visible !important;
   height: auto !important;
-  padding: 0 15px;
-  max-width: 100%;
-  margin: 0;
+  padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
   box-sizing: border-box;
   width: 100%;
 }
 
-/* Ensure proper Bootstrap container behavior */
-.content-wrapper .container-fluid .row {
-  margin-left: -15px;
-  margin-right: -15px;
+/* Header Section */
+.dashboard-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.content-wrapper .container-fluid .col-12,
-.content-wrapper .container-fluid .col-md-3,
-.content-wrapper .container-fluid .col-md-4,
-.content-wrapper .container-fluid .col-xl-3 {
-  padding-left: 15px;
-  padding-right: 15px;
+.welcome-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
 }
 
-/* Override any conflicting navbar container-fluid styles */
-.navbar .container-fluid {
-  max-width: 100%;
-  padding-left: 15px;
-  padding-right: 15px;
+.welcome-subtitle {
+  font-size: 1.1rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Modern Stats Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+.stat-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-xl);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--dark-color);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Action Cards Grid */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.action-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  transform: scaleX(0);
+  transition: var(--transition);
+}
+
+.action-card:hover::before {
+  transform: scaleX(1);
+}
+
+.action-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-xl);
+  text-decoration: none;
+  color: inherit;
+}
+
+.action-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.action-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 0.5rem;
+}
+
+.action-description {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Content Sections */
+.content-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: between;
+  align-items: center;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--dark-color);
+  margin: 0;
+}
+
+.section-body {
+  padding: 2rem;
+}
+
+/* Program Cards */
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.program-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+  overflow: hidden;
+}
+
+.program-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.program-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.program-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 0.5rem;
+}
+
+.program-description {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.program-footer {
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Announcement Cards */
+.announcement-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.announcement-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary-color);
+}
+
+.announcement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Badges */
+.badge-modern {
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Buttons */
+.btn-modern {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: var(--transition);
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary-modern {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+}
+
+.btn-primary-modern:hover {
+  background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: #cbd5e1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem;
+  }
+  
+  .dashboard-header {
+    padding: 1.5rem;
+  }
+  
+  .welcome-title {
+    font-size: 2rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Ensure proper spacing */
+.content-wrapper .row {
+  margin-bottom: 1.5rem;
 }
 
 /* Force scrolling on the main content */
@@ -68,327 +418,125 @@ html, body {
   max-height: none !important;
 }
 
-/* Custom announcement card styling */
-.border-left-primary {
-  border-left: 4px solid #007bff !important;
-}
-
-.card.border-left-primary:hover {
-  box-shadow: 0 0.5rem 1rem rgba(0, 123, 255, 0.15) !important;
-  transform: translateY(-2px);
-  transition: all 0.3s ease;
-}
-
-/* Stats card styling */
-.stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* Ensure proper spacing */
-.content-wrapper .row {
-  margin-bottom: 1.5rem;
-}
-
-.content-wrapper .card {
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  margin-bottom: 1rem;
-}
-
-.content-wrapper .card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-}
-
-/* Ensure proper content spacing */
-.content-wrapper {
-  padding: 1.5rem;
-}
-
-/* Fix any potential margin issues */
-.content-wrapper > *:first-child {
-  margin-top: 0;
-}
-
-.content-wrapper > *:last-child {
-  margin-bottom: 0;
-}
-
 </style>
 <div class="container-fluid">
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-collection display-4 mb-3"></i>
-                    <h3 class="display-4">{{ $totalPrograms }}</h3>
-                    <p class="mb-0">Assigned Programs</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
-                <div class="card-body text-center">
-                    <i class="bi bi-people display-4 mb-3"></i>
-                    <h3 class="display-4">{{ $totalStudents }}</h3>
-                    <p class="mb-0">Total Students</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white;">
-                <div class="card-body text-center">
-                    <i class="bi bi-book display-4 mb-3"></i>
-                    <h3 class="display-4">{{ $totalModules }}</h3>
-                    <p class="mb-0">Total Modules</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <div class="card-body text-center">
-                    <i class="bi bi-play-circle display-4 mb-3"></i>
-                    <h3 class="display-4">{{ $assignedPrograms->where('pivot.video_link', '!=', null)->count() }}</h3>
-                    <p class="mb-0">Videos Added</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Welcome Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title">Welcome back, {{ $professor->full_name }}!</h4>
-                    <p class="card-text text-muted">
-                        Manage your assigned programs, upload video content, and track student progress from your dashboard.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    @php
-        $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
-        $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
-        $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
-    @endphp
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-collection text-primary" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">View Programs</h5>
-                    <p class="card-text">Access your assigned programs and manage content.</p>
-                    <a href="{{ route('professor.programs') }}" class="btn btn-primary">View Programs</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-calendar-event text-success" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Meetings</h5>
-                    <p class="card-text">Track and Manage Class Meetings.</p>
-                    <a href="{{ route('professor.meetings') }}" class="btn btn-success">Manage Meetings</a>
-                </div>
-            </div>
-        </div>
-        @if(!empty($announcementManagementEnabled) && $announcementManagementEnabled)
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-megaphone text-warning" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Announcements</h5>
-                    <p class="card-text">View and manage your announcements.</p>
-                    <a href="{{ route('professor.announcements.index') }}" class="btn btn-warning">View Announcements</a>
-                </div>
-            </div>
-        </div>
-        @endif
-        @if($gradingEnabled)
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-award text-warning" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Grading</h5>
-                    <p class="card-text">Evaluate and assign grades to students.</p>
-                    <a href="{{ route('professor.grading') }}" class="btn btn-warning">Manage Grades</a>
-                </div>
-            </div>
-        </div>
-        @endif
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-person-circle text-info" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Profile</h5>
-                    <p class="card-text">Update your profile information and settings.</p>
-                    <a href="{{ route('professor.profile') }}" class="btn btn-info">Edit Profile</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Additional Tools -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-camera-video text-secondary" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Upload Videos</h5>
-                    <p class="card-text">Add or update video content for your programs.</p>
-                    <a href="{{ route('professor.programs') }}" class="btn btn-secondary">Manage Videos</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-people text-dark" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Students</h5>
-                    <p class="card-text">View and manage your students.</p>
-                    <a href="{{ route('professor.students.index') }}" class="btn btn-dark">View Students</a>
-                </div>
-            </div>
-        </div>
-        @if($moduleManagementEnabled)
-        <div class="col-md-4 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-journals text-success" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">Module Management</h5>
-                    <p class="card-text">Create and manage modules for your assigned programs.</p>
-                    <a href="{{ route('professor.modules.index') }}" class="btn btn-success">Manage Modules</a>
-                </div>
-            </div>
-        </div>
-        @endif
-        @if($aiQuizEnabled ?? false)
-        <div class="col-md-4 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-robot text-danger" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">AI Quiz Generator</h5>
-                    <p class="card-text">Generate quizzes from uploaded documents using AI.</p>
-                    <a href="{{ route('professor.quiz-generator') }}" class="btn btn-danger">Generate Quiz</a>
-                </div>
-            </div>
-        </div>
-        @endif
-    </div>
-
-    <!-- Recent Programs -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Your Programs</h5>
-                    <a href="{{ route('professor.programs') }}" class="btn btn-outline-primary btn-sm">View All</a>
-                </div>
-                <div class="card-body">
-                    {{-- Only use $assignedPrograms as provided by the controller. Do not fetch or display any other programs. --}}
-                    @if($assignedPrograms->count() > 0)
-                        <div class="row">
-                            @foreach($assignedPrograms->take(3) as $program)
-                                <div class="col-md-4 mb-3">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h6 class="card-title">{{ $program->program_name }}</h6>
-                                            <p class="card-text small text-muted">
-                                                {{ Str::limit($program->program_description, 80) }}
-                                            </p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">
-                                                    {{ $program->students->count() }} students
-                                                </small>
-                                                @if($program->pivot->video_link)
-                                                    <span class="badge bg-success">Video Added</span>
-                                                @else
-                                                    <span class="badge bg-warning">No Video</span>
-                                                @endif
-                                            </div>
-                                            <div class="mt-2">
-                                                <a href="{{ route('professor.program.details', $program->program_id) }}" 
-                                                   class="btn btn-primary btn-sm">View Details</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="bi bi-collection text-muted" style="font-size: 4rem;"></i>
-                            <h5 class="mt-3 text-muted">No Programs Assigned</h5>
-                            <p class="text-muted">You haven't been assigned to any programs yet. Contact your administrator.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Announcements Section -->
+    <!-- Announcements Header Section -->
+   
+        <!-- Announcements Section -->
     @if(!empty($announcementManagementEnabled) && $announcementManagementEnabled && isset($announcements) && $announcements->count() > 0)
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-megaphone"></i> Announcements</h5>
-                    <span class="badge bg-primary">{{ $announcements->count() }}</span>
+    <div class="content-section fade-in-up">
+        <div class="section-header">
+            <h5 class="section-title">
+                <i class="bi bi-megaphone me-2"></i>Recent Announcements
+            </h5>
+            <span class="badge badge-modern" style="background-color: var(--primary-color); color: white;">
+                {{ $announcements->count() }} Total
+            </span>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                @foreach($announcements->take(3) as $announcement)
+                    <div class="col-md-4 mb-3">
+                        <div class="announcement-card">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0 fw-semibold">{{ $announcement->title }}</h6>
+                                    @if($announcement->priority === 'high')
+                                        <span class="badge badge-modern" style="background-color: var(--danger-color); color: white;">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>High
+                                        </span>
+                                    @elseif($announcement->priority === 'medium')
+                                        <span class="badge badge-modern" style="background-color: var(--warning-color); color: white;">
+                                            <i class="bi bi-dash-circle me-1"></i>Medium
+                                        </span>
+                                    @else
+                                        <span class="badge badge-modern" style="background-color: var(--info-color); color: white;">
+                                            <i class="bi bi-info-circle me-1"></i>Low
+                                        </span>
+                                    @endif
+                                </div>
+                                <p class="card-text small text-muted mb-3 lh-base">
+                                    {{ Str::limit($announcement->content, 120) }}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted d-flex align-items-center">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        {{ $announcement->created_at->format('M d, Y') }}
+                                    </small>
+                                    @if($announcement->target_scope === 'program_specific')
+                                        <small class="text-primary d-flex align-items-center">
+                                            <i class="bi bi-bookmark me-1"></i>Program Specific
+                                        </small>
+                                    @else
+                                        <small class="text-success d-flex align-items-center">
+                                            <i class="bi bi-globe me-1"></i>General
+                                        </small>
+                                    @endif
+                                </div>
+                                @if($announcement->expire_date && $announcement->expire_date->isToday())
+                                    <div class="mt-2">
+                                        <small class="text-warning d-flex align-items-center">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>Expires today
+                                        </small>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            
+            @if($announcements->count() > 3)
+                <div class="text-center mt-3">
+                    <button class="btn btn-modern btn-primary-modern" onclick="toggleAllAnnouncements()">
+                        <span id="toggleText">Show All Announcements</span>
+                        <i class="bi bi-chevron-down ms-1" id="toggleIcon"></i>
+                    </button>
                 </div>
-                <div class="card-body">
+                <div id="additionalAnnouncements" style="display: none;" class="mt-4">
                     <div class="row">
-                        @foreach($announcements->take(3) as $announcement)
+                        @foreach($announcements->skip(3) as $announcement)
                             <div class="col-md-4 mb-3">
-                                <div class="card h-100 border-left-primary">
-                                    <div class="card-body">
+                                <div class="announcement-card">
+                                    <div class="card-body p-3">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="card-title mb-0">{{ $announcement->title }}</h6>
+                                            <h6 class="card-title mb-0 fw-semibold">{{ $announcement->title }}</h6>
                                             @if($announcement->priority === 'high')
-                                                <span class="badge bg-danger">High Priority</span>
+                                                <span class="badge badge-modern" style="background-color: var(--danger-color); color: white;">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>High
+                                                </span>
                                             @elseif($announcement->priority === 'medium')
-                                                <span class="badge bg-warning">Medium Priority</span>
+                                                <span class="badge badge-modern" style="background-color: var(--warning-color); color: white;">
+                                                    <i class="bi bi-dash-circle me-1"></i>Medium
+                                                </span>
                                             @else
-                                                <span class="badge bg-info">Low Priority</span>
+                                                <span class="badge badge-modern" style="background-color: var(--info-color); color: white;">
+                                                    <i class="bi bi-info-circle me-1"></i>Low
+                                                </span>
                                             @endif
                                         </div>
-                                        <p class="card-text small text-muted mb-2">
-                                            {{ Str::limit($announcement->content, 100) }}
+                                        <p class="card-text small text-muted mb-3 lh-base">
+                                            {{ Str::limit($announcement->content, 120) }}
                                         </p>
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                <i class="bi bi-calendar3"></i>
+                                            <small class="text-muted d-flex align-items-center">
+                                                <i class="bi bi-calendar3 me-1"></i>
                                                 {{ $announcement->created_at->format('M d, Y') }}
                                             </small>
                                             @if($announcement->target_scope === 'program_specific')
-                                                <small class="text-primary">
-                                                    <i class="bi bi-bookmark"></i> Program Specific
+                                                <small class="text-primary d-flex align-items-center">
+                                                    <i class="bi bi-bookmark me-1"></i>Program Specific
                                                 </small>
                                             @else
-                                                <small class="text-success">
-                                                    <i class="bi bi-globe"></i> General
+                                                <small class="text-success d-flex align-items-center">
+                                                    <i class="bi bi-globe me-1"></i>General
                                                 </small>
                                             @endif
                                         </div>
                                         @if($announcement->expire_date && $announcement->expire_date->isToday())
                                             <div class="mt-2">
-                                                <small class="text-warning">
-                                                    <i class="bi bi-exclamation-triangle"></i> Expires today
+                                                <small class="text-warning d-flex align-items-center">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>Expires today
                                                 </small>
                                             </div>
                                         @endif
@@ -397,66 +545,203 @@ html, body {
                             </div>
                         @endforeach
                     </div>
-                    @if($announcements->count() > 3)
-                        <div class="text-center mt-3">
-                            <button class="btn btn-outline-primary btn-sm" onclick="toggleAllAnnouncements()">
-                                <span id="toggleText">Show All Announcements</span>
-                                <i class="bi bi-chevron-down" id="toggleIcon"></i>
-                            </button>
-                        </div>
-                        <div id="additionalAnnouncements" style="display: none;" class="mt-3">
-                            <div class="row">
-                                @foreach($announcements->skip(3) as $announcement)
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card h-100 border-left-primary">
-                                            <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <h6 class="card-title mb-0">{{ $announcement->title }}</h6>
-                                                    @if($announcement->priority === 'high')
-                                                        <span class="badge bg-danger">High Priority</span>
-                                                    @elseif($announcement->priority === 'medium')
-                                                        <span class="badge bg-warning">Medium Priority</span>
-                                                    @else
-                                                        <span class="badge bg-info">Low Priority</span>
-                                                    @endif
-                                                </div>
-                                                <p class="card-text small text-muted mb-2">
-                                                    {{ Str::limit($announcement->content, 100) }}
-                                                </p>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-calendar3"></i>
-                                                        {{ $announcement->created_at->format('M d, Y') }}
-                                                    </small>
-                                                    @if($announcement->target_scope === 'program_specific')
-                                                        <small class="text-primary">
-                                                            <i class="bi bi-bookmark"></i> Program Specific
-                                                        </small>
-                                                    @else
-                                                        <small class="text-success">
-                                                            <i class="bi bi-globe"></i> General
-                                                        </small>
-                                                    @endif
-                                                </div>
-                                                @if($announcement->expire_date && $announcement->expire_date->isToday())
-                                                    <div class="mt-2">
-                                                        <small class="text-warning">
-                                                            <i class="bi bi-exclamation-triangle"></i> Expires today
-                                                        </small>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
+                </div>
+            @endif
+        </div>
+    </div>
+    @else
+    <!-- Default Welcome Header when no announcements -->
+    <div class="dashboard-header fade-in-up">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="welcome-title">Welcome back, {{ $professor->full_name }}!</h1>
+                <p class="welcome-subtitle">Manage your assigned programs, upload video content, and track student progress from your modern dashboard.</p>
+            </div>
+            <div class="d-none d-md-block">
+                <div class="text-muted small">
+                    <i class="bi bi-calendar3"></i>
+                    {{ now()->format('l, F j, Y') }}
                 </div>
             </div>
         </div>
     </div>
     @endif
+
+    <!-- Modern Stats Grid -->
+    <div class="stats-grid fade-in-up">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                <i class="bi bi-collection"></i>
+            </div>
+            <div class="stat-number">{{ $totalPrograms }}</div>
+            <div class="stat-label">Assigned Programs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--success-color), #10b981);">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-number">{{ $totalStudents }}</div>
+            <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+                <i class="bi bi-book"></i>
+            </div>
+            <div class="stat-number">{{ $totalModules }}</div>
+            <div class="stat-label">Total Modules</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--info-color), #06b6d4);">
+                <i class="bi bi-play-circle"></i>
+            </div>
+            <div class="stat-number">{{ $assignedPrograms->where('pivot.video_link', '!=', null)->count() }}</div>
+            <div class="stat-label">Videos Added</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Grid -->
+    @php
+        $gradingEnabled = \App\Models\AdminSetting::where('setting_key', 'grading_enabled')->value('setting_value') !== 'false';
+        $moduleManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_module_management_enabled')->value('setting_value') === '1';
+        $announcementManagementEnabled = \App\Models\AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
+    @endphp
+    
+    <div class="action-grid fade-in-up">
+        <a href="{{ route('professor.programs') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                <i class="bi bi-collection"></i>
+            </div>
+            <h5 class="action-title">View Programs</h5>
+            <p class="action-description">Access your assigned programs and manage content with ease.</p>
+        </a>
+        
+        <a href="{{ route('professor.meetings') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--success-color), #10b981);">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+            <h5 class="action-title">Meetings</h5>
+            <p class="action-description">Track and manage class meetings efficiently.</p>
+        </a>
+        
+        @if(!empty($announcementManagementEnabled) && $announcementManagementEnabled)
+        <a href="{{ route('professor.announcements.index') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+                <i class="bi bi-megaphone"></i>
+            </div>
+            <h5 class="action-title">Announcements</h5>
+            <p class="action-description">View and manage your announcements to students.</p>
+        </a>
+        @endif
+        
+        @if($gradingEnabled)
+        <a href="{{ route('professor.grading') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--danger-color), #ef4444);">
+                <i class="bi bi-award"></i>
+            </div>
+            <h5 class="action-title">Grading</h5>
+            <p class="action-description">Evaluate and assign grades to students.</p>
+        </a>
+        @endif
+        
+        <a href="{{ route('professor.profile') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--info-color), #06b6d4);">
+                <i class="bi bi-person-circle"></i>
+            </div>
+            <h5 class="action-title">Profile</h5>
+            <p class="action-description">Update your profile information and settings.</p>
+        </a>
+        
+        <a href="{{ route('professor.programs') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--dark-color), #374151);">
+                <i class="bi bi-camera-video"></i>
+            </div>
+            <h5 class="action-title">Upload Videos</h5>
+            <p class="action-description">Add or update video content for your programs.</p>
+        </a>
+        
+        <a href="{{ route('professor.students.index') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);">
+                <i class="bi bi-people"></i>
+            </div>
+            <h5 class="action-title">Students</h5>
+            <p class="action-description">View and manage your students effectively.</p>
+        </a>
+        
+        @if($moduleManagementEnabled)
+        <a href="{{ route('professor.modules.index') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, #059669, #10b981);">
+                <i class="bi bi-journals"></i>
+            </div>
+            <h5 class="action-title">Module Management</h5>
+            <p class="action-description">Create and manage modules for your assigned programs.</p>
+        </a>
+        @endif
+        
+        @if($aiQuizEnabled ?? false)
+        <a href="{{ route('professor.quiz-generator') }}" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--danger-color), #f87171);">
+                <i class="bi bi-robot"></i>
+            </div>
+            <h5 class="action-title">AI Quiz Generator</h5>
+            <p class="action-description">Generate quizzes from uploaded documents using AI.</p>
+        </a>
+        @endif
+    </div>
+
+    <!-- Your Programs Section -->
+    <div class="content-section fade-in-up">
+        <div class="section-header">
+            <h5 class="section-title">
+                <i class="bi bi-collection me-2"></i>Your Programs
+            </h5>
+            <a href="{{ route('professor.programs') }}" class="btn btn-modern btn-primary-modern">View All Programs</a>
+        </div>
+        <div class="section-body">
+            @if($assignedPrograms->count() > 0)
+                <div class="program-grid">
+                    @foreach($assignedPrograms->take(3) as $program)
+                        <div class="program-card">
+                            <div class="program-header">
+                                <h6 class="program-title">{{ $program->program_name }}</h6>
+                                <p class="program-description">
+                                    {{ Str::limit($program->program_description, 100) }}
+                                </p>
+                            </div>
+                            <div class="program-footer">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-people me-1 text-muted"></i>
+                                    <small class="text-muted">{{ $program->students->count() }} students</small>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($program->pivot->video_link)
+                                        <span class="badge badge-modern" style="background-color: var(--success-color); color: white;">
+                                            <i class="bi bi-check-circle me-1"></i>Video Added
+                                        </span>
+                                    @else
+                                        <span class="badge badge-modern" style="background-color: var(--warning-color); color: white;">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>No Video
+                                        </span>
+                                    @endif
+                                    <a href="{{ route('professor.program.details', $program->program_id) }}" 
+                                       class="btn btn-modern btn-primary-modern btn-sm">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-collection"></i>
+                    </div>
+                    <h5 class="text-muted">No Programs Assigned</h5>
+                    <p class="text-muted">You haven't been assigned to any programs yet. Contact your administrator for assistance.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+  
 </div>
 
 <script>
@@ -468,13 +753,37 @@ function toggleAllAnnouncements() {
     if (additionalDiv.style.display === 'none') {
         additionalDiv.style.display = 'block';
         toggleText.textContent = 'Show Less';
-        toggleIcon.className = 'bi bi-chevron-up';
+        toggleIcon.className = 'bi bi-chevron-up ms-1';
     } else {
         additionalDiv.style.display = 'none';
         toggleText.textContent = 'Show All Announcements';
-        toggleIcon.className = 'bi bi-chevron-down';
+        toggleIcon.className = 'bi bi-chevron-down ms-1';
     }
 }
+
+// Add fade-in animation on scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in-up').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
+});
 </script>
 
 @endsection

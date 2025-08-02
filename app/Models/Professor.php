@@ -42,6 +42,7 @@ class Professor extends Authenticatable
         'dynamic_data',
         'referral_code',
         'avatar',
+        'profile_photo',
     ];
 
     /**

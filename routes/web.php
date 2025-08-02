@@ -1687,6 +1687,12 @@ Route::middleware(['professor.auth'])
     Route::put('/profile', [ProfessorDashboardController::class, 'updateProfile'])
          ->name('profile.update');
     
+    // Profile Photo Management
+    Route::post('/profile/photo', [ProfessorDashboardController::class, 'updateProfilePhoto'])
+         ->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfessorDashboardController::class, 'removeProfilePhoto'])
+         ->name('profile.photo.remove');
+    
     // Student Management
     // My batches (only those this prof owns)
     Route::get(
@@ -1725,33 +1731,13 @@ Route::middleware(['professor.auth'])
     Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
          ->name('meetings.finish');
     
-    // Additional professor routes for meetings/settings
-    Route::get('/settings', [ProfessorDashboardController::class, 'settings'])
-         ->name('settings');
-    Route::put('/settings', [ProfessorDashboardController::class, 'updateSettings'])
-         ->name('settings.update');
-    
-    // Enhanced Grading Management
-    Route::get('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'index'])
-         ->name('grading');
-    Route::post('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'store'])
-         ->name('grading.store');
-    Route::get('/grading/student/{student}', [\App\Http\Controllers\Professor\GradingController::class, 'studentDetails'])
-         ->name('grading.student-details');
-    Route::post('/grading/assignment/{student}/{assignment}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeAssignment'])
-         ->name('grading.assignment');
-    Route::post('/grading/activity/{student}/{activity}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeActivity'])
-         ->name('grading.activity');
-    Route::post('/grading/quiz/{student}/{quiz}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeQuiz'])
-         ->name('grading.quiz');
-    Route::post('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignment'])
-         ->name('assignments.create');
-    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])
-         ->name('assignments.create');
-    Route::post('/activities/create', [\App\Http\Controllers\Professor\GradingController::class, 'createActivity'])
-         ->name('activities.create');
-    Route::post('/grading/export', [\App\Http\Controllers\Professor\GradingController::class, 'exportGrades'])
-         ->name('grading.export');
+    // Additional professor routes for meetings/settings (redirected to profile)
+    Route::get('/settings', function() {
+        return redirect()->route('professor.profile');
+    })->name('settings');
+    Route::put('/settings', function() {
+        return redirect()->route('professor.profile');
+    })->name('settings.update');
     
     // Chat routes
     Route::post('/chat/send', [\App\Http\Controllers\Professor\ChatController::class, 'sendMessage'])
@@ -1991,12 +1977,6 @@ Route::middleware(['professor.auth'])
         $quizzes = \App\Models\Quiz::with('questions')->orderBy('created_at', 'desc')->get();
         return response()->json(['quizzes' => $quizzes]);
     });
-    Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
-         ->name('grading.update');
-    Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
-         ->name('grading.destroy');
-    Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
-         ->name('grading.student');
     Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz'])
          ->name('quiz-generator.save-manual');
     Route::put('/quiz-generator/update-quiz/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuiz'])
@@ -2004,8 +1984,6 @@ Route::middleware(['professor.auth'])
     Route::post('/quiz-generator/question/options', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionOptions'])
          ->name('quiz-generator.question.options');
     // ...existing professor routes...
-    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])->name('grading.auto-grade-quizzes');
-    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])->name('assignments.create');
     
     // Professor Announcements Routes
     Route::get('/announcements', [ProfessorAnnouncementController::class, 'index'])
