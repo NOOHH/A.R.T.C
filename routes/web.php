@@ -1773,9 +1773,7 @@ Route::middleware(['professor.auth'])
     Route::put('/quiz-generator/update-quiz/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuizWithQuestions'])
          ->name('quiz-generator.update-quiz');
     
-    // Quiz edit and preview routes
-    Route::get('/quiz-generator/edit/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'editQuiz'])
-         ->name('quiz-generator.edit');
+    // Quiz preview route
     Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'previewQuiz'])
          ->name('quiz-generator.preview');
     
@@ -1790,8 +1788,6 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.draft');
     Route::delete('/quiz-generator/{quiz}/delete', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'deleteQuiz'])
          ->name('quiz-generator.delete');
-    Route::get('/quiz-generator/edit/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuizForEdit'])
-         ->name('quiz-generator.edit');
          
     // Temporary test route without authentication
     Route::post('/quiz-generator/test-generate', function(\Illuminate\Http\Request $request) {

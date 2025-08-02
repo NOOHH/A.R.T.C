@@ -110,6 +110,13 @@
                                     <i class="bi bi-arrow-clockwise"></i>
                                     <span class="d-none d-md-inline ms-1">Restore</span>
                                 </button>
+                                
+                                <button class="btn btn-danger btn-sm" 
+                                        onclick="deleteQuiz('{{ $quiz->quiz_id }}')"
+                                        title="Delete Quiz Permanently">
+                                    <i class="bi bi-trash"></i>
+                                    <span class="d-none d-md-inline ms-1">Delete</span>
+                                </button>
                             @endif
                         </div>
                     </td>

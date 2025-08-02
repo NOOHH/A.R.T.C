@@ -187,8 +187,8 @@
                                 </div>
                             </div>
 
-                            <!-- AI Document Upload Section -->
-                            <div class="card mb-4">
+                            <!-- AI Document Upload Section (Hidden during edit) -->
+                            <div class="card mb-4" id="aiGeneratorSection">
                                 <div class="card-header">
                                     <h6 class="mb-0"><i class="bi bi-robot"></i> AI Question Generator</h6>
                                 </div>
@@ -268,8 +268,12 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveQuiz(true)">Save as Draft</button>
-                <button type="button" class="btn btn-success" onclick="saveQuiz(false)">Publish Quiz</button>
+                <button type="button" class="btn btn-primary" id="saveDraftBtn" onclick="saveQuiz(true)">
+                    <span id="saveDraftText">Save as Draft</span>
+                </button>
+                <button type="button" class="btn btn-success" id="publishBtn" onclick="saveQuiz(false)">
+                    <span id="publishText">Publish Quiz</span>
+                </button>
             </div>
                                         <!-- Draggable manual questions will appear here -->
                                     </div>
@@ -718,14 +722,37 @@ if (quizModalEl) {
 document.getElementById('createQuizModal').addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
     const isEdit = button && button.getAttribute('data-edit-quiz');
+    const aiGeneratorSection = document.getElementById('aiGeneratorSection');
+    const saveDraftText = document.getElementById('saveDraftText');
+    const publishText = document.getElementById('publishText');
     
     if (isEdit) {
         currentQuizId = button.getAttribute('data-quiz-id');
         document.getElementById('modalTitle').textContent = 'Edit Quiz';
+        
+        // Hide AI generator section during edit
+        if (aiGeneratorSection) {
+            aiGeneratorSection.style.display = 'none';
+        }
+        
+        // Update button text for editing
+        if (saveDraftText) saveDraftText.textContent = 'Update Draft';
+        if (publishText) publishText.textContent = 'Update & Publish';
+        
         loadQuizData(currentQuizId);
     } else {
         currentQuizId = null;
         document.getElementById('modalTitle').textContent = 'Create New Quiz';
+        
+        // Show AI generator section for new quiz
+        if (aiGeneratorSection) {
+            aiGeneratorSection.style.display = 'block';
+        }
+        
+        // Update button text for creating
+        if (saveDraftText) saveDraftText.textContent = 'Save as Draft';
+        if (publishText) publishText.textContent = 'Publish Quiz';
+        
         resetForm();
     }
 });
@@ -734,6 +761,14 @@ document.getElementById('createQuizModal').addEventListener('show.bs.modal', fun
 function resetForm() {
     document.getElementById('quizForm').reset();
     document.getElementById('quizId').value = '';
+    
+    // Reset deadline field
+    const dueDateInput = document.getElementById('due_date');
+    if (dueDateInput) {
+        dueDateInput.disabled = true;
+        dueDateInput.required = false;
+        dueDateInput.removeAttribute('required');
+    }
     
     // Reset canvas
     const canvas = document.getElementById('quizCanvas');
@@ -788,8 +823,27 @@ async function loadQuizData(quizId) {
             document.getElementById('infinite_retakes').checked = data.quiz.infinite_retakes || false;
             document.getElementById('has_deadline').checked = data.quiz.has_deadline || false;
             
-            if (data.quiz.due_date) {
-                document.getElementById('due_date').value = data.quiz.due_date;
+            // Handle deadline date input
+            const dueDateInput = document.getElementById('due_date');
+            if (data.quiz.has_deadline && data.quiz.due_date) {
+                dueDateInput.value = data.quiz.due_date;
+                dueDateInput.disabled = false;
+                dueDateInput.required = true;
+                dueDateInput.setAttribute('required', 'required');
+            } else {
+                dueDateInput.value = '';
+                dueDateInput.disabled = true;
+                dueDateInput.required = false;
+                dueDateInput.removeAttribute('required');
+            }
+            
+            // Handle infinite retakes
+            const maxAttemptsInput = document.getElementById('max_attempts');
+            if (data.quiz.infinite_retakes) {
+                maxAttemptsInput.disabled = true;
+                maxAttemptsInput.value = 999;
+            } else {
+                maxAttemptsInput.disabled = false;
             }
             
             // Load questions into canvas
@@ -893,7 +947,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (hasDeadlineCheckbox && dueDateInput) {
         hasDeadlineCheckbox.addEventListener('change', function() {
             dueDateInput.disabled = !this.checked;
-            if (!this.checked) {
+            if (this.checked) {
+                dueDateInput.required = true;
+                dueDateInput.setAttribute('required', 'required');
+            } else {
+                dueDateInput.required = false;
+                dueDateInput.removeAttribute('required');
                 dueDateInput.value = '';
             }
         });
@@ -1648,7 +1707,7 @@ function initializeSortable() {
 }
 
 // Save quiz
-async function saveQuiz() {
+async function saveQuiz(isDraft = true) {
     const form = document.getElementById('quizForm');
     const formData = new FormData(form);
     
@@ -1663,6 +1722,16 @@ async function saveQuiz() {
     
     if (!programId) {
         alert('Please select a program');
+        return;
+    }
+    
+    // Validate deadline if checkbox is checked
+    const hasDeadline = document.getElementById('has_deadline').checked;
+    const dueDate = document.getElementById('due_date').value;
+    
+    if (hasDeadline && !dueDate) {
+        alert('Please select a deadline date and time when "Set Quiz Deadline" is checked');
+        document.getElementById('due_date').focus();
         return;
     }
     
@@ -1710,8 +1779,9 @@ async function saveQuiz() {
         has_deadline: document.getElementById('has_deadline').checked,
         due_date: document.getElementById('has_deadline').checked ? document.getElementById('due_date').value : null,
         questions: questions,
-        is_draft: true,
-                        _token: window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        is_draft: isDraft,
+        status: isDraft ? 'draft' : 'published',
+        _token: window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     };
     
     console.log('Quiz data being sent:', quizData);
@@ -1737,7 +1807,9 @@ async function saveQuiz() {
         const data = await response.json();
         
         if (data.success) {
-            showAlert('success', isEdit ? 'Quiz updated successfully!' : 'Quiz created successfully!');
+            const action = isEdit ? 'updated' : 'created';
+            const status = isDraft ? 'draft' : 'published';
+            showAlert('success', `Quiz ${action} successfully as ${status}!`);
             // Close modal and reload page
             const modal = bootstrap.Modal.getInstance(document.getElementById('createQuizModal'));
             modal.hide();
@@ -2323,6 +2395,40 @@ async function restoreQuiz(quizId) {
     }
 }
 
+async function deleteQuiz(quizId) {
+    if (!confirm('Are you sure you want to permanently delete this quiz? This action cannot be undone.')) {
+        return;
+    }
+    
+    // Double confirmation for safety
+    if (!confirm('This will permanently delete the quiz and all its questions. Are you absolutely sure?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/professor/quiz-generator/${quizId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('success', data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message);
+        }
+    } catch (error) {
+        console.error('Error deleting quiz:', error);
+        showAlert('danger', 'Error deleting quiz. Please try again.');
+    }
+}
+
     // Event listeners for quiz management
     document.addEventListener('DOMContentLoaded', function() {
         // Delete quiz buttons
@@ -2492,16 +2598,6 @@ async function restoreQuiz(quizId) {
         } catch (error) {
             console.error('Error opening quiz preview:', error);
             showAlert('danger', 'Error opening quiz preview. Please try again.');
-        }
-    }
-
-    // Edit Quiz
-    async function editQuiz(quizId) {
-        try {
-            window.location.href = `/professor/quiz-generator/edit/${quizId}`;
-        } catch (error) {
-            console.error('Error navigating to edit quiz:', error);
-            showAlert('danger', 'Error opening quiz editor. Please try again.');
         }
     }
 
