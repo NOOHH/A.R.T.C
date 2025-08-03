@@ -1236,6 +1236,7 @@
     padding: 5px;
     border-radius: 4px;
     transition: all 0.3s ease;
+    z-index: 10; /* Lower than navbar z-index */
 }
 
 .module-drag-handle:hover {
@@ -2249,6 +2250,8 @@
     color: rgba(255, 255, 255, 0.7);
     margin-right: 0.5rem;
     font-size: 1.2rem;
+    z-index: 10; /* Lower than navbar z-index */
+    position: relative;
 }
 
 .drag-handle:hover {

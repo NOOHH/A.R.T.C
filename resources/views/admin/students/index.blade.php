@@ -15,9 +15,14 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> List of Students</h2>
     <div class="d-flex gap-2">
-      <a href="{{ route('admin.students.export') }}" class="btn btn-success">
-        <i class="bi bi-download"></i> Export to CSV
-      </a>
+      <form method="GET" action="{{ route('admin.students.export') }}" style="display: inline;">
+        <input type="hidden" name="program_id" value="{{ request('program_id') }}">
+        <input type="hidden" name="status" value="{{ request('status') }}">
+        <input type="hidden" name="search" value="{{ request('search') }}">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-download"></i> Export to CSV
+        </button>
+      </form>
       <a href="{{ route('admin.students.archived') }}" class="btn btn-outline-secondary">
         <i class="bi bi-archive"></i> View Archived
       </a>
@@ -125,9 +130,20 @@
                   </td>
                   <td>
                     @if($student->enrollment && $student->enrollment->learning_mode)
-                      <span class="badge bg-{{ $student->enrollment->learning_mode === 'synchronous' ? 'primary' : 'success' }}">
-                        {{ ucfirst($student->enrollment->learning_mode) }}
-                      </span>
+                      @php
+                        $mode = strtolower($student->enrollment->learning_mode);
+                        $badgeColor = 'secondary';
+                        $displayText = 'Unknown';
+                        
+                        if (in_array($mode, ['synchronous', 'synch', 'sync'])) {
+                          $badgeColor = 'primary';
+                          $displayText = 'Synchronous';
+                        } elseif (in_array($mode, ['asynchronous', 'async'])) {
+                          $badgeColor = 'success';  
+                          $displayText = 'Asynchronous';
+                        }
+                      @endphp
+                      <span class="badge bg-{{ $badgeColor }}">{{ $displayText }}</span>
                     @else
                       <span class="text-muted">-</span>
                     @endif

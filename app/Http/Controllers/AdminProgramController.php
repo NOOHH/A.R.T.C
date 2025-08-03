@@ -313,8 +313,7 @@ class AdminProgramController extends Controller
         $status = $program->is_archived ? 'archived' : 'unarchived';
 
         return response()->json([
-            'success' => true,
-            'message' => "Program {$status} successfully!"
+            'success' => true
         ]);
     }
 
@@ -503,11 +502,14 @@ class AdminProgramController extends Controller
                 'pendingEnrollments',
                 'completedCourses'
             ) + [
-                'approvedStudents' => Student::whereNotNull('date_approved')->get(),
-                'students' => Student::whereNotNull('date_approved')->get(), // Add for multiple selection
-                'programs' => Program::where('is_archived', false)->get(),
-                'batches' => StudentBatch::where('batch_status', 'available')->get(),
-                'courses' => Course::where('is_archived', false)->get()
+                'students' => Student::where('is_archived', false)
+                    ->whereNotNull('date_approved')
+                    ->orderBy('firstname')
+                    ->orderBy('lastname')
+                    ->get(),
+                'programs' => Program::where('is_archived', false)->orderBy('program_name')->get(),
+                'batches' => StudentBatch::orderBy('batch_name')->get(),
+                'courses' => Course::with('module')->where('is_archived', false)->orderBy('subject_name')->get()
             ]);
         } catch (\Exception $e) {
             Log::error('Enrollment management error: ' . $e->getMessage(), [
@@ -520,11 +522,10 @@ class AdminProgramController extends Controller
                 'activeEnrollments' => 0,
                 'pendingEnrollments' => 0,
                 'completedCourses' => 0,
-                'approvedStudents' => collect(),
-                'students' => collect(), // Add for multiple selection
-                'programs' => collect(),
-                'batches' => collect(),
-                'courses' => collect()
+                'students' => collect([]),
+                'programs' => collect([]),
+                'batches' => collect([]),
+                'courses' => collect([])
             ]);
         }
     }

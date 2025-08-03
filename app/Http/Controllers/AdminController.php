@@ -707,8 +707,8 @@ class AdminController extends Controller
                 'program_id' => 'required|exists:programs,program_id', 
                 'batch_id' => 'required|exists:student_batches,batch_id',
                 'enrollment_type' => 'required|in:modular,full,accelerated',
-                'learning_mode' => 'required|in:online,onsite,hybrid',
-                'course_id' => 'nullable|exists:courses,course_id'
+                'learning_mode' => 'required|in:online,onsite,hybrid'
+                // Note: module_id and course_id validation removed since enrollments table doesn't have these fields
             ]);
 
             // Handle single or multiple student selection
@@ -752,19 +752,32 @@ class AdminController extends Controller
                     }
 
                     // Create enrollment
-                    Enrollment::create([
+                    $enrollment = Enrollment::create([
                         'student_id' => $studentId,
                         'program_id' => $request->program_id,
                         'package_id' => $package->package_id,
                         'batch_id' => $request->batch_id,
                         'enrollment_type' => $request->enrollment_type,
                         'learning_mode' => $request->learning_mode,
-                        'course_id' => $request->enrollment_type === 'modular' ? $request->course_id : null,
                         'enrollment_status' => 'enrolled',
                         'payment_status' => 'pending',
                         'amount' => $package->package_price,
                         'enrollment_date' => now()
                     ]);
+                    
+                    // If modular enrollment, create record in enrollment_courses table
+                    if ($request->enrollment_type === 'modular' && $request->course_id) {
+                        DB::table('enrollment_courses')->insert([
+                            'enrollment_id' => $enrollment->enrollment_id,
+                            'course_id' => $request->course_id,
+                            'module_id' => $request->module_id,
+                            'enrollment_type' => 'course', // Set as 'course' based on existing data
+                            'course_price' => 0.00, // Default based on existing data
+                            'is_active' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
 
                     $successCount++;
                 } catch (\Exception $e) {

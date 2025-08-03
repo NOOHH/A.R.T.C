@@ -175,11 +175,6 @@
                 z-index: 99
             }
             
-            .profile-icon {
-                font-size: 1.8rem;
-                padding: 0.5rem;
-            }
-            
             #chatTriggerBtn {
                 font-size: 1.8rem !important;
                 padding: 0.5rem;
@@ -288,11 +283,8 @@
 
     <div class="header-right">
         <!-- Chat Icon Button -->
-        <button class="btn btn-link p-0 ms-2" id="chatTriggerBtn" title="Open Chat" style="font-size: 1.5rem; color: #764ba2;">
+        <button class="btn btn-link p-0" id="chatTriggerBtn" title="Open Chat" style="font-size: 1.5rem; color: #764ba2;">
             <i class="bi bi-chat-dots"></i>
         </button>
-        
-        <!-- Mobile Profile Icon -->
-        <div class="profile-icon">👤</div>
     </div>
 </header>

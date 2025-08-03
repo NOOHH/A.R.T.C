@@ -467,6 +467,13 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     // Enrolled Courses page - NEW
     Route::get('/student/enrolled-courses', [StudentDashboardController::class, 'enrolledCourses'])->name('student.enrolled-courses');
     
+    // Student Analytics page
+    Route::get('/student/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
+    
+    // Student Profile page
+    Route::get('/student/profile', [StudentController::class, 'profile'])->name('student.profile');
+    Route::put('/student/profile', [StudentController::class, 'updateProfile'])->name('student.profile.update');
+    
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
     
@@ -2801,6 +2808,225 @@ Route::post('/test-set-session', function(\Illuminate\Http\Request $request) {
 // Admin Enrollments
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])->name('admin.enrollments.index');
+
+// API routes for enrollment form
+Route::get('/api/programs/{programId}/modules', function($programId) {
+    try {
+        $modules = \App\Models\Module::where('program_id', $programId)
+            ->where('is_archived', false)
+            ->orderBy('module_name')
+            ->get(['modules_id', 'module_name']);
+            
+        return response()->json([
+            'success' => true,
+            'modules' => $modules->map(function($module) {
+                return [
+                    'module_id' => $module->modules_id, // Map to expected field name
+                    'module_name' => $module->module_name
+                ];
+            })
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+});
+
+Route::get('/api/modules/{moduleId}/courses', function($moduleId) {
+    try {
+        $courses = \App\Models\Course::where('module_id', $moduleId)
+            ->where('is_archived', false)
+            ->orderBy('subject_name')
+            ->get(['subject_id', 'subject_name']);
+            
+        return response()->json([
+            'success' => true,
+            'courses' => $courses
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+});
+
+// Test enrollment form
+Route::get('/test-enrollment-form', function () {
+    return view('test-enrollment');
+});
+
+// Test route for creating enrollment
+Route::get('/test-create-enrollment', function () {
+    try {
+        // Get a real student and program for testing
+        $student = \App\Models\Student::where('is_archived', false)
+            ->whereNotNull('date_approved')
+            ->first();
+            
+        $program = \App\Models\Program::where('is_archived', false)->first();
+        $batch = \App\Models\StudentBatch::first();
+        $package = \App\Models\Package::where('program_id', $program->program_id)->first();
+        
+        if (!$student || !$program || !$batch || !$package) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Missing required data',
+                'data' => [
+                    'student' => $student ? 'found' : 'missing',
+                    'program' => $program ? 'found' : 'missing',
+                    'batch' => $batch ? 'found' : 'missing',
+                    'package' => $package ? 'found' : 'missing'
+                ]
+            ]);
+        }
+        
+        // Check if enrollment already exists
+        $existingEnrollment = \App\Models\Enrollment::where([
+            'student_id' => $student->student_id,
+            'program_id' => $program->program_id
+        ])->first();
+        
+        if ($existingEnrollment) {
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Student already enrolled',
+                'enrollment_id' => $existingEnrollment->enrollment_id
+            ]);
+        }
+        
+        // Create the enrollment
+        $enrollment = \App\Models\Enrollment::create([
+            'student_id' => $student->student_id,
+            'program_id' => $program->program_id,
+            'package_id' => $package->package_id,
+            'batch_id' => $batch->batch_id,
+            'enrollment_type' => 'full',
+            'learning_mode' => 'online',
+            'enrollment_status' => 'enrolled',
+            'payment_status' => 'pending',
+            'amount' => $package->package_price ?? 0,
+            'enrollment_date' => now()
+        ]);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Enrollment created successfully',
+            'enrollment_id' => $enrollment->enrollment_id,
+            'data' => [
+                'student' => $student->firstname . ' ' . $student->lastname,
+                'program' => $program->program_name,
+                'package' => $package->package_name,
+                'batch' => $batch->batch_name
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+    }
+});
+
+// Test route for enrollment assignment
+Route::get('/test-enrollment-assignment', function () {
+    try {
+        // Get available data
+        $students = \App\Models\Student::where('is_archived', false)
+            ->whereNotNull('date_approved')
+            ->get(['student_id', 'firstname', 'lastname', 'email']);
+            
+        $programs = \App\Models\Program::where('is_archived', false)->get(['program_id', 'program_name']);
+        $batches = \App\Models\StudentBatch::get(['batch_id', 'batch_name', 'start_date']);
+        $packages = \App\Models\Package::get(['package_id', 'package_name', 'program_id']);
+        
+        $response = [
+            'status' => 'success',
+            'data_available' => [
+                'students' => $students->count(),
+                'programs' => $programs->count(),
+                'batches' => $batches->count(),
+                'packages' => $packages->count()
+            ],
+            'sample_data' => [
+                'student' => $students->first() ? [
+                    'id' => $students->first()->student_id,
+                    'name' => $students->first()->firstname . ' ' . $students->first()->lastname,
+                    'email' => $students->first()->email
+                ] : null,
+                'program' => $programs->first() ? [
+                    'id' => $programs->first()->program_id,
+                    'name' => $programs->first()->program_name
+                ] : null,
+                'batch' => $batches->first() ? [
+                    'id' => $batches->first()->batch_id,
+                    'name' => $batches->first()->batch_name
+                ] : null,
+                'package' => $packages->first() ? [
+                    'id' => $packages->first()->package_id,
+                    'name' => $packages->first()->package_name
+                ] : null
+            ]
+        ];
+        
+        // Test if we can create a sample enrollment assignment
+        if ($students->count() > 0 && $programs->count() > 0 && $batches->count() > 0 && $packages->count() > 0) {
+            $existingEnrollment = \App\Models\Enrollment::where([
+                'student_id' => $students->first()->student_id,
+                'program_id' => $programs->first()->program_id
+            ])->first();
+            
+            $response['enrollment_test'] = [
+                'can_enroll' => !$existingEnrollment,
+                'existing_enrollment' => $existingEnrollment ? $existingEnrollment->enrollment_id : null
+            ];
+        }
+        
+        return response()->json($response);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+    }
+});
+
+// Test route for enrollment management
+Route::get('/test-enrollment-management', function () {
+    try {
+        $controller = new \App\Http\Controllers\AdminProgramController();
+        $result = $controller->enrollmentManagement();
+        
+        if ($result instanceof \Illuminate\View\View) {
+            return [
+                'status' => 'success',
+                'view_name' => $result->getName(),
+                'data_keys' => array_keys($result->getData()),
+                'students_count' => $result->getData()['students']->count(),
+                'programs_count' => $result->getData()['programs']->count(),
+                'batches_count' => $result->getData()['batches']->count(),
+                'courses_count' => $result->getData()['courses']->count(),
+            ];
+        } else {
+            return ['status' => 'error', 'message' => 'Invalid response type'];
+        }
+    } catch (\Exception $e) {
+        return [
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ];
+    }
+});
     // ...add any other /admin/enrollments routes here...
 });
 

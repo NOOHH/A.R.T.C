@@ -400,6 +400,9 @@ body, html {
   width: 18px;
   text-align: center;
   color: inherit;
+  min-width: 18px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .nav-link span {
@@ -622,6 +625,18 @@ body, html {
   display: inline-block;
   vertical-align: middle;
   font-size: 0.95rem;
+}
+
+/* Submenu icons */
+.submenu-link i {
+  margin-right: 12px;
+  font-size: 0.95rem;
+  width: 18px;
+  text-align: center;
+  color: inherit;
+  min-width: 18px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* Center icon when collapsed */

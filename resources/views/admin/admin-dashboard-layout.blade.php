@@ -1132,6 +1132,9 @@ function displaySearchResults(data) {
 
 @stack('scripts')
 
+<!-- Admin Sidebar JavaScript -->
+<script src="{{ asset('js/admin/admin-sidebar.js') }}?v={{ time() }}"></script>
+
 <!-- Include Global Chat Component -->
 @include('components.global-chat')
 

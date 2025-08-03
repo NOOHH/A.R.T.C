@@ -89,10 +89,6 @@
                             <i class="bi bi-receipt"></i>
                             <span>Payment History</span>
                         </a>
-                        <a href="{{ route('admin.enrollments.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.enrollments.index') active @endif">
-                            <i class="bi bi-book"></i>
-                            <span>Assign Course to Student</span>
-                        </a>
                         @endif
                         @if($isAdmin || ($isDirector && $directorFeatures['manage_batches']))
                         <a href="{{ route('admin.batches.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.batches')) active @endif">
@@ -206,7 +202,7 @@
             <!-- Announcements -->
             <div class="nav-item">
                 <a href="{{ route('admin.announcements.index') }}" class="nav-link @if(str_starts_with(Route::currentRouteName(), 'admin.announcements')) active @endif">
-                    <i class="bi bi-megaphone"></i>
+                    <i class="bi bi-broadcast"></i>
                     <span>Announcements</span>
                 </a>
             </div>

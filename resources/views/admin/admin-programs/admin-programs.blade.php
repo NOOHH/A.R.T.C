@@ -74,7 +74,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+    <div class="analytics-card" style="background: rgb(204, 204, 204);">
         <div class="card-icon">📈</div>
         <div class="card-content">
             <div class="card-number">{{ number_format($avgEnrollmentPerProgram ?? 0, 1) }}</div>
