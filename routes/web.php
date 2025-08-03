@@ -1168,10 +1168,38 @@ Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'res
      ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
-Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
+Route::get('/admin/quiz-generator', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'index'])
      ->name('admin.quiz-generator');
-Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
+Route::post('/admin/quiz-generator/generate', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generate'])
      ->name('admin.quiz-generator.generate');
+Route::post('/admin/quiz-generator/save-quiz', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'save'])
+     ->name('admin.quiz-generator.save');
+Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'update'])
+     ->name('admin.quiz-generator.update');
+Route::get('/admin/quiz-generator/modules/{programId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getModulesByProgram'])
+     ->name('admin.quiz-generator.modules');
+Route::get('/admin/quiz-generator/courses/{moduleId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getCoursesByModule'])
+     ->name('admin.quiz-generator.courses');
+Route::get('/admin/quiz-generator/contents/{courseId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getContentsByCourse'])
+     ->name('admin.quiz-generator.contents');
+Route::post('/admin/quiz-generator/generate-ai-questions', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generateAIQuestions'])
+     ->name('admin.quiz-generator.generate-ai-questions');
+Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz'])
+     ->name('admin.quiz-generator.get-quiz');
+Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish'])
+     ->name('admin.quiz-generator.publish');
+Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive'])
+     ->name('admin.quiz-generator.archive');
+Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft'])
+     ->name('admin.quiz-generator.draft');
+Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete'])
+     ->name('admin.quiz-generator.delete');
+Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview'])
+     ->name('admin.quiz-generator.preview');
+Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal'])
+     ->name('admin.quiz-generator.api.questions');
+Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions'])
+     ->name('admin.quiz-generator.question-options');
 
 // Chat routes
 Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
