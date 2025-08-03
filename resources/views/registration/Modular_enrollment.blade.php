@@ -2095,6 +2095,32 @@ function loadModules() {
         // which is called after this function with a delay
         console.log('User is not logged in, form will be populated by copyStepperDataToFinalForm');
         @endif
+        
+        // Always populate the program dropdown with selected program
+        setTimeout(() => {
+            populateProgramDropdown();
+            // Also ensure education level is properly synchronized
+            syncEducationLevelField();
+        }, 100);
+    }
+    
+    // Function to synchronize education level field between dropdown and hidden field
+    function syncEducationLevelField() {
+        const educationLevelDropdown = document.getElementById('educationLevel');
+        const hiddenEducationField = document.querySelector('input[name="education_level"]');
+        
+        if (!educationLevelDropdown || !hiddenEducationField) return;
+        
+        // If hidden field has value but dropdown doesn't, try to set dropdown
+        if (hiddenEducationField.value && !educationLevelDropdown.value) {
+            educationLevelDropdown.value = hiddenEducationField.value;
+            console.log('✅ Synced education level dropdown from hidden field:', hiddenEducationField.value);
+        }
+        // If dropdown has value but hidden field doesn't, update hidden field
+        else if (educationLevelDropdown.value && !hiddenEducationField.value) {
+            hiddenEducationField.value = educationLevelDropdown.value;
+            console.log('✅ Synced hidden education level from dropdown:', educationLevelDropdown.value);
+        }
     }
     
     // Force populate visible fields - additional safety net
@@ -2602,19 +2628,30 @@ function loadModules() {
     
     // Update selected modules data to include course selections
     function updateSelectedModulesWithCourses() {
-        const modulesWithCourses = selectedModules.map(module => {
-            const courseSelection = selectedCourses[module.id] || [];
-            return {
-                ...module,
-                selected_courses: courseSelection
-            };
+        // Remove duplicates from selectedModules first
+        const uniqueModules = [];
+        const seenModuleIds = new Set();
+        
+        selectedModules.forEach(module => {
+            if (!seenModuleIds.has(module.id)) {
+                seenModuleIds.add(module.id);
+                const courseSelection = selectedCourses[module.id] || [];
+                uniqueModules.push({
+                    ...module,
+                    selected_courses: courseSelection
+                });
+            }
         });
         
-        // Update the hidden input field
-        document.getElementById('selected_modules').value = JSON.stringify(modulesWithCourses);
-        console.log('Updated modules with course selections:', modulesWithCourses);
+        // Update the global selectedModules array to remove duplicates
+        selectedModules.length = 0;
+        selectedModules.push(...uniqueModules);
         
-        return modulesWithCourses;
+        // Update the hidden input field
+        document.getElementById('selected_modules').value = JSON.stringify(uniqueModules);
+        console.log('Updated modules with course selections (duplicates removed):', uniqueModules);
+        
+        return uniqueModules;
     }
     
     // Legacy display courses function (for backward compatibility)
@@ -2763,10 +2800,19 @@ function copyStepperDataToFinalForm() {
 
     // Package, program, modules, learning mode (steps 1-4)
     const packageId = document.getElementById('package_id')?.value || '';
-    const programId = document.getElementById('program_id')?.value || '';
+    const programId = document.getElementById('program_id')?.value || selectedProgramId || '';
     const selectedModules = document.getElementById('selected_modules')?.value || '';
     const learningMode = document.getElementById('learning_mode')?.value || '';
-    const educationLevel = document.getElementById('educationLevel')?.value || ''; // Get education level
+    
+    // Get education level from the dropdown in the final form
+    const educationLevelDropdown = document.getElementById('educationLevel');
+    let educationLevel = educationLevelDropdown?.value || '';
+    
+    // If education level is empty, try to get it from hidden field
+    if (!educationLevel) {
+        const hiddenEducationLevel = document.querySelector('input[name="education_level"]');
+        educationLevel = hiddenEducationLevel?.value || '';
+    }
 
     console.log('🔍 FORM DATA DEBUG:', {
         packageId, 
@@ -2774,6 +2820,7 @@ function copyStepperDataToFinalForm() {
         selectedModules, 
         learningMode,
         educationLevel,
+        selectedProgramId,
         hasPackageId: !!packageId,
         hasProgramId: !!programId,
         hasEducationLevel: !!educationLevel
@@ -2950,6 +2997,12 @@ function copyStepperDataToFinalForm() {
     setOrCreateHidden(form, 'selected_modules', selectedModules);
     setOrCreateHidden(form, 'learning_mode', learningMode);
     setOrCreateHidden(form, 'education_level', educationLevel); // Ensure education_level is set
+    
+    // Sync the visible dropdowns with the hidden fields
+    setTimeout(() => {
+        populateProgramDropdown();
+        syncEducationLevelField();
+    }, 50);
     
     // Handle start date - set to today if empty
     const startDateInput = form.querySelector('input[name="Start_Date"]');
@@ -3253,6 +3306,58 @@ function onProgramSelectionChange() {
     }
 }
 
+// Function to populate the program dropdown in the final form
+function populateProgramDropdown() {
+    const programSelect = document.getElementById('programSelect');
+    if (!programSelect || !selectedProgramId) return;
+    
+    console.log('Populating program dropdown with selected program:', selectedProgramId);
+    
+    // Check if the option already exists
+    let optionExists = false;
+    for (let option of programSelect.options) {
+        if (option.value === selectedProgramId.toString()) {
+            option.selected = true;
+            optionExists = true;
+            break;
+        }
+    }
+    
+    // If option doesn't exist, create it
+    if (!optionExists && window.controllerData && window.controllerData.allPrograms) {
+        const program = window.controllerData.allPrograms.find(p => p.id == selectedProgramId);
+        if (program) {
+            const option = document.createElement('option');
+            option.value = program.id;
+            option.textContent = program.program_name || program.name || `Program ${program.id}`;
+            option.selected = true;
+            programSelect.appendChild(option);
+            console.log('✅ Added and selected program option:', option.textContent);
+        }
+    }
+    
+    // Trigger the change event to update hidden fields
+    onProgramSelectionChange();
+}
+
+// Function to handle education level selection change
+function onEducationLevelChange() {
+    const educationLevel = document.getElementById('educationLevel');
+    if (!educationLevel) return;
+    
+    const selectedValue = educationLevel.value;
+    console.log('Education level changed to:', selectedValue);
+    
+    // Update the hidden education_level field
+    const hiddenEducationField = document.querySelector('input[name="education_level"]');
+    if (hiddenEducationField) {
+        hiddenEducationField.value = selectedValue;
+    }
+    
+    // Trigger the file requirements toggle
+    toggleEducationLevelRequirements();
+}
+
 // Function to load modules for a specific program
 function loadModulesForProgram(programId) {
     if (programId) {
@@ -3297,8 +3402,16 @@ function toggleEducationLevelRequirements() {
     if (!educationLevel || !requirementsContainer) return;
     
     const selectedOption = educationLevel.options[educationLevel.selectedIndex];
+    const selectedValue = educationLevel.value;
     
-    console.log('Education level changed to:', educationLevel.value);
+    console.log('Education level changed to:', selectedValue);
+    
+    // Update the hidden education_level field
+    const hiddenEducationField = document.querySelector('input[name="education_level"]');
+    if (hiddenEducationField) {
+        hiddenEducationField.value = selectedValue;
+        console.log('✅ Updated hidden education_level field to:', selectedValue);
+    }
     
     // Clear existing requirements
     requirementsContainer.innerHTML = '';

@@ -1411,16 +1411,12 @@
                     }
                 }
                 
-                // FIXED: Handle program suggestions - ONLY show if document validation was successful
-                if (data.success && data.valid_document && data.suggestions && data.suggestions.length > 0) {
-                    console.log('✅ Document validated successfully - showing program suggestions:', data.suggestions);
+                // FIXED: Handle program suggestions
+                if (data.suggestions && data.suggestions.length > 0) {
+                    console.log('✅ Found program suggestions:', data.suggestions);
                     showProgramSuggestions(data.suggestions);
-                } else if (data.success && data.valid_document) {
-                    console.log('✅ Document validated but no specific program suggestions found');
-                    // Show a generic message that the document was validated but no specific matches
-                    showInfoModal('Your document has been successfully validated! You can now select any program from the dropdown list.');
                 } else {
-                    console.log('Document validation failed or incomplete - not showing program suggestions');
+                    console.log('No program suggestions found');
                 }
                 
                 // Handle education level detection
@@ -1466,7 +1462,7 @@
         console.log('=== File Upload Process Initiated ===');
     }
 
-    // Show program suggestions in dropdown - ENHANCED VERSION WITH BETTER MATCHING
+    // Show program suggestions in dropdown - ENHANCED VERSION
     function showProgramSuggestions(suggestions) {
         console.log('=== Showing Program Suggestions ===');
         console.log('Suggestions received:', suggestions);
@@ -1484,118 +1480,9 @@
             option.remove();
         });
         
-        // Enhanced matching for culinary and other programs
-        const availablePrograms = Array.from(programSelect.options).map(option => ({
-            id: option.value,
-            name: option.textContent.trim(),
-            value: option.value
-        })).filter(prog => prog.value && prog.value !== '');
-        
-        console.log('Available programs in dropdown:', availablePrograms);
-        
-        // Enhanced keyword matching for better program detection
-        const enhancedSuggestions = [];
-        const addedPrograms = new Set();
-        
-        // Process original suggestions first
+        // Only add suggestion header if suggestions exist
         if (suggestions && suggestions.length > 0) {
-            suggestions.forEach(suggestion => {
-                try {
-                    let programId, programName;
-                    
-                    // Handle different suggestion formats
-                    if (suggestion.program && typeof suggestion.program === 'object') {
-                        programId = suggestion.program.id;
-                        programName = suggestion.program.program_name;
-                    } else if (suggestion.id || suggestion.program_id) {
-                        programId = suggestion.program_id || suggestion.id;
-                        programName = suggestion.program_name || suggestion.name;
-                    } else if (typeof suggestion === 'string') {
-                        programId = suggestion;
-                        programName = suggestion;
-                    }
-                    
-                    if (programId && programName && !addedPrograms.has(programId)) {
-                        enhancedSuggestions.push({id: programId, name: programName, source: 'api'});
-                        addedPrograms.add(programId);
-                    }
-                } catch (error) {
-                    console.error('Error processing suggestion:', error, suggestion);
-                }
-            });
-        }
-        
-        // ENHANCED: Additional keyword-based matching for culinary and other programs
-        const culinaryKeywords = ['chef', 'culinary', 'cooking', 'food', 'kitchen', 'pastry', 'baking', 'cuisine', 'gastronomy'];
-        const techKeywords = ['programming', 'web', 'development', 'software', 'coding', 'computer', 'IT', 'technology'];
-        const businessKeywords = ['business', 'management', 'marketing', 'finance', 'accounting', 'entrepreneur'];
-        const artKeywords = ['art', 'design', 'graphic', 'creative', 'multimedia', 'photography', 'animation'];
-        
-        // Check if any culinary keywords were detected (could be from OCR text or filename)
-        const detectedText = (suggestions.map(s => JSON.stringify(s)).join(' ') + ' chef certificate').toLowerCase();
-        console.log('Detected text for keyword matching:', detectedText);
-        
-        // Enhanced keyword matching
-        availablePrograms.forEach(program => {
-            const programLower = program.name.toLowerCase();
-            let isMatch = false;
-            let matchReason = '';
-            
-            // Check culinary matches
-            if (culinaryKeywords.some(keyword => 
-                detectedText.includes(keyword) || programLower.includes(keyword)
-            )) {
-                if (culinaryKeywords.some(keyword => programLower.includes(keyword))) {
-                    isMatch = true;
-                    matchReason = 'culinary';
-                }
-            }
-            
-            // Check tech matches
-            if (techKeywords.some(keyword => 
-                detectedText.includes(keyword) || programLower.includes(keyword)
-            )) {
-                if (techKeywords.some(keyword => programLower.includes(keyword))) {
-                    isMatch = true;
-                    matchReason = 'technology';
-                }
-            }
-            
-            // Check business matches
-            if (businessKeywords.some(keyword => 
-                detectedText.includes(keyword) || programLower.includes(keyword)
-            )) {
-                if (businessKeywords.some(keyword => programLower.includes(keyword))) {
-                    isMatch = true;
-                    matchReason = 'business';
-                }
-            }
-            
-            // Check art/design matches
-            if (artKeywords.some(keyword => 
-                detectedText.includes(keyword) || programLower.includes(keyword)
-            )) {
-                if (artKeywords.some(keyword => programLower.includes(keyword))) {
-                    isMatch = true;
-                    matchReason = 'art';
-                }
-            }
-            
-            // Add matched programs that aren't already added
-            if (isMatch && !addedPrograms.has(program.id)) {
-                enhancedSuggestions.push({
-                    id: program.id, 
-                    name: program.name, 
-                    source: 'keyword-' + matchReason
-                });
-                addedPrograms.add(program.id);
-                console.log(`✅ Added ${matchReason} program by keyword matching:`, program.name);
-            }
-        });
-        
-        // Only proceed if we have suggestions to show
-        if (enhancedSuggestions.length > 0) {
-            console.log('Final enhanced suggestions:', enhancedSuggestions);
+            console.log('Adding suggestions header and options...');
             
             // Create and add header option
             const headerOption = document.createElement('option');
@@ -1613,11 +1500,48 @@
                 programSelect.appendChild(headerOption);
             }
             
-            // Sort suggestions alphabetically by name
-            enhancedSuggestions.sort((a, b) => a.name.localeCompare(b.name));
+            // Process suggestions to normalize format and prevent duplicates
+            const normalizedSuggestions = [];
+            const addedPrograms = new Set(); // Track program IDs to prevent duplicates
             
-            // Add each suggestion
-            enhancedSuggestions.forEach((suggestion, index) => {
+            suggestions.forEach(suggestion => {
+                try {
+                    let programId, programName;
+                    
+                    // Handle different suggestion formats
+                    if (suggestion.program && typeof suggestion.program === 'object') {
+                        // Format: {program: {id: 123, program_name: "Program Name"}}
+                        programId = suggestion.program.id;
+                        programName = suggestion.program.program_name;
+                    } else if (suggestion.id || suggestion.program_id) {
+                        // Format: {id: 123, name: "Program Name"} or {program_id: 123, program_name: "Program Name"}
+                        programId = suggestion.program_id || suggestion.id;
+                        programName = suggestion.program_name || suggestion.name;
+                    } else if (typeof suggestion === 'string') {
+                        // Format: "Program Name" (string only)
+                        programId = suggestion;
+                        programName = suggestion;
+                    } else {
+                        // Cannot process this suggestion
+                        console.warn('Unknown suggestion format:', suggestion);
+                        return;
+                    }
+                    
+                    // Only add valid suggestions with program IDs and prevent duplicates
+                    if (programId && programName && !addedPrograms.has(programId)) {
+                        normalizedSuggestions.push({id: programId, name: programName});
+                        addedPrograms.add(programId);
+                    }
+                } catch (error) {
+                    console.error('Error processing suggestion:', error, suggestion);
+                }
+            });
+            
+            // Sort suggestions alphabetically by name
+            normalizedSuggestions.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Add each normalized suggestion
+            normalizedSuggestions.forEach((suggestion, index) => {
                 const suggestionOption = document.createElement('option');
                 suggestionOption.value = suggestion.id;
                 suggestionOption.textContent = `⭐ ${suggestion.name}`;
@@ -1625,7 +1549,7 @@
                 suggestionOption.style.backgroundColor = '#e3f2fd';
                 suggestionOption.style.fontWeight = '500';
                 
-                console.log(`Adding suggestion ${index + 1}:`, suggestion.name, 'with ID:', suggestion.id, 'Source:', suggestion.source);
+                console.log(`Adding suggestion ${index + 1}:`, suggestion.name, 'with ID:', suggestion.id);
                 
                 // Insert after header
                 const headerIndex = Array.from(programSelect.children).indexOf(headerOption);
@@ -1641,7 +1565,7 @@
             programSelect.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
             
             // Show notification modal
-            showInfoModal(`Great! We found ${enhancedSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
+            showInfoModal(`Great! We found ${normalizedSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
             
             // Auto-scroll to the program select field
             setTimeout(() => {
@@ -1661,9 +1585,7 @@
             
             console.log('✅ Program suggestions added successfully');
         } else {
-            console.log('No valid suggestions to display after enhancement');
-            // Show message that document was processed but no specific matches found
-            showInfoModal('Your document has been processed successfully! Please manually select the appropriate program from the dropdown list.');
+            console.log('No suggestions to display');
         }
     }
 
@@ -2831,6 +2753,10 @@
             isPasswordConfirmFilled
         });
         
+        // Check password validation
+        const isPasswordValid = typeof window.validatePassword === 'function' ? window.validatePassword() : true;
+        const isPasswordConfirmValid = typeof window.validatePasswordConfirmation === 'function' ? window.validatePasswordConfirmation() : true;
+        
         // Check if email is verified
         const emailVerified = window.enrollmentEmailVerified || false;
         
@@ -2839,13 +2765,15 @@
             emailVerified
         });
         
-        // Enable next button if all conditions are met (MODIFIED: More lenient validation)
+        // Enable next button only if ALL conditions are met including email verification
         const allFieldsFilled = isFirstnameFilled && isLastnameFilled && isEmailFilled && isPasswordFilled && isPasswordConfirmFilled;
+        const allValidationsPassed = isPasswordValid && isPasswordConfirmValid;
         
         console.log('🔍 Final validation results:', {
             allFieldsFilled,
+            allValidationsPassed,
             emailVerified,
-            shouldEnableButton: allFieldsFilled // CHANGED: Removed email verification requirement
+            shouldEnableButton: allFieldsFilled && allValidationsPassed && emailVerified
         });
         
         if (nextBtn) {
@@ -2855,15 +2783,15 @@
                 classes: nextBtn.className
             });
             
-            // MODIFIED: Enable button when fields are filled (email verification optional)
-            if (allFieldsFilled) {
+            // Enable button only when ALL conditions are met
+            if (allFieldsFilled && allValidationsPassed && emailVerified) {
                 nextBtn.disabled = false;
                 nextBtn.style.opacity = '1';
                 nextBtn.style.cursor = 'pointer';
                 nextBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 nextBtn.classList.add('enabled');
                 nextBtn.classList.remove('disabled');
-                console.log('✅ Step 4 Next button ENABLED (fields filled)');
+                console.log('✅ Step 4 Next button ENABLED (all conditions met)');
             } else {
                 nextBtn.disabled = true;
                 nextBtn.style.opacity = '0.5';
@@ -2871,14 +2799,17 @@
                 nextBtn.style.background = '#ccc';
                 nextBtn.classList.add('disabled');
                 nextBtn.classList.remove('enabled');
-                console.log('❌ Step 4 Next button DISABLED - allFieldsFilled:', allFieldsFilled);
+                console.log('❌ Step 4 Next button DISABLED - conditions not met:', {
+                    allFieldsFilled,
+                    allValidationsPassed,
+                    emailVerified
+                });
             }
         } else {
             console.error('❌ Next button not found! Looking for element with ID: step4NextBtn');
         }
         
-        // MODIFIED: Return based on fields only (not email verification)
-        return allFieldsFilled;
+        return allFieldsFilled && allValidationsPassed && emailVerified;
     };
     
     // Update hidden fields when page loads
@@ -3919,9 +3850,28 @@ if (currentStep !== finalStep) {
     
     // Double-check that Start_Date is not empty in FormData
     if (!finalFormData.get('Start_Date') || finalFormData.get('Start_Date') === '') {
-        const today = new Date().toISOString().split('T')[0];
-        finalFormData.set('Start_Date', today);
-        console.log('📅 Force-set Start_Date in FormData to:', today);
+        // Check if we have a selected batch and get its start date
+        const selectedBatchId = sessionStorage.getItem('selectedBatchId');
+        let startDate = null;
+        
+        if (selectedBatchId) {
+            // Try to get batch start date from session storage or make API call
+            const batchStartDate = sessionStorage.getItem(`batch_${selectedBatchId}_start_date`);
+            if (batchStartDate) {
+                startDate = batchStartDate;
+                console.log('📅 Using batch start date from session storage:', startDate);
+            }
+        }
+        
+        // If no batch start date found, use today's date as fallback
+        if (!startDate) {
+            const today = new Date().toISOString().split('T')[0];
+            startDate = today;
+            console.log('📅 Using today\'s date as fallback:', startDate);
+        }
+        
+        finalFormData.set('Start_Date', startDate);
+        console.log('📅 Force-set Start_Date in FormData to:', startDate);
     }
     
     // Handle reCAPTCHA if present
@@ -3939,8 +3889,8 @@ if (currentStep !== finalStep) {
         method: 'POST',
         body: finalFormData,
         headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
         }
     })
     .then(async response => {
@@ -3950,148 +3900,118 @@ if (currentStep !== finalStep) {
         // Get response text first to handle both JSON and HTML responses
         let responseText;
         try {
-            responseText = await response.text();
-            console.log('📄 Raw response text (first 500 chars):', responseText.substring(0, 500));
-            console.log('📄 Response content type:', response.headers.get('content-type'));
+        responseText = await response.text();
+        console.log('📄 Raw response text (first 500 chars):', responseText.substring(0, 500));
+        console.log('📄 Response content type:', response.headers.get('content-type'));
         } catch (textError) {
-            console.error('❌ Could not read response text:', textError);
+        console.error('❌ Could not read response text:', textError);
+        showFormLoading(false);
+        showFormErrors(['Failed to read server response. Please try again.']);
+        return;
+        }
+        
+        if (response.ok) {
+        // Check if response is JSON or HTML
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+            // Handle JSON response
+            try {
+            const data = JSON.parse(responseText);
+            console.log('✅ Registration successful (JSON):', data);
+            
             showFormLoading(false);
-            showFormErrors(['Failed to read server response. Please try again.']);
+            
+            // Show success message and redirect
+            if (data.success) {
+                // Show success alert
+                alert('🎉 Registration completed successfully! You will be redirected to the success page.');
+                
+                // Redirect to success page
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.href = '/registration/success';
+                }
+            } else {
+                // Handle error in JSON response
+                showFormErrors([data.message || 'Registration failed. Please try again.']);
+                // Re-enable submit button
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Complete Registration';
+                }
+            }
+            } catch (jsonError) {
+            console.error('❌ Could not parse JSON response:', jsonError);
+            showFormLoading(false);
+            showFormErrors(['Server returned invalid JSON. Please try again.']);
+            // Re-enable submit button
             if (submitButton) {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Complete Registration';
             }
-            return;
-        }
-        
-        if (response.ok) {
-            // Check if response is JSON or HTML
-            const contentType = response.headers.get('content-type');
-            
-            if (contentType && contentType.includes('application/json')) {
-                // Handle JSON response
-                try {
-                    const data = JSON.parse(responseText);
-                    console.log('✅ Registration successful (JSON):', data);
-                    
-                    showFormLoading(false);
-                    
-                    if (data.success) {
-                        // Show success message
-                        showSuccessModal('🎉 Registration completed successfully! You will be redirected to your dashboard.');
-                        
-                        // Redirect after delay
-                        setTimeout(() => {
-                            if (data.redirect) {
-                                window.location.href = data.redirect;
-                            } else {
-                                window.location.href = '/registration/success';
-                            }
-                        }, 2000);
-                    } else {
-                        // Handle error response
-                        const errorMessages = data.errors ? Object.values(data.errors).flat() : [data.message || 'Registration failed'];
-                        showFormErrors(errorMessages);
-                        if (submitButton) {
-                            submitButton.disabled = false;
-                            submitButton.textContent = 'Complete Registration';
-                        }
-                    }
-                } catch (jsonError) {
-                    console.error('❌ Could not parse JSON response:', jsonError);
-                    showFormLoading(false);
-                    showFormErrors(['Server returned invalid response. Please try again.']);
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Complete Registration';
-                    }
-                }
-            } else {
-                // Handle HTML response (likely a redirect page or success page)
-                console.log('✅ Registration successful (HTML response)');
-                
-                // Check if response contains success indicators
-                const responseTextLower = responseText.toLowerCase();
-                if (responseTextLower.includes('success') || 
-                    responseTextLower.includes('registration') || 
-                    responseTextLower.includes('complete') ||
-                    responseTextLower.includes('enrolled')) {
-                    
-                    showFormLoading(false);
-                    showSuccessModal('🎉 Registration completed successfully!');
-                    
-                    setTimeout(() => {
-                        window.location.href = '/registration/success';
-                    }, 2000);
-                    
-                } else if (responseTextLower.includes('login') || responseTextLower.includes('signin')) {
-                    showFormLoading(false);
-                    showSuccessModal('🎉 Registration completed successfully! Please login to continue.');
-                    
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
-                    
-                } else if (responseTextLower.includes('error') || responseTextLower.includes('fail')) {
-                    // Response indicates an error
-                    showFormLoading(false);
-                    const errorText = responseText.replace(/<[^>]*>/g, '').trim();
-                    const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
-                    showFormErrors([`Registration failed: ${truncatedError}`]);
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Complete Registration';
-                    }
-                } else {
-                    // Show success and redirect anyway since we got a 200 response
-                    showFormLoading(false);
-                    showSuccessModal('🎉 Registration completed successfully!');
-                    
-                    // Try to find redirect URL in the HTML
-                    const redirectMatch = responseText.match(/window\.location\.href\s*=\s*['"]([^'"]+)['"]/);
-                    setTimeout(() => {
-                        if (redirectMatch) {
-                            window.location.href = redirectMatch[1];
-                        } else {
-                            window.location.href = '/registration/success';
-                        }
-                    }, 2000);
-                }
             }
         } else {
-            console.error('❌ Server returned error status:', response.status, response.statusText);
+            // Handle HTML response (likely a redirect page or success page)
+            console.log('✅ Registration successful (HTML response)');
             
-            // Try to parse as JSON first for structured error handling
-            try {
-                const errorData = JSON.parse(responseText);
-                console.error('❌ Server error data:', errorData);
-                
-                showFormLoading(false);
-                
-                if (errorData.errors) {
-                    const errorMessages = Object.values(errorData.errors).flat();
-                    showFormErrors(errorMessages);
-                } else {
-                    showFormErrors([errorData.message || 'Registration failed. Please try again.']);
-                }
-            } catch (parseError) {
-                console.error('❌ Could not parse error response as JSON:', parseError);
-                console.log('📄 Raw error response:', responseText.substring(0, 1000));
-                
-                showFormLoading(false);
-                
-                // Extract meaningful error from HTML if possible
-                const errorText = responseText.replace(/<[^>]*>/g, '').trim();
-                const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
-                
-                if (response.status === 422) {
-                    showFormErrors(['Validation failed. Please check your inputs and try again.']);
-                } else if (response.status === 500) {
-                    showFormErrors(['Server error occurred. Please try again later.']);
-                } else {
-                    showFormErrors([`Server error (${response.status}): ${truncatedError || 'Unknown error'}`]);
-                }
+            showFormLoading(false);
+            
+            // Check if response contains success indicators
+            const responseTextLower = responseText.toLowerCase();
+            if (responseTextLower.includes('success') || responseTextLower.includes('registration') || responseTextLower.includes('complete')) {
+            alert('🎉 Registration completed successfully!');
+            window.location.href = '/registration/success';
+            } else if (responseTextLower.includes('login') || responseTextLower.includes('signin')) {
+            alert('🎉 Registration completed successfully! Please login to continue.');
+            window.location.href = '/login';
+            } else {
+            // Show success and redirect anyway since we got a 200 response
+            alert('🎉 Registration completed successfully!');
+            
+            // Try to find redirect URL in the HTML
+            const redirectMatch = responseText.match(/window\.location\.href\s*=\s*['"]([^'"]+)['"]/);
+            if (redirectMatch) {
+                window.location.href = redirectMatch[1];
+            } else {
+                window.location.href = '/registration/success';
             }
+            }
+        }
+        } else {
+        console.error('❌ Server returned error status:', response.status, response.statusText);
+        
+        // Try to parse as JSON first for structured error handling
+        try {
+            const errorData = JSON.parse(responseText);
+            console.error('❌ Server error data:', errorData);
+            
+            showFormLoading(false);
+            
+            if (errorData.errors) {
+            const errorMessages = Object.values(errorData.errors).flat();
+            showFormErrors(errorMessages);
+            } else {
+            showFormErrors([errorData.message || 'Registration failed. Please try again.']);
+            }
+            
+            // Re-enable submit button
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Complete Registration';
+            }
+        } catch (parseError) {
+            console.error('❌ Could not parse error response as JSON:', parseError);
+            console.log('📄 Raw error response:', responseText.substring(0, 1000));
+            
+            showFormLoading(false);
+            
+            // Extract meaningful error from HTML if possible
+            const errorText = responseText.replace(/<[^>]*>/g, '').trim();
+            const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+            
+            showFormErrors([`Server error (${response.status}): ${truncatedError || 'Unknown error'}`]);
             
             // Re-enable submit button
             if (submitButton) {

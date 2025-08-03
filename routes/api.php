@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\CompletionController;
+use Illuminate\Support\Facades\Schema; // Added for Schema facade
 
 /*
 |--------------------------------------------------------------------------
@@ -491,20 +492,42 @@ Route::middleware('web')->group(function () {
             ]);
             
             // Start with base query for programs with modular packages
-            $query = \App\Models\Program::where('is_archived', false)
+            $query = \App\Models\Program::when(Schema::hasColumn('programs', 'archived'), function($q) {
+                    return $q->where('archived', false);
+                })
+                ->when(Schema::hasColumn('programs', 'is_archived'), function($q) {
+                    return $q->where('is_archived', false);
+                })
                 ->whereHas('packages', function($q) {
                     $q->where('package_type', 'modular')
-                      ->where('status', 'active');
+                      ->when(Schema::hasColumn('packages', 'archived'), function($subQ) {
+                          return $subQ->where('archived', false);
+                      })
+                      ->when(Schema::hasColumn('packages', 'status'), function($subQ) {
+                          return $subQ->where('status', 'active');
+                      });
                 })
                 ->with([
                     'modules' => function($q) {
-                        $q->where('is_archived', false)
-                          ->orderBy('module_order', 'asc')
-                          ->select('modules_id', 'module_name', 'module_description', 'program_id');
+                        $q->when(Schema::hasColumn('modules', 'archived'), function($subQ) {
+                            return $subQ->where('archived', false);
+                        })
+                        ->when(Schema::hasColumn('modules', 'is_archived'), function($subQ) {
+                            return $subQ->where('is_archived', false);
+                        })
+                        ->when(Schema::hasColumn('modules', 'module_order'), function($subQ) {
+                            return $subQ->orderBy('module_order', 'asc');
+                        })
+                        ->select('modules_id', 'module_name', 'module_description', 'program_id');
                     }, 
                     'packages' => function($q) {
                         $q->where('package_type', 'modular')
-                          ->where('status', 'active');
+                          ->when(Schema::hasColumn('packages', 'archived'), function($subQ) {
+                              return $subQ->where('archived', false);
+                          })
+                          ->when(Schema::hasColumn('packages', 'status'), function($subQ) {
+                              return $subQ->where('status', 'active');
+                          });
                     }
                 ]);
             
@@ -532,9 +555,6 @@ Route::middleware('web')->group(function () {
                 */
             }
             
-            $programs = $query->select('program_id', 'program_name', 'program_description')
-                ->orderBy('program_name')
-                ->get();
             $programs = $query->select('program_id', 'program_name', 'program_description')
                 ->orderBy('program_name')
                 ->get();

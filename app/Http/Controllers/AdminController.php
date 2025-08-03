@@ -146,18 +146,52 @@ class AdminController extends Controller
                 return $staticValue;
             };
             
+            // Get user information (enhanced)
+            $userInfo = [];
+            if ($registration->user) {
+                $userInfo = [
+                    'full_name' => trim(($registration->user->firstname ?? '') . ' ' . ($registration->user->lastname ?? '')),
+                    'email' => $registration->user->email,
+                    'account_registered_date' => $registration->user->created_at ? $registration->user->created_at->format('M d, Y H:i') : 'N/A',
+                    'user_role' => $registration->user->role ?? 'student',
+                ];
+            } else {
+                // Fallback to registration data
+                $userInfo = [
+                    'full_name' => trim(($getFieldValue('firstname') ?? '') . ' ' . ($getFieldValue('lastname') ?? '')),
+                    'email' => $getFieldValue('email') ?? 'N/A',
+                    'account_registered_date' => $registration->created_at ? $registration->created_at->format('M d, Y H:i') : 'N/A',
+                    'user_role' => 'student',
+                ];
+            }
+            
             
             // Build response based only on active form requirements and actual form data
             $response = [
                 'registration_id' => $registration->registration_id,
                 'status' => $registration->status,
                 'created_at' => $registration->created_at->format('M d, Y H:i'),
+                'created_at_formatted' => $registration->created_at->format('M d, Y H:i'),
+                
+                // User Information (Enhanced)
+                'user_info' => $userInfo,
+                
                 // Core enrollment flow data (always shown)
                 'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
                 'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
                 'plan_name' => $registration->plan_name ?? ($registration->plan ? $registration->plan->plan_name : 'N/A'),
                 'enrollment_type' => $registration->enrollment_type ?? 'Full',
                 'learning_mode' => $getFieldValue('learning_mode', $registration->learning_mode),
+                'enrollment_date' => $registration->created_at->format('M d, Y H:i'),
+            ];
+            
+            // Enhanced enrollment information
+            $enrollmentInfo = [
+                'plan_type' => $registration->enrollment_type ?? 'Full',
+                'package' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
+                'program' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
+                'learning_mode' => $getFieldValue('learning_mode', $registration->learning_mode),
+                'enrollment_date' => $registration->created_at->format('M d, Y H:i'),
             ];
             
             // Process course selection for modular enrollments
@@ -168,6 +202,16 @@ class AdminController extends Controller
                 
                 if (is_array($selectedCourses) && count($selectedCourses) > 0) {
                     $courseNames = [];
+                    $moduleNames = [];
+                    
+                    // Also process selected modules
+                    $selectedModules = null;
+                    if ($registration->selected_modules) {
+                        $selectedModules = is_string($registration->selected_modules) 
+                            ? json_decode($registration->selected_modules, true) 
+                            : $registration->selected_modules;
+                    }
+                    
                     foreach ($selectedCourses as $courseData) {
                         if (is_array($courseData)) {
                             if (isset($courseData['selected_courses']) && is_array($courseData['selected_courses'])) {
@@ -185,13 +229,31 @@ class AdminController extends Controller
                             }
                         }
                     }
+                    
+                    // Process modules if available
+                    if (is_array($selectedModules)) {
+                        foreach ($selectedModules as $moduleData) {
+                            if (is_array($moduleData) && isset($moduleData['name'])) {
+                                $moduleNames[] = $moduleData['name'];
+                            }
+                        }
+                    }
+                    
+                    $enrollmentInfo['courses'] = count($courseNames) > 0 ? implode(', ', $courseNames) : 'Not specified';
+                    $enrollmentInfo['modules'] = count($moduleNames) > 0 ? implode(', ', $moduleNames) : 'Not specified';
                     $response['course_info'] = count($courseNames) > 0 ? implode(', ', $courseNames) : 'Modular (courses not specified)';
                 } else {
+                    $enrollmentInfo['courses'] = 'Not specified';
+                    $enrollmentInfo['modules'] = 'Not specified';
                     $response['course_info'] = 'Modular';
                 }
             } else {
+                $enrollmentInfo['courses'] = 'Full Program (All Courses)';
+                $enrollmentInfo['modules'] = 'Full Program (All Modules)';
                 $response['course_info'] = 'Full';
             }
+            
+            $response['enrollment_info_enhanced'] = $enrollmentInfo;
             
             // Add fields based on active form requirements (only what was actually presented to student)
             $personalInfoFields = [];
@@ -250,6 +312,75 @@ class AdminController extends Controller
             $response['education_info'] = $educationFields;
             $response['documents'] = $documentFields;
             $response['other_fields'] = $otherFields;
+            
+            // Enhanced document information based on education level
+            $educationLevel = $getFieldValue('education_level') ?? $getFieldValue('educational_attainment');
+            $documentInfo = [
+                'education_level' => $educationLevel ?? 'Not specified',
+                'document_requirements' => [],
+                'uploaded_documents' => []
+            ];
+            
+            // Determine document requirements based on education level
+            if ($educationLevel) {
+                if (strtolower($educationLevel) === 'undergraduate' || strpos(strtolower($educationLevel), 'undergrad') !== false) {
+                    $documentInfo['document_requirements'] = [
+                        'PSA Birth Certificate',
+                        'High School Diploma/TOR', 
+                        'Good Moral Certificate',
+                        '2x2 Photo',
+                        'Valid ID'
+                    ];
+                } elseif (strtolower($educationLevel) === 'graduate' || strpos(strtolower($educationLevel), 'grad') !== false) {
+                    $documentInfo['document_requirements'] = [
+                        'PSA Birth Certificate',
+                        'College Diploma',
+                        'College TOR',
+                        'Good Moral Certificate', 
+                        '2x2 Photo',
+                        'Valid ID'
+                    ];
+                } else {
+                    // Default requirements
+                    $documentInfo['document_requirements'] = [
+                        'PSA Birth Certificate',
+                        'Educational Documents',
+                        'Good Moral Certificate',
+                        '2x2 Photo',
+                        'Valid ID'
+                    ];
+                }
+            }
+            
+            // Check which documents have been uploaded
+            $documentFields = [
+                'PSA' => 'PSA Birth Certificate',
+                'TOR' => 'Transcript of Records',
+                'diploma' => 'Diploma',
+                'diploma_certificate' => 'Diploma Certificate',
+                'Course_Cert' => 'Course Certificate', 
+                'good_moral' => 'Good Moral Certificate',
+                'photo_2x2' => '2x2 Photo',
+                'valid_id' => 'Valid ID',
+                'birth_certificate' => 'Birth Certificate',
+                'Cert_of_Grad' => 'Certificate of Graduation',
+                'Undergraduate' => 'Undergraduate Documents',
+                'Graduate' => 'Graduate Documents'
+            ];
+            
+            foreach ($documentFields as $fieldName => $displayName) {
+                $documentValue = $getFieldValue($fieldName);
+                if (!empty($documentValue) && $documentValue !== 'N/A') {
+                    $documentInfo['uploaded_documents'][] = [
+                        'field_name' => $fieldName,
+                        'display_name' => $displayName,
+                        'file_path' => $documentValue,
+                        'status' => 'uploaded'
+                    ];
+                }
+            }
+            
+            $response['document_info_enhanced'] = $documentInfo;
             
             // Add email (always shown since it's core to user account)
             $response['email'] = $registration->user->email ?? $getFieldValue('email') ?? 'N/A';
@@ -1371,7 +1502,7 @@ class AdminController extends Controller
         try {
             $payment = Payment::with(['enrollment.program', 'enrollment.package'])->findOrFail($id);
             
-            $paymentDetails = json_decode($payment->payment_details, true) ?? [];
+            $paymentDetails = is_string($payment->payment_details) ? json_decode($payment->payment_details, true) : ($payment->payment_details ?? []);
             
             return response()->json([
                 'payment_id' => $payment->payment_id,
@@ -1425,7 +1556,7 @@ class AdminController extends Controller
             ];
 
             if ($payment) {
-                $paymentDetails = json_decode($payment->payment_details, true) ?? [];
+                $paymentDetails = is_string($payment->payment_details) ? json_decode($payment->payment_details, true) : ($payment->payment_details ?? []);
                 $data = array_merge($data, [
                     'payment_method' => $payment->payment_method,
                     'reference_number' => $payment->reference_number,
@@ -1799,12 +1930,27 @@ class AdminController extends Controller
                 'rejected_fields'  => json_encode($request->input('rejected_fields', [])),
                 'rejected_at'      => now(),
             ]);
+
+            // Handle different response types
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration rejected successfully.'
+                ]);
+            }
     
             return redirect()
                 ->route('admin.student.registration.pending')
                 ->with('success', 'Registration rejected successfully.');
     
         } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejection failed: ' . $e->getMessage()
+                ], 500);
+            }
+
             return redirect()->back()
                 ->with('error', 'Rejection failed: ' . $e->getMessage());
         }
@@ -1831,16 +1977,28 @@ class AdminController extends Controller
             // Create student record if not exists
             $this->createStudentFromRegistration($registration);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Registration approved successfully.'
-            ]);
+            // Handle different response types
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration approved successfully.'
+                ]);
+            }
+
+            return redirect()
+                ->route('admin.student.registration.pending')
+                ->with('success', 'Registration approved successfully.');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error approving registration: ' . $e->getMessage()
-            ], 500);
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error approving registration: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->with('error', 'Error approving registration: ' . $e->getMessage());
         }
     }
 

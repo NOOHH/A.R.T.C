@@ -77,6 +77,71 @@ class StudentRegistrationController extends Controller
         }
         
         try {
+            // AUTO-CREATE BATCH LOGIC: Check if we need to create a batch for this program BEFORE validation
+            $program = Program::find($request->program_id);
+            $learningMode = strtolower($request->input('learning_mode'));
+            
+            // Only auto-create batches for synchronous mode and if program has auto_create_batch enabled
+            if ($learningMode === 'synchronous' && $program && $program->auto_create_batch) {
+                // Check if there are any available batches for this program
+                $availableBatches = \App\Models\StudentBatch::where('program_id', $request->program_id)
+                    ->whereIn('batch_status', ['available', 'pending'])
+                    ->where(function($query) {
+                        $query->where(function($subQuery) {
+                            // For available batches, check if registration deadline hasn't passed
+                            $subQuery->where('batch_status', 'available')
+                                     ->where(function($deadlineQuery) {
+                                         $deadlineQuery->whereNull('registration_deadline')
+                                                      ->orWhere('registration_deadline', '>=', now()->format('Y-m-d'));
+                                     });
+                        })->orWhere('batch_status', 'pending'); // Always include pending batches
+                    })
+                    ->where(function($capacityQuery) {
+                        // Only include batches that have available slots
+                        $capacityQuery->whereRaw('current_capacity < max_capacity');
+                    })
+                    ->count();
+                
+                Log::info('Auto-batch creation check (before validation)', [
+                    'program_id' => $request->program_id,
+                    'learning_mode' => $learningMode,
+                    'auto_create_enabled' => $program->auto_create_batch,
+                    'available_batches_count' => $availableBatches
+                ]);
+                
+                if ($availableBatches === 0) {
+                    // No available batches, create a new pending batch
+                    $autoBatch = $this->createAutoBatch($request->program_id, $program->program_name);
+                    if ($autoBatch) {
+                        // Set the auto-created batch as the selected batch for this enrollment
+                        $request->merge(['batch_id' => $autoBatch->batch_id]);
+                        
+                        // Set the student's start date to match the auto-created batch's start date
+                        $request->merge(['Start_Date' => $autoBatch->start_date]);
+                        
+                        Log::info('Auto-created batch and assigned to enrollment (before validation)', [
+                            'batch_id' => $autoBatch->batch_id,
+                            'batch_name' => $autoBatch->batch_name,
+                            'program_id' => $request->program_id,
+                            'batch_start_date' => $autoBatch->start_date,
+                            'student_start_date_set_to' => $autoBatch->start_date
+                        ]);
+                    }
+                }
+            }
+            
+            // FALLBACK: Ensure Start_Date is always set
+            if (!$request->has('Start_Date') || $request->input('Start_Date') === null || $request->input('Start_Date') === '') {
+                // Set default start date to 2 weeks from now
+                $defaultStartDate = now()->addWeeks(2)->format('Y-m-d');
+                $request->merge(['Start_Date' => $defaultStartDate]);
+                
+                Log::info('Set fallback Start_Date', [
+                    'default_start_date' => $defaultStartDate,
+                    'reason' => 'No Start_Date provided and auto-batch creation did not set one'
+                ]);
+            }
+
             // Get program type for dynamic validation (map to database values)
             $enrollmentType = $request->input('enrollment_type');
             $programType = $enrollmentType === 'Full' ? 'full' : 'modular';
@@ -653,53 +718,6 @@ class StudentRegistrationController extends Controller
                 // Create new student record
                 $student = Student::create($studentData);
                 Log::info('Created new student record', ['student_id' => $student->student_id]);
-            }
-            
-            // AUTO-CREATE BATCH LOGIC: Check if we need to create a batch for this program
-            $program = Program::find($request->program_id);
-            $learningMode = strtolower($request->learning_mode);
-            
-            // Only auto-create batches for synchronous mode and if program has auto_create_batch enabled
-            if ($learningMode === 'synchronous' && $program && $program->auto_create_batch) {
-                // Check if there are any available batches for this program
-                $availableBatches = \App\Models\StudentBatch::where('program_id', $request->program_id)
-                    ->whereIn('batch_status', ['available', 'pending'])
-                    ->where(function($query) {
-                        $query->where(function($subQuery) {
-                            // For available batches, check if registration deadline hasn't passed
-                            $subQuery->where('batch_status', 'available')
-                                     ->where(function($deadlineQuery) {
-                                         $deadlineQuery->whereNull('registration_deadline')
-                                                      ->orWhere('registration_deadline', '>=', now()->format('Y-m-d'));
-                                     });
-                        })->orWhere('batch_status', 'pending'); // Always include pending batches
-                    })
-                    ->where(function($capacityQuery) {
-                        // Only include batches that have available slots
-                        $capacityQuery->whereRaw('current_capacity < max_capacity');
-                    })
-                    ->count();
-                
-                Log::info('Auto-batch creation check', [
-                    'program_id' => $request->program_id,
-                    'learning_mode' => $learningMode,
-                    'auto_create_enabled' => $program->auto_create_batch,
-                    'available_batches_count' => $availableBatches
-                ]);
-                
-                if ($availableBatches === 0) {
-                    // No available batches, create a new pending batch
-                    $autoBatch = $this->createAutoBatch($request->program_id, $program->program_name);
-                    if ($autoBatch) {
-                        // Set the auto-created batch as the selected batch for this enrollment
-                        $request->merge(['batch_id' => $autoBatch->batch_id]);
-                        Log::info('Auto-created batch and assigned to enrollment', [
-                            'batch_id' => $autoBatch->batch_id,
-                            'batch_name' => $autoBatch->batch_name,
-                            'program_id' => $request->program_id
-                        ]);
-                    }
-                }
             }
             
             // Also create an immediate enrollment record with the batch_id
@@ -1408,12 +1426,37 @@ class StudentRegistrationController extends Controller
                 ], 400);
             }
 
-            // Check if email exists in users table
-            $userExists = User::where('email', $email)->exists();
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return response()->json([
+                    'available' => false,
+                    'message' => 'Invalid email format'
+                ], 400);
+            }
+
+            // Check if email exists in any of the user-type tables
+            $userExists = DB::table('users')->where('email', $email)->exists();
+            $studentExists = DB::table('students')->where('email', $email)->exists();
+            $adminExists = DB::table('admins')->where('email', $email)->exists();
+            $directorExists = DB::table('directors')->where('directors_email', $email)->exists();
+            $professorExists = DB::table('professors')->where('professor_email', $email)->exists();
+
+            $existsInAny = $userExists || $studentExists || $adminExists || $directorExists || $professorExists;
+
+            // Log the check for debugging
+            Log::info('Email availability check', [
+                'email' => $email,
+                'user_exists' => $userExists,
+                'student_exists' => $studentExists,
+                'admin_exists' => $adminExists,
+                'director_exists' => $directorExists,
+                'professor_exists' => $professorExists,
+                'exists_in_any' => $existsInAny
+            ]);
 
             return response()->json([
-                'available' => !$userExists,
-                'message' => $userExists ? 'Email is already registered' : 'Email is available'
+                'available' => !$existsInAny,
+                'message' => $existsInAny ? 'Email is already registered in our system' : 'Email is available'
             ]);
 
         } catch (\Exception $e) {
@@ -1452,12 +1495,32 @@ class StudentRegistrationController extends Controller
                 ], 400);
             }
 
-            // Check if email already exists in users table
-            $userExists = User::where('email', $email)->exists();
-            if ($userExists) {
+            // Check if email already exists in any of the user-type tables
+            $userExists = DB::table('users')->where('email', $email)->exists();
+            $studentExists = DB::table('students')->where('email', $email)->exists();
+            $adminExists = DB::table('admins')->where('email', $email)->exists();
+            $directorExists = DB::table('directors')->where('directors_email', $email)->exists();
+            $professorExists = DB::table('professors')->where('professor_email', $email)->exists();
+
+            $existsInAny = $userExists || $studentExists || $adminExists || $directorExists || $professorExists;
+
+            if ($existsInAny) {
+                // Log which table contains the email for debugging
+                $existingTables = [];
+                if ($userExists) $existingTables[] = 'users';
+                if ($studentExists) $existingTables[] = 'students';
+                if ($adminExists) $existingTables[] = 'admins';
+                if ($directorExists) $existingTables[] = 'directors';
+                if ($professorExists) $existingTables[] = 'professors';
+
+                Log::info('Email already exists in system', [
+                    'email' => $email,
+                    'existing_tables' => $existingTables
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'This email is already registered. Please use a different email address.'
+                    'message' => 'This email is already registered in our system. Please use a different email address.'
                 ], 400);
             }
 
@@ -2048,8 +2111,8 @@ class StudentRegistrationController extends Controller
             $batchName = "Auto-Batch {$batchNumber} - {$programName} ({$currentYear})";
             
             // Set default values for auto-created batch
-            $registrationDeadline = now()->addWeeks(2); // 2 weeks from now
-            $startDate = now()->addWeeks(4); // 4 weeks from now
+            $registrationDeadline = now()->addWeeks(1); // 1 week from now for registration deadline
+            $startDate = now()->addWeeks(2); // 2 weeks from now for start date (as requested)
             
             $autoBatch = \App\Models\StudentBatch::create([
                 'batch_name' => $batchName,
@@ -2081,6 +2144,76 @@ class StudentRegistrationController extends Controller
                 'error' => $e->getMessage()
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Public method to create auto batch via AJAX request
+     */
+    public function createAutoBatchPublic(Request $request)
+    {
+        try {
+            $programId = $request->input('program_id');
+            
+            if (!$programId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Program ID is required'
+                ], 400);
+            }
+            
+            // Get program details
+            $program = \App\Models\Program::find($programId);
+            if (!$program) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Program not found'
+                ], 404);
+            }
+            
+            // Check if auto batch creation is enabled for this program
+            if (!$program->auto_create_batch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Auto batch creation is not enabled for this program'
+                ], 400);
+            }
+            
+            // Create the auto batch
+            $autoBatch = $this->createAutoBatch($programId, $program->program_name);
+            
+            if ($autoBatch) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Auto batch created successfully',
+                    'batch' => [
+                        'batch_id' => $autoBatch->batch_id,
+                        'batch_name' => $autoBatch->batch_name,
+                        'program_id' => $autoBatch->program_id,
+                        'max_capacity' => $autoBatch->max_capacity,
+                        'current_capacity' => $autoBatch->current_capacity,
+                        'batch_status' => $autoBatch->batch_status,
+                        'start_date' => $autoBatch->start_date,
+                        'registration_deadline' => $autoBatch->registration_deadline
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create auto batch'
+                ], 500);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error creating auto batch', [
+                'error' => $e->getMessage(),
+                'program_id' => $request->input('program_id')
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create auto batch'
+            ], 500);
         }
     }
 

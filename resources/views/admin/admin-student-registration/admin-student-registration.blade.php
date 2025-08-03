@@ -711,7 +711,33 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Define functions IMMEDIATELY to ensure they're available for inline handlers
+// Global variables and functions that need to be available immediately
+let registrationModal;
+let rejectReasonModal;
+const baseUrl = window.location.origin;
+const token = document.querySelector('meta[name="csrf-token"]')?.content;
+const isHistory = '{{ isset($history) && $history ? "true" : "false" }}' === 'true';
+
+// Helper functions
+function na(value) {
+    return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
+}
+
+function formatDocumentLink(filePath, displayName) {
+    if (!filePath || filePath === 'N/A' || filePath === '') {
+        return '<span class="text-muted">Not uploaded</span>';
+    }
+    
+    // Clean the file path
+    const cleanPath = filePath.replace(/^storage\//, '').replace(/^\//, '');
+    const fullUrl = `${baseUrl}/storage/${cleanPath}`;
+    
+    return `<a href="${fullUrl}" target="_blank" class="document-link">
+        <i class="bi bi-file-earmark-pdf"></i> ${displayName}
+    </a>`;
+}
+
+// Define global functions IMMEDIATELY to ensure they're available for inline handlers
 window.viewRegistrationDetails = function(registrationId) {
     console.log('viewRegistrationDetails called with ID:', registrationId);
     
@@ -739,21 +765,49 @@ window.viewRegistrationDetails = function(registrationId) {
             return response.json();
         })
         .then(data => {
-            // Left Column - Personal Information
+            console.log('Registration details received:', data); // Debug log
+            
+            // Left Column - User & Personal Information
             let leftColumn = `
                 <div class="col-md-6">
+                    <!-- User Information -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-person-circle"></i> User Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Full Name:</strong></div>
+                                <div class="col-sm-8">${data.user_info?.full_name || na(data.firstname + ' ' + data.lastname)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Email:</strong></div>
+                                <div class="col-sm-8">${data.user_info?.email || na(data.email)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Account Registered:</strong></div>
+                                <div class="col-sm-8">${data.user_info?.account_registered_date || na(data.created_at)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Personal Information -->
                     <div class="card mb-3">
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0"><i class="bi bi-person"></i> Personal Information</h6>
                         </div>
                         <div class="card-body">
                             <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Full Name:</strong></div>
-                                <div class="col-sm-8">${na(data.firstname)} ${na(data.middlename)} ${na(data.lastname)}</div>
+                                <div class="col-sm-4"><strong>First Name:</strong></div>
+                                <div class="col-sm-8">${na(data.firstname)}</div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Email:</strong></div>
-                                <div class="col-sm-8">${na(data.email)}</div>
+                                <div class="col-sm-4"><strong>Middle Name:</strong></div>
+                                <div class="col-sm-8">${na(data.middlename)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Last Name:</strong></div>
+                                <div class="col-sm-8">${na(data.lastname)}</div>
                             </div>
                             <div class="row mb-2">
                                 <div class="col-sm-4"><strong>Phone:</strong></div>
@@ -776,22 +830,6 @@ window.viewRegistrationDetails = function(registrationId) {
                                 <div class="col-sm-8">${na(data.zip_code)}</div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Education:</strong></div>
-                                <div class="col-sm-8">${na(data.educational_attainment)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>School:</strong></div>
-                                <div class="col-sm-8">${na(data.school)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Course:</strong></div>
-                                <div class="col-sm-8">${na(data.course)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Batch Date:</strong></div>
-                                <div class="col-sm-8">${na(data.batch_start_date)}</div>
-                            </div>
-                            <div class="row mb-2">
                                 <div class="col-sm-4"><strong>Status:</strong></div>
                                 <div class="col-sm-8">
                                     <span class="badge ${data.status === 'approved' ? 'bg-success' : 
@@ -808,54 +846,109 @@ window.viewRegistrationDetails = function(registrationId) {
                 </div>
             `;
 
-            // Right Column - Documents and Additional Info
+            // Right Column - Enrollment & Documents
             let rightColumn = `
                 <div class="col-md-6">
+                    <!-- Enrollment Information -->
                     <div class="card mb-3">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="mb-0"><i class="bi bi-files"></i> Documents</h6>
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Enrollment Information</h6>
                         </div>
                         <div class="card-body">
                             <div class="row mb-2">
-                                <div class="col-sm-4"><strong>2x2 Photo:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.photo_2x2, '2x2 Photo')}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>PSA Birth Certificate:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.PSA, 'PSA Birth Certificate')}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Diploma:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.diploma, 'Diploma')}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>TOR:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.TOR, 'Transcript of Records')}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Program Details</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Program:</strong></div>
-                                <div class="col-sm-8">${na(data.program_title)}</div>
+                                <div class="col-sm-4"><strong>Plan/Enrollment Type:</strong></div>
+                                <div class="col-sm-8"><span class="badge bg-info">${data.enrollment_info_enhanced?.plan_type || na(data.enrollment_type)}</span></div>
                             </div>
                             <div class="row mb-2">
                                 <div class="col-sm-4"><strong>Package:</strong></div>
-                                <div class="col-sm-8">${na(data.package_name)}</div>
+                                <div class="col-sm-8">${data.enrollment_info_enhanced?.package || na(data.package_name)}</div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Plan:</strong></div>
-                                <div class="col-sm-8">${na(data.plan_name)}</div>
+                                <div class="col-sm-4"><strong>Program:</strong></div>
+                                <div class="col-sm-8">${data.enrollment_info_enhanced?.program || na(data.program_name)}</div>
+                            </div>`;
+                            
+            // Add course/module information dynamically
+            if (data.enrollment_info_enhanced?.plan_type === 'Modular') {
+                rightColumn += `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Courses:</strong></div>
+                                <div class="col-sm-8">
+                                    <div class="small text-wrap">${data.enrollment_info_enhanced?.courses || 'Not specified'}</div>
+                                </div>
                             </div>
                             <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Registration Date:</strong></div>
-                                <div class="col-sm-8">${na(data.created_at_formatted)}</div>
+                                <div class="col-sm-4"><strong>Modules:</strong></div>
+                                <div class="col-sm-8">
+                                    <div class="small text-wrap">${data.enrollment_info_enhanced?.modules || 'Not specified'}</div>
+                                </div>
+                            </div>`;
+            } else {
+                rightColumn += `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Course Type:</strong></div>
+                                <div class="col-sm-8"><span class="badge bg-info">Full Program (All Courses)</span></div>
+                            </div>`;
+            }
+            
+            rightColumn += `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Learning Mode:</strong></div>
+                                <div class="col-sm-8"><span class="badge bg-secondary">${data.enrollment_info_enhanced?.learning_mode || na(data.learning_mode)}</span></div>
                             </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Enrollment Date:</strong></div>
+                                <div class="col-sm-8">${data.enrollment_info_enhanced?.enrollment_date || na(data.created_at)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Information -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Document Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Education Level:</strong></div>
+                                <div class="col-sm-8"><span class="badge bg-primary">${data.document_info_enhanced?.education_level || 'Not specified'}</span></div>
+                            </div>`;
+                            
+            // Show document requirements and uploaded documents dynamically
+            if (data.document_info_enhanced?.uploaded_documents && data.document_info_enhanced.uploaded_documents.length > 0) {
+                rightColumn += `
+                            <div class="row mb-2">
+                                <div class="col-sm-12"><strong>Uploaded Documents:</strong></div>
+                            </div>`;
+                            
+                data.document_info_enhanced.uploaded_documents.forEach(doc => {
+                    rightColumn += `
+                            <div class="row mb-2">
+                                <div class="col-sm-4">${doc.display_name}:</div>
+                                <div class="col-sm-8">${formatDocumentLink(doc.file_path, doc.display_name)}</div>
+                            </div>`;
+                });
+            } else {
+                rightColumn += `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>PSA Birth Certificate:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.PSA, 'PSA')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Transcript of Records:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.TOR, 'TOR')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Good Moral:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.good_moral, 'Good Moral')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>2x2 Photo:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.photo_2x2, '2x2 Photo')}</div>
+                            </div>`;
+            }
+            
+            rightColumn += `
                         </div>
                     </div>
                 </div>
@@ -949,17 +1042,6 @@ window.rejectRegistration = function(registrationId) {
         form.submit();
     }
 };
-
-// Global variables and functions that need to be available immediately
-let registrationModal;
-let rejectReasonModal;
-const baseUrl = window.location.origin;
-const token = document.querySelector('meta[name="csrf-token"]')?.content;
-const isHistory = '{{ isset($history) && $history ? "true" : "false" }}' === 'true';
-
-function na(value) {
-    return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
-}
 
 // DUPLICATE REMOVED: Global function for viewing registration details
 // window.viewRegistrationDetails = function(registrationId) {
@@ -2004,6 +2086,189 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
     };
 });
+
+// Ensure all functions are globally available immediately (Fallback functions)
+if (typeof window.viewRegistrationDetails === 'undefined') {
+    window.viewRegistrationDetails = function(registrationId) {
+        console.log('Fallback viewRegistrationDetails called with ID:', registrationId);
+        if (!registrationId) {
+            alert('Invalid registration ID');
+            return;
+        }
+        
+        // Initialize modal if needed
+        const modal = document.getElementById('registrationModal');
+        if (!modal) {
+            console.error('Registration modal not found');
+            return;
+        }
+        
+        if (!registrationModal) {
+            registrationModal = new bootstrap.Modal(modal);
+        }
+        
+        const modalDetails = document.getElementById('modal-details');
+        const modalActions = document.getElementById('modal-actions');
+        
+        if (modalDetails && modalActions) {
+            modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+            registrationModal.show();
+            
+            fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+                .then(response => response.json())
+                .then(data => {
+                    displayRegistrationDetails(data, registrationId);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    modalDetails.innerHTML = '<div class="alert alert-danger">Failed to load details</div>';
+                });
+        }
+    };
+}
+
+if (typeof window.approveRegistration === 'undefined') {
+    window.approveRegistration = function(registrationId) {
+        console.log('Fallback approveRegistration called with ID:', registrationId);
+        if (!registrationId) {
+            alert('Invalid registration ID');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to approve this registration?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/registration/${registrationId}/approve`;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = token || document.querySelector('meta[name="csrf-token"]')?.content;
+            
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+}
+
+if (typeof window.rejectRegistration === 'undefined') {
+    window.rejectRegistration = function(registrationId) {
+        console.log('Fallback rejectRegistration called with ID:', registrationId);
+        if (!registrationId) {
+            alert('Invalid registration ID');
+            return;
+        }
+        
+        const reason = prompt('Please provide a reason for rejection:');
+        if (reason && reason.trim()) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/registration/${registrationId}/reject`;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = token || document.querySelector('meta[name="csrf-token"]')?.content;
+            
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'reason';
+            reasonInput.value = reason;
+            
+            form.appendChild(csrfInput);
+            form.appendChild(reasonInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+}
+
+// Helper function for displaying registration details
+function displayRegistrationDetails(data, registrationId) {
+    const modalDetails = document.getElementById('modal-details');
+    const modalActions = document.getElementById('modal-actions');
+    
+    if (!modalDetails || !modalActions) return;
+    
+    let leftColumn = `
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-person-circle"></i> User Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Full Name:</strong></div>
+                        <div class="col-sm-8">${(data.firstname || '') + ' ' + (data.lastname || '')}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Email:</strong></div>
+                        <div class="col-sm-8">${data.email || 'N/A'}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Registration Date:</strong></div>
+                        <div class="col-sm-8">${data.created_at || 'N/A'}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Status:</strong></div>
+                        <div class="col-sm-8">
+                            <span class="badge ${data.status === 'approved' ? 'bg-success' : 
+                                              data.status === 'rejected' ? 'bg-danger' : 'bg-warning'}">${data.status || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    let rightColumn = `
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Enrollment Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Program:</strong></div>
+                        <div class="col-sm-8">${data.program_name || 'N/A'}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Package:</strong></div>
+                        <div class="col-sm-8">${data.package_name || 'N/A'}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Plan Type:</strong></div>
+                        <div class="col-sm-8">${data.enrollment_type || 'N/A'}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Learning Mode:</strong></div>
+                        <div class="col-sm-8">${data.learning_mode || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modalDetails.innerHTML = leftColumn + rightColumn;
+
+    let actionButtons = '';
+    if (data.status === 'pending') {
+        actionButtons = `
+            <button type="button" class="btn btn-success" onclick="approveRegistration('${registrationId}')">
+                <i class="bi bi-check-circle"></i> Approve
+            </button>
+            <button type="button" class="btn btn-danger" onclick="rejectRegistration('${registrationId}')">
+                <i class="bi bi-x-circle"></i> Reject
+            </button>
+        `;
+    }
+
+    modalActions.innerHTML = `
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        ${actionButtons}
+    `;
+}
 </script>
 
 <!-- Enhanced Registration Modal JavaScript -->

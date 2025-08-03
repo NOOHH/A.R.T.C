@@ -87,9 +87,21 @@ class ModularRegistrationController extends Controller
 
             // Get education levels for modular plan
             $educationLevels = EducationLevel::where('is_active', true)
-                ->where('available_modular_plan', true)
                 ->orderBy('level_order', 'asc')
-                ->get();
+                ->get()
+                ->filter(function ($level) {
+                    // Check if this education level is available for modular plan
+                    $fileRequirements = json_decode($level->file_requirements, true);
+                    if (!is_array($fileRequirements)) return true; // If no specific requirements, include it
+                    
+                    // Check if any requirement has available_modular_plan = true
+                    foreach ($fileRequirements as $requirement) {
+                        if (isset($requirement['available_modular_plan']) && $requirement['available_modular_plan'] === true) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
 
             $modularPlan = Plan::where('plan_id', 2)->first(); // Modular Plan
 
