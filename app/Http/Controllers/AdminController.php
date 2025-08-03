@@ -2072,4 +2072,32 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Download assignment submission file
+     */
+    public function downloadSubmission($id)
+    {
+        try {
+            $submission = AssignmentSubmission::findOrFail($id);
+            
+            if (!$submission->attachment) {
+                return redirect()->back()->with('error', 'No attachment found for this submission.');
+            }
+
+            $filePath = storage_path('app/public/' . $submission->attachment);
+            
+            if (!file_exists($filePath)) {
+                return redirect()->back()->with('error', 'Submission file not found.');
+            }
+
+            $originalName = basename($submission->attachment);
+            
+            return response()->download($filePath, $originalName);
+
+        } catch (\Exception $e) {
+            Log::error('Error downloading submission: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error downloading submission file.');
+        }
+    }
 }

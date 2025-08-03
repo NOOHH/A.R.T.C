@@ -755,6 +755,13 @@ function loadPrograms() {
         })
         .then(programs => {
             console.log('Programs received:', programs);
+            
+            // Check if programs is actually an array
+            if (!Array.isArray(programs)) {
+                console.error('Programs data is not an array:', programs);
+                throw new Error('Invalid programs data format');
+            }
+            
             const boardExamSelect = document.getElementById('boardExam');
             const manualBoardExamSelect = document.getElementById('manualBoardExam');
             

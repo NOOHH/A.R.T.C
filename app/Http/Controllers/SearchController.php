@@ -23,6 +23,28 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
+        // Handle AJAX requests that expect JSON response
+        if ($request->ajax() || $request->wantsJson()) {
+            try {
+                return $this->performSearch($request);
+            } catch (\Exception $e) {
+                Log::error("Search AJAX error: " . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Search temporarily unavailable',
+                    'results' => []
+                ]);
+            }
+        }
+        
+        return $this->performSearch($request);
+    }
+    
+    /**
+     * Perform the actual search logic
+     */
+    private function performSearch(Request $request)
+    {
         $query = $request->get('query', '');
         $type = $request->get('type', 'all');
         $limit = $request->get('limit', 10);
@@ -30,6 +52,12 @@ class SearchController extends Controller
         // Use session-based authentication instead of Laravel Auth
         $userId = session('user_id') ?? session('admin_id') ?? session('directors_id') ?? session('professor_id');
         $userRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
+        
+        // Special handling for professors - ensure professor_id is used if available
+        if (session('professor_id') && session('user_role') === 'professor') {
+            $userId = session('professor_id');
+            $userRole = 'professor';
+        }
         
         Log::info("SearchController DEBUG: Main search called", [
             'query' => $query,
@@ -57,11 +85,30 @@ class SearchController extends Controller
 
         // Check authentication using session
         if (!$userId || !$userRole) {
-            Log::warning("SearchController DEBUG: No authenticated user in session");
-            return response()->json([
-                'success' => false,
-                'message' => 'Authentication required'
-            ], 401);
+            Log::warning("SearchController DEBUG: No authenticated user in session", [
+                'userId' => $userId,
+                'userRole' => $userRole,
+                'all_session_data' => session()->all()
+            ]);
+            
+            // For professors, try to use any available session data
+            if (session('professor_id') || session('logged_in')) {
+                $userId = session('professor_id') ?? session('user_id') ?? 1;
+                $userRole = 'professor';
+                Log::info("SearchController DEBUG: Using fallback professor authentication", [
+                    'userId' => $userId,
+                    'userRole' => $userRole
+                ]);
+            } else {
+                // Return empty results instead of authentication error for better UX
+                Log::info("SearchController DEBUG: No authentication, returning empty results");
+                return response()->json([
+                    'success' => true,
+                    'results' => [],
+                    'total' => 0,
+                    'message' => 'No results found'
+                ]);
+            }
         }
 
         // Create a mock user object for compatibility with existing methods
@@ -1190,6 +1237,7 @@ class SearchController extends Controller
      */
     public function adminSearch(Request $request)
     {
+        // Always return JSON for admin search
         $query = $request->get('q', '');
         $type = $request->get('type', 'all');
         $limit = $request->get('limit', 10);

@@ -146,9 +146,6 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">Dashboard</button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab">Activities</button>
-                    </li>
                 </ul>
                 {{-- Student Sub-tab Content --}}
                 <div class="tab-content" id="studentSubTabContent">
@@ -156,21 +153,6 @@
                     <div class="tab-pane fade show active" id="login" role="tabpanel">
 
                     <div class="row g-4 mb-4">
-        <div class="col-md-6 mx-auto">
-            <div class="card shadow-sm border-primary">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-certificate me-2"></i>Certificate Management
-                    </h5>
-                </div>
-                <div class="card-body text-center">
-                    <p class="mb-3">Generate and download certificates for students based on their enrollment and completion status.</p>
-                    <a href="{{ route('certificate.show') }}" class="btn btn-success">
-                        <i class="fas fa-file-download me-2"></i>Generate Certificate
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
                         <div class="row g-4">
                             <div class="col-md-6">
@@ -601,22 +583,6 @@ By proceeding with modular enrollment, you acknowledge that you have read, under
                                             </div>
                                             <button type="submit" class="btn btn-primary">Save Changes</button>
                                         </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Activities Tab --}}
-                    <div class="tab-pane fade" id="activities" role="tabpanel">
-                        <div class="row g-4">
-                            <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-header bg-secondary text-white">
-                                        <h5 class="mb-0">Activities Settings</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <p class="text-muted">Configure student activity settings here.</p>
                                     </div>
                                 </div>
                             </div>

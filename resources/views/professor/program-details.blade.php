@@ -664,9 +664,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Close
                 </button>
-                <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none;">
-                    <i class="bi bi-pencil me-1"></i>Edit Module
-                </button>
             </div>
         </div>
     </div>

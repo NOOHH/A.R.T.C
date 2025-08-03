@@ -1081,7 +1081,12 @@ function performSearch(query = null) {
             'Accept': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         showSearchLoading(false);
         displaySearchResults(data);
@@ -1089,6 +1094,11 @@ function performSearch(query = null) {
     .catch(error => {
         console.error('Search error:', error);
         showSearchLoading(false);
+        // Display error message to user
+        const resultsContainer = document.getElementById('searchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="p-3 text-danger text-center">Search temporarily unavailable</div>';
+        }
     });
 }
 

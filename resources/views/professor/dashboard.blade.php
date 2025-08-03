@@ -133,6 +133,8 @@ html, body {
   margin-bottom: 1rem;
   font-size: 1.5rem;
   color: white;
+  /* Ensure inline styles take precedence */
+  background: var(--primary-color) !important;
 }
 
 .stat-number {
@@ -570,28 +572,28 @@ html, body {
     <!-- Modern Stats Grid -->
     <div class="stats-grid fade-in-up">
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;">
                 <i class="bi bi-collection"></i>
             </div>
             <div class="stat-number">{{ $totalPrograms }}</div>
             <div class="stat-label">Assigned Programs</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, var(--success-color), #10b981);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669) !important;">
                 <i class="bi bi-people"></i>
             </div>
             <div class="stat-number">{{ $totalStudents }}</div>
             <div class="stat-label">Total Students</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706) !important;">
                 <i class="bi bi-book"></i>
             </div>
             <div class="stat-number">{{ $totalModules }}</div>
             <div class="stat-label">Total Modules</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, var(--info-color), #06b6d4);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;">
                 <i class="bi bi-play-circle"></i>
             </div>
             <div class="stat-number">{{ $assignedPrograms->where('pivot.video_link', '!=', null)->count() }}</div>

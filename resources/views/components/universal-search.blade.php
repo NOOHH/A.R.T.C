@@ -362,7 +362,13 @@ function performSearch(query) {
         limit: 10
     });
     
-    fetch(`/search?${params.toString()}`)
+    fetch(`/search-now?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
         .then(response => response.json())
         .then(data => {
             hideSearchLoading();
@@ -391,44 +397,60 @@ function displaySearchResults(results) {
     container.innerHTML = results.map(result => {
         if (result.type === 'program') {
             return `
-                <div class="search-result-item" onclick="selectSearchResult('${result.id}', 'program')">
+                <div class="search-result-item" onclick="window.location.href='${result.url || '/profile/program/' + result.id}'">
                     <div class="search-result-icon">
                         <i class="bi bi-collection text-primary" style="font-size: 1.5rem;"></i>
                     </div>
                     <div class="search-result-info">
                         <div class="search-result-name">${result.name}</div>
-                        <div class="search-result-email">${result.description}</div>
-                        <small class="text-muted">
-                            ${result.modules_count} modules • ${result.courses_count} courses
-                        </small>
+                        <div class="search-result-email">${result.description || ''}</div>
+                        <small class="text-muted">Program</small>
                     </div>
                     <div class="search-result-role">
                         <span class="badge bg-info">Program</span>
                     </div>
-                    <div class="search-result-actions">
-                        ${generateProgramActionButtons(result)}
+                </div>
+            `;
+        } else if (result.type === 'student') {
+            return `
+                <div class="search-result-item" onclick="window.location.href='${result.url || '/profile/user/' + result.id}'">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <div class="search-result-info">
+                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-email">${result.email || ''}</div>
+                        <small class="text-muted">Student</small>
+                    </div>
+                    <div class="search-result-role">
+                        <span class="badge bg-success">Student</span>
+                    </div>
+                </div>
+            `;
+        } else if (result.type === 'professor') {
+            return `
+                <div class="search-result-item" onclick="window.location.href='${result.url || '/profile/professor/' + result.id}'">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <div class="search-result-info">
+                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-email">${result.email || ''}</div>
+                        <small class="text-muted">Professor</small>
+                    </div>
+                    <div class="search-result-role">
+                        <span class="badge bg-warning">Professor</span>
                     </div>
                 </div>
             `;
         } else {
-            const roleClass = getRoleClass(result.role);
-            const actions = generateActionButtons(result);
-            
+            // Fallback for other types
             return `
                 <div class="search-result-item" onclick="selectSearchResult('${result.id}', '${result.type}')">
                     <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
                     <div class="search-result-info">
                         <div class="search-result-name">${result.name}</div>
-                        <div class="search-result-email">${result.email}</div>
-                        ${result.programs && result.programs.length > 0 ? 
-                            `<small class="text-muted">Programs: ${result.programs.join(', ')}</small>` : ''}
+                        <div class="search-result-email">${result.email || ''}</div>
+                        <small class="text-muted">${result.type}</small>
                     </div>
                     <div class="search-result-role">
-                        <span class="badge bg-${roleClass}">${result.role}</span>
-                        <br><small class="text-muted">${result.status}</small>
-                    </div>
-                    <div class="search-result-actions">
-                        ${actions}
+                        <span class="badge bg-secondary">${result.type}</span>
                     </div>
                 </div>
             `;
@@ -788,10 +810,14 @@ function loadPrograms() {
         .then(data => {
             if (data.success) {
                 const select = document.getElementById('advancedSearchProgram');
+                if (!select) {
+                    console.warn('advancedSearchProgram select not found in DOM.');
+                    return;
+                }
                 data.programs.forEach(program => {
                     const option = document.createElement('option');
-                    option.value = program.id;
-                    option.textContent = program.name;
+                    option.value = program.id || program.program_id;
+                    option.textContent = program.name || program.program_name;
                     select.appendChild(option);
                 });
             }
