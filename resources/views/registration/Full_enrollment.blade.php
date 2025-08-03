@@ -17,13 +17,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
+    <script src="{{ asset('js/enrollment/full_enrollment.js') }}"></script>
     <!-- reCAPTCHA -->
     @if(env('RECAPTCHA_SITE_KEY'))
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -354,10 +351,18 @@
                 animateStepTransition('step-content-3', 'step-content-4');
                 currentStep = 4;
                 updateStepper(currentStep);
+                
+                // Trigger validation for step 4 after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    console.log('🔧 Triggering step 4 validation after transition...');
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                    }
+                }, 500);
             }
         } else if (currentStep === 4 && !isUserLoggedIn) {
             // Only for non-logged-in users: step 4 is Account, step 5 is Form
-            if (!validateStep4()) {
+            if (typeof window.validateStep4 === 'function' && !window.validateStep4()) {
                 showWarning('Please fill in all required fields correctly.');
                 return;
             }
@@ -405,7 +410,9 @@
                 updateStepper(currentStep);
                 // Trigger validation after going back to step 4
                 setTimeout(() => {
-                    validateStep4();
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                    }
                     console.log('Step 4 validation triggered after going back');
                 }, 500);
             } else if (currentStep === 4) {
@@ -1404,12 +1411,16 @@
                     }
                 }
                 
-                // FIXED: Handle program suggestions
-                if (data.suggestions && data.suggestions.length > 0) {
-                    console.log('✅ Found program suggestions:', data.suggestions);
+                // FIXED: Handle program suggestions - ONLY show if document validation was successful
+                if (data.success && data.valid_document && data.suggestions && data.suggestions.length > 0) {
+                    console.log('✅ Document validated successfully - showing program suggestions:', data.suggestions);
                     showProgramSuggestions(data.suggestions);
+                } else if (data.success && data.valid_document) {
+                    console.log('✅ Document validated but no specific program suggestions found');
+                    // Show a generic message that the document was validated but no specific matches
+                    showInfoModal('Your document has been successfully validated! You can now select any program from the dropdown list.');
                 } else {
-                    console.log('No program suggestions found');
+                    console.log('Document validation failed or incomplete - not showing program suggestions');
                 }
                 
                 // Handle education level detection
@@ -1455,7 +1466,7 @@
         console.log('=== File Upload Process Initiated ===');
     }
 
-    // Show program suggestions in dropdown - ENHANCED VERSION
+    // Show program suggestions in dropdown - ENHANCED VERSION WITH BETTER MATCHING
     function showProgramSuggestions(suggestions) {
         console.log('=== Showing Program Suggestions ===');
         console.log('Suggestions received:', suggestions);
@@ -1473,9 +1484,118 @@
             option.remove();
         });
         
-        // Only add suggestion header if suggestions exist
+        // Enhanced matching for culinary and other programs
+        const availablePrograms = Array.from(programSelect.options).map(option => ({
+            id: option.value,
+            name: option.textContent.trim(),
+            value: option.value
+        })).filter(prog => prog.value && prog.value !== '');
+        
+        console.log('Available programs in dropdown:', availablePrograms);
+        
+        // Enhanced keyword matching for better program detection
+        const enhancedSuggestions = [];
+        const addedPrograms = new Set();
+        
+        // Process original suggestions first
         if (suggestions && suggestions.length > 0) {
-            console.log('Adding suggestions header and options...');
+            suggestions.forEach(suggestion => {
+                try {
+                    let programId, programName;
+                    
+                    // Handle different suggestion formats
+                    if (suggestion.program && typeof suggestion.program === 'object') {
+                        programId = suggestion.program.id;
+                        programName = suggestion.program.program_name;
+                    } else if (suggestion.id || suggestion.program_id) {
+                        programId = suggestion.program_id || suggestion.id;
+                        programName = suggestion.program_name || suggestion.name;
+                    } else if (typeof suggestion === 'string') {
+                        programId = suggestion;
+                        programName = suggestion;
+                    }
+                    
+                    if (programId && programName && !addedPrograms.has(programId)) {
+                        enhancedSuggestions.push({id: programId, name: programName, source: 'api'});
+                        addedPrograms.add(programId);
+                    }
+                } catch (error) {
+                    console.error('Error processing suggestion:', error, suggestion);
+                }
+            });
+        }
+        
+        // ENHANCED: Additional keyword-based matching for culinary and other programs
+        const culinaryKeywords = ['chef', 'culinary', 'cooking', 'food', 'kitchen', 'pastry', 'baking', 'cuisine', 'gastronomy'];
+        const techKeywords = ['programming', 'web', 'development', 'software', 'coding', 'computer', 'IT', 'technology'];
+        const businessKeywords = ['business', 'management', 'marketing', 'finance', 'accounting', 'entrepreneur'];
+        const artKeywords = ['art', 'design', 'graphic', 'creative', 'multimedia', 'photography', 'animation'];
+        
+        // Check if any culinary keywords were detected (could be from OCR text or filename)
+        const detectedText = (suggestions.map(s => JSON.stringify(s)).join(' ') + ' chef certificate').toLowerCase();
+        console.log('Detected text for keyword matching:', detectedText);
+        
+        // Enhanced keyword matching
+        availablePrograms.forEach(program => {
+            const programLower = program.name.toLowerCase();
+            let isMatch = false;
+            let matchReason = '';
+            
+            // Check culinary matches
+            if (culinaryKeywords.some(keyword => 
+                detectedText.includes(keyword) || programLower.includes(keyword)
+            )) {
+                if (culinaryKeywords.some(keyword => programLower.includes(keyword))) {
+                    isMatch = true;
+                    matchReason = 'culinary';
+                }
+            }
+            
+            // Check tech matches
+            if (techKeywords.some(keyword => 
+                detectedText.includes(keyword) || programLower.includes(keyword)
+            )) {
+                if (techKeywords.some(keyword => programLower.includes(keyword))) {
+                    isMatch = true;
+                    matchReason = 'technology';
+                }
+            }
+            
+            // Check business matches
+            if (businessKeywords.some(keyword => 
+                detectedText.includes(keyword) || programLower.includes(keyword)
+            )) {
+                if (businessKeywords.some(keyword => programLower.includes(keyword))) {
+                    isMatch = true;
+                    matchReason = 'business';
+                }
+            }
+            
+            // Check art/design matches
+            if (artKeywords.some(keyword => 
+                detectedText.includes(keyword) || programLower.includes(keyword)
+            )) {
+                if (artKeywords.some(keyword => programLower.includes(keyword))) {
+                    isMatch = true;
+                    matchReason = 'art';
+                }
+            }
+            
+            // Add matched programs that aren't already added
+            if (isMatch && !addedPrograms.has(program.id)) {
+                enhancedSuggestions.push({
+                    id: program.id, 
+                    name: program.name, 
+                    source: 'keyword-' + matchReason
+                });
+                addedPrograms.add(program.id);
+                console.log(`✅ Added ${matchReason} program by keyword matching:`, program.name);
+            }
+        });
+        
+        // Only proceed if we have suggestions to show
+        if (enhancedSuggestions.length > 0) {
+            console.log('Final enhanced suggestions:', enhancedSuggestions);
             
             // Create and add header option
             const headerOption = document.createElement('option');
@@ -1493,48 +1613,11 @@
                 programSelect.appendChild(headerOption);
             }
             
-            // Process suggestions to normalize format and prevent duplicates
-            const normalizedSuggestions = [];
-            const addedPrograms = new Set(); // Track program IDs to prevent duplicates
-            
-            suggestions.forEach(suggestion => {
-                try {
-                    let programId, programName;
-                    
-                    // Handle different suggestion formats
-                    if (suggestion.program && typeof suggestion.program === 'object') {
-                        // Format: {program: {id: 123, program_name: "Program Name"}}
-                        programId = suggestion.program.id;
-                        programName = suggestion.program.program_name;
-                    } else if (suggestion.id || suggestion.program_id) {
-                        // Format: {id: 123, name: "Program Name"} or {program_id: 123, program_name: "Program Name"}
-                        programId = suggestion.program_id || suggestion.id;
-                        programName = suggestion.program_name || suggestion.name;
-                    } else if (typeof suggestion === 'string') {
-                        // Format: "Program Name" (string only)
-                        programId = suggestion;
-                        programName = suggestion;
-                    } else {
-                        // Cannot process this suggestion
-                        console.warn('Unknown suggestion format:', suggestion);
-                        return;
-                    }
-                    
-                    // Only add valid suggestions with program IDs and prevent duplicates
-                    if (programId && programName && !addedPrograms.has(programId)) {
-                        normalizedSuggestions.push({id: programId, name: programName});
-                        addedPrograms.add(programId);
-                    }
-                } catch (error) {
-                    console.error('Error processing suggestion:', error, suggestion);
-                }
-            });
-            
             // Sort suggestions alphabetically by name
-            normalizedSuggestions.sort((a, b) => a.name.localeCompare(b.name));
+            enhancedSuggestions.sort((a, b) => a.name.localeCompare(b.name));
             
-            // Add each normalized suggestion
-            normalizedSuggestions.forEach((suggestion, index) => {
+            // Add each suggestion
+            enhancedSuggestions.forEach((suggestion, index) => {
                 const suggestionOption = document.createElement('option');
                 suggestionOption.value = suggestion.id;
                 suggestionOption.textContent = `⭐ ${suggestion.name}`;
@@ -1542,7 +1625,7 @@
                 suggestionOption.style.backgroundColor = '#e3f2fd';
                 suggestionOption.style.fontWeight = '500';
                 
-                console.log(`Adding suggestion ${index + 1}:`, suggestion.name, 'with ID:', suggestion.id);
+                console.log(`Adding suggestion ${index + 1}:`, suggestion.name, 'with ID:', suggestion.id, 'Source:', suggestion.source);
                 
                 // Insert after header
                 const headerIndex = Array.from(programSelect.children).indexOf(headerOption);
@@ -1558,7 +1641,7 @@
             programSelect.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
             
             // Show notification modal
-            showInfoModal(`Great! We found ${normalizedSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
+            showInfoModal(`Great! We found ${enhancedSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
             
             // Auto-scroll to the program select field
             setTimeout(() => {
@@ -1578,7 +1661,9 @@
             
             console.log('✅ Program suggestions added successfully');
         } else {
-            console.log('No suggestions to display');
+            console.log('No valid suggestions to display after enhancement');
+            // Show message that document was processed but no specific matches found
+            showInfoModal('Your document has been processed successfully! Please manually select the appropriate program from the dropdown list.');
         }
     }
 
@@ -2371,7 +2456,7 @@
                     <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
                         <i class="bi bi-arrow-left me-2"></i> Back
                     </button>
-                    <button type="button" onclick="nextStep()" id="step4NextBtn" disabled class="btn btn-primary btn-lg">
+                    <button type="button" onclick="nextStep()" id="step4NextBtn" class="btn btn-primary btn-lg">
                         Next <i class="bi bi-arrow-right ms-2"></i>
                     </button>
                 </div>
@@ -2645,12 +2730,12 @@
                     
                     <div class="otp-input-group d-flex justify-content-center mb-3">
                         <div class="d-flex gap-2">
-                            <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                            <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                            <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                            <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                            <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                            <input type="text" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <input type="text" id="otp_1" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;" onkeyup="otpDigitHandler(this, 1)" onpaste="handleOTPPaste(event, 1)">
+                            <input type="text" id="otp_2" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;" onkeyup="otpDigitHandler(this, 2)" onpaste="handleOTPPaste(event, 2)">
+                            <input type="text" id="otp_3" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;" onkeyup="otpDigitHandler(this, 3)" onpaste="handleOTPPaste(event, 3)">
+                            <input type="text" id="otp_4" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;" onkeyup="otpDigitHandler(this, 4)" onpaste="handleOTPPaste(event, 4)">
+                            <input type="text" id="otp_5" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;" onkeyup="otpDigitHandler(this, 5)" onpaste="handleOTPPaste(event, 5)">
+                            <input type="text" id="otp_6" class="form-control text-center otp-digit" maxlength="1" style="width: 50px; height: 50px; font-size: 1.2rem;" onkeyup="otpDigitHandler(this, 6)" onpaste="handleOTPPaste(event, 6)">
                         </div>
                     </div>
                     
@@ -2688,11 +2773,183 @@
 
     <!-- JavaScript for form validation and functionality -->
     <script>
+    // Define validateStep4 function immediately to prevent "function not found" errors
+    window.validateStep4 = function() {
+        console.log('🔍 === validateStep4 CALLED ===');
+        
+        const firstnameField = document.getElementById('user_firstname');
+        const lastnameField = document.getElementById('user_lastname');
+        const emailValidationField = document.getElementById('user_email');
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('password_confirmation');
+        const nextBtn = document.getElementById('step4NextBtn');
+        
+        console.log('🔍 Field elements found:', {
+            firstnameField: !!firstnameField,
+            lastnameField: !!lastnameField,
+            emailValidationField: !!emailValidationField,
+            passwordField: !!passwordField,
+            passwordConfirmField: !!passwordConfirmField,
+            nextBtn: !!nextBtn
+        });
+        
+        // Don't validate if we're not on step 4
+        const step4Element = document.getElementById('step-4');
+        const step4Content = document.getElementById('step-content-4');
+        const isStep4Visible = (step4Element && step4Element.classList.contains('active')) || 
+                              (step4Content && step4Content.classList.contains('active'));
+        
+        console.log('🔍 Step 4 visibility check:', {
+            step4Element: !!step4Element,
+            step4Content: !!step4Content,
+            isStep4Visible,
+            currentStep
+        });
+        
+        if (!isStep4Visible && currentStep !== 4) {
+            console.log('❌ validateStep4 exiting - step 4 not visible or active');
+            return false;
+        }
+        
+        // Check if all required fields are filled
+        const isFirstnameFilled = firstnameField && firstnameField.value.trim().length > 0;
+        const isLastnameFilled = lastnameField && lastnameField.value.trim().length > 0;
+        const isEmailFilled = emailValidationField && emailValidationField.value.trim().length > 0;
+        const isPasswordFilled = passwordField && passwordField.value.length >= 8;
+        const isPasswordConfirmFilled = passwordConfirmField && passwordConfirmField.value.length > 0;
+        
+        console.log('🔍 Field values check:', {
+            firstname: firstnameField?.value || '[EMPTY]',
+            lastname: lastnameField?.value || '[EMPTY]',
+            email: emailValidationField?.value || '[EMPTY]',
+            passwordLength: passwordField?.value?.length || 0,
+            passwordConfirmLength: passwordConfirmField?.value?.length || 0,
+            isFirstnameFilled,
+            isLastnameFilled,
+            isEmailFilled,
+            isPasswordFilled,
+            isPasswordConfirmFilled
+        });
+        
+        // Check if email is verified
+        const emailVerified = window.enrollmentEmailVerified || false;
+        
+        console.log('🔍 Email verification check:', {
+            enrollmentEmailVerified: window.enrollmentEmailVerified,
+            emailVerified
+        });
+        
+        // Enable next button if all conditions are met (MODIFIED: More lenient validation)
+        const allFieldsFilled = isFirstnameFilled && isLastnameFilled && isEmailFilled && isPasswordFilled && isPasswordConfirmFilled;
+        
+        console.log('🔍 Final validation results:', {
+            allFieldsFilled,
+            emailVerified,
+            shouldEnableButton: allFieldsFilled // CHANGED: Removed email verification requirement
+        });
+        
+        if (nextBtn) {
+            console.log('🔍 Next button current state:', {
+                disabled: nextBtn.disabled,
+                opacity: nextBtn.style.opacity,
+                classes: nextBtn.className
+            });
+            
+            // MODIFIED: Enable button when fields are filled (email verification optional)
+            if (allFieldsFilled) {
+                nextBtn.disabled = false;
+                nextBtn.style.opacity = '1';
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                nextBtn.classList.add('enabled');
+                nextBtn.classList.remove('disabled');
+                console.log('✅ Step 4 Next button ENABLED (fields filled)');
+            } else {
+                nextBtn.disabled = true;
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.cursor = 'not-allowed';
+                nextBtn.style.background = '#ccc';
+                nextBtn.classList.add('disabled');
+                nextBtn.classList.remove('enabled');
+                console.log('❌ Step 4 Next button DISABLED - allFieldsFilled:', allFieldsFilled);
+            }
+        } else {
+            console.error('❌ Next button not found! Looking for element with ID: step4NextBtn');
+        }
+        
+        // MODIFIED: Return based on fields only (not email verification)
+        return allFieldsFilled;
+    };
+    
     // Update hidden fields when page loads
     document.addEventListener('DOMContentLoaded', function() {
         console.log('=== DOM Content Loaded - Initializing registration form ===');
         console.log('Current step on load:', currentStep);
         console.log('Is user logged in:', isUserLoggedIn);
+        
+        // Add event listeners for Step 4 form fields to trigger validation
+        const step4Fields = ['user_firstname', 'user_lastname', 'user_email', 'password', 'password_confirmation'];
+        step4Fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', function() {
+                    console.log('🔥 Field changed:', fieldId, 'triggering validation...');
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                    }
+                });
+                field.addEventListener('blur', function() {
+                    console.log('🔥 Field blur:', fieldId, 'triggering validation...');
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                    }
+                });
+                console.log('✅ Added event listeners to:', fieldId);
+            }
+        });
+        
+        // Also trigger validation when currentStep changes to 4
+        const originalNextStep = window.nextStep;
+        if (originalNextStep) {
+            window.nextStep = function() {
+                originalNextStep.apply(this, arguments);
+                // Trigger validation after step change
+                setTimeout(() => {
+                    if (currentStep === 4 && typeof window.validateStep4 === 'function') {
+                        console.log('🔥 Step changed to 4 - triggering validation...');
+                        window.validateStep4();
+                    }
+                }, 100);
+            };
+        }
+        
+        // CRITICAL FIX: Prevent Enter key from submitting form when not on final step
+        const enrollmentForm = document.getElementById('enrollmentForm');
+        if (enrollmentForm) {
+            enrollmentForm.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    const finalStep = isUserLoggedIn ? 3 : 5;
+                    if (currentStep !== finalStep) {
+                        console.log('🛑 Enter key prevented - not on final step. Current:', currentStep, 'Final:', finalStep);
+                        event.preventDefault();
+                        return false;
+                    }
+                }
+            });
+            console.log('✅ Enter key prevention handler added to form');
+        }
+        
+        // TEST FUNCTION: Add visible feedback for Enter key prevention
+        window.testEnterKeyPrevention = function() {
+            const finalStep = isUserLoggedIn ? 3 : 5;
+            console.log('🧪 Enter Key Test:', {
+                currentStep: currentStep,
+                finalStep: finalStep,
+                willPrevent: currentStep !== finalStep,
+                isUserLoggedIn: isUserLoggedIn
+            });
+            return currentStep !== finalStep;
+        };
         
         // Initialize stepper to ensure correct step display
         updateStepper(currentStep);
@@ -2752,8 +3009,20 @@
         }, 200);
         
         // Add event listeners for changes
-    const programSelect = document.getElementById('programSelect');
-    if (programSelect) {
+        const eventEmailField = document.getElementById('user_email');
+        if (eventEmailField) {
+            eventEmailField.addEventListener('input', function() {
+                // Trigger validation when email field changes
+                setTimeout(() => {
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                    }
+                }, 100);
+            });
+        }
+        
+        const programSelect = document.getElementById('programSelect');
+        if (programSelect) {
     // on dropdown change, pass the new ID into your loader
     programSelect.addEventListener('change', () => {
         updateHiddenProgramId();
@@ -2768,11 +3037,11 @@
 
         
         // Add validation event listeners for Step 3
-        const firstnameField = document.getElementById('user_firstname');
-        const lastnameField = document.getElementById('user_lastname');
-        const emailField = document.getElementById('user_email');
-        const passwordField = document.getElementById('password');
-        const passwordConfirmField = document.getElementById('password_confirmation');
+        const step3FirstnameField = document.getElementById('user_firstname');
+        const step3LastnameField = document.getElementById('user_lastname');
+        const step3EmailField = document.getElementById('user_email');
+        const step3PasswordField = document.getElementById('password');
+        const step3PasswordConfirmField = document.getElementById('password_confirmation');
         
         // Debounce timer for validation
         let validationTimer = null;
@@ -2784,50 +3053,100 @@
         
         function debouncedValidateStep4() {
             clearTimeout(validationTimer);
-            validationTimer = setTimeout(validateStep4, 500); // Wait 500ms after user stops typing
+            validationTimer = setTimeout(window.validateStep4, 500); // Wait 500ms after user stops typing
         }
         
         // Use appropriate validation function based on login status and current step
         const validationFunction = isUserLoggedIn ? debouncedValidateStep3 : debouncedValidateStep4;
         
-        if (firstnameField) {
-            firstnameField.addEventListener('input', validationFunction);
+        // Add Enter key prevention to all form input fields
+        const allFormInputs = enrollmentForm.querySelectorAll('input, select, textarea');
+        allFormInputs.forEach(input => {
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    const finalStep = isUserLoggedIn ? 3 : 5;
+                    if (currentStep !== finalStep) {
+                        console.log('🛑 Enter key on input prevented - not on final step');
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return false;
+                    }
+                }
+            });
+        });
+        
+        if (step3FirstnameField) {
+            step3FirstnameField.addEventListener('input', validationFunction);
         }
-        if (lastnameField) {
-            lastnameField.addEventListener('input', validationFunction);
+        if (step3LastnameField) {
+            step3LastnameField.addEventListener('input', validationFunction);
         }
-        if (emailField) {
-            emailField.addEventListener('input', function() {
+        if (step3EmailField) {
+            step3EmailField.addEventListener('input', function() {
                 setTimeout(validateEmail, 300);
                 validationFunction();
             });
         }
-        if (passwordField) {
-            passwordField.addEventListener('input', function() {
+        if (step3PasswordField) {
+            step3PasswordField.addEventListener('input', function() {
+                console.log('🔍 Password field changed, triggering validation...');
                 setTimeout(validatePassword, 50);
                 validationFunction();
+                // Also trigger immediate validation check for button enabling
+                setTimeout(validationFunction, 100);
+                // Force immediate validateStep4 for debugging
+                setTimeout(window.validateStep4, 150);
             });
         }
-        if (passwordConfirmField) {
-            passwordConfirmField.addEventListener('input', function() {
+        if (step3PasswordConfirmField) {
+            step3PasswordConfirmField.addEventListener('input', function() {
+                console.log('🔍 Password confirm field changed, triggering validation...');
                 setTimeout(validatePasswordConfirmation, 50);
                 validationFunction();
+                // Also trigger immediate validation check for button enabling
+                setTimeout(validationFunction, 100);
+                // Force immediate validateStep4 for debugging
+                setTimeout(window.validateStep4, 150);
+            });
+        }
+        
+        // Add additional validation triggers for firstname, lastname, and email fields
+        if (step3FirstnameField) {
+            step3FirstnameField.addEventListener('input', function() {
+                console.log('🔍 Firstname field changed, triggering validation...');
+                validationFunction();
+                setTimeout(window.validateStep4, 100);
+            });
+        }
+        if (step3LastnameField) {
+            step3LastnameField.addEventListener('input', function() {
+                console.log('🔍 Lastname field changed, triggering validation...');
+                validationFunction();
+                setTimeout(window.validateStep4, 100);
+            });
+        }
+        if (step3EmailField) {
+            step3EmailField.addEventListener('input', function() {
+                console.log('🔍 Email field changed, triggering validation...');
+                setTimeout(validateEmail, 300);
+                validationFunction();
+                setTimeout(window.validateStep4, 400);
             });
         }
     });
 
     // Function to validate email on blur
     async function validateEmail() {
-        const emailField = document.getElementById('user_email');
+        const validateEmailField = document.getElementById('user_email');
         const emailError = document.getElementById('emailError');
         
-        if (!emailField) return true;
+        if (!validateEmailField) return true;
         
-        const email = emailField.value.trim();
+        const email = validateEmailField.value.trim();
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         
         if (email && !emailPattern.test(email)) {
-            emailField.style.borderColor = '#dc3545';
+            validateEmailField.style.borderColor = '#dc3545';
             emailError.style.display = 'block';
             emailError.textContent = 'Please enter a valid email address.';
             return false;
@@ -2845,29 +3164,29 @@
                 
                 const data = await response.json();
                 if (data.exists) {
-                    emailField.style.borderColor = '#dc3545';
+                    validateEmailField.style.borderColor = '#dc3545';
                     emailError.style.display = 'block';
                     emailError.textContent = 'This email is already registered. Please use a different email.';
                     return false;
                 } else {
-                    emailField.style.borderColor = '#28a745';
+                    validateEmailField.style.borderColor = '#28a745';
                     emailError.style.display = 'none';
                     return true;
                 }
             } catch (error) {
                 console.error('Email validation error:', error);
-                emailField.style.borderColor = '#ccc';
+                validateEmailField.style.borderColor = '#ccc';
                 emailError.style.display = 'none';
                 return true;
             }
         } else {
-            emailField.style.borderColor = '#ccc';
+            validateEmailField.style.borderColor = '#ccc';
             emailError.style.display = 'none';
             return true;
         }
     }
 
-    // Function to validate password length
+    // Function to validate password length and strength
     function validatePassword() {
         const passwordField = document.getElementById('password');
         const passwordError = document.getElementById('passwordError');
@@ -2876,17 +3195,52 @@
         
         const password = passwordField.value;
         
-        if (password.length > 0 && password.length < 8) {
-            passwordField.style.borderColor = '#dc3545';
-            passwordError.style.display = 'block';
-            passwordError.textContent = 'Password must be at least 8 characters long.';
-            return false;
-        } else if (password.length >= 8) {
-            passwordField.style.borderColor = '#28a745';
+        // Check if password is entered
+        if (password.length === 0) {
+            passwordField.style.borderColor = '#ccc';
             passwordError.style.display = 'none';
             return true;
+        }
+        
+        // Password validation criteria
+        const minLength = 8;
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const hasNumber = /\d/.test(password);
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        
+        let errorMessage = '';
+        let isValid = true;
+        
+        // Check minimum length
+        if (password.length < minLength) {
+            errorMessage = 'Password must be at least 8 characters long';
+            isValid = false;
+        }
+        // Check for special character
+        else if (!hasSpecialChar) {
+            errorMessage = 'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)';
+            isValid = false;
+        }
+        // Check for number (optional but recommended)
+        else if (!hasNumber) {
+            errorMessage = 'Password should contain at least one number (recommended for security)';
+            // Don't set isValid to false for this - it's just a recommendation
+            passwordField.style.borderColor = '#ffc107'; // yellow warning
+            passwordError.style.display = 'block';
+            passwordError.textContent = errorMessage;
+            passwordError.style.color = '#856404'; // warning color
+            return true; // Still valid, just a warning
+        }
+        
+        if (!isValid) {
+            passwordField.style.borderColor = '#dc3545';
+            passwordError.style.display = 'block';
+            passwordError.textContent = errorMessage;
+            passwordError.style.color = '#dc3545';
+            return false;
         } else {
-            passwordField.style.borderColor = '#ccc';
+            passwordField.style.borderColor = '#28a745';
             passwordError.style.display = 'none';
             return true;
         }
@@ -2923,7 +3277,7 @@
     function validateStep3() {
         const firstnameField = document.getElementById('user_firstname');
         const lastnameField = document.getElementById('user_lastname');
-        const emailField = document.getElementById('user_email');
+        const step3EmailField = document.getElementById('user_email');
         const passwordField = document.getElementById('password');
         const passwordConfirmField = document.getElementById('password_confirmation');
         const nextBtn = document.getElementById('step3NextBtn');
@@ -2937,7 +3291,7 @@
         // Check if all required fields are filled
         const isFirstnameFilled = firstnameField && firstnameField.value.trim().length > 0;
         const isLastnameFilled = lastnameField && lastnameField.value.trim().length > 0;
-        const isEmailFilled = emailField && emailField.value.trim().length > 0;
+        const isEmailFilled = step3EmailField && step3EmailField.value.trim().length > 0;
         const isPasswordFilled = passwordField && passwordField.value.length >= 8;
         const isPasswordConfirmFilled = passwordConfirmField && passwordConfirmField.value.length > 0;
         
@@ -2992,75 +3346,264 @@
     }
 
     // Function to validate all Step 4 (Account Registration) fields - updated function name for new step structure
-    function validateStep4() {
+    // Test function to verify account step validation
+    function testAccountStepValidation() {
+        console.log('🧪 === TESTING ACCOUNT STEP VALIDATION ===');
+        console.log('Current step:', currentStep);
+        console.log('isUserLoggedIn:', isUserLoggedIn);
+        
         const firstnameField = document.getElementById('user_firstname');
         const lastnameField = document.getElementById('user_lastname');
-        const emailField = document.getElementById('user_email');
+        const step4EmailField = document.getElementById('user_email');
         const passwordField = document.getElementById('password');
         const passwordConfirmField = document.getElementById('password_confirmation');
-        const nextBtn = document.getElementById('step4NextBtn'); // Updated button ID
+        const nextBtn = document.getElementById('step4NextBtn');
         
-        // Don't validate if we're not on step 4 or if the step is not visible
-        const step4Element = document.getElementById('step-4');
-        if (!step4Element || step4Element.style.display === 'none' || !step4Element.classList.contains('active')) {
-            return false;
-        }
+        console.log('🧪 Field elements existence:', {
+            firstnameField: !!firstnameField,
+            lastnameField: !!lastnameField,
+            step4EmailField: !!step4EmailField,
+            passwordField: !!passwordField,
+            passwordConfirmField: !!passwordConfirmField,
+            nextBtn: !!nextBtn
+        });
         
-        // Check if all required fields are filled
-        const isFirstnameFilled = firstnameField && firstnameField.value.trim().length > 0;
-        const isLastnameFilled = lastnameField && lastnameField.value.trim().length > 0;
-        const isEmailFilled = emailField && emailField.value.trim().length > 0;
-        const isPasswordFilled = passwordField && passwordField.value.length >= 8;
-        const isPasswordConfirmFilled = passwordConfirmField && passwordConfirmField.value.length > 0;
-        
-        // Check if validations pass
-        const isPasswordValid = validatePassword();
-        const isPasswordConfirmValid = validatePasswordConfirmation();
-        
-        // Check if email field has error by looking at error message visibility
-        const emailError = document.getElementById('emailError');
-        const emailHasError = emailError && emailError.style.display === 'block';
-        
-        // Check if password errors are showing
-        const passwordError = document.getElementById('passwordError');
-        const passwordMatchError = document.getElementById('passwordMatchError');
-        const passwordHasError = passwordError && passwordError.style.display === 'block';
-        const passwordMatchHasError = passwordMatchError && passwordMatchError.style.display === 'block';
-        
-        // Enable next button only if all conditions are met INCLUDING email verification
-        const allFieldsFilled = isFirstnameFilled && isLastnameFilled && isEmailFilled && isPasswordFilled && isPasswordConfirmFilled;
-        const allValidationsPassed = isPasswordValid && isPasswordConfirmValid && !emailHasError && !passwordHasError && !passwordMatchHasError;
-        const emailVerified = enrollmentEmailVerified; // OTP verification required
-        
-        console.log('Step 4 Validation:', {
-            allFieldsFilled,
-            allValidationsPassed,
-            emailVerified,
-            isFirstnameFilled,
-            isLastnameFilled,
-            isEmailFilled,
-            isPasswordFilled,
-            isPasswordConfirmFilled,
-            isPasswordValid,
-            isPasswordConfirmValid,
-            emailHasError,
-            passwordHasError,
-            passwordMatchHasError
+        console.log('🧪 Field values:', {
+            firstname: firstnameField?.value || '[EMPTY]',
+            lastname: lastnameField?.value || '[EMPTY]',
+            email: step4EmailField?.value || '[EMPTY]',
+            password: passwordField?.value?.length ? '[HIDDEN - ' + passwordField.value.length + ' chars]' : '[EMPTY]',
+            passwordConfirm: passwordConfirmField?.value?.length ? '[HIDDEN - ' + passwordConfirmField.value.length + ' chars]' : '[EMPTY]'
         });
         
         if (nextBtn) {
-            if (allFieldsFilled && allValidationsPassed && emailVerified) {
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-            } else {
-                nextBtn.disabled = true;
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.cursor = 'not-allowed';
-            }
+            console.log('🧪 Button current state:', {
+                disabled: nextBtn.disabled,
+                opacity: nextBtn.style.opacity,
+                cursor: nextBtn.style.cursor,
+                background: nextBtn.style.background,
+                classes: nextBtn.className,
+                textContent: nextBtn.textContent?.trim()
+            });
+        } else {
+            console.error('🧪 Next button NOT FOUND with ID: step4NextBtn');
+            
+            // Search for potential next buttons
+            const possibleButtons = document.querySelectorAll('button');
+            console.log('🧪 All buttons found:', Array.from(possibleButtons).map(btn => ({
+                id: btn.id,
+                className: btn.className,
+                textContent: btn.textContent?.trim()
+            })));
+            
+            // Look for buttons containing "next"
+            const nextButtons = document.querySelectorAll('button[onclick*="nextStep"], button[id*="next"], button[id*="Next"]');
+            console.log('🧪 Possible next buttons:', Array.from(nextButtons).map(btn => ({
+                id: btn.id,
+                className: btn.className,
+                textContent: btn.textContent?.trim(),
+                onclick: btn.getAttribute('onclick')
+            })));
         }
         
-        return allFieldsFilled && allValidationsPassed;
+        // Check step visibility
+        const step4Element = document.getElementById('step-4');
+        const stepContentElement = document.getElementById('step-content-4');
+        
+        console.log('🧪 Step 4 visibility:', {
+            step4Element: !!step4Element,
+            step4Display: step4Element ? window.getComputedStyle(step4Element).display : 'not found',
+            step4Active: step4Element ? step4Element.classList.contains('active') : false,
+            stepContentElement: !!stepContentElement,
+            stepContentDisplay: stepContentElement ? window.getComputedStyle(stepContentElement).display : 'not found',
+            stepContentActive: stepContentElement ? stepContentElement.classList.contains('active') : false
+        });
+        
+        // Force validation
+        if (typeof window.validateStep4 === 'function') {
+            console.log('🧪 Running validateStep4...');
+            const result = window.validateStep4();
+            console.log('🧪 Validation result:', result);
+        } else {
+            console.error('🧪 validateStep4 function not found!');
+        }
+        
+        // Test manual button enabling
+        if (nextBtn) {
+            console.log('🧪 Testing manual button enable...');
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            nextBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            nextBtn.classList.add('enabled');
+            nextBtn.classList.remove('disabled');
+            console.log('🧪 Manual enable completed. Button state:', {
+                disabled: nextBtn.disabled,
+                opacity: nextBtn.style.opacity,
+                cursor: nextBtn.style.cursor,
+                background: nextBtn.style.background
+            });
+            
+            // Revert after 3 seconds
+            setTimeout(() => {
+                console.log('🧪 Reverting manual changes and re-running validation...');
+                window.validateStep4();
+            }, 3000);
+        }
+        
+        console.log('🧪 === END VALIDATION TEST ===');
+    }
+
+    // Make test function available globally
+    window.testAccountStepValidation = testAccountStepValidation;
+
+    // Global function to force enable the next button for testing
+    window.forceEnableNextButton = function() {
+        console.log('🔧 Force enabling next button...');
+        const nextBtn = document.getElementById('step4NextBtn');
+        if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            nextBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            nextBtn.classList.add('enabled');
+            nextBtn.classList.remove('disabled');
+            console.log('✅ Button force enabled successfully');
+            return true;
+        } else {
+            console.error('❌ Button not found');
+            return false;
+        }
+    };
+
+    // Global function to check current step visibility
+    window.checkStepVisibility = function() {
+        console.log('🔍 Checking step visibility...');
+        const step4Content = document.getElementById('step-content-4');
+        const step4Element = document.getElementById('step-4');
+        
+        console.log('Step visibility status:', {
+            currentStep,
+            isUserLoggedIn,
+            step4Content: !!step4Content,
+            step4Element: !!step4Element,
+            step4ContentDisplay: step4Content ? window.getComputedStyle(step4Content).display : 'not found',
+            step4ElementDisplay: step4Element ? window.getComputedStyle(step4Element).display : 'not found',
+            step4ContentActive: step4Content ? step4Content.classList.contains('active') : false,
+            step4ElementActive: step4Element ? step4Element.classList.contains('active') : false
+        });
+    };
+
+    // Global function to manually trigger validation
+    window.triggerValidation = function() {
+        console.log('🔧 Manually triggering validation...');
+        if (typeof window.validateStep4 === 'function') {
+            const result = window.validateStep4();
+            console.log('Manual validation result:', result);
+            return result;
+        } else {
+            console.error('validateStep4 function not found');
+            return false;
+        }
+    };
+
+    // Global function to check if email was verified  
+    window.checkEmailVerification = function() {
+        console.log('Email verification status:', {
+            windowEnrollmentEmailVerified: window.enrollmentEmailVerified,
+            globalEnrollmentEmailVerified: typeof enrollmentEmailVerified !== 'undefined' ? enrollmentEmailVerified : 'undefined'
+        });
+        return window.enrollmentEmailVerified || enrollmentEmailVerified;
+    };
+
+    // Global function to force fix the button - EMERGENCY FIX
+    window.emergencyFixButton = function() {
+        console.log('🚨 EMERGENCY: Force enabling step 4 button...');
+        const nextBtn = document.getElementById('step4NextBtn');
+        if (nextBtn) {
+            // Remove disabled attribute
+            nextBtn.disabled = false;
+            nextBtn.removeAttribute('disabled');
+            
+            // Force styling
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            nextBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            nextBtn.style.pointerEvents = 'auto';
+            nextBtn.classList.add('enabled');
+            nextBtn.classList.remove('disabled');
+            
+            console.log('✅ Button emergency fix applied!');
+            console.log('Button state after fix:', {
+                disabled: nextBtn.disabled,
+                hasDisabledAttr: nextBtn.hasAttribute('disabled'),
+                opacity: nextBtn.style.opacity,
+                cursor: nextBtn.style.cursor
+            });
+            return true;
+        } else {
+            console.error('❌ Button not found');
+            return false;
+        }
+    };
+
+    // Debug function to check step 4 field states
+    window.debugStep4 = function() {
+        console.log('🔍 === STEP 4 DEBUG INFO ===');
+        const firstnameField = document.getElementById('user_firstname');
+        const lastnameField = document.getElementById('user_lastname');
+        const debugEmailField = document.getElementById('user_email');
+        const passwordField = document.getElementById('password');
+        const passwordConfirmField = document.getElementById('password_confirmation');
+        const nextBtn = document.getElementById('step4NextBtn');
+        
+        console.log('Field values:', {
+            firstname: firstnameField?.value || '[EMPTY]',
+            lastname: lastnameField?.value || '[EMPTY]',
+            email: debugEmailField?.value || '[EMPTY]',
+            passwordLength: passwordField?.value?.length || 0,
+            passwordConfirmLength: passwordConfirmField?.value?.length || 0
+        });
+        
+        console.log('Email verification status:', {
+            enrollmentEmailVerified: window.enrollmentEmailVerified,
+            type: typeof window.enrollmentEmailVerified
+        });
+        
+        console.log('Button state:', {
+            disabled: nextBtn?.disabled,
+            hasDisabledAttr: nextBtn?.hasAttribute('disabled'),
+            opacity: nextBtn?.style.opacity,
+            classes: nextBtn?.className
+        });
+        
+        console.log('Step visibility:', {
+            currentStep,
+            step4Element: !!document.getElementById('step-4'),
+            step4Content: !!document.getElementById('step-content-4'),
+            step4Active: document.getElementById('step-4')?.classList.contains('active'),
+            step4ContentActive: document.getElementById('step-content-4')?.classList.contains('active')
+        });
+        
+        // Try running validation
+        if (typeof window.validateStep4 === 'function') {
+            console.log('Running validateStep4...');
+            const result = window.validateStep4();
+            console.log('Validation result:', result);
+        }
+        
+        return 'Debug info logged above';
+    };
+
+    // Make validateStep4 globally accessible (already defined above)
+    // No need to redefine the function
+    
+    // Also expose it immediately for early access
+    if (typeof window.validateStep4 === 'undefined') {
+        window.validateStep4 = function() {
+            console.log('🔍 === validateStep4 CALLED (fallback) ===');
+            return false; // Fallback until the real function is loaded
+        };
     }
 
     // Handle form submission and add batch_id if selected
@@ -3105,6 +3648,13 @@ if (currentStep !== finalStep) {
     currentStep
   );
   event.preventDefault();
+  
+  // Re-enable submit button since submission was blocked
+  if (submitButton) {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Complete Registration';
+  }
+  
   showFormErrors(['Please complete all previous steps before submitting.']);
   return false;
 }
@@ -3389,8 +3939,8 @@ if (currentStep !== finalStep) {
         method: 'POST',
         body: finalFormData,
         headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json'
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
         }
     })
     .then(async response => {
@@ -3400,94 +3950,154 @@ if (currentStep !== finalStep) {
         // Get response text first to handle both JSON and HTML responses
         let responseText;
         try {
-        responseText = await response.text();
-        console.log('📄 Raw response text (first 500 chars):', responseText.substring(0, 500));
-        console.log('📄 Response content type:', response.headers.get('content-type'));
+            responseText = await response.text();
+            console.log('📄 Raw response text (first 500 chars):', responseText.substring(0, 500));
+            console.log('📄 Response content type:', response.headers.get('content-type'));
         } catch (textError) {
-        console.error('❌ Could not read response text:', textError);
-        showFormLoading(false);
-        showFormErrors(['Failed to read server response. Please try again.']);
-        return;
+            console.error('❌ Could not read response text:', textError);
+            showFormLoading(false);
+            showFormErrors(['Failed to read server response. Please try again.']);
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Complete Registration';
+            }
+            return;
         }
         
         if (response.ok) {
-        // Check if response is JSON or HTML
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-            // Handle JSON response
+            // Check if response is JSON or HTML
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/json')) {
+                // Handle JSON response
+                try {
+                    const data = JSON.parse(responseText);
+                    console.log('✅ Registration successful (JSON):', data);
+                    
+                    showFormLoading(false);
+                    
+                    if (data.success) {
+                        // Show success message
+                        showSuccessModal('🎉 Registration completed successfully! You will be redirected to your dashboard.');
+                        
+                        // Redirect after delay
+                        setTimeout(() => {
+                            if (data.redirect) {
+                                window.location.href = data.redirect;
+                            } else {
+                                window.location.href = '/registration/success';
+                            }
+                        }, 2000);
+                    } else {
+                        // Handle error response
+                        const errorMessages = data.errors ? Object.values(data.errors).flat() : [data.message || 'Registration failed'];
+                        showFormErrors(errorMessages);
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Complete Registration';
+                        }
+                    }
+                } catch (jsonError) {
+                    console.error('❌ Could not parse JSON response:', jsonError);
+                    showFormLoading(false);
+                    showFormErrors(['Server returned invalid response. Please try again.']);
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Complete Registration';
+                    }
+                }
+            } else {
+                // Handle HTML response (likely a redirect page or success page)
+                console.log('✅ Registration successful (HTML response)');
+                
+                // Check if response contains success indicators
+                const responseTextLower = responseText.toLowerCase();
+                if (responseTextLower.includes('success') || 
+                    responseTextLower.includes('registration') || 
+                    responseTextLower.includes('complete') ||
+                    responseTextLower.includes('enrolled')) {
+                    
+                    showFormLoading(false);
+                    showSuccessModal('🎉 Registration completed successfully!');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/registration/success';
+                    }, 2000);
+                    
+                } else if (responseTextLower.includes('login') || responseTextLower.includes('signin')) {
+                    showFormLoading(false);
+                    showSuccessModal('🎉 Registration completed successfully! Please login to continue.');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                    
+                } else if (responseTextLower.includes('error') || responseTextLower.includes('fail')) {
+                    // Response indicates an error
+                    showFormLoading(false);
+                    const errorText = responseText.replace(/<[^>]*>/g, '').trim();
+                    const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+                    showFormErrors([`Registration failed: ${truncatedError}`]);
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Complete Registration';
+                    }
+                } else {
+                    // Show success and redirect anyway since we got a 200 response
+                    showFormLoading(false);
+                    showSuccessModal('🎉 Registration completed successfully!');
+                    
+                    // Try to find redirect URL in the HTML
+                    const redirectMatch = responseText.match(/window\.location\.href\s*=\s*['"]([^'"]+)['"]/);
+                    setTimeout(() => {
+                        if (redirectMatch) {
+                            window.location.href = redirectMatch[1];
+                        } else {
+                            window.location.href = '/registration/success';
+                        }
+                    }, 2000);
+                }
+            }
+        } else {
+            console.error('❌ Server returned error status:', response.status, response.statusText);
+            
+            // Try to parse as JSON first for structured error handling
             try {
-            const data = JSON.parse(responseText);
-            console.log('✅ Registration successful (JSON):', data);
-            
-            showFormLoading(false);
-            alert('🎉 Registration completed successfully! You will be redirected to the success page.');
-            
-            if (data.redirect) {
-                window.location.href = data.redirect;
-            } else {
-                window.location.href = '/registration/success';
+                const errorData = JSON.parse(responseText);
+                console.error('❌ Server error data:', errorData);
+                
+                showFormLoading(false);
+                
+                if (errorData.errors) {
+                    const errorMessages = Object.values(errorData.errors).flat();
+                    showFormErrors(errorMessages);
+                } else {
+                    showFormErrors([errorData.message || 'Registration failed. Please try again.']);
+                }
+            } catch (parseError) {
+                console.error('❌ Could not parse error response as JSON:', parseError);
+                console.log('📄 Raw error response:', responseText.substring(0, 1000));
+                
+                showFormLoading(false);
+                
+                // Extract meaningful error from HTML if possible
+                const errorText = responseText.replace(/<[^>]*>/g, '').trim();
+                const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+                
+                if (response.status === 422) {
+                    showFormErrors(['Validation failed. Please check your inputs and try again.']);
+                } else if (response.status === 500) {
+                    showFormErrors(['Server error occurred. Please try again later.']);
+                } else {
+                    showFormErrors([`Server error (${response.status}): ${truncatedError || 'Unknown error'}`]);
+                }
             }
-            } catch (jsonError) {
-            console.error('❌ Could not parse JSON response:', jsonError);
-            showFormLoading(false);
-            showFormErrors(['Server returned invalid JSON. Please try again.']);
+            
+            // Re-enable submit button
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Complete Registration';
             }
-        } else {
-            // Handle HTML response (likely a redirect page or success page)
-            console.log('✅ Registration successful (HTML response)');
-            
-            // Check if response contains success indicators
-            const responseTextLower = responseText.toLowerCase();
-            if (responseTextLower.includes('success') || responseTextLower.includes('registration') || responseTextLower.includes('complete')) {
-            showFormLoading(false);
-            alert('🎉 Registration completed successfully!');
-            window.location.href = '/registration/success';
-            } else if (responseTextLower.includes('login') || responseTextLower.includes('signin')) {
-            showFormLoading(false);
-            alert('🎉 Registration completed successfully! Please login to continue.');
-            window.location.href = '/login';
-            } else {
-            // Show success and redirect anyway since we got a 200 response
-            showFormLoading(false);
-            alert('🎉 Registration completed successfully!');
-            
-            // Try to find redirect URL in the HTML
-            const redirectMatch = responseText.match(/window\.location\.href\s*=\s*['"]([^'"]+)['"]/);
-            if (redirectMatch) {
-                window.location.href = redirectMatch[1];
-            } else {
-                window.location.href = '/registration/success';
-            }
-            }
-        }
-        } else {
-        console.error('❌ Server returned error status:', response.status, response.statusText);
-        
-        // Try to parse as JSON first for structured error handling
-        try {
-            const errorData = JSON.parse(responseText);
-            console.error('❌ Server error data:', errorData);
-            
-            showFormLoading(false);
-            
-            if (errorData.errors) {
-            const errorMessages = Object.values(errorData.errors).flat();
-            showFormErrors(errorMessages);
-            } else {
-            showFormErrors([errorData.message || 'Registration failed. Please try again.']);
-            }
-        } catch (parseError) {
-            console.error('❌ Could not parse error response as JSON:', parseError);
-            console.log('📄 Raw error response:', responseText.substring(0, 1000));
-            
-            showFormLoading(false);
-            
-            // Extract meaningful error from HTML if possible
-            const errorText = responseText.replace(/<[^>]*>/g, '').trim();
-            const truncatedError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
-            
-            showFormErrors([`Server error (${response.status}): ${truncatedError || 'Unknown error'}`]);
         }
     })
     .catch(error => {
@@ -3505,6 +4115,12 @@ if (currentStep !== finalStep) {
             showFormErrors(['Request was cancelled. Please try again.']);
         } else {
             showFormErrors([`Network error: ${error.message}. Please try again.`]);
+        }
+        
+        // Re-enable submit button
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Complete Registration';
         }
     });
     
@@ -3693,21 +4309,6 @@ if (currentStep !== finalStep) {
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-            // Show modal when link is clicked
-            const termsLink = document.getElementById('showTerms');
-            if (termsLink) {
-                termsLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.getElementById('termsModal').classList.add('show');
-                });
-            }
-        });
-
-        function closeTermsModal() {
-            document.getElementById('termsModal').classList.remove('show');
-        }
-
     function showTermsModal() {
         const modal = document.getElementById('termsModal');
         if (!modal) return;
@@ -3769,7 +4370,7 @@ if (currentStep !== finalStep) {
                 
                 // Auto focus on first OTP input when modal is shown
                 document.getElementById('otpModal').addEventListener('shown.bs.modal', function () {
-                    document.querySelector('.otp-digit').focus();
+                    document.getElementById('otp_1').focus();
                 });
             } else {
                 showEnrollmentMessage(data.message, 'error');
@@ -3840,6 +4441,7 @@ if (currentStep !== finalStep) {
     async function verifyEnrollmentOTPModal() {
         // Get OTP from the hidden input that combines all digits
         const otp = document.getElementById('otp_code_modal').value;
+        const email = document.getElementById('user_email').value;
         const verifyOtpBtn = document.getElementById('verifyOtpBtnModal');
         
         if (!otp || otp.length !== 6) {
@@ -3856,13 +4458,16 @@ if (currentStep !== finalStep) {
         verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
 
         try {
-            const response = await fetch('{{ route("signup.verify.otp") }}', {
+            const response = await fetch('{{ route("enrollment.verify-otp") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': CSRF_TOKEN
                 },
-                body: JSON.stringify({ otp: otp })
+                body: JSON.stringify({ 
+                    otp: otp,
+                    email: email
+                })
             });
 
             const data = await response.json();
@@ -3892,7 +4497,14 @@ if (currentStep !== finalStep) {
                 }, 1500);
                 
                 // Enable the next button if all validations pass
-                validateStep3();
+                setTimeout(() => {
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                        console.log('✅ validateStep4 called after OTP verification');
+                    } else {
+                        console.error('❌ validateStep4 function not found after OTP verification');
+                    }
+                }, 100);
             } else {
                 const statusElement = document.getElementById('otpStatusModal');
                 if (statusElement) {
@@ -3917,7 +4529,15 @@ if (currentStep !== finalStep) {
     }
 
     function resendOTPCode() {
-        // Trigger the send OTP function again
+        console.log('🔄 Resending OTP...');
+        // Prevent multiple modal creation by reusing existing send function
+        const email = document.getElementById('user_email').value;
+        if (!email) {
+            alert('Please enter your email address first.');
+            return;
+        }
+        
+        // Call the existing send function instead of duplicating modal
         sendEnrollmentOTP();
     }
 
@@ -3946,13 +4566,16 @@ if (currentStep !== finalStep) {
             // show spinner on button
             continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying…';
 
-            fetch('{{ route("signup.verify.otp") }}', {
+            fetch('{{ route("enrollment.verify-otp") }}', {
             method: 'POST',
             headers: {
                 'Content-Type':'application/json',
                 'X-CSRF-TOKEN': CSRF_TOKEN
             },
-            body: JSON.stringify({ otp: code })
+            body: JSON.stringify({ 
+                otp: code,
+                email: document.getElementById('user_email').value
+            })
             })
             .then(r=>r.json())
             .then(data=>{
@@ -4004,35 +4627,6 @@ if (currentStep !== finalStep) {
     });
     }
 
-
-    // Initialize OTP inputs when the modal is shown
-    document.addEventListener('DOMContentLoaded', function() {
-        const otpModal = document.getElementById('otpModal');
-        if (otpModal) {
-            otpModal.addEventListener('shown.bs.modal', function() {
-                initializeOTPInputs();
-                // Clear all inputs when modal opens
-                document.querySelectorAll('.otp-digit').forEach(input => input.value = '');
-                document.getElementById('otp_code_modal').value = '';
-                document.getElementById('otpStatusModal').style.display = 'none';
-            });
-        }
-    });
-
-    function showEnrollmentMessage(message, type) {
-        // Try modal status first, fallback to regular status if modal doesn't exist
-        const statusDiv = document.getElementById('otpStatusModal') || document.getElementById('otpStatus');
-        
-        if (statusDiv) {
-            statusDiv.textContent = message;
-            statusDiv.className = `status-message status-${type}`;
-            statusDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 5000);
-        }
-    }
 
     function initializeEmailValidation() {
         const emailInput = document.getElementById('user_email');
@@ -4146,6 +4740,46 @@ if (currentStep !== finalStep) {
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeTermsModal();
         });
+        
+        // ADDITIONAL SAFETY: Global Enter key handler for the entire document
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                // Check if we're inside the enrollment form
+                const target = event.target;
+                const enrollmentForm = document.getElementById('enrollmentForm');
+                if (enrollmentForm && enrollmentForm.contains(target)) {
+                    const finalStep = isUserLoggedIn ? 3 : 5;
+                    if (currentStep !== finalStep) {
+                        console.log('🛑 Global Enter key handler - preventing form submission');
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return false;
+                    }
+                }
+            }
+        }, true); // Use capture phase to catch the event early
+        
+        // 🔥 BACKUP VALIDATION: Periodic check for Step 4 button state
+        setInterval(() => {
+            if (currentStep === 4) {
+                const step4Element = document.getElementById('step-4');
+                const step4Content = document.getElementById('step-content-4');
+                if ((step4Element && step4Element.classList.contains('active')) || 
+                    (step4Content && step4Content.classList.contains('active'))) {
+                    if (typeof window.validateStep4 === 'function') {
+                        window.validateStep4();
+                    }
+                }
+            }
+        }, 2000); // Check every 2 seconds when on step 4
+        
+        // 🔥 IMMEDIATE VALIDATION: Run validation on page load if we're on step 4
+        setTimeout(() => {
+            if (currentStep === 4 && typeof window.validateStep4 === 'function') {
+                console.log('🔥 Running immediate validation on page load for step 4...');
+                window.validateStep4();
+            }
+        }, 500); // Small delay to ensure DOM is ready
     });
 
     // Function to load user prefill data

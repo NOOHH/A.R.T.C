@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Registration;
@@ -1443,6 +1444,23 @@ class StudentRegistrationController extends Controller
                 ], 400);
             }
 
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please enter a valid email address'
+                ], 400);
+            }
+
+            // Check if email already exists in users table
+            $userExists = User::where('email', $email)->exists();
+            if ($userExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email is already registered. Please use a different email address.'
+                ], 400);
+            }
+
             // Generate 6-digit OTP
             $otpCode = sprintf('%06d', mt_rand(0, 999999));
 
@@ -1453,16 +1471,29 @@ class StudentRegistrationController extends Controller
                 'email' => $email
             ]]);
 
-            // Send OTP via email (implement your email sending logic here)
-            // For now, just log it for testing
-            Log::info('OTP sent for enrollment', [
-                'email' => $email,
-                'otp' => $otpCode,
-                'expires_at' => now()->addMinutes(10)
-            ]);
-
-            // In a real application, send email here
-            // Mail::to($email)->send(new EnrollmentOTPMail($otpCode));
+            // Send OTP via email
+            try {
+                Mail::raw("Your OTP code for A.R.T.C enrollment is: $otpCode\n\nThis code will expire in 10 minutes.", function ($message) use ($email) {
+                    $message->to($email)
+                           ->subject('A.R.T.C Enrollment - OTP Verification Code');
+                });
+                
+                Log::info('OTP sent successfully for enrollment', [
+                    'email' => $email,
+                    'otp' => $otpCode,
+                    'expires_at' => now()->addMinutes(10)
+                ]);
+            } catch (\Exception $mailException) {
+                Log::error('Failed to send OTP email', [
+                    'error' => $mailException->getMessage(),
+                    'email' => $email
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send OTP email'
+                ], 500);
+            }
 
             return response()->json([
                 'success' => true,
@@ -1490,12 +1521,12 @@ class StudentRegistrationController extends Controller
     {
         try {
             $email = $request->input('email');
-            $otpCode = $request->input('otp_code');
+            $otpCode = $request->input('otp_code') ?? $request->input('otp');
 
-            if (!$email || !$otpCode) {
+            if (!$otpCode) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Email and OTP code are required'
+                    'message' => 'OTP code is required'
                 ], 400);
             }
 

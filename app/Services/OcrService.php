@@ -591,7 +591,8 @@ class OcrService
             'the', 'of', 'in', 'and', 'or', 'but', 'for', 'with', 'to', 'from',
             'at', 'by', 'on', 'up', 'as', 'an', 'a', 'is', 'was', 'are', 'were',
             'certificate', 'degree', 'bachelor', 'master', 'doctor', 'university',
-            'college', 'school', 'major', 'minor', 'concentration', 'specialization'
+            'college', 'school', 'major', 'minor', 'concentration', 'specialization',
+            'this', 'that', 'has', 'been', 'awarded', 'given', 'completion', 'course'
         ];
         
         // Extract meaningful terms
@@ -603,24 +604,81 @@ class OcrService
             return !in_array($word, $stopWords);
         });
         
-        // Extract specific program-related terms
+        // Enhanced program-related terms with better culinary detection
         $programTerms = [
+            // Culinary & Food Service (Enhanced)
+            'culinary', 'cooking', 'chef', 'food', 'nutrition', 'hospitality', 
+            'restaurant', 'kitchen', 'baking', 'pastry', 'cuisine', 'gastronomy',
+            'catering', 'foodservice', 'culinarys', 'chefs', 'cook', 'baker',
+            'sommelier', 'barista', 'patissier', 'culinarian',
+            
+            // Engineering
             'engineering', 'engineer', 'civil', 'mechanical', 'electrical', 'chemical',
+            'industrial', 'aerospace', 'automotive', 'structural',
+            
+            // Healthcare
             'nursing', 'nurse', 'medicine', 'medical', 'health', 'care',
-            'culinary', 'cooking', 'chef', 'food', 'nutrition', 'hospitality',
+            'pharmacy', 'dentistry', 'therapy', 'clinical', 'healthcare',
+            
+            // Business
             'business', 'management', 'administration', 'finance', 'accounting',
+            'marketing', 'economics', 'entrepreneurship', 'commerce', 'trade',
+            
+            // Technology
             'computer', 'information', 'technology', 'programming', 'software',
+            'coding', 'development', 'web', 'database', 'networking', 'cybersecurity',
+            'digital', 'systems', 'applications', 'tech',
+            
+            // Education
             'education', 'teaching', 'teacher', 'elementary', 'secondary',
+            'pedagogy', 'curriculum', 'instruction',
+            
+            // Social Sciences
             'psychology', 'social', 'work', 'counseling', 'therapy',
-            'mathematics', 'physics', 'chemistry', 'biology', 'science'
+            'sociology', 'anthropology', 'communications',
+            
+            // Sciences
+            'mathematics', 'physics', 'chemistry', 'biology', 'science',
+            'environmental', 'laboratory', 'research',
+            
+            // Arts & Design
+            'art', 'design', 'graphic', 'multimedia', 'photography', 'animation',
+            'creative', 'visual', 'digital', 'media', 'advertising'
         ];
         
         // Add program-specific terms found in text
         foreach ($programTerms as $term) {
             if (strpos($text, $term) !== false) {
                 $keywords[] = $term;
+                
+                // Add related terms for better matching
+                if (in_array($term, ['chef', 'cooking', 'culinary', 'food', 'kitchen', 'baking'])) {
+                    $keywords = array_merge($keywords, ['culinary', 'chef', 'cooking', 'food', 'hospitality']);
+                }
             }
         }
+        
+        // Special pattern matching for compound terms
+        $compoundPatterns = [
+            '/chef\s*certificate/i' => ['chef', 'culinary', 'cooking', 'food'],
+            '/culinary\s*arts/i' => ['culinary', 'chef', 'cooking', 'arts'],
+            '/food\s*service/i' => ['food', 'culinary', 'hospitality', 'restaurant'],
+            '/web\s*development/i' => ['web', 'development', 'programming', 'technology'],
+            '/graphic\s*design/i' => ['graphic', 'design', 'art', 'creative'],
+            '/business\s*administration/i' => ['business', 'administration', 'management'],
+        ];
+        
+        foreach ($compoundPatterns as $pattern => $terms) {
+            if (preg_match($pattern, $text)) {
+                $keywords = array_merge($keywords, $terms);
+            }
+        }
+        
+        // Log extracted keywords for debugging
+        Log::info('OCR Keywords extracted', [
+            'original_text_preview' => substr($text, 0, 200),
+            'extracted_keywords' => array_unique($keywords)
+        ]);
         
         return array_unique($keywords);
     }
@@ -633,8 +691,11 @@ class OcrService
         $keywords = $this->extractKeywords($ocrText);
         
         if (empty($keywords)) {
+            Log::info('No keywords extracted from OCR text for program suggestions');
             return [];
         }
+        
+        Log::info('Suggesting programs with keywords', ['keywords' => $keywords]);
         
         $programs = Program::where('is_archived', 0)->get();
         $modules = Module::where('is_archived', 0)->get()->groupBy('program_id');
@@ -643,14 +704,36 @@ class OcrService
         
         foreach ($programs as $program) {
             $score = 0;
+            $matchingKeywords = [];
             
-            // Check program name and description
+            // Enhanced scoring system
             foreach ($keywords as $keyword) {
-                if (stripos($program->program_name, $keyword) !== false) {
-                    $score += 3; // Higher weight for program name matches
+                $keywordLower = strtolower($keyword);
+                $programNameLower = strtolower($program->program_name);
+                $programDescLower = strtolower($program->program_description ?? '');
+                
+                // Program name matches (highest weight)
+                if (stripos($programNameLower, $keywordLower) !== false) {
+                    $score += 5; // Increased weight for program name matches
+                    $matchingKeywords[] = $keyword;
+                    
+                    // Extra bonus for exact culinary matches
+                    if (in_array($keywordLower, ['chef', 'culinary', 'cooking', 'food']) && 
+                        strpos($programNameLower, 'culinary') !== false) {
+                        $score += 3; // Bonus for culinary matches
+                    }
                 }
-                if ($program->program_description && stripos($program->program_description, $keyword) !== false) {
+                
+                // Program description matches
+                if ($program->program_description && stripos($programDescLower, $keywordLower) !== false) {
+                    $score += 3; // Increased weight for description matches
+                    $matchingKeywords[] = $keyword;
+                }
+                
+                // Special scoring for related keywords
+                if ($this->areKeywordsRelated($keywordLower, $programNameLower)) {
                     $score += 2;
+                    $matchingKeywords[] = $keyword;
                 }
             }
             
@@ -658,11 +741,15 @@ class OcrService
             if (isset($modules[$program->program_id])) {
                 foreach ($modules[$program->program_id] as $module) {
                     foreach ($keywords as $keyword) {
-                        if (stripos($module->module_name, $keyword) !== false) {
+                        $keywordLower = strtolower($keyword);
+                        
+                        if (stripos($module->module_name, $keywordLower) !== false) {
                             $score += 1;
+                            $matchingKeywords[] = $keyword;
                         }
-                        if ($module->module_description && stripos($module->module_description, $keyword) !== false) {
+                        if ($module->module_description && stripos($module->module_description, $keywordLower) !== false) {
                             $score += 1;
+                            $matchingKeywords[] = $keyword;
                         }
                     }
                 }
@@ -672,23 +759,14 @@ class OcrService
                 $suggestions[] = [
                     'program' => $program,
                     'score' => $score,
-                    'matching_keywords' => array_filter($keywords, function($keyword) use ($program, $modules) {
-                        $match = stripos($program->program_name, $keyword) !== false ||
-                                ($program->program_description && stripos($program->program_description, $keyword) !== false);
-                        
-                        if (!$match && isset($modules[$program->program_id])) {
-                            foreach ($modules[$program->program_id] as $module) {
-                                if (stripos($module->module_name, $keyword) !== false ||
-                                    ($module->module_description && stripos($module->module_description, $keyword) !== false)) {
-                                    $match = true;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        return $match;
-                    })
+                    'matching_keywords' => array_unique($matchingKeywords)
                 ];
+                
+                Log::info('Program scored for suggestion', [
+                    'program_name' => $program->program_name,
+                    'score' => $score,
+                    'matching_keywords' => array_unique($matchingKeywords)
+                ]);
             }
         }
         
@@ -697,7 +775,63 @@ class OcrService
             return $b['score'] - $a['score'];
         });
         
-        return array_slice($suggestions, 0, 3); // Return top 3 suggestions
+        // Return top 5 suggestions instead of 3 for better coverage
+        $topSuggestions = array_slice($suggestions, 0, 5);
+        
+        Log::info('Final program suggestions', [
+            'total_suggestions' => count($topSuggestions),
+            'suggestions' => array_map(function($s) {
+                return [
+                    'program_name' => $s['program']['program_name'],
+                    'score' => $s['score'],
+                    'keywords' => $s['matching_keywords']
+                ];
+            }, $topSuggestions)
+        ]);
+        
+        return $topSuggestions;
+    }
+    
+    /**
+     * Check if keywords are related for better program matching
+     */
+    private function areKeywordsRelated($keyword, $programName)
+    {
+        $relations = [
+            // Culinary relations
+            'chef' => ['culinary', 'food', 'cooking', 'hospitality', 'restaurant'],
+            'cooking' => ['culinary', 'chef', 'food', 'kitchen', 'hospitality'],
+            'food' => ['culinary', 'chef', 'cooking', 'nutrition', 'hospitality'],
+            'baking' => ['culinary', 'pastry', 'food', 'chef'],
+            
+            // Technology relations
+            'programming' => ['computer', 'software', 'development', 'coding', 'web'],
+            'web' => ['development', 'programming', 'computer', 'software'],
+            'software' => ['computer', 'programming', 'development', 'technology'],
+            
+            // Business relations
+            'management' => ['business', 'administration', 'leadership'],
+            'finance' => ['business', 'accounting', 'economics'],
+            'marketing' => ['business', 'advertising', 'communications'],
+            
+            // Healthcare relations
+            'nursing' => ['healthcare', 'medical', 'health', 'care'],
+            'medical' => ['healthcare', 'nursing', 'health', 'medicine'],
+            
+            // Art & Design relations
+            'design' => ['art', 'creative', 'graphic', 'visual'],
+            'graphic' => ['design', 'art', 'visual', 'creative'],
+        ];
+        
+        if (isset($relations[$keyword])) {
+            foreach ($relations[$keyword] as $relatedTerm) {
+                if (strpos($programName, $relatedTerm) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
 

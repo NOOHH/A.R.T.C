@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OTP Test</title>
+    <meta name="csrf-token" content="test-token">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <h1>OTP Function Test</h1>
+    
+    <div>
+        <input type="text" id="otp_1" maxlength="1" onkeyup="otpDigitHandler(this, 1)" style="width: 50px; height: 50px;">
+        <input type="text" id="otp_2" maxlength="1" onkeyup="otpDigitHandler(this, 2)" style="width: 50px; height: 50px;">
+        <input type="text" id="otp_3" maxlength="1" onkeyup="otpDigitHandler(this, 3)" style="width: 50px; height: 50px;">
+        <input type="text" id="otp_4" maxlength="1" onkeyup="otpDigitHandler(this, 4)" style="width: 50px; height: 50px;">
+        <input type="text" id="otp_5" maxlength="1" onkeyup="otpDigitHandler(this, 5)" style="width: 50px; height: 50px;">
+        <input type="text" id="otp_6" maxlength="1" onkeyup="otpDigitHandler(this, 6)" style="width: 50px; height: 50px;">
+    </div>
+    
+    <input type="hidden" id="otp_code_modal" name="otp_code">
+    
+    <div id="output" style="margin-top: 20px;">
+        <p>Combined OTP: <span id="combined-otp"></span></p>
+    </div>
+    
+    <script src="../js/enrollment/full_enrollment.js"></script>
+    
+    <script>
+        // Override updateOTPCode to show output
+        const originalUpdateOTPCode = window.updateOTPCode;
+        window.updateOTPCode = function() {
+            originalUpdateOTPCode();
+            const hiddenInput = document.getElementById('otp_code_modal');
+            document.getElementById('combined-otp').textContent = hiddenInput.value;
+        };
+        
+        console.log('OTP functions available:', {
+            otpDigitHandler: typeof window.otpDigitHandler,
+            updateOTPCode: typeof window.updateOTPCode,
+            sendEnrollmentOTP: typeof window.sendEnrollmentOTP,
+            verifyEnrollmentOTPModal: typeof window.verifyEnrollmentOTPModal
+        });
+    </script>
+</body>
+</html>
