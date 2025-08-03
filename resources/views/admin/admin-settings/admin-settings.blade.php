@@ -57,6 +57,8 @@
     70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
 }
+
+
 </style>
 @endpush
 
@@ -161,14 +163,64 @@
                                         <h5 class="mb-0">LOGIN CUSTOMIZATION</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">COLOR</label>
-                                            <input type="color" class="form-control form-control-color" value="#007bff">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">COLOR</label>
-                                            <input type="color" class="form-control form-control-color" value="#6c757d">
-                                        </div>
+                                        <form id="loginCustomizationForm" method="POST" action="{{ route('admin.settings.update.login') }}" enctype="multipart/form-data">
+                                            @csrf
+                                            <div class="mb-3">
+                                                <label class="form-label">Background Color (Top of Gradient)</label>
+                                                <input type="color" class="form-control form-control-color" name="login_background_color" 
+                                                       value="{{ $settings['login']['background_color'] ?? '#8e24aa' }}">
+                                                <div class="form-text">Main background color for the left panel</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Gradient Color (Bottom of Gradient)</label>
+                                                <input type="color" class="form-control form-control-color" name="login_gradient_color" 
+                                                       value="{{ $settings['login']['gradient_color'] ?? '#b0004c' }}">
+                                                <div class="form-text">Bottom color for the gradient background</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Accent Color (Button Color)</label>
+                                                <input type="color" class="form-control form-control-color" name="login_accent_color" 
+                                                       value="{{ $settings['login']['accent_color'] ?? '#b0004c' }}">
+                                                <div class="form-text">Color for login button and accent elements</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Text Color</label>
+                                                <input type="color" class="form-control form-control-color" name="login_text_color" 
+                                                       value="{{ $settings['login']['text_color'] ?? '#333333' }}">
+                                                <div class="form-text">Color for text in the right panel</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Card Background</label>
+                                                <input type="color" class="form-control form-control-color" name="login_card_background" 
+                                                       value="{{ $settings['login']['card_background'] ?? '#ffffff' }}">
+                                                <div class="form-text">Background color for the login form card</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Input Border Color</label>
+                                                <input type="color" class="form-control form-control-color" name="login_input_border_color" 
+                                                       value="{{ $settings['login']['input_border_color'] ?? '#dee2e6' }}">
+                                                <div class="form-text">Border color for input fields</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Input Focus Color</label>
+                                                <div class="input-group">
+                                                    <input type="color" class="form-control form-control-color" name="login_input_focus_color" 
+                                                           value="{{ $settings['login']['input_focus_color'] ?? '#667eea' }}" id="login_input_focus_color">
+                                                    <button type="button" class="btn btn-outline-secondary copy-color-btn" data-target="login_input_focus_color" data-tooltip="Copy color">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary paste-color-btn" data-target="login_input_focus_color" data-tooltip="Paste color">
+                                                        <i class="fas fa-paste"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="form-text">Border color when input fields are focused</div>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i>Save Login Settings
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -1874,6 +1926,73 @@ document.addEventListener('DOMContentLoaded', function() {
             e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
         }
     });
+
+    // Login Customization Form Handler
+    const loginCustomizationForm = document.getElementById('loginCustomizationForm');
+    if (loginCustomizationForm) {
+        loginCustomizationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            
+            // Show loading state
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            submitButton.disabled = true;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // If not JSON, get the text and throw an error
+                    return response.text().then(text => {
+                        console.error('Non-JSON response received:', text.substring(0, 500));
+                        throw new Error('Server returned non-JSON response (Status: ' + response.status + '): ' + text.substring(0, 200));
+                    });
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    showAlert('Login settings saved successfully!', 'success');
+                    // Reload the page to apply changes
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showAlert(data.message || 'Error saving login settings', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                showAlert('Error saving login settings: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Restore button state
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
+        });
+    }
+    
+
     
     function updateSaveButtonState() {
         const submitButton = document.getElementById('saveRequirementsBtn');

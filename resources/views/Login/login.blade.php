@@ -13,6 +13,62 @@
     <style>
         {!! \App\Helpers\SettingsHelper::getButtonStyles() !!}
     </style>
+    <style>
+        /* Enhanced Password Toggle Design for Login Page */
+        .login-form .input-row {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .login-form .input-row input {
+            margin-bottom: 0;
+            padding-right: 50px;
+        }
+        
+        .login-form .input-row .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            background: rgba(139, 69, 19, 0.1);
+            border: 1px solid rgba(139, 69, 19, 0.2);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #8B4513;
+            backdrop-filter: blur(5px);
+        }
+        
+        .login-form .input-row .toggle-password:hover {
+            background: rgba(139, 69, 19, 0.2);
+            border-color: rgba(139, 69, 19, 0.4);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+        }
+        
+        .login-form .input-row .toggle-password:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        
+        .login-form .input-row .toggle-password.showing {
+            background: rgba(34, 139, 34, 0.15);
+            border-color: rgba(34, 139, 34, 0.3);
+            color: #228B22;
+        }
+        
+        .login-form .input-row .toggle-password.showing:hover {
+            background: rgba(34, 139, 34, 0.25);
+            border-color: rgba(34, 139, 34, 0.5);
+        }
+        
+
+    </style>
 </head>
 <body class="login-page">
     @php
@@ -24,8 +80,15 @@
         <div class="review-text">
             Review Smarter.<br>Learn Better.<br>Succeed Faster.
         </div>
+
+        <div class="login-illustration-container">
+            <img src="{{ asset('images/Login-image.png') }}" alt="Login Illustration" class="login-illustration">
+            <div class="floating-icon-1">📚</div>
+            <div class="floating-icon-2">▶️</div>
+        </div>
+
         <div class="copyright">
-            {!! $footer['text'] ?? '© Copyright Ascendo Review and Training Center.<br>All Rights Reserved.' !!}
+            © Copyright Ascendo Review and Training Center.<br>All Rights Reserved.
         </div>
     </div>
     <div class="right">
@@ -69,17 +132,22 @@
             
             <a href="#" class="forgot">Forgot your password? Click here.</a>
             <button type="submit">LOG IN</button>
-            <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
-            <div style="margin-top: 8px; font-size: 1em;">Don't have an account? <a href="{{ route('signup') }}" class="register-link">Register here.</a></div>
+            <div style="margin-top: 16px; font-size: 0.95em; text-align: center;">Don't have an account? <a href="{{ route('signup') }}" class="register-link">Register here.</a></div>
         </form>
     </div>
     <script>
         function togglePassword() {
             const pwd = document.getElementById('password');
+            const toggleBtn = pwd.nextElementSibling;
+            
             if (pwd.type === 'password') {
                 pwd.type = 'text';
+                toggleBtn.classList.add('showing');
+                toggleBtn.innerHTML = '👁️‍🗨️';
             } else {
                 pwd.type = 'password';
+                toggleBtn.classList.remove('showing');
+                toggleBtn.innerHTML = '👁️';
             }
         }
     </script>

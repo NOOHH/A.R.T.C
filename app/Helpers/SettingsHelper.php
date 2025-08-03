@@ -477,13 +477,18 @@ class SettingsHelper
             body.login-page .login-form input[type='email'],
             body.login-page .login-form input[type='password'] {
                 border-color: " . ($login['input_border_color'] ?? '#dee2e6') . " !important;
+                border-radius: 25px !important;
+                padding: 14px 20px !important;
+                background: #f8f9fa !important;
+                transition: border-color 0.3s, box-shadow 0.3s !important;
             }
             
             body.login-page .login-form input[type='text']:focus,
             body.login-page .login-form input[type='email']:focus,
             body.login-page .login-form input[type='password']:focus {
                 border-color: " . ($login['input_focus_color'] ?? '#667eea') . " !important;
-                box-shadow: 0 0 0 0.2rem rgba(" . self::hexToRgb($login['input_focus_color'] ?? '#667eea') . ", 0.25) !important;
+                box-shadow: 0 0 0 3px rgba(" . self::hexToRgb($login['input_focus_color'] ?? '#667eea') . ", 0.1) !important;
+                background: #fff !important;
             }
             
             body.login-page .login-form button[type='submit'] {

@@ -318,6 +318,13 @@ class AdminSettingsController extends Controller
 
         $this->saveSettings($settings);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Login page settings updated successfully!'
+            ]);
+        }
+
         return back()->with('success', 'Login page settings updated successfully!');
     }
 
