@@ -3,8 +3,8 @@
 @section('title', 'My Enrolled Courses - A.R.T.C')
 
 @push('styles')
-    {!! App\Helpers\UIHelper::getNavbarStyles() !!}
     <style>
+        /* Scoped styles for enrolled-courses page to prevent conflicts */
         .enrolled-courses-container {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             min-height: 100vh;
@@ -99,7 +99,7 @@
             flex: 1;
         }
 
-        .program-name {
+        .enrollment-card .program-name {
             font-size: 1.4rem;
             font-weight: 700;
             color: #1a202c;
@@ -268,7 +268,7 @@
             flex: 1;
         }
 
-        .course-name {
+        .enrollment-card .course-name {
             font-size: 1.1rem;
             font-weight: 600;
             color: #1a202c;
@@ -296,7 +296,7 @@
             margin-top: auto;
         }
 
-        .module-tag {
+        .enrollment-card .module-tag {
             background: #e0e7ff;
             color: #3730a3;
             padding: 0.25rem 0.75rem;
@@ -415,165 +415,6 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
-            }
-        }
-
-        .status-badges {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .status-badge {
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-badge.approved {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-badge.pending {
-            background: #fef3cd;
-            color: #92400e;
-        }
-
-        .status-badge.paid {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .status-badge.modular {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .status-badge.full {
-            background: #fce7f3;
-            color: #be185d;
-        }
-
-        .courses-section h3 {
-            color: #2d3748;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .courses-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-
-        .course-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .course-card:hover {
-            background: #f1f5f9;
-            border-color: #667eea;
-            transform: translateY(-1px);
-        }
-
-        .course-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-        }
-
-        .course-description {
-            color: #4a5568;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            line-height: 1.5;
-        }
-
-        .course-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            color: #718096;
-        }
-
-        .module-tag {
-            background: #edf2f7;
-            color: #4a5568;
-            padding: 0.2rem 0.6rem;
-            border-radius: 15px;
-            font-weight: 500;
-        }
-
-        .no-enrollments {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #718096;
-        }
-
-        .no-enrollments i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #cbd5e0;
-        }
-
-        .no-enrollments h3 {
-            color: #4a5568;
-            margin-bottom: 1rem;
-        }
-
-        .no-enrollments p {
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-        }
-
-        .btn-enroll {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 0.8rem 2rem;
-            border-radius: 25px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn-enroll:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .enrollment-meta {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .courses-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .page-header h1 {
-                font-size: 2rem;
-            }
-
-            .content-wrapper {
-                margin: 0 1rem;
-                padding: 1.5rem;
             }
         }
     </style>

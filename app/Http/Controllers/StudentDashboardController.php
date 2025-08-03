@@ -649,6 +649,14 @@ class StudentDashboardController extends Controller
         if ($student) {
             // Check if student has any enrollment for this program
             $enrollment = $student->enrollments()->where('program_id', $courseId)->first();
+            
+            // If not found via student relationship, try by user_id
+            if (!$enrollment) {
+                $enrollment = \App\Models\Enrollment::where('user_id', session('user_id'))
+                    ->where('program_id', $courseId)
+                    ->first();
+            }
+            
             $isEnrolled = (bool) $enrollment;
         }
         
@@ -2832,10 +2840,30 @@ class StudentDashboardController extends Controller
             $enrolledCoursesData[] = $enrollmentInfo;
         }
 
+        // Prepare student programs data for sidebar component
+        $studentPrograms = [];
+        if ($student) {
+            $enrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->with(['program', 'package'])
+                ->where('enrollment_status', 'approved')
+                ->get();
+            
+            foreach ($enrollments as $enrollmentData) {
+                if ($enrollmentData->program) {
+                    $studentPrograms[] = [
+                        'program_id' => $enrollmentData->program->program_id,
+                        'program_name' => $enrollmentData->program->program_name,
+                        'package_name' => $enrollmentData->package ? $enrollmentData->package->package_name : 'No Package'
+                    ];
+                }
+            }
+        }
+
         return view('student.enrolled-courses', [
             'user' => $user,
             'student' => $student,
-            'enrolledCoursesData' => $enrolledCoursesData
+            'enrolledCoursesData' => $enrolledCoursesData,
+            'studentPrograms' => $studentPrograms
         ]);
     }
 
