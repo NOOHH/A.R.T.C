@@ -1872,22 +1872,28 @@ class AdminSettingsController extends Controller
     {
         try {
             $request->validate([
-                'terms_and_conditions' => 'nullable|string',
-                'privacy_policy' => 'nullable|string'
+                'full_enrollment_terms' => 'nullable|string',
+                'modular_enrollment_terms' => 'nullable|string',
+                'require_terms_acceptance' => 'nullable'
             ]);
 
-            // Get current settings
-            $settings = $this->getCurrentSettings();
-            
-            // Update terms and conditions settings
-            $settings['terms_conditions'] = [
-                'terms_and_conditions' => $request->input('terms_and_conditions', ''),
-                'privacy_policy' => $request->input('privacy_policy', ''),
-                'updated_at' => now()->toISOString()
-            ];
+            // Save full enrollment terms
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'full_enrollment_terms'],
+                ['setting_value' => $request->input('full_enrollment_terms', '')]
+            );
 
-            // Save the updated settings
-            $this->saveSettings($settings);
+            // Save modular enrollment terms
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'modular_enrollment_terms'],
+                ['setting_value' => $request->input('modular_enrollment_terms', '')]
+            );
+
+            // Save require terms acceptance setting
+            AdminSetting::updateOrCreate(
+                ['setting_key' => 'require_terms_acceptance'],
+                ['setting_value' => $request->has('require_terms_acceptance') ? '1' : '0']
+            );
 
             return response()->json([
                 'success' => true,

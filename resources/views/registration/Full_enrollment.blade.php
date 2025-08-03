@@ -1091,6 +1091,94 @@
         console.log('=== Account data copy completed ===');
     }
 
+    // Helper function to copy student form data back to account fields
+    function copyStudentFormToAccountData() {
+        console.log('=== Copying student form data to account fields ===');
+        
+        const step5Fields = {
+                'firstname': 'user_firstname',
+                'lastname': 'user_lastname',
+                'email': 'email'
+            };
+            
+        Object.keys(step5Fields).forEach(step5Field => {
+            const step4Field = step5Fields[step5Field];
+            const sourceField = document.querySelector(`input[name="${step5Field}"]`);
+            const targetField = document.querySelector(`input[name="${step4Field}"]`);
+            
+            console.log(`Checking field mapping: ${step5Field} -> ${step4Field}`, {
+                sourceField: !!sourceField,
+                targetField: !!targetField,
+                sourceValue: sourceField?.value
+            });
+            
+            if (sourceField && targetField && sourceField.value.trim()) {
+                targetField.value = sourceField.value.trim();
+                console.log(`✅ Copied ${step5Field} -> ${step4Field}: ${sourceField.value}`);
+                
+                // Trigger any validation or change events
+                const event = new Event('input', { bubbles: true });
+                targetField.dispatchEvent(event);
+            } else {
+                console.log(`❌ Could not copy ${step5Field} -> ${step4Field}:`, {
+                    sourceExists: !!sourceField,
+                    targetExists: !!targetField,
+                    hasValue: sourceField?.value?.trim() || 'empty'
+                });
+            }
+        });
+        
+        console.log('=== Student form data copy completed ===');
+    }
+
+    // Bidirectional sync function - call this when either form changes
+    function syncNameFields(direction = 'both') {
+        console.log(`=== Syncing name fields (${direction}) ===`);
+        
+        if (direction === 'account-to-student' || direction === 'both') {
+            copyAccountDataToStudentForm();
+        }
+        
+        if (direction === 'student-to-account' || direction === 'both') {
+            copyStudentFormToAccountData();
+        }
+    }
+
+    // Set up automatic syncing between account and student form fields
+    function setupNameFieldSyncing() {
+        console.log('=== Setting up name field syncing ===');
+        
+        // Account fields (Step 4)
+        const accountFields = ['user_firstname', 'user_lastname', 'email'];
+        accountFields.forEach(fieldName => {
+            const field = document.querySelector(`input[name="${fieldName}"]`);
+            if (field) {
+                field.addEventListener('input', function() {
+                    console.log(`Account field changed: ${fieldName}`);
+                    // Sync to student form
+                    syncNameFields('account-to-student');
+                });
+                console.log(`✅ Added sync listener to account field: ${fieldName}`);
+            }
+        });
+        
+        // Student form fields (Step 5)
+        const studentFields = ['firstname', 'lastname', 'email'];
+        studentFields.forEach(fieldName => {
+            const field = document.querySelector(`input[name="${fieldName}"]`);
+            if (field) {
+                field.addEventListener('input', function() {
+                    console.log(`Student field changed: ${fieldName}`);
+                    // Sync to account form
+                    syncNameFields('student-to-account');
+                });
+                console.log(`✅ Added sync listener to student field: ${fieldName}`);
+            }
+        });
+        
+        console.log('=== Name field syncing setup completed ===');
+    }
+
     // Helper function to fill logged in user data
     function fillLoggedInUserData() {
         if (isUserLoggedIn) {
@@ -1411,12 +1499,25 @@
                     }
                 }
                 
-                // FIXED: Handle program suggestions
+                // FIXED: Handle program suggestions with enhanced debugging
+                console.log('🔍 Processing suggestions:', {
+                    hasSuggestions: !!data.suggestions,
+                    suggestionsLength: data.suggestions ? data.suggestions.length : 0,
+                    suggestions: data.suggestions
+                });
+                
                 if (data.suggestions && data.suggestions.length > 0) {
                     console.log('✅ Found program suggestions:', data.suggestions);
                     showProgramSuggestions(data.suggestions);
                 } else {
-                    console.log('No program suggestions found');
+                    console.log('❌ No program suggestions found');
+                    // Clear any existing suggestions and show appropriate message
+                    clearProgramSuggestions();
+                    
+                    // Add a small delay to ensure clearing is complete
+                    setTimeout(() => {
+                        showInfoModal('No specific programs were found that match your uploaded certificate. Please select a program from the dropdown list based on your educational background and career goals.');
+                    }, 100);
                 }
                 
                 // Handle education level detection
@@ -1462,10 +1563,52 @@
         console.log('=== File Upload Process Initiated ===');
     }
 
+    // Clear program suggestions from dropdown - ENHANCED VERSION
+    function clearProgramSuggestions() {
+        console.log('=== Clearing Program Suggestions ===');
+        
+        const programSelect = document.getElementById('programSelect');
+        if (!programSelect) {
+            console.error('Program select element not found');
+            return;
+        }
+        
+        // Remove ALL existing suggestions and headers
+        const existingSuggestions = programSelect.querySelectorAll('.suggestion-option, .suggestion-header');
+        existingSuggestions.forEach(option => {
+            console.log('Removing existing suggestion/header:', option.textContent);
+            option.remove();
+        });
+        
+        // Also check for any options with the header text (fallback)
+        const allOptions = programSelect.querySelectorAll('option');
+        allOptions.forEach(option => {
+            if (option.textContent.includes('Suggested Programs')) {
+                console.log('Removing header option with text:', option.textContent);
+                option.remove();
+            }
+        });
+        
+        // Reset dropdown styling
+        programSelect.style.borderColor = '';
+        programSelect.style.boxShadow = '';
+        programSelect.style.backgroundColor = 'white';
+        
+        console.log('✅ Program suggestions cleared');
+    }
+
     // Show program suggestions in dropdown - ENHANCED VERSION
     function showProgramSuggestions(suggestions) {
         console.log('=== Showing Program Suggestions ===');
         console.log('Suggestions received:', suggestions);
+        console.log('Suggestions type:', typeof suggestions);
+        console.log('Suggestions length:', suggestions ? suggestions.length : 'null/undefined');
+        
+        // CRITICAL FIX: Don't proceed if no valid suggestions
+        if (!suggestions || !Array.isArray(suggestions) || suggestions.length === 0) {
+            console.log('❌ No valid suggestions provided - not showing any header or options');
+            return;
+        }
         
         const programSelect = document.getElementById('programSelect');
         if (!programSelect) {
@@ -1475,14 +1618,14 @@
         
         // IMPORTANT FIX: Remove ALL existing suggestions and headers to prevent duplicates
         const existingSuggestions = programSelect.querySelectorAll('.suggestion-option, .suggestion-header');
+        console.log('Found existing suggestions/headers:', existingSuggestions.length);
         existingSuggestions.forEach(option => {
             console.log('Removing existing suggestion/header:', option.textContent);
             option.remove();
         });
         
-        // Only add suggestion header if suggestions exist
-        if (suggestions && suggestions.length > 0) {
-            console.log('Adding suggestions header and options...');
+        // Add suggestion header and options (we already validated suggestions exist)
+        console.log('✅ Adding suggestions header and options...');
             
             // Create and add header option
             const headerOption = document.createElement('option');
@@ -1510,9 +1653,10 @@
                     
                     // Handle different suggestion formats
                     if (suggestion.program && typeof suggestion.program === 'object') {
-                        // Format: {program: {id: 123, program_name: "Program Name"}}
-                        programId = suggestion.program.id;
+                        // Format: {program: {program_id: 123, program_name: "Program Name"}}
+                        programId = suggestion.program.program_id || suggestion.program.id;
                         programName = suggestion.program.program_name;
+                        console.log('Processing program suggestion:', { programId, programName, suggestion });
                     } else if (suggestion.id || suggestion.program_id) {
                         // Format: {id: 123, name: "Program Name"} or {program_id: 123, program_name: "Program Name"}
                         programId = suggestion.program_id || suggestion.id;
@@ -1565,7 +1709,7 @@
             programSelect.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
             
             // Show notification modal
-            showInfoModal(`Great! We found ${normalizedSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
+            showInfoModal(`Great! We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
             
             // Auto-scroll to the program select field
             setTimeout(() => {
@@ -1584,9 +1728,6 @@
             }, 1000);
             
             console.log('✅ Program suggestions added successfully');
-        } else {
-            console.log('No suggestions to display');
-        }
     }
 
     // Handle education level detection
@@ -2615,7 +2756,7 @@
                 <button type="button" onclick="prevStep()" class="btn btn-outline-secondary btn-lg">
                     <i class="bi bi-arrow-left me-2"></i> Back
                 </button>
-                <button type="submit" class="btn btn-success btn-lg" id="submitButton">
+                <button type="submit" class="btn btn-success btn-lg" id="submitButton" disabled>
                     <i class="bi bi-check-circle me-2"></i> Complete Registration
                 </button>
             </div>
@@ -2911,6 +3052,9 @@
             currentStep = 1;
             
             // Prefill user data if form fields are already available
+        
+        // Set up bidirectional name field syncing
+        setupNameFieldSyncing();
             setTimeout(() => {
                 fillLoggedInUserData();
             }, 100);
@@ -4231,11 +4375,14 @@ if (currentStep !== finalStep) {
 
     function showTermsModal() {
         const modal = document.getElementById('termsModal');
-        if (!modal) return;
+        if (!modal) {
+            console.error('Terms modal not found');
+            return;
+        }
+        console.log('Showing terms modal');
         // show the modal
+        modal.style.display = 'flex';
         modal.classList.add('show');
-        // give the browser a tick to apply that, then fade in
-        requestAnimationFrame(() => modal.classList.add('active'));
         // lock background scrolling
         document.body.style.overflow = 'hidden';
     }
@@ -4243,13 +4390,12 @@ if (currentStep !== finalStep) {
     function closeTermsModal() {
         const modal = document.getElementById('termsModal');
         if (!modal) return;
-        // fade out
-        modal.classList.remove('active');
-        // after the fade, remove it from flow
-        setTimeout(() => {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-        }, 300); // match your CSS transition-duration (0.3s)
+        console.log('Closing terms modal');
+        // hide the modal
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        // restore background scrolling
+        document.body.style.overflow = '';
     }
 
     // OTP Functions for Step 3 Account Registration
@@ -4700,6 +4846,35 @@ if (currentStep !== finalStep) {
                 window.validateStep4();
             }
         }, 500); // Small delay to ensure DOM is ready
+        
+        // Add event listeners for form validation
+        const requiredFields = [
+            'user_firstname',
+            'user_lastname', 
+            'user_email',
+            'password',
+            'password_confirmation',
+            'programSelect',
+            'batchSelect',
+            'termsCheckbox'
+        ];
+        
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (field.type === 'checkbox') {
+                    field.addEventListener('change', validateFormForSubmission);
+                } else {
+                    field.addEventListener('input', validateFormForSubmission);
+                    field.addEventListener('change', validateFormForSubmission);
+                }
+            }
+        });
+        
+        // Initial validation
+        setTimeout(() => {
+            validateFormForSubmission();
+        }, 1000);
     });
 
     // Function to load user prefill data
@@ -4795,6 +4970,75 @@ if (currentStep !== finalStep) {
         console.log('Batch selection cleared');
     }
 
+    // Comprehensive form validation function
+    function validateFormForSubmission() {
+        console.log('🔍 === Validating Form for Submission ===');
+        
+        // Get all required fields
+        const requiredFields = [
+            'user_firstname',
+            'user_lastname', 
+            'user_email',
+            'password',
+            'password_confirmation',
+            'programSelect',
+            'batchSelect'
+        ];
+        
+        // Check if all required fields are filled
+        let allFieldsFilled = true;
+        const fieldStatus = {};
+        
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                const isFilled = field.value && field.value.trim().length > 0;
+                fieldStatus[fieldId] = isFilled;
+                if (!isFilled) {
+                    allFieldsFilled = false;
+                }
+            } else {
+                fieldStatus[fieldId] = false;
+                allFieldsFilled = false;
+            }
+        });
+        
+        // Check terms and conditions acceptance
+        const termsCheckbox = document.getElementById('termsCheckbox');
+        const termsAccepted = termsCheckbox && termsCheckbox.checked;
+        
+        // Check email verification (if user is not logged in)
+        const emailVerified = isUserLoggedIn || window.enrollmentEmailVerified || false;
+        
+        console.log('🔍 Validation results:', {
+            fieldStatus,
+            allFieldsFilled,
+            termsAccepted,
+            emailVerified,
+            isUserLoggedIn
+        });
+        
+        // Enable submit button only if ALL conditions are met
+        const submitButton = document.getElementById('submitButton');
+        if (submitButton) {
+            const shouldEnable = allFieldsFilled && termsAccepted && emailVerified;
+            
+            if (shouldEnable) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('disabled');
+                submitButton.style.opacity = '1';
+                console.log('✅ Submit button enabled');
+            } else {
+                submitButton.disabled = true;
+                submitButton.classList.add('disabled');
+                submitButton.style.opacity = '0.5';
+                console.log('❌ Submit button disabled');
+            }
+        }
+        
+        return allFieldsFilled && termsAccepted && emailVerified;
+    }
+
     // Terms and Conditions modal functions
     function acceptTerms() {
         // Check the terms and conditions checkbox
@@ -4803,13 +5047,8 @@ if (currentStep !== finalStep) {
             termsCheckbox.checked = true;
         }
         
-        // Enable the submit button
-        const submitButton = document.getElementById('submitButton');
-        if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.classList.remove('disabled');
-            submitButton.style.opacity = '1';
-        }
+        // Validate form and update submit button
+        validateFormForSubmission();
         
         // Close the modal
         closeTermsModal();
@@ -4824,13 +5063,8 @@ if (currentStep !== finalStep) {
             termsCheckbox.checked = false;
         }
         
-        // Disable the submit button
-        const submitButton = document.getElementById('submitButton');
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.classList.add('disabled');
-            submitButton.style.opacity = '0.5';
-        }
+        // Validate form and update submit button
+        validateFormForSubmission();
         
         // Close the modal
         closeTermsModal();
