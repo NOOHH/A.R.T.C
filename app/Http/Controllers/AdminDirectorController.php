@@ -6,6 +6,7 @@ use App\Models\Director;
 use App\Models\Program;
 use App\Http\Controllers\UnifiedLoginController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class AdminDirectorController extends Controller
@@ -49,9 +50,9 @@ class AdminDirectorController extends Controller
             return back()->withErrors(['directors_email' => 'This email address is already registered in the system.'])->withInput();
         }
 
-        // Store plain text password - will be hashed on first login
+        // Hash the password for security
         $plainPassword = $validated['directors_password'];
-        $validated['directors_password'] = $plainPassword; // Store as plain text initially
+        $validated['directors_password'] = Hash::make($plainPassword); // Hash the password
         
         // Get admin_id from session or set a default value for testing
         $admin_id = session('user_id') ?? session('admin_id') ?? auth()->id() ?? 1;
@@ -117,7 +118,7 @@ class AdminDirectorController extends Controller
 
     public function show(Director $director)
     {
-        $director->load(['programs', 'admin']);
+        $director->load(['programs', 'assignedPrograms', 'admin']);
         return view('admin.directors.show', compact('director'));
     }
 
@@ -163,19 +164,22 @@ class AdminDirectorController extends Controller
         // Handle program access if provided
         if ($request->has('program_access')) {
             $programAccess = $request->program_access;
-            $validated['has_all_program_access'] = is_array($programAccess) ? in_array('all', $programAccess) : $programAccess === 'all';
+            $hasAllAccess = is_array($programAccess) ? in_array('all', $programAccess) : $programAccess === 'all';
+            
+            // Update the has_all_program_access flag
+            $director->update(['has_all_program_access' => $hasAllAccess]);
             
             // Clear existing program assignments
             $director->assignedPrograms()->detach();
             
-            // Handle program assignment
-            if (!$validated['has_all_program_access']) {
+            // Handle program assignment only if not "all programs"
+            if (!$hasAllAccess) {
                 $programIds = is_array($programAccess) ? $programAccess : [$programAccess];
                 
                 $validProgramIds = [];
                 foreach ($programIds as $programId) {
                     if ($programId !== 'all' && is_numeric($programId)) {
-                        $validProgramIds[] = $programId;
+                        $validProgramIds[] = (int)$programId;
                     }
                 }
                 
@@ -183,6 +187,9 @@ class AdminDirectorController extends Controller
                     $director->assignedPrograms()->attach($validProgramIds);
                 }
             }
+        } else {
+            // If no program_access is provided, maintain current assignments
+            // This handles cases where the field might not be submitted
         }
 
         $director->update($validated);
