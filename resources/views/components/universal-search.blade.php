@@ -41,11 +41,6 @@
                 </ul>
             </div>
             @endif
-            
-            <!-- Advanced Search Button -->
-            <button class="btn btn-outline-primary" type="button" onclick="showAdvancedSearch()">
-                <i class="bi bi-funnel"></i>
-            </button>
         </div>
         
         <!-- Search Results Dropdown -->
@@ -79,73 +74,7 @@
     </div>
 </div>
 
-<!-- Advanced Search Modal -->
-<div class="modal fade" id="advancedSearchModal" tabindex="-1" aria-labelledby="advancedSearchModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="advancedSearchModalLabel">
-                    <i class="bi bi-funnel me-2"></i>Advanced Search
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="advancedSearchForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Search Query</label>
-                                <input type="text" class="form-control" id="advancedSearchQuery" placeholder="Enter name, email, or ID">
-                            </div>
-                        </div>
-                        
-                        @if(auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'director'))
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Role</label>
-                                <select class="form-select" id="advancedSearchRole">
-                                    <option value="">All Roles</option>
-                                    <option value="student">Students</option>
-                                    <option value="professor">Professors</option>
-                                </select>
-                            </div>
-                        </div>
-                        @endif
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" id="advancedSearchStatus">
-                                    <option value="">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        @if(auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'director' || auth()->user()->role === 'professor'))
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Program</label>
-                                <select class="form-select" id="advancedSearchProgram">
-                                    <option value="">All Programs</option>
-                                    <!-- Programs will be populated dynamically -->
-                                </select>
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="performAdvancedSearch()">
-                    <i class="bi bi-search me-2"></i>Search
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Search Results Modal -->
 <div class="modal fade" id="searchResultsModal" tabindex="-1" aria-labelledby="searchResultsModalLabel" aria-hidden="true">
@@ -323,15 +252,40 @@ let isSearchFocused = false;
 
 // Initialize search functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Load programs for advanced search
-    loadPrograms();
-    
     // Set up outside click handler
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.search-container')) {
             hideSearchDropdown();
         }
     });
+    
+    // Set up event delegation for search result clicks
+    const searchResults = document.getElementById('searchResults');
+    if (searchResults) {
+        searchResults.addEventListener('click', function(e) {
+            const resultItem = e.target.closest('.search-result-item');
+            if (resultItem) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const url = resultItem.dataset.url;
+                const id = resultItem.dataset.id;
+                const type = resultItem.dataset.type;
+                
+                hideSearchDropdown();
+                
+                if (url) {
+                    // Direct URL navigation
+                    console.log('Navigating to:', url);
+                    window.location.href = url;
+                } else if (id && type) {
+                    // Fallback using selectSearchResult function
+                    console.log('Using selectSearchResult for:', id, type);
+                    selectSearchResult(id, type);
+                }
+            }
+        });
+    }
 });
 
 // Handle search input
@@ -397,7 +351,7 @@ function displaySearchResults(results) {
     container.innerHTML = results.map(result => {
         if (result.type === 'program') {
             return `
-                <div class="search-result-item" onclick="window.location.href='${result.url || '/profile/program/' + result.id}'">
+                <div class="search-result-item" data-url="${result.url || '/profile/program/' + result.id}" style="cursor: pointer;">
                     <div class="search-result-icon">
                         <i class="bi bi-collection text-primary" style="font-size: 1.5rem;"></i>
                     </div>
@@ -413,7 +367,7 @@ function displaySearchResults(results) {
             `;
         } else if (result.type === 'student') {
             return `
-                <div class="search-result-item" onclick="window.location.href='${result.url || '/profile/user/' + result.id}'">
+                <div class="search-result-item" data-url="${result.url || '/profile/user/' + result.id}" style="cursor: pointer;">
                     <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
                     <div class="search-result-info">
                         <div class="search-result-name">${result.name}</div>
@@ -427,7 +381,7 @@ function displaySearchResults(results) {
             `;
         } else if (result.type === 'professor') {
             return `
-                <div class="search-result-item" onclick="window.location.href='${result.url || '/profile/professor/' + result.id}'">
+                <div class="search-result-item" data-url="${result.url || '/profile/professor/' + result.id}" style="cursor: pointer;">
                     <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
                     <div class="search-result-info">
                         <div class="search-result-name">${result.name}</div>
@@ -442,7 +396,7 @@ function displaySearchResults(results) {
         } else {
             // Fallback for other types
             return `
-                <div class="search-result-item" onclick="selectSearchResult('${result.id}', '${result.type}')">
+                <div class="search-result-item" data-id="${result.id}" data-type="${result.type}" style="cursor: pointer;">
                     <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
                     <div class="search-result-info">
                         <div class="search-result-name">${result.name}</div>
@@ -462,7 +416,15 @@ function displaySearchResults(results) {
 
 // Generate action buttons based on user role
 function generateActionButtons(result) {
-    const currentUser = @json(auth()->user());
+    // Try multiple ways to get current user info:
+    // 1. Laravel auth user
+    // 2. Session data
+    // 3. Global JavaScript variables
+    const currentUser = @json(auth()->user()) || {
+        id: @json(session('user_id') ?: session('professor_id')) || (typeof window !== 'undefined' && window.myId),
+        role: @json(session('user_role') ?: session('user_type')) || (typeof window !== 'undefined' && window.userRole),
+        name: @json(session('user_name')) || (typeof window !== 'undefined' && window.myName)
+    };
     let actions = [];
     
     // View profile action
@@ -502,7 +464,131 @@ function generateProgramActionButtons(result) {
     return actions.join('');
 }
 
-// Get role class for badge styling
+// Show result modal
+function showResultModal(result) {
+    const modalHtml = `
+        <div class="modal fade" id="searchResultModal" tabindex="-1" aria-labelledby="searchResultModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="searchResultModalLabel">
+                            <i class="bi bi-${getTypeIcon(result.type)} me-2"></i>${result.name}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-3 text-center">
+                                <div class="result-icon mb-3">
+                                    <i class="bi bi-${getTypeIcon(result.type)}" style="font-size: 4rem; color: ${getTypeColor(result.type)};"></i>
+                                </div>
+                                <span class="badge bg-${getTypeBadgeColor(result.type)} fs-6">${result.type}</span>
+                            </div>
+                            <div class="col-md-9">
+                                <h4 class="mb-3">${result.name}</h4>
+                                ${result.email ? `<p><strong>Email:</strong> ${result.email}</p>` : ''}
+                                ${result.description ? `<p><strong>Description:</strong> ${result.description}</p>` : ''}
+                                <p><strong>ID:</strong> ${result.id}</p>
+                                
+                                ${getResultActions(result)}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        ${getModalFooterActions(result)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('searchResultModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('searchResultModal'));
+    modal.show();
+    
+    // Remove modal from DOM when hidden
+    document.getElementById('searchResultModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+// Get type icon
+function getTypeIcon(type) {
+    switch(type) {
+        case 'student': return 'person-fill';
+        case 'professor': return 'person-badge-fill';
+        case 'program': return 'collection-fill';
+        case 'admin': return 'shield-fill';
+        case 'director': return 'star-fill';
+        default: return 'person-fill';
+    }
+}
+
+// Get type color
+function getTypeColor(type) {
+    switch(type) {
+        case 'student': return '#28a745';
+        case 'professor': return '#fd7e14';
+        case 'program': return '#007bff';
+        case 'admin': return '#ffc107';
+        case 'director': return '#dc3545';
+        default: return '#6c757d';
+    }
+}
+
+// Get type badge color
+function getTypeBadgeColor(type) {
+    switch(type) {
+        case 'student': return 'success';
+        case 'professor': return 'warning';
+        case 'program': return 'info';
+        case 'admin': return 'primary';
+        case 'director': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+// Get result actions
+function getResultActions(result) {
+    let actions = [];
+    
+    if (result.type === 'student' || result.type === 'professor') {
+        actions.push(`
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-3">
+                <button class="btn btn-outline-primary btn-sm" onclick="startChat('${result.id}')">
+                    <i class="bi bi-chat-dots me-1"></i>Start Chat
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="viewDetails('${result.id}', '${result.type}')">
+                    <i class="bi bi-info-circle me-1"></i>View Details
+                </button>
+            </div>
+        `);
+    } else if (result.type === 'program') {
+        actions.push(`
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-3">
+                <button class="btn btn-outline-info btn-sm" onclick="viewProgramModules('${result.id}')">
+                    <i class="bi bi-list-ul me-1"></i>View Modules
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="viewProgramStudents('${result.id}')">
+                    <i class="bi bi-people me-1"></i>View Students
+                </button>
+            </div>
+        `);
+    }
+    
+    return actions.join('');
+}
+
 function getRoleClass(role) {
     switch(role.toLowerCase()) {
         case 'student': return 'primary';
@@ -706,124 +792,7 @@ function showNoResults() {
     showSearchDropdown();
 }
 
-// Advanced search
-function showAdvancedSearch() {
-    $('#advancedSearchModal').modal('show');
-}
 
-function performAdvancedSearch() {
-    const query = document.getElementById('advancedSearchQuery').value.trim();
-    const role = document.getElementById('advancedSearchRole').value;
-    const status = document.getElementById('advancedSearchStatus').value;
-    const program = document.getElementById('advancedSearchProgram').value;
-    
-    const params = new URLSearchParams({
-        query: query,
-        role: role,
-        status: status,
-        program: program,
-        limit: 50
-    });
-    
-    fetch(`/search/advanced?${params.toString()}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayAdvancedResults(data.results);
-                $('#advancedSearchModal').modal('hide');
-                $('#searchResultsModal').modal('show');
-            } else {
-                alert('Search failed: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Advanced search error:', error);
-            alert('Search failed. Please try again.');
-        });
-}
 
-// Display advanced search results
-function displayAdvancedResults(results) {
-    const container = document.getElementById('searchResultsContainer');
-    
-    if (results.length === 0) {
-        container.innerHTML = '<div class="text-center py-4"><p class="text-muted">No results found.</p></div>';
-        return;
-    }
-    
-    container.innerHTML = `
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Additional Info</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${results.map(result => `
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="${result.avatar}" alt="${result.name}" class="rounded-circle me-3" width="40" height="40">
-                                    <div>
-                                        <div class="fw-bold">${result.name}</div>
-                                        <small class="text-muted">${result.email}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-${result.role === 'student' ? 'primary' : 'success'}">${result.role}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-${result.status === 'active' ? 'success' : 'secondary'}">${result.status}</span>
-                            </td>
-                            <td>
-                                ${result.enrollment_info ? result.enrollment_info.map(e => `<small class="d-block">${e.program} (${e.batch})</small>`).join('') : ''}
-                                ${result.programs ? result.programs.map(p => `<small class="d-block">${p.name}</small>`).join('') : ''}
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="viewProfile(${result.id}, '${result.role}')">
-                                        <i class="bi bi-person"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success" onclick="startChat(${result.id})">
-                                        <i class="bi bi-chat"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
 
-// Load programs for advanced search
-function loadPrograms() {
-    fetch('/api/programs')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const select = document.getElementById('advancedSearchProgram');
-                if (!select) {
-                    console.warn('advancedSearchProgram select not found in DOM.');
-                    return;
-                }
-                data.programs.forEach(program => {
-                    const option = document.createElement('option');
-                    option.value = program.id || program.program_id;
-                    option.textContent = program.name || program.program_name;
-                    select.appendChild(option);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading programs:', error);
-        });
-}
 </script>

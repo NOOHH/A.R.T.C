@@ -653,14 +653,7 @@ html, body {
             <p class="action-description">Update your profile information and settings.</p>
         </a>
         
-        <a href="{{ route('professor.programs') }}" class="action-card">
-            <div class="action-icon" style="background: linear-gradient(135deg, var(--dark-color), #374151);">
-                <i class="bi bi-camera-video"></i>
-            </div>
-            <h5 class="action-title">Upload Videos</h5>
-            <p class="action-description">Add or update video content for your programs.</p>
-        </a>
-        
+         
         <a href="{{ route('professor.students.index') }}" class="action-card">
             <div class="action-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);">
                 <i class="bi bi-people"></i>

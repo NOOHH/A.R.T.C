@@ -10,6 +10,7 @@ use App\Models\AdminSetting;
 use App\Models\MeetingAttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProfessorMeetingController extends Controller
 {
@@ -120,6 +121,32 @@ class ProfessorMeetingController extends Controller
         // Check if professor can create meetings
         if (!$this->canCreateMeetings($professorId)) {
             return back()->withErrors(['general' => 'You do not have permission to create meetings. Please contact your administrator.']);
+        }
+
+        // Debug: Log the request data
+        Log::info('Meeting creation request:', $request->all());
+        Log::info('Program IDs:', $request->input('program_ids', []));
+        Log::info('Batch IDs:', $request->input('batch_ids', []));
+        Log::info('Meeting title:', ['title' => $request->input('meeting_title')]);
+        Log::info('Meeting date:', ['date' => $request->input('meeting_date')]);
+        Log::info('Meeting link:', ['link' => $request->input('meeting_link')]);
+        
+        // Additional debugging for form data
+        Log::info('Raw POST data:', $_POST);
+        Log::info('Request headers:', $request->headers->all());
+        
+        // Check if arrays are empty
+        $programIds = $request->input('program_ids', []);
+        $batchIds = $request->input('batch_ids', []);
+        
+        Log::info('Program IDs count:', ['count' => count($programIds)]);
+        Log::info('Batch IDs count:', ['count' => count($batchIds)]);
+        
+        if (empty($programIds)) {
+            Log::error('Program IDs is empty or null');
+        }
+        if (empty($batchIds)) {
+            Log::error('Batch IDs is empty or null');
         }
 
         $request->validate([

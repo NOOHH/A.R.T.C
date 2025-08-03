@@ -16,9 +16,7 @@
                     <a href="{{ route('admin.professors.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to Professors
                     </a>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createMeetingModal"
-                            data-professor-id="{{ $professor->professor_id }}"
-                            data-professor-name="{{ $professor->professor_name }}">
+                    <button type="button" class="btn btn-primary" onclick="showSimpleModal('{{ $professor->professor_id }}', '{{ $professor->professor_name }}')">
                         <i class="bi bi-calendar-plus me-2"></i>Create Meeting
                     </button>
                 </div>
@@ -119,8 +117,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                 </p>
@@ -173,8 +171,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Time:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes<br>
                                                     <strong>Status:</strong> <span class="badge bg-{{ $meeting->status === 'ongoing' ? 'warning' : ($meeting->status === 'completed' ? 'success' : 'secondary') }}">{{ ucfirst($meeting->status) }}</span>
@@ -218,8 +216,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                 </p>
@@ -262,8 +260,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                 </p>
@@ -296,30 +294,7 @@
                                     <p class="text-muted">There are no completed meetings yet.</p>
                                 </div>
                             @endif
-@push('styles')
-<style>
-.meeting-carousel {
-    display: flex;
-    gap: 1rem;
-    overflow-x: auto;
-    padding: 1rem 0;
-}
-.meeting-card {
-    min-width: 300px;
-    max-width: 350px;
-    flex: 0 0 auto;
-    margin-bottom: 1rem;
-}
-.meeting-card .card {
-    height: 100%;
-    border: 1px solid #ddd;
-}
-.meeting-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-</style>
-@endpush
+
 
 @include('admin.professors.partials.create-meeting-modal')
                         </div>
@@ -329,9 +304,6 @@
         </div>
     </div>
 </div>
-
-<!-- Create Meeting Modal -->
-@include('admin.professors.partials.create-meeting-modal')
 
 <script>
 // Simple dropdown checkbox functionality for meetings page
@@ -454,15 +426,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @push('styles')
 <style>
+/* Professional Tab Styling */
 .nav-pills .nav-link {
-    color: #495057;
-    border-radius: 0.5rem;
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.5rem !important;
+    margin-right: 0.5rem !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #e9ecef !important;
+    border-color: #adb5bd !important;
+    color: #495057 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
 .nav-pills .nav-link.active {
-    background-color: #0d6efd;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
 }
 
+.nav-pills .nav-link.active:hover {
+    background-color: #0b5ed7 !important;
+    border-color: #0b5ed7 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Card hover effects */
 .card {
     transition: transform 0.2s;
 }
@@ -473,6 +470,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .badge {
     font-size: 0.7rem;
+}
+
+/* Meeting carousel styling */
+.meeting-carousel {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+}
+
+.meeting-card {
+    min-width: 300px;
+    max-width: 350px;
+    flex: 0 0 auto;
+    margin-bottom: 1rem;
+}
+
+.meeting-card .card {
+    height: 100%;
+    border: 1px solid #ddd;
+}
+
+.meeting-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 </style>
 @endpush

@@ -179,35 +179,7 @@ class SearchController extends Controller
     /**
      * Advanced search with filters
      */
-    public function advancedSearch(Request $request)
-    {
-        $query = $request->get('query', '');
-        $role = $request->get('role', '');
-        $status = $request->get('status', '');
-        $program_id = $request->get('program', '');
-        $limit = $request->get('limit', 50);
 
-        $user = Auth::user();
-        $results = [];
-
-        // Build query based on role filter
-        if ($role === 'student') {
-            $results = $this->advancedSearchStudents($query, $status, $program_id, $limit, $user);
-        } elseif ($role === 'professor') {
-            $results = $this->advancedSearchProfessors($query, $status, $limit, $user);
-        } else {
-            // Search all
-            $students = $this->advancedSearchStudents($query, $status, $program_id, $limit/2, $user);
-            $professors = $this->advancedSearchProfessors($query, $status, $limit/2, $user);
-            $results = array_merge($students, $professors);
-        }
-
-        return response()->json([
-            'success' => true,
-            'results' => $results,
-            'total' => count($results)
-        ]);
-    }
 
     /**
      * Get user profile details
@@ -527,67 +499,7 @@ class SearchController extends Controller
         })->toArray();
     }
 
-    /**
-     * Advanced search for students
-     */
-    private function advancedSearchStudents($query, $status, $program_id, $limit, $user)
-    {
-        if (!$user || !in_array($user->role, ['admin', 'director', 'professor'])) {
-            return [];
-        }
 
-        $students = User::where('role', 'student');
-
-        if ($query) {
-            $students->where(function($q) use ($query) {
-                $q->where('user_firstname', 'LIKE', "%{$query}%")
-                  ->orWhere('user_lastname', 'LIKE', "%{$query}%")
-                  ->orWhere('email', 'LIKE', "%{$query}%");
-            });
-        }
-
-        if ($status === 'active') {
-            $students->where('is_online', true);
-        } elseif ($status === 'inactive') {
-            $students->where('is_online', false);
-        }
-
-        if ($program_id) {
-            $students->whereHas('student.enrollments', function($q) use ($program_id) {
-                $q->where('program_id', $program_id);
-            });
-        }
-
-        return $this->formatStudentResults($students->limit($limit)->get());
-    }
-
-    /**
-     * Advanced search for professors
-     */
-    private function advancedSearchProfessors($query, $status, $limit, $user)
-    {
-        if (!$user || !in_array($user->role, ['admin', 'director', 'student'])) {
-            return [];
-        }
-
-        $professors = User::where('role', 'professor');
-
-        if ($query) {
-            $professors->where(function($q) use ($query) {
-                $q->where('user_firstname', 'LIKE', "%{$query}%")
-                  ->orWhere('user_lastname', 'LIKE', "%{$query}%")
-                  ->orWhere('email', 'LIKE', "%{$query}%");
-            });
-        }
-
-        if ($status === 'active') {
-            $professors->where('is_online', true);
-        } elseif ($status === 'inactive') {
-            $professors->where('is_online', false);
-        }
-
-        return $this->formatProfessorResults($professors->limit($limit)->get());
-    }
 
     /**
      * Get detailed user profile
@@ -782,7 +694,7 @@ class SearchController extends Controller
         ]);
         
         if ($currentUserRole === 'professor') {
-            return route('professor.students.index');
+            return route('professor.view.student', $studentId);
         } else {
             return route('admin.students.show', $studentId);
         }
@@ -1081,7 +993,20 @@ class SearchController extends Controller
      */
     public function showUserProfile($id)
     {
-        $user = User::with(['student.enrollments.program'])->findOrFail($id);
+        // First try to find by user_id
+        $user = User::with(['student.enrollments.program'])->find($id);
+        
+        // If not found, try to find by student_id
+        if (!$user) {
+            $student = Student::where('student_id', $id)->with(['user', 'enrollments.program'])->first();
+            if ($student && $student->user) {
+                $user = $student->user;
+                // Load the student relationship with enrollments for the user
+                $user->load(['student.enrollments.program']);
+            } else {
+                abort(404, 'User not found');
+            }
+        }
         
         $profile = [
             'id' => $user->user_id,
@@ -1124,7 +1049,14 @@ class SearchController extends Controller
             }
         }
 
-        return view('profiles.user', compact('profile', 'user'));
+        // Check if current user is a professor and return appropriate view
+        $currentUserRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
+        
+        if ($currentUserRole === 'professor') {
+            return view('professor.student-profile', compact('profile', 'user'));
+        } else {
+            return view('profiles.user', compact('profile', 'user'));
+        }
     }
 
     /**

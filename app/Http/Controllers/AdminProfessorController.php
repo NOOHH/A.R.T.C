@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use App\Models\AdminSetting;
+use Illuminate\Support\Facades\Log;
 
 class AdminProfessorController extends Controller
 {
@@ -302,39 +303,53 @@ class AdminProfessorController extends Controller
      */
     public function getProfessorBatches($professor_id)
     {
-        // Load professor and programs
-        $professor = Professor::with('programs')->findOrFail($professor_id);
-        
-        // Get professor's programs
-        $programs = $professor->programs->map(function ($program) {
-            return [
-                'program_id' => $program->program_id,
-                'program_name' => $program->program_name,
-                'description' => $program->description
-            ];
-        });
-        
-        // Get professor's assigned batches
-        $batches = StudentBatch::with('program')
-            ->where('professor_id', $professor_id)
-            ->get()
-            ->map(function ($batch) {
-            return [
-                'batch_id' => $batch->batch_id,
-                'batch_name' => $batch->batch_name,
-                'program_id' => $batch->program_id,
-                'program_name' => $batch->program->program_name,
-                'start_date' => $batch->start_date,
-                'end_date' => $batch->end_date,
-                'batch_status' => $batch->batch_status
-            ];
-        });
+        try {
+            // Load professor and programs
+            $professor = Professor::with('programs')->findOrFail($professor_id);
+            
+            // Get professor's programs
+            $programs = $professor->programs->map(function ($program) {
+                return [
+                    'program_id' => $program->program_id,
+                    'program_name' => $program->program_name,
+                    'description' => $program->description
+                ];
+            });
+            
+            // Get professor's assigned batches
+            $batches = StudentBatch::with('program')
+                ->where('professor_id', $professor_id)
+                ->get()
+                ->map(function ($batch) {
+                return [
+                    'batch_id' => $batch->batch_id,
+                    'batch_name' => $batch->batch_name,
+                    'program_id' => $batch->program_id,
+                    'program_name' => $batch->program ? $batch->program->program_name : 'Unknown Program',
+                    'start_date' => $batch->start_date,
+                    'end_date' => $batch->end_date,
+                    'batch_status' => $batch->batch_status
+                ];
+            });
 
-        return response()->json([
-            'success' => true,
-            'programs' => $programs,
-            'batches' => $batches
-        ]);
+            return response()->json([
+                'success' => true,
+                'programs' => $programs,
+                'batches' => $batches
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getProfessorBatches:', [
+                'professor_id' => $professor_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading professor data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -415,7 +430,9 @@ class AdminProfessorController extends Controller
             'batches.program'
         ])->findOrFail($professor_id);
 
-        $meetings = $professor->classMeetings;
+        $meetings = $professor->classMeetings->filter(function($meeting) {
+            return $meeting->batch !== null;
+        });
         
         // Categorize meetings
         $currentMeetings = $meetings->where('status', 'ongoing');

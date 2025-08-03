@@ -2,7 +2,6 @@
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
 
 <style>
@@ -179,21 +178,6 @@
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createQuizModal">
             <i class="bi bi-plus-circle"></i> Create New Quiz
         </button>
-    </div>
-    
-    <!-- Debug Information -->
-    <div class="alert alert-info">
-        <h5>Debug Information:</h5>
-        <p><strong>Current User Session:</strong> 
-            @if(session('logged_in'))
-                Logged in as {{ session('user_name', 'Unknown') }} ({{ session('user_type', 'Unknown Type') }})
-            @else
-                Not logged in via session
-            @endif
-        </p>
-        <p><strong>Auth::user():</strong> {{ Auth::user() ? Auth::user()->name : 'null' }}</p>
-        <p><strong>Programs Available:</strong> {{ $assignedPrograms->count() }}</p>
-        <p><strong>Total Quizzes:</strong> {{ $draftQuizzes->count() + $publishedQuizzes->count() + $archivedQuizzes->count() }}</p>
     </div>
     
     <!-- Error/Success Messages -->

@@ -58,6 +58,103 @@ use App\Http\Controllers\Professor\AnnouncementController as ProfessorAnnounceme
 
 // routes/web.php
 
+// Immediate search endpoint - placed at top to avoid middleware conflicts
+Route::get('/search-now', function(\Illuminate\Http\Request $request) {
+    try {
+        $query = $request->get('query', '');
+        $type = $request->get('type', 'all');
+        $limit = (int) $request->get('limit', 10);
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query too short',
+                'results' => []
+            ]);
+        }
+        
+        $results = [];
+        
+        // Direct database queries
+        if ($type === 'all' || $type === 'students') {
+            $students = \Illuminate\Support\Facades\DB::table('students')
+                ->select('student_id as id', 'firstname', 'lastname', 'email')
+                ->where(function($q) use ($query) {
+                    $q->where('firstname', 'LIKE', "%{$query}%")
+                      ->orWhere('lastname', 'LIKE', "%{$query}%")
+                      ->orWhere('email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($students as $student) {
+                $results[] = [
+                    'type' => 'student',
+                    'id' => $student->id,
+                    'name' => $student->firstname . ' ' . $student->lastname,
+                    'email' => $student->email,
+                    'url' => '/professor/view/student/' . $student->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'professors') {
+            $professors = \Illuminate\Support\Facades\DB::table('professors')
+                ->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_email')
+                ->where(function($q) use ($query) {
+                    $q->where('professor_first_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_last_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($professors as $professor) {
+                $results[] = [
+                    'type' => 'professor',
+                    'id' => $professor->id,
+                    'name' => $professor->professor_first_name . ' ' . $professor->professor_last_name,
+                    'email' => $professor->professor_email,
+                    'url' => '/professor/view/professor/' . $professor->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'programs') {
+            $programs = \Illuminate\Support\Facades\DB::table('programs')
+                ->select('program_id as id', 'program_name', 'program_description')
+                ->where('program_name', 'LIKE', "%{$query}%")
+                ->limit($limit)
+                ->get();
+                
+            foreach ($programs as $program) {
+                $results[] = [
+                    'type' => 'program',
+                    'id' => $program->id,
+                    'name' => $program->program_name,
+                    'description' => $program->program_description,
+                    'url' => '/professor/view/program/' . $program->id
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+            'total' => count($results),
+            'message' => count($results) > 0 ? 'Search completed successfully' : 'No results found'
+        ]);
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Search error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false, 
+            'message' => 'Search error: ' . $e->getMessage(), 
+            'results' => []
+        ]);
+    }
+});
+
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\StudentPaymentModalController;
 
@@ -219,6 +316,18 @@ Route::get('/test-registration-routes', function() {
             'validate-file' => route('registration.validateFile')
         ]
      ]);
+});
+
+Route::get('/test-export-route', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Export route test',
+        'export_route' => route('admin.batches.export', 1),
+        'batch_routes' => [
+            'index' => route('admin.batches.index'),
+            'export_template' => '/admin/batches/{id}/export'
+        ]
+    ]);
 });
 
 /*
@@ -1239,17 +1348,133 @@ Route::post('/chat/save-message', [ChatController::class, 'saveChatMessage'])->n
 
 // Enhanced Search functionality routes
 Route::get('/search', [SearchController::class, 'search'])->name('search');
-Route::get('/search/advanced', [SearchController::class, 'advancedSearch'])->name('search.advanced');
+Route::get('/ajax/search', [SearchController::class, 'search'])->name('ajax.search'); // AJAX-specific route
+
+// Direct search route that completely bypasses middleware and session issues
+Route::get('/direct-search', function(\Illuminate\Http\Request $request) {
+    try {
+        $query = $request->get('query', '');
+        $type = $request->get('type', 'all');
+        $limit = $request->get('limit', 10);
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query too short',
+                'results' => []
+            ]);
+        }
+        
+        $results = [];
+        
+        // Direct database queries without any authentication checks
+        if ($type === 'all' || $type === 'students') {
+            $students = \Illuminate\Support\Facades\DB::table('students')
+                ->select('student_id as id', 'firstname', 'lastname', 'email')
+                ->where(function($q) use ($query) {
+                    $q->where('firstname', 'LIKE', "%{$query}%")
+                      ->orWhere('lastname', 'LIKE', "%{$query}%")
+                      ->orWhere('email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($students as $student) {
+                $results[] = [
+                    'type' => 'student',
+                    'id' => $student->id,
+                    'name' => $student->firstname . ' ' . $student->lastname,
+                    'email' => $student->email,
+                    'url' => '/profile/user/' . $student->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'professors') {
+            $professors = \Illuminate\Support\Facades\DB::table('professors')
+                ->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_email')
+                ->where(function($q) use ($query) {
+                    $q->where('professor_first_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_last_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($professors as $professor) {
+                $results[] = [
+                    'type' => 'professor',
+                    'id' => $professor->id,
+                    'name' => $professor->professor_first_name . ' ' . $professor->professor_last_name,
+                    'email' => $professor->professor_email,
+                    'url' => '/profile/professor/' . $professor->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'programs') {
+            $programs = \Illuminate\Support\Facades\DB::table('programs')
+                ->select('program_id as id', 'program_name', 'program_description')
+                ->where('program_name', 'LIKE', "%{$query}%")
+                ->limit($limit)
+                ->get();
+                
+            foreach ($programs as $program) {
+                $results[] = [
+                    'type' => 'program',
+                    'id' => $program->id,
+                    'name' => $program->program_name,
+                    'description' => $program->program_description,
+                    'url' => '/profile/program/' . $program->id
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+            'total' => count($results),
+            'message' => count($results) > 0 ? 'Search completed successfully' : 'No results found'
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Search error: ' . $e->getMessage(), 
+            'results' => []
+        ]);
+    }
+})->name('direct.search'); // Direct search route that bypasses all middleware
+
+Route::get('/test-ajax-search', function(\Illuminate\Http\Request $request) {
+    try {
+        $controller = new \App\Http\Controllers\SearchController();
+        return $controller->search($request);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Search error: ' . $e->getMessage(), 
+            'results' => []
+        ]);
+    }
+})->name('test.ajax.search'); // Test route that calls search controller directly
+
 Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
 
 // New Universal Search System routes
 Route::get('/search/universal', [SearchController::class, 'universalSearch'])->name('search.universal');
 Route::get('/search/profile', [SearchController::class, 'getProfile'])->name('search.profile');
 
-// Profile pages for search results
+// Profile pages for search results - make them accessible with session auth
 Route::get('/profile/user/{id}', [SearchController::class, 'showUserProfile'])->name('profile.user');
 Route::get('/profile/professor/{id}', [SearchController::class, 'showProfessorProfile'])->name('profile.professor');
 Route::get('/profile/program/{id}', [SearchController::class, 'showProgramProfile'])->name('profile.program');
+
+// Simple test route to debug the issue
+Route::get('/test-program/{id}', function($id) {
+    $program = \App\Models\Program::findOrFail($id);
+    return "Program: " . $program->program_name . " (ID: " . $id . ")";
+})->name('test.program');
 
 // API routes for AJAX search
 Route::prefix('api/search')->group(function () {
@@ -1617,6 +1842,11 @@ Route::middleware(['professor.auth'])
          ->name('students.index');
     Route::post('/students/{student}/grade', [ProfessorDashboardController::class, 'gradeStudent'])
          ->name('students.grade');
+    
+    // Professor-accessible profile routes (for search results)
+    Route::get('/view/program/{id}', [SearchController::class, 'showProgramProfile'])->name('professor.view.program');
+    Route::get('/view/student/{id}', [SearchController::class, 'showUserProfile'])->name('professor.view.student');
+    Route::get('/view/professor/{id}', [SearchController::class, 'showProfessorProfile'])->name('professor.view.professor');
     
     // Meeting Management (replacing Attendance)
     Route::get('/attendance', [\App\Http\Controllers\ProfessorMeetingController::class, 'index'])

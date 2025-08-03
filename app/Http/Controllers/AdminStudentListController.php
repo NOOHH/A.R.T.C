@@ -194,6 +194,13 @@ class AdminStudentListController extends Controller
                 });
             })
 
+            // Apply batch filter
+            ->when($request->filled('batch_id'), function($q) use ($request) {
+                $q->whereHas('enrollments', function($q2) use ($request) {
+                    $q2->where('batch_id', $request->batch_id);
+                });
+            })
+
             // Apply search filter
             ->when($request->filled('search'), function($q) use ($request) {
                 $search = $request->search;
@@ -219,6 +226,9 @@ class AdminStudentListController extends Controller
             if ($program) {
                 $filterInfo[] = 'program_' . str_replace(' ', '_', strtolower($program->program_name));
             }
+        }
+        if ($request->filled('batch_id')) {
+            $filterInfo[] = 'batch_' . $request->batch_id;
         }
         if ($request->filled('status')) {
             $filterInfo[] = $request->status;
