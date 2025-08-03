@@ -93,7 +93,7 @@ Route::get('/search-now', function(\Illuminate\Http\Request $request) {
                     'id' => $student->id,
                     'name' => $student->firstname . ' ' . $student->lastname,
                     'email' => $student->email,
-                    'url' => '/profile/user/' . $student->id
+                    'url' => '/professor/view/student/' . $student->id
                 ];
             }
         }
@@ -115,7 +115,7 @@ Route::get('/search-now', function(\Illuminate\Http\Request $request) {
                     'id' => $professor->id,
                     'name' => $professor->professor_first_name . ' ' . $professor->professor_last_name,
                     'email' => $professor->professor_email,
-                    'url' => '/profile/professor/' . $professor->id
+                    'url' => '/professor/view/professor/' . $professor->id
                 ];
             }
         }
@@ -133,7 +133,7 @@ Route::get('/search-now', function(\Illuminate\Http\Request $request) {
                     'id' => $program->id,
                     'name' => $program->program_name,
                     'description' => $program->program_description,
-                    'url' => '/profile/program/' . $program->id
+                    'url' => '/professor/view/program/' . $program->id
                 ];
             }
         }
@@ -1493,17 +1493,23 @@ Route::get('/test-ajax-search', function(\Illuminate\Http\Request $request) {
         ]);
     }
 })->name('test.ajax.search'); // Test route that calls search controller directly
-Route::get('/search/advanced', [SearchController::class, 'advancedSearch'])->name('search.advanced');
+
 Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
 
 // New Universal Search System routes
 Route::get('/search/universal', [SearchController::class, 'universalSearch'])->name('search.universal');
 Route::get('/search/profile', [SearchController::class, 'getProfile'])->name('search.profile');
 
-// Profile pages for search results
+// Profile pages for search results - make them accessible with session auth
 Route::get('/profile/user/{id}', [SearchController::class, 'showUserProfile'])->name('profile.user');
 Route::get('/profile/professor/{id}', [SearchController::class, 'showProfessorProfile'])->name('profile.professor');
 Route::get('/profile/program/{id}', [SearchController::class, 'showProgramProfile'])->name('profile.program');
+
+// Simple test route to debug the issue
+Route::get('/test-program/{id}', function($id) {
+    $program = \App\Models\Program::findOrFail($id);
+    return "Program: " . $program->program_name . " (ID: " . $id . ")";
+})->name('test.program');
 
 // API routes for AJAX search
 Route::prefix('api/search')->group(function () {
@@ -1891,6 +1897,11 @@ Route::middleware(['professor.auth'])
          ->name('students.index');
     Route::post('/students/{student}/grade', [ProfessorDashboardController::class, 'gradeStudent'])
          ->name('students.grade');
+    
+    // Professor-accessible profile routes (for search results)
+    Route::get('/view/program/{id}', [SearchController::class, 'showProgramProfile'])->name('professor.view.program');
+    Route::get('/view/student/{id}', [SearchController::class, 'showUserProfile'])->name('professor.view.student');
+    Route::get('/view/professor/{id}', [SearchController::class, 'showProfessorProfile'])->name('professor.view.professor');
     
     // Meeting Management (replacing Attendance)
     Route::get('/attendance', [\App\Http\Controllers\ProfessorMeetingController::class, 'index'])
