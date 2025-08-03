@@ -864,94 +864,102 @@ Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentPr
 Route::post('/student/payment/upload-proof', [StudentPaymentModalController::class, 'uploadPaymentProof'])->name('student.payment.upload-proof');
 Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnabledPaymentMethods'])->name('payment-methods.enabled');
 
+// Test route for modal functionality (no authentication required)
+Route::get('/test/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
+     ->name('test.registration.details');
+
 // Admin dashboard and admin routes with middleware
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
          ->name('admin.dashboard');
 
-// Admin approve/reject registration
-Route::get('/admin/modal-test', function() {
-    return view('admin.modal-test');
-})->middleware(['admin.director.auth']);
-Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
-Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson']);
-Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
-     ->name('admin.registration.approve');
-Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'])
-     ->name('admin.registration.reject');
-Route::post('/admin/registration/{id}/reject-with-reason', [AdminController::class, 'rejectWithReason'])
-     ->name('admin.registration.reject.reason');
-Route::post('/admin/registration/{id}/reject-with-fields', [AdminController::class, 'rejectWithFields'])
-     ->name('admin.registration.reject.fields');
-Route::post('/admin/registration/{id}/approve-resubmission', [AdminController::class, 'approveResubmission'])
-     ->name('admin.registration.approve.resubmission');
-// Registration actions
-Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
-     ->name('admin.registration.approve');
-Route::post('/admin/registration/{id}/reject', [AdminController::class, 'rejectRegistration'])
-     ->name('admin.registration.reject');
-Route::post('/admin/registration/{id}/update-rejection', [AdminController::class, 'updateRejection'])
-     ->name('admin.registration.update.rejection');
-Route::get('/admin/registration/{id}/original-data', [AdminController::class, 'getOriginalRegistrationData'])
-     ->name('admin.registration.original.data');
+    // Admin approve/reject registration
+    Route::get('/admin/modal-test', function() {
+        return view('admin.modal-test');
+    });
+    Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
+    Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
+         ->name('admin.registration.details');
+    Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
+         ->name('admin.registration.approve');
+    Route::post('/admin/registration/{id}/reject', [AdminController::class, 'reject'])
+         ->name('admin.registration.reject');
+    Route::post('/admin/registration/{id}/reject-with-reason', [AdminController::class, 'rejectWithReason'])
+         ->name('admin.registration.reject.reason');
+    Route::post('/admin/registration/{id}/reject-with-fields', [AdminController::class, 'rejectWithFields'])
+         ->name('admin.registration.reject.fields');
+    Route::post('/admin/registration/{id}/approve-resubmission', [AdminController::class, 'approveResubmission'])
+         ->name('admin.registration.approve.resubmission');
+    // Registration actions
+    Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])
+         ->name('admin.registration.approve');
+    Route::post('/admin/registration/{id}/reject', [AdminController::class, 'rejectRegistration'])
+         ->name('admin.registration.reject');
+    Route::post('/admin/registration/{id}/update-rejection', [AdminController::class, 'updateRejection'])
+         ->name('admin.registration.update.rejection');
+    Route::get('/admin/registration/{id}/original-data', [AdminController::class, 'getOriginalRegistrationData'])
+         ->name('admin.registration.original.data');
 
-// Get registration details
-Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
-     ->name('admin.registration.details');
+    // List student registrations
+    Route::get('/admin-student-registration', [AdminController::class, 'studentRegistration'])
+         ->name('admin.student.registration');
+    Route::get('/admin-student-registration/pending', [AdminController::class, 'studentRegistration'])
+         ->name('admin.student.registration.pending');
+    Route::get('/admin-student-registration/rejected', [AdminController::class, 'studentRegistrationRejected'])
+         ->name('admin.student.registration.rejected');
+    Route::get('/admin-student-registration/resubmitted', [AdminController::class, 'studentRegistrationResubmitted'])
+         ->name('admin.student.registration.resubmitted');
+    Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
+         ->name('admin.student.registration.history');
 
-// List student registrations
-Route::get('/admin-student-registration', [AdminController::class, 'studentRegistration'])
-     ->name('admin.student.registration');
-Route::get('/admin-student-registration/pending', [AdminController::class, 'studentRegistration'])
-     ->name('admin.student.registration.pending');
-Route::get('/admin-student-registration/rejected', [AdminController::class, 'studentRegistrationRejected'])
-     ->name('admin.student.registration.rejected');
-Route::get('/admin-student-registration/resubmitted', [AdminController::class, 'studentRegistrationResubmitted'])
-     ->name('admin.student.registration.resubmitted');
-Route::get('/admin-student-registration/history', [AdminController::class, 'studentRegistrationHistory'])
-     ->name('admin.student.registration.history');
+    // Student history actions
+    Route::get('/admin/student/{id}/details', [AdminController::class, 'getStudentDetailsJson'])
+         ->name('admin.student.details');
+    Route::post('/admin/student/{id}/undo-approval', [AdminController::class, 'undoApproval'])
+         ->name('admin.student.undo.approval');
 
-// Student history actions
-Route::get('/admin/student/{id}/details', [AdminController::class, 'getStudentDetailsJson'])
-     ->name('admin.student.details');
-Route::post('/admin/student/{id}/undo-approval', [AdminController::class, 'undoApproval'])
-     ->name('admin.student.undo.approval');
+    // Rejected registration actions
+    Route::post('/admin/registration/{id}/undo-rejection', [AdminController::class, 'undoRejection'])
+         ->name('admin.registration.undo.rejection');
+    Route::post('/admin/registration/{id}/approve-rejected', [AdminController::class, 'approveRejectedRegistration'])
+         ->name('admin.registration.approve.rejected');
 
-// Rejected registration actions
-Route::post('/admin/registration/{id}/undo-rejection', [AdminController::class, 'undoRejection'])
-     ->name('admin.registration.undo.rejection');
-Route::post('/admin/registration/{id}/approve-rejected', [AdminController::class, 'approveRejectedRegistration'])
-     ->name('admin.registration.approve.rejected');
+    // Enrollment details for payment history
+    Route::get('/admin/student/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])
+         ->name('admin.enrollment.details');
+    Route::get('/admin/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])
+         ->name('admin.enrollment.details.json');
 
-// Enrollment details for payment history
-Route::get('/admin/student/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])
-     ->name('admin.enrollment.details');
-Route::get('/admin/enrollment/{id}/details', [AdminController::class, 'getEnrollmentDetailsJson'])
-     ->name('admin.enrollment.details.json');
+    // Enrollment assignment route  
+    Route::post('/admin/enrollment/assign', [AdminController::class, 'assignEnrollment'])
+         ->name('admin.enrollment.assign');
 
-// Enrollment assignment route  
-Route::post('/admin/enrollment/assign', [AdminController::class, 'assignEnrollment'])
-     ->name('admin.enrollment.assign');
+    // Payment management routes
+    Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
+         ->name('admin.student.registration.payment.pending');
+    Route::get('/admin-student-registration/payment/rejected', [AdminController::class, 'paymentRejected'])
+         ->name('admin.student.registration.payment.rejected');
+    Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
+         ->name('admin.student.registration.payment.history');
 
-// Payment management routes
-Route::get('/admin-student-registration/payment/pending', [AdminController::class, 'paymentPending'])
-     ->name('admin.student.registration.payment.pending');
-Route::get('/admin-student-registration/payment/rejected', [AdminController::class, 'paymentRejected'])
-     ->name('admin.student.registration.payment.rejected');
-Route::get('/admin-student-registration/payment/history', [AdminController::class, 'paymentHistory'])
-     ->name('admin.student.registration.payment.history');
+    // Mark enrollment as paid
+    Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
+         ->name('admin.enrollment.mark-paid');
 
-// Mark enrollment as paid
-Route::post('/admin/enrollment/{id}/mark-paid', [AdminController::class, 'markAsPaid'])
-     ->name('admin.enrollment.mark-paid');
+    // View one student registration's details
+    Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
+         ->name('admin.student.registration.view');
 
-// View one student registration's details
-Route::get('/admin-student-registration/view/{id}', [AdminController::class, 'showRegistrationDetails'])
-     ->name('admin.student.registration.view');
+    // Add this route for payment details by enrollment ID
+    Route::get('/admin/enrollment/{id}/payment-details', [AdminController::class, 'getPaymentDetailsByEnrollment'])
+         ->name('admin.enrollment.payment-details');
 
-// Add this route for payment details by enrollment ID
-Route::get('/admin/enrollment/{id}/payment-details', [AdminController::class, 'getPaymentDetailsByEnrollment'])
-     ->name('admin.enrollment.payment-details');
+    // Registration management routes (moved inside middleware group)
+    Route::post('/admin/registrations/{id}/approve', [AdminController::class, 'approveRegistration'])
+         ->name('admin.registrations.approve');
+    Route::post('/admin/registrations/{id}/undo-approval', [AdminController::class, 'undoRegistrationApproval'])
+         ->name('admin.registrations.undo-approval');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -1231,11 +1239,7 @@ Route::post('/admin/settings/payment-terms', [AdminSettingsController::class, 'u
 Route::post('/admin/settings/terms-conditions', [AdminSettingsController::class, 'updateTermsConditions'])
      ->name('admin.settings.update.terms.conditions');
 
-// Registration management routes
-Route::post('/admin/registrations/{id}/approve', [AdminController::class, 'approveRegistration'])
-     ->name('admin.registrations.approve');
-Route::post('/admin/registrations/{id}/undo-approval', [AdminController::class, 'undoRegistrationApproval'])
-     ->name('admin.registrations.undo-approval');
+// Registration management routes (moved inside middleware group)
 
 // Payment management routes
 Route::post('/admin/payments/{id}/mark-paid', [AdminController::class, 'markPaymentAsPaid'])
@@ -1780,8 +1784,6 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/certificates/{student}/download', [CertificateController::class, 'adminDownload'])->name('admin.certificates.download');
     Route::post('/admin/certificates/bulk-approve', [CertificateController::class, 'bulkApprove'])->name('admin.certificates.bulk-approve');
 });
-
-}); // End of admin middleware group
 
 /*
 |--------------------------------------------------------------------------

@@ -164,6 +164,23 @@ class AdminController extends Controller
                 ];
             }
             
+            // Check if we have a student record for additional information
+            $studentInfo = [];
+            if ($registration->user_id) {
+                $student = \App\Models\Student::where('user_id', $registration->user_id)->first();
+                if ($student) {
+                    $studentInfo = [
+                        'firstname' => $student->firstname,
+                        'lastname' => $student->lastname,
+                        'middlename' => $student->middlename,
+                        'contact_number' => $student->contact_number,
+                        'address' => $student->address,
+                        'city' => $student->city,
+                        'province' => $student->province,
+                    ];
+                }
+            }
+            
             
             // Build response based only on active form requirements and actual form data
             $response = [
@@ -175,6 +192,9 @@ class AdminController extends Controller
                 // User Information (Enhanced)
                 'user_info' => $userInfo,
                 
+                // Student Information (if available)
+                'student_info' => $studentInfo,
+                
                 // Core enrollment flow data (always shown)
                 'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
                 'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
@@ -182,6 +202,33 @@ class AdminController extends Controller
                 'enrollment_type' => $registration->enrollment_type ?? 'Full',
                 'learning_mode' => $getFieldValue('learning_mode', $registration->learning_mode),
                 'enrollment_date' => $registration->created_at->format('M d, Y H:i'),
+                
+                // Enhanced plan type detection
+                'plan_type' => $this->getPlanType($registration),
+                
+                // Enhanced education level information
+                'education_level_info' => $this->getEducationLevelInfo($registration),
+                
+                // Direct field access for backward compatibility
+                'firstname' => $studentInfo['firstname'] ?? $getFieldValue('firstname'),
+                'lastname' => $studentInfo['lastname'] ?? $getFieldValue('lastname'),
+                'email' => $userInfo['email'] ?? $getFieldValue('email'),
+                'contact_number' => $studentInfo['contact_number'] ?? $getFieldValue('contact_number'),
+                'street_address' => $studentInfo['address'] ?? $getFieldValue('street_address'),
+                'city' => $studentInfo['city'] ?? $getFieldValue('city'),
+                'state_province' => $studentInfo['province'] ?? $getFieldValue('state_province'),
+                
+                // Document fields for direct access
+                'PSA' => $getFieldValue('PSA'),
+                'TOR' => $getFieldValue('TOR'),
+                'diploma' => $getFieldValue('diploma'),
+                'diploma_certificate' => $getFieldValue('diploma_certificate'),
+                'Course_Cert' => $getFieldValue('Course_Cert'),
+                'good_moral' => $getFieldValue('good_moral'),
+                'photo_2x2' => $getFieldValue('photo_2x2'),
+                'valid_id' => $getFieldValue('valid_id'),
+                'birth_certificate' => $getFieldValue('birth_certificate'),
+                'Cert_of_Grad' => $getFieldValue('Cert_of_Grad'),
             ];
             
             // Enhanced enrollment information
@@ -409,6 +456,195 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Registration not found: ' . $e->getMessage()], 404);
         }
+    }
+    
+    /**
+     * Get the plan type (Full or Modular) based on registration data
+     */
+    private function getPlanType($registration)
+    {
+        // Check enrollment_type first
+        if ($registration->enrollment_type) {
+            return ucfirst(strtolower($registration->enrollment_type));
+        }
+        
+        // Check package type
+        if ($registration->package && $registration->package->package_type) {
+            return ucfirst(strtolower($registration->package->package_type));
+        }
+        
+        // Check plan name
+        if ($registration->plan && $registration->plan->plan_name) {
+            $planName = strtolower($registration->plan->plan_name);
+            if (strpos($planName, 'modular') !== false) {
+                return 'Modular';
+            } elseif (strpos($planName, 'full') !== false) {
+                return 'Full';
+            }
+        }
+        
+        // Check package name
+        if ($registration->package_name) {
+            $packageName = strtolower($registration->package_name);
+            if (strpos($packageName, 'modular') !== false) {
+                return 'Modular';
+            } elseif (strpos($packageName, 'full') !== false) {
+                return 'Full';
+            }
+        }
+        
+        // Default to Full
+        return 'Full';
+    }
+    
+    /**
+     * Helper function to get field value with priority: dynamic_fields > static_field > enrollment_field
+     */
+    private function getFieldValue($fieldName, $registration, $staticValue = null)
+    {
+        // Parse dynamic fields (JSON stored data from actual form submission)
+        $dynamicFields = [];
+        if ($registration->dynamic_fields) {
+            $dynamicFields = is_string($registration->dynamic_fields) 
+                ? json_decode($registration->dynamic_fields, true) 
+                : $registration->dynamic_fields;
+            if (!is_array($dynamicFields)) {
+                $dynamicFields = [];
+            }
+        }
+        
+        // Get latest enrollment if available
+        $latestEnrollment = null;
+        if ($registration->enrollments && $registration->enrollments->count() > 0) {
+            $latestEnrollment = $registration->enrollments->sortByDesc('created_at')->first();
+        }
+        
+        // First check dynamic fields (actual form data)
+        if (isset($dynamicFields[$fieldName]) && !empty($dynamicFields[$fieldName])) {
+            return $dynamicFields[$fieldName];
+        }
+        // Then check static registration fields
+        if (!empty($registration->$fieldName)) {
+            return $registration->$fieldName;
+        }
+        // Then check enrollment fields
+        if ($latestEnrollment && !empty($latestEnrollment->$fieldName)) {
+            return $latestEnrollment->$fieldName;
+        }
+        // Finally use provided static value
+        return $staticValue;
+    }
+    
+    /**
+     * Get education level information with file requirements
+     */
+    private function getEducationLevelInfo($registration)
+    {
+        $educationLevel = $this->getFieldValue('education_level', $registration);
+        
+        if (!$educationLevel || $educationLevel === 'N/A') {
+            return [
+                'level_name' => 'N/A',
+                'file_requirements' => [],
+                'uploaded_documents' => []
+            ];
+        }
+        
+        // Get education level details from database
+        $levelInfo = \App\Models\EducationLevel::where('level_name', $educationLevel)
+            ->orWhere('level_name', 'like', '%' . $educationLevel . '%')
+            ->first();
+            
+        if (!$levelInfo) {
+            return [
+                'level_name' => $educationLevel,
+                'file_requirements' => [],
+                'uploaded_documents' => $this->getUploadedDocuments($registration)
+            ];
+        }
+        
+        // Get file requirements for this education level
+        $fileRequirements = [];
+        if ($levelInfo->file_requirements) {
+            $requirements = is_string($levelInfo->file_requirements) 
+                ? json_decode($levelInfo->file_requirements, true) 
+                : $levelInfo->file_requirements;
+                
+            if (is_array($requirements)) {
+                foreach ($requirements as $requirement) {
+                    if (isset($requirement['field_name']) && isset($requirement['display_name'])) {
+                        $fileRequirements[] = [
+                            'field_name' => $requirement['field_name'],
+                            'display_name' => $requirement['display_name'],
+                            'is_required' => $requirement['is_required'] ?? false,
+                            'document_type' => $requirement['document_type'] ?? $requirement['field_name']
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return [
+            'level_name' => $levelInfo->level_name,
+            'level_order' => $levelInfo->level_order,
+            'file_requirements' => $fileRequirements,
+            'uploaded_documents' => $this->getUploadedDocuments($registration, $fileRequirements)
+        ];
+    }
+    
+    /**
+     * Get uploaded documents for a registration
+     */
+    private function getUploadedDocuments($registration, $fileRequirements = [])
+    {
+        $uploadedDocs = [];
+        
+        // Get dynamic fields
+        $dynamicFields = $registration->dynamic_fields ? json_decode($registration->dynamic_fields, true) : [];
+        
+        // Check each file requirement
+        foreach ($fileRequirements as $requirement) {
+            $fieldName = $requirement['field_name'];
+            $displayName = $requirement['display_name'];
+            
+            // Check in dynamic fields first
+            if (isset($dynamicFields[$fieldName]) && $dynamicFields[$fieldName]) {
+                $uploadedDocs[] = [
+                    'field_name' => $fieldName,
+                    'display_name' => $displayName,
+                    'file_path' => $dynamicFields[$fieldName],
+                    'is_required' => $requirement['is_required'],
+                    'uploaded' => true
+                ];
+            } else {
+                // Check if not uploaded
+                $uploadedDocs[] = [
+                    'field_name' => $fieldName,
+                    'display_name' => $displayName,
+                    'file_path' => null,
+                    'is_required' => $requirement['is_required'],
+                    'uploaded' => false
+                ];
+            }
+        }
+        
+        // Also check common document fields
+        $commonFields = ['PSA', 'TOR', 'diploma', 'diploma_certificate', 'Course_Cert', 'good_moral', 'photo_2x2', 'valid_id', 'birth_certificate', 'Cert_of_Grad'];
+        
+        foreach ($commonFields as $fieldName) {
+            $value = $this->getFieldValue($fieldName, $registration);
+            if ($value && $value !== 'N/A') {
+                $uploadedDocs[] = [
+                    'field_name' => $fieldName,
+                    'display_name' => ucfirst(str_replace('_', ' ', $fieldName)),
+                    'file_path' => $value,
+                    'is_required' => false,
+                    'uploaded' => true
+                ];
+            }
+        }
+        
+        return $uploadedDocs;
     }
 
     public function approve($id)
