@@ -1347,12 +1347,12 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                 
                                 contentHtml = `
                                     <div class="content-display">
-                                        ${videoPlayer}
-                                        <div class="content-details mt-3">
-                                            <h5>Video Details</h5>
+                                        <div class="content-details mb-3 p-3 border rounded bg-light">
+                                            <h5><i class="bi bi-play-circle"></i> Video Details</h5>
                                             <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
                                             <p><strong>Source:</strong> <a href="${videoUrl}" target="_blank">External Link</a></p>
                                         </div>
+                                        ${videoPlayer}
                                     </div>
                                 `;
                             } 
@@ -1391,9 +1391,14 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                                     Your browser does not support the video tag.
                                                 </video>
                                                 <div class="mt-2">
-                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-download"></i> Download
-                                                    </a>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary" title="View in New Tab">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <a href="${fileUrl}" download class="btn btn-secondary" title="Download">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         `;
@@ -1405,9 +1410,14 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                                 <h6>${fileName}</h6>
                                                 <iframe src="${fileUrl}" style="width: 100%; height: 400px; border: 1px solid #ddd;"></iframe>
                                                 <div class="mt-2">
-                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-download"></i> Download
-                                                    </a>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary" title="View in New Tab">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <a href="${fileUrl}" download class="btn btn-secondary" title="Download">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         `;
@@ -1418,9 +1428,14 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                                 <h6>${fileName}</h6>
                                                 <img src="${fileUrl}" class="img-fluid" alt="${fileName}" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
                                                 <div class="mt-2">
-                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-download"></i> Download
-                                                    </a>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary" title="View in New Tab">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <a href="${fileUrl}" download class="btn btn-secondary" title="Download">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         `;
@@ -1434,9 +1449,14 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                                     <p>File preview not available for this type</p>
                                                 </div>
                                                 <div class="mt-2">
-                                                    <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-download"></i> Download
-                                                    </a>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary" title="View in New Tab">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <a href="${fileUrl}" download class="btn btn-secondary" title="Download">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </div>
                                         `;
@@ -1445,12 +1465,12 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                 
                                 contentHtml = `
                                     <div class="content-display">
-                                        ${videoPlayers}
-                                        <div class="content-details mt-3">
-                                            <h5>Content Details</h5>
+                                        <div class="content-details mb-3 p-3 border rounded bg-light">
+                                            <h5><i class="bi bi-play-circle"></i> Content Details</h5>
                                             <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
                                             <p><strong>Files:</strong> ${attachmentPaths.length} file(s) attached</p>
                                         </div>
+                                        ${videoPlayers}
                                     </div>
                                 `;
                             }
@@ -1511,16 +1531,6 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                     if (fileExtension === 'pdf') {
                                         fileViewer += `
                                             <div class="pdf-viewer">
-                                                <div class="pdf-controls mb-2">
-                                                    <div class="btn-group">
-                                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                                            <i class="bi bi-fullscreen"></i> Full Screen
-                                                        </a>
-                                                        <a href="${fileUrl}" download class="btn btn-outline-primary btn-sm">
-                                                            <i class="bi bi-download"></i> Download
-                                                        </a>
-                                                    </div>
-                                                </div>
                                                 <iframe class="content-frame" src="${fileUrl}#toolbar=1&navpanes=1&scrollbar=1" 
                                                         style="width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px;"
                                                         allowfullscreen>
@@ -1639,12 +1649,22 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                             
                             contentHtml = `
                                 <div class="content-display">
-                                    ${fileViewer}
-                                    <div class="content-details mt-3">
-                                        <h5>Document Details</h5>
+                                    <div class="content-details mb-3 p-3 border rounded bg-light">
+                                        <h5><i class="bi bi-file-earmark-text"></i> Document Details</h5>
                                         <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
                                         <p><strong>Files:</strong> ${attachmentPaths.length} file(s) attached</p>
                                     </div>
+                                    <div class="document-controls mb-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/storage/${attachmentPaths[0]}" target="_blank" class="btn btn-outline-secondary" title="View in New Tab">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/storage/${attachmentPaths[0]}" download class="btn btn-secondary" title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    ${fileViewer}
                                 </div>
                             `;
                         } else {
@@ -1656,10 +1676,12 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                         if (content.content_url) {
                             contentHtml = `
                                 <div class="content-display">
-                                    <div class="link-preview">
+                                    <div class="content-details mb-3 p-3 border rounded bg-light">
                                         <h5><i class="bi bi-link-45deg"></i> External Link</h5>
                                         <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
                                         <p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>
+                                    </div>
+                                    <div class="link-preview">
                                         <div class="mt-3">
                                             <a href="${content.content_url}" target="_blank" class="btn btn-primary">
                                                 <i class="bi bi-box-arrow-up-right"></i> Open Link
@@ -1676,11 +1698,13 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                     case 'assignment':
                         contentHtml = `
                             <div class="content-display">
-                                <div class="assignment-preview">
+                                <div class="content-details mb-3 p-3 border rounded bg-light">
                                     <h5><i class="bi bi-pencil-square"></i> Assignment Details</h5>
                                     <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
                                     ${content.due_date ? `<p><strong>Due Date:</strong> ${new Date(content.due_date).toLocaleDateString()}</p>` : ''}
-                                    ${content.submission_instructions ? `<div class="mt-3"><h6>Instructions:</h6><p>${content.submission_instructions}</p></div>` : ''}
+                                    ${content.submission_instructions ? `<div class="mt-2"><strong>Instructions:</strong><br><p>${content.submission_instructions}</p></div>` : ''}
+                                </div>
+                                <div class="assignment-preview">
                                     <div class="mt-3">
                                         <button class="btn btn-info" onclick="viewSubmissions(${contentId})">
                                             <i class="bi bi-file-earmark-text"></i> View Submissions
@@ -1694,8 +1718,10 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                     default:
                         let defaultContentHtml = `
                             <div class="content-display">
-                                <h5>${(content.content_type || 'Content').charAt(0).toUpperCase() + (content.content_type || 'Content').slice(1)} Details</h5>
-                                <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                <div class="content-details mb-3 p-3 border rounded bg-light">
+                                    <h5><i class="bi bi-file-earmark"></i> ${(content.content_type || 'Content').charAt(0).toUpperCase() + (content.content_type || 'Content').slice(1)} Details</h5>
+                                    <p><strong>Description:</strong> ${content.content_description || 'No description'}</p>
+                                </div>
                         `;
                         
                         // Handle attachments for any content type
@@ -1786,12 +1812,14 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                                 
                                 filePreview += `
                                     <div class="mb-3">
-                                        <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
-                                        <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
-                                            <i class="bi bi-eye"></i> View in New Tab
-                                        </a>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary" title="View in New Tab">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="${fileUrl}" download class="btn btn-secondary" title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
                                     </div>
                                 `;
                             }
@@ -1803,11 +1831,13 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
                         
                         if (content.content_url) {
                             defaultContentHtml += `
-                                <p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>
-                                <div class="mt-2">
-                                    <a href="${content.content_url}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-box-arrow-up-right"></i> Open Link
-                                    </a>
+                                <div class="mt-3 p-3 border rounded">
+                                    <p><strong>URL:</strong> <a href="${content.content_url}" target="_blank">${content.content_url}</a></p>
+                                    <div class="mt-2">
+                                        <a href="${content.content_url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-box-arrow-up-right"></i> Open Link
+                                        </a>
+                                    </div>
                                 </div>
                             `;
                         }

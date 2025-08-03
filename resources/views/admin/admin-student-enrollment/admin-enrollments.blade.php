@@ -48,13 +48,9 @@
                             <div class="card">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5><i class="bi bi-person-plus me-2"></i>Individual Student Enrollment</h5>
-                                    <form method="GET" action="{{ route('admin.students.export') }}" style="display: inline;">
-                                        <input type="hidden" name="status" value="approved">
-                                        <input type="hidden" name="download" value="direct">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-download me-1"></i>Export Students CSV
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportApprovedStudents()">
+                                        <i class="bi bi-download me-1"></i>Export Students CSV
+                                    </button>
                                 </div>
                                 <div class="card-body">
                                     <form action="{{ route('admin.enrollment.assign') }}" method="POST" id="enrollmentForm">
@@ -313,6 +309,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Export approved students function
+    function exportApprovedStudents() {
+        const exportUrl = '{{ route("admin.students.export") }}?status=approved&download=direct';
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = exportUrl;
+        link.download = 'approved_students_export.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 });
 </script>
 @endsection

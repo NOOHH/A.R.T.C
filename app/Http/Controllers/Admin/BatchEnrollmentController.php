@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\Professor;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class BatchEnrollmentController extends Controller
 {
@@ -626,42 +627,147 @@ class BatchEnrollmentController extends Controller
     {
         // Authentication is handled by middleware
         
-        $batch = StudentBatch::with(['program', 'enrollments.user'])->findOrFail($id);
-        
-        $enrollments = $batch->enrollments->map(function ($enrollment) {
-            $user = $enrollment->user;
-            return [
-                'Student Name' => $user ? $user->user_firstname . ' ' . $user->user_lastname : 'N/A',
-                'Email' => $user ? $user->email : 'N/A',
-                'Enrollment Date' => $enrollment->enrollment_date ? $enrollment->enrollment_date->format('Y-m-d') : 'N/A',
-                'Status' => $enrollment->enrollment_status ?? 'N/A'
-            ];
-        });
-
-        $filename = 'batch_' . $batch->batch_id . '_enrollments_' . date('Y-m-d') . '.csv';
-        
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function() use ($enrollments) {
-            $file = fopen('php://output', 'w');
+        try {
+            $batch = StudentBatch::with(['program', 'enrollments.user', 'enrollments.student', 'enrollments.program', 'enrollments.package'])->findOrFail($id);
             
-            // Add CSV headers
-            if ($enrollments->isNotEmpty()) {
-                fputcsv($file, array_keys($enrollments->first()));
+            // Log for debugging
+            Log::info('Exporting batch enrollments', [
+                'batch_id' => $id,
+                'batch_name' => $batch->batch_name,
+                'enrollment_count' => $batch->enrollments->count()
+            ]);
+            
+            $enrollments = $batch->enrollments->map(function ($enrollment) {
+                $user = $enrollment->user;
+                $student = $enrollment->student;
                 
-                // Add data rows
-                foreach ($enrollments as $enrollment) {
-                    fputcsv($file, $enrollment);
+                // Get student name from user or student relationship
+                $studentName = 'N/A';
+                if ($user) {
+                    $studentName = trim(($user->user_firstname ?? '') . ' ' . ($user->user_lastname ?? ''));
+                } elseif ($student) {
+                    $studentName = trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? ''));
                 }
-            }
-            
-            fclose($file);
-        };
+                
+                // Get email from user or student relationship
+                $email = 'N/A';
+                if ($user) {
+                    $email = $user->email ?? 'N/A';
+                } elseif ($student) {
+                    $email = $student->email ?? 'N/A';
+                }
+                
+                return [
+                    'Student Name' => $studentName ?: 'N/A',
+                    'Email' => $email,
+                    'Program' => $enrollment->program->program_name ?? 'N/A',
+                    'Package' => $enrollment->package->package_name ?? 'N/A',
+                    'Enrollment Date' => $enrollment->created_at ? $enrollment->created_at->format('Y-m-d H:i:s') : 'N/A',
+                    'Enrollment Status' => $enrollment->enrollment_status ?? 'N/A',
+                    'Payment Status' => $enrollment->payment_status ?? 'N/A',
+                    'Batch Access' => $enrollment->batch_access_granted ? 'Granted' : 'Pending',
+                    'Amount' => $enrollment->package->price ?? 0
+                ];
+            });
 
-        return response()->stream($callback, 200, $headers);
+            $filename = 'batch_' . $batch->batch_id . '_enrollments_' . date('Y-m-d_H-i-s') . '.csv';
+            
+            $headers = [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0'
+            ];
+
+            $callback = function() use ($enrollments) {
+                $file = fopen('php://output', 'w');
+                
+                // Add BOM for UTF-8 encoding
+                fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+                
+                // Add CSV headers
+                if ($enrollments->isNotEmpty()) {
+                    fputcsv($file, array_keys($enrollments->first()));
+                    
+                    // Add data rows
+                    foreach ($enrollments as $enrollment) {
+                        fputcsv($file, $enrollment);
+                    }
+                } else {
+                    // If no enrollments, still create a file with headers
+                    fputcsv($file, ['Student Name', 'Email', 'Program', 'Package', 'Enrollment Date', 'Enrollment Status', 'Payment Status', 'Batch Access', 'Amount']);
+                    fputcsv($file, ['No enrollments found for this batch']);
+                }
+                
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+            
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('Export error: ' . $e->getMessage(), [
+                'batch_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Try to return JSON as fallback
+            try {
+                $batch = StudentBatch::with(['program', 'enrollments.user', 'enrollments.student', 'enrollments.program', 'enrollments.package'])->findOrFail($id);
+                
+                $enrollments = $batch->enrollments->map(function ($enrollment) {
+                    $user = $enrollment->user;
+                    $student = $enrollment->student;
+                    
+                    $studentName = 'N/A';
+                    if ($user) {
+                        $studentName = trim(($user->user_firstname ?? '') . ' ' . ($user->user_lastname ?? ''));
+                    } elseif ($student) {
+                        $studentName = trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? ''));
+                    }
+                    
+                    $email = 'N/A';
+                    if ($user) {
+                        $email = $user->email ?? 'N/A';
+                    } elseif ($student) {
+                        $email = $student->email ?? 'N/A';
+                    }
+                    
+                    return [
+                        'student_name' => $studentName ?: 'N/A',
+                        'email' => $email,
+                        'program' => $enrollment->program->program_name ?? 'N/A',
+                        'package' => $enrollment->package->package_name ?? 'N/A',
+                        'enrollment_date' => $enrollment->created_at ? $enrollment->created_at->format('Y-m-d H:i:s') : 'N/A',
+                        'enrollment_status' => $enrollment->enrollment_status ?? 'N/A',
+                        'payment_status' => $enrollment->payment_status ?? 'N/A',
+                        'batch_access' => $enrollment->batch_access_granted ? 'Granted' : 'Pending',
+                        'amount' => $enrollment->package->price ?? 0
+                    ];
+                });
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Export completed (JSON format due to CSV error)',
+                    'batch' => [
+                        'id' => $batch->batch_id,
+                        'name' => $batch->batch_name,
+                        'program' => $batch->program->program_name ?? 'N/A'
+                    ],
+                    'enrollments' => $enrollments,
+                    'total_enrollments' => $enrollments->count()
+                ]);
+                
+            } catch (\Exception $fallbackError) {
+                Log::error('Fallback export also failed: ' . $fallbackError->getMessage());
+                
+                return response()->json([
+                    'error' => 'Failed to export batch enrollments. Please try again later.',
+                    'details' => $e->getMessage()
+                ], 500);
+            }
+        }
     }
 
     /**

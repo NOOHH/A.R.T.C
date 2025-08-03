@@ -1630,19 +1630,44 @@ function removeStudent(batchId, enrollmentId) {
 }
 
 function exportStudentList(batchId) {
-    const filterParams = new URLSearchParams();
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput && searchInput.value) {
-        filterParams.append('search', searchInput.value);
-    }
-
-    const statusFilter = document.getElementById('statusFilter');
-    if (statusFilter && statusFilter.value) {
-        filterParams.append('status', statusFilter.value);
-    }
-
-    const url = `/admin/students/export?batch_id=${batchId}&${filterParams.toString()}`;
-    window.location.href = url;
+    // Use the correct route for batch export
+    const url = `{{ url('admin/batches') }}/${batchId}/export`;
+    
+    // Show loading indicator
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+    button.disabled = true;
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `batch_${batchId}_students_export.csv`;
+    
+    // Add error handling
+    link.onerror = function() {
+        alert('Error downloading file. Please try again.');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    };
+    
+    // Add success handling
+    link.onload = function() {
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 1000);
+    };
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Reset button after a delay
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }, 2000);
 }
 
 // Helper functions

@@ -13,14 +13,9 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> List of Students</h2>
     <div class="d-flex gap-2">
-      <form method="GET" action="{{ route('admin.students.export') }}" style="display: inline;">
-        <input type="hidden" name="program_id" value="{{ request('program_id') }}">
-        <input type="hidden" name="status" value="{{ request('status') }}">
-        <input type="hidden" name="search" value="{{ request('search') }}">
-        <button type="submit" class="btn btn-success">
-          <i class="bi bi-download"></i> Export to CSV
-        </button>
-      </form>
+      <button type="button" class="btn btn-success" onclick="exportToCSV()">
+        <i class="bi bi-download"></i> Export to CSV
+      </button>
       <a href="{{ route('admin.students.archived') }}" class="btn btn-outline-secondary">
         <i class="bi bi-archive"></i> View Archived
       </a>
@@ -278,6 +273,32 @@
       .addEventListener('change', function() {
         this.form.submit();
       });
+
+    // Export to CSV function
+    function exportToCSV() {
+      // Get current filter values
+      const programId = document.getElementById('program_id').value;
+      const status = document.getElementById('status').value;
+      const search = document.getElementById('search').value;
+      
+      // Build the export URL with current filters
+      let exportUrl = '{{ route("admin.students.export") }}?';
+      const params = new URLSearchParams();
+      
+      if (programId) params.append('program_id', programId);
+      if (status) params.append('status', status);
+      if (search) params.append('search', search);
+      
+      exportUrl += params.toString();
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = exportUrl;
+      link.download = 'students_export.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   </script>
 @endpush
 

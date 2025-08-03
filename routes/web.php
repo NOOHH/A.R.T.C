@@ -323,6 +323,18 @@ Route::get('/test-registration-routes', function() {
      ]);
 });
 
+Route::get('/test-export-route', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Export route test',
+        'export_route' => route('admin.batches.export', 1),
+        'batch_routes' => [
+            'index' => route('admin.batches.index'),
+            'export_template' => '/admin/batches/{id}/export'
+        ]
+    ]);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Test Settings
