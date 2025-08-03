@@ -16,9 +16,7 @@
                     <a href="{{ route('admin.professors.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to Professors
                     </a>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createMeetingModal"
-                            data-professor-id="{{ $professor->professor_id }}"
-                            data-professor-name="{{ $professor->professor_name }}">
+                    <button type="button" class="btn btn-primary" onclick="showSimpleModal('{{ $professor->professor_id }}', '{{ $professor->professor_name }}')">
                         <i class="bi bi-calendar-plus me-2"></i>Create Meeting
                     </button>
                 </div>

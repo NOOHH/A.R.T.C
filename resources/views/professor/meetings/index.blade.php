@@ -400,7 +400,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-                                    <form action="{{ route('professor.meetings.store') }}" method="POST">
+            <form action="{{ route('professor.meetings.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     @if ($errors->any())
@@ -918,8 +918,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form validation
     const createMeetingForm = document.querySelector('#createMeetingModal form');
+    console.log('Looking for form with selector: #createMeetingModal form');
+    console.log('Modal element:', document.getElementById('createMeetingModal'));
+    console.log('All forms on page:', document.querySelectorAll('form'));
+    
     if (createMeetingForm) {
         console.log('Form found:', createMeetingForm);
+        console.log('Form action:', createMeetingForm.action);
+        console.log('Form method:', createMeetingForm.method);
         createMeetingForm.addEventListener('submit', function(event) {
             console.log('Form submission triggered');
             const selectedPrograms = Array.from(programCheckboxes).filter(cb => cb.checked);
