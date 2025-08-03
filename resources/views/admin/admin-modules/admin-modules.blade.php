@@ -222,6 +222,31 @@
     transition: all 0.3s ease;
   }
   
+  /* Mobile Course Header */
+  @media (max-width: 768px) {
+    .course-header {
+      padding: 1.2rem 1.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    
+    .course-header h5 {
+      font-size: 1.1rem;
+      line-height: 1.3;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .course-header {
+      padding: 1rem 1.2rem;
+    }
+    
+    .course-header h5 {
+      font-size: 1rem;
+    }
+  }
+  
   .course-header:hover {
     background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
   }
@@ -252,6 +277,39 @@
     border: 1px solid #e9ecef;
     border-radius: 10px;
     transition: all 0.3s ease;
+  }
+  
+  /* Mobile Content Items */
+  @media (max-width: 768px) {
+    .content-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.2rem 1rem;
+    }
+    
+    .content-item-info {
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+    
+    .content-item:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .content-item {
+      padding: 1rem 0.8rem;
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+    }
+    
+    .content-item-info {
+      gap: 0.6rem;
+    }
   }
   
   .content-item:hover {
@@ -840,9 +898,29 @@ function loadModuleContentInViewer(moduleId) {
     subtitleElement.textContent = 'Fetching module details';
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
-    // Fetch module content
-    fetch(`/admin/modules/${moduleId}/content`)
-        .then(response => response.json())
+    // Fetch module content with proper headers
+    fetch(`/admin/modules/${moduleId}/content`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON - authentication may have expired');
+            }
+            
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 titleElement.textContent = data.module.module_name;
@@ -899,9 +977,29 @@ function loadCourseContentInViewer(moduleId, courseId) {
     subtitleElement.textContent = 'Fetching course content';
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
-    // Fetch course content
-    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`)
-        .then(response => response.json())
+    // Fetch course content with proper headers
+    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON - authentication may have expired');
+            }
+            
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 titleElement.textContent = data.course.course_name;
@@ -1684,11 +1782,32 @@ function loadCourseContent(moduleId, courseId) {
     
     container.innerHTML = '<div class="text-center p-3"><i class="bi bi-arrow-clockwise fa-spin"></i> Loading content...</div>';
     
-    fetch(`/admin/courses/${courseId}/content`)
-        .then(response => response.json())
+    // Use the correct API endpoint with proper headers
+    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON - authentication may have expired');
+            }
+            
+            return response.json();
+        })
         .then(data => {
-            if (data.success && data.content) {
-                displayCourseContent(moduleId, courseId, data.content);
+            if (data.success && data.content_items) {
+                displayCourseContent(moduleId, courseId, data.content_items);
                 container.dataset.loaded = 'true';
             } else {
                 container.innerHTML = `
@@ -1703,7 +1822,18 @@ function loadCourseContent(moduleId, courseId) {
         })
         .catch(error => {
             console.error('Error loading content:', error);
-            container.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+            
+            // Enhanced error handling for mobile
+            let errorMessage = 'Error loading content';
+            if (error.message.includes('authentication')) {
+                errorMessage = 'Session expired. Please refresh the page.';
+            } else if (error.message.includes('HTTP 404')) {
+                errorMessage = 'Content not found.';
+            } else if (error.message.includes('HTTP 403')) {
+                errorMessage = 'Access denied.';
+            }
+            
+            container.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
         });
 }
 

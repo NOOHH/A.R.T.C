@@ -258,7 +258,7 @@
 
 <!-- Batch Upload Modal -->
 <div class="modal-bg" id="batchModalBg">
-    <div class="modal" style="max-width: 600px; width: 90vw;">
+    <div class="modal">
         <h3>Batch Upload Programs</h3>
         <div class="file-upload-info">
             <strong>CSV Format Required:</strong><br>

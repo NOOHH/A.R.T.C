@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Authentication Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-card { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .code { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 API Authentication Debug Test</h1>
+        <p>This test will check what's happening with the admin modules API.</p>
+        
+        <div class="test-card" id="auth-check">
+            <h3>1. Authentication Check</h3>
+            <div id="auth-results">Running...</div>
+        </div>
+        
+        <div class="test-card" id="api-test">
+            <h3>2. API Endpoint Test</h3>
+            <div id="api-results">Waiting for auth check...</div>
+        </div>
+        
+        <div class="test-card" id="headers-test">
+            <h3>3. Response Headers Analysis</h3>
+            <div id="headers-results">Waiting for API test...</div>
+        </div>
+        
+        <div class="test-card" id="recommendations">
+            <h3>4. Recommendations</h3>
+            <div id="rec-results">Waiting for tests...</div>
+        </div>
+    </div>
+
+    <script>
+        async function runTests() {
+            console.log('🧪 Starting API authentication tests...');
+            
+            // Test 1: Check authentication context
+            await checkAuthentication();
+            
+            // Test 2: Test API endpoints
+            await testAPIEndpoints();
+            
+            // Test 3: Analyze headers
+            await analyzeHeaders();
+            
+            // Test 4: Provide recommendations
+            provideRecommendations();
+        }
+        
+        async function checkAuthentication() {
+            const authResults = document.getElementById('auth-results');
+            const authCard = document.getElementById('auth-check');
+            
+            try {
+                // Check if we're in admin context
+                const isAdminPath = window.location.pathname.includes('/admin');
+                const hasCSRF = document.querySelector('meta[name="csrf-token"]') !== null;
+                
+                let html = '<div class="mb-3">';
+                html += `<p><strong>Current URL:</strong> ${window.location.href}</p>`;
+                html += `<p><strong>Admin Path:</strong> ${isAdminPath ? '✅ Yes' : '❌ No'}</p>`;
+                html += `<p><strong>CSRF Token:</strong> ${hasCSRF ? '✅ Available' : '❌ Missing'}</p>`;
+                
+                // Try to check user agent
+                html += `<p><strong>User Agent:</strong> ${navigator.userAgent.substring(0, 50)}...</p>`;
+                
+                html += '</div>';
+                
+                if (!isAdminPath) {
+                    html += '<div class="alert alert-warning">⚠️ Not in admin context. Please navigate to the admin modules page first.</div>';
+                    authCard.className = 'test-card warning';
+                } else if (!hasCSRF) {
+                    html += '<div class="alert alert-danger">❌ CSRF token missing. This will cause API calls to fail.</div>';
+                    authCard.className = 'test-card error';
+                } else {
+                    html += '<div class="alert alert-success">✅ Basic authentication context looks good.</div>';
+                    authCard.className = 'test-card success';
+                }
+                
+                authResults.innerHTML = html;
+                
+            } catch (error) {
+                authResults.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                authCard.className = 'test-card error';
+            }
+        }
+        
+        async function testAPIEndpoints() {
+            const apiResults = document.getElementById('api-results');
+            const apiCard = document.getElementById('api-test');
+            
+            let html = '<div class="mb-3">';
+            
+            const endpoints = [
+                { url: '/admin/modules/1/content', name: 'Module Content' },
+                { url: '/admin/modules/1/courses/1/content', name: 'Course Content' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                html += `<h5>${endpoint.name} API Test</h5>`;
+                
+                try {
+                    const response = await fetch(endpoint.url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        }
+                    });
+                    
+                    const contentType = response.headers.get('content-type') || 'unknown';
+                    const isJSON = contentType.includes('application/json');
+                    
+                    html += `<div class="code">`;
+                    html += `<strong>URL:</strong> ${endpoint.url}<br>`;
+                    html += `<strong>Status:</strong> ${response.status} ${response.statusText}<br>`;
+                    html += `<strong>Content-Type:</strong> ${contentType}<br>`;
+                    html += `<strong>Is JSON:</strong> ${isJSON ? '✅ Yes' : '❌ No'}<br>`;
+                    html += `</div>`;
+                    
+                    if (response.ok && isJSON) {
+                        try {
+                            const data = await response.json();
+                            html += `<div class="alert alert-success">✅ ${endpoint.name}: SUCCESS</div>`;
+                            html += `<div class="code">Response: ${JSON.stringify(data, null, 2).substring(0, 200)}...</div>`;
+                        } catch (jsonError) {
+                            html += `<div class="alert alert-danger">❌ ${endpoint.name}: JSON parse error - ${jsonError.message}</div>`;
+                        }
+                    } else if (!isJSON) {
+                        // Try to get a preview of the HTML response
+                        const text = await response.text();
+                        const preview = text.substring(0, 200).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        
+                        html += `<div class="alert alert-danger">❌ ${endpoint.name}: Received HTML instead of JSON</div>`;
+                        html += `<div class="code">HTML Preview: ${preview}...</div>`;
+                        
+                        if (text.includes('<!DOCTYPE')) {
+                            html += `<div class="alert alert-warning">🔍 This looks like a redirect to login page or error page.</div>`;
+                        }
+                    } else {
+                        html += `<div class="alert alert-warning">⚠️ ${endpoint.name}: HTTP ${response.status}</div>`;
+                    }
+                    
+                } catch (error) {
+                    html += `<div class="alert alert-danger">❌ ${endpoint.name}: Network error - ${error.message}</div>`;
+                }
+                
+                html += '<hr>';
+            }
+            
+            html += '</div>';
+            apiResults.innerHTML = html;
+            
+            // Set card color based on results
+            if (html.includes('SUCCESS')) {
+                apiCard.className = 'test-card success';
+            } else if (html.includes('HTML instead of JSON')) {
+                apiCard.className = 'test-card error';
+            } else {
+                apiCard.className = 'test-card warning';
+            }
+        }
+        
+        async function analyzeHeaders() {
+            const headersResults = document.getElementById('headers-results');
+            const headersCard = document.getElementById('headers-test');
+            
+            try {
+                // Test a simple request to see response headers
+                const response = await fetch('/admin/modules/1/content', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                });
+                
+                let html = '<h5>Response Headers Analysis</h5>';
+                html += '<div class="code">';
+                
+                for (const [key, value] of response.headers.entries()) {
+                    html += `<strong>${key}:</strong> ${value}<br>`;
+                }
+                
+                html += '</div>';
+                
+                // Check for redirect indicators
+                const location = response.headers.get('location');
+                const contentType = response.headers.get('content-type');
+                
+                if (location) {
+                    html += `<div class="alert alert-warning">🔄 Response includes redirect to: ${location}</div>`;
+                }
+                
+                if (contentType && contentType.includes('text/html')) {
+                    html += `<div class="alert alert-danger">❌ Content-Type is HTML, not JSON</div>`;
+                    html += `<div class="alert alert-info">💡 This suggests the request was redirected to a login page or error page.</div>`;
+                    headersCard.className = 'test-card error';
+                } else if (contentType && contentType.includes('application/json')) {
+                    html += `<div class="alert alert-success">✅ Content-Type is JSON as expected</div>`;
+                    headersCard.className = 'test-card success';
+                } else {
+                    html += `<div class="alert alert-warning">⚠️ Unexpected Content-Type: ${contentType}</div>`;
+                    headersCard.className = 'test-card warning';
+                }
+                
+                headersResults.innerHTML = html;
+                
+            } catch (error) {
+                headersResults.innerHTML = `<div class="alert alert-danger">Error analyzing headers: ${error.message}</div>`;
+                headersCard.className = 'test-card error';
+            }
+        }
+        
+        function provideRecommendations() {
+            const recResults = document.getElementById('rec-results');
+            const recCard = document.getElementById('recommendations');
+            
+            let html = '<div class="mb-3">';
+            
+            // Check test results to provide specific recommendations
+            const hasAuthError = document.body.innerHTML.includes('HTML instead of JSON');
+            const hasNetworkError = document.body.innerHTML.includes('Network error');
+            const hasSuccess = document.body.innerHTML.includes('SUCCESS');
+            
+            if (hasSuccess) {
+                html += '<div class="alert alert-success">';
+                html += '<h5>🎉 APIs are working correctly!</h5>';
+                html += '<p>The JSON parsing error you experienced was likely temporary or due to a specific condition.</p>';
+                html += '</div>';
+                recCard.className = 'test-card success';
+            } else if (hasAuthError) {
+                html += '<div class="alert alert-danger">';
+                html += '<h5>🔐 Authentication Issue Detected</h5>';
+                html += '<p>The APIs are returning HTML (likely a login page) instead of JSON.</p>';
+                html += '<h6>Solutions:</h6>';
+                html += '<ul>';
+                html += '<li><strong>Log in:</strong> Ensure you are logged in as an admin or director</li>';
+                html += '<li><strong>Session:</strong> Check if your session has expired</li>';
+                html += '<li><strong>Permissions:</strong> Verify director_manage_modules setting is enabled</li>';
+                html += '<li><strong>Clear cache:</strong> Try refreshing the page or clearing browser cache</li>';
+                html += '</ul>';
+                html += '</div>';
+                recCard.className = 'test-card error';
+            } else if (hasNetworkError) {
+                html += '<div class="alert alert-warning">';
+                html += '<h5>🌐 Network Issue</h5>';
+                html += '<p>There are network connectivity issues with the API endpoints.</p>';
+                html += '<h6>Solutions:</h6>';
+                html += '<ul>';
+                html += '<li>Check if Laravel development server is running</li>';
+                html += '<li>Verify the correct URL and port</li>';
+                html += '<li>Check for any firewall or proxy issues</li>';
+                html += '</ul>';
+                html += '</div>';
+                recCard.className = 'test-card warning';
+            } else {
+                html += '<div class="alert alert-info">';
+                html += '<h5>🤔 Unclear Status</h5>';
+                html += '<p>The test results are inconclusive. Try the following:</p>';
+                html += '<ul>';
+                html += '<li>Refresh this page and run the test again</li>';
+                html += '<li>Check the browser console for additional errors</li>';
+                html += '<li>Navigate to the admin modules page and try the action again</li>';
+                html += '</ul>';
+                html += '</div>';
+                recCard.className = 'test-card warning';
+            }
+            
+            html += '<h6>Additional Debug Steps:</h6>';
+            html += '<ol>';
+            html += '<li>Open browser developer tools (F12)</li>';
+            html += '<li>Go to Network tab</li>';
+            html += '<li>Navigate to admin modules page</li>';
+            html += '<li>Try to load course content</li>';
+            html += '<li>Check the API request in Network tab for exact response</li>';
+            html += '</ol>';
+            
+            html += '</div>';
+            recResults.innerHTML = html;
+        }
+        
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runTests, 1000);
+        });
+        
+        // Add a manual test button
+        window.manualTest = runTests;
+    </script>
+    
+    <div class="text-center mt-4">
+        <button class="btn btn-primary" onclick="manualTest()">🔄 Run Tests Again</button>
+    </div>
+</body>
+</html>

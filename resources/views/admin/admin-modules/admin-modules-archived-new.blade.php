@@ -408,7 +408,10 @@ function restoreModule(moduleId) {
     $.ajax({
         url: `/admin/modules/${moduleId}/toggle-archive`,
         method: 'POST',
-        data: { is_archived: false },
+        data: { 
+            is_archived: false,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
         success: function(response) {
             if (response.success) {
                 showMessage('Module restored successfully!', 'success');

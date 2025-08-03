@@ -1099,9 +1099,18 @@ function displaySearchResults(data) {
         data.results.forEach(result => {
             const resultItem = document.createElement('div');
             resultItem.className = 'search-result-item p-2 border-bottom';
+            
+            // Create avatar or icon element
+            let avatarElement = '';
+            if (result.avatar && (result.type === 'student' || result.type === 'professor')) {
+                avatarElement = `<img src="${result.avatar}" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="Profile">`;
+            } else {
+                avatarElement = `<i class="bi ${result.icon || 'bi-search'} me-2"></i>`;
+            }
+            
             resultItem.innerHTML = `
                 <div class="d-flex align-items-center">
-                    <i class="bi ${result.icon || 'bi-search'} me-2"></i>
+                    ${avatarElement}
                     <div>
                         <div class="fw-medium">${result.title}</div>
                         <small class="text-muted">${result.subtitle || ''}</small>

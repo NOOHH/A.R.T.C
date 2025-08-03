@@ -948,7 +948,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])->name('admin.modules.batch-store');
     Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])->name('admin.modules.course-content-upload');
     Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])->name('admin.modules.course-content-store');
-    Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive');
+    Route::post('/admin/modules/{module:modules_id}/toggle-archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive');
     Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])->name('admin.modules.batch-delete');
     Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])->name('admin.modules.archived');
     Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
@@ -984,10 +984,6 @@ Route::get('/test-endpoint', function() {
     return response()->json(['message' => 'Test endpoint working', 'time' => now()]);
 });
 
-// Toggle archive status
-Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
-     ->name('admin.modules.toggle-archive');
-     
 // Batch delete modules (used only by archived modules view)
 Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])
      ->name('admin.modules.batch-delete');
@@ -1039,7 +1035,7 @@ Route::middleware(['admin.auth'])->group(function () {
 });
 
 // Admin Content Routes
-Route::middleware(['admin.auth'])->group(function () {
+Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/modules/{id}', [AdminModuleController::class, 'getModule'])
          ->name('admin.modules.get');
     Route::get('/admin/modules/{moduleId}/content', [AdminModuleController::class, 'getModuleContent'])
@@ -1131,6 +1127,9 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/test-quiz-save', function () {
         return view('test-quiz-save');
     });
+    
+    // Admin search route (GET version for admin dashboard)
+    Route::get('/admin/search', [SearchController::class, 'adminSearch'])->name('admin.search');
 });
 
 // Chat routes
@@ -1497,6 +1496,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])->name('admin.students.archived');
     Route::post('/admin/students/{id}/archive', [AdminStudentListController::class, 'archive'])->name('admin.students.archive');
     Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
+    Route::post('/admin/students/{student}/disapprove', [AdminStudentListController::class, 'disapprove'])->name('admin.students.disapprove');
     // Admin: Show a single student profile
     Route::get('/admin/students/{student}', [App\Http\Controllers\AdminStudentListController::class, 'show'])->name('admin.students.show');
 });

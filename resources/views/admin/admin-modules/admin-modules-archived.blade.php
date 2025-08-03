@@ -134,7 +134,7 @@
                                         <div class="archived-badge">Archived</div>
                                         <div class="content-header">
                                             <h3 class="content-title">{{ $module->module_name }}</h3>
-                                            <span class="content-type-icon module"><i class="fas fa-cube"></i></span>
+                                           
                                         </div>
                                         <p class="content-description">{{ $module->module_description }}</p>
                                         <div class="content-footer">
@@ -503,7 +503,10 @@ function restoreModule(moduleId) {
     $.ajax({
         url: `/admin/modules/${moduleId}/toggle-archive`,
         method: 'POST',
-        data: { is_archived: false },
+        data: { 
+            is_archived: false,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
         success: function(response) {
             if (response.success) {
                 showMessage('Module restored successfully!', 'success');

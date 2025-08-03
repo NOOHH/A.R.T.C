@@ -223,27 +223,36 @@
 .modal-bg {
     display: none;
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    inset: 0; /* top/right/bottom/left: 0 */
     background: rgba(0, 0, 0, 0.5);
-    align-items: center; /* ✅ ensures vertical centering */
-    justify-content: center; /* ✅ ensures horizontal centering */
-    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px; /* prevents touching edges on small viewports */
+    overflow-y: auto; /* scroll if content exceeds viewport */
 }
 
 .modal-bg.active {
-    display: flex !important;
+    display: flex;
 }
 
+
+.modal-bg.active .modal {
+    opacity: 1;
+    transform: scale(1);
+}
 .modal {
     background: white;
     padding: 20px;
     border-radius: 15px;
-    max-width: 500px;
+    max-width: 600px;
     width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    opacity: 1;
-    transform: scale(1);
-    transition: all 0.3s ease; /* optional smooth animation */
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .modal-bg .modal {

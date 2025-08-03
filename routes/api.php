@@ -287,20 +287,27 @@ Route::post('/admin/search', function (Request $request) {
     // Search professors
     if ($type === 'all' || $type === 'professors') {
         $professors = \Illuminate\Support\Facades\DB::table('professors')
+            ->where('professor_archived', false)
             ->where(function($q) use ($query) {
-                $q->where('professors.professors_first_name', 'like', "%{$query}%")
-                  ->orWhere('professors.professors_last_name', 'like', "%{$query}%")
-                  ->orWhere('professors.professors_email', 'like', "%{$query}%");
+                $q->where('professor_first_name', 'like', "%{$query}%")
+                  ->orWhere('professor_last_name', 'like', "%{$query}%")
+                  ->orWhere('professor_name', 'like', "%{$query}%")
+                  ->orWhere('professor_email', 'like', "%{$query}%");
             })
-            ->select('professors.professors_id as id', 'professors.professors_first_name', 'professors.professors_last_name', 'professors.professors_email')
+            ->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_name', 'professor_email')
             ->limit(5)
             ->get();
             
         foreach ($professors as $professor) {
+            $name = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+            if (empty($name)) {
+                $name = $professor->professor_name ?? 'Unknown Professor';
+            }
+            
             $results[] = [
                 'id' => $professor->id,
-                'name' => $professor->professors_first_name . ' ' . $professor->professors_last_name,
-                'subtitle' => $professor->professors_email,
+                'name' => $name,
+                'subtitle' => $professor->professor_email ?? 'No email',
                 'type' => 'professor'
             ];
         }
