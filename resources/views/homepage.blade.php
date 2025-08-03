@@ -15,34 +15,41 @@
     {!! App\Helpers\SettingsHelper::getHomepageStyles() !!}
     
     /* Modern Program Card Design - Inspired by meme card layout */
-    .program-card-modern {
-        background: #1a1a1a;
-        border-radius: 12px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        max-width: 320px;
-        margin: 0 auto;
-    }
+.program-card-modern {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    max-width: 320px;
+    margin: 0 auto;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
     
     .program-card-modern:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        transform: translateY(-6px);
+         box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
     }
     
-    .program-image-container {
-        width: 100%;
-        height: 200px;
-        overflow: hidden;
-        position: relative;
-    }
+.program-image-container {
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2.5rem;
+}
     
-    .program-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
+.program-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
     
     .program-card-modern:hover .program-image {
         transform: scale(1.05);
@@ -59,50 +66,100 @@
         font-size: 3rem;
     }
     
-    .program-content {
-        padding: 20px;
-        color: white;
-    }
+.program-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
     
-    .program-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 12px;
-        line-height: 1.3;
-    }
+.program-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
     
-    .program-description {
-        font-size: 0.9rem;
-        color: #cccccc;
-        line-height: 1.5;
-        margin-bottom: 20px;
-        min-height: 60px;
-    }
+.program-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
     
-    .program-learn-more-btn {
-        background: transparent;
-        border: 1px solid #666;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: auto;
-        display: inline-block;
-    }
+.program-learn-more-btn {
+    background: #ffffff;
+    border: 2px solid #764ba2;
+    color: #764ba2;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    align-self: start;
+    text-decoration: none;
+}
     
-    .program-learn-more-btn:hover {
+.program-learn-more-btn:hover {
         background: white;
         color: #1a1a1a;
         border-color: white;
     }
     
+
+.carousel-nav {
+    background: #ffffff;
+    border: 2px solid #764ba2;
+    color: #764ba2;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-nav:hover {
+    background: #764ba2;
+    color: #fff;
+}
+.carousel-nav.prev-btn {
+    left: -22px;
+}
+
+.carousel-nav.next-btn {
+    right: -22px;
+}
+.programs-section {
+    padding: 60px 0;
+    overflow: hidden; /* added */
+}
+
+.programs-carousel-container {
+    padding: 50px; /* added to contain edge cards */
+}
+/* Responsive */
+@media (max-width: 768px) {
+    .program-card-modern {
+        max-width: 280px;
+    }
+    .program-image-container {
+        height: 150px;
+    }
+}
     /* Carousel adjustments for new design */
     .programs-carousel {
         display: flex;
-        gap: 24px;
+        gap: 30px;
         overflow-x: auto;
         padding: 20px 0;
         scroll-behavior: smooth;
