@@ -11,6 +11,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PasswordResetMail;
 
 /**
  * UnifiedLoginController
@@ -363,5 +369,268 @@ class UnifiedLoginController extends Controller
         }
         
         return $existingUser;
+    }
+
+    /**
+     * Display the form to request a password reset link.
+     */
+    public function showLinkRequestForm()
+    {
+        return view('Login.password-reset');
+    }
+
+    /**
+     * Send a reset link to the given user.
+     */
+    public function sendResetLinkEmail(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        // Check if email exists in any of the user tables
+        $userExists = false;
+        $userType = null;
+        $userName = null;
+        
+        try {
+            // Check students table (uses 'email' column)
+            if (Student::where('email', $request->email)->exists()) {
+                $student = Student::where('email', $request->email)->first();
+                $userExists = true;
+                $userType = 'student';
+                $userName = trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? ''));
+            }
+            // Check admins table (uses 'email' column)
+            elseif (Admin::where('email', $request->email)->exists()) {
+                $admin = Admin::where('email', $request->email)->first();
+                $userExists = true;
+                $userType = 'admin';
+                $userName = $admin->admin_name ?? 'Admin';
+            }
+            // Check professors table (uses 'professor_email' column)
+            elseif (Professor::where('professor_email', $request->email)->exists()) {
+                $professor = Professor::where('professor_email', $request->email)->first();
+                $userExists = true;
+                $userType = 'professor';
+                $userName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? '')) ?: $professor->professor_name ?? 'Professor';
+            }
+            // Check directors table (uses 'directors_email' column)
+            elseif (Director::where('directors_email', $request->email)->exists()) {
+                $director = Director::where('directors_email', $request->email)->first();
+                $userExists = true;
+                $userType = 'director';
+                $userName = trim(($director->directors_first_name ?? '') . ' ' . ($director->directors_last_name ?? '')) ?: $director->directors_name ?? 'Director';
+            }
+
+            if ($userExists) {
+                // Generate password reset token
+                $token = Str::random(64);
+                
+                // Store the token in session with expiration (1 hour)
+                session([
+                    'password_reset_token' => $token,
+                    'password_reset_email' => $request->email,
+                    'password_reset_user_type' => $userType,
+                    'password_reset_expires' => now()->addHour()
+                ]);
+                
+                // Generate reset URL
+                $resetUrl = url('/password/reset/' . $token . '?email=' . urlencode($request->email));
+                
+                // Send password reset email using the same method as OTP
+                Mail::raw("Hello {$userName},\n\nYou have requested to reset your password for your A.R.T.C account.\n\nClick the following link to reset your password:\n{$resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you did not request this password reset, please ignore this email.\n\nBest regards,\nA.R.T.C Team", function ($message) use ($request) {
+                    $message->to($request->email)
+                            ->subject('A.R.T.C - Password Reset Request');
+                });
+                
+                Log::info('Password reset email sent successfully', [
+                    'email' => $request->email, 
+                    'user_type' => $userType,
+                    'user_name' => $userName
+                ]);
+            } else {
+                Log::info('Password reset requested for non-existent email', [
+                    'email' => $request->email
+                ]);
+            }
+            
+            // Always return the same message for security (don't reveal if email exists)
+            return back()->with(['status' => 'If your email address is in our system, you will receive a password reset link shortly.']);
+            
+        } catch (\Exception $e) {
+            Log::error('Password reset email failed: ' . $e->getMessage(), [
+                'email' => $request->email,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            // Still return success message for security, but log the error
+            return back()->with(['status' => 'If your email address is in our system, you will receive a password reset link shortly.']);
+        }
+    }
+
+    /**
+     * Display the password reset view for the given token.
+     */
+    public function showResetForm(Request $request, $token = null)
+    {
+        // Validate token and check if it's not expired
+        $storedToken = session('password_reset_token');
+        $storedEmail = session('password_reset_email');
+        $expiry = session('password_reset_expires');
+        
+        if (!$token || !$storedToken || $token !== $storedToken) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Invalid password reset token.']);
+        }
+        
+        if (!$expiry || now()->isAfter($expiry)) {
+            // Clear expired token
+            session()->forget(['password_reset_token', 'password_reset_email', 'password_reset_user_type', 'password_reset_expires']);
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Password reset token has expired. Please request a new one.']);
+        }
+        
+        // Use email from session if not provided in request
+        $email = $request->email ?: $storedEmail;
+        
+        return view('Login.change-password')->with([
+            'token' => $token,
+            'email' => $email
+        ]);
+    }
+
+    /**
+     * Reset the given user's password.
+     */
+    public function reset(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/'
+            ],
+        ], [
+            'password.regex' => 'Password must contain at least one uppercase letter, lowercase letter, number, and special character.'
+        ]);
+
+        // Validate reCAPTCHA if enabled
+        if (env('RECAPTCHA_SECRET_KEY')) {
+            $recaptchaResponse = $request->input('g-recaptcha-response');
+            if (!$recaptchaResponse) {
+                return back()->withErrors(['captcha' => 'Please complete the reCAPTCHA verification.']);
+            }
+
+            try {
+                $response = Http::post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => env('RECAPTCHA_SECRET_KEY'),
+                    'response' => $recaptchaResponse,
+                    'remoteip' => $request->ip()
+                ]);
+
+                $responseData = $response->json();
+                if (!$responseData['success']) {
+                    return back()->withErrors(['captcha' => 'reCAPTCHA verification failed. Please try again.']);
+                }
+            } catch (\Exception $e) {
+                Log::error('reCAPTCHA verification failed: ' . $e->getMessage());
+                return back()->withErrors(['captcha' => 'reCAPTCHA verification failed. Please try again.']);
+            }
+        }
+
+        // Validate token
+        $storedToken = session('password_reset_token');
+        $storedEmail = session('password_reset_email');
+        $userType = session('password_reset_user_type');
+        $expiry = session('password_reset_expires');
+        
+        if (!$storedToken || $request->token !== $storedToken) {
+            return back()->withErrors(['token' => 'Invalid password reset token.']);
+        }
+        
+        if (!$expiry || now()->isAfter($expiry)) {
+            // Clear expired token
+            session()->forget(['password_reset_token', 'password_reset_email', 'password_reset_user_type', 'password_reset_expires']);
+            return back()->withErrors(['token' => 'Password reset token has expired. Please request a new one.']);
+        }
+        
+        if ($request->email !== $storedEmail) {
+            return back()->withErrors(['email' => 'Email address does not match the reset request.']);
+        }
+
+        // Validate reCAPTCHA if enabled
+        if (env('RECAPTCHA_SECRET_KEY')) {
+            $recaptchaResponse = $request->input('g-recaptcha-response');
+            if (!$recaptchaResponse) {
+                return back()->withErrors(['captcha' => 'Please complete the reCAPTCHA verification.']);
+            }
+
+            try {
+                $response = Http::post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => env('RECAPTCHA_SECRET_KEY'),
+                    'response' => $recaptchaResponse,
+                    'remoteip' => $request->ip()
+                ]);
+
+                $responseData = $response->json();
+                if (!$responseData['success']) {
+                    return back()->withErrors(['captcha' => 'reCAPTCHA verification failed. Please try again.']);
+                }
+            } catch (\Exception $e) {
+                Log::error('reCAPTCHA verification failed: ' . $e->getMessage());
+                return back()->withErrors(['captcha' => 'reCAPTCHA verification failed. Please try again.']);
+            }
+        }
+
+        // Find user in appropriate table and update password
+        $email = $request->email;
+        $newPassword = Hash::make($request->password);
+        $updated = false;
+
+        try {
+            // Check each user type and update password using correct email column
+            if (Student::where('email', $email)->exists()) {
+                Student::where('email', $email)->update(['password' => $newPassword]);
+                $updated = true;
+                Log::info('Password reset successful for student: ' . $email);
+            }
+            elseif (Admin::where('email', $email)->exists()) {
+                Admin::where('email', $email)->update(['password' => $newPassword]);
+                $updated = true;
+                Log::info('Password reset successful for admin: ' . $email);
+            }
+            elseif (Professor::where('professor_email', $email)->exists()) {
+                Professor::where('professor_email', $email)->update(['professor_password' => $newPassword]);
+                $updated = true;
+                Log::info('Password reset successful for professor: ' . $email);
+            }
+            elseif (Director::where('directors_email', $email)->exists()) {
+                Director::where('directors_email', $email)->update(['directors_password' => $newPassword]);
+                $updated = true;
+                Log::info('Password reset successful for director: ' . $email);
+            }
+
+            if ($updated) {
+                // Clear the reset token after successful password update
+                session()->forget(['password_reset_token', 'password_reset_email', 'password_reset_user_type', 'password_reset_expires']);
+                
+                return redirect()->route('login')->with('status', 'Your password has been reset successfully! You can now log in with your new password.');
+            }
+
+            return back()->withErrors(['email' => 'We could not find a user with that email address.']);
+            
+        } catch (\Exception $e) {
+            Log::error('Password reset failed: ' . $e->getMessage(), [
+                'email' => $email,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return back()->withErrors(['email' => 'There was an error updating your password. Please try again.']);
+        }
     }
 }
