@@ -119,8 +119,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                 </p>
@@ -173,8 +173,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Time:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes<br>
                                                     <strong>Status:</strong> <span class="badge bg-{{ $meeting->status === 'ongoing' ? 'warning' : ($meeting->status === 'completed' ? 'success' : 'secondary') }}">{{ ucfirst($meeting->status) }}</span>
@@ -218,8 +218,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                 </p>
@@ -262,8 +262,8 @@
                                             </div>
                                             <div class="card-body">
                                                 <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch->program->program_name }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch->batch_name }}<br>
+                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
                                                     <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
                                                     <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                 </p>
@@ -329,9 +329,6 @@
         </div>
     </div>
 </div>
-
-<!-- Create Meeting Modal -->
-@include('admin.professors.partials.create-meeting-modal')
 
 <script>
 // Simple dropdown checkbox functionality for meetings page

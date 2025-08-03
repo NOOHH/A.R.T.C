@@ -1,6 +1,6 @@
 <!-- Create Meeting Modal -->
-<div class="modal fade" id="createMeetingModal" tabindex="-1" aria-labelledby="createMeetingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="createMeetingModal" tabindex="-1" aria-labelledby="createMeetingModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
+    <div class="modal-dialog modal-lg" style="z-index: 10000 !important;">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="createMeetingModalLabel">
@@ -93,13 +93,28 @@
 <script>
 // Admin Create Meeting Modal functionality
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin modal script loaded');
     const createMeetingModal = document.getElementById('createMeetingModal');
     
     if (createMeetingModal) {
+        console.log('Admin modal element found');
+        
+        // Add additional event listeners for debugging
+        createMeetingModal.addEventListener('shown.bs.modal', function(event) {
+            console.log('Admin modal shown event triggered');
+            console.log('Modal element:', createMeetingModal);
+            console.log('Modal display style:', createMeetingModal.style.display);
+            console.log('Modal z-index:', createMeetingModal.style.zIndex);
+        });
+        
         createMeetingModal.addEventListener('show.bs.modal', function(event) {
+            console.log('Admin modal show event triggered');
             const button = event.relatedTarget;
             const professorId = button.getAttribute('data-professor-id');
             const professorName = button.getAttribute('data-professor-name');
+            
+            console.log('Professor ID:', professorId);
+            console.log('Professor Name:', professorName);
             
             document.getElementById('meeting_professor_id').value = professorId;
             document.getElementById('createMeetingModalLabel').innerHTML = 
@@ -124,6 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Error fetching professor data:', error);
                 });
         });
+    } else {
+        console.error('Admin modal element not found!');
     }
     
     function populatePrograms(programs) {
@@ -296,3 +313,63 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<style>
+/* Custom modal z-index to ensure it appears above all other elements */
+#createMeetingModal {
+    z-index: 99999 !important;
+    position: fixed !important;
+}
+
+#createMeetingModal .modal-dialog {
+    z-index: 100000 !important;
+    position: relative !important;
+}
+
+/* Ensure modal backdrop has correct z-index */
+.modal-backdrop.show {
+    z-index: 99998 !important;
+}
+
+/* Additional styles to ensure modal visibility */
+.modal.show {
+    display: block !important;
+    z-index: 99999 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.modal.show .modal-dialog {
+    z-index: 100000 !important;
+    position: relative !important;
+}
+
+/* Debug styles - add a border to see if modal is visible */
+#createMeetingModal {
+    border: 5px solid red !important;
+    background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
+#createMeetingModal .modal-content {
+    border: 5px solid blue !important;
+    background-color: white !important;
+}
+
+/* Force modal to be visible */
+.modal.fade.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Override any conflicting styles */
+body.modal-open {
+    overflow: hidden !important;
+}
+
+.modal-backdrop {
+    z-index: 99998 !important;
+}
+</style>

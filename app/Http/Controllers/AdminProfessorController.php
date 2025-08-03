@@ -415,7 +415,9 @@ class AdminProfessorController extends Controller
             'batches.program'
         ])->findOrFail($professor_id);
 
-        $meetings = $professor->classMeetings;
+        $meetings = $professor->classMeetings->filter(function($meeting) {
+            return $meeting->batch !== null;
+        });
         
         // Categorize meetings
         $currentMeetings = $meetings->where('status', 'ongoing');

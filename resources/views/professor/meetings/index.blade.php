@@ -24,6 +24,8 @@
                     <p class="text-muted">Manage your class meetings and attendance</p>
                 </div>
                 <div class="d-flex gap-2">
+                    <!-- View Toggle -->
+                    
                     <!-- Program Filter -->
                     <select class="form-select" id="programFilter" style="width: 200px;">
                         <option value="">All Programs</option>
@@ -99,8 +101,8 @@
                 </div>
             </div>
 
-            <!-- Meetings by Program -->
-            <div id="meetingsByProgram">
+            <!-- Card View -->
+            <div id="cardView" class="view-section">
                 {{-- Only use $professorPrograms and $batches as provided by the controller. Do not fetch or display any other programs or batches. --}}
                 @if($professorPrograms->count() > 0)
                     @foreach($professorPrograms as $program)
@@ -309,6 +311,80 @@
                     </div>
                 @endif
             </div>
+
+            <!-- Table View -->
+            <div id="tableView" class="view-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">All Meetings</h5>
+                    </div>
+                    <div class="card-body">
+                        @if($meetings->count() > 0)
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Program</th>
+                                            <th>Batch</th>
+                                            <th>Date & Time</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($meetings as $meeting)
+                                            <tr>
+                                                <td>{{ $meeting->title }}</td>
+                                                <td>{{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}</td>
+                                                <td>{{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}</td>
+                                                <td>
+                                                    @if($meeting->status == 'ongoing')
+                                                        <span class="badge bg-warning">Ongoing</span>
+                                                    @elseif($meeting->status == 'completed')
+                                                        <span class="badge bg-success">Completed</span>
+                                                    @elseif(\Carbon\Carbon::parse($meeting->meeting_date)->isToday())
+                                                        <span class="badge bg-info">Today</span>
+                                                    @elseif(\Carbon\Carbon::parse($meeting->meeting_date)->isFuture())
+                                                        <span class="badge bg-primary">Upcoming</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">{{ ucfirst($meeting->status) }}</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        @if($meeting->status == 'ongoing')
+                                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openMeetingModal('{{ $meeting->meeting_id }}', '{{ $meeting->title }}', '{{ $meeting->meeting_url }}')">
+                                                                <i class="bi bi-play-circle"></i>
+                                                            </button>
+                                                        @endif
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMeetingModal"
+                                                            data-meeting-id="{{ $meeting->meeting_id }}"
+                                                            data-meeting-title="{{ $meeting->title }}"
+                                                            data-meeting-date="{{ $meeting->meeting_date }}"
+                                                            data-meeting-link="{{ $meeting->meeting_url }}"
+                                                            data-meeting-description="{{ $meeting->description }}"
+                                                            data-meeting-status="{{ $meeting->status }}">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="text-center py-5">
+                                <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
+                                <h5 class="text-muted">No meetings found</h5>
+                                <p class="text-muted">Create your first meeting to get started!</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -324,9 +400,19 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('professor.meetings.store') }}" method="POST">
+                                    <form action="{{ route('professor.meetings.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="meeting_title" class="form-label">Meeting Title</label>
@@ -566,6 +652,10 @@
 
 @push('styles')
 <style>
+.view-section {
+    transition: all 0.3s ease;
+}
+
 .meeting-carousel {
     display: flex;
     gap: 1rem;
@@ -674,6 +764,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const meetingLinkInput = document.getElementById('meeting_link');
     const programSelectionText = document.getElementById('programSelectionText');
     const batchSelectionText = document.getElementById('batchSelectionText');
+    
+    // View toggle functionality
+    const viewModeRadios = document.querySelectorAll('input[name="viewMode"]');
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+    
+    viewModeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'card') {
+                cardView.style.display = 'block';
+                tableView.style.display = 'none';
+            } else {
+                cardView.style.display = 'none';
+                tableView.style.display = 'block';
+            }
+        });
+    });
     
     // Program filter functionality
     if (programFilter) {
@@ -810,11 +917,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Form validation
-    const createMeetingForm = document.querySelector('form[action*="meetings.store"]');
+    const createMeetingForm = document.querySelector('#createMeetingModal form');
     if (createMeetingForm) {
+        console.log('Form found:', createMeetingForm);
         createMeetingForm.addEventListener('submit', function(event) {
+            console.log('Form submission triggered');
             const selectedPrograms = Array.from(programCheckboxes).filter(cb => cb.checked);
             const selectedBatches = Array.from(batchCheckboxes).filter(cb => cb.checked);
+            
+            // Debug: Log what's being selected
+            console.log('Selected programs:', selectedPrograms.map(p => ({ id: p.value, name: p.nextElementSibling.textContent })));
+            console.log('Selected batches:', selectedBatches.map(b => ({ id: b.value, name: b.nextElementSibling.textContent })));
             
             // Clear previous error messages
             document.querySelectorAll('.validation-error').forEach(el => el.remove());
@@ -831,11 +944,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 hasErrors = true;
             }
             
+            // Ensure hidden checkboxes are unchecked to avoid sending empty arrays
+            if (!hasErrors) {
+                // Uncheck all hidden program checkboxes
+                programCheckboxes.forEach(checkbox => {
+                    if (!checkbox.checked) {
+                        checkbox.disabled = true;
+                    }
+                });
+                
+                // Uncheck all hidden batch checkboxes
+                batchCheckboxes.forEach(checkbox => {
+                    if (!checkbox.checked) {
+                        checkbox.disabled = true;
+                    }
+                });
+                
+                console.log('Form validation passed, submitting...');
+            }
+            
             if (hasErrors) {
                 event.preventDefault();
+                console.log('Form validation failed, preventing submission');
                 return false;
             }
         });
+    } else {
+        console.error('Create meeting form not found!');
+        // Try alternative selectors
+        const altForm1 = document.querySelector('form[action*="professor.meetings.store"]');
+        const altForm2 = document.querySelector('form[action*="meetings"]');
+        if (altForm1) {
+            console.log('Found form with alternative selector 1:', altForm1);
+        } else if (altForm2) {
+            console.log('Found form with alternative selector 2:', altForm2);
+        }
     }
     
     function showValidationError(fieldName, message) {
