@@ -69,7 +69,6 @@
             
             <a href="{{ route('password.request') }}" class="forgot">Forgot your password? Click here.</a>
             <button type="submit">LOG IN</button>
-            <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
             <div style="margin-top: 8px; font-size: 1em;">Don't have an account? <a href="{{ route('signup') }}" class="register-link">Register here.</a></div>
         </form>
     </div>
