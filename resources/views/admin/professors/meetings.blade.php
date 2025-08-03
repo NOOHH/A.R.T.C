@@ -294,30 +294,7 @@
                                     <p class="text-muted">There are no completed meetings yet.</p>
                                 </div>
                             @endif
-@push('styles')
-<style>
-.meeting-carousel {
-    display: flex;
-    gap: 1rem;
-    overflow-x: auto;
-    padding: 1rem 0;
-}
-.meeting-card {
-    min-width: 300px;
-    max-width: 350px;
-    flex: 0 0 auto;
-    margin-bottom: 1rem;
-}
-.meeting-card .card {
-    height: 100%;
-    border: 1px solid #ddd;
-}
-.meeting-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-</style>
-@endpush
+
 
 @include('admin.professors.partials.create-meeting-modal')
                         </div>
@@ -449,15 +426,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @push('styles')
 <style>
+/* Professional Tab Styling */
 .nav-pills .nav-link {
-    color: #495057;
-    border-radius: 0.5rem;
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.5rem !important;
+    margin-right: 0.5rem !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #e9ecef !important;
+    border-color: #adb5bd !important;
+    color: #495057 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
 .nav-pills .nav-link.active {
-    background-color: #0d6efd;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
 }
 
+.nav-pills .nav-link.active:hover {
+    background-color: #0b5ed7 !important;
+    border-color: #0b5ed7 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Card hover effects */
 .card {
     transition: transform 0.2s;
 }
@@ -468,6 +470,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .badge {
     font-size: 0.7rem;
+}
+
+/* Meeting carousel styling */
+.meeting-carousel {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+}
+
+.meeting-card {
+    min-width: 300px;
+    max-width: 350px;
+    flex: 0 0 auto;
+    margin-bottom: 1rem;
+}
+
+.meeting-card .card {
+    height: 100%;
+    border: 1px solid #ddd;
+}
+
+.meeting-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 </style>
 @endpush

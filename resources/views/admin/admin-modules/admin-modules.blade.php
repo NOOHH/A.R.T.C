@@ -147,7 +147,7 @@
   }
   
   .module-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     color: white;
     padding: 2rem;
     cursor: pointer;
@@ -158,7 +158,7 @@
   }
   
   .module-header:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6b4190 100%);
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
   }
   
   .module-title-section {
@@ -211,7 +211,7 @@
   }
   
   .course-header {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     color: white;
     padding: 1.5rem 2rem;
     cursor: pointer;
@@ -247,7 +247,7 @@
   }
   
   .course-header:hover {
-    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
   }
   
   .course-header h5 {
@@ -376,7 +376,7 @@
   }
   
   .module-actions {
-    display: flex;
+    display: none; /* Hide the module actions to remove white background */
     gap: 1rem;
     align-items: center;
   }
@@ -392,13 +392,13 @@
   }
   
   .add-course-btn {
-    background: rgba(255, 255, 255, 0.2);
+    background: #2c3e50;
     color: white !important;
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
   }
   
   .add-course-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: #34495e;
     color: white !important;
     border-color: rgba(255, 255, 255, 0.5) !important;
     transform: translateY(-2px);
@@ -514,12 +514,12 @@
   }
   
   .add-course-btn {
-    background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+    background: #2c3e50;
     color: white;
   }
   
   .add-course-btn:hover {
-    background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+    background: #34495e;
     transform: translateY(-2px);
     color: white;
   }
@@ -606,6 +606,190 @@
       opacity: 1;
     }
   }
+  
+  /* Professional Action Button Styles */
+  .action-btn-green {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(44, 62, 80, 0.1);
+    min-width: 28px;
+    min-height: 28px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  .action-btn-green:hover {
+    background: #34495e;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(44, 62, 80, 0.2);
+  }
+  
+  .action-btn-green i {
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  
+  /* Specific button types */
+  .action-btn-green.add-btn {
+    background: #3498db;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  
+  .action-btn-green.add-btn:hover {
+    background: #2980b9;
+  }
+  
+  .action-btn-green.edit-btn {
+    background: #f39c12;
+  }
+  
+  .action-btn-green.edit-btn:hover {
+    background: #e67e22;
+  }
+  
+  .action-btn-green.archive-btn {
+    background: #95a5a6;
+  }
+  
+  .action-btn-green.archive-btn:hover {
+    background: #7f8c8d;
+  }
+  
+  .action-btn-green.view-btn {
+    background: #3498db;
+  }
+  
+  .action-btn-green.view-btn:hover {
+    background: #2980b9;
+  }
+  
+  .action-btn-green.override-btn {
+    background: #8e44ad;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  
+  .action-btn-green.override-btn:hover {
+    background: #7d3c98;
+  }
+  
+  /* Action button groups */
+  .action-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  
+  /* Course header actions */
+  .course-header .action-btn-group {
+    gap: 0.3rem;
+  }
+  
+  /* Content item actions - prevent overflow */
+  .content-item-actions {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    align-items: center;
+    min-width: 0;
+  }
+  
+  .content-item-actions .action-btn-green {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+    min-width: 24px;
+    min-height: 24px;
+    flex-shrink: 0;
+  }
+  
+  .content-item-actions .action-btn-green.override-btn {
+    padding: 0.25rem 0.45rem;
+    font-size: 0.7rem;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Content item layout improvements */
+  .content-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    gap: 1rem;
+  }
+  
+  .content-item-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .content-item-info h6 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  
+  /* Mobile responsiveness for buttons */
+  @media (max-width: 768px) {
+    .action-btn-group {
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+    
+    .action-btn-green {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.5rem;
+    }
+    
+    .action-btn-green.override-btn {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.4rem;
+    }
+    
+    .content-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+      padding: 1rem;
+    }
+    
+    .content-item-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+    
+    .content-item-info h6 {
+      max-width: none;
+      white-space: normal;
+    }
+  }
 </style>
 
 <div class="modules-hierarchy" id="modulesHierarchy">
@@ -614,7 +798,7 @@
     <div class="module-container" data-module-id="{{ $module->modules_id }}">
       <div class="module-header" onclick="toggleModule({{ $module->modules_id }})">
         <div class="module-title-section">
-          <i class="module-drag-handle bi bi-grip-vertical"></i>
+          <i class="module-drag-handle bi bi-grip-vertical" onclick="event.stopPropagation();"></i>
           <i class="module-toggle-icon bi bi-chevron-right"></i>
           <div>
             <h4 class="mb-0">{{ $module->module_name }}</h4>
@@ -626,10 +810,10 @@
         
         <div class="module-actions" onclick="event.stopPropagation();">
           <div class="action-btn-group">
-            <button class="action-btn-green" onclick="showAddCourseModal({{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-plus-circle"></i> Add Course</button>
-            <button class="action-btn-green" onclick="editModule({{ $module->modules_id }})"><i class="bi bi-pencil"></i></button>
-            <button class="action-btn-green" onclick="archiveModule({{ $module->modules_id }})"><i class="bi bi-archive"></i></button>
-            <button class="action-btn-green" onclick="openOverrideModal('module', {{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-sliders"></i> Override Settings</button>
+            <button class="action-btn-green add-btn" onclick="showAddCourseModal({{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-plus-circle"></i> Add Course</button>
+            <button class="action-btn-green edit-btn" onclick="editModule({{ $module->modules_id }})" title="Edit Module"><i class="bi bi-pencil"></i></button>
+            <button class="action-btn-green archive-btn" onclick="archiveModule({{ $module->modules_id }})" title="Archive Module"><i class="bi bi-archive"></i></button>
+            <button class="action-btn-green override-btn" onclick="openOverrideModal('module', {{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-sliders"></i> Override</button>
           </div>
         </div>
       </div>
@@ -715,7 +899,7 @@
 }
 
 .content-viewer-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     color: white;
     padding: 1.5rem;
     border-radius: 15px 15px 0 0;
@@ -773,7 +957,7 @@
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid #2c3e50;
 }
 
 .course-preview-item h6, .content-item-preview h6 {
@@ -821,7 +1005,7 @@
     background: #f8f9fa;
     border-radius: 10px;
     padding: 1.5rem;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid #2c3e50;
 }
 
 @media (max-width: 1200px) {
@@ -1753,10 +1937,10 @@ function displayCourses(moduleId, courses) {
                     </div>
                     <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">
                         <div class="action-btn-group">
-                            <button class="action-btn-green" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')"><i class="bi bi-plus"></i> Add Content</button>
-                            <button class="action-btn-green" onclick="editCourse(${course.subject_id})"><i class="bi bi-pencil"></i></button>
-                            <button class="action-btn-green" onclick="archiveCourse(${course.subject_id})"><i class="bi bi-archive"></i></button>
-                            <button class="action-btn-green" onclick="openOverrideModal('course', ${course.subject_id}, '${course.subject_name.replace(/'/g, "\\'")}')"><i class="bi bi-sliders"></i> Override Settings</button>
+                            <button class="action-btn-green add-btn" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')" title="Add Content"><i class="bi bi-plus"></i></button>
+                            <button class="action-btn-green edit-btn" onclick="editCourse(${course.subject_id})" title="Edit Course"><i class="bi bi-pencil"></i></button>
+                            <button class="action-btn-green archive-btn" onclick="archiveCourse(${course.subject_id})" title="Archive Course"><i class="bi bi-archive"></i></button>
+                            <button class="action-btn-green override-btn" onclick="openOverrideModal('course', ${course.subject_id}, '${course.subject_name.replace(/'/g, "\\'")}')"><i class="bi bi-sliders"></i> Override</button>
                         </div>
                     </div>
                 </div>
@@ -1871,11 +2055,11 @@ function displayCourseContent(moduleId, courseId, contentItems) {
                 </div>
                 <div class="content-item-actions" onclick="event.stopPropagation();">
                     <div class="action-btn-group">
-                        <button class="action-btn-green" onclick="loadContentInViewer(${item.id}, '${item.content_type}', '${item.content_title}', ${moduleId}, ${courseId})" title="View Content"><i class="bi bi-eye"></i></button>
-                        <button class="action-btn-green" onclick="editContent(${item.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="action-btn-green" onclick="archiveContent(${item.id})"><i class="bi bi-archive"></i></button>
+                        <button class="action-btn-green view-btn" onclick="loadContentInViewer(${item.id}, '${item.content_type}', '${item.content_title}', ${moduleId}, ${courseId})" title="View Content"><i class="bi bi-eye"></i></button>
+                        <button class="action-btn-green edit-btn" onclick="editContent(${item.id})" title="Edit Content"><i class="bi bi-pencil"></i></button>
+                        <button class="action-btn-green archive-btn" onclick="archiveContent(${item.id})" title="Archive Content"><i class="bi bi-archive"></i></button>
                         @php $escapedContentTitle = isset($item) ? addslashes($item->content_title) : ''; @endphp
-                        <button class="action-btn-green" onclick="openOverrideModal('content', ${item.id}, '${item.content_title}')"><i class="bi bi-sliders"></i> Override Settings</button>
+                        <button class="action-btn-green override-btn" onclick="openOverrideModal('content', ${item.id}, '${item.content_title}')" title="Override Settings"><i class="bi bi-sliders"></i></button>
                     </div>
                 </div>
             </div>
@@ -4136,5 +4320,35 @@ document.addEventListener('DOMContentLoaded', function() {
         </form>
     </div>
 </div>
+
+<style>
+/* Hide scrollbars on modals */
+.modal {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.modal-body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* Hide drag handle from navbar and other unintended locations */
+.navbar .module-drag-handle,
+.nav .module-drag-handle,
+.header .module-drag-handle,
+.admin-header .module-drag-handle,
+.navbar-nav .module-drag-handle {
+    display: none !important;
+}
+</style>
 
 @endsection

@@ -736,6 +736,12 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 @keyframes slideIn {
@@ -822,6 +828,12 @@
     padding: 30px;
     flex: 1;
     overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 @media (max-width: 768px) {
@@ -1713,7 +1725,7 @@
 
 /* Course functionality styles */
 .add-course-btn {
-    background: rgb(33, 152, 182);
+    background: #2c3e50;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -1724,13 +1736,14 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+    box-shadow: 0 2px 4px rgba(44, 62, 80, 0.2);
     
 }
 
 .add-course-btn:hover {
+    background: #34495e;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 4px 8px rgba(44, 62, 80, 0.3);
 }
 
 .large-modal .modal {
@@ -2221,13 +2234,13 @@
 }
 
 .add-course-btn {
-    background: rgba(255, 255, 255, 0.2);
+    background: #2c3e50;
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .add-course-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: #34495e;
     color: white;
     transform: scale(1.05);
 }
@@ -2417,4 +2430,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Hide drag handle from navbar and other unintended locations */
+.navbar .module-drag-handle,
+.nav .module-drag-handle,
+.header .module-drag-handle,
+.admin-header .module-drag-handle,
+.navbar-nav .module-drag-handle {
+    display: none !important;
 }
