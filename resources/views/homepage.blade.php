@@ -154,6 +154,196 @@
             height: 160px;
         }
     }
+    
+    /* Professional Modal Styles */
+    .program-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    .program-modal-content {
+        background: white;
+        border-radius: 16px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .program-modal-header {
+        padding: 2rem 2rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .program-modal-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .close-modal:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+    
+    .program-description {
+        padding: 1rem 2rem;
+        color: #6c757d;
+        line-height: 1.6;
+        font-size: 1rem;
+    }
+    
+    .modules-section {
+        padding: 1rem 2rem 2rem;
+    }
+    
+    .modules-section h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .module-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+    
+    .module-item:hover {
+        background: #e9ecef;
+        transform: translateX(2px);
+    }
+    
+    .module-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .module-description {
+        color: #6c757d;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+    
+    .courses-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .courses-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .courses-list {
+        display: grid;
+        gap: 0.5rem;
+    }
+    
+    .course-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .course-item:hover {
+        border-color: #667eea;
+        background: #f8f9fb;
+    }
+    
+    .course-name {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .course-description {
+        color: #6c757d;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+    
+    .no-modules-message {
+        text-align: center;
+        color: #adb5bd;
+        font-style: italic;
+        padding: 2rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 2px dashed #dee2e6;
+    }
+    
+    /* Responsive Modal */
+    @media (max-width: 768px) {
+        .program-modal {
+            padding: 1rem;
+        }
+        
+        .program-modal-content {
+            max-height: 90vh;
+        }
+        
+        .program-modal-header,
+        .program-description,
+        .modules-section {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        
+        .program-modal-title {
+            font-size: 1.5rem;
+        }
+    }
 </style>
 @endpush
 
@@ -247,12 +437,7 @@ $homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
                 </button>
                 @endif
                 
-                <!-- View All Programs Button -->
-                <div class="text-center mt-4">
-                    <a href="{{ route('review-programs') }}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-grid me-2"></i>View All Programs
-                    </a>
-                </div>
+                
             </div>
         @else
             <div class="text-center py-5">
@@ -371,18 +556,37 @@ function showProgramDetails(programId) {
             }
             return response.json();
         })
-        .then(modules => {
+        .then(data => {
             const modulesList = document.getElementById('modulesList');
             
-            if (modules.length > 0) {
+            if (data.success && data.modules && data.modules.length > 0) {
                 let html = '';
-                modules.forEach(module => {
+                data.modules.forEach(module => {
                     html += `
                         <div class="module-item">
-                            <div class="module-name">${module.module_name}</div>
-                            <div class="module-description">${module.module_description || 'No description available.'}</div>
-                        </div>
+                            <div class="module-name">
+                                <i class="bi bi-collection me-2"></i>${module.module_name || module.name}
+                            </div>
+                            <div class="module-description">${module.module_description || module.description || 'No description available.'}</div>
                     `;
+                    
+                    // Add courses if they exist
+                    if (module.courses && module.courses.length > 0) {
+                        html += '<div class="courses-section">';
+                        html += '<div class="courses-title"><i class="bi bi-book me-1"></i>Courses:</div>';
+                        html += '<div class="courses-list">';
+                        module.courses.forEach(course => {
+                            html += `
+                                <div class="course-item">
+                                    <div class="course-name">${course.course_name}</div>
+                                    ${course.description ? `<div class="course-description">${course.description}</div>` : ''}
+                                </div>
+                            `;
+                        });
+                        html += '</div></div>';
+                    }
+                    
+                    html += '</div>';
                 });
                 modulesList.innerHTML = html;
             } else {

@@ -722,11 +722,28 @@ Route::get('/programs/{id}', function ($id) {
 // API endpoint for programs dropdown (for navbar)
 Route::get('/api/programs', function () {
     $programs = \App\Models\Program::where('is_archived', false)
-                                   ->select('program_id', 'program_name', 'program_description')
+                                   ->select('program_id', 'program_name', 'program_description', 'program_image')
                                    ->get();
     
-    return response()->json($programs);
+    return response()->json([
+        'success' => true,
+        'data' => $programs
+    ]);
 })->name('api.programs');
+
+// API endpoint for individual program
+Route::get('/api/programs/{id}', function ($id) {
+    $program = \App\Models\Program::where('program_id', $id)
+                                  ->where('is_archived', false)
+                                  ->select('program_id', 'program_name', 'program_description', 'program_image')
+                                  ->first();
+    
+    if ($program) {
+        return response()->json($program);
+    } else {
+        return response()->json(['error' => 'Program not found'], 404);
+    }
+})->name('api.programs.show');
 
 // API endpoint for modules by program
 Route::get('/api/programs/{programId}/modules', function ($programId) {
@@ -757,9 +774,13 @@ Route::get('/api/programs/{programId}/modules', function ($programId) {
         $transformedModules = [];
         foreach ($modules as $module) {
             $transformedModules[] = [
+                'modules_id' => $module->modules_id,
                 'module_id' => $module->modules_id,
                 'module_name' => $module->module_name,
+                'id' => $module->modules_id,
+                'name' => $module->module_name,
                 'description' => $module->module_description,
+                'module_description' => $module->module_description,
                 'program_id' => $module->program_id,
                 'courses' => $coursesByModule[$module->modules_id] ?? [],
             ];
@@ -2810,30 +2831,6 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])->name('admin.enrollments.index');
 
 // API routes for enrollment form
-Route::get('/api/programs/{programId}/modules', function($programId) {
-    try {
-        $modules = \App\Models\Module::where('program_id', $programId)
-            ->where('is_archived', false)
-            ->orderBy('module_name')
-            ->get(['modules_id', 'module_name']);
-            
-        return response()->json([
-            'success' => true,
-            'modules' => $modules->map(function($module) {
-                return [
-                    'module_id' => $module->modules_id, // Map to expected field name
-                    'module_name' => $module->module_name
-                ];
-            })
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
-    }
-});
-
 Route::get('/api/modules/{moduleId}/courses', function($moduleId) {
     try {
         $courses = \App\Models\Course::where('module_id', $moduleId)
