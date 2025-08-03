@@ -486,6 +486,10 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
     
+    // Student search route
+    Route::get('/student/search', [App\Http\Controllers\SearchController::class, 'search'])
+         ->name('student.search');
+    
     // Course route - moved inside middleware group for authentication
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     
@@ -868,6 +872,10 @@ Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnab
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
          ->name('admin.dashboard');
+    
+    // Admin search route
+    Route::get('/admin/search', [App\Http\Controllers\SearchController::class, 'search'])
+         ->name('admin.search');
 
 // Admin approve/reject registration
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
@@ -1702,49 +1710,51 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/professors/{id}', [AdminProfessorController::class, 'show'])->name('admin.professors.show');
     Route::put('/admin/professors/{id}', [AdminProfessorController::class, 'update'])->name('admin.professors.update');
     Route::delete('/admin/professors/{id}', [AdminProfessorController::class, 'destroy'])->name('admin.professors.delete');
-    // ...add any other /admin/professors routes here...
+    
+    Route::get('/admin/professors/archived', [AdminProfessorController::class, 'archived'])
+         ->name('admin.professors.archived');
+
+    Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
+         ->name('admin.professors.edit');
+
+    Route::get('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'viewMeetings'])
+         ->name('admin.professors.meetings');
+
+    Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
+         ->name('admin.professors.update');
+
+    Route::patch('/admin/professors/{professor}/archive', [AdminProfessorController::class, 'archive'])
+         ->name('admin.professors.archive');
+
+    Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController::class, 'restore'])
+         ->name('admin.professors.restore');
+
+    Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
+         ->name('admin.professors.destroy');
+
+    Route::get('/admin/professors/{id}/profile', [AdminProfessorController::class, 'showProfile'])
+         ->name('admin.professors.profile');
+
+    Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
+         ->name('admin.professors.video.update');
+
+    // Professor batch assignment routes
+    Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorController::class, 'assignBatch'])
+         ->name('admin.professors.assign-batch');
+
+    Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
+         ->name('admin.professors.unassign-batch');
+
+    // Professor programs API route for meeting creation
+    Route::get('/admin/professors/{professor}/programs', [AdminProfessorController::class, 'getProfessorPrograms'])
+         ->name('admin.professors.programs');
+    Route::get('/admin/professors/{professor}/videos', [AdminProfessorController::class, 'getVideos'])
+         ->name('admin.professors.videos');
+    
+    // Professor meeting creation route
+    Route::post('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'createMeeting'])
+         ->name('admin.professors.createMeeting');
 });
-
-Route::get('/admin/professors/archived', [AdminProfessorController::class, 'archived'])
-     ->name('admin.professors.archived');
-
-Route::post('/admin/professors', [AdminProfessorController::class, 'store'])
-     ->name('admin.professors.store');
-
-Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
-     ->name('admin.professors.edit');
-
-Route::get('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'viewMeetings'])
-     ->name('admin.professors.meetings');
-
-Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
-     ->name('admin.professors.update');
-
-Route::patch('/admin/professors/{professor}/archive', [AdminProfessorController::class, 'archive'])
-     ->name('admin.professors.archive');
-
-Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController::class, 'restore'])
-     ->name('admin.professors.restore');
-
-Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
-     ->name('admin.professors.destroy');
-
-Route::get('/admin/professors/{id}/profile', [AdminProfessorController::class, 'showProfile'])
-     ->name('admin.professors.profile');
-
-Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
-     ->name('admin.professors.video.update');
-
-// Professor batch assignment routes
-Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorController::class, 'assignBatch'])
-     ->name('admin.professors.assign-batch');
-
-Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
-     ->name('admin.professors.unassign-batch');
-
-// Professor programs API route for meeting creation
-Route::get('/admin/professors/{professor}/programs', [AdminProfessorController::class, 'getProfessorPrograms'])
-     ->name('admin.professors.programs');
 
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
 Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);

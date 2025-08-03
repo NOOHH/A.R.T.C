@@ -73,7 +73,7 @@
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-success"
-                                                        data-bs-toggle="modal" data-bs-target="#createMeetingModal"
+                                                        onclick="showSimpleModal('{{ $professor->professor_id }}', '{{ $professor->full_name }}')"
                                                         data-professor-id="{{ $professor->professor_id }}"
                                                         data-professor-name="{{ $professor->full_name }}">
                                                     <i class="bi bi-calendar-plus"></i>
@@ -83,12 +83,6 @@
                                                    title="View Meetings">
                                                     <i class="bi bi-calendar2-week"></i>
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-outline-info"
-                                                        data-bs-toggle="modal" data-bs-target="#videosModal"
-                                                        data-professor-id="{{ $professor->professor_id }}"
-                                                        data-professor-name="{{ $professor->full_name }}">
-                                                    <i class="bi bi-play-circle"></i>
-                                                </button>
                                                 <button type="button" class="btn btn-sm btn-outline-warning"
                                                         data-bs-toggle="modal" data-bs-target="#archiveModal"
                                                         data-professor-id="{{ $professor->professor_id }}"
@@ -212,20 +206,7 @@
     </div>
 </div>
 
-<!-- Video Management Modal -->
-<div class="modal fade" id="videosModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Manage Video Links - <span id="professorNameSpan"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="videoModalBody">
-                <!-- Content will be loaded dynamically -->
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Archive Confirmation Modal -->
 <div class="modal fade" id="archiveModal" tabindex="-1">
@@ -299,25 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('deleteProfessorName').textContent = professorName;
         document.getElementById('deleteForm').action = `/admin/professors/${professorId}`;
-    });
-
-    // Videos modal
-    $('#videosModal').on('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const professorId = button.getAttribute('data-professor-id');
-        const professorName = button.getAttribute('data-professor-name');
-        
-        document.getElementById('professorNameSpan').textContent = professorName;
-        
-        // Fetch professor's program video links
-        fetch(`/admin/professors/${professorId}/videos`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('videoModalBody').innerHTML = data.html;
-            })
-            .catch(error => {
-                document.getElementById('videoModalBody').innerHTML = '<p class="text-danger">Error loading video data.</p>';
-            });
     });
 });
 
