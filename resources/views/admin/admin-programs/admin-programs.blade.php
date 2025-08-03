@@ -7,29 +7,18 @@
 <link rel="stylesheet" href="{{ asset('css/admin/admin-programs/admin-programs.css') }}?v={{ time() }}">
 @endpush
 
+@push('scripts')
+<script>
+    // Pass session data to JavaScript
+    window.sessionSuccess = @json(session('success'));
+    window.sessionError = @json(session('error'));
+</script>
+@endpush
+
 @section('content')
-<!-- Display messages -->
-@if(session('success'))
-    <div class="success-message">{{ session('success') }}</div>
-@endif
-
-@if(session('error'))
-    <div class="error-message">{{ session('error') }}</div>
-@endif
-
-@if($errors->any())
-    <div class="error-message">
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-
 <!-- Analytics Cards Section -->
 <div class="analytics-cards">
-    <div class="analytics-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="analytics-card" style="background: #e3f2fd;">
         <div class="card-icon">🎓</div>
         <div class="card-content">
             <div class="card-number">{{ $totalPrograms ?? 0 }}</div>
@@ -44,7 +33,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: linear-gradient(135deg, #635664 0%, #eeeeee 100%);">
+    <div class="analytics-card" style="background: #f3e5f5;">
         <div class="card-icon">👥</div>
         <div class="card-content">
             <div class="card-number">{{ $totalEnrollments ?? 0 }}</div>
@@ -59,7 +48,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+    <div class="analytics-card" style="background: #e8f5e8;">
         <div class="card-icon">📚</div>
         <div class="card-content">
             <div class="card-number">{{ $activePrograms ?? 0 }}</div>
@@ -74,7 +63,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: rgb(204, 204, 204);">
+    <div class="analytics-card" style="background: #fff3e0;">
         <div class="card-icon">📈</div>
         <div class="card-content">
             <div class="card-number">{{ number_format($avgEnrollmentPerProgram ?? 0, 1) }}</div>
@@ -101,9 +90,6 @@
                     <a href="{{ route('admin.programs.archived') }}" class="view-archived-btn">
                         📁 View Archived
                     </a>
-                    <button type="button" class="add-module-btn batch-upload-btn" id="showBatchModal">
-                        📤 Batch Upload
-                    </button>
                 </div>
             </div>
 
@@ -121,7 +107,7 @@
 
                         <div class="program-actions">
                             <button type="button" class="view-enrollees-btn" data-program-id="{{ $program->program_id }}">
-                                👥 View Enrollees
+                                👥 <span style="color: black;">View Enrollees</span>
                             </button>
                             <button type="button" class="archive-btn" data-program-id="{{ $program->program_id }}">
                                 📁 Archive
@@ -230,7 +216,7 @@
 
 <!-- Add Program Modal -->
 <div class="modal-bg" id="addModalBg">
-    <div class="modal">
+    <div class="custom-modal">
         <h3>Create New Program</h3>
         <form action="{{ route('admin.programs.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -266,7 +252,7 @@
 
 <!-- Enrollments Modal -->
 <div class="modal-bg" id="enrollmentsModal">
-    <div class="modal">
+    <div class="custom-modal">
         <h3>Enrolled Students</h3>
         <div class="loading" id="loadingMessage">Loading enrollments...</div>
         <ul id="enrollmentsList" style="display: none;"></ul>
@@ -276,39 +262,7 @@
     </div>
 </div>
 
-<!-- Batch Upload Modal -->
-<div class="modal-bg" id="batchModalBg">
-    <div class="modal">
-        <h3>Batch Upload Programs</h3>
-        <div class="file-upload-info">
-            <strong>CSV Format Required:</strong><br>
-            Column 1: Program Name (required)<br>
-            Column 2: Program Description (optional)<br>
-            <em>Example: "Web Development","Learn HTML, CSS, and JavaScript"</em>
-        </div>
-        
-        <form action="{{ route('admin.programs.batch-store') }}"
-              method="POST"
-              enctype="multipart/form-data"
-              id="batchProgramForm">
-            @csrf
-            
-            <div style="margin: 20px 0;">
-                <label for="csvFile"><strong>Select CSV File:</strong></label>
-                <input type="file" 
-                       id="csvFile" 
-                       name="csv_file" 
-                       accept=".csv"
-                       required>
-            </div>
 
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelBatchModal">Cancel</button>
-                <button type="submit" class="add-btn">Upload Programs</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 
 @endsection

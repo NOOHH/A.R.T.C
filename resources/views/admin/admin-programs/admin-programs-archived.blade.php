@@ -6,6 +6,17 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ asset('css/admin/admin-programs.css') }}">
+@endpush
+
+@push('scripts')
+<script>
+    // Pass session data to JavaScript
+    window.sessionSuccess = @json(session('success'));
+    window.sessionError = @json(session('error'));
+</script>
+@endpush
+
+@push('styles')
 <style>
   /* Professional Design Overhaul for Archived Programs */
   body {
@@ -532,35 +543,60 @@
     margin-right: 10px;
     transform: scale(1.2);
   }
+
+  /* Toast notification styles */
+  .toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .toast-notification.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-left: 4px solid #28a745;
+  }
+
+  .toast-notification.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-left: 4px solid #dc3545;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
 </style>
 @endpush
 
 @section('content')
-<!-- Display messages -->
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
-@if($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show">
-        <ul class="mb-0">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
 
 <div class="programs-container">
     <!-- Professional Header -->
@@ -765,29 +801,60 @@ document.addEventListener('DOMContentLoaded', function() {
             const programId = e.target.dataset.programId;
             
             if (confirm('Are you sure you want to unarchive this program?')) {
-                fetch(`/admin/programs/${programId}/toggle-archive`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Simply reload the page without showing success message
-                        location.reload();
-                    } else {
-                        alert('Error: ' + (data.message || 'Something went wrong'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while unarchiving the program.');
-                });
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/programs/${programId}/toggle-archive`;
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                
+                form.appendChild(csrfInput);
+                document.body.appendChild(form);
+                form.submit();
             }
         }
     });
+
+    // Check for session flash messages and display as toasts
+    const successMessage = window.sessionSuccess || '';
+    const errorMessage = window.sessionError || '';
+    
+    if (successMessage && successMessage !== '') {
+        showMessage(successMessage, 'success');
+    }
+    
+    if (errorMessage && errorMessage !== '') {
+        showMessage(errorMessage, 'error');
+    }
+
+    // Show message function for toasts
+    function showMessage(message, type = 'success') {
+        console.log('Showing message:', message, type);
+        
+        // Remove existing toast notifications
+        document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
+        
+        const toastDiv = document.createElement('div');
+        toastDiv.className = `toast-notification ${type}`;
+        toastDiv.textContent = message;
+        
+        document.body.appendChild(toastDiv);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toastDiv.parentNode) {
+                toastDiv.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => {
+                    if (toastDiv.parentNode) {
+                        toastDiv.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
 });
 
 // Batch delete functionality

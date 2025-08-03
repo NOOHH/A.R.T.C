@@ -223,27 +223,25 @@
 .modal-bg {
     display: none;
     position: fixed;
-    inset: 0; /* top/right/bottom/left: 0 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 20px; /* prevents touching edges on small viewports */
-    overflow-y: auto; /* scroll if content exceeds viewport */
+    z-index: 99999;
+    padding: 20px;
+    overflow-y: auto;
 }
 
 .modal-bg.active {
-    display: flex;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
-
-.modal-bg.active .modal {
-    opacity: 1;
-    transform: scale(1);
-}
-.modal {
+.custom-modal {
     background: white;
-    padding: 20px;
+    padding: 30px;
     border-radius: 15px;
     max-width: 600px;
     width: 100%;
@@ -253,23 +251,12 @@
     opacity: 0;
     transform: scale(0.95);
     transition: opacity 0.25s ease, transform 0.25s ease;
+    margin: auto;
 }
 
-.modal-bg .modal {
-  display: block !important;
-  /* now your white box will appear */
-}
-
-
-.modal {
-    opacity: 0;
-    transform: scale(0.9);
-    transition: all 0.3s ease;
-}
-
-.modal-bg.active .modal {
-    opacity: 1;
-    transform: scale(1);
+.modal-bg.active .custom-modal {
+    opacity: 1 !important;
+    transform: scale(1) !important;
 }
 /* General styles */
 /* Button styles */
@@ -285,11 +272,12 @@
 
 .view-enrollees-btn {
     background: #17a2b8;
-    color: white;
+    color: black;
 }
 
 .view-enrollees-btn:hover {
     background: #138496;
+    color: black;
 }
 
 .archive-btn {
@@ -301,17 +289,10 @@
     background: #e0a800;
 }
 
-.batch-upload-btn {
-    background: #28a745 !important;
-    color: white !important;
-}
 
-.batch-upload-btn:hover {
-    background: #218838 !important;
-}
 
 /* Modal form styles */
-.modal input[type="text"], .modal textarea, .modal input[type="file"] {
+.custom-modal input[type="text"], .custom-modal textarea, .custom-modal input[type="file"] {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -353,48 +334,7 @@
     background: #0056b3;
 }
 
-/* Batch upload specific styles */
-.batch-program-item {
-    position: relative;
-    border: 1px solid #e0e0e0;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 8px;
-    background: #f9f9f9;
-}
 
-.remove-program-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.remove-program-btn:hover {
-    background: #c82333;
-}
-
-.add-another-btn {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 10px 0;
-    width: 100%;
-}
-
-.add-another-btn:hover {
-    background: #218838;
-}
 
 /* Loading and error styles */
 .loading {
@@ -404,22 +344,88 @@
 }
 
 .success-message, .error-message {
-    padding: 10px 15px;
+    padding: 15px 20px;
     margin: 10px 0;
-    border-radius: 5px;
+    border-radius: 8px;
     font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: relative;
+    animation: slideIn 0.3s ease-out;
 }
 
 .success-message {
     background: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
+    border-left: 4px solid #28a745;
 }
 
 .error-message {
     background: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+    border-left: 4px solid #dc3545;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Toast notification styles */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.toast-notification.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-left: 4px solid #28a745;
+}
+
+.toast-notification.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-left: 4px solid #dc3545;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }
 
 /* Stats grid styles */
@@ -467,15 +473,7 @@
     border-color: #007bff;
 }
 
-/* File upload specific */
-.file-upload-info {
-    background: #e9ecef;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 10px 0;
-    font-size: 0.9em;
-    color: #495057;
-}
+
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -487,7 +485,7 @@
         grid-template-columns: 1fr 1fr;
     }
     
-    .modal {
+    .custom-modal {
         max-width: 95%;
         margin: 10px;
     }

@@ -2,22 +2,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     console.log('Admin Programs JS loaded');
 
+    // Check for session flash messages and display as toasts
+    const successMessage = window.sessionSuccess || '';
+    const errorMessage = window.sessionError || '';
+    
+    if (successMessage && successMessage !== '') {
+        showMessage(successMessage, 'success');
+    }
+    
+    if (errorMessage && errorMessage !== '') {
+        showMessage(errorMessage, 'error');
+    }
+
     // ✅ Modal functionality
     const addModalBg = document.getElementById('addModalBg');
-    const batchModalBg = document.getElementById('batchModalBg');
     const enrollmentsModal = document.getElementById('enrollmentsModal');
     const showAddModal = document.getElementById('showAddModal');
-    const showBatchModal = document.getElementById('showBatchModal');
     const cancelAddModal = document.getElementById('cancelAddModal');
-    const cancelBatchModal = document.getElementById('cancelBatchModal');
     const closeEnrollmentsModal = document.getElementById('closeEnrollmentsModal');
 
     console.log('Elements found:', {
         addModalBg: !!addModalBg,
-        batchModalBg: !!batchModalBg,
         enrollmentsModal: !!enrollmentsModal,
-        showAddModal: !!showAddModal,
-        showBatchModal: !!showBatchModal
+        showAddModal: !!showAddModal
     });
 
     // Show Add Program Modal
@@ -26,23 +33,19 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             console.log('Add button clicked');
             if (addModalBg) {
+                console.log('Modal found, adding active class');
                 addModalBg.classList.add('active');
                 addModalBg.style.display = 'flex';
+                console.log('Modal display style:', addModalBg.style.display);
+                console.log('Modal classes:', addModalBg.className);
+                console.log('Modal computed style:', window.getComputedStyle(addModalBg).display);
+            } else {
+                console.log('Modal not found!');
             }
         });
     }
 
-    // Show Batch Upload Modal
-    if (showBatchModal) {
-        showBatchModal.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Batch button clicked');
-            if (batchModalBg) {
-                batchModalBg.classList.add('active');
-                batchModalBg.style.display = 'flex';
-            }
-        });
-    }
+
 
     // Close modals
     if (cancelAddModal) {
@@ -56,16 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (cancelBatchModal) {
-        cancelBatchModal.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Cancel batch clicked');
-            if (batchModalBg) {
-                batchModalBg.classList.remove('active');
-                batchModalBg.style.display = 'none';
-            }
-        });
-    }
+
 
     if (closeEnrollmentsModal) {
         closeEnrollmentsModal.addEventListener('click', function(e) {
@@ -79,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Close modal when clicking background
-    [addModalBg, batchModalBg, enrollmentsModal].forEach(modal => {
+    [addModalBg, enrollmentsModal].forEach(modal => {
         if (modal) {
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
@@ -169,31 +163,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (confirm(`Are you sure you want to archive "${programName}"?`)) {
                 console.log('User confirmed archive');
                 
-                fetch(`/admin/programs/${programId}/archive`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        programCard.style.transition = 'opacity 0.3s ease';
-                        programCard.style.opacity = '0';
-                        setTimeout(() => {
-                            programCard.remove();
-                        }, 300);
-                        showMessage(data.message, 'success');
-                    } else {
-                        showMessage(data.message || 'Error archiving program', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showMessage('Error archiving program. Please try again.', 'error');
-                });
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/programs/${programId}/archive`;
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                
+                form.appendChild(csrfInput);
+                document.body.appendChild(form);
+                form.submit();
             }
         });
     });
@@ -328,33 +310,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function showMessage(message, type = 'success') {
         console.log('Showing message:', message, type);
         
-        // Remove existing messages
-        document.querySelectorAll('.temp-message').forEach(msg => msg.remove());
+        // Remove existing toast notifications
+        document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
         
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `${type}-message temp-message`;
-        messageDiv.textContent = message;
-        messageDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1100;
-            padding: 15px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            max-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : '#d1ecf1'};
-            color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : '#0c5460'};
-            border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : '#bee5eb'};
-        `;
+        const toastDiv = document.createElement('div');
+        toastDiv.className = `toast-notification ${type}`;
+        toastDiv.textContent = message;
         
-        document.body.appendChild(messageDiv);
+        document.body.appendChild(toastDiv);
         
         // Auto remove after 5 seconds
         setTimeout(() => {
-            if (messageDiv.parentNode) {
-                messageDiv.remove();
+            if (toastDiv.parentNode) {
+                toastDiv.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => {
+                    if (toastDiv.parentNode) {
+                        toastDiv.remove();
+                    }
+                }, 300);
             }
         }, 5000);
     }

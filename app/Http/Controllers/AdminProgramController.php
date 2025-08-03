@@ -321,14 +321,18 @@ class AdminProgramController extends Controller
 
     public function toggleArchive(Request $request, Program $program)
     {
-        $program->is_archived = !$program->is_archived;
-        $program->save();
+        try {
+            $program->is_archived = !$program->is_archived;
+            $program->save();
 
-        $status = $program->is_archived ? 'archived' : 'unarchived';
+            $status = $program->is_archived ? 'archived' : 'unarchived';
+            $message = $program->is_archived ? 'Program archived successfully!' : 'Program unarchived successfully!';
 
-        return response()->json([
-            'success' => true
-        ]);
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Toggle archive error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error updating program status. Please try again.');
+        }
     }
 
     public function batchDelete(Request $request)
@@ -550,10 +554,7 @@ class AdminProgramController extends Controller
             $program = DB::table('programs')->where('program_id', $id)->first();
             
             if (!$program) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Program not found.'
-                ]);
+                return redirect()->back()->with('error', 'Program not found.');
             }
             
             DB::table('programs')
@@ -563,17 +564,11 @@ class AdminProgramController extends Controller
                     'updated_at' => Carbon::now()
                 ]);
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Program archived successfully!'
-            ]);
+            return redirect()->back()->with('success', 'Program archived successfully!');
         } catch (\Exception $e) {
             Log::error('Program archive error: ' . $e->getMessage());
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Error archiving program. Please try again.'
-            ]);
+            return redirect()->back()->with('error', 'Error archiving program. Please try again.');
         }
     }
 }
