@@ -164,15 +164,29 @@ class AdminProgramController extends Controller
         $request->validate([
             'program_name' => 'required|string|max:100',
             'program_description' => 'nullable|string|max:1000',
+            'program_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        Program::create([
+        $data = [
             'program_name' => $request->program_name,
             'program_description' => $request->program_description,
             'created_by_admin_id' => Auth::user()->admin_id ?? 1,
             'is_archived' => false,
             'is_active' => true,
-        ]);
+        ];
+
+        // Handle image upload
+        if ($request->hasFile('program_image')) {
+            $image = $request->file('program_image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            
+            // Store the image in storage/app/public/program-images
+            $image->storeAs('public/program-images', $imageName);
+            
+            $data['program_image'] = $imageName;
+        }
+
+        Program::create($data);
 
         return redirect()
             ->route('admin.programs.index')

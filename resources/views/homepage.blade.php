@@ -13,6 +13,147 @@
 
 <style>
     {!! App\Helpers\SettingsHelper::getHomepageStyles() !!}
+    
+    /* Modern Program Card Design - Inspired by meme card layout */
+    .program-card-modern {
+        background: #1a1a1a;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        max-width: 320px;
+        margin: 0 auto;
+    }
+    
+    .program-card-modern:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    .program-image-container {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .program-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .program-card-modern:hover .program-image {
+        transform: scale(1.05);
+    }
+    
+    .program-image-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+    
+    .program-content {
+        padding: 20px;
+        color: white;
+    }
+    
+    .program-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+    
+    .program-description {
+        font-size: 0.9rem;
+        color: #cccccc;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        min-height: 60px;
+    }
+    
+    .program-learn-more-btn {
+        background: transparent;
+        border: 1px solid #666;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: auto;
+        display: inline-block;
+    }
+    
+    .program-learn-more-btn:hover {
+        background: white;
+        color: #1a1a1a;
+        border-color: white;
+    }
+    
+    /* Carousel adjustments for new design */
+    .programs-carousel {
+        display: flex;
+        gap: 24px;
+        overflow-x: auto;
+        padding: 20px 0;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .programs-carousel::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .program-card-wrapper {
+        flex: 0 0 auto;
+        width: 320px;
+    }
+    
+    /* Center cards when there are only 2 programs */
+    .programs-carousel:has(.program-card-wrapper:nth-child(2):last-child) {
+        justify-content: center;
+    }
+    
+    /* Alternative for browsers that don't support :has() */
+    .programs-carousel.two-cards {
+        justify-content: center;
+    }
+    
+    /* Additional centering for exactly 2 cards */
+    .program-card-wrapper:nth-child(1):nth-last-child(2),
+    .program-card-wrapper:nth-child(2):nth-last-child(1) {
+        /* This targets the first card when there are exactly 2 cards total,
+           and the second card when there are exactly 2 cards total */
+    }
+    
+    /* Center container when exactly 2 cards */
+    .programs-carousel-container:has(.program-card-wrapper:nth-child(2):last-child) .programs-carousel {
+        justify-content: center;
+    }
+    
+    @media (max-width: 768px) {
+        .program-card-wrapper {
+            width: 280px;
+        }
+        
+        .program-card-modern {
+            max-width: 280px;
+        }
+        
+        .program-image-container {
+            height: 160px;
+        }
+    }
 </style>
 @endpush
 
@@ -63,26 +204,33 @@ $homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
                 <div class="programs-carousel" id="programsCarousel">
                     @foreach($programs as $program)
                     <div class="program-card-wrapper">
-                        <div class="card program-card h-100 shadow-sm">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title text-primary fw-bold">{{ $program->program_name }}</h5>
-                                <p class="card-text text-muted flex-grow-1">
+                        <div class="program-card-modern">
+                            <!-- Program Image -->
+                            <div class="program-image-container">
+                                @if(isset($program->program_image) && $program->program_image)
+                                    <img src="{{ asset('storage/program-images/' . $program->program_image) }}" 
+                                         alt="{{ $program->program_name }}" 
+                                         class="program-image">
+                                @else
+                                    <div class="program-image-placeholder">
+                                        <i class="bi bi-mortarboard-fill"></i>
+                                    </div>
+                                @endif
+                            </div>
+                            
+                            <!-- Program Content -->
+                            <div class="program-content">
+                                <h3 class="program-title">{{ $program->program_name }}</h3>
+                                <p class="program-description">
                                     @if(!empty($program->program_description))
-                                        {{ Str::limit($program->program_description, 150) }}
+                                        {{ Str::limit($program->program_description, 120) }}
                                     @else
-                                        No description yet.
+                                        Discover comprehensive learning opportunities designed to advance your career and knowledge in this specialized field.
                                     @endif
                                 </p>
-                                <div class="mt-auto">
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-outline-primary btn-sm" onclick="showProgramDetails({{ $program->program_id }})">
-                                            <i class="bi bi-eye me-1"></i>Quick View
-                                        </button>
-                                        <a href="{{ route('programs.show', $program->program_id) }}" class="btn btn-primary btn-sm">
-                                            <i class="bi bi-arrow-right me-1"></i>Details
-                                        </a>
-                                    </div>
-                                </div>
+                                <button class="program-learn-more-btn" onclick="showProgramDetails({{ $program->program_id }})">
+                                    Learn more
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -326,6 +474,24 @@ function initCarouselDragScroll() {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize carousel drag scrolling
     initCarouselDragScroll();
+    
+    // Center cards if there are exactly 2
+    const carousel = document.getElementById('programsCarousel');
+    if (carousel) {
+        const cardCount = carousel.querySelectorAll('.program-card-wrapper').length;
+        
+        if (cardCount === 2) {
+            carousel.classList.add('two-cards');
+            // Force centering for 2 cards
+            carousel.style.justifyContent = 'center';
+        } else if (cardCount === 1) {
+            // Also center single card
+            carousel.style.justifyContent = 'center';
+        } else {
+            // Default alignment for 3+ cards
+            carousel.style.justifyContent = 'flex-start';
+        }
+    }
     
     // Make sure all content is visible immediately
     document.querySelectorAll('.fade-in-up').forEach(el => {

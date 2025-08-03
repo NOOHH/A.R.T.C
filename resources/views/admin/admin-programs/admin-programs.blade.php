@@ -232,10 +232,30 @@
 <div class="modal-bg" id="addModalBg">
     <div class="modal">
         <h3>Create New Program</h3>
-        <form action="{{ route('admin.programs.store') }}" method="POST">
+        <form action="{{ route('admin.programs.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <input type="text" name="program_name" placeholder="Program Name" required>
             <textarea name="program_description" placeholder="Program Description" rows="4" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            
+            <!-- Program Image Upload -->
+            <div class="image-upload-section" style="margin: 15px 0;">
+                <label for="program_image" style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">
+                    Program Image (Optional)
+                </label>
+                <input type="file" 
+                       name="program_image" 
+                       id="program_image" 
+                       accept="image/*"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+                <small style="color: #666; font-size: 0.85em;">Recommended: 400x300px, max 2MB (JPG, PNG, WEBP)</small>
+                
+                <!-- Image Preview -->
+                <div id="imagePreview" style="margin-top: 10px; display: none;">
+                    <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #ddd;">
+                    <button type="button" id="removeImage" style="display: block; margin-top: 5px; background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer;">Remove Image</button>
+                </div>
+            </div>
+            
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="cancelAddModal">Cancel</button>
                 <button type="submit" class="add-btn">Add Program</button>
@@ -296,5 +316,54 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ asset('admin/admin-programs.js') }}?v={{ time() }}"></script>
+
+<script>
+// Image preview functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('program_image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const removeImageBtn = document.getElementById('removeImage');
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select a valid image file.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validate file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Image size must be less than 2MB.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+
+        // Remove image functionality
+        removeImageBtn.addEventListener('click', function() {
+            imageInput.value = '';
+            imagePreview.style.display = 'none';
+            previewImg.src = '';
+        });
+    }
+});
+</script>
 @endpush
 

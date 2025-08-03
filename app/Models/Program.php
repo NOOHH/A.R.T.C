@@ -18,6 +18,7 @@ class Program extends Model
     protected $fillable = [
         'program_name',
         'program_description',
+        'program_image',
         'created_by_admin_id',
         'director_id',
         'is_archived',
