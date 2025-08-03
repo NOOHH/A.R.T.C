@@ -1683,6 +1683,10 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
     // Admin: Show a single student profile
     Route::get('/admin/students/{student}', [App\Http\Controllers\AdminStudentListController::class, 'show'])->name('admin.students.show');
+    
+    // Debug routes for CSV export
+    Route::get('/admin/students/debug-export', [App\Http\Controllers\DebugStudentExportController::class, 'debugExport'])->name('admin.students.debug-export');
+    Route::get('/admin/students/test-csv', [App\Http\Controllers\DebugStudentExportController::class, 'testCsvDownload'])->name('admin.students.test-csv');
 });
 
 /*

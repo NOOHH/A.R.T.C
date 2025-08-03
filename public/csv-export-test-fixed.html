@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student CSV Export Test - Fixed</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Student CSV Export Test - Fixed Version</h1>
+    
+    <div class="test-section info">
+        <h2>Expected CSV Format</h2>
+        <p>The CSV should now contain only these columns:</p>
+        <ul>
+            <li>ID</li>
+            <li>Name</li>
+            <li>Email</li>
+            <li>Program</li>
+            <li>Batch</li>
+            <li>Learning Mode</li>
+            <li>Start Date</li>
+            <li>End Date</li>
+            <li>Status</li>
+            <li>Registered</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Export</h2>
+        <button onclick="testExport()">Test Student Export</button>
+        <button onclick="testExportApproved()">Test Approved Students Export</button>
+        <button onclick="testDebugEndpoint()">Test Debug Endpoint</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString().substr(11, 8);
+            const logDiv = document.getElementById('testResults');
+            const entry = document.createElement('div');
+            entry.className = `test-section ${type}`;
+            entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logDiv.appendChild(entry);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function testExport() {
+            log('Testing student CSV export (all students)...');
+            
+            const link = document.createElement('a');
+            link.href = '/admin/students/export';
+            link.download = 'students_export_test.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            log('Export download triggered. Check your downloads folder.', 'success');
+        }
+
+        function testExportApproved() {
+            log('Testing student CSV export (approved only)...');
+            
+            const link = document.createElement('a');
+            link.href = '/admin/students/export?status=approved';
+            link.download = 'approved_students_export_test.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            log('Approved students export download triggered. Check your downloads folder.', 'success');
+        }
+
+        function testDebugEndpoint() {
+            log('Testing debug endpoint...');
+            
+            fetch('/admin/students/debug-export')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        log('Debug endpoint error: ' + data.error, 'error');
+                    } else {
+                        log('Debug endpoint successful. Student count: ' + (data.student_count || 0), 'success');
+                        log('Sample data: ' + JSON.stringify(data.sample_data || [], null, 2));
+                    }
+                })
+                .catch(error => {
+                    log('Debug endpoint failed: ' + error.message, 'error');
+                });
+        }
+
+        log('Test page loaded. Ready to test CSV export with simplified format.');
+    </script>
+</body>
+</html>

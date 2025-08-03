@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AdminStudentListController extends Controller
 {
@@ -184,8 +185,16 @@ class AdminStudentListController extends Controller
      */
     public function export(Request $request)
     {
-        $students = Student::with(['user', 'program', 'enrollment.batch', 'enrollments.program', 'enrollments.package'])
-            ->where('is_archived', false)
+        try {
+            // Clear any output buffers to prevent corruption
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            Log::info('Student CSV export started', ['filters' => $request->all()]);
+            
+            $students = Student::with(['user', 'program', 'enrollment.batch', 'enrollments.program', 'enrollments.package'])
+                ->where('is_archived', false)
 
             // Apply program filter
             ->when($request->filled('program_id'), function($q) use ($request) {
@@ -245,72 +254,69 @@ class AdminStudentListController extends Controller
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
         ];
 
         $callback = function() use ($students) {
             $file = fopen('php://output', 'w');
+            
+            // Add BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             // Add CSV headers
             fputcsv($file, [
-                'Student ID',
-                'First Name', 
-                'Middle Name',
-                'Last Name',
+                'ID',
+                'Name',
                 'Email',
-                'Contact Number',
-                'Emergency Contact',
-                'Address',
-                'City',
-                'State/Province',
-                'ZIP Code',
                 'Program',
-                'Enrollment Type',
-                'Package',
                 'Batch',
+                'Learning Mode',
                 'Start Date',
-                'Date Approved',
+                'End Date',
                 'Status',
-                'All Enrollments',
-                'Total Enrollments',
-                'Is Archived'
+                'Registered'
             ]);
 
             // Add data rows
             foreach ($students as $student) {
                 $enrollment = $student->enrollments->first();
-                $allEnrollments = $student->enrollments->map(function($enroll) {
-                    return ($enroll->program->program_name ?? 'N/A') . ' (' . ($enroll->package->package_name ?? 'N/A') . ')';
-                })->implode('; ');
+                
+                // Handle date_approved properly - it might be a string or Carbon object
+                $registeredDate = '';
+                if ($student->date_approved) {
+                    if (is_string($student->date_approved)) {
+                        $registeredDate = $student->date_approved;
+                    } else {
+                        $registeredDate = $student->date_approved->format('Y-m-d H:i:s');
+                    }
+                }
 
                 fputcsv($file, [
                     $student->student_id ?? '',
-                    $student->firstname ?? '',
-                    $student->middlename ?? '',
-                    $student->lastname ?? '',
+                    trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? '')),
                     $student->email ?? ($student->user->email ?? ''),
-                    $student->contact_number ?? '',
-                    $student->emergency_contact_number ?? '',
-                    $student->street_address ?? '',
-                    $student->city ?? '',
-                    $student->state_province ?? '',
-                    $student->zipcode ?? '',
                     $student->program->program_name ?? 'N/A',
-                    $enrollment->enrollment_type ?? 'N/A',
-                    $enrollment->package->package_name ?? 'N/A',
                     $enrollment->batch->batch_name ?? 'N/A',
+                    $enrollment->learning_mode ?? 'N/A',
                     $student->Start_Date ?? '',
-                    $student->date_approved ? $student->date_approved->format('Y-m-d H:i:s') : '',
+                    $enrollment->end_date ?? 'N/A', // You may need to adjust this field name
                     $student->date_approved ? 'Approved' : 'Pending',
-                    $allEnrollments,
-                    $student->enrollments->count(),
-                    $student->is_archived ? 'Yes' : 'No'
+                    $registeredDate
                 ]);
             }
 
             fclose($file);
         };
 
+        Log::info('Student CSV export completed', ['student_count' => $students->count()]);
         return response()->stream($callback, 200, $headers);
+        
+        } catch (\Exception $e) {
+            Log::error('Student CSV export failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Export failed: ' . $e->getMessage()], 500);
+        }
     }
 
     /**

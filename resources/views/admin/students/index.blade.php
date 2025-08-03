@@ -276,6 +276,8 @@
 
     // Export to CSV function
     function exportToCSV() {
+      console.log('Starting CSV export...');
+      
       // Get current filter values
       const programId = document.getElementById('program_id').value;
       const status = document.getElementById('status').value;
@@ -291,13 +293,55 @@
       
       exportUrl += params.toString();
       
+      console.log('Export URL:', exportUrl);
+      
+      // Show loading indicator
+      const exportBtn = document.querySelector('button[onclick="exportToCSV()"]');
+      const originalText = exportBtn.innerHTML;
+      exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
+      exportBtn.disabled = true;
+      
       // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = exportUrl;
       link.download = 'students_export.csv';
+      
+      // Add error handling
+      link.onerror = function() {
+        console.error('Export download failed');
+        alert('Export failed. Please try again or contact support.');
+        // Restore button
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+      };
+      
+      // Monitor for successful download completion
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Restore button after a short delay
+      setTimeout(() => {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+        console.log('Export process completed');
+      }, 2000);
+      
+      // Test if the export URL is accessible
+      fetch(exportUrl, { method: 'HEAD' })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          console.log('Export URL is accessible');
+        })
+        .catch(error => {
+          console.error('Export URL test failed:', error);
+          alert('Export URL is not accessible. Error: ' + error.message);
+          // Restore button
+          exportBtn.innerHTML = originalText;
+          exportBtn.disabled = false;
+        });
     }
   </script>
 @endpush
