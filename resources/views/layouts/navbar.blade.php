@@ -394,6 +394,11 @@
     
     @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
 
+    <!-- Debug script for enrollment buttons -->
+    <script src="{{ asset('js/enrollment-debug.js') }}"></script>
+    <!-- Direct fix for modular enrollment button -->
+    <script src="{{ asset('js/modular-button-fix.js') }}"></script>
+    
     <!-- Global Chat Component -->
 @include('components.global-chat')
 

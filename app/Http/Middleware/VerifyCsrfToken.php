@@ -17,5 +17,13 @@ class VerifyCsrfToken extends Middleware
         'api/test-route',
         'api/debug-session',
         'api/me',
+        '/enrollment/send-otp',
+        '/enrollment/verify-otp',
+        '/enrollment/validate-referral',
+        '/enrollment/modular/submit',
+        '/enrollment/modular/validate',
+        '/registration/validate-file',
+        '/modular/registration/validate-file',
+        '/modular/registration/user-prefill',
     ];
 }

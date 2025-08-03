@@ -264,7 +264,7 @@ Route::post('/admin/search', function (Request $request) {
     // Search students
     if ($type === 'all' || $type === 'students') {
         $students = \Illuminate\Support\Facades\DB::table('students')
-            ->leftJoin('users', 'students.user_id', '=', 'users.id')
+            ->leftJoin('users', 'students.user_id', '=', 'users.user_id')
             ->where(function($q) use ($query) {
                 $q->where('students.firstname', 'like', "%{$query}%")
                   ->orWhere('students.lastname', 'like', "%{$query}%")
@@ -439,22 +439,34 @@ Route::middleware('web')->group(function () {
     // Get available programs for modular enrollment (with filtering)
     Route::get('/enrollment/available-programs', function (Request $request) {
         try {
-            // Get current session student info
+            // Get current session student info or user_id from request
+            $userId = $request->get('user_id') ?? session('user_id');
             $student = session('student');
             $studentId = $student['id'] ?? null;
+            
+            Log::info('API: Fetching available programs for modular enrollment', [
+                'user_id' => $userId,
+                'student_id' => $studentId,
+                'session_data' => session()->all()
+            ]);
             
             // Start with base query for programs with modular packages
             $query = \App\Models\Program::where('is_archived', false)
                 ->whereHas('packages', function($q) {
-                    $q->where('package_type', 'modular');
+                    $q->where('package_type', 'modular')
+                      ->where('status', 'active');
                 })
-                ->with(['modules' => function($q) {
-                    $q->where('is_archived', false)
-                      ->orderBy('module_order', 'asc')
-                      ->select('modules_id', 'module_name', 'module_description', 'program_id');
-                }, 'packages' => function($q) {
-                    $q->where('package_type', 'modular');
-                }]);
+                ->with([
+                    'modules' => function($q) {
+                        $q->where('is_archived', false)
+                          ->orderBy('module_order', 'asc')
+                          ->select('modules_id', 'module_name', 'module_description', 'program_id');
+                    }, 
+                    'packages' => function($q) {
+                        $q->where('package_type', 'modular')
+                          ->where('status', 'active');
+                    }
+                ]);
             
             // If we have a student, filter out programs they're already enrolled in
             if ($studentId) {
@@ -467,7 +479,9 @@ Route::middleware('web')->group(function () {
                         ->where('student_enrollments.plan_id', 1); // Full plan
                 });
                 
-                // Exclude programs with existing modular enrollments
+                // Allow multiple modular enrollments for the same program
+                // (commenting out modular exclusion)
+                /*
                 $query->whereNotExists(function($subQuery) use ($studentId) {
                     $subQuery->select(DB::raw(1))
                         ->from('student_enrollments')
@@ -475,8 +489,12 @@ Route::middleware('web')->group(function () {
                         ->where('student_enrollments.student_id', $studentId)
                         ->where('student_enrollments.plan_id', 2); // Modular plan
                 });
+                */
             }
             
+            $programs = $query->select('program_id', 'program_name', 'program_description')
+                ->orderBy('program_name')
+                ->get();
             $programs = $query->select('program_id', 'program_name', 'program_description')
                 ->orderBy('program_name')
                 ->get();
@@ -485,6 +503,11 @@ Route::middleware('web')->group(function () {
             $programs = $programs->filter(function($program) {
                 return $program->modules && $program->modules->count() > 0;
             });
+            
+            Log::info('API: Returning available programs', [
+                'programs_count' => $programs->count(),
+                'programs' => $programs->pluck('program_name')->toArray()
+            ]);
             
             return response()->json([
                 'success' => true, 

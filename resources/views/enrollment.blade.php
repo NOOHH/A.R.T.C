@@ -157,10 +157,10 @@ body {
                     <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Complete Plan</h3>
                         <p class="text-muted mb-4">Comprehensive program covering all essential topics</p>
-                        <button onclick="window.location.href='{{ route('enrollment.full') }}'"
+                        <a href="{{ route('enrollment.full') }}" 
                                 class="btn enrollment-btn enroll-btn">
                             <i class="bi bi-mortarboard"></i> Enroll Now
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -168,10 +168,119 @@ body {
                     <div class="enrollment-card program-card enrollment-program-card h-100 w-100">
                         <h3>Modular Plan</h3>
                         <p class="text-muted mb-4">Flexible modules tailored to your specific needs</p>
-                        <button onclick="window.location.href='{{ route('enrollment.modular') }}'"
-                                class="btn enrollment-btn enroll-btn">
+                        <!-- Direct link with both route() helper and explicit URL -->
+                        <a href="{{ route('enrollment.modular') }}" 
+                                class="btn enrollment-btn enroll-btn" 
+                                id="modular-enroll-btn"
+                                data-url="/enrollment/modular"
+                                data-target="modular_enrollment"
+                                onclick="window.location.href='/enrollment/modular'; return false;">
                             <i class="bi bi-puzzle"></i> Enroll Now
-                        </button>
+                        </a>
+                        
+                        <!-- Alternative direct link for modular enrollment -->
+                        <div class="d-flex flex-column align-items-center mt-2">
+                            <a href="/direct-to-modular" 
+                                    class="btn btn-sm btn-outline-secondary mb-1"
+                                    style="font-size: 0.8rem;">
+                                Direct Link
+                            </a>
+                        </div>
+                        
+                        <script>
+                            // Enhanced modular enrollment button handler with multiple backup methods
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var modularBtn = document.getElementById('modular-enroll-btn');
+                                if (modularBtn) {
+                                    console.log('Found modular button, adding reliable navigation handler');
+                                    
+                                    modularBtn.addEventListener('click', function(e) {
+                                        e.preventDefault();
+                                        console.log('Modular button clicked, attempting multi-approach navigation');
+                                        
+                                        // Method 1: Direct assignment to location.href
+                                        try {
+                                            window.location.href = '/enrollment/modular';
+                                            return false;
+                                        } catch (err) {
+                                            console.error('Method 1 failed:', err);
+                                        }
+                                        
+                                        // Method 2: Open in same window
+                                        try {
+                                            window.open('/enrollment/modular', '_self');
+                                            return false;
+                                        } catch (err) {
+                                            console.error('Method 2 failed:', err);
+                                        }
+                                        
+                                        // Method 3: Try the PHP helper
+                                        try {
+                                            window.location.href = '/direct-to-modular.php';
+                                            return false;
+                                        } catch (err) {
+                                            console.error('Method 3 failed:', err);
+                                        }
+                                        
+                                        // Method 4: Form submission approach
+                                        try {
+                                            var form = document.createElement('form');
+                                            form.method = 'GET';
+                                            form.action = '/enrollment/modular';
+                                            document.body.appendChild(form);
+                                            form.submit();
+                                            return false;
+                                        } catch (err) {
+                                            console.error('Method 4 failed:', err);
+                                            alert('Navigation failed. Please try the Alternative Link below.');
+                                        }
+                                        
+                                        return false;
+                                    });
+                                }
+                            });
+                        </script>
+                        
+                        <!-- Additional helper script for reliable navigation -->
+                        <script>
+                            // Backup navigation function
+                            function tryModularEnrollment() {
+                                console.log('Backup navigation function called');
+                                
+                                // Try each route in sequence
+                                const tryRoutes = [
+                                    '/enrollment/modular',
+                                    '/modular-enrollment',
+                                    '/emergency-modular',
+                                    '/go-to-modular.php',
+                                    '/test-modular.php'
+                                ];
+                                        
+                                        let currentRoute = 0;
+                                        
+                                        function tryNextRoute() {
+                                            if (currentRoute >= tryRoutes.length) {
+                                                alert('Unable to access modular enrollment. Please try again later or contact support.');
+                                                return;
+                                            }
+                                            
+                                            console.log('Trying route:', tryRoutes[currentRoute]);
+                                            
+                                            // Try to navigate to the route
+                                            window.location.href = tryRoutes[currentRoute];
+                                            
+                                            // Set a timeout to try the next route if navigation didn't work
+                                            setTimeout(function() {
+                                                currentRoute++;
+                                                tryNextRoute();
+                                            }, 3000); // Try next route after 3 seconds
+                                        }
+                                        
+                                        // Start the navigation attempt
+                                        tryNextRoute();
+                                        return false;
+                                }
+                        </script>
                     </div>
                 </div>
             </div>

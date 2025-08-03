@@ -756,18 +756,12 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
     };
 
-    // Global function for viewing registration details
+    // Global function for viewing registration details using enhanced modal
     window.viewRegistrationDetails = function(registrationId) {
         if (!registrationId) {
             alert('Invalid registration ID');
             return;
         }
-        
-        const modalDetails = document.getElementById('modal-details');
-        const modalActions = document.getElementById('modal-actions');
-        
-        modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
-        registrationModal.show();
 
         fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
             .then(response => {
@@ -777,10 +771,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                // Left Column - Personal Information
-                let leftColumn = `
-                    <div class="col-md-6">
-                        <div class="card mb-3">
+                // Use the enhanced modal from enhanced-registration-modal.js
+                if (typeof createEnhancedRegistrationModal === 'function') {
+                    createEnhancedRegistrationModal(data);
+                } else {
+                    console.error('Enhanced modal function not found');
+                    alert('Error: Enhanced modal not loaded properly');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching registration details:', error);
+                alert('Error loading registration details: ' + error.message);
+            });
+    };
+    // Global function for approving registration
                             <div class="card-header bg-primary text-white">
                                 <h6 class="mb-0"><i class="bi bi-person"></i> Personal Information</h6>
                             </div>
@@ -1487,6 +1491,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 });
 </script>
+
+<!-- Enhanced Registration Modal JavaScript -->
+<script src="{{ asset('js/enhanced-registration-modal.js') }}"></script>
 
 <!-- Confirmation Modal Template (will be created dynamically) -->
 

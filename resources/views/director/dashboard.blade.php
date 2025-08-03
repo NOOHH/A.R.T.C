@@ -107,7 +107,7 @@
                                     <tr>
                                         <td>{{ $registration->firstname }} {{ $registration->lastname }}</td>
                                         <td>Unknown</td>
-                                        <td>{{ $registration->email ?? 'Not provided' }}</td>
+                                        <td>{{ isset($registration->user) ? ($registration->user->email ?? 'Not provided') : 'Not provided' }}</td>
                                         <td>{{ date('M d, Y', strtotime($registration->created_at)) }}</td>
                                         <td>
                                             <span class="badge badge-success">

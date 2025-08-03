@@ -1073,7 +1073,7 @@ class AdminAnalyticsController extends Controller
             // Check for quiz_results table
             if (DB::getSchemaBuilder()->hasTable('quiz_results')) {
                 $query = DB::table('quiz_results')
-                    ->join('users', 'quiz_results.user_id', '=', 'users.id')
+                    ->join('users', '', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {
@@ -1094,7 +1094,7 @@ class AdminAnalyticsController extends Controller
             // Check for module_completions table if no quiz_results
             if (!$avgScore && DB::getSchemaBuilder()->hasTable('module_completions')) {
                 $query = DB::table('module_completions')
-                    ->join('users', 'module_completions.student_id', '=', 'users.id')
+                    ->join('users', '', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {
@@ -1115,7 +1115,7 @@ class AdminAnalyticsController extends Controller
             // Check for quiz_answers table
             if (!$avgScore && DB::getSchemaBuilder()->hasTable('quiz_answers')) {
                 $query = DB::table('quiz_answers')
-                    ->join('users', 'quiz_answers.user_id', '=', 'users.id')
+                    ->join('users', '', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {
@@ -1170,7 +1170,7 @@ class AdminAnalyticsController extends Controller
             $actualCompletions = 0;
             if (DB::getSchemaBuilder()->hasTable('module_completions')) {
                 $query = DB::table('module_completions')
-                    ->join('users', 'module_completions.student_id', '=', 'users.id')
+                    ->join('users', '', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {
@@ -1191,7 +1191,7 @@ class AdminAnalyticsController extends Controller
             // If no module_completions, check user_progress table
             if ($actualCompletions == 0 && DB::getSchemaBuilder()->hasTable('user_progress')) {
                 $query = DB::table('user_progress')
-                    ->join('users', 'user_progress.user_id', '=', 'users.id')
+                    ->join('users', '', '=', 'users.user_id')
                     ->where('users.role', 'student')
                     ->where('user_progress.is_completed', true);
 

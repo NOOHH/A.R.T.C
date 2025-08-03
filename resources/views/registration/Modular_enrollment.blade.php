@@ -13,6 +13,10 @@
 @push('styles')
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        // Define CSRF token as constant for consistency with Full_enrollment
+        const CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
      <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_enrollment.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -535,6 +539,49 @@
                 @if(isset($formRequirements) && $formRequirements->count() > 0)
                     @php 
                         $currentSection = null;
+                        $hasFirstNameField = false;
+                        $hasLastNameField = false;
+                        
+                        // Check if firstname and lastname fields exist in dynamic fields
+                        foreach($formRequirements as $field) {
+                            if(in_array($field->field_name, ['firstname', 'first_name', 'FirstName'])) {
+                                $hasFirstNameField = true;
+                            }
+                            if(in_array($field->field_name, ['lastname', 'last_name', 'LastName'])) {
+                                $hasLastNameField = true;
+                            }
+                        }
+                    @endphp
+                    
+                    <!-- Always show firstname and lastname fields first if they're not in dynamic fields -->
+                    @if(!$hasFirstNameField || !$hasLastNameField)
+                        <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-left: 4px solid #007bff; border-radius: 0.25rem;">
+                            <h4 style="margin-bottom: 1rem; color: #007bff;">
+                                <i class="bi bi-person-circle me-2"></i>Personal Information
+                            </h4>
+                            @if(!$hasFirstNameField)
+                                <div class="form-group">
+                                    <label for="firstname" style="font-weight:700;">
+                                        <i class="bi bi-person me-2"></i>First Name
+                                        <span class="required">*</span>
+                                    </label>
+                                    <input type="text" name="firstname" id="firstname" class="form-control" required>
+                                </div>
+                            @endif
+                            @if(!$hasLastNameField)
+                                <div class="form-group">
+                                    <label for="lastname" style="font-weight:700;">
+                                        <i class="bi bi-person me-2"></i>Last Name
+                                        <span class="required">*</span>
+                                    </label>
+                                    <input type="text" name="lastname" id="lastname" class="form-control" required>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                    
+                    @php 
+                        $currentSection = null;
                     @endphp
                     @foreach($formRequirements as $field)
                         @if($field->field_type === 'section')
@@ -837,8 +884,24 @@
     let selectedCourses = {};
     let extraModulePrice = 0;
     
-    // CSRF token
-    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    // CSRF token is now defined in the head section as a constant
+    
+    // Data from controller
+    window.programs = @json($programs ?? []);
+    window.packages = @json($packages ?? []);
+    window.educationLevels = @json($educationLevels ?? []);
+    window.formRequirements = @json($formRequirements ?? []);
+    window.student = @json($student ?? null);
+    window.modularPlan = @json($modularPlan ?? null);
+    
+    // Debug: Log controller data
+    console.log('Controller Data:', {
+        programs: window.programs.length,
+        packages: window.packages.length,
+        educationLevels: window.educationLevels.length,
+        student: !!window.student,
+        modularPlan: !!window.modularPlan
+    });
     
     // User session data for API calls
     const CURRENT_USER_ID = @json(session('user_id'));
@@ -1009,19 +1072,25 @@
             case 2:
                 // Reset program selection when entering step 2
                 selectedProgramId = null;
-                document.getElementById('program_id').value = '';
-                document.getElementById('step2-next').disabled = true;
-                loadPrograms();
+                const programIdField = document.getElementById('program_id');
+                if (programIdField) {
+                    programIdField.value = '';
+                }
+                const step2NextBtn = document.getElementById('step2-next');
+                if (step2NextBtn) {
+                    step2NextBtn.disabled = true;
+                }
+                // Delay loading programs to ensure DOM is ready
+                setTimeout(loadPrograms, 100);
                 break;
             case 3:
                 // Module selection step - load modules for selected program
-                loadModules();
+                setTimeout(loadModules, 100);
                 break;
-             case 4:
-            // Module selection: ensure modules load when arriving here
-            loadModules();
-            break;
-
+            case 4:
+                // Module selection: ensure modules load when arriving here
+                setTimeout(loadModules, 100);
+                break;
             case 5:
                 setupAccountForm();
                 break;
@@ -1038,6 +1107,17 @@
                 setTimeout(function() {
                     copyStepperDataToFinalForm();
                     console.log('Step 7 loaded: copying data to final form after delay');
+                    
+                    // Additional attempt to populate visible fields after longer delay
+                    setTimeout(function() {
+                        forcePopulateVisibleFields();
+                        console.log('🔧 Force populate attempt completed');
+                        // One more attempt with even longer delay for slow-loading dynamic forms
+                        setTimeout(function() {
+                            forcePopulateVisibleFields();
+                            console.log('🔧 Final force populate attempt completed');
+                        }, 1000);
+                    }, 500);
                 }, 100);
                 break;
         }
@@ -1121,6 +1201,11 @@
     // Load programs from the database using the filtered API endpoint
     function loadPrograms() {
         const grid = document.getElementById('programsGrid');
+        if (!grid) {
+            console.error('programsGrid element not found');
+            return;
+        }
+        
         grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading programs...</div>';
         
         // Fetch filtered programs based on student's current enrollments
@@ -1255,77 +1340,56 @@
     
     // Load modules
 function loadModules() {
+    console.log('loadModules called');
+    
     const grid = document.getElementById('modulesGrid');
     const limitSpan = document.getElementById('moduleLimit');
+    
+    if (!grid) {
+        console.error('modulesGrid element not found');
+        return;
+    }
+    
     grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading modules...</div>';
-    limitSpan.textContent = packageModuleLimit;
+    
+    if (limitSpan) {
+        limitSpan.textContent = packageModuleLimit || 3;
+    }
 
-    let allModules = [];
-    let modulesToFetch = [];
-
-    if (selectedProgramIds.length > 0) {
-        selectedProgramIds.forEach(programId => {
-            const program = window.availableProgramsForModular.find(p => p.program_id == programId);
-            if (program) {
-                if (program.modules && program.modules.length > 0) {
-                    const programModules = program.modules.map(module => ({
-                        ...module,
-                        program_name: program.program_name,
-                        program_id: program.program_id
-                    }));
-                    allModules = allModules.concat(programModules);
-                } else {
-                    modulesToFetch.push(program);
-                }
-            }
-        });
-    } else if (selectedProgramId) {
-        const program = window.availableProgramsForModular.find(p => p.program_id == selectedProgramId);
-        if (program) {
-            if (program.modules && program.modules.length > 0) {
-                allModules = program.modules.map(module => ({
+    // Get the selected program ID
+    const programId = selectedProgramId || (selectedProgramIds.length > 0 ? selectedProgramIds[0] : null);
+    
+    if (!programId) {
+        console.error('No program selected');
+        grid.innerHTML = '<div class="alert alert-warning">Please select a program first.</div>';
+        return;
+    }
+    
+    console.log('Loading modules for program ID:', programId);
+    
+    // Fetch modules for the selected program
+    fetch(`/api/programs/${programId}/modules`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Modules API response:', data);
+            
+            if (data.success && data.modules && data.modules.length > 0) {
+                const modules = data.modules.map(module => ({
                     ...module,
-                    program_name: program.program_name,
-                    program_id: program.program_id
+                    module_id: module.modules_id || module.id,
+                    module_name: module.module_name || module.name,
+                    description: module.module_description || module.description
                 }));
+                
+                processAndDisplayModules(modules);
             } else {
-                modulesToFetch.push(program);
+                grid.innerHTML = '<div class="alert alert-info">No modules available for this program.</div>';
             }
-        }
-    }
-
-    if (modulesToFetch.length > 0) {
-        return Promise.all(modulesToFetch.map(program =>
-            fetch(`/api/programs/${program.program_id}/modules`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.modules) {
-                        return data.modules.map(module => ({
-                            ...module,
-                            id: module.modules_id || module.id,
-                            name: module.module_name || module.name,
-                            description: module.module_description || module.description,
-                            program_name: program.program_name,
-                            program_id: program.program_id,
-                            module_id: module.module_id || module.id
-                        }));
-                    }
-                    return [];
-                })
-                .catch(error => {
-                    console.error(`Error fetching modules for program ${program.program_id}:`, error);
-                    return [];
-                })
-        )).then(moduleArrays => {
-            moduleArrays.forEach(mods => {
-                allModules = allModules.concat(mods);
-            });
-            processAndDisplayModules(allModules);
+        })
+        .catch(error => {
+            console.error('Error loading modules:', error);
+            grid.innerHTML = '<div class="alert alert-danger">Error loading modules. Please try again.</div>';
         });
-    } else {
-        processAndDisplayModules(allModules);
-        return Promise.resolve();
-    }
 }
 
     
@@ -1750,9 +1814,16 @@ function loadModules() {
         .then(async response => {
             let data;
             try {
+                // Check if response is OK first
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error:', response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+                }
                 data = await response.json();
             } catch (e) {
-                throw new Error('Server error: Invalid response format.');
+                console.error('Response parsing error:', e);
+                throw new Error('Server error: ' + e.message);
             }
             return data;
         })
@@ -2026,6 +2097,221 @@ function loadModules() {
         @endif
     }
     
+    // Force populate visible fields - additional safety net
+    function forcePopulateVisibleFields() {
+        if (isUserLoggedIn) return; // Only for non-logged-in users
+        
+        console.log('🔧 Force populating visible fields...');
+        
+        // Get stored form data from multiple sources
+        let formData = null;
+        
+        // Try sessionStorage first
+        const savedData = sessionStorage.getItem('enrollmentFormData');
+        if (savedData) {
+            try {
+                formData = JSON.parse(savedData);
+            } catch (e) {
+                console.error('Error parsing saved data:', e);
+            }
+        }
+        
+        // If no saved data, try to get from account form fields directly
+        if (!formData) {
+            const userFirstname = document.getElementById('user_firstname')?.value || '';
+            const userLastname = document.getElementById('user_lastname')?.value || '';
+            const userEmail = document.getElementById('user_email')?.value || '';
+            
+            if (userFirstname || userLastname || userEmail) {
+                formData = {
+                    user_firstname: userFirstname,
+                    user_lastname: userLastname,
+                    user_email: userEmail
+                };
+                console.log('🔧 Created form data from account fields:', formData);
+            }
+        }
+        
+        if (!formData || (!formData.user_firstname && !formData.user_lastname)) {
+            console.log('⚠️ No form data found or empty names');
+            return;
+        }
+        
+        const form = document.getElementById('modularEnrollmentForm');
+        if (!form) {
+            console.log('⚠️ Form not found');
+            return;
+        }
+        
+        console.log('🔧 Using form data:', formData);
+        
+        // DEBUGGING: List all form fields to help identify the actual field names
+        const allFormInputs = form.querySelectorAll('input, select, textarea');
+        console.log('🔍 ALL FORM FIELDS DEBUG:');
+        allFormInputs.forEach((input, index) => {
+            console.log(`  ${index}: tag=${input.tagName}, type=${input.type}, name="${input.name}", id="${input.id}", placeholder="${input.placeholder}", value="${input.value}"`);
+        });
+        
+        // Find and populate all possible name fields with comprehensive patterns
+        const allInputs = form.querySelectorAll('input[type="text"], input[type="email"], input');
+        console.log('🔧 Found total inputs:', allInputs.length);
+        
+        let populatedCount = 0;
+        
+        allInputs.forEach((input, index) => {
+            const name = (input.name || '').toLowerCase();
+            const id = (input.id || '').toLowerCase();
+            const placeholder = (input.placeholder || '').toLowerCase();
+            
+            console.log(`🔍 Checking input ${index}: name="${input.name}", id="${input.id}", placeholder="${input.placeholder}", value="${input.value}"`);
+            
+            // Enhanced firstname patterns
+            if (name.includes('firstname') || name.includes('first_name') || name === 'firstname' ||
+                id.includes('firstname') || id.includes('first_name') || id === 'firstname' ||
+                placeholder.includes('first') || placeholder.includes('firstname')) {
+                if (!input.value && formData.user_firstname) {
+                    input.value = formData.user_firstname;
+                    input.dataset.populated = 'force';
+                    populatedCount++;
+                    console.log('✅ Force populated firstname field:', input.name || input.id, '=', formData.user_firstname);
+                    // Trigger change event to ensure form validation
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            
+            // Enhanced lastname patterns
+            if (name.includes('lastname') || name.includes('last_name') || name === 'lastname' ||
+                id.includes('lastname') || id.includes('last_name') || id === 'lastname' ||
+                placeholder.includes('last') || placeholder.includes('lastname')) {
+                if (!input.value && formData.user_lastname) {
+                    input.value = formData.user_lastname;
+                    input.dataset.populated = 'force';
+                    populatedCount++;
+                    console.log('✅ Force populated lastname field:', input.name || input.id, '=', formData.user_lastname);
+                    // Trigger change event to ensure form validation
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            
+            // Enhanced email patterns
+            if (name.includes('email') || id.includes('email') || input.type === 'email' ||
+                placeholder.includes('email')) {
+                if (!input.value && formData.user_email) {
+                    input.value = formData.user_email;
+                    input.dataset.populated = 'force';
+                    populatedCount++;
+                    console.log('✅ Force populated email field:', input.name || input.id, '=', formData.user_email);
+                    // Trigger change event to ensure form validation
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        });
+        
+        console.log(`🔧 Force population complete. Fields populated: ${populatedCount}`);
+        
+        // If we still haven't populated any fields, try a more aggressive approach
+        if (populatedCount === 0) {
+            console.log('🔧 No fields populated, trying field creation...');
+            
+            // Create firstname field if it doesn't exist
+            if (formData.user_firstname) {
+                let firstnameField = form.querySelector('input[name="firstname"], input[id="firstname"]');
+                if (!firstnameField) {
+                    // Create the firstname field
+                    const firstnameGroup = document.createElement('div');
+                    firstnameGroup.className = 'form-group';
+                    firstnameGroup.style.marginBottom = '1rem';
+                    
+                    const firstnameLabel = document.createElement('label');
+                    firstnameLabel.htmlFor = 'firstname';
+                    firstnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>First Name <span class="required" style="color: red;">*</span>';
+                    firstnameLabel.style.fontWeight = '700';
+                    
+                    const firstnameInput = document.createElement('input');
+                    firstnameInput.type = 'text';
+                    firstnameInput.name = 'firstname';
+                    firstnameInput.id = 'firstname';
+                    firstnameInput.className = 'form-control';
+                    firstnameInput.value = formData.user_firstname;
+                    firstnameInput.required = true;
+                    firstnameInput.dataset.populated = 'force-created';
+                    
+                    firstnameGroup.appendChild(firstnameLabel);
+                    firstnameGroup.appendChild(firstnameInput);
+                    
+                    // Insert at the top of the form (after hidden fields)
+                    const formBody = form.querySelector('.card-body') || form;
+                    const existingGroups = formBody.querySelectorAll('.form-group');
+                    if (existingGroups.length > 0) {
+                        formBody.insertBefore(firstnameGroup, existingGroups[0]);
+                    } else {
+                        formBody.appendChild(firstnameGroup);
+                    }
+                    
+                    populatedCount++;
+                    console.log('🔧 Created and populated firstname field:', formData.user_firstname);
+                    
+                    // Trigger events
+                    firstnameInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    firstnameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            
+            // Create lastname field if it doesn't exist
+            if (formData.user_lastname) {
+                let lastnameField = form.querySelector('input[name="lastname"], input[id="lastname"]');
+                if (!lastnameField) {
+                    // Create the lastname field
+                    const lastnameGroup = document.createElement('div');
+                    lastnameGroup.className = 'form-group';
+                    lastnameGroup.style.marginBottom = '1rem';
+                    
+                    const lastnameLabel = document.createElement('label');
+                    lastnameLabel.htmlFor = 'lastname';
+                    lastnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>Last Name <span class="required" style="color: red;">*</span>';
+                    lastnameLabel.style.fontWeight = '700';
+                    
+                    const lastnameInput = document.createElement('input');
+                    lastnameInput.type = 'text';
+                    lastnameInput.name = 'lastname';
+                    lastnameInput.id = 'lastname';
+                    lastnameInput.className = 'form-control';
+                    lastnameInput.value = formData.user_lastname;
+                    lastnameInput.required = true;
+                    lastnameInput.dataset.populated = 'force-created';
+                    
+                    lastnameGroup.appendChild(lastnameLabel);
+                    lastnameGroup.appendChild(lastnameInput);
+                    
+                    // Insert after firstname field or at the top
+                    const formBody = form.querySelector('.card-body') || form;
+                    const firstnameGroup = form.querySelector('div:has(input[name="firstname"], input[id="firstname"])');
+                    
+                    if (firstnameGroup) {
+                        firstnameGroup.insertAdjacentElement('afterend', lastnameGroup);
+                    } else {
+                        const existingGroups = formBody.querySelectorAll('.form-group');
+                        if (existingGroups.length > 0) {
+                            formBody.insertBefore(lastnameGroup, existingGroups[0]);
+                        } else {
+                            formBody.appendChild(lastnameGroup);
+                        }
+                    }
+                    
+                    populatedCount++;
+                    console.log('🔧 Created and populated lastname field:', formData.user_lastname);
+                    
+                    // Trigger events
+                    lastnameInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    lastnameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        }
+    }
+
     // Submit enrollment
     function submitEnrollment() {
         console.log('Submitting enrollment with data:', {
@@ -2401,6 +2687,16 @@ function copyStepperDataToFinalForm() {
         passwordConfirmation = document.getElementById('password_confirmation')?.value || '';
         referralCode = document.getElementById('referral_code')?.value || '';
         
+        // Store the form data in sessionStorage for later use
+        const formDataToStore = {
+            user_firstname: userFirstname,
+            user_lastname: userLastname,
+            user_email: userEmail,
+            referral_code: referralCode
+        };
+        sessionStorage.setItem('enrollmentFormData', JSON.stringify(formDataToStore));
+        console.log('💾 Stored form data in sessionStorage:', formDataToStore);
+        
         // Debug logging (only show when fields actually have problematic values)
         const hasProblematicValues = userFirstname === userEmail && userEmail !== '' && userFirstname !== '';
         if (hasProblematicValues) {
@@ -2499,23 +2795,122 @@ function copyStepperDataToFinalForm() {
         setOrCreateHidden(form, 'password_confirmation', passwordConfirmation);
         setOrCreateHidden(form, 'referral_code', referralCode);
         
-        // Also populate the dynamic form fields if they exist
-        const firstnameField = form.querySelector('input[name="firstname"]');
+        // Also populate the dynamic form fields if they exist - enhanced field finder
+        const firstNameSelectors = [
+            'input[name="firstname"]',
+            'input[name="first_name"]',
+            'input[name="First_Name"]',
+            'input[name="FirstName"]',
+            'input[id="firstname"]',
+            'input[id="first_name"]'
+        ];
+        
+        let firstnameField = null;
+        for (const selector of firstNameSelectors) {
+            firstnameField = form.querySelector(selector);
+            if (firstnameField) break;
+        }
+        
         if (firstnameField) {
             firstnameField.value = userFirstname;
             console.log('✅ Populated firstname field with:', userFirstname);
+            console.log('✅ Firstname field name:', firstnameField.name, 'id:', firstnameField.id);
             console.log('✅ Firstname field visibility:', window.getComputedStyle(firstnameField).display, 'opacity:', window.getComputedStyle(firstnameField).opacity);
+            // Mark field as populated to avoid confusion
+            firstnameField.dataset.populated = 'true';
+            // Trigger events to ensure form validation
+            firstnameField.dispatchEvent(new Event('change', { bubbles: true }));
+            firstnameField.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
-            console.log('⚠️ No firstname field found in form');
+            console.log('⚠️ No firstname field found in form using any selector');
+            // Force create a firstname field if it doesn't exist
+            const firstnameInput = document.createElement('input');
+            firstnameInput.type = 'text';
+            firstnameInput.name = 'firstname';
+            firstnameInput.id = 'firstname';
+            firstnameInput.className = 'form-control';
+            firstnameInput.value = userFirstname;
+            firstnameInput.required = true;
+            firstnameInput.dataset.populated = 'created';
+            
+            // Create a label and wrapper
+            const firstnameGroup = document.createElement('div');
+            firstnameGroup.className = 'form-group';
+            const firstnameLabel = document.createElement('label');
+            firstnameLabel.htmlFor = 'firstname';
+            firstnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>First Name <span class="required">*</span>';
+            firstnameLabel.style.fontWeight = '700';
+            
+            firstnameGroup.appendChild(firstnameLabel);
+            firstnameGroup.appendChild(firstnameInput);
+            
+            // Insert at the beginning of the form
+            const formContent = form.querySelector('.card-body');
+            if (formContent && formContent.firstChild) {
+                formContent.insertBefore(firstnameGroup, formContent.firstChild);
+                console.log('✅ Created and populated firstname field with:', userFirstname);
+            }
         }
 
-        const lastnameField = form.querySelector('input[name="lastname"]');
+        const lastNameSelectors = [
+            'input[name="lastname"]',
+            'input[name="last_name"]',
+            'input[name="Last_Name"]', 
+            'input[name="LastName"]',
+            'input[id="lastname"]',
+            'input[id="last_name"]'
+        ];
+        
+        let lastnameField = null;
+        for (const selector of lastNameSelectors) {
+            lastnameField = form.querySelector(selector);
+            if (lastnameField) break;
+        }
+        
         if (lastnameField) {
             lastnameField.value = userLastname;
             console.log('✅ Populated lastname field with:', userLastname);
+            console.log('✅ Lastname field name:', lastnameField.name, 'id:', lastnameField.id);
             console.log('✅ Lastname field visibility:', window.getComputedStyle(lastnameField).display, 'opacity:', window.getComputedStyle(lastnameField).opacity);
+            // Mark field as populated to avoid confusion
+            lastnameField.dataset.populated = 'true';
+            // Trigger events to ensure form validation
+            lastnameField.dispatchEvent(new Event('change', { bubbles: true }));
+            lastnameField.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
-            console.log('⚠️ No lastname field found in form');
+            console.log('⚠️ No lastname field found in form using any selector');
+            // Force create a lastname field if it doesn't exist
+            const lastnameInput = document.createElement('input');
+            lastnameInput.type = 'text';
+            lastnameInput.name = 'lastname';
+            lastnameInput.id = 'lastname';
+            lastnameInput.className = 'form-control';
+            lastnameInput.value = userLastname;
+            lastnameInput.required = true;
+            lastnameInput.dataset.populated = 'created';
+            
+            // Create a label and wrapper
+            const lastnameGroup = document.createElement('div');
+            lastnameGroup.className = 'form-group';
+            const lastnameLabel = document.createElement('label');
+            lastnameLabel.htmlFor = 'lastname';
+            lastnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>Last Name <span class="required">*</span>';
+            lastnameLabel.style.fontWeight = '700';
+            
+            lastnameGroup.appendChild(lastnameLabel);
+            lastnameGroup.appendChild(lastnameInput);
+            
+            // Insert after firstname field or at the beginning
+            const firstnameGroup = form.querySelector('div:has(input[name="firstname"], input[id="firstname"])') || 
+                                 form.querySelector('.form-group');
+            const formContent = form.querySelector('.card-body');
+            
+            if (firstnameGroup && firstnameGroup.nextSibling) {
+                formContent.insertBefore(lastnameGroup, firstnameGroup.nextSibling);
+            } else if (formContent && formContent.firstChild) {
+                formContent.insertBefore(lastnameGroup, formContent.firstChild);
+            }
+            console.log('✅ Created and populated lastname field with:', userLastname);
         }
 
         // Also try alternate field names (first_name, last_name)
@@ -3120,7 +3515,7 @@ function handleFileUpload(inputElement) {
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     
-    fetch('/registration/validate-file', {
+            fetch('{{ route("registration.validateFile") }}', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -3657,42 +4052,74 @@ function updateProgramSelect(availablePrograms, selectedProgramId = null) {
 
 // Update modules and courses UI for a selected program
 function updateModulesAndCoursesUI(programId) {
+    console.log('updateModulesAndCoursesUI called with programId:', programId);
+    
+    // Find the program in available programs
     const program = window.availableProgramsForModular.find(p => p.program_id == programId);
+    console.log('Found program:', program);
+    
     const modulesGrid = document.getElementById('modulesGrid');
-    if (modulesGrid) {
-        modulesGrid.innerHTML = '';
-        if (program && program.modules.length > 0) {
-            program.modules.forEach(module => {
-                let moduleHtml = `<div class='module-card'><h5>${module.module_name}</h5>`;
-                if (module.courses.length > 0) {
-                    moduleHtml += '<ul>';
-                    module.courses.forEach(course => {
-                        moduleHtml += `<li>${course.course_name}</li>`;
-                    });
-                    moduleHtml += '</ul>';
+    if (!modulesGrid) {
+        console.error('modulesGrid element not found');
+        return;
+    }
+    
+    if (!program) {
+        console.error('Program not found for ID:', programId);
+        modulesGrid.innerHTML = '<div class="alert alert-warning">Program not found.</div>';
+        return;
+    }
+    
+    // Check if program has modules property
+    if (!program.modules || !Array.isArray(program.modules)) {
+        console.log('Program has no modules array, fetching modules...');
+        // Fetch modules for this program
+        fetch(`/api/programs/${programId}/modules`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.modules) {
+                    displayModules(data.modules);
                 } else {
-                    moduleHtml += '<div class="text-muted">No available courses</div>';
+                    modulesGrid.innerHTML = '<div class="alert alert-info">No modules available for this program.</div>';
                 }
-                moduleHtml += '</div>';
-                modulesGrid.innerHTML += moduleHtml;
+            })
+            .catch(error => {
+                console.error('Error fetching modules:', error);
+                modulesGrid.innerHTML = '<div class="alert alert-danger">Error loading modules.</div>';
             });
-        } else {
-            modulesGrid.innerHTML = '<div class="alert alert-info">No available modules for this program.</div>';
-        }
+        return;
+    }
+    
+    // Display modules if they exist
+    if (program.modules.length > 0) {
+        displayModules(program.modules);
+    } else {
+        modulesGrid.innerHTML = '<div class="alert alert-info">No modules available for this program.</div>';
     }
 }
 
-// When a package is selected, update the program select and modules/courses UI
-async function onPackageSelected(packageId, programId) {
-    if (!window.availableProgramsForModular.length) {
-        window.availableProgramsForModular = await fetchAvailableProgramsForStudent();
+    // When a package is selected, update the program select and modules/courses UI
+    async function onPackageSelected(packageId, programId) {
+        console.log('onPackageSelected called with:', { packageId, programId });
+        
+        if (!window.availableProgramsForModular.length) {
+            window.availableProgramsForModular = await fetchAvailableProgramsForStudent();
+        }
+        
+        updateProgramSelect(window.availableProgramsForModular, programId);
+        
+        if (programId) {
+            const programSelect = document.getElementById('programSelect');
+            if (programSelect) {
+                programSelect.dispatchEvent(new Event('change'));
+            }
+            
+            // Only call updateModulesAndCoursesUI if we're on the modules step
+            if (currentStep === 4) {
+                updateModulesAndCoursesUI(programId);
+            }
+        }
     }
-    updateProgramSelect(window.availableProgramsForModular, programId);
-    if (programId) {
-        document.getElementById('programSelect').dispatchEvent(new Event('change'));
-        updateModulesAndCoursesUI(programId);
-    }
-}
 
 // Patch the selectPackage function to call onPackageSelected
 const origSelectPackage = window.selectPackage;
@@ -3721,34 +4148,58 @@ window.addEventListener('DOMContentLoaded', async function() {
 
 // Replace the displayPrograms and loadPrograms logic for the program card carousel:
 async function displayPrograms() {
-    const programs = window.availableProgramsForModular.length ? window.availableProgramsForModular : await fetchAvailableProgramsForStudent();
+    // Use controller data first, then API as fallback
+    let programs = window.programs && window.programs.length > 0 ? window.programs : 
+                   (window.availableProgramsForModular.length ? window.availableProgramsForModular : 
+                   await fetchAvailableProgramsForStudent());
+    
+    console.log('displayPrograms: Using programs from', 
+        window.programs && window.programs.length > 0 ? 'controller' : 'API', 
+        '- Count:', programs.length);
+    
     window.availableProgramsForModular = programs;
     const grid = document.getElementById('programsGrid');
+    
     if (!programs || programs.length === 0) {
         grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
         return;
     }
+    
     // Clear existing content
     const carouselInner = document.querySelector('#programCarousel .carousel-inner');
-    carouselInner.innerHTML = '';
+    if (carouselInner) {
+        carouselInner.innerHTML = '';
+    } else {
+        console.warn('Carousel inner element not found, using grid fallback');
+        // Fallback: display as simple grid
+        displayProgramsAsGrid(programs);
+        return;
+    }
+    
     // Group programs into chunks for carousel slides (2 programs per slide)
     const chunkSize = 2;
     const programChunks = [];
     for (let i = 0; i < programs.length; i += chunkSize) {
         programChunks.push(programs.slice(i, i + chunkSize));
     }
+    
     // Create carousel slides
     programChunks.forEach((chunk, index) => {
         const isActive = index === 0 ? 'active' : '';
         let slideHtml = `<div class="carousel-item ${isActive}"><div class="row justify-content-center">`;
+        
         chunk.forEach(program => {
+            const description = program.program_description || program.description || 'No description available.';
+            const moduleCount = program.modules ? program.modules.length : 0;
+            
             slideHtml += `
                 <div class="col-md-5 mb-4">
                     <div class="card selection-card h-100" 
                          onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
                         <div class="card-body">
                             <h4 class="card-title">${program.program_name}</h4>
-                            <p class="card-text">${program.description || 'No description available.'}</p>
+                            <p class="card-text">${description}</p>
+                            <small class="text-muted">${moduleCount} modules available</small>
                             <div id="modules-for-program-${program.program_id}"></div>
                         </div>
                     </div>
@@ -3778,6 +4229,62 @@ async function displayPrograms() {
         document.querySelector('#programCarousel .carousel-control-next').style.display = 'none';
     }
 }
+
+// Fallback function to display programs as simple grid
+function displayProgramsAsGrid(programs) {
+    const grid = document.getElementById('programsGrid');
+    if (!grid) return;
+    
+    let gridHtml = '<div class="row">';
+    programs.forEach(program => {
+        const description = program.program_description || program.description || 'No description available.';
+        const moduleCount = program.modules ? program.modules.length : 0;
+        
+        gridHtml += `
+            <div class="col-md-6 mb-4">
+                <div class="card selection-card h-100" 
+                     onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
+                    <div class="card-body">
+                        <h4 class="card-title">${program.program_name}</h4>
+                        <p class="card-text">${description}</p>
+                        <small class="text-muted">${moduleCount} modules available</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    gridHtml += '</div>';
+    grid.innerHTML = gridHtml;
+}
+
+// Function to select a program
+function selectProgram(programId) {
+    console.log('Selected program:', programId);
+    
+    // Store selected program
+    selectedProgramId = programId;
+    
+    // Update hidden field
+    const hiddenField = document.getElementById('program_id');
+    if (hiddenField) {
+        hiddenField.value = programId;
+    }
+    
+    // Update program select dropdown if exists
+    const programSelect = document.getElementById('programSelect');
+    if (programSelect) {
+        programSelect.value = programId;
+    }
+    
+    // Move to next step
+    if (typeof nextStep === 'function') {
+        nextStep();
+    }
+}
+
+// Global function assignments
+window.displayProgramsAsGrid = displayProgramsAsGrid;
+window.selectProgram = selectProgram;
 window.addEventListener('DOMContentLoaded', displayPrograms);
 window.displayPrograms = displayPrograms;
 </script>
@@ -3790,7 +4297,9 @@ window.displayPrograms = displayPrograms;
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
+</style>
 
+<script>
 // Data persistence functions to maintain data when navigating between steps
 function saveFormData() {
     if (!isUserLoggedIn) {
@@ -3876,5 +4385,5 @@ prevStep = function() {
     setTimeout(restoreFormData, 100); // Restore data after step change
     return result;
 };
-</style>
+</script>
 @endpush

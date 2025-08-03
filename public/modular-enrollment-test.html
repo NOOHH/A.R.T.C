@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 50px;
+            font-family: Arial, sans-serif;
+        }
+        .btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .result-box {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin-top: 20px;
+        }
+        .status-pending {
+            color: #007bff;
+        }
+        .status-success {
+            color: #28a745;
+        }
+        .status-error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Modular Enrollment Link Tester</h1>
+        <p>This page tests various ways to access the modular enrollment form.</p>
+        
+        <div class="mb-4">
+            <h2>Test Routes</h2>
+            <div class="d-flex flex-wrap">
+                <a href="/enrollment/modular" class="btn btn-primary" target="_blank">
+                    Main Route: /enrollment/modular
+                </a>
+                
+                <a href="/modular-enrollment" class="btn btn-secondary" target="_blank">
+                    Alternative: /modular-enrollment
+                </a>
+                
+                <a href="/emergency-modular" class="btn btn-warning" target="_blank">
+                    Emergency: /emergency-modular
+                </a>
+                
+                <a href="/go-to-modular" class="btn btn-info" target="_blank">
+                    Redirect: /go-to-modular
+                </a>
+                
+                <button id="js-test-btn" class="btn btn-success">
+                    JavaScript Navigation
+                </button>
+                
+                <button id="ajax-test-btn" class="btn btn-dark">
+                    AJAX Test
+                </button>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <h2>Results</h2>
+            <div id="results" class="result-box">
+                <p>Click any of the buttons above to test the routes.</p>
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <h2>View Existence Test</h2>
+            <button id="view-test-btn" class="btn btn-outline-primary">
+                Test if Modular_enrollment.blade.php exists
+            </button>
+            <div id="view-results" class="result-box mt-3">
+                <p>Click the button to test if the view file exists.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // JavaScript navigation test
+        document.getElementById('js-test-btn').addEventListener('click', function() {
+            const resultsBox = document.getElementById('results');
+            resultsBox.innerHTML = '<p class="status-pending">Testing JavaScript navigation to /enrollment/modular...</p>';
+            
+            try {
+                // Create a new window and try to navigate
+                const newWindow = window.open('/enrollment/modular', '_blank');
+                if (newWindow) {
+                    resultsBox.innerHTML += '<p class="status-success">New window opened successfully!</p>';
+                } else {
+                    resultsBox.innerHTML += '<p class="status-error">New window blocked by popup blocker or failed to open.</p>';
+                }
+            } catch (error) {
+                resultsBox.innerHTML += `<p class="status-error">Error: ${error.message}</p>`;
+            }
+        });
+        
+        // AJAX test
+        document.getElementById('ajax-test-btn').addEventListener('click', function() {
+            const resultsBox = document.getElementById('results');
+            resultsBox.innerHTML = '<p class="status-pending">Testing AJAX request to /enrollment/modular...</p>';
+            
+            fetch('/enrollment/modular', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    resultsBox.innerHTML += `<p class="status-success">Route accessible! Status: ${response.status}</p>`;
+                    return response.text().then(html => {
+                        const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+                        const title = titleMatch ? titleMatch[1] : 'No title found';
+                        resultsBox.innerHTML += `<p>Page title: ${title}</p>`;
+                        
+                        // Check if it contains modular enrollment content
+                        if (html.includes('Modular_enrollment') || html.includes('modular-enrollment')) {
+                            resultsBox.innerHTML += `<p class="status-success">✅ Confirmed: Page contains modular enrollment content</p>`;
+                        } else {
+                            resultsBox.innerHTML += `<p class="status-error">❌ Warning: Page may not be the correct modular enrollment form</p>`;
+                        }
+                    });
+                } else {
+                    resultsBox.innerHTML += `<p class="status-error">Route error! Status: ${response.status}</p>`;
+                }
+            })
+            .catch(error => {
+                resultsBox.innerHTML += `<p class="status-error">Request failed: ${error.message}</p>`;
+            });
+        });
+        
+        // View existence test
+        document.getElementById('view-test-btn').addEventListener('click', function() {
+            const viewResultsBox = document.getElementById('view-results');
+            viewResultsBox.innerHTML = '<p class="status-pending">Testing if the Modular_enrollment.blade.php view exists...</p>';
+            
+            fetch('/test-modular-view')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    viewResultsBox.innerHTML = `
+                        <p class="status-success">✅ Success! The Modular_enrollment.blade.php view exists and can be rendered.</p>
+                        <p>Programs: ${data.data_counts.programs}</p>
+                        <p>Packages: ${data.data_counts.packages}</p>
+                        <p>Education Levels: ${data.data_counts.education_levels}</p>
+                    `;
+                } else {
+                    viewResultsBox.innerHTML = `
+                        <p class="status-error">❌ Error: ${data.message}</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                viewResultsBox.innerHTML = `
+                    <p class="status-error">❌ Request failed: ${error.message}</p>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>

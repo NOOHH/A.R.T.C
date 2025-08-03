@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 // Broadcasting Authentication (for Laravel Echo + Pusher)
 Broadcast::routes(['middleware' => ['web']]);
@@ -42,6 +44,9 @@ use App\Http\Controllers\TestController;
 use App\Models\Package;
 use App\Http\Controllers\DatabaseTestController;
 use App\Http\Controllers\Admin\BatchEnrollmentController;
+use App\Http\Controllers\ModularRegistrationController;
+use App\Http\Controllers\EmergencyModularController;
+use App\Http\Controllers\EnrollmentDebugController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\SearchController;
@@ -200,6 +205,10 @@ Route::middleware(['web'])->group(function(){
 });
 
 // Debug routes for testing
+Route::get('/test-file-upload', function() {
+    return view('test_file_upload');
+});
+
 Route::get('/test-registration-routes', function() {
     return response()->json([
         'success' => true,
@@ -258,100 +267,45 @@ Route::get('/programs/{id}', function($id) {
 })->name('programs.show');
 
 // Enrollment selection
+// Enrollment index page - serves as both selection and index
 Route::get('/enrollment', [StudentRegistrationController::class, 'showEnrollmentSelection'])
-     ->name('enrollment.selection');
+     ->name('enrollment.index');
 
 // Full enrollment form (GET)
 Route::get('/enrollment/full', [StudentRegistrationController::class, 'showRegistrationForm'])
      ->name('enrollment.full');
 
 // Modular enrollment form (GET)
-Route::get('/enrollment/modular', function () {
-    $allPrograms = Program::with(['modules.courses', 'packages' => function($q) { $q->where('package_type', 'modular'); }])
-        ->where('is_archived', false)
-        ->whereHas('packages', function($q) { $q->where('package_type', 'modular'); })
-        ->get();
+Route::get('/enrollment/modular', [ModularRegistrationController::class, 'showForm'])->name('enrollment.modular');
 
-    // Get only modular packages
-    $packages = Package::with('program')
-        ->where('package_type', 'modular')
-        ->get();
+// Alternative route for modular enrollment (in case the main route has issues)
+Route::get('/modular-enrollment', [ModularRegistrationController::class, 'showForm'])->name('enrollment.modular.alt');
 
-    // Auto-generate default modular package if none exist
-    if ($packages->isEmpty()) {
-        $defaultPackage = Package::create([
-            'package_name' => 'Standard Modular Package',
-            'description' => 'Flexible modular package allowing course-by-course enrollment',
-            'amount' => 0.00,
-            'package_type' => 'modular',
-            'created_by_admin_id' => 1
-        ]);
-        $packages = collect([$defaultPackage]);
-        \Log::info('Auto-generated default modular package', ['package_id' => $defaultPackage->package_id]);
-    }
+// Emergency fallback route for modular enrollment (simplest possible handler)
+Route::get('/emergency-modular', [EmergencyModularController::class, 'showEmergencyModularForm'])->name('enrollment.modular.emergency');
 
-    $programId = request('program_id');
+// Redirect simplified modular route to the main modular enrollment page
+Route::get('/simplified-modular', function() {
+    return redirect()->route('enrollment.modular');
+})->name('enrollment.modular.simplified');
 
-    // Get form requirements for modular enrollment
-    $formRequirements = \App\Models\FormRequirement::active()
-        ->forProgram('modular')
-        ->ordered()
-        ->get();
-
-    // Get education levels
-    $educationLevels = \App\Models\EducationLevel::all();
-
-    // Get plan data with learning mode settings
-    $fullPlan = \App\Models\Plan::where('plan_id', 1)->first(); // Full Plan
-    $modularPlan = \App\Models\Plan::where('plan_id', 2)->first(); // Modular Plan
-
-    // Get existing student data if user is logged in
-    $student = null;
-    $enrolledProgramIds = [];
-
-    if (session('user_id')) {
-        $student = \App\Models\Student::where('user_id', session('user_id'))->first();
-        if ($student) {
-            $enrolledProgramIds = $student->enrollments()->pluck('program_id')->toArray();
-        }
-    }
-
-    // Filter out programs the user is already enrolled in
-    $programs = $allPrograms->reject(function ($program) use ($enrolledProgramIds) {
-        return in_array($program->program_id, $enrolledProgramIds);
-    })->values();
-
-    // Build contentStructure for JS (programs with modules and courses)
-    $contentStructure = $programs->map(function($program) {
-        return [
-            'program_id' => $program->program_id,
-            'program_name' => $program->program_name,
-            'modules' => $program->modules->map(function($module) {
-                return [
-                    'module_id' => $module->module_id,
-                    'module_name' => $module->module_name,
-                    'courses' => $module->courses->map(function($course) {
-                        return [
-                            'course_id' => $course->course_id,
-                            'course_name' => $course->course_name,
-                            'content_count' => $course->content_count ?? 0
-                        ];
-                    })->toArray()
-                ];
-            })->toArray()
-        ];
-    })->toArray();
-
-    return view('registration.Modular_enrollment', compact('programs', 'packages', 'programId', 'formRequirements', 'educationLevels', 'student', 'fullPlan', 'modularPlan', 'contentStructure'));
-})->name('enrollment.modular');
+// Debug and testing routes for enrollment
+Route::get('/log-click', [EnrollmentDebugController::class, 'logClick'])->name('debug.log-click');
+Route::get('/test-modular-view', [EnrollmentDebugController::class, 'testModularView'])->name('debug.test-modular-view');
+Route::get('/go-to-modular', [EnrollmentDebugController::class, 'redirectToModular'])->name('debug.redirect-to-modular');
+Route::get('/direct-to-modular', [EnrollmentDebugController::class, 'forceDirectNavigation'])->name('debug.force-modular');
 
 // Modular enrollment submission
-Route::post('/enrollment/modular/submit', [StudentRegistrationController::class, 'submitModularEnrollment'])->name('enrollment.modular.submit');
-Route::post('/enrollment/modular/store', [StudentRegistrationController::class, 'storeModular'])->name('enrollment.modular.store');
+Route::post('/enrollment/modular/submit', [ModularRegistrationController::class, 'submitEnrollment'])->name('enrollment.modular.submit');
+
+// Modular enrollment validation
+Route::post('/enrollment/modular/validate', [ModularRegistrationController::class, 'validateStep'])->name('enrollment.modular.validate');
 
 // API endpoints for modular enrollment
 Route::middleware(['web'])->group(function () {
-    Route::get('/api/enrollment/available-programs', [StudentRegistrationController::class, 'getAvailableProgramsForModularEnrollment'])->name('api.enrollment.available-programs');
+    Route::get('/api/modular/batches/{programId}', [ModularRegistrationController::class, 'getBatchesForProgram'])->name('api.modular.batches.program');
+    Route::post('/modular/registration/validate-file', [ModularRegistrationController::class, 'validateFileUpload'])->name('modular.registration.validateFile');
+    Route::get('/modular/registration/user-prefill', [ModularRegistrationController::class, 'userPrefill'])->name('modular.registration.userPrefill');
 });
 
 // Enrollment-specific OTP and validation routes

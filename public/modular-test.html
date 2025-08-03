@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Enrollment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: #0066cc;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #0055aa;
+        }
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            overflow: auto;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modular Enrollment Link Test</h1>
+    
+    <p>Click the buttons below to test different ways to access the modular enrollment page:</p>
+    
+    <div>
+        <a href="/enrollment/modular" class="btn" target="_blank">Direct URL Link</a>
+        <a href="/modular-redirect.php" class="btn" target="_blank">PHP Redirect Script</a>
+        <button class="btn" onclick="testModularLink()">JavaScript Navigation</button>
+    </div>
+    
+    <div class="result" id="result">Results will appear here...</div>
+    
+    <h2>Debug Information:</h2>
+    <pre id="debug"></pre>
+    
+    <script>
+        function log(message) {
+            const debug = document.getElementById('debug');
+            debug.textContent += message + '\n';
+        }
+        
+        function testModularLink() {
+            log('Testing modular link via JavaScript...');
+            try {
+                // Log the attempt
+                log('Attempting to navigate to: /enrollment/modular');
+                
+                // Try to navigate
+                window.open('/enrollment/modular', '_blank');
+                
+                // Update result
+                document.getElementById('result').textContent = 'JavaScript navigation initiated. Check if a new tab opened.';
+            } catch (error) {
+                log('Error: ' + error.message);
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Log initial page load
+        log('Page loaded at: ' + new Date().toISOString());
+    </script>
+</body>
+</html>

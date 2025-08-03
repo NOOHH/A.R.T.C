@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 31, 2025 at 09:01 PM
+-- Generation Time: Aug 02, 2025 at 08:48 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -103,7 +103,8 @@ INSERT INTO `admin_settings` (`setting_id`, `setting_key`, `setting_value`, `set
 (116, 'director_manage_professors', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:39:28'),
 (117, 'director_manage_batches', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:52'),
 (118, 'director_view_chat_logs', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21'),
-(119, 'director_manage_settings', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21');
+(119, 'director_manage_settings', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21'),
+(120, 'professor_announcement_management_enabled', '1', 'Enable announcement management for professors', 1, '2025-08-02 18:23:39', '2025-08-02 18:23:39');
 
 -- --------------------------------------------------------
 
@@ -141,7 +142,9 @@ CREATE TABLE `announcements` (
 INSERT INTO `announcements` (`announcement_id`, `admin_id`, `professor_id`, `program_id`, `title`, `content`, `description`, `publish_date`, `expire_date`, `is_published`, `type`, `target_users`, `target_programs`, `target_batches`, `target_plans`, `target_scope`, `video_link`, `is_active`, `created_at`, `updated_at`) VALUES
 (15, NULL, NULL, 39, 'w', 'w', 'w', '2025-07-25 14:38:22', NULL, 1, 'general', '[\"students\"]', '[\"39\"]', '[\"16\"]', '[\"modular\"]', 'specific', NULL, 1, '2025-07-25 14:38:22', '2025-07-25 14:39:07'),
 (16, NULL, NULL, 38, 'w', 'w', 'w', '2025-07-25 14:38:43', NULL, 1, 'general', '[\"students\"]', '[\"38\"]', NULL, '[\"modular\"]', 'specific', NULL, 1, '2025-07-25 14:38:43', '2025-07-25 14:39:07'),
-(17, NULL, 8, 39, 'Welcome to the New Semester!', 'Welcome students! This semester we have exciting new courses and projects. Please check your schedules and prepare for an engaging learning experience.', 'Important information about the upcoming semester', '2025-07-25 02:43:02', '2025-08-25 02:43:02', 1, 'general', NULL, '[39]', NULL, NULL, 'specific', NULL, 1, '2025-07-26 02:43:02', '2025-07-26 02:43:02');
+(17, NULL, 8, 39, 'Welcome to the New Semester!', 'Welcome students! This semester we have exciting new courses and projects. Please check your schedules and prepare for an engaging learning experience.', 'Important information about the upcoming semester', '2025-07-25 02:43:02', '2025-08-25 02:43:02', 1, 'general', NULL, '[39]', NULL, NULL, 'specific', NULL, 1, '2025-07-26 02:43:02', '2025-07-26 02:43:02'),
+(21, 1, NULL, NULL, 'BIG W', 'W', NULL, '2025-08-02 17:24:04', NULL, 1, 'general', NULL, NULL, NULL, NULL, 'all', NULL, 1, '2025-08-02 17:24:04', '2025-08-02 17:24:04'),
+(22, NULL, NULL, NULL, 'Test Professor Announcement', 'This is a test announcement for professors only.', NULL, NULL, NULL, 1, 'general', '\"[\\\"professors\\\"]\"', NULL, NULL, NULL, 'specific', NULL, 1, '2025-08-02 18:25:24', '2025-08-02 18:25:24');
 
 -- --------------------------------------------------------
 
@@ -455,7 +458,21 @@ INSERT INTO `content_items` (`id`, `content_title`, `content_description`, `less
 (84, 'Lessons 1', NULL, NULL, 47, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929387_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:36:27', '2025-07-30 18:36:27', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
 (85, 'Lessons 1', NULL, NULL, 49, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929402_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:36:42', '2025-07-30 18:36:42', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
 (86, 'Lessons 1', NULL, NULL, 46, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753929422_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-30 18:37:03', '2025-07-30 18:37:03', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(87, 'Lessons 1', 'W', NULL, 53, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753975145_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-31 07:19:05', '2025-07-31 07:19:05', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+(87, 'Lessons 1', 'W', NULL, 53, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1753975145_Vince _Certificate (1).pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-07-31 07:19:05', '2025-07-31 07:19:05', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(88, 'qqq', 'Manually Created Quiz', NULL, 47, 'quiz', NULL, '\"{\\\"quiz_id\\\":40}\"', NULL, NULL, NULL, '2025-08-06 03:55:00', NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-01 19:55:37', '2025-08-02 12:39:49', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(89, 'BREH', 'Manually Created Quiz', NULL, 48, 'quiz', NULL, '\"{\\\"quiz_id\\\":41}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 12:42:20', '2025-08-02 12:42:20', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(90, 'asdasd', 'Manually Created Quiz', NULL, 53, 'quiz', NULL, '\"{\\\"quiz_id\\\":42}\"', NULL, NULL, NULL, '2025-08-11 20:49:00', NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 12:49:15', '2025-08-02 12:49:15', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(91, 'Test', 'Manually Created Quiz', NULL, 48, 'quiz', NULL, '\"{\\\"quiz_id\\\":45}\"', NULL, NULL, NULL, '2025-08-25 22:27:00', NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 14:25:56', '2025-08-02 15:48:14', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(93, 'qweqwe', 'Manually Created Quiz', NULL, 50, 'quiz', NULL, '\"{\\\"quiz_id\\\":47}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 14:43:18', '2025-08-02 17:00:39', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(94, 'THIS IS PROFESSOR', 'Manually Created Quiz', NULL, 47, 'quiz', NULL, '\"{\\\"quiz_id\\\":48}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 14:53:20', '2025-08-02 16:55:27', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(95, 'qwe', 'Admin Created Quiz', NULL, 52, 'quiz', NULL, '\"{\\\"quiz_id\\\":49}\"', NULL, NULL, NULL, '2025-08-04 17:28:00', NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 15:28:48', '2025-08-02 15:46:49', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(96, 'ww', 'Admin Created Quiz', NULL, 53, 'quiz', NULL, '\"{\\\"quiz_id\\\":50}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 15:48:39', '2025-08-02 15:48:39', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(97, 'asdas', 'Manually Created Quiz', NULL, 52, 'quiz', NULL, '\"{\\\"quiz_id\\\":54}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 16:36:46', '2025-08-02 16:36:46', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(98, 'qweqw', 'AI Generated Quiz', NULL, 52, 'quiz', NULL, '\"{\\\"quiz_id\\\":55}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 16:47:31', '2025-08-02 16:47:37', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(99, 'ssss', 'AI Generated Quiz', NULL, 52, 'quiz', NULL, '\"{\\\"quiz_id\\\":56}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 16:51:52', '2025-08-02 16:51:52', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(100, 'asdasdasaaa', 'Manually Created Quiz', NULL, 52, 'quiz', NULL, '\"{\\\"quiz_id\\\":57}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 16:52:17', '2025-08-02 16:55:33', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(101, 'AI?', 'AI Generated Quiz', NULL, 50, 'quiz', NULL, '\"{\\\"quiz_id\\\":58}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 17:00:52', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(102, 'asdasd', 'AI Generated Quiz', NULL, 52, 'quiz', NULL, '\"{\\\"quiz_id\\\":59}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 17:01:09', '2025-08-02 17:01:09', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -957,7 +974,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (69, '2025_07_31_000000_add_multiple_files_support_to_content_items', 59),
 (70, '2025_07_20_101518_create_student_progress_table', 60),
 (71, '2025_07_31_013337_add_progress_tracking_to_enrollments_table', 61),
-(72, '2025_07_10_173838_create_board_passers_table', 62);
+(72, '2025_07_10_173838_create_board_passers_table', 62),
+(73, '2025_08_03_022856_add_profile_photo_to_professors_table', 63),
+(74, '2025_08_03_023555_add_dynamic_data_to_professors_table', 64);
 
 -- --------------------------------------------------------
 
@@ -977,6 +996,7 @@ CREATE TABLE `modules` (
   `plan_id` int(11) DEFAULT NULL,
   `attachment` varchar(255) DEFAULT NULL,
   `video_path` varchar(255) DEFAULT NULL,
+  `content_url` text DEFAULT NULL,
   `additional_content` longtext DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -997,14 +1017,15 @@ CREATE TABLE `modules` (
 -- Dumping data for table `modules`
 --
 
-INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `program_id`, `batch_id`, `learning_mode`, `content_type`, `content_data`, `plan_id`, `attachment`, `video_path`, `additional_content`, `created_at`, `updated_at`, `is_archived`, `order`, `admin_override`, `is_locked`, `requires_prerequisite`, `prerequisite_module_id`, `release_date`, `completion_criteria`, `lock_reason`, `locked_by`, `module_order`) VALUES
-(73, 'Modules 1', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-25 15:33:43', '2025-07-25 15:33:43', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(74, 'Modules 2', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-25 15:33:56', '2025-07-25 15:33:56', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(75, 'Modules 1', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-26 00:57:19', '2025-07-26 00:57:19', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(76, 'Modules 2', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-26 00:57:33', '2025-07-26 00:57:33', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(77, 'Modules 1', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:17:12', '2025-07-30 18:36:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
-(78, 'Modules 2', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, 'modules/1753626089_BRAVO-MANUSCRIPT.pdf', NULL, NULL, '2025-07-27 06:21:29', '2025-07-30 18:36:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2),
-(79, 'Modules 1', NULL, 41, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, '2025-07-27 06:27:10', '2025-07-27 06:27:10', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `program_id`, `batch_id`, `learning_mode`, `content_type`, `content_data`, `plan_id`, `attachment`, `video_path`, `content_url`, `additional_content`, `created_at`, `updated_at`, `is_archived`, `order`, `admin_override`, `is_locked`, `requires_prerequisite`, `prerequisite_module_id`, `release_date`, `completion_criteria`, `lock_reason`, `locked_by`, `module_order`) VALUES
+(73, 'Modules 1', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-25 15:33:43', '2025-07-25 15:33:43', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(74, 'Modules 2', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-25 15:33:56', '2025-07-25 15:33:56', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(75, 'Modules 1', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-26 00:57:19', '2025-07-26 00:57:19', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(76, 'Modules 2', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-26 00:57:33', '2025-07-26 00:57:33', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(77, 'Modules 1', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-27 06:17:12', '2025-07-30 18:36:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
+(78, 'Modules 2', NULL, 40, NULL, 'Asynchronous', 'module', '[]', NULL, 'modules/1753626089_BRAVO-MANUSCRIPT.pdf', NULL, NULL, NULL, '2025-07-27 06:21:29', '2025-07-30 18:36:11', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2),
+(79, 'Modules 1', NULL, 41, NULL, 'Asynchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-27 06:27:10', '2025-07-27 06:27:10', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(80, 'Modules 3', 'TEST DECRIPTION', 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-02 17:45:31', '2025-08-02 17:45:31', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1290,6 +1311,8 @@ CREATE TABLE `professors` (
   `professor_email` varchar(100) NOT NULL,
   `professor_password` varchar(255) NOT NULL,
   `referral_code` varchar(20) DEFAULT NULL,
+  `profile_photo` varchar(255) DEFAULT NULL,
+  `dynamic_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`dynamic_data`)),
   `professor_archived` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -1299,8 +1322,8 @@ CREATE TABLE `professors` (
 -- Dumping data for table `professors`
 --
 
-INSERT INTO `professors` (`professor_id`, `admin_id`, `professor_name`, `professor_first_name`, `professor_last_name`, `professor_email`, `professor_password`, `referral_code`, `professor_archived`, `created_at`, `updated_at`) VALUES
-(8, 1, 'robert san', 'robert', 'san', 'robert@gmail.com', '$2y$10$VoMnQqIuvSditKfIjnEoNuMWmB1FmLLOgaeTWvqNpld78kK/LfB3K', 'PROF08RSAN', 0, '2025-07-09 12:02:17', '2025-07-17 18:55:31');
+INSERT INTO `professors` (`professor_id`, `admin_id`, `professor_name`, `professor_first_name`, `professor_last_name`, `professor_email`, `professor_password`, `referral_code`, `profile_photo`, `dynamic_data`, `professor_archived`, `created_at`, `updated_at`) VALUES
+(8, 1, 'robert SANS', 'robert', 'SANS', 'robert@gmail.com', '$2y$10$VoMnQqIuvSditKfIjnEoNuMWmB1FmLLOgaeTWvqNpld78kK/LfB3K', 'PROF08RSAN', 'profile_photos/JFuMcwmIxxFGaTySFx2BoovXUl0jVjE2hxpdjKJc.jpg', '{\"test\":\"value\"}', 0, '2025-07-09 12:02:17', '2025-08-02 18:41:21');
 
 -- --------------------------------------------------------
 
@@ -1391,7 +1414,8 @@ INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `di
 
 CREATE TABLE `quizzes` (
   `quiz_id` bigint(20) UNSIGNED NOT NULL,
-  `professor_id` bigint(20) UNSIGNED NOT NULL,
+  `professor_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `admin_id` int(11) DEFAULT NULL,
   `program_id` bigint(20) UNSIGNED NOT NULL,
   `module_id` bigint(20) UNSIGNED DEFAULT NULL,
   `course_id` bigint(20) UNSIGNED DEFAULT NULL,
@@ -1405,9 +1429,12 @@ CREATE TABLE `quizzes` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `status` enum('draft','published','archived') NOT NULL DEFAULT 'draft',
   `allow_retakes` tinyint(1) NOT NULL DEFAULT 0,
+  `infinite_retakes` tinyint(1) DEFAULT 0,
   `instant_feedback` tinyint(1) NOT NULL DEFAULT 0,
   `show_correct_answers` tinyint(1) NOT NULL DEFAULT 1,
   `max_attempts` int(11) DEFAULT NULL,
+  `has_deadline` tinyint(1) DEFAULT 0,
+  `due_date` datetime DEFAULT NULL,
   `is_draft` tinyint(1) NOT NULL DEFAULT 0,
   `randomize_order` tinyint(1) NOT NULL DEFAULT 0,
   `randomize_mc_options` tinyint(1) NOT NULL DEFAULT 0,
@@ -1420,15 +1447,18 @@ CREATE TABLE `quizzes` (
 -- Dumping data for table `quizzes`
 --
 
-INSERT INTO `quizzes` (`quiz_id`, `professor_id`, `program_id`, `module_id`, `course_id`, `content_id`, `quiz_title`, `instructions`, `quiz_description`, `total_questions`, `time_limit`, `document_path`, `is_active`, `status`, `allow_retakes`, `instant_feedback`, `show_correct_answers`, `max_attempts`, `is_draft`, `randomize_order`, `randomize_mc_options`, `tags`, `created_at`, `updated_at`) VALUES
-(30, 8, 38, 66, 36, 54, 'dsfgsdfgsdf', NULL, NULL, 10, 60, 'quiz-documents/3INOg6rDNGwwcKs2LWrIR6NnrI0dXubpncFRvJCP.pdf', 0, 'archived', 1, 1, 1, NULL, 0, 1, 0, '\"[]\"', '2025-07-26 05:00:30', '2025-07-28 10:30:44'),
-(31, 8, 41, 79, 53, NULL, 'tetetetet', '', 'sadfsafas', 1, 30, NULL, 0, 'draft', 0, 0, 0, 1, 0, 0, 0, '[]', '2025-07-27 11:37:06', '2025-07-27 11:37:06'),
-(32, 8, 41, 79, 52, NULL, 'ME batch Quiz', '', 'ASDFASFA', 1, 30, NULL, 0, 'draft', 0, 0, 0, 1, 0, 0, 0, '[]', '2025-07-27 11:37:58', '2025-07-27 11:37:58'),
-(34, 8, 41, 79, 52, NULL, 'yesss', '', 'asdgafsgdasdf', 1, 30, NULL, 0, 'draft', 0, 0, 0, 1, 0, 0, 0, '[]', '2025-07-27 12:05:03', '2025-07-27 12:05:03'),
-(35, 8, 40, 78, 50, NULL, 'fadssdfaasfd', '', 'asfdasdf', 1, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:28:44', '2025-07-28 10:28:44'),
-(36, 8, 40, 78, 50, NULL, 'fadssdfaasfd', '', 'asfdasdf', 1, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:28:55', '2025-07-28 10:28:55'),
-(37, 8, 40, 78, 50, NULL, 'fadssdfaasfd', '', 'asfdasdf', 1, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:28:58', '2025-07-28 10:28:58'),
-(38, 8, 40, 78, 51, NULL, '123123', '', '1231231', 10, 60, NULL, 1, 'draft', 0, 0, 1, 1, 1, 0, 0, NULL, '2025-07-28 10:30:38', '2025-07-28 10:30:38');
+INSERT INTO `quizzes` (`quiz_id`, `professor_id`, `admin_id`, `program_id`, `module_id`, `course_id`, `content_id`, `quiz_title`, `instructions`, `quiz_description`, `total_questions`, `time_limit`, `document_path`, `is_active`, `status`, `allow_retakes`, `infinite_retakes`, `instant_feedback`, `show_correct_answers`, `max_attempts`, `has_deadline`, `due_date`, `is_draft`, `randomize_order`, `randomize_mc_options`, `tags`, `created_at`, `updated_at`) VALUES
+(45, 8, NULL, 40, 77, 48, 91, 'Test', 'Please answer the following questions.', '1', 1, 60, NULL, 0, 'draft', 0, 1, 0, 1, 999, 1, '2025-08-25 22:27:00', 1, 0, 0, NULL, '2025-08-02 14:25:56', '2025-08-02 15:48:14'),
+(47, 8, NULL, 40, 78, 50, 93, 'qweqwe', 'Please answer the following questions.', 'qeweqw', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 14:43:18', '2025-08-02 17:00:39'),
+(48, 8, NULL, 40, 77, 47, 94, 'THIS IS PROFESSOR', 'Please answer the following questions.', 'NANANANA', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 14:53:20', '2025-08-02 16:55:27'),
+(49, NULL, 1, 41, 79, 52, 95, 'qwe', 'Please answer the following questions.', 'qweqwe', 1, 60, NULL, 1, 'published', 0, 1, 0, 1, 999, 1, '2025-08-04 17:28:00', 0, 0, 0, NULL, '2025-08-02 15:28:48', '2025-08-02 15:46:49'),
+(50, NULL, 1, 41, 79, 53, 96, 'ww', 'Please answer the following questions.', 'qweqwe', 1, 60, NULL, 1, 'published', 0, 0, 0, 1, 1, 0, NULL, 0, 0, 0, NULL, '2025-08-02 15:48:39', '2025-08-02 15:55:50'),
+(54, 8, NULL, 41, 79, 52, 97, 'asdas', 'Please answer the following questions.', 'dasdasd', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 16:36:46', '2025-08-02 16:36:46'),
+(55, NULL, 1, 41, 79, 52, 98, 'qweqw', 'Please answer the following questions.', 'eqweqwe', 1, 60, NULL, 1, 'published', 0, 0, 0, 1, 1, 0, NULL, 0, 0, 0, NULL, '2025-08-02 16:47:31', '2025-08-02 16:47:37'),
+(56, NULL, 1, 41, 79, 52, 99, 'ssss', 'Please answer the following questions.', 'ssss', 1, 60, NULL, 0, 'draft', 0, 1, 0, 1, 999, 0, NULL, 1, 0, 0, NULL, '2025-08-02 16:51:52', '2025-08-02 16:51:52'),
+(57, 8, NULL, 41, 79, 52, 100, 'asdasdasaaa', 'Please answer the following questions.', 'dasdasd', 1, 60, NULL, 1, 'published', 0, 1, 0, 1, 999, 0, NULL, 0, 0, 0, NULL, '2025-08-02 16:52:17', '2025-08-02 16:55:33'),
+(58, NULL, 1, 40, 78, 50, 101, 'AI?', 'Please answer the following questions.', 'AI?', 10, 60, NULL, 1, 'published', 0, 0, 0, 1, 1, 0, NULL, 0, 0, 0, NULL, '2025-08-02 16:53:00', '2025-08-02 17:00:52'),
+(59, NULL, 1, 41, 79, 52, 102, 'asdasd', 'Please answer the following questions.', 'asdasd', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 17:01:09', '2025-08-02 17:01:09');
 
 -- --------------------------------------------------------
 
@@ -1501,18 +1531,26 @@ CREATE TABLE `quiz_questions` (
 --
 
 INSERT INTO `quiz_questions` (`id`, `quiz_id`, `quiz_title`, `program_id`, `question_text`, `question_type`, `question_order`, `options`, `correct_answer`, `explanation`, `question_source`, `question_metadata`, `instructions`, `points`, `source_file`, `is_active`, `created_by_admin`, `created_by_professor`, `created_at`, `updated_at`) VALUES
-(373, 45, 'asdfas', NULL, 'test', 'multiple_choice', NULL, '\"{\\\"A\\\":\\\"\\\",\\\"B\\\":\\\"\\\",\\\"C\\\":\\\"\\\",\\\"D\\\":\\\"\\\"}\"', 'A', NULL, 'generated', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-27 05:55:06', '2025-07-27 05:55:06'),
-(374, 46, 'bruhh', NULL, 'br', 'multiple_choice', NULL, '\"{\\\"A\\\":\\\"\\\",\\\"B\\\":\\\"\\\",\\\"C\\\":\\\"\\\",\\\"D\\\":\\\"\\\"}\"', 'A', NULL, 'generated', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-27 06:02:10', '2025-07-27 06:02:10'),
-(375, 38, '123123', 40, 'What is vulnerability?', 'multiple_choice', NULL, '[\"made public, leaving organizations unprotected\",\"A database security feature\",\"A type of firewall configuration\",\"A software development methodology\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(376, 38, '123123', 40, 'How would you define exploit?', 'multiple_choice', NULL, '[\"to zero, the less time it has to cause damage across various organizations\",\"A database security feature\",\"A network infrastructure component\",\"A method for encrypting sensitive data\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(377, 38, '123123', 40, 'According to the document, what does exploit refer to?', 'multiple_choice', NULL, '[\"considered preventable and technically is just an exploit versus a zero-day-day-day exploit\",\"A method for encrypting sensitive data\",\"A software development methodology\",\"A type of firewall configuration\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(378, 38, '123123', 40, 'Which statement best describes This security hole?', 'multiple_choice', NULL, '[\"then exploited by hackers before the vendor becomes aware and hurries to fix it\",\"A backup and recovery process\",\"A programming language security feature\",\"A network monitoring protocol\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(379, 38, '123123', 40, 'What is What?', 'multiple_choice', NULL, '[\"a zero-day-day day vulnerability\",\"A software development methodology\",\"A backup and recovery process\",\"A programming language security feature\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(380, 38, '123123', 40, 'How would you define Every organization?', 'multiple_choice', NULL, '[\"at risk for zero-day exploits regardless of size\",\"A type of firewall configuration\",\"A backup and recovery process\",\"A user authentication system\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(381, 38, '123123', 40, 'According to the document, what does These exploits refer to?', 'multiple_choice', NULL, '[\"often designed or purchased for those specic purposes by various organizations including governments and organized crime\",\"A user authentication system\",\"A software development methodology\",\"A method for encrypting sensitive data\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(382, 38, '123123', 40, 'Which statement best describes Life Span of zero-day-day-Day Exploit There?', 'multiple_choice', NULL, '[\"a nite life time of all zero-day exploits\",\"A user authentication system\",\"A type of firewall configuration\",\"A backup and recovery process\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(383, 38, '123123', 40, 'What is closer life span of zero-day-day-day exploit?', 'multiple_choice', NULL, '[\"to zero, the less time it has to cause damage across various organizations\",\"A network monitoring protocol\",\"A backup and recovery process\",\"A type of firewall configuration\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38'),
-(384, 38, '123123', 40, 'Which statement accurately describes this concept?', 'multiple_choice', NULL, '[\"Zero Day Exploits ITEN11C Information Assurance and Security II a zero-day-day-day day vulnerabilityrefers to a hole in software that is unknown to the vendor\",\"This is only partially correct based on the document\",\"This statement contradicts the information provided\",\"All vulnerabilities are automatically patched within 24 hours\"]', 'A', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-07-28 10:30:38', '2025-07-28 10:30:38');
+(395, 45, 'Test', 40, 'qweqwe', 'multiple_choice', NULL, '[\"ww\",\"ww\",\"w\",\"w\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 14:25:56', '2025-08-02 14:25:56'),
+(397, 47, 'qweqwe', 40, 'qweqweqewwqe', 'multiple_choice', NULL, '[\"qw\",\"eqwe\",\"qweqwe\",\"qweqwe\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 14:43:18', '2025-08-02 14:43:18'),
+(398, 48, 'THIS IS PROFESSOR', 40, 'PROF', 'multiple_choice', NULL, '[\"PROF\",\"PROF\",\"PROF\",\"PRFO\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 14:53:20', '2025-08-02 14:53:20'),
+(399, 49, 'qwe', 41, 'qweqwe', 'multiple_choice', NULL, '[\"Option A\",\"Option B\",\"Option Cqweqwe\",\"Option D\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 15:28:48', '2025-08-02 15:28:48'),
+(402, 50, 'ww', 41, 'qqeqweqweqe', 'multiple_choice', NULL, '[\"Option AAAA\",\"Option B\",\"Option C\",\"Option D\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 15:55:50', '2025-08-02 15:55:50'),
+(403, 54, 'asdas', 41, 'asdasdasd', 'multiple_choice', NULL, '[\"asdas\",\"adsasd\",\"dasdas\",\"dasdasdasd\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 16:36:46', '2025-08-02 16:36:46'),
+(404, 55, 'qweqw', 41, 'qweqwe', 'multiple_choice', NULL, '[\"Option A\",\"Option B\",\"Option C\",\"Option D\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:47:31', '2025-08-02 16:47:31'),
+(405, 56, 'ssss', 41, 'asdsadssss', 'multiple_choice', NULL, '[\"Option A\",\"Option B\",\"Option C\",\"Option D\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:51:52', '2025-08-02 16:51:52'),
+(406, 57, 'asdasdasaaa', 41, 'sadsd', 'multiple_choice', NULL, '[\"asda\",\"sdas\",\"sssaa\",\"sss\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 16:52:17', '2025-08-02 16:52:17'),
+(407, 58, 'AI?', 40, 'What is stress (S) defined as in the context of machine elements?', 'multiple_choice', NULL, '[\"The total force applied to a material.\",\"The total deformation a material undergoes under load.\",\"The total resistance a material offers to an applied load.\",\"The maximum stress a material can withstand before failure.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(408, 58, 'AI?', 40, 'How is allowable stress (S<sub>allow</sub>) calculated?', 'multiple_choice', NULL, '[\"S<sub>allow<\\/sub> = Yield Stress \\/ Factor of Safety\",\"S<sub>allow<\\/sub> = Ultimate Stress \\/ Factor of Safety\",\"S<sub>allow<\\/sub> = Design Stress \\/ Factor of Safety\",\"S<sub>allow<\\/sub> = Tensile Stress \\/ Factor of Safety\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(409, 58, 'AI?', 40, 'For a solid circular cross-section, how is tensile stress (S<sub>t</sub>) calculated?', 'multiple_choice', NULL, '[\"S<sub>t<\\/sub> = F \\/ ( D\\u00b2\\/4)\",\"S<sub>t<\\/sub> = F \\/ ( D\\u00b2)\",\"S<sub>t<\\/sub> = 4F \\/ ( D\\u00b2)\",\"S<sub>t<\\/sub> = F \\/ (4 D\\u00b2)\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(410, 58, 'AI?', 40, 'What is the formula for shearing stress (S<sub>s</sub>) in a single bolt or rivet joining two plates?', 'multiple_choice', NULL, '[\"S<sub>s<\\/sub> = F \\/ (2 D\\u00b2)\",\"S<sub>s<\\/sub> = F \\/ ( D\\u00b2\\/4)\",\"S<sub>s<\\/sub> = F \\/ ( D\\u00b2)\",\"S<sub>s<\\/sub> = 2F \\/ ( D\\u00b2\\/4)\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(411, 58, 'AI?', 40, 'How is bearing stress (S<sub>b</sub>) calculated?', 'multiple_choice', NULL, '[\"S<sub>b<\\/sub> = F<sub>b<\\/sub> \\/ (D + L)\",\"S<sub>b<\\/sub> = F<sub>b<\\/sub> \\/ (DL)\",\"S<sub>b<\\/sub> = F<sub>b<\\/sub> \\/ (D\\/L)\",\"S<sub>b<\\/sub> = F<sub>b<\\/sub> \\/ (L\\/D)\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(412, 58, 'AI?', 40, 'The formula for torsional shear stress (S<sub>s</sub>) in a solid shaft is:', 'multiple_choice', NULL, '[\"S<sub>s<\\/sub> = 16T \\/ D\\u00b3\",\"S<sub>s<\\/sub> = 16T \\/ D\",\"S<sub>s<\\/sub> = 16T \\/ ( D )\",\"S<sub>s<\\/sub> = 16T \\/ ( D\\u00b3)\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(413, 58, 'AI?', 40, 'In the context of bending stress (S<sub>f</sub>) for a rectangular beam, what does \'c\' represent?', 'multiple_choice', NULL, '[\"The distance of the neutral axis from the farthest fiber.\",\"The length of the beam.\",\"The width of the beam.\",\"The height of the beam.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(414, 58, 'AI?', 40, 'What is Poisson\'s Ratio ( )?', 'multiple_choice', NULL, '[\"The ratio of axial unit deformation to lateral unit deformation.\",\"The ratio of lateral unit deformation to axial unit deformation.\",\"The ratio of shear stress to tensile stress.\",\"The ratio of tensile stress to compressive stress.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(415, 58, 'AI?', 40, 'For cylinders rolling in opposite directions, the center distance is calculated as:', 'multiple_choice', NULL, '[\"(D  + D ) \\/ 2\",\"(D  - D ) \\/ 2\",\"(D  + D ) \\/ 4\",\"(D  - D ) \\/ 4\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(416, 58, 'AI?', 40, 'According to the notes, what determines the direction of rotation of a driven cylinder with multiple gears and idlers?', 'multiple_choice', NULL, '[\"The number of idlers.\",\"The size of the gears.\",\"Whether the number of gears and idlers is even or odd.\",\"The friction loss in the system.   **III.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
+(417, 59, 'asdasd', 41, 'asdasd', 'multiple_choice', NULL, '[\"Option Aasdasdasd\",\"Option Bdasd\",\"Option Casdas\",\"Option Dasdasd\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 17:01:09', '2025-08-02 17:01:09');
 
 -- --------------------------------------------------------
 
@@ -1643,7 +1681,7 @@ CREATE TABLE `registrations` (
 --
 
 INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `program_name`, `enrollment_type`, `learning_mode`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `dynamic_fields`, `photo_2x2`, `Start_Date`, `status`, `approved_by`, `approved_at`, `undo_reason`, `undone_at`, `undone_by`, `rejection_reason`, `rejected_fields`, `rejected_by`, `rejected_at`, `resubmitted_at`, `original_submission`, `created_at`, `updated_at`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `selected_courses`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `education_level`, `sync_async_mode`, `Test`, `last_name`, `referral_code`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `form_137`) VALUES
-(1, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753974831_Vince _Certificate (1).pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:13:51', '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753974831_1753907633_final-docu.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":78,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"50\\\",\\\"51\\\"]},{\\\"id\\\":77,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"48\\\"]}]\"', '\"[\\\"50\\\",\\\"51\\\",\\\"48\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(1, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753974831_Vince _Certificate (1).pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:13:51', '2025-08-02 17:44:10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753974831_1753907633_final-docu.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":78,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"50\\\",\\\"51\\\"]},{\\\"id\\\":77,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"48\\\"]}]\"', '\"[\\\"50\\\",\\\"51\\\",\\\"48\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (2, 1, 34, 'Package 33', NULL, NULL, 41, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:16:10', '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":79,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]},{\\\"id\\\":\\\"79\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]}]\"', '\"[\\\"52\\\",\\\"53\\\",\\\"52\\\",\\\"53\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
@@ -1750,7 +1788,7 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `photo_2x2`, `profile_photo`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `is_archived`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `education_level`, `program_name`, `enrollment_type`, `learning_mode`, `Undergraduate`, `Graduate`, `dynamic_fields`, `status`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `referral_code`, `ama_namin`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `Test`, `last_name`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`) VALUES
-('2025-07-00001', 1, 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:14:15', '2025-07-31 07:14:15', '2025-07-31 07:14:15', 'vince03handsome11@gmail.com', 0, 34, 'Package 33', NULL, NULL, 40, 'Graduate', 'Nursing', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+('2025-07-00001', 1, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_1_1754156650.jpg', NULL, '2025-07-31 07:14:15', '2025-07-31 07:14:15', '2025-08-02 17:44:10', 'vince03handsome11@gmail.com', 0, 34, 'Package 33', NULL, NULL, 40, 'Graduate', 'Nursing', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -2382,13 +2420,13 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `admin_settings`
 --
 ALTER TABLE `admin_settings`
-  MODIFY `setting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=120;
+  MODIFY `setting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
 
 --
 -- AUTO_INCREMENT for table `announcements`
 --
 ALTER TABLE `announcements`
-  MODIFY `announcement_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `announcement_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `assignments`
@@ -2442,7 +2480,7 @@ ALTER TABLE `content_completions`
 -- AUTO_INCREMENT for table `content_items`
 --
 ALTER TABLE `content_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=103;
 
 --
 -- AUTO_INCREMENT for table `courses`
@@ -2520,13 +2558,13 @@ ALTER TABLE `messages`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
+  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 
 --
 -- AUTO_INCREMENT for table `module_completions`
@@ -2616,7 +2654,7 @@ ALTER TABLE `programs`
 -- AUTO_INCREMENT for table `quizzes`
 --
 ALTER TABLE `quizzes`
-  MODIFY `quiz_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `quiz_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `quiz_attempts`
@@ -2634,7 +2672,7 @@ ALTER TABLE `quiz_options`
 -- AUTO_INCREMENT for table `quiz_questions`
 --
 ALTER TABLE `quiz_questions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=385;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=418;
 
 --
 -- AUTO_INCREMENT for table `referrals`

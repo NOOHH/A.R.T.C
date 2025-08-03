@@ -1292,15 +1292,116 @@
                 if (data.file_path) {
                     // Always create/update hidden input inside the form
                     let form = inputElement.closest('form');
+                    
+                    // If form wasn't found, search more broadly for the form
+                    if (!form) {
+                        // Try to find the main form
+                        form = document.querySelector('form#enrollmentForm') || 
+                               document.querySelector('form#registrationForm') || 
+                               document.querySelector('form#studentForm') || 
+                               document.querySelector('form');
+                        
+                        if (!form) {
+                            console.error('❌ Could not find form element for storing file path');
+                            // Create an emergency hidden field in the document body
+                            document.body.insertAdjacentHTML('beforeend', 
+                                `<input type="hidden" id="emergency_${fieldName}_path" name="${fieldName}_path" value="${data.file_path}">`);
+                            console.log('⚠️ Created emergency hidden input in document body');
+                            return;
+                        }
+                    }
+                    
+                    // Create or update the hidden input field for file path
                     let hiddenFileInput = form.querySelector(`input[name="${fieldName}_path"]`);
                     if (!hiddenFileInput) {
                         hiddenFileInput = document.createElement('input');
                         hiddenFileInput.type = 'hidden';
                         hiddenFileInput.name = fieldName + '_path';
                         form.appendChild(hiddenFileInput);
+                        console.log('✅ Created new hidden input for', fieldName);
                     }
+                    
+                    // Set the value
                     hiddenFileInput.value = data.file_path;
                     console.log('✅ Stored file path for', fieldName, ':', data.file_path);
+                    
+                    // Also create a backup field with a consistent name for easier retrieval
+                    let backupField = form.querySelector(`input[name="uploaded_files[${fieldName}]"]`);
+                    if (!backupField) {
+                        backupField = document.createElement('input');
+                        backupField.type = 'hidden';
+                        backupField.name = `uploaded_files[${fieldName}]`;
+                        form.appendChild(backupField);
+                    }
+                    backupField.value = data.file_path;
+                    console.log('✅ Created backup file path field:', `uploaded_files[${fieldName}]`);
+                    
+                    // Get just the filename from the path
+                    const fileName = data.file_path.split('/').pop();
+                    
+                    // ENHANCED SOLUTION: Create a complete visual replacement for the file input
+                    const fileContainer = inputElement.closest('.mb-3') || inputElement.parentElement;
+                    if (fileContainer) {
+                        // Create a div to contain both the original input and our visual indicator
+                        let fileWrapper = fileContainer.querySelector('.file-upload-wrapper');
+                        if (!fileWrapper) {
+                            fileWrapper = document.createElement('div');
+                            fileWrapper.className = 'file-upload-wrapper';
+                            
+                            // Move the input into this wrapper (preserve any event handlers)
+                            const originalInput = inputElement;
+                            fileContainer.insertBefore(fileWrapper, originalInput);
+                            fileWrapper.appendChild(originalInput);
+                        }
+                        
+                        // Remove any existing visual indicators
+                        const existingIndicators = fileContainer.querySelectorAll('.file-upload-success, .file-visual-replacement');
+                        existingIndicators.forEach(el => el.remove());
+                        
+                        // Create a visual replacement that looks like a file input with a selected file
+                        const visualReplacement = document.createElement('div');
+                        visualReplacement.className = 'file-visual-replacement form-control d-flex align-items-center';
+                        visualReplacement.style.marginTop = '10px';
+                        visualReplacement.style.padding = '8px 12px';
+                        visualReplacement.style.border = '1px solid #28a745';
+                        visualReplacement.style.borderRadius = '4px';
+                        visualReplacement.style.backgroundColor = '#f8fff9';
+                        visualReplacement.style.display = 'flex';
+                        visualReplacement.style.justifyContent = 'space-between';
+                        visualReplacement.style.alignItems = 'center';
+                        visualReplacement.style.minHeight = 'calc(1.5em + 0.75rem + 2px)';
+                        
+                        visualReplacement.innerHTML = `
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <i class="fas fa-file-alt me-2 text-success"></i>
+                                <span class="text-truncate">${fileName}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-danger ms-2" 
+                                onclick="removeUploadedFile('${fieldName}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        // Add the visual replacement after the original input
+                        fileWrapper.appendChild(visualReplacement);
+                        
+                        // Add additional success message
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'file-upload-success text-success mt-2';
+                        successMsg.innerHTML = '<i class="fas fa-check-circle me-1"></i> File validated successfully';
+                        fileContainer.appendChild(successMsg);
+                        
+                        // Optionally hide the original file input to prevent confusion
+                        // But keep it in the DOM for the form submission
+                        inputElement.style.display = 'none';
+                        
+                        // Set data attributes on the input to track that we have an uploaded file
+                        inputElement.dataset.hasUploadedFile = 'true';
+                        inputElement.dataset.uploadedFilePath = data.file_path;
+                        inputElement.dataset.uploadedFileName = fileName;
+                        
+                        console.log('✅ Created visual replacement for file input showing:', fileName);
+                    }
                 }
                 
                 // FIXED: Handle program suggestions
@@ -1365,15 +1466,15 @@
             return;
         }
         
-        // Clear existing suggestions
-        const existingSuggestions = programSelect.querySelectorAll('.suggestion-option');
+        // IMPORTANT FIX: Remove ALL existing suggestions and headers to prevent duplicates
+        const existingSuggestions = programSelect.querySelectorAll('.suggestion-option, .suggestion-header');
         existingSuggestions.forEach(option => {
-            console.log('Removing existing suggestion:', option.textContent);
+            console.log('Removing existing suggestion/header:', option.textContent);
             option.remove();
         });
         
-        // Add suggestion header if suggestions exist
-        if (suggestions.length > 0) {
+        // Only add suggestion header if suggestions exist
+        if (suggestions && suggestions.length > 0) {
             console.log('Adding suggestions header and options...');
             
             // Create and add header option
@@ -1383,6 +1484,7 @@
             headerOption.className = 'suggestion-header';
             headerOption.style.fontWeight = 'bold';
             headerOption.style.color = '#007bff';
+            headerOption.style.backgroundColor = '#e3f2fd';
             
             // Insert after the default "Select Program" option
             if (programSelect.children.length > 0) {
@@ -1391,17 +1493,56 @@
                 programSelect.appendChild(headerOption);
             }
             
-            // Add each suggestion
-            suggestions.forEach((suggestion, index) => {
+            // Process suggestions to normalize format and prevent duplicates
+            const normalizedSuggestions = [];
+            const addedPrograms = new Set(); // Track program IDs to prevent duplicates
+            
+            suggestions.forEach(suggestion => {
+                try {
+                    let programId, programName;
+                    
+                    // Handle different suggestion formats
+                    if (suggestion.program && typeof suggestion.program === 'object') {
+                        // Format: {program: {id: 123, program_name: "Program Name"}}
+                        programId = suggestion.program.id;
+                        programName = suggestion.program.program_name;
+                    } else if (suggestion.id || suggestion.program_id) {
+                        // Format: {id: 123, name: "Program Name"} or {program_id: 123, program_name: "Program Name"}
+                        programId = suggestion.program_id || suggestion.id;
+                        programName = suggestion.program_name || suggestion.name;
+                    } else if (typeof suggestion === 'string') {
+                        // Format: "Program Name" (string only)
+                        programId = suggestion;
+                        programName = suggestion;
+                    } else {
+                        // Cannot process this suggestion
+                        console.warn('Unknown suggestion format:', suggestion);
+                        return;
+                    }
+                    
+                    // Only add valid suggestions with program IDs and prevent duplicates
+                    if (programId && programName && !addedPrograms.has(programId)) {
+                        normalizedSuggestions.push({id: programId, name: programName});
+                        addedPrograms.add(programId);
+                    }
+                } catch (error) {
+                    console.error('Error processing suggestion:', error, suggestion);
+                }
+            });
+            
+            // Sort suggestions alphabetically by name
+            normalizedSuggestions.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Add each normalized suggestion
+            normalizedSuggestions.forEach((suggestion, index) => {
                 const suggestionOption = document.createElement('option');
-                suggestionOption.value = suggestion.program_id || suggestion.id;
-                suggestionOption.textContent = `⭐ ${suggestion.program_name || suggestion.name}`;
+                suggestionOption.value = suggestion.id;
+                suggestionOption.textContent = `⭐ ${suggestion.name}`;
                 suggestionOption.className = 'suggestion-option';
                 suggestionOption.style.backgroundColor = '#e3f2fd';
                 suggestionOption.style.fontWeight = '500';
-                suggestionOption.dataset.suggestion = 'true';
                 
-                console.log(`Adding suggestion ${index + 1}:`, suggestion.program_name || suggestion.name);
+                console.log(`Adding suggestion ${index + 1}:`, suggestion.name, 'with ID:', suggestion.id);
                 
                 // Insert after header
                 const headerIndex = Array.from(programSelect.children).indexOf(headerOption);
@@ -1417,7 +1558,7 @@
             programSelect.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
             
             // Show notification modal
-            showInfoModal(`🎯 Great! We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
+            showInfoModal(`Great! We found ${normalizedSuggestions.length} program(s) that match your uploaded certificate. Check the suggested programs (marked with ⭐) at the top of the Program dropdown list.`);
             
             // Auto-scroll to the program select field
             setTimeout(() => {
@@ -1711,12 +1852,89 @@
     }
 
     function removeUploadedFile(fieldName) {
-        // Remove hidden input and uploaded info
-        const form = document.getElementById('enrollmentForm');
+        // Find the main form
+        const form = document.getElementById('enrollmentForm') || 
+                    document.querySelector('form#registrationForm') || 
+                    document.querySelector('form#studentForm') || 
+                    document.querySelector('form');
+                    
+        if (!form) {
+            console.error('Could not find form for removing uploaded file');
+            return;
+        }
+        
+        // Remove all stored file paths
         const hiddenInput = form.querySelector(`input[name='${fieldName}_path']`);
-        if (hiddenInput) hiddenInput.remove();
+        if (hiddenInput) {
+            console.log('Removing hidden input for', fieldName);
+            hiddenInput.remove();
+        }
+        
+        // Remove backup field if exists
+        const backupField = form.querySelector(`input[name="uploaded_files[${fieldName}]"]`);
+        if (backupField) {
+            console.log('Removing backup field for', fieldName);
+            backupField.remove();
+        }
+        
+        // Remove emergency field if exists
+        const emergencyField = document.getElementById(`emergency_${fieldName}_path`);
+        if (emergencyField) {
+            console.log('Removing emergency field for', fieldName);
+            emergencyField.remove();
+        }
+        
+        // Find and reset the file input
+        const fileInput = form.querySelector(`input[name='${fieldName}']`);
+        if (fileInput) {
+            // Clear selected file
+            fileInput.value = '';
+            fileInput.classList.remove('is-valid', 'is-warning');
+            delete fileInput.dataset.hasUploadedFile;
+            delete fileInput.dataset.uploadedFilePath;
+            delete fileInput.dataset.uploadedFileName;
+            
+            // Make the file input visible again
+            fileInput.style.display = '';
+            
+            console.log('Reset file input for', fieldName);
+        }
+        
+        // Remove visual elements
+        const fileContainer = fileInput?.closest('.mb-3') || document.querySelector(`input[name='${fieldName}']`)?.parentElement;
+        if (fileContainer) {
+            // Remove success indicator
+            const successIndicator = fileContainer.querySelector('.file-upload-success');
+            if (successIndicator) {
+                console.log('Removing success indicator for', fieldName);
+                successIndicator.remove();
+            }
+            
+            // Remove visual replacement
+            const visualReplacement = fileContainer.querySelector('.file-visual-replacement');
+            if (visualReplacement) {
+                console.log('Removing visual replacement for', fieldName);
+                visualReplacement.remove();
+            }
+            
+            // Unwrap the file input if it's in a wrapper
+            const fileWrapper = fileContainer.querySelector('.file-upload-wrapper');
+            if (fileWrapper && fileInput) {
+                // Move the file input back to its original position
+                fileContainer.insertBefore(fileInput, fileWrapper);
+                fileWrapper.remove();
+            }
+        }
+        
+        // Remove any old uploaded info element (for backward compatibility)
         const uploadedInfo = document.getElementById('uploaded-' + fieldName);
-        if (uploadedInfo) uploadedInfo.style.display = 'none';
+        if (uploadedInfo) {
+            console.log('Removing legacy uploaded info for', fieldName);
+            uploadedInfo.style.display = 'none';
+        }
+        
+        console.log('✅ File removed successfully for', fieldName);
+        showInfoModal('File removed successfully. You can upload a new file if needed.');
     }
 
     </script>
@@ -3029,6 +3247,61 @@ if (currentStep !== finalStep) {
         const today = new Date().toISOString().split('T')[0];
         startDateInput.value = today;
         console.log('📅 Fixed empty start date to:', today);
+    }
+    
+    // CRITICAL FIX: Ensure all uploaded file paths are included in form submission
+    console.log('🗂️ CHECKING FILE UPLOADS:');
+    const fileInputs = form.querySelectorAll('input[type="file"]');
+    let totalValidFiles = 0;
+    
+    fileInputs.forEach(fileInput => {
+        const fieldName = fileInput.name;
+        console.log(`Checking file input: ${fieldName}`);
+        
+        // Check if file has been validated and stored
+        if (fileInput.dataset.hasUploadedFile === 'true') {
+            const filePath = fileInput.dataset.uploadedFilePath;
+            console.log(`  ✅ File uploaded for ${fieldName}: ${filePath}`);
+            
+            // Ensure hidden field exists for the file path
+            let hiddenPathInput = form.querySelector(`input[name="${fieldName}_path"]`);
+            if (!hiddenPathInput) {
+                hiddenPathInput = document.createElement('input');
+                hiddenPathInput.type = 'hidden';
+                hiddenPathInput.name = `${fieldName}_path`;
+                form.appendChild(hiddenPathInput);
+                console.log(`  ✅ Created hidden input for ${fieldName}_path`);
+            }
+            hiddenPathInput.value = filePath;
+            
+            // Also create backup field for StudentRegistrationController compatibility
+            let backupField = form.querySelector(`input[name="uploaded_files[${fieldName}]"]`);
+            if (!backupField) {
+                backupField = document.createElement('input');
+                backupField.type = 'hidden';
+                backupField.name = `uploaded_files[${fieldName}]`;
+                form.appendChild(backupField);
+            }
+            backupField.value = filePath;
+            
+            totalValidFiles++;
+        } else if (fileInput.files && fileInput.files.length > 0) {
+            console.log(`  ⚠️ File selected but not validated for ${fieldName}: ${fileInput.files[0].name}`);
+        } else {
+            console.log(`  ℹ️ No file selected for ${fieldName}`);
+        }
+    });
+    
+    console.log(`📊 Total validated files: ${totalValidFiles}`);
+    
+    // Log all hidden inputs for debugging
+    const hiddenInputs = form.querySelectorAll('input[type="hidden"]');
+    console.log('📝 HIDDEN INPUTS IN FORM:');
+    hiddenInputs.forEach(input => {
+        if (input.name.includes('_path') || input.name.includes('uploaded_files')) {
+            console.log(`  ${input.name}: ${input.value}`);
+        }
+    });
         
         // Hidden field has been removed - only the visible date input is used
         console.log('📅 Start date set in visible field only');
@@ -3052,14 +3325,45 @@ if (currentStep !== finalStep) {
     
     console.log('�🚀 SUBMITTING FORM VIA AJAX');
     console.log('🌐 Request URL:', form.action);
-    console.log('📦 Form data entries:');
+    
+    // CRITICAL FIX: Ensure all file paths are properly included in form data
+    // Look for file inputs with uploaded files and ensure their paths are in the form data
+    const fileInputs = form.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        const fieldName = input.name;
+        const pathFieldName = fieldName + '_path';
+        
+        // Check if we have a hidden path field for this file input
+        const hasPathField = finalFormData.has(pathFieldName);
+        
+        // Also check if the file input has a data attribute indicating an uploaded file
+        const hasUploadedFile = input.dataset.hasUploadedFile === 'true';
+        const uploadedFilePath = input.dataset.uploadedFilePath;
+        
+        console.log(`Checking file input ${fieldName}: hasPathField=${hasPathField}, hasUploadedFile=${hasUploadedFile}`);
+        
+        // If we have an uploaded file but no path field, add it
+        if (hasUploadedFile && uploadedFilePath && !hasPathField) {
+            finalFormData.append(pathFieldName, uploadedFilePath);
+            console.log(`🔧 Added missing file path for ${fieldName}: ${uploadedFilePath}`);
+        }
+        
+        // Also check for any emergency fields
+        const emergencyField = document.getElementById(`emergency_${fieldName}_path`);
+        if (emergencyField && !hasPathField) {
+            finalFormData.append(pathFieldName, emergencyField.value);
+            console.log(`🔧 Added emergency file path for ${fieldName}: ${emergencyField.value}`);
+        }
+    });
+    
+    console.log('📦 Final form data entries:');
     for (let [key, value] of finalFormData.entries()) {
         if (key === '_token') {
-        console.log(`  ${key}: ${value.substring(0, 10)}...`);
+            console.log(`  ${key}: ${value.substring(0, 10)}...`);
         } else if (value instanceof File) {
-        console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
+            console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
         } else {
-        console.log(`  ${key}: ${value}`);
+            console.log(`  ${key}: ${value}`);
         }
     }
     
@@ -3185,7 +3489,6 @@ if (currentStep !== finalStep) {
             
             showFormErrors([`Server error (${response.status}): ${truncatedError || 'Unknown error'}`]);
         }
-        }
     })
     .catch(error => {
         console.error('🔥 Network/Fetch error details:', error);
@@ -3197,16 +3500,16 @@ if (currentStep !== finalStep) {
         
         // More specific error messages
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        showFormErrors(['Network connection failed. Please check your internet connection and try again.']);
+            showFormErrors(['Network connection failed. Please check your internet connection and try again.']);
         } else if (error.name === 'AbortError') {
-        showFormErrors(['Request was cancelled. Please try again.']);
+            showFormErrors(['Request was cancelled. Please try again.']);
         } else {
-        showFormErrors([`Network error: ${error.message}. Please try again.`]);
+            showFormErrors([`Network error: ${error.message}. Please try again.`]);
         }
     });
     
     return false; // Prevent any default form submission
-    }
+}
 
 
     // Comprehensive form validation function
@@ -3444,7 +3747,7 @@ if (currentStep !== finalStep) {
         sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
         try {
-            const response = await fetch('{{ route("signup.send.otp") }}', {
+            const response = await fetch('{{ route("enrollment.send-otp") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3493,7 +3796,7 @@ if (currentStep !== finalStep) {
         verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
 
         try {
-            const response = await fetch('{{ route("signup.verify.otp") }}', {
+            const response = await fetch('{{ route("enrollment.verify-otp") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

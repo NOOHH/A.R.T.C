@@ -16,7 +16,7 @@ class Registration extends Model
         'lastname',
         'firstname',
         'middlename',
-        'email', // Add email field
+        // 'email' removed - doesn't exist in the database
         'user_id',
         'package_id',
         'program_id',

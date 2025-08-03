@@ -169,7 +169,7 @@ class RegistrationController extends Controller
         $validated = $request->validate([
             'course' => 'required|string',
             'package_id' => 'required|exists:packages,package_id',
-            'enrollment_type' => 'required|in:Modular,Full',
+            'enrollment_type' => 'required|in:Full', // Only Full enrollment now
             'firstname' => 'required|string',
             'lastname' => 'required|string',
             'email' => 'required|email',
@@ -186,15 +186,9 @@ class RegistrationController extends Controller
         $user->role = 'student';
         $user->save();
 
-        // Save enrollment
+        // Save enrollment - Only Full enrollment supported in this controller
         $enrollment = new \App\Models\Enrollment();
-        if ($validated['enrollment_type'] === 'Modular') {
-            $enrollment->Modular_enrollment = $validated['course'];
-            $enrollment->Full_Program = '';
-        } else {
-            $enrollment->Modular_enrollment = '';
-            $enrollment->Full_Program = $validated['course'];
-        }
+        $enrollment->Full_Program = $validated['course'];
         $enrollment->package_id = $validated['package_id'];
         $enrollment->save();
 
@@ -245,7 +239,7 @@ class RegistrationController extends Controller
                 'program_id' => 'required|exists:programs,program_id',
                 'package_id' => 'required|exists:packages,package_id',
                 'learning_mode' => 'required|in:synchronous,asynchronous',
-                'enrollment_type' => 'required|in:Full,Modular',
+                'enrollment_type' => 'required|in:Full', // Only Full enrollment
                 'batch_id' => 'nullable|exists:student_batches,batch_id'
             ]);
 
@@ -339,7 +333,7 @@ class RegistrationController extends Controller
             'user_email' => 'required|email|unique:users,email',
             'password' => 'required|min:8',
             'password_confirmation' => 'required|same:password',
-            'enrollment_type' => 'required|in:Full,Modular'
+            'enrollment_type' => 'required|in:Full' // Only Full enrollment
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -401,7 +395,7 @@ class RegistrationController extends Controller
                 'program_id' => 'required|exists:programs,program_id',
                 'package_id' => 'required|exists:packages,package_id',
                 'learning_mode' => 'required|in:synchronous,asynchronous',
-                'enrollment_type' => 'required|in:Full,Modular',
+                'enrollment_type' => 'required|in:Full', // Only Full enrollment
                 'start_date' => 'nullable|date',
                 'batch_id' => 'nullable|exists:student_batches,batch_id'
             ]);

@@ -95,46 +95,81 @@ class AdminController extends Controller
                     ->firstOrFail();
             }
             
-            // Get dynamic fields from registration and merge with enrollment data
-            $dynamicFields = $registration->dynamic_fields ?? [];
+            // Determine program type for form requirements filtering
+            $programType = 'both'; // default
+            if ($registration->enrollment_type) {
+                $programType = strtolower($registration->enrollment_type) === 'modular' ? 'modular' : 'full';
+            }
             
-            // Get enrollment data if available (for dynamic field inheritance)
-            $enrollmentData = [];
-            if ($registration->enrollments && $registration->enrollments->count() > 0) {
-                // Get the most recent enrollment
-                $latestEnrollment = $registration->enrollments->sortByDesc('created_at')->first();
-                if ($latestEnrollment && $latestEnrollment->inherited_registration_data) {
-                    $enrollmentData = $latestEnrollment->inherited_registration_data;
+            // Get active form requirements for this program type
+            $activeRequirements = \App\Models\FormRequirement::where('is_active', true)
+                ->where(function($query) use ($programType) {
+                    $query->where('program_type', $programType)
+                          ->orWhere('program_type', 'both')
+                          ->orWhere('program_type', 'all');
+                })
+                ->orderBy('sort_order')
+                ->get();
+                
+            // Parse dynamic fields (JSON stored data from actual form submission)
+            $dynamicFields = [];
+            if ($registration->dynamic_fields) {
+                $dynamicFields = is_string($registration->dynamic_fields) 
+                    ? json_decode($registration->dynamic_fields, true) 
+                    : $registration->dynamic_fields;
+                if (!is_array($dynamicFields)) {
+                    $dynamicFields = [];
                 }
             }
             
-            // Helper function to get field value with priority: dynamic_fields > enrollment_data > static_field
-            $getFieldValue = function($staticValue, $dynamicKey, $enrollmentKey = null) use ($dynamicFields, $enrollmentData) {
-                // First check dynamic fields
-                if (isset($dynamicFields[$dynamicKey]) && !empty($dynamicFields[$dynamicKey])) {
-                    return $dynamicFields[$dynamicKey];
+            // Get enrollment data if available
+            $latestEnrollment = null;
+            if ($registration->enrollments && $registration->enrollments->count() > 0) {
+                $latestEnrollment = $registration->enrollments->sortByDesc('created_at')->first();
+            }
+            
+            // Helper function to get field value with priority: dynamic_fields > static_field > enrollment_field
+            $getFieldValue = function($fieldName, $staticValue = null) use ($dynamicFields, $registration, $latestEnrollment) {
+                // First check dynamic fields (actual form data)
+                if (isset($dynamicFields[$fieldName]) && !empty($dynamicFields[$fieldName])) {
+                    return $dynamicFields[$fieldName];
                 }
-                // Then check enrollment data
-                if ($enrollmentKey && isset($enrollmentData[$enrollmentKey]) && !empty($enrollmentData[$enrollmentKey])) {
-                    return $enrollmentData[$enrollmentKey];
+                // Then check static registration fields
+                if (!empty($registration->$fieldName)) {
+                    return $registration->$fieldName;
                 }
-                // Finally use static value
-                return $staticValue ?? null;
+                // Then check enrollment fields
+                if ($latestEnrollment && !empty($latestEnrollment->$fieldName)) {
+                    return $latestEnrollment->$fieldName;
+                }
+                // Finally use provided static value
+                return $staticValue;
             };
             
-            // Parse course selections if modular
-            $courseInfo = 'Full';
+            
+            // Build response based only on active form requirements and actual form data
+            $response = [
+                'registration_id' => $registration->registration_id,
+                'status' => $registration->status,
+                'created_at' => $registration->created_at->format('M d, Y H:i'),
+                // Core enrollment flow data (always shown)
+                'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
+                'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
+                'plan_name' => $registration->plan_name ?? ($registration->plan ? $registration->plan->plan_name : 'N/A'),
+                'enrollment_type' => $registration->enrollment_type ?? 'Full',
+                'learning_mode' => $getFieldValue('learning_mode', $registration->learning_mode),
+            ];
+            
+            // Process course selection for modular enrollments
             if ($registration->enrollment_type === 'Modular' && $registration->selected_courses) {
                 $selectedCourses = is_string($registration->selected_courses) 
                     ? json_decode($registration->selected_courses, true) 
                     : $registration->selected_courses;
                 
                 if (is_array($selectedCourses) && count($selectedCourses) > 0) {
-                    // Get course names
                     $courseNames = [];
                     foreach ($selectedCourses as $courseData) {
                         if (is_array($courseData)) {
-                            // Handle module with courses structure
                             if (isset($courseData['selected_courses']) && is_array($courseData['selected_courses'])) {
                                 foreach ($courseData['selected_courses'] as $courseId) {
                                     $course = \App\Models\Course::find($courseId);
@@ -144,83 +179,105 @@ class AdminController extends Controller
                                 }
                             }
                         } else {
-                            // Handle direct course ID
                             $course = \App\Models\Course::find($courseData);
                             if ($course) {
                                 $courseNames[] = $course->subject_name;
                             }
                         }
                     }
-                    $courseInfo = count($courseNames) > 0 ? implode(', ', $courseNames) : 'Modular (courses not specified)';
+                    $response['course_info'] = count($courseNames) > 0 ? implode(', ', $courseNames) : 'Modular (courses not specified)';
                 } else {
-                    $courseInfo = 'Modular';
+                    $response['course_info'] = 'Modular';
                 }
+            } else {
+                $response['course_info'] = 'Full';
             }
             
-            // Build response with dynamic field support
-            $response = [
-                'registration_id' => $registration->registration_id,
-                'firstname' => $getFieldValue($registration->firstname, 'firstname'),
-                'middlename' => $getFieldValue($registration->middlename, 'middlename'),
-                'lastname' => $getFieldValue($registration->lastname, 'lastname'),
-                'email' => $registration->user->email ?? $registration->email ?? $getFieldValue(null, 'email'),
-                'contact_number' => $getFieldValue($registration->contact_number, 'contact_number', 'contact_number'),
-                'mobile_number' => $getFieldValue($registration->contact_number ?? $registration->phone_number, 'mobile_number', 'mobile_number'),
-                'emergency_contact_number' => $getFieldValue($registration->emergency_contact_number, 'emergency_contact_number'),
-                'telephone_number' => $getFieldValue($registration->Telephone_Number, 'telephone_number'),
-                'gender' => $getFieldValue($registration->gender, 'gender'),
-                'birthdate' => $getFieldValue($registration->birthdate, 'birthdate'),
-                'age' => $registration->birthdate ? now()->diffInYears($registration->birthdate) : ($getFieldValue(null, 'age') ?? 'N/A'),
-                'street_address' => $getFieldValue($registration->street_address, 'street_address', 'address'),
-                'address' => $getFieldValue($registration->address ?? $registration->street_address, 'address', 'street_address'),
-                'city' => $getFieldValue($registration->city, 'city'),
-                'state_province' => $getFieldValue($registration->state_province, 'state_province', 'province'),
-                'province' => $getFieldValue($registration->state_province, 'province', 'state_province'),
-                'zipcode' => $getFieldValue($registration->zipcode, 'zipcode'),
-                'school_name' => $getFieldValue($registration->school_name, 'school_name'),
-                'student_school' => $getFieldValue($registration->student_school, 'student_school'),
-                'program_name' => $registration->program_name ?? ($registration->program ? $registration->program->program_name : 'N/A'),
-                'package_name' => $registration->package_name ?? ($registration->package ? $registration->package->package_name : 'N/A'),
-                'plan_name' => $registration->plan_name ?? ($registration->plan ? $registration->plan->plan_name : 'N/A'),
-                'plan_type' => $registration->enrollment_type ?? 'Full',
-                'course_info' => $courseInfo,
-                'learning_mode' => $getFieldValue($registration->learning_mode, 'learning_mode'),
-                'registration_mode' => $getFieldValue(null, 'registration_mode'),
-                'education_level' => $getFieldValue($registration->education_level, 'education_level'),
-                'Start_Date' => $getFieldValue($registration->Start_Date, 'start_date', 'Start_Date'),
-                'start_date' => $getFieldValue($registration->start_date ?? $registration->Start_Date, 'start_date', 'start_date'),
-                'status' => $registration->status,
-                // Document fields
-                'PSA' => $getFieldValue($registration->PSA, 'PSA'),
-                'TOR' => $getFieldValue($registration->TOR, 'TOR'),
-                'Course_Cert' => $getFieldValue($registration->Course_Cert, 'Course_Cert'),
-                'good_moral' => $getFieldValue($registration->good_moral, 'good_moral'),
-                'photo_2x2' => $getFieldValue($registration->photo_2x2, 'photo_2x2'),
-                'birth_certificate' => $getFieldValue($registration->birth_certificate, 'birth_certificate'),
-                'diploma_certificate' => $getFieldValue($registration->diploma_certificate, 'diploma_certificate'),
-                'Cert_of_Grad' => $getFieldValue($registration->Cert_of_Grad, 'Cert_of_Grad'),
-                'valid_id' => $getFieldValue($registration->valid_id, 'valid_id'),
-                'Undergraduate' => $getFieldValue($registration->Undergraduate, 'Undergraduate'),
-                'Graduate' => $getFieldValue($registration->Graduate, 'Graduate'),
-                // Additional dynamic fields that might be present
-                'referral_code' => $getFieldValue($registration->referral_code, 'referral_code'),
-                'selected_modules' => $getFieldValue($registration->selected_modules, 'selected_modules'),
-                'selected_courses_dynamic' => $getFieldValue($registration->selected_courses, 'selected_courses'),
-                'created_at' => $registration->created_at->format('M d, Y H:i')
-            ];
+            // Add fields based on active form requirements (only what was actually presented to student)
+            $personalInfoFields = [];
+            $contactFields = [];
+            $addressFields = [];
+            $educationFields = [];
+            $documentFields = [];
+            $otherFields = [];
             
-            // Add any additional dynamic fields that aren't covered above
-            if (is_array($dynamicFields)) {
-                foreach ($dynamicFields as $key => $value) {
-                    if (!isset($response[$key]) && !empty($value)) {
-                        $response[$key] = $value;
+            foreach ($activeRequirements as $requirement) {
+                $fieldName = $requirement->field_name;
+                $fieldLabel = $requirement->field_label;
+                $fieldType = $requirement->field_type;
+                
+                // Skip section headers
+                if ($fieldType === 'section') {
+                    continue;
+                }
+                
+                // Get field value
+                $value = $getFieldValue($fieldName);
+                
+                // Only include fields that have values or were explicitly part of the form flow
+                if (!empty($value) || isset($dynamicFields[$fieldName])) {
+                    $fieldData = [
+                        'label' => $fieldLabel,
+                        'value' => $value ?: 'N/A',
+                        'type' => $fieldType,
+                        'required' => $requirement->is_required
+                    ];
+                    
+                    // Categorize fields for better organization
+                    if (in_array($fieldName, ['firstname', 'middlename', 'lastname', 'gender', 'birthdate', 'age', 'religion', 'citizenship', 'civil_status'])) {
+                        $personalInfoFields[$fieldName] = $fieldData;
+                    } elseif (in_array($fieldName, ['contact_number', 'phone_number', 'mobile_number', 'telephone_number', 'emergency_contact_number', 'emergency_contact_relationship', 'parent_guardian_name', 'parent_guardian_contact'])) {
+                        $contactFields[$fieldName] = $fieldData;
+                    } elseif (in_array($fieldName, ['street_address', 'address', 'city', 'state_province', 'province', 'zipcode'])) {
+                        $addressFields[$fieldName] = $fieldData;
+                    } elseif (in_array($fieldName, ['education_level', 'school_name', 'student_school', 'previous_school', 'graduation_year', 'course_taken', 'work_experience', 'employment_status', 'monthly_income'])) {
+                        $educationFields[$fieldName] = $fieldData;
+                    } elseif ($fieldType === 'file' || in_array($fieldName, ['PSA', 'TOR', 'Course_Cert', 'good_moral', 'photo_2x2', 'birth_certificate', 'diploma_certificate', 'valid_id', 'medical_certificate'])) {
+                        $documentFields[$fieldName] = $fieldData;
+                    } else {
+                        $otherFields[$fieldName] = $fieldData;
                     }
+                    
+                    // Also add to main response for backward compatibility
+                    $response[$fieldName] = $value ?: 'N/A';
                 }
             }
+            
+            // Add categorized fields to response
+            $response['personal_info'] = $personalInfoFields;
+            $response['contact_info'] = $contactFields;
+            $response['address_info'] = $addressFields;
+            $response['education_info'] = $educationFields;
+            $response['documents'] = $documentFields;
+            $response['other_fields'] = $otherFields;
+            
+            // Add email (always shown since it's core to user account)
+            $response['email'] = $registration->user->email ?? $getFieldValue('email') ?? 'N/A';
+            
+            // Add enrollment information if available
+            if ($latestEnrollment) {
+                $response['enrollment_info'] = [
+                    'enrollment_id' => $latestEnrollment->enrollment_id,
+                    'enrollment_status' => $latestEnrollment->enrollment_status,
+                    'payment_status' => $latestEnrollment->payment_status,
+                    'progress_percentage' => $latestEnrollment->progress_percentage,
+                    'batch_id' => $latestEnrollment->batch_id,
+                    'start_date' => $latestEnrollment->start_date,
+                    'created_at' => $latestEnrollment->created_at->format('M d, Y H:i'),
+                ];
+            }
+            
+            // Add form requirements metadata for admin reference
+            $response['form_metadata'] = [
+                'program_type' => $programType,
+                'total_active_requirements' => $activeRequirements->count(),
+                'fields_with_data' => count(array_filter($dynamicFields)),
+                'enrollment_flow_completed' => !empty($registration->plan_id) && !empty($registration->package_id) && !empty($registration->learning_mode)
+            ];
             
             return response()->json($response);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Registration not found'], 404);
+            return response()->json(['error' => 'Registration not found: ' . $e->getMessage()], 404);
         }
     }
 
