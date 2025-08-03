@@ -2445,6 +2445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: 150,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
+            fallbackOnBody: true, // << add this
             onEnd: function(evt) {
                 const moduleIds = Array.from(modulesContainer.children).map(el => 
                     el.getAttribute('data-module-id')

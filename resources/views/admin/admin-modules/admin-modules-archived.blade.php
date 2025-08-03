@@ -503,20 +503,31 @@ function restoreModule(moduleId) {
     $.ajax({
         url: `/admin/modules/${moduleId}/toggle-archive`,
         method: 'POST',
-        data: { 
-            is_archived: false,
-            _token: $('meta[name="csrf-token"]').attr('content')
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'Content-Type': 'application/json'
         },
+        data: JSON.stringify({ 
+            is_archived: false
+        }),
         success: function(response) {
             if (response.success) {
                 showMessage('Module restored successfully!', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showMessage('Error restoring module', 'error');
+                showMessage('Error restoring module: ' + (response.message || ''), 'error');
             }
         },
-        error: function() {
-            showMessage('Error restoring module', 'error');
+        error: function(xhr) {
+            console.error('Error restoring module:', xhr.responseText);
+            let errorMessage = 'Error restoring module';
+            try {
+                const errorData = JSON.parse(xhr.responseText);
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Ignore parsing errors
+            }
+            showMessage(errorMessage, 'error');
         }
     });
 }
@@ -571,16 +582,34 @@ function deleteModule(moduleId) {
     $.ajax({
         url: `/admin/modules/${moduleId}`,
         method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
         success: function(response) {
             if (response.success) {
                 showMessage('Module deleted successfully!', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showMessage('Error deleting module', 'error');
+                showMessage(response.message || 'Error deleting module', 'error');
             }
         },
-        error: function() {
-            showMessage('Error deleting module', 'error');
+        error: function(xhr) {
+            console.error('Delete error:', xhr);
+            let errorMessage = 'Error deleting module';
+            
+            if (xhr.status === 405) {
+                errorMessage = 'Method not allowed - please check route configuration';
+            } else if (xhr.status === 404) {
+                errorMessage = 'Module not found';
+            } else if (xhr.status === 419) {
+                errorMessage = 'CSRF token mismatch - please refresh the page';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            
+            showMessage(errorMessage, 'error');
         }
     });
 }
@@ -633,14 +662,36 @@ function updateStats() {
     });
 }
 
-// Show message function
+// Show message function with right-side positioning
 function showMessage(message, type) {
-    const messageDiv = $(`<div class="${type}-message">${message}</div>`);
-    $('.modules-container').prepend(messageDiv);
+    // Remove any existing messages
+    $('.toast-notification').remove();
     
+    const toastClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? '<i class="bi bi-check-circle-fill"></i>' : '<i class="bi bi-exclamation-triangle-fill"></i>';
+    
+    const messageDiv = $(`
+        <div class="toast-notification alert ${toastClass} alert-dismissible fade show" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        ">
+            ${icon}
+            <span style="margin-left: 8px;">${message}</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(messageDiv);
+    
+    // Auto-remove after 4 seconds
     setTimeout(() => {
-        messageDiv.fadeOut(() => messageDiv.remove());
-    }, 3000);
+        messageDiv.alert('close');
+    }, 4000);
 }
 </script>
 @endpush
