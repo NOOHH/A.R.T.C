@@ -869,7 +869,7 @@
     width: 100%;
 }
 .deadlines-content::-webkit-scrollbar {
-    width: 10px;
+    width: 4px;
 }
 .deadlines-content::-webkit-scrollbar-track {
     background: rgba(0,0,0,0.03);
@@ -1171,18 +1171,6 @@
     <div class="dashboard-card courses-card">
         <div class="card-header">
             <h2>My Programs</h2>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="completion-badge">{{ count($courses) > 0 ? floor(array_sum(array_column($courses, 'progress')) / count($courses)) : '0' }}% overall progress</span>
-                <button onclick="refreshDashboard()" class="btn btn-sm btn-outline-light" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                </button>
-                <button onclick="testDashboardUpdate()" class="btn btn-sm btn-outline-warning" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
-                    <i class="bi bi-bug"></i> Test
-                </button>
-                <button onclick="testProgramModal()" class="btn btn-sm btn-outline-info" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
-                    <i class="bi bi-collection"></i> Test Program Profile
-                </button>
-            </div>
         </div>
         <div class="courses-list">
             @forelse($courses as $course)

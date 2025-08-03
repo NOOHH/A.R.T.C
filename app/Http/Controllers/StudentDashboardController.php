@@ -2796,6 +2796,8 @@ class StudentDashboardController extends Controller
                     if ($enrollmentCourse->course) {
                         $enrollmentInfo['courses'][] = [
                             'course_id' => $enrollmentCourse->course->subject_id,
+                            'subject_id' => $enrollmentCourse->course->subject_id,
+                            'program_id' => $enrollment->program->program_id,
                             'course_name' => $enrollmentCourse->course->subject_name,
                             'course_description' => $enrollmentCourse->course->subject_description,
                             'module_name' => $enrollmentCourse->module->module_name ?? 'N/A',
@@ -2816,6 +2818,8 @@ class StudentDashboardController extends Controller
                     foreach ($module->courses as $course) {
                         $enrollmentInfo['courses'][] = [
                             'course_id' => $course->subject_id,
+                            'subject_id' => $course->subject_id,
+                            'program_id' => $enrollment->program->program_id,
                             'course_name' => $course->subject_name,
                             'course_description' => $course->subject_description,
                             'module_name' => $module->module_name,

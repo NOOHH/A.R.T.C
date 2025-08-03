@@ -33,6 +33,10 @@ body, html {
   overflow: hidden;
 }
 
+.main-content-area.sidebar-collapsed {
+  margin-left: 60px;
+}
+
 /* Content Wrapper */
 .content-wrapper {
   flex: 1;

@@ -79,7 +79,7 @@
   border-right: 1px solid var(--sidebar-border);
   box-shadow: var(--sidebar-shadow);
   transform: translateX(0);
-  transition: var(--transition-smooth);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9999;
   overflow: hidden;
   overflow-x: hidden;
@@ -90,6 +90,8 @@
 .professional-sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
 }
+
+/* Removed hover expand - now click-only like professor sidebar */
 
 /* Mobile: Hidden by default */
 @media (max-width: 768px) {

@@ -1,20 +1,13 @@
 <!-- Professional Student Sidebar -->
+<style>
+.professional-sidebar.collapsed .sidebar-toggle-btn {
+  display: none;
+}
+
+ </style>
 <aside class="professional-sidebar" id="studentSidebar">
   <!-- Sidebar Header -->
-  <div class="sidebar-header">
-    <div class="sidebar-brand">
-      <div class="brand-icon">
-        <i class="bi bi-mortarboard-fill"></i>
-      </div>
-      <div class="brand-content">
-        <div class="brand-title">ARTC</div>
-        <div class="brand-subtitle">Student Portal</div>
-      </div>
-    </div>
-    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
-      <i class="bi bi-chevron-left"></i>
-    </button>
-  </div>
+
 
   <!-- User Profile Section -->
   <div class="sidebar-profile">
@@ -38,6 +31,9 @@
       <div class="profile-name">{{ session('user_firstname') }} {{ session('user_lastname') }}</div>
       <div class="profile-role">Student</div>
     </div>
+       <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+      <i class="bi bi-chevron-left"></i>
+    </button>
   </div>
 
   <!-- Navigation Menu -->

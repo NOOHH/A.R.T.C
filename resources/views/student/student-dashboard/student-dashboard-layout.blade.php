@@ -91,10 +91,60 @@
     .sidebar-toggle-btn:hover {
       background-color: rgba(0, 0, 0, 0.1);
     }
+
+    /* Mobile sidebar toggle */
+    .mobile-sidebar-toggle {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      width: 48px;
+      height: 48px;
+      background: #1a1a1a;
+      border: 2px solid #2d2d2d;
+      border-radius: 12px;
+      color: white;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .mobile-sidebar-toggle:hover {
+      background: #2d2d2d;
+      transform: scale(1.05);
+    }
+
+    /* Main content area adjustments for sidebar collapse */
+    .main-content-area {
+      margin-left: 280px;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .main-content-area.sidebar-collapsed {
+      margin-left: 60px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-sidebar-toggle {
+        display: flex !important;
+      }
+      
+      .main-content-area {
+        margin-left: 0 !important;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="student-container">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle d-md-none" id="mobileSidebarToggle">
+      <i class="bi bi-list"></i>
+    </button>
+
     {{-- Professional Sidebar --}}
     @if(!isset($hideSidebar) || !$hideSidebar)
       @include('components.student-sidebar')
@@ -203,9 +253,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (sidebar) {
         sidebar.classList.toggle('collapsed');
         
-        // Update content margin
+        // Update content margin (like professor sidebar)
         if (sidebar.classList.contains('collapsed')) {
-          mainContentArea.style.marginLeft = '60px';
+          mainContentArea.style.marginLeft = '70px';
         } else {
           mainContentArea.style.marginLeft = '280px';
         }
@@ -277,6 +327,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Make entire sidebar clickable to toggle (like professor sidebar)
+  if (sidebar) {
+    sidebar.addEventListener('click', function(e) {
+      // Only toggle if we're not clicking on navigation links or forms
+      if (!e.target.closest('.nav-link') && 
+          !e.target.closest('.submenu-link') && 
+          !e.target.closest('form') && 
+          !e.target.closest('button') &&
+          !e.target.closest('a')) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebar();
+      }
+    });
+  }
+
   // Backdrop click to close (mobile)
   if (backdrop) {
     backdrop.addEventListener('click', closeSidebar);
@@ -317,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Set proper margin
       if (sidebar && sidebar.classList.contains('collapsed')) {
-        mainContentArea.style.marginLeft = '60px';
+        mainContentArea.style.marginLeft = '70px';
       } else if (sidebar) {
         mainContentArea.style.marginLeft = '280px';
       } else {
