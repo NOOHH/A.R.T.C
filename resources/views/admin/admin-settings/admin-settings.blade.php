@@ -89,7 +89,7 @@
             <ul class="nav nav-tabs justify-content-center" id="settingsTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="student-tab" data-bs-toggle="tab" data-bs-target="#student" type="button" role="tab">
-                        <i class="fas fa-user-graduate me-2"></i>Student
+                        <i class="fas fa-user-graduate me-2"></i>Site
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -1950,39 +1950,24 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
                 
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                console.log('Content-Type:', contentType);
-                
-                if (contentType && contentType.includes('application/json')) {
-                    return response.json();
-                } else {
-                    // If not JSON, get the text and throw an error
-                    return response.text().then(text => {
-                        console.error('Non-JSON response received:', text.substring(0, 500));
-                        throw new Error('Server returned non-JSON response (Status: ' + response.status + '): ' + text.substring(0, 200));
-                    });
-                }
-            })
-            .then(data => {
-                if (data.success) {
+                // If response is successful (200-299), consider it a success
+                if (response.ok) {
+                    // Show success message and reload page
                     showAlert('Login settings saved successfully!', 'success');
-                    // Reload the page to apply changes
                     setTimeout(() => {
                         window.location.reload();
                     }, 1500);
                 } else {
-                    showAlert(data.message || 'Error saving login settings', 'error');
+                    // Handle actual errors
+                    return response.text().then(text => {
+                        throw new Error('Server error: ' + response.status);
+                    });
                 }
             })
             .catch(error => {
                 console.error('Fetch error:', error);
-                console.error('Error name:', error.name);
-                console.error('Error message:', error.message);
-                console.error('Error stack:', error.stack);
-                showAlert('Error saving login settings: ' + error.message, 'error');
+                showAlert('Error saving login settings. Please try again.', 'error');
             })
             .finally(() => {
                 // Restore button state
