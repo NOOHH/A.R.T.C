@@ -1172,6 +1172,9 @@ function displaySearchResults(data) {
 
 @stack('scripts')
 
+<!-- Admin Functions JavaScript - Shared across all admin pages -->
+<script src="{{ asset('js/admin/admin-functions.js') }}?v={{ time() }}"></script>
+
 <!-- Admin Sidebar JavaScript -->
 <script src="{{ asset('js/admin/admin-sidebar.js') }}?v={{ time() }}"></script>
 

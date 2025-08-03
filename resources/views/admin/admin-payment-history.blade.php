@@ -115,35 +115,8 @@
 </div>
 
 <script>
-function viewDetails(enrollmentId) {
-    // Redirect to enrollment details page
-    window.location.href = `/admin/enrollment/${enrollmentId}`;
-}
-
-function retryPayment(enrollmentId) {
-    if (confirm('Are you sure you want to retry this payment?')) {
-        // Add AJAX call to retry payment
-        fetch(`/admin/enrollment/${enrollmentId}/retry-payment`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Payment retry initiated');
-                location.reload();
-            } else {
-                alert('Error retrying payment');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error retrying payment');
-        });
-    }
-}
+// Functions are now available globally from admin-functions.js
+// viewDetails() and retryPayment() are defined in the shared admin functions file
+console.log('✅ Admin payment history page loaded - functions available globally');
 </script>
 @endsection

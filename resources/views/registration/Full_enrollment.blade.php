@@ -1072,12 +1072,17 @@
                 });
                 
                 if (sourceField && targetField && sourceField.value.trim()) {
-                    targetField.value = sourceField.value.trim();
-                    console.log(`✅ Copied ${step4Field} -> ${step5Field}: ${sourceField.value}`);
-                    
-                    // Trigger any validation or change events
-                    const event = new Event('input', { bubbles: true });
-                    targetField.dispatchEvent(event);
+                    // Only update if values are different to prevent infinite loops
+                    if (targetField.value.trim() !== sourceField.value.trim()) {
+                        targetField.value = sourceField.value.trim();
+                        console.log(`✅ Copied ${step4Field} -> ${step5Field}: ${sourceField.value}`);
+                        
+                        // Trigger any validation or change events
+                        const event = new Event('input', { bubbles: true });
+                        targetField.dispatchEvent(event);
+                    } else {
+                        console.log(`⏭️ Skipped ${step4Field} -> ${step5Field}: values already match`);
+                    }
                 } else {
                     console.log(`❌ Could not copy ${step4Field} -> ${step5Field}:`, {
                         sourceExists: !!sourceField,
@@ -1113,12 +1118,17 @@
             });
             
             if (sourceField && targetField && sourceField.value.trim()) {
-                targetField.value = sourceField.value.trim();
-                console.log(`✅ Copied ${step5Field} -> ${step4Field}: ${sourceField.value}`);
-                
-                // Trigger any validation or change events
-                const event = new Event('input', { bubbles: true });
-                targetField.dispatchEvent(event);
+                // Only update if values are different to prevent infinite loops
+                if (targetField.value.trim() !== sourceField.value.trim()) {
+                    targetField.value = sourceField.value.trim();
+                    console.log(`✅ Copied ${step5Field} -> ${step4Field}: ${sourceField.value}`);
+                    
+                    // Trigger any validation or change events
+                    const event = new Event('input', { bubbles: true });
+                    targetField.dispatchEvent(event);
+                } else {
+                    console.log(`⏭️ Skipped ${step5Field} -> ${step4Field}: values already match`);
+                }
             } else {
                 console.log(`❌ Could not copy ${step5Field} -> ${step4Field}:`, {
                     sourceExists: !!sourceField,
@@ -1153,11 +1163,17 @@
         accountFields.forEach(fieldName => {
             const field = document.querySelector(`input[name="${fieldName}"]`);
             if (field) {
-                field.addEventListener('input', function() {
-                    console.log(`Account field changed: ${fieldName}`);
+                // Remove existing listeners to prevent duplicates
+                field.removeEventListener('input', field.syncHandler);
+                
+                // Create new handler
+                field.syncHandler = function() {
+                    console.log(`🔄 Account field changed: ${fieldName} = "${this.value}"`);
                     // Sync to student form
                     syncNameFields('account-to-student');
-                });
+                };
+                
+                field.addEventListener('input', field.syncHandler);
                 console.log(`✅ Added sync listener to account field: ${fieldName}`);
             }
         });
@@ -1167,13 +1183,35 @@
         studentFields.forEach(fieldName => {
             const field = document.querySelector(`input[name="${fieldName}"]`);
             if (field) {
-                field.addEventListener('input', function() {
-                    console.log(`Student field changed: ${fieldName}`);
+                // Remove existing listeners to prevent duplicates
+                field.removeEventListener('input', field.syncHandler);
+                
+                // Create new handler
+                field.syncHandler = function() {
+                    console.log(`🔄 Student field changed: ${fieldName} = "${this.value}"`);
                     // Sync to account form
                     syncNameFields('student-to-account');
-                });
+                };
+                
+                field.addEventListener('input', field.syncHandler);
                 console.log(`✅ Added sync listener to student field: ${fieldName}`);
             }
+        });
+        
+        // Also sync when switching between steps
+        const stepButtons = document.querySelectorAll('[data-step]');
+        stepButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const currentStep = parseInt(this.getAttribute('data-step'));
+                console.log(`🔄 Step change detected: ${currentStep}`);
+                
+                // Sync when moving between account (step 4) and student form (step 5)
+                if (currentStep === 4 || currentStep === 5) {
+                    setTimeout(() => {
+                        syncNameFields('both');
+                    }, 100); // Small delay to ensure DOM is updated
+                }
+            });
         });
         
         console.log('=== Name field syncing setup completed ===');
@@ -2548,6 +2586,27 @@
                         }
                     }
                 @endphp
+                
+                <!-- First Name and Last Name always at the top -->
+                @if(!$hasFirstname)
+                <div class="form-group">
+                    <label for="firstname" style="font-weight:700;">
+                        <i class="bi bi-person me-2"></i>First Name
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" name="firstname" id="firstname" class="form-control" required>
+                </div>
+                @endif
+                @if(!$hasLastname)
+                <div class="form-group">
+                    <label for="lastname" style="font-weight:700;">
+                        <i class="bi bi-person me-2"></i>Last Name
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" name="lastname" id="lastname" class="form-control" required>
+                </div>
+                @endif
+                
                 @foreach($formRequirements as $field)
                     @if($field->field_type === 'section')
                         @php 
@@ -2557,7 +2616,7 @@
                             <i class="bi bi-folder me-2"></i>{{ $currentSection }}
                         </h3>
                     @else
-                        @if($field->field_name !== 'Cert_of_Grad')
+                        @if($field->field_name !== 'Cert_of_Grad' && $field->field_name !== 'firstname' && $field->field_name !== 'lastname')
                             <div class="form-group">
                                 @if($currentSection)
                                     <div class="section-indicator" style="font-size:0.9rem; color:#6c757d; margin-bottom:0.5rem;">
@@ -2640,24 +2699,6 @@
                         @endif
                     @endif
                 @endforeach
-                @if(!$hasFirstname)
-                <div class="form-group">
-                    <label for="firstname" style="font-weight:700;">
-                        <i class="bi bi-person me-2"></i>First Name
-                        <span class="required">*</span>
-                    </label>
-                    <input type="text" name="firstname" id="firstname" class="form-control" required>
-                </div>
-                @endif
-                @if(!$hasLastname)
-                <div class="form-group">
-                    <label for="lastname" style="font-weight:700;">
-                        <i class="bi bi-person me-2"></i>Last Name
-                        <span class="required">*</span>
-                    </label>
-                    <input type="text" name="lastname" id="lastname" class="form-control" required>
-                </div>
-                @endif
             @else
                 <!-- Fallback fields if no dynamic fields are configured -->
                 <div class="form-group">
@@ -2820,8 +2861,8 @@
     </div>
 
     <!-- Terms and Conditions Modal -->
-    <div id="termsModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px;">
+    <div id="termsModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="max-width: 600px; background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
             <h3>Terms and Conditions</h3>
             <div style="max-height: 320px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem;">
                 {!! nl2br(e(\App\Models\AdminSetting::getValue('full_enrollment_terms', 'By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.'))) !!}
@@ -2836,6 +2877,117 @@
 
     <!-- JavaScript for form validation and functionality -->
     <script>
+    // 🚨 EMERGENCY DEBUGGING: Check if script is loading
+    console.log('🔧 SCRIPT LOADING: Full enrollment script starting...');
+    console.log('🔧 SCRIPT LOADING: Current time:', new Date().toISOString());
+    
+    // 🚨 EMERGENCY: Global function availability check
+    console.log('🔧 EMERGENCY: Checking global function availability...');
+    console.log('  - typeof showTermsModal:', typeof showTermsModal);
+    console.log('  - typeof window.showTermsModal:', typeof window.showTermsModal);
+    console.log('  - typeof closeTermsModal:', typeof closeTermsModal);
+    console.log('  - typeof window.closeTermsModal:', typeof window.closeTermsModal);
+    
+    // CRITICAL: Define modal functions immediately at the top to prevent "function not found" errors
+    console.log('🔧 DEFINING: showTermsModal function...');
+    
+    // Define function in multiple ways to ensure availability
+    function showTermsModal() {
+        console.log('✅ showTermsModal called via regular function');
+        const modal = document.getElementById('termsModal');
+        if (!modal) {
+            console.error('❌ Terms modal not found');
+            console.log('🔍 Available elements with "terms" in ID:');
+            document.querySelectorAll('[id*="terms"]').forEach(el => console.log('  -', el.id));
+            return;
+        }
+        console.log('✅ Modal found, showing...');
+        // show the modal
+        modal.style.display = 'flex';
+        // lock background scrolling
+        document.body.style.overflow = 'hidden';
+        console.log('✅ Modal should be visible now');
+    }
+    console.log('✅ Regular showTermsModal function defined');
+    
+    // Also attach to window object
+    window.showTermsModal = showTermsModal;
+    console.log('✅ window.showTermsModal defined');
+    
+    console.log('🔧 DEFINING: closeTermsModal function...');
+    
+    function closeTermsModal() {
+        console.log('✅ closeTermsModal called via regular function');
+        const modal = document.getElementById('termsModal');
+        if (!modal) {
+            console.error('❌ Terms modal not found for closing');
+            return;
+        }
+        console.log('✅ Closing terms modal');
+        // hide the modal
+        modal.style.display = 'none';
+        // restore background scrolling
+        document.body.style.overflow = '';
+        console.log('✅ Modal should be hidden now');
+    }
+    console.log('✅ Regular closeTermsModal function defined');
+    
+    // Also attach to window object
+    window.closeTermsModal = closeTermsModal;
+    console.log('✅ window.closeTermsModal defined');
+    console.log('✅ Regular closeTermsModal function defined');
+    
+    // 🚨 EMERGENCY FALLBACK: Add click handler after DOM is ready
+    console.log('🔧 SETTING UP: Emergency fallback click handler...');
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔧 DOMContentLoaded fired - setting up emergency handlers...');
+        const termsLink = document.getElementById('showTerms');
+        if (termsLink) {
+            console.log('✅ Terms link found, adding emergency click handler...');
+            termsLink.addEventListener('click', function(e) {
+                console.log('🚨 EMERGENCY: Terms link clicked via event listener');
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Try to call the function
+                if (typeof window.showTermsModal === 'function') {
+                    console.log('✅ Calling window.showTermsModal...');
+                    window.showTermsModal();
+                } else if (typeof showTermsModal === 'function') {
+                    console.log('✅ Calling regular showTermsModal...');
+                    showTermsModal();
+                } else {
+                    console.error('❌ Both functions are undefined!');
+                    console.log('🔍 Available functions:', Object.keys(window).filter(key => key.includes('showTerms')));
+                }
+            });
+            console.log('✅ Emergency click handler added to terms link');
+        } else {
+            console.error('❌ Terms link not found!');
+        }
+    });
+    
+    // 🚨 ADDITIONAL DEBUGGING: Check function availability
+    console.log('🔧 DEBUGGING: Function availability check...');
+    console.log('  - typeof window.showTermsModal:', typeof window.showTermsModal);
+    console.log('  - typeof showTermsModal:', typeof showTermsModal);
+    console.log('  - window.showTermsModal === function:', typeof window.showTermsModal === 'function');
+    console.log('  - showTermsModal === function:', typeof showTermsModal === 'function');
+    
+    // 🚨 CHECK MODAL HTML EXISTS
+    console.log('🔧 CHECKING: Modal HTML existence...');
+    const modalElement = document.getElementById('termsModal');
+    console.log('  - Modal element found:', !!modalElement);
+    if (modalElement) {
+        console.log('  - Modal display style:', modalElement.style.display);
+        console.log('  - Modal visibility:', modalElement.style.visibility);
+        console.log('  - Modal z-index:', modalElement.style.zIndex);
+    } else {
+        console.error('❌ Modal element not found!');
+        console.log('🔍 All elements with "modal" in ID:');
+        document.querySelectorAll('[id*="modal"]').forEach(el => console.log('  -', el.id));
+    }
+    
     // Define validateStep4 function immediately to prevent "function not found" errors
     window.validateStep4 = function() {
         console.log('🔍 === validateStep4 CALLED ===');
@@ -4373,31 +4525,6 @@ if (currentStep !== finalStep) {
         }
     }
 
-    function showTermsModal() {
-        const modal = document.getElementById('termsModal');
-        if (!modal) {
-            console.error('Terms modal not found');
-            return;
-        }
-        console.log('Showing terms modal');
-        // show the modal
-        modal.style.display = 'flex';
-        modal.classList.add('show');
-        // lock background scrolling
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeTermsModal() {
-        const modal = document.getElementById('termsModal');
-        if (!modal) return;
-        console.log('Closing terms modal');
-        // hide the modal
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-        // restore background scrolling
-        document.body.style.overflow = '';
-    }
-
     // OTP Functions for Step 3 Account Registration
     let enrollmentEmailVerified = false;
 
@@ -4788,11 +4915,71 @@ if (currentStep !== finalStep) {
         // Initialize terms modal event handlers
         const termsLink = document.getElementById('showTerms');
         if (termsLink) {
-            termsLink.addEventListener('click', e => {
+            console.log('✅ Terms link found, adding event listener');
+            // Remove any existing listeners to prevent duplicates
+            termsLink.removeEventListener('click', termsLink.termsClickHandler);
+            
+            // Create new handler
+            termsLink.termsClickHandler = function(e) {
                 e.preventDefault();
-                showTermsModal();
-            });
+                e.stopPropagation();
+                console.log('🚨 Terms and Conditions link clicked via event listener');
+                
+                // Try multiple ways to call the function
+                if (typeof showTermsModal === 'function') {
+                    console.log('✅ Calling showTermsModal directly');
+                    showTermsModal();
+                } else if (typeof window.showTermsModal === 'function') {
+                    console.log('✅ Calling window.showTermsModal');
+                    window.showTermsModal();
+                } else {
+                    console.error('❌ Both showTermsModal functions are undefined!');
+                    console.log('🔍 Available functions:', Object.keys(window).filter(key => key.includes('showTerms')));
+                    
+                    // Emergency fallback
+                    const modal = document.getElementById('termsModal');
+                    if (modal) {
+                        console.log('🚨 Emergency: Showing modal directly');
+                        modal.style.display = 'flex';
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        console.error('❌ Modal element not found!');
+                    }
+                }
+            };
+            
+            termsLink.addEventListener('click', termsLink.termsClickHandler);
+            console.log('✅ Event listener added to terms link');
+        } else {
+            console.error('❌ Terms link not found!');
         }
+        
+        // Backup: Add event listener with a delay to ensure DOM is ready
+        setTimeout(() => {
+            const backupTermsLink = document.getElementById('showTerms');
+            if (backupTermsLink && !backupTermsLink.hasAttribute('data-listener-added')) {
+                console.log('✅ Adding backup event listener for terms link');
+                backupTermsLink.setAttribute('data-listener-added', 'true');
+                backupTermsLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🚨 Backup: Terms and Conditions link clicked');
+                    
+                    if (typeof showTermsModal === 'function') {
+                        showTermsModal();
+                    } else if (typeof window.showTermsModal === 'function') {
+                        window.showTermsModal();
+                    } else {
+                        console.error('❌ Backup: Both functions undefined!');
+                        const modal = document.getElementById('termsModal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                            document.body.style.overflow = 'hidden';
+                        }
+                    }
+                });
+            }
+        }, 1000);
 
         // Modal click outside to close
         const termsModal = document.getElementById('termsModal');
@@ -4855,8 +5042,7 @@ if (currentStep !== finalStep) {
             'password',
             'password_confirmation',
             'programSelect',
-            'batchSelect',
-            'termsCheckbox'
+            'batchSelect'
         ];
         
         requiredFields.forEach(fieldId => {
@@ -4870,6 +5056,15 @@ if (currentStep !== finalStep) {
                 }
             }
         });
+        
+        // Special handling for terms checkbox
+        const termsCheckbox = document.getElementById('termsCheckbox');
+        if (termsCheckbox) {
+            termsCheckbox.addEventListener('change', function() {
+                console.log('Terms checkbox changed:', this.checked);
+                validateFormForSubmission();
+            });
+        }
         
         // Initial validation
         setTimeout(() => {
@@ -5045,6 +5240,8 @@ if (currentStep !== finalStep) {
         const termsCheckbox = document.getElementById('termsCheckbox');
         if (termsCheckbox) {
             termsCheckbox.checked = true;
+            // Trigger change event to ensure validation runs
+            termsCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
         }
         
         // Validate form and update submit button
@@ -5061,6 +5258,8 @@ if (currentStep !== finalStep) {
         const termsCheckbox = document.getElementById('termsCheckbox');
         if (termsCheckbox) {
             termsCheckbox.checked = false;
+            // Trigger change event to ensure validation runs
+            termsCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
         }
         
         // Validate form and update submit button
@@ -5073,13 +5272,6 @@ if (currentStep !== finalStep) {
         showWarning('You must accept the terms and conditions to proceed with registration.');
         
         console.log('Terms and conditions declined');
-    }
-
-    function closeTermsModal() {
-        const termsModal = document.getElementById('termsModal');
-        if (termsModal) {
-            termsModal.style.display = 'none';
-        }
     }
 
     </script>

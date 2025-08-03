@@ -83,34 +83,8 @@
 </div>
 
 <script>
-function markAsPaid(enrollmentId) {
-    if (confirm('Are you sure you want to mark this payment as completed?')) {
-        // Add AJAX call to update payment status
-        fetch(`/admin/enrollment/${enrollmentId}/mark-paid`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error updating payment status');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error updating payment status');
-        });
-    }
-}
-
-function viewDetails(enrollmentId) {
-    // Redirect to enrollment details page
-    window.location.href = `/admin/enrollment/${enrollmentId}`;
-}
+// Functions are now available globally from admin-functions.js
+// markAsPaid() and viewDetails() are defined in the shared admin functions file
+console.log('✅ Admin payment pending page loaded - functions available globally');
 </script>
 @endsection

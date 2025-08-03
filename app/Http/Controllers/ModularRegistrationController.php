@@ -91,7 +91,13 @@ class ModularRegistrationController extends Controller
                 ->get()
                 ->filter(function ($level) {
                     // Check if this education level is available for modular plan
-                    $fileRequirements = json_decode($level->file_requirements, true);
+                    $fileRequirements = $level->file_requirements;
+                    
+                    // Handle both string and array formats
+                    if (is_string($fileRequirements)) {
+                        $fileRequirements = json_decode($fileRequirements, true);
+                    }
+                    
                     if (!is_array($fileRequirements)) return true; // If no specific requirements, include it
                     
                     // Check if any requirement has available_modular_plan = true

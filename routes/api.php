@@ -491,21 +491,20 @@ Route::middleware('web')->group(function () {
                 'session_data' => session()->all()
             ]);
             
-            // Start with base query for programs with modular packages
+            // Start with base query for programs with modules (for modular enrollment)
             $query = \App\Models\Program::when(Schema::hasColumn('programs', 'archived'), function($q) {
                     return $q->where('archived', false);
                 })
                 ->when(Schema::hasColumn('programs', 'is_archived'), function($q) {
                     return $q->where('is_archived', false);
                 })
-                ->whereHas('packages', function($q) {
-                    $q->where('package_type', 'modular')
-                      ->when(Schema::hasColumn('packages', 'archived'), function($subQ) {
-                          return $subQ->where('archived', false);
-                      })
-                      ->when(Schema::hasColumn('packages', 'status'), function($subQ) {
-                          return $subQ->where('status', 'active');
-                      });
+                ->whereHas('modules', function($q) {
+                    $q->when(Schema::hasColumn('modules', 'archived'), function($subQ) {
+                        return $subQ->where('archived', false);
+                    })
+                    ->when(Schema::hasColumn('modules', 'is_archived'), function($subQ) {
+                        return $subQ->where('is_archived', false);
+                    });
                 })
                 ->with([
                     'modules' => function($q) {
@@ -519,15 +518,6 @@ Route::middleware('web')->group(function () {
                             return $subQ->orderBy('module_order', 'asc');
                         })
                         ->select('modules_id', 'module_name', 'module_description', 'program_id');
-                    }, 
-                    'packages' => function($q) {
-                        $q->where('package_type', 'modular')
-                          ->when(Schema::hasColumn('packages', 'archived'), function($subQ) {
-                              return $subQ->where('archived', false);
-                          })
-                          ->when(Schema::hasColumn('packages', 'status'), function($subQ) {
-                              return $subQ->where('status', 'active');
-                          });
                     }
                 ]);
             

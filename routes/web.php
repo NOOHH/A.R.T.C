@@ -870,6 +870,9 @@ Route::middleware(['admin.director.auth'])->group(function () {
          ->name('admin.dashboard');
 
 // Admin approve/reject registration
+Route::get('/admin/modal-test', function() {
+    return view('admin.modal-test');
+})->middleware(['admin.director.auth']);
 Route::get('/admin/registration/{id}', [AdminController::class, 'showRegistration']);
 Route::get('/admin/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson']);
 Route::post('/admin/registration/{id}/approve', [AdminController::class, 'approve'])

@@ -563,19 +563,23 @@
 
     <!-- Enhanced Registration Details Modal -->
     <div class="modal fade" id="registrationModal" tabindex="-1" aria-labelledby="registrationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="registrationModalLabel">Registration Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row" id="modal-details">
-                        <!-- Content will be loaded here -->
+                    <div id="registration-details-content">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer" id="modal-actions">
-                    <!-- Actions will be populated based on status -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -625,7 +629,7 @@
 
     <!-- Resubmission Comparison Modal -->
     <div class="modal fade" id="resubmissionComparisonModal" tabindex="-1" aria-labelledby="resubmissionComparisonModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xxl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="resubmissionComparisonModalLabel">Registration Resubmission Comparison</h5>
@@ -723,279 +727,144 @@ function na(value) {
     return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
 }
 
-function formatDocumentLink(filePath, displayName) {
-    if (!filePath || filePath === 'N/A' || filePath === '') {
-        return '<span class="text-muted">Not uploaded</span>';
+function formatDocumentLink(filename, label) {
+    if (!filename || filename === 'N/A' || filename === '') {
+        return `<span class="badge bg-secondary">Not uploaded</span>`;
     }
     
-    // Clean the file path
-    const cleanPath = filePath.replace(/^storage\//, '').replace(/^\//, '');
-    const fullUrl = `${baseUrl}/storage/${cleanPath}`;
+    // Clean the filename
+    const cleanFilename = filename.replace(/^storage\//, '').replace(/^\//, '');
+    const ext = cleanFilename.split('.').pop().toLowerCase();
+    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
+    const isPdf = ext === 'pdf';
     
-    return `<a href="${fullUrl}" target="_blank" class="document-link">
-        <i class="bi bi-file-earmark-pdf"></i> ${displayName}
-    </a>`;
+    let viewBtn = '';
+    if (isImage || isPdf) {
+        viewBtn = `<button type="button" class="btn btn-outline-primary btn-sm" onclick="showDocumentPreview('${cleanFilename}','${label}')">
+            <i class="bi bi-eye"></i> View ${label}
+        </button>`;
+    } else {
+        viewBtn = `<a href="${baseUrl}/storage/documents/${cleanFilename}" target="_blank" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-download"></i> Download ${label}
+        </a>`;
+    }
+    return `<span class="badge bg-success me-2">Uploaded</span>${viewBtn}`;
 }
 
 // Define global functions IMMEDIATELY to ensure they're available for inline handlers
 window.viewRegistrationDetails = function(registrationId) {
-    console.log('viewRegistrationDetails called with ID:', registrationId);
+    console.log('🔍 Opening registration details modal for:', registrationId);
     
     if (!registrationId) {
+        console.error('Invalid registration ID provided');
         alert('Invalid registration ID');
         return;
     }
     
-    // Initialize modal if needed
-    if (!registrationModal) {
-        registrationModal = new bootstrap.Modal(document.getElementById('registrationModal'));
-    }
+    // Show modal using the exact same pattern as payment modal
+    const modal = new bootstrap.Modal(document.getElementById('registrationModal'));
+    modal.show();
     
-    const modalDetails = document.getElementById('modal-details');
-    const modalActions = document.getElementById('modal-actions');
-    
-    modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
-    registrationModal.show();
+    // Load the registration details
+    loadRegistrationDetails(registrationId);
+};
 
+// Function to load registration details (matching payment modal structure exactly)
+function loadRegistrationDetails(registrationId) {
+    const detailsContainer = document.getElementById('registration-details-content');
+    detailsContainer.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
     fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch details');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('Registration details received:', data); // Debug log
+            if (data.error) {
+                detailsContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
             
-            // Left Column - User & Personal Information
-            let leftColumn = `
-                <div class="col-md-6">
-                    <!-- User Information -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="mb-0"><i class="bi bi-person-circle"></i> User Information</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Full Name:</strong></div>
-                                <div class="col-sm-8">${data.user_info?.full_name || na(data.firstname + ' ' + data.lastname)}</div>
+            // Create the exact same structure as your payment modal with professional cards
+            detailsContainer.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-person"></i> Student Information</h6>
                             </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Email:</strong></div>
-                                <div class="col-sm-8">${data.user_info?.email || na(data.email)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Account Registered:</strong></div>
-                                <div class="col-sm-8">${data.user_info?.account_registered_date || na(data.created_at)}</div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Name:</strong></div>
+                                    <div class="col-sm-8">${data.user_info?.full_name || (data.firstname || '') + ' ' + (data.lastname || '') || 'N/A'}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Email:</strong></div>
+                                    <div class="col-sm-8">${data.user_info?.email || data.email || 'N/A'}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Registration ID:</strong></div>
+                                    <div class="col-sm-8">${data.registration_id || 'N/A'}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Personal Information -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="bi bi-person"></i> Personal Information</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>First Name:</strong></div>
-                                <div class="col-sm-8">${na(data.firstname)}</div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Program Details</h6>
                             </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Middle Name:</strong></div>
-                                <div class="col-sm-8">${na(data.middlename)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Last Name:</strong></div>
-                                <div class="col-sm-8">${na(data.lastname)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Phone:</strong></div>
-                                <div class="col-sm-8">${na(data.contact_number || data.mobile_number)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Address:</strong></div>
-                                <div class="col-sm-8">${na(data.street_address)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>City:</strong></div>
-                                <div class="col-sm-8">${na(data.city)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Province:</strong></div>
-                                <div class="col-sm-8">${na(data.province)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>ZIP Code:</strong></div>
-                                <div class="col-sm-8">${na(data.zip_code)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Status:</strong></div>
-                                <div class="col-sm-8">
-                                    <span class="badge ${data.status === 'approved' ? 'bg-success' : 
-                                                      data.status === 'rejected' ? 'bg-danger' : 'bg-warning'}">${na(data.status)}</span>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Program:</strong></div>
+                                    <div class="col-sm-8">${data.program_name || 'N/A'}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Package:</strong></div>
+                                    <div class="col-sm-8">${data.package_name || 'N/A'}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Type:</strong></div>
+                                    <div class="col-sm-8">${data.enrollment_type || 'Full'}</div>
                                 </div>
                             </div>
-                            ${data.rejection_reason ? `
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Rejection Reason:</strong></div>
-                                <div class="col-sm-8 text-danger">${na(data.rejection_reason)}</div>
-                            </div>` : ''}
                         </div>
                     </div>
                 </div>
-            `;
-
-            // Right Column - Enrollment & Documents
-            let rightColumn = `
-                <div class="col-md-6">
-                    <!-- Enrollment Information -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Enrollment Information</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Plan/Enrollment Type:</strong></div>
-                                <div class="col-sm-8"><span class="badge bg-info">${data.enrollment_info_enhanced?.plan_type || na(data.enrollment_type)}</span></div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Registration Information</h6>
                             </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Package:</strong></div>
-                                <div class="col-sm-8">${data.enrollment_info_enhanced?.package || na(data.package_name)}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Program:</strong></div>
-                                <div class="col-sm-8">${data.enrollment_info_enhanced?.program || na(data.program_name)}</div>
-                            </div>`;
-                            
-            // Add course/module information dynamically
-            if (data.enrollment_info_enhanced?.plan_type === 'Modular') {
-                rightColumn += `
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Courses:</strong></div>
-                                <div class="col-sm-8">
-                                    <div class="small text-wrap">${data.enrollment_info_enhanced?.courses || 'Not specified'}</div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p><strong>Status:</strong> 
+                                            <span class="badge ${data.status === 'approved' ? 'bg-success' : data.status === 'rejected' ? 'bg-danger' : 'bg-warning'}">${data.status || 'pending'}</span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p><strong>Learning Mode:</strong> ${data.learning_mode || 'Not specified'}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p><strong>Registration Date:</strong> ${data.created_at_formatted || data.created_at || 'N/A'}</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Modules:</strong></div>
-                                <div class="col-sm-8">
-                                    <div class="small text-wrap">${data.enrollment_info_enhanced?.modules || 'Not specified'}</div>
-                                </div>
-                            </div>`;
-            } else {
-                rightColumn += `
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Course Type:</strong></div>
-                                <div class="col-sm-8"><span class="badge bg-info">Full Program (All Courses)</span></div>
-                            </div>`;
-            }
-            
-            rightColumn += `
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Learning Mode:</strong></div>
-                                <div class="col-sm-8"><span class="badge bg-secondary">${data.enrollment_info_enhanced?.learning_mode || na(data.learning_mode)}</span></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Enrollment Date:</strong></div>
-                                <div class="col-sm-8">${data.enrollment_info_enhanced?.enrollment_date || na(data.created_at)}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Document Information -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-warning text-dark">
-                            <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Document Information</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Education Level:</strong></div>
-                                <div class="col-sm-8"><span class="badge bg-primary">${data.document_info_enhanced?.education_level || 'Not specified'}</span></div>
-                            </div>`;
-                            
-            // Show document requirements and uploaded documents dynamically
-            if (data.document_info_enhanced?.uploaded_documents && data.document_info_enhanced.uploaded_documents.length > 0) {
-                rightColumn += `
-                            <div class="row mb-2">
-                                <div class="col-sm-12"><strong>Uploaded Documents:</strong></div>
-                            </div>`;
-                            
-                data.document_info_enhanced.uploaded_documents.forEach(doc => {
-                    rightColumn += `
-                            <div class="row mb-2">
-                                <div class="col-sm-4">${doc.display_name}:</div>
-                                <div class="col-sm-8">${formatDocumentLink(doc.file_path, doc.display_name)}</div>
-                            </div>`;
-                });
-            } else {
-                rightColumn += `
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>PSA Birth Certificate:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.PSA, 'PSA')}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Transcript of Records:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.TOR, 'TOR')}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>Good Moral:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.good_moral, 'Good Moral')}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-sm-4"><strong>2x2 Photo:</strong></div>
-                                <div class="col-sm-8">${formatDocumentLink(data.photo_2x2, '2x2 Photo')}</div>
-                            </div>`;
-            }
-            
-            rightColumn += `
                         </div>
                     </div>
                 </div>
-            `;
-
-            modalDetails.innerHTML = leftColumn + rightColumn;
-
-            // Setup action buttons based on status and view type
-            let actionButtons = '';
-            if (isHistory) {
-                if (data.status === 'approved') {
-                    actionButtons = `
-                        <button type="button" class="btn btn-warning" onclick="undoApproval('${registrationId}')">
-                            <i class="bi bi-arrow-counterclockwise"></i> Undo Approval
-                        </button>
-                    `;
-                }
-            } else {
-                // Pending view - show approve/reject buttons
-                actionButtons = `
-                    <button type="button" class="btn btn-success" onclick="approveRegistration('${registrationId}')">
-                        <i class="bi bi-check-circle"></i> Approve
-                    </button>
-                    <button type="button" class="btn btn-danger" onclick="rejectRegistration('${registrationId}')">
-                        <i class="bi bi-x-circle"></i> Reject
-                    </button>
-                `;
-            }
-
-            modalActions.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                ${actionButtons}
             `;
         })
         .catch(error => {
-            console.error('Error:', error);
-            modalDetails.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle"></i> Failed to load registration details. Please try again.
-                    </div>
-                </div>
-            `;
-            modalActions.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            `;
+            console.error('Error loading registration details:', error);
+            detailsContainer.innerHTML = `<div class="alert alert-danger">Error loading registration details</div>`;
         });
+}
 };
 
 window.approveRegistration = function(registrationId) {
@@ -1238,21 +1107,7 @@ window.rejectRegistration = function(registrationId) {
 // Global functions are defined at the top of the script section
 
 // Helper functions that need to be available globally
-function formatDocumentLink(filename, label) {
-    if (!filename || filename === 'N/A') {
-        return `<span class="text-muted">Not uploaded</span>`;
-    }
-    const ext = filename.split('.').pop().toLowerCase();
-    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
-    const isPdf = ext === 'pdf';
-    let viewBtn = '';
-    if (isImage || isPdf) {
-        viewBtn = `<button type="button" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1" onclick="showDocumentPreview('${filename}','${label}')"><i class="bi bi-eye"></i> View</button>`;
-    } else {
-        viewBtn = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1"><i class="bi bi-eye"></i> View</a>`;
-    }
-    return viewBtn;
-}
+// Document formatting function already defined above
 
 // Document preview function
 window.showDocumentPreview = function(filename, label) {

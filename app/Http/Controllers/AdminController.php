@@ -63,15 +63,14 @@ class AdminController extends Controller
     public function showRegistration($id)
     {
         try {
-            $registration = Registration::where('registration_id', $id)->firstOrFail();
-            $user = User::find($registration->user_id);
-
-            $data = $registration->toArray();
-            $data['email'] = $user ? $user->email : 'N/A';
-
-            return response()->json($data);
+            $registration = Registration::with(['user', 'program', 'package', 'plan'])
+                                        ->where('registration_id', $id)
+                                        ->firstOrFail();
+            
+            // Return a proper view instead of JSON
+            return view('admin.registrations.show', compact('registration'));
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Registration not found or database error.'], 404);
+            return redirect()->back()->with('error', 'Registration not found.');
         }
     }
 
@@ -557,11 +556,27 @@ class AdminController extends Controller
 
             DB::commit();
 
+            // Handle different response types
+            if (request()->expectsJson() || request()->wantsJson() || request()->isJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Student \"" . $student->student_id . "\" approved and moved to history."
+                ]);
+            }
+
             return redirect()
                 ->route('admin.student.registration.history')
                 ->with('success', "Student \"" . $student->student_id . "\" approved and moved to history.");
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            if (request()->expectsJson() || request()->wantsJson() || request()->isJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Approval failed: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return redirect()->back()
                              ->with('error', 'Approval failed: ' . $e->getMessage());
         }
@@ -683,10 +698,24 @@ class AdminController extends Controller
                 'rejected_at' => now()
             ]);
 
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Rejection details updated successfully.'
+                ]);
+            }
+
             return redirect()
                 ->route('admin.student.registration.pending')
                 ->with('success', 'Rejection details updated successfully.');
         } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Update failed: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return redirect()->back()
                              ->with('error', 'Update failed: ' . $e->getMessage());
         }
@@ -1108,6 +1137,12 @@ class AdminController extends Controller
             $registration = Registration::findOrFail($id);
             
             if ($registration->status !== 'rejected') {
+                if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Registration is not rejected.'
+                    ], 400);
+                }
                 return redirect()->back()->with('error', 'Registration is not rejected.');
             }
             
@@ -1121,10 +1156,25 @@ class AdminController extends Controller
                 'updated_at' => now()
             ]);
             
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registration rejection undone successfully. Status changed to pending.'
+                ]);
+            }
+            
             return redirect()->back()->with('success', 'Registration rejection undone successfully. Status changed to pending.');
             
         } catch (\Exception $e) {
             Log::error('Error undoing rejection: ' . $e->getMessage());
+            
+            if ($request->expectsJson() || $request->wantsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to undo rejection: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return redirect()->back()->with('error', 'Failed to undo rejection.');
         }
     }
