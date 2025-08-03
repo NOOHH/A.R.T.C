@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login</title>
+    <title>Reset Password</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
     <style>
@@ -22,7 +21,7 @@
     @endphp
     <div class="left">
         <div class="review-text">
-            Review Smarter.<br>Learn Better.<br>Succeed Faster.
+            Reset Your Password.<br>Secure Your Account.<br>Continue Learning.
         </div>
         <div class="copyright">
             {!! $footer['text'] ?? '© Copyright Ascendo Review and Training Center.<br>All Rights Reserved.' !!}
@@ -36,12 +35,19 @@
             @endphp
             <a href="{{ url('/') }}" class="brand-text">{{ $navbarSettings['brand_name'] ?? 'Ascendo Review and Training Center' }}</a>
         </div>
-        <h2>Log in to your account.</h2>
+        <h2>Reset your password.</h2>
 
         {{-- Display Success Messages --}}
         @if(session('success'))
             <div class="alert alert-success">
                 {{ session('success') }}
+            </div>
+        @endif
+
+        {{-- Display Info Messages --}}
+        @if(session('status'))
+            <div class="alert alert-success">
+                {{ session('status') }}
             </div>
         @endif
 
@@ -54,34 +60,25 @@
             </div>
         @endif
 
-        <form class="login-form" method="POST" action="{{ route('login.submit') }}">
+        <form class="login-form" method="POST" action="{{ route('password.email') }}">
             @csrf
-            <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
             
             <label for="email">Enter your email address</label>
             <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
-
-            <label for="password">Enter your password</label>
-            <div class="input-row">
-                <input type="password" id="password" name="password" placeholder="at least 8 characters" required>
-                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            <small style="color: #666; font-size: 0.9em; margin-bottom: 16px; display: block;">
+                We'll send you a password reset link if this email is registered in our system.
+            </small>
+            
+            <button type="submit">SEND RESET LINK</button>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ route('login') }}" class="forgot">← Back to Login</a>
             </div>
             
-            <a href="{{ route('password.request') }}" class="forgot">Forgot your password? Click here.</a>
-            <button type="submit">LOG IN</button>
-            <button type="button" class="google-btn"><span style="font-size:1.2em;">&#128279;</span> SIGN IN WITH GOOGLE</button>
-            <div style="margin-top: 8px; font-size: 1em;">Don't have an account? <a href="{{ route('signup') }}" class="register-link">Register here.</a></div>
+            <div style="margin-top: 8px; font-size: 1em; text-align: center;">
+                Don't have an account? <a href="{{ route('signup') }}" class="register-link">Register here.</a>
+            </div>
         </form>
     </div>
-    <script>
-        function togglePassword() {
-            const pwd = document.getElementById('password');
-            if (pwd.type === 'password') {
-                pwd.type = 'text';
-            } else {
-                pwd.type = 'password';
-            }
-        }
-    </script>
 </body>
 </html>

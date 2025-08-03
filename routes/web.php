@@ -468,6 +468,12 @@ Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('lo
 Route::post('/login', [UnifiedLoginController::class, 'login'])->name('login.submit');
 Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout');
 
+// Password Reset Routes
+Route::get('/password/reset', [UnifiedLoginController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/password/email', [UnifiedLoginController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/password/reset/{token}', [UnifiedLoginController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [UnifiedLoginController::class, 'reset'])->name('password.update');
+
 // Signup page
 Route::get('/signup', [App\Http\Controllers\SignupController::class, 'showSignupForm'])->name('signup');
 Route::post('/signup', [App\Http\Controllers\SignupController::class, 'signup'])->name('user.signup');
