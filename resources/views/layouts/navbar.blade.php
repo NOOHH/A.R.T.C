@@ -73,11 +73,337 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}?v={{ time() }}">
     <style>
         {!! \App\Helpers\SettingsHelper::getNavbarStyles() !!}
         {!! \App\Helpers\SettingsHelper::getFooterStyles() !!}
         {!! \App\Helpers\SettingsHelper::getProgramCardStyles() !!}
+        
+        /* Fix navbar hover issues */
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 8px 12px !important;
+            border-radius: 6px;
+        }
+        
+        .nav-link:hover {
+            color: #5c2f91 !important;
+            background: rgba(92, 47, 145, 0.1) !important;
+            transform: translateY(-1px);
+        }
+        
+        .nav-link:focus,
+        .nav-link:active {
+            color: #5c2f91 !important;
+            background: rgba(92, 47, 145, 0.1) !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Remove Bootstrap's default button-like appearance */
+        .navbar-nav .nav-link {
+            background-color: transparent !important;
+            border: none !important;
+        }
+        
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link:focus,
+        .navbar-nav .nav-link:active {
+            background-color: rgba(92, 47, 145, 0.1) !important;
+            border: none !important;
+        }
+        
+        /* Ensure modal styles are properly loaded */
+        .programs-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .programs-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .programs-modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .programs-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .programs-modal-header h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        
+        .close-modal:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .programs-modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        /* Fix dropdown item styling */
+        .nav-item.dropdown .nav-link {
+            cursor: pointer;
+        }
+        
+        /* Ensure proper spacing and remove any Bootstrap button effects */
+        .navbar-nav .nav-item {
+            margin: 0 5px;
+        }
+        
+        .navbar-nav .nav-item .nav-link {
+            color: #222 !important;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Remove any button-like styling from Bootstrap */
+        .navbar-light .navbar-nav .nav-link {
+            color: #222 !important;
+        }
+        
+        .navbar-light .navbar-nav .nav-link:hover,
+        .navbar-light .navbar-nav .nav-link:focus {
+            color: #5c2f91 !important;
+            background: rgba(92, 47, 145, 0.1) !important;
+        }
+        
+        /* Smooth icon transitions */
+        .nav-link i {
+            transition: transform 0.2s ease;
+        }
+        
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
+        
+        /* Fix dropdown menu hover styles - More specific selectors to override external CSS */
+        .navbar .dropdown-menu,
+        .navbar-nav .dropdown-menu,
+        .navbar .navbar-nav .dropdown-menu {
+            border: none !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+            border-radius: 8px !important;
+            padding: 8px 0 !important;
+            margin-top: 8px !important;
+            background-color: white !important; /* White background */
+            color: #222 !important; /* Dark text */
+            max-height: none !important; /* Override external CSS max-height */
+            overflow: visible !important; /* Override external CSS overflow */
+            transform: none !important; /* Override external CSS transform */
+            transition: none !important; /* Override external CSS transition */
+            width: auto !important; /* Override external CSS width */
+            min-width: 200px !important; /* Set minimum width */
+        }
+        
+        .navbar .dropdown-menu .dropdown-item,
+        .navbar-nav .dropdown-menu .dropdown-item,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item {
+            padding: 10px 20px !important;
+            transition: all 0.2s ease !important;
+            background: transparent !important;
+            border: none !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-weight: 500 !important;
+            color: #222 !important; /* Dark text for white background */
+            opacity: 1 !important; /* Override external CSS opacity */
+            transform: none !important; /* Override external CSS transform */
+            pointer-events: auto !important; /* Override external CSS pointer-events */
+            text-align: left !important; /* Override external CSS text-align */
+            white-space: normal !important; /* Override external CSS white-space */
+            box-sizing: border-box !important; /* Override external CSS box-sizing */
+        }
+        
+        .navbar .dropdown-menu .dropdown-item:hover,
+        .navbar-nav .dropdown-menu .dropdown-item:hover,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item:hover {
+            background: rgba(92, 47, 145, 0.1) !important; /* Light purple background on hover */
+            color: #5c2f91 !important; /* Purple text on hover */
+            transform: translateX(5px) !important;
+            border-radius: 0 !important;
+        }
+        
+        .navbar .dropdown-menu .dropdown-item:focus,
+        .navbar-nav .dropdown-menu .dropdown-item:focus,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item:focus,
+        .navbar .dropdown-menu .dropdown-item:active,
+        .navbar-nav .dropdown-menu .dropdown-item:active,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item:active {
+            background: rgba(92, 47, 145, 0.1) !important;
+            color: #5c2f91 !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Dropdown item icons */
+        .navbar .dropdown-menu .dropdown-item i,
+        .navbar-nav .dropdown-menu .dropdown-item i,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item i {
+            transition: transform 0.2s ease;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .navbar .dropdown-menu .dropdown-item:hover i,
+        .navbar-nav .dropdown-menu .dropdown-item:hover i,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item:hover i {
+            transform: scale(1.1);
+        }
+        
+        /* Special styling for logout button */
+        .navbar .dropdown-menu .dropdown-item.text-danger:hover,
+        .navbar-nav .dropdown-menu .dropdown-item.text-danger:hover,
+        .navbar .navbar-nav .dropdown-menu .dropdown-item.text-danger:hover {
+            background: rgba(220, 53, 69, 0.1) !important;
+            color: #dc3545 !important;
+        }
+        
+        /* Dropdown divider styling */
+        .navbar .dropdown-menu .dropdown-divider,
+        .navbar-nav .dropdown-menu .dropdown-divider,
+        .navbar .navbar-nav .dropdown-menu .dropdown-divider {
+            margin: 8px 0 !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Override external CSS dropdown hover behavior */
+        .navbar .dropdown:hover .dropdown-menu,
+        .navbar-nav .dropdown:hover .dropdown-menu,
+        .navbar .navbar-nav .dropdown:hover .dropdown-menu {
+            max-height: none !important;
+            padding: 8px 0 !important;
+        }
+        
+        /* Ensure dropdown items are always visible when dropdown is open */
+        .navbar .dropdown.show .dropdown-menu .dropdown-item,
+        .navbar-nav .dropdown.show .dropdown-menu .dropdown-item,
+        .navbar .navbar-nav .dropdown.show .dropdown-menu .dropdown-item {
+            opacity: 1 !important;
+            transform: none !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Additional overrides to ensure white background and proper styling */
+        .navbar .dropdown-menu,
+        .navbar-nav .dropdown-menu {
+            background: white !important;
+            background-color: white !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Force override any external CSS that might be setting dark backgrounds */
+        .navbar .dropdown-menu *,
+        .navbar-nav .dropdown-menu * {
+            background-color: transparent !important;
+        }
+        
+        .navbar .dropdown-menu,
+        .navbar-nav .dropdown-menu {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        /* Ensure proper z-index for dropdown */
+        .navbar .dropdown-menu,
+        .navbar-nav .dropdown-menu {
+            z-index: 1050 !important;
+        }
+        
+        /* Bootstrap dropdown specific overrides */
+        .dropdown-menu.show {
+            background: white !important;
+            background-color: white !important;
+            color: #222 !important;
+        }
+        
+        /* Override any Bootstrap dark theme classes */
+        .dropdown-menu[data-bs-popper="static"],
+        .dropdown-menu[data-bs-popper="dynamic"] {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        /* Force white background on all dropdown states */
+        .dropdown-menu,
+        .dropdown-menu.show,
+        .dropdown-menu.show * {
+            background: white !important;
+            background-color: white !important;
+        }
+        
+        /* Ensure text is dark on white background */
+        .dropdown-menu,
+        .dropdown-menu.show,
+        .dropdown-menu .dropdown-item {
+            color: #222 !important;
+        }
+        
+        /* Position dropdown menu correctly when on the right side */
+        .navbar-nav.ms-auto .dropdown-menu {
+            right: 0 !important;
+            left: auto !important;
+            transform: none !important;
+        }
+        
+        /* Ensure proper spacing for right-aligned dropdown */
+        .navbar-nav.ms-auto .nav-item {
+            margin-left: 15px;
+        }
  
     </style>
     @stack('styles') {{-- ✅ to load page-specific styles --}}
@@ -110,13 +436,7 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Universal Search Component (accessible to all users) -->
-                <div class="navbar-nav me-auto">
-                    <div class="nav-item" style="min-width: 300px;">
-                       
-                    </div>
-                </div>
-                
+                <!-- All navigation links grouped together on the right -->
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url('/') }}">
@@ -124,18 +444,17 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link" href="javascript:void(0)" id="navbarProgramsBtn" 
-                           onclick="toggleProgramsModal(event)">
+                        <a class="nav-link" href="javascript:void(0)" id="navbarProgramsBtn" onclick="toggleProgramsModal(event)">
                             <i class="bi bi-book"></i> Review Programs
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="javascript:void(0)">
+                        <a class="nav-link" href="{{ url('/#about') }}">
                             <i class="bi bi-people"></i> About Us
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="javascript:void(0)">
+                        <a class="nav-link" href="{{ url('/#contact') }}">
                             <i class="bi bi-envelope"></i> Contact Us
                         </a>
                     </li>
@@ -185,13 +504,11 @@
                             </ul>
                         @endif
                     </li>
-
-                        @endif
-                    </li>
                 </ul>
             </div>
         </div>
     </nav>
+    @endif
     
     <!-- Programs Modal -->
     <div id="programsModal" class="programs-modal" style="display: none;">
@@ -299,6 +616,7 @@
     // Toggle programs modal
     function toggleProgramsModal(event) {
         event.preventDefault();
+        event.stopPropagation();
         const modal = document.getElementById('programsModal');
         if (modal.style.display === 'none' || modal.style.display === '') {
             modal.style.display = 'flex';
@@ -329,21 +647,14 @@
                 if (data.success && data.data && data.data.length > 0) {
                     // Add "View All Programs" option first
                     const viewAllItem = document.createElement('a');
-                    viewAllItem.href = '/programs';
-                    viewAllItem.className = 'program-modal-item view-all-programs';
-                    viewAllItem.innerHTML = `
-                        <i class="bi bi-list-ul"></i>
-                        <div class="program-modal-item-content">
-                            <div class="program-modal-item-title">View All Programs</div>
-                            <p class="program-modal-item-desc">Browse all available review programs</p>
-                        </div>
-                    `;
+                    viewAllItem.href = '/review-programs';
+
                     modalList.appendChild(viewAllItem);
                     
                     // Add individual programs
                     data.data.forEach(program => {
                         const programItem = document.createElement('a');
-                        programItem.href = `/programs/${program.program_id}`;
+                        programItem.href = `/profile/program/${program.program_id}`;
                         programItem.className = 'program-modal-item';
                         programItem.innerHTML = `
                             <i class="bi bi-book"></i>
@@ -394,8 +705,6 @@
     
     @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
 
-    <!-- Global Chat Component -->
-@include('components.global-chat')
 
 </body>
 

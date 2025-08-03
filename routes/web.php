@@ -249,10 +249,9 @@ Route::get('/programs', function() {
     return redirect()->route('review-programs');
 })->name('programs.index');
 
-// Individual program details
+// Individual program details - redirect to profile
 Route::get('/programs/{id}', function($id) {
-    $program = \App\Models\Program::with('modules')->findOrFail($id);
-    return view('programs.show', compact('program'));
+    return redirect("/profile/program/{$id}");
 })->name('programs.show');
 
 // Enrollment selection
@@ -705,18 +704,9 @@ Route::get('/programs', function () {
     return view('programs.index', compact('programs'));
 })->name('programs.index');
 
-// Program details page
+// Program details page - redirect to profile
 Route::get('/programs/{id}', function ($id) {
-    $program = \App\Models\Program::where('program_id', $id)
-                                  ->where('is_archived', false)
-                                  ->with(['modules' => function($query) {
-                                      $query->where('is_archived', false)
-                                            ->orderBy('module_order')
-                                            ->orderBy('module_name');
-                                  }])
-                                  ->firstOrFail();
-    
-    return view('programs.show', compact('program'));
+    return redirect("/profile/program/{$id}");
 })->name('programs.show');
 
 // API endpoint for programs dropdown (for navbar)

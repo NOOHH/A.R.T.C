@@ -111,9 +111,7 @@ body {
     left: 50%;
     top: 100%;
     transform: translateX(-50%); /* Center horizontally below parent */
-    background: #f1f1f1; /* Match navbar background color */
     min-width: 110px; /* Reduced from 160px to 110px */
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     border-radius: 12px;
     overflow: hidden;
     z-index: 10;
@@ -123,8 +121,15 @@ body {
     padding: 0;
     align-items: center;
     justify-content: center;
-    color: black; /* Match navbar text color */
+    background: white; /* Changed to white background */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); /* Added shadow for depth */
 }
+
+.dropdown-menu a {
+    color: #222 !important; /* Changed to dark text for readability on white background */
+}
+
+
 .dropdown:hover .dropdown-menu {
     max-height: 220px; /* Reduced max height for smaller dropdown */
     padding: 8px 0; /* Less vertical padding */
@@ -135,7 +140,7 @@ body {
     justify-content: center;
     width: 100%;
     padding: 8px 0; /* Reduced from 14px 0 */
-    color: #222; /* Match navbar link color */
+    color: #222; /* Dark text for white background */
     text-decoration: none;
     font-weight: 700;
     font-size: 0.95rem;
@@ -147,7 +152,7 @@ body {
     opacity: 0;
     transform: translateY(24px);
     pointer-events: none;
-    background: #f1f1f1; /* Match navbar background color */
+    background: white; /* White background for dropdown items */
 }
 .dropdown:hover .dropdown-menu a {
     opacity: 1;
@@ -156,7 +161,8 @@ body {
     pointer-events: auto;
 }
 .dropdown-menu a:hover {
-    background: #797580; /* Slightly darker for hover, but still harmonious */
+    background: rgba(92, 47, 145, 0.1); /* Purple hover background instead of gray */
+    color: #5c2f91; /* Purple text on hover */
 }
 
 /* Main Section */
@@ -416,7 +422,7 @@ body {
         }
         
         .view-all-programs:hover {
-            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+          
             color: white !important;
             transform: translateX(5px);
         }
