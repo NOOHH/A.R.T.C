@@ -1919,12 +1919,18 @@ class StudentRegistrationController extends Controller
                 ], 400);
             }
 
-            // Check if email exists in users table
-            $userExists = User::where('email', $email)->exists();
+            // Check if email exists in any of the user-type tables
+            $userExists = DB::table('users')->where('email', $email)->exists();
+            $studentExists = DB::table('students')->where('student_email', $email)->exists();
+            $adminExists = DB::table('admins')->where('email', $email)->exists();
+            $directorExists = DB::table('directors')->where('directors_email', $email)->exists();
+            $professorExists = DB::table('professors')->where('professor_email', $email)->exists();
+
+            $existsInAny = $userExists || $studentExists || $adminExists || $directorExists || $professorExists;
 
             return response()->json([
-                'available' => !$userExists,
-                'message' => $userExists ? 'Email is already registered' : 'Email is available'
+                'available' => !$existsInAny,
+                'message' => $existsInAny ? 'Email is already registered' : 'Email is available'
             ]);
 
         } catch (\Exception $e) {
