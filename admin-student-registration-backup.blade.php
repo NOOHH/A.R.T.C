@@ -961,9 +961,9 @@ function na(value) {
     return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
 }
 
-// DUPLICATE REMOVED: Global function for viewing registration details
-// window.viewRegistrationDetails = function(registrationId) {
-    /*if (!registrationId) {
+// Global function for viewing registration details
+window.viewRegistrationDetails = function(registrationId) {
+    if (!registrationId) {
         alert('Invalid registration ID');
         return;
     }
@@ -1150,10 +1150,50 @@ function na(value) {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
         });
-        */ // END DUPLICATE FUNCTION COMMENT
+};
 
-// Note: Duplicate function definitions removed to prevent conflicts
-// Global functions are defined at the top of the script section
+// Global function for approving registration
+window.approveRegistration = function(registrationId) {
+    // Show custom confirmation modal
+    showConfirmModal(
+        'Confirm Approval', 
+        'Are you sure you want to approve this registration? This action cannot be undone.',
+        'Yes, Approve',
+        'btn-success',
+        function() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `${baseUrl}/admin/registration/${registrationId}/approve`;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = token;
+            
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    );
+};
+
+// Global function for rejecting registration with field marking
+window.rejectRegistration = function(registrationId) {
+    if (!rejectReasonModal) {
+        rejectReasonModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
+    }
+    
+    const rejectForm = document.getElementById('rejectReasonForm');
+    rejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject`;
+    
+    // Load registration fields for marking
+    loadRegistrationFieldsForRejection(registrationId);
+    
+    if (registrationModal) {
+        registrationModal.hide();
+    }
+    rejectReasonModal.show();
+};
 
 // Helper functions that need to be available globally
 function formatDocumentLink(filename, label) {
@@ -1306,8 +1346,8 @@ document.addEventListener('DOMContentLoaded', function() {
         rejectReasonModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
     }
 
-    // DUPLICATE REMOVED: Global function for viewing registration details
-    /*window.viewRegistrationDetails = function(registrationId) {
+    // Global function for viewing registration details
+    window.viewRegistrationDetails = function(registrationId) {
         if (!registrationId) {
             alert('Invalid registration ID');
             return;
@@ -1526,9 +1566,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 `;
             });
-    */  // END DUPLICATE FUNCTION COMMENT
+    };
 
-    // Note: Duplicate function definitions removed - using global functions defined at top
+    // Global function for approving registration
+    window.approveRegistration = function(registrationId) {
+        // Show custom confirmation modal
+        showConfirmModal(
+            'Confirm Approval', 
+            'Are you sure you want to approve this registration? This action cannot be undone.',
+            'Yes, Approve',
+            'btn-success',
+            function() {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `${baseUrl}/admin/registration/${registrationId}/approve`;
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = token;
+                
+                form.appendChild(csrfInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        );
+    };
+
+    // Global function for rejecting registration with field marking
+    window.rejectRegistration = function(registrationId) {
+        const rejectForm = document.getElementById('rejectReasonForm');
+        rejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject`;
+        
+        // Load registration fields for marking
+        loadRegistrationFieldsForRejection(registrationId);
+        
+        registrationModal.hide();
+        const rejectModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
+        rejectModal.show();
+    };
 
     // Load registration fields for rejection marking
     function loadRegistrationFieldsForRejection(registrationId) {
