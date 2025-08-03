@@ -330,16 +330,6 @@ class UnifiedLoginController extends Controller
      */
     public static function syncToUsersTable($email, $name, $role, $password = null, $recordId = null)
     {
-        // Skip syncing directors to users table - they have their own authentication table
-        if ($role === 'director') {
-            Log::info("Skipping director sync to users table - directors have separate authentication", [
-                'email' => $email,
-                'role' => $role,
-                'record_id' => $recordId
-            ]);
-            return null;
-        }
-        
         // Check if user already exists in users table
         $existingUser = User::where('email', $email)->first();
         
@@ -354,8 +344,10 @@ class UnifiedLoginController extends Controller
                 'directors_id' => null // Set default null value
             ];
 
-            // Add the appropriate ID based on role (not needed for directors since we skip them)
-            // This is left for other roles that might need cross-table references
+            // Add the appropriate ID based on role
+            if ($role === 'director' && $recordId) {
+                $userData['directors_id'] = $recordId;
+            }
 
             // Create user record
             $user = User::create($userData);

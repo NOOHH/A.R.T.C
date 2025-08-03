@@ -164,56 +164,5 @@ function toggleAllProgramsCheckboxes(checkbox) {
     const checkboxes = document.querySelectorAll('#programCheckboxList input[type="checkbox"]');
     checkboxes.forEach(cb => cb.checked = checkbox.checked);
 }
-
-// Handle program access logic
-document.addEventListener('DOMContentLoaded', function() {
-    const allProgramsCheckbox = document.getElementById('program_all');
-    const specificProgramCheckboxes = document.querySelectorAll('#programCheckboxList input[type="checkbox"]:not(#program_all)');
-    const selectAllCheckbox = document.getElementById('selectAllPrograms');
-
-    // Function to update UI based on selections
-    function updateProgramSelection() {
-        if (allProgramsCheckbox.checked) {
-            // If "All Programs" is checked, uncheck specific programs
-            specificProgramCheckboxes.forEach(cb => cb.checked = false);
-            selectAllCheckbox.checked = true;
-        } else {
-            // Check if all specific programs are selected
-            const allSpecificChecked = Array.from(specificProgramCheckboxes).every(cb => cb.checked);
-            selectAllCheckbox.checked = allSpecificChecked;
-        }
-    }
-
-    // Handle "All Programs" checkbox
-    allProgramsCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            specificProgramCheckboxes.forEach(cb => cb.checked = false);
-        }
-        updateProgramSelection();
-    });
-
-    // Handle specific program checkboxes
-    specificProgramCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                allProgramsCheckbox.checked = false;
-            }
-            updateProgramSelection();
-        });
-    });
-
-    // Handle "Select All" checkbox
-    selectAllCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            specificProgramCheckboxes.forEach(cb => cb.checked = true);
-            allProgramsCheckbox.checked = false;
-        } else {
-            specificProgramCheckboxes.forEach(cb => cb.checked = false);
-        }
-    });
-
-    // Initial UI update
-    updateProgramSelection();
-});
 </script>
 @endpush

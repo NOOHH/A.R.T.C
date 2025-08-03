@@ -62,36 +62,77 @@
                             <h5 class="mb-0"><i class="bi bi-book"></i> Assigned Programs</h5>
                         </div>
                         <div class="card-body">
-                            @if($director->has_all_program_access)
-                                <div class="alert alert-info">
-                                    <i class="bi bi-globe"></i> <strong>All Programs Access</strong> - This director has access to all programs in the system.
-                                </div>
-                                @php
-                                    $allPrograms = \App\Models\Program::where('is_archived', false)->get();
-                                @endphp
-                                @if($allPrograms->count() > 0)
-                                    <div class="list-group">
-                                        @foreach($allPrograms as $program)
-                                            <div class="list-group-item">
+                            @if($director->programs->count() > 0)
+                                <div class="list-group">
+                                    @foreach($director->programs as $program)
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
                                                 <h6 class="mb-1">{{ $program->program_name }}</h6>
                                                 <p class="mb-1 text-muted">{{ Str::limit($program->program_description, 60) }}</p>
-                                                <span class="badge bg-success">All Access</span>
                                             </div>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            @elseif($director->assignedPrograms->count() > 0)
-                                <div class="list-group">
-                                    @foreach($director->assignedPrograms as $program)
-                                        <div class="list-group-item">
-                                            <h6 class="mb-1">{{ $program->program_name }}</h6>
-                                            <p class="mb-1 text-muted">{{ Str::limit($program->program_description, 60) }}</p>
-                                            <span class="badge bg-primary">Specific Access</span>
+                                            <form method="POST" action="{{ route('admin.directors.unassign-program', $director) }}" class="d-inline">
+                                                @csrf
+                                                <input type="hidden" name="program_id" value="{{ $program->program_id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="return confirm('Unassign this program?')" title="Unassign">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     @endforeach
                                 </div>
                             @else
                                 <p class="text-muted">No programs assigned to this director.</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assign New Program -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Assign Program</h5>
+                        </div>
+                        <div class="card-body">
+                                    @php
+                                        $query = \App\Models\Program::where('is_archived', false);
+                                        if ($director->programs->count() > 0) {
+                                            $assignedProgramIds = $director->programs->pluck('program_id')->toArray();
+                                            $query->whereNotIn('program_id', $assignedProgramIds);
+                                        }
+                                        $availablePrograms = $query->get();
+                                    @endphp
+
+                            @if($availablePrograms->count() > 0)
+                                <form method="POST" action="{{ route('admin.directors.assign-program', $director) }}">
+                                    @csrf
+                                    <div class="row align-items-end">
+                                        <div class="col-md-8">
+                                            <label for="program_id" class="form-label">Select Program</label>
+                                            <select name="program_id" id="program_id" class="form-select" required>
+                                                <option value="">Choose a program...</option>
+                                                @foreach($availablePrograms as $program)
+                                                    <option value="{{ $program->program_id }}">
+                                                        {{ $program->program_name }}
+                                                        @if($program->director_id)
+                                                            (Currently assigned to {{ $program->director->full_name }})
+                                                        @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="bi bi-plus"></i> Assign Program
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            @else
+                                <p class="text-muted">All available programs are already assigned.</p>
                             @endif
                         </div>
                     </div>

@@ -1651,11 +1651,13 @@ Route::patch('/admin/directors/{director:directors_id}/restore', [AdminDirectorC
 Route::delete('/admin/directors/{director:directors_id}', [AdminDirectorController::class, 'destroy'])
      ->name('admin.directors.destroy');
 
-// Assign/Unassign program routes - DEPRECATED: Now using edit form with assignedPrograms relationship
-// Route::post('/admin/directors/{director:directors_id}/assign-program', [AdminDirectorController::class, 'assignProgram'])
-//      ->name('admin.directors.assign-program');
-// Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminDirectorController::class, 'unassignProgram'])
-//      ->name('admin.directors.unassign-program');
+// Assign program to director
+Route::post('/admin/directors/{director:directors_id}/assign-program', [AdminDirectorController::class, 'assignProgram'])
+     ->name('admin.directors.assign-program');
+
+// Unassign program from director
+Route::post('/admin/directors/{director:directors_id}/unassign-program', [AdminDirectorController::class, 'unassignProgram'])
+     ->name('admin.directors.unassign-program');
 
 // Director Dashboard Routes
 Route::get('/director/dashboard', function() {
