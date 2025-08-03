@@ -237,7 +237,12 @@
         overflow-y: auto;
         position: relative;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        scrollbar-width: none; 
     }
+
+    .program-modal-content::-webkit-scrollbar {
+    display: none; /* for Chrome, Safari */
+}
     
     .program-modal-header {
         padding: 2rem 2rem 1rem;
