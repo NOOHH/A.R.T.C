@@ -236,16 +236,56 @@ Route::get('/programs/{id}', function ($id) {
 
 // Program modules API route
 Route::get('/programs/{id}/modules', function ($id) {
-    $modules = \App\Models\Module::where('program_id', $id)
-        ->where('is_archived', false)
-        ->orderBy('module_order', 'asc')
-        ->get(['modules_id', 'module_name']);
-    
-    // wrap it:
-    return response()->json([
-        'success' => true,
-        'modules' => $modules
-    ]);
+    try {
+        // Fetch modules with their courses
+        $modules = DB::table('modules')
+            ->where('program_id', $id)
+            ->where('is_archived', false)
+            ->orderBy('module_order', 'asc')
+            ->select('modules_id', 'module_name', 'module_description', 'program_id')
+            ->get();
+
+        $moduleIds = $modules->pluck('modules_id')->toArray();
+        $courses = DB::table('courses')
+            ->whereIn('module_id', $moduleIds)
+            ->select('subject_id as course_id', 'subject_name as course_name', 'subject_description as description', 'module_id')
+            ->get();
+
+        $coursesByModule = [];
+        foreach ($courses as $course) {
+            $coursesByModule[$course->module_id][] = [
+                'course_id' => $course->course_id,
+                'course_name' => $course->course_name,
+                'description' => $course->description,
+            ];
+        }
+
+        $transformedModules = [];
+        foreach ($modules as $module) {
+            $transformedModules[] = [
+                'modules_id' => $module->modules_id,
+                'module_id' => $module->modules_id,
+                'module_name' => $module->module_name,
+                'id' => $module->modules_id,
+                'name' => $module->module_name,
+                'description' => $module->module_description,
+                'module_description' => $module->module_description,
+                'program_id' => $module->program_id,
+                'courses' => $coursesByModule[$module->modules_id] ?? [],
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'modules' => $transformedModules
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error loading modules:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Error loading modules: ' . $e->getMessage()
+        ], 500);
+    }
 });
 
 

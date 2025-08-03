@@ -189,6 +189,9 @@ class UnifiedLoginController extends Controller
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
+        // Authenticate admin with Laravel Auth (multi-auth guard) - THIS WAS MISSING!
+        Auth::guard('admin')->login($admin);
+
         // Create session using PHP sessions (not Laravel sessions)
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

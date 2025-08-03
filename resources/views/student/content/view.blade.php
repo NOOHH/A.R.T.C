@@ -230,7 +230,12 @@
                 @endif
             </div>
             
-            <h1 class="content-title">{{ $content->content_title ?? 'Content' }}</h1>
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="content-title">{{ $content->content_title ?? 'Content' }}</h1>
+                <a href="{{ url()->previous() }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+            </div>
             
             @if($content->content_description)
                 <p class="mb-0">{{ $content->content_description }}</p>
@@ -382,6 +387,128 @@
                             </div>
                         @endif
                     @endforeach
+                </div>
+            @endif
+            
+            <!-- Quiz Section -->
+            @if($content->content_type === 'quiz' && isset($quiz))
+                <div class="quiz-section">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-question-circle"></i> {{ $quiz->quiz_title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            @if($quiz->quiz_description)
+                                <div class="alert alert-info">
+                                    <strong>Description:</strong> {{ $quiz->quiz_description }}
+                                </div>
+                            @endif
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong>Total Questions:</strong> {{ $quiz->questions->count() }}</p>
+                                    <p><strong>Time Limit:</strong> 
+                                        @if($quiz->time_limit > 0)
+                                            {{ $quiz->time_limit }} minutes
+                                        @else
+                                            No time limit
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Max Attempts:</strong> {{ $quiz->max_attempts }}</p>
+                                    <p><strong>Attempts Used:</strong> {{ $quizAttempts->where('status', 'completed')->count() }} / {{ $quiz->max_attempts }}</p>
+                                </div>
+                            </div>
+                            
+                            @if($quizAttempts->where('status', 'completed')->count() > 0)
+                                <div class="completed-attempts mb-3">
+                                    <h6>Previous Attempts:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Attempt</th>
+                                                    <th>Score</th>
+                                                    <th>Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($quizAttempts->where('status', 'completed')->sortByDesc('completed_at') as $attempt)
+                                                    <tr>
+                                                        <td>{{ $loop->iteration }}</td>
+                                                        <td>
+                                                            @php
+                                                                // Ensure score is calculated properly
+                                                                if ($attempt->score <= 0 && $attempt->total_questions > 0 && isset($attempt->correct_answers)) {
+                                                                    $calculatedScore = ($attempt->correct_answers / $attempt->total_questions) * 100;
+                                                                    $displayScore = number_format($calculatedScore, 1);
+                                                                } else {
+                                                                    $displayScore = number_format($attempt->score, 1);
+                                                                }
+                                                                $scoreClass = $displayScore >= 75 ? 'success' : 'warning';
+                                                            @endphp
+                                                            <span class="badge bg-{{ $scoreClass }}">
+                                                                {{ $displayScore }}%
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ $attempt->completed_at->format('M j, Y g:i A') }}</td>
+                                                        <td>
+                                                            <a href="{{ route('student.quiz.results', ['attemptId' => $attempt->attempt_id, 'content_id' => $content->id]) }}" 
+                                                               class="btn btn-sm btn-outline-primary">
+                                                                View Results
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div class="quiz-actions">
+                                @if($hasActiveAttempt)
+                                    <div class="alert alert-warning">
+                                        <strong>You have an active quiz attempt!</strong>
+                                        <p class="mb-2">Started: {{ $activeAttempt->started_at->format('M j, Y g:i A') }}</p>
+                                        @if($quiz->time_limit > 0)
+                                            @php
+                                                $timeElapsed = $activeAttempt->started_at->diffInMinutes(now());
+                                                $timeRemaining = max(0, $quiz->time_limit - $timeElapsed);
+                                            @endphp
+                                            <p class="mb-0">Time Remaining: 
+                                                <span class="badge bg-{{ $timeRemaining > 10 ? 'success' : 'danger' }}">
+                                                    {{ $timeRemaining }} minutes
+                                                </span>
+                                            </p>
+                                        @endif
+                                    </div>
+                                    <a href="{{ route('student.quiz.take', $activeAttempt->attempt_id) }}" 
+                                       class="btn btn-success btn-lg">
+                                        <i class="bi bi-play-circle"></i> Continue Quiz
+                                    </a>
+                                @elseif($quizAttempts->where('status', 'completed')->count() >= $quiz->max_attempts)
+                                    <div class="alert alert-danger">
+                                        <strong>Maximum attempts reached!</strong>
+                                        <p class="mb-0">You have used all {{ $quiz->max_attempts }} attempts for this quiz.</p>
+                                    </div>
+                                @else
+                                    <div class="start-quiz-section">
+                                        <div class="alert alert-success">
+                                            <strong>Ready to start?</strong>
+                                            <p class="mb-0">Click the button below to begin your quiz attempt.</p>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-primary btn-lg" onclick="confirmStartQuiz()">
+                                            <i class="bi bi-play-circle"></i> Start Quiz
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 </div>
             @endif
             
@@ -819,6 +946,102 @@
                     notification.remove();
                 }
             }, 5000);
+        }
+        
+        // Quiz Functions
+        function confirmStartQuiz() {
+            const modal = `
+                <div class="modal fade" id="startQuizModal" tabindex="-1" aria-labelledby="startQuizModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="startQuizModalLabel">
+                                    <i class="bi bi-question-circle"></i> Start Quiz
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-warning">
+                                    <strong>Important Instructions:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        @if(isset($quiz) && $quiz->time_limit > 0)
+                                            <li>This quiz has a time limit of {{ $quiz->time_limit }} minutes</li>
+                                        @endif
+                                        <li>Once started, you cannot pause the quiz</li>
+                                        <li>Make sure you have a stable internet connection</li>
+                                        @if(isset($quiz))
+                                            <li>You have {{ $quiz->max_attempts - $quizAttempts->where('status', 'completed')->count() }} attempt(s) remaining</li>
+                                        @endif
+                                    </ul>
+                                </div>
+                                <p>Are you ready to start the quiz?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="startQuiz()">
+                                    <i class="bi bi-play-circle"></i> Start Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('startQuizModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to DOM
+            document.body.insertAdjacentHTML('beforeend', modal);
+            
+            // Show modal
+            const bootstrapModal = new bootstrap.Modal(document.getElementById('startQuizModal'));
+            bootstrapModal.show();
+        }
+        
+        function startQuiz() {
+            const quizId = @json($quiz->quiz_id ?? null);
+            if (!quizId) {
+                showNotification('Quiz ID not found', 'error');
+                return;
+            }
+            
+            // Show loading
+            const startBtn = document.querySelector('#startQuizModal .btn-primary');
+            const originalText = startBtn.innerHTML;
+            startBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Starting...';
+            startBtn.disabled = true;
+            
+            fetch(`/student/quiz/${quizId}/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Hide modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('startQuizModal'));
+                    modal.hide();
+                    
+                    // Redirect to quiz
+                    window.location.href = data.redirect;
+                } else {
+                    showNotification(data.message || 'Error starting quiz', 'error');
+                    startBtn.innerHTML = originalText;
+                    startBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error starting quiz', 'error');
+                startBtn.innerHTML = originalText;
+                startBtn.disabled = false;
+            });
         }
     </script>
 @endpush

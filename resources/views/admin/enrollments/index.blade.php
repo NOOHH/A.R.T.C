@@ -68,7 +68,6 @@
                                     <th>Start Date</th>
                                     <th>Capacity</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -83,18 +82,10 @@
                                             {{ ucfirst($batch->status) }}
                                         </span>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info" onclick="editBatch({{ $batch->id }})">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteBatch({{ $batch->id }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">No batches found</td>
+                                    <td colspan="5" class="text-center">No batches found</td>
                                 </tr>
                                 @endforelse
                             </tbody>

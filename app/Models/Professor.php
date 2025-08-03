@@ -42,6 +42,7 @@ class Professor extends Authenticatable
         'dynamic_data',
         'referral_code',
         'avatar',
+        'profile_photo',
     ];
 
     /**
@@ -332,6 +333,7 @@ class Professor extends Authenticatable
 
     public function assignedPrograms()
     {
-        return $this->belongsToMany(\App\Models\Program::class, 'professor_program', 'professor_id', 'program_id');
+        return $this->belongsToMany(\App\Models\Program::class, 'professor_program', 'professor_id', 'program_id')
+                    ->withTimestamps();
     }
 }

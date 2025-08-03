@@ -3,11 +3,7 @@
 @section('title', 'Student Assignment Submissions - A.R.T.C Admin')
 
 @push('styles')
-    <!-- Bootstrap & Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-
-    <!-- Your custom CSS -->
+    <!-- Custom CSS for submissions page -->
     <style>
         :root {
             --primary-color: #0d6efd;

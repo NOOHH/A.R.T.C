@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript Debug Test for Chemistry Course</title>
+</head>
+<body>
+    <h1>Testing JavaScript for Chemistry Course</h1>
+    
+    <script>
+        // Test the exact JavaScript that should be running for the Chemistry course
+        console.log("Testing JavaScript functionality...");
+        
+        // Simulate the course data that would be passed to the JavaScript
+        const chemistryData = {
+            courseId: 48,
+            courseName: "Chemistry",
+            programId: 40
+        };
+        
+        console.log("Chemistry Course Data:", chemistryData);
+        
+        // Test if the functions that should be available are defined
+        function testViewContent(contentId) {
+            console.log("Testing viewContent with ID:", contentId);
+            
+            // Simulate the fetch call
+            fetch(`/professor/content/view/${contentId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log("viewContent response status:", response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log("viewContent response data:", data);
+            })
+            .catch(error => {
+                console.error("viewContent error:", error);
+            });
+        }
+        
+        function testArchiveContent(contentId) {
+            console.log("Testing archiveContent with ID:", contentId);
+            
+            fetch(`/professor/content/archive/${contentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': 'test-token'
+                }
+            })
+            .then(response => {
+                console.log("archiveContent response status:", response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log("archiveContent response data:", data);
+            })
+            .catch(error => {
+                console.error("archiveContent error:", error);
+            });
+        }
+        
+        // Test with Chemistry content ID
+        console.log("Running tests...");
+        testViewContent(83);
+        setTimeout(() => testArchiveContent(83), 1000);
+        
+        // Test DOM element selection that might fail
+        const editBtn = document.querySelector('.edit-content-btn[data-content-id="83"]');
+        const archiveBtn = document.querySelector('.archive-content-btn[data-content-id="83"]');
+        
+        console.log("Edit button found:", editBtn);
+        console.log("Archive button found:", archiveBtn);
+        
+        if (!editBtn) {
+            console.error("Edit button not found for content ID 83");
+        }
+        if (!archiveBtn) {
+            console.error("Archive button not found for content ID 83");
+        }
+    </script>
+</body>
+</html>

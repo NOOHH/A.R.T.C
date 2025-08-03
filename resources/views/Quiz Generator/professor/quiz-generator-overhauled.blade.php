@@ -91,7 +91,7 @@
 
 <!-- Create/Edit Quiz Modal -->
 <div class="modal fade" id="createQuizModal" tabindex="-1" aria-labelledby="createQuizModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen" id="createQuizModalDialog">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" id="createQuizModalDialog">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="createQuizModalLabel">
@@ -156,13 +156,39 @@
                                                 <label for="max_attempts" class="form-label">Max Attempts</label>
                                                 <input type="number" class="form-control" id="max_attempts" name="max_attempts" value="1" min="1">
                                             </div>
+
+                                            <div class="col-md-4">
+                                                <label class="form-label">Retake Options</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="infinite_retakes" name="infinite_retakes">
+                                                    <label class="form-check-label" for="infinite_retakes">
+                                                        Allow Infinite Retakes
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="has_deadline" name="has_deadline">
+                                                    <label class="form-check-label" for="has_deadline">
+                                                        Set Quiz Deadline
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="due_date" class="form-label">Deadline Date & Time</label>
+                                                <input type="datetime-local" class="form-control" id="due_date" name="due_date" disabled>
+                                                <small class="form-text text-muted">Leave unchecked for no deadline</small>
+                                            </div>
                                         </div>
                                     </form>
                                 </div>
                             </div>
 
-                            <!-- AI Document Upload Section -->
-                            <div class="card mb-4">
+                            <!-- AI Document Upload Section (Hidden during edit) -->
+                            <div class="card mb-4" id="aiGeneratorSection">
                                 <div class="card-header">
                                     <h6 class="mb-0"><i class="bi bi-robot"></i> AI Question Generator</h6>
                                 </div>
@@ -220,7 +246,7 @@
                     </div>
                     
                     <!-- AI Generated Questions Side Panel -->
-                    <div class="col-4 bg-light border-start" id="aiQuestionsPanel" style="display: none;">
+                    <div class="col-lg-4 bg-light border-start" id="aiQuestionsPanel" style="display: none;">
                         <div class="p-3 h-100 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0"><i class="bi bi-robot"></i> Generated Questions</h6>
@@ -242,14 +268,13 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveQuiz(true)">Save as Draft</button>
-                <button type="button" class="btn btn-success" onclick="saveQuiz(false)">Publish Quiz</button>
+                <button type="button" class="btn btn-primary" id="saveDraftBtn" onclick="saveQuiz(true)">
+                    <span id="saveDraftText">Save as Draft</span>
+                </button>
+                <button type="button" class="btn btn-success" id="publishBtn" onclick="saveQuiz(false)">
+                    <span id="publishText">Publish Quiz</span>
+                </button>
             </div>
-                                        <!-- Empty state -->
-                                        <div id="quizEmptyState" class="text-center">
-                                            <i class="bi bi-inbox" style="font-size: 2.5rem; color: #bdbdbd;"></i>
-                                            <div class="mt-2 text-muted">No questions added yet. Click <b>Add Question</b> or use AI Generate to get started.</div>
-                                        </div>
                                         <!-- Draggable manual questions will appear here -->
                                     </div>
                                 </div>
@@ -271,26 +296,22 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="saveQuiz()">
-                    <i class="bi bi-check-circle"></i> Save Quiz
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
 <!-- View Questions Modal -->
-<div class="modal fade" id="viewQuestionsModal" tabindex="-1" aria-labelledby="viewQuestionsModalLabel" aria-hidden="true">
+<div class="modal fade" id="viewQuestionsModal" tabindex="-1" aria-labelledby="viewQuestionsModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title" id="viewQuestionsModalLabel"><i class="bi bi-list-ul"></i> Quiz Questions</h5>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewQuestionsModalLabel">
+                    <i class="bi bi-list-ul"></i> Quiz Questions
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="questionsList">
+                <div id="questionsList" class="p-3">
                     <div class="d-flex justify-content-center">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -298,8 +319,10 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Close
+                </button>
             </div>
         </div>
     </div>
@@ -309,6 +332,25 @@
 
 @push('styles')
 <style>
+/* disable interaction and dim the sidebar */
+#modernSidebar.sidebar-disabled {
+  pointer-events: none;
+  opacity: 0.25;
+  filter: blur(1px);
+  transition: opacity .2s ease, filter .2s ease;
+}
+
+/* optionally fully hide instead of dimming (use only if you want it gone) */
+#modernSidebar.hide-sidebar {
+  display: none !important;
+}
+
+/* simplify scroll lock: avoid position:fixed side effects */
+body.modal-open {
+  overflow: hidden !important;
+  position: static !important;
+}
+
 /* Modal styles for question view */
 #viewQuestionsModal .modal-body {
     max-height: 70vh;
@@ -324,6 +366,76 @@
     padding: 10px 15px;
     border-top: none !important;
     color: #6c757d;
+}
+
+/* Mobile-responsive table improvements */
+.table-responsive {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.question-preview {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.options-preview {
+    font-size: 0.8em;
+    color: #6c757d;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mobile responsive buttons */
+@media (max-width: 768px) {
+    .d-flex.flex-wrap.gap-1 {
+        justify-content: center;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        margin: 1px;
+    }
+    
+    .question-preview {
+        max-width: 200px;
+    }
+    
+    .options-preview {
+        max-width: 150px;
+    }
+    
+    .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+
+/* Professional styling improvements */
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+}
+
+.table-primary > th {
+    background: linear-gradient(135deg, #b3d7ff 0%, #7bb3ff 100%) !important;
+    border-color: #92c5f7 !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
 }
 
 /* Quiz Canvas Styles */
@@ -346,6 +458,20 @@
     border-radius: 8px;
     margin-bottom: 15px;
     padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.quiz-question-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Button consistency */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
     position: relative;
     cursor: move;
     transition: all 0.3s ease;
@@ -543,6 +669,14 @@
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+.modal-backdrop {
+  z-index: 1050 !important;
+}
+.modal {
+  z-index: 1060 !important;
+}
+
 </style>
 @endpush
 
@@ -551,19 +685,74 @@
 let currentQuizId = null;
 let questionCounter = 0;
 let aiQuestions = [];
+const quizModalEl = document.getElementById('createQuizModal');
+const sidebarEl = document.getElementById('modernSidebar');
+let savedScroll = 0;
+
+if (quizModalEl) {
+  quizModalEl.addEventListener('show.bs.modal', () => {
+    // save scroll position so we can restore
+    savedScroll = window.scrollY || document.documentElement.scrollTop;
+
+    // disable / dim sidebar
+    if (sidebarEl) {
+      sidebarEl.classList.add('sidebar-disabled');
+      // if you want to fully hide instead, use: sidebarEl.classList.add('hide-sidebar');
+    }
+
+    // lock background scrolling (Bootstrap does overflow hidden already; this is reinforcement)
+    document.body.classList.add('modal-open');
+  });
+
+  quizModalEl.addEventListener('hidden.bs.modal', () => {
+    // restore sidebar
+    if (sidebarEl) {
+      sidebarEl.classList.remove('sidebar-disabled');
+      // if you used hide-sidebar, also remove it:
+      // sidebarEl.classList.remove('hide-sidebar');
+    }
+
+    // restore scroll
+    document.body.classList.remove('modal-open');
+    window.scrollTo(0, savedScroll);
+  });
+}
 
 // Initialize when modal opens
 document.getElementById('createQuizModal').addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
     const isEdit = button && button.getAttribute('data-edit-quiz');
+    const aiGeneratorSection = document.getElementById('aiGeneratorSection');
+    const saveDraftText = document.getElementById('saveDraftText');
+    const publishText = document.getElementById('publishText');
     
     if (isEdit) {
         currentQuizId = button.getAttribute('data-quiz-id');
         document.getElementById('modalTitle').textContent = 'Edit Quiz';
+        
+        // Hide AI generator section during edit
+        if (aiGeneratorSection) {
+            aiGeneratorSection.style.display = 'none';
+        }
+        
+        // Update button text for editing
+        if (saveDraftText) saveDraftText.textContent = 'Update Draft';
+        if (publishText) publishText.textContent = 'Update & Publish';
+        
         loadQuizData(currentQuizId);
     } else {
         currentQuizId = null;
         document.getElementById('modalTitle').textContent = 'Create New Quiz';
+        
+        // Show AI generator section for new quiz
+        if (aiGeneratorSection) {
+            aiGeneratorSection.style.display = 'block';
+        }
+        
+        // Update button text for creating
+        if (saveDraftText) saveDraftText.textContent = 'Save as Draft';
+        if (publishText) publishText.textContent = 'Publish Quiz';
+        
         resetForm();
     }
 });
@@ -572,6 +761,14 @@ document.getElementById('createQuizModal').addEventListener('show.bs.modal', fun
 function resetForm() {
     document.getElementById('quizForm').reset();
     document.getElementById('quizId').value = '';
+    
+    // Reset deadline field
+    const dueDateInput = document.getElementById('due_date');
+    if (dueDateInput) {
+        dueDateInput.disabled = true;
+        dueDateInput.required = false;
+        dueDateInput.removeAttribute('required');
+    }
     
     // Reset canvas
     const canvas = document.getElementById('quizCanvas');
@@ -587,6 +784,105 @@ function resetForm() {
     closeSidePanel();
     questionCounter = 0;
     window.quizQuestions = {};
+}
+
+// Load quiz data for editing
+async function loadQuizData(quizId) {
+    try {
+        console.log('Loading quiz data for editing:', quizId);
+        const response = await fetch(`/professor/quiz-generator/api/questions/${quizId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Populate basic quiz information
+            document.getElementById('quizId').value = data.quiz.quiz_id;
+            document.getElementById('quiz_title').value = data.quiz.quiz_title || '';
+            document.getElementById('quiz_description').value = data.quiz.quiz_description || '';
+            document.getElementById('program_id').value = data.quiz.program_id || '';
+            
+            // Load modules and courses if available
+            if (data.quiz.program_id) {
+                await loadModules(data.quiz.program_id);
+                if (data.quiz.module_id) {
+                    document.getElementById('module_id').value = data.quiz.module_id;
+                    await loadCourses(data.quiz.module_id);
+                    if (data.quiz.course_id) {
+                        document.getElementById('course_id').value = data.quiz.course_id;
+                    }
+                }
+            }
+            
+            // Set quiz settings
+            document.getElementById('time_limit').value = data.quiz.time_limit || 60;
+            document.getElementById('max_attempts').value = data.quiz.max_attempts || 1;
+            document.getElementById('infinite_retakes').checked = data.quiz.infinite_retakes || false;
+            document.getElementById('has_deadline').checked = data.quiz.has_deadline || false;
+            
+            // Handle deadline date input
+            const dueDateInput = document.getElementById('due_date');
+            if (data.quiz.has_deadline && data.quiz.due_date) {
+                dueDateInput.value = data.quiz.due_date;
+                dueDateInput.disabled = false;
+                dueDateInput.required = true;
+                dueDateInput.setAttribute('required', 'required');
+            } else {
+                dueDateInput.value = '';
+                dueDateInput.disabled = true;
+                dueDateInput.required = false;
+                dueDateInput.removeAttribute('required');
+            }
+            
+            // Handle infinite retakes
+            const maxAttemptsInput = document.getElementById('max_attempts');
+            if (data.quiz.infinite_retakes) {
+                maxAttemptsInput.disabled = true;
+                maxAttemptsInput.value = 999;
+            } else {
+                maxAttemptsInput.disabled = false;
+            }
+            
+            // Load questions into canvas
+            const canvas = document.getElementById('quizCanvas');
+            canvas.innerHTML = '';
+            window.quizQuestions = {};
+            window.questionCounter = 0;
+            
+            if (data.questions && data.questions.length > 0) {
+                data.questions.forEach((question, index) => {
+                    const questionData = {
+                        id: question.id,
+                        question: question.question_text,
+                        type: question.question_type,
+                        options: question.options || ['', '', '', ''],
+                        correct_answer: question.correct_answer || 0,
+                        explanation: question.explanation || '',
+                        points: question.points || 1,
+                        order: question.question_order || index + 1
+                    };
+                    
+                    addQuestionToCanvas(questionData);
+                });
+            } else {
+                resetForm();
+            }
+            
+            updateQuestionCount();
+            console.log('Quiz data loaded successfully');
+            
+        } else {
+            throw new Error(data.message || 'Failed to load quiz data');
+        }
+        
+    } catch (error) {
+        console.error('Error loading quiz data:', error);
+        alert('Error loading quiz data: ' + error.message);
+        resetForm();
+    }
 }
 
 // Store the last uploaded file for regeneration
@@ -639,6 +935,39 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset last uploaded file
             lastUploadedFile = null;
             console.log('lastUploadedFile reset to null');
+        });
+    }
+
+    // Handle deadline checkbox functionality
+    const hasDeadlineCheckbox = document.getElementById('has_deadline');
+    const dueDateInput = document.getElementById('due_date');
+    const infiniteRetakesCheckbox = document.getElementById('infinite_retakes');
+    const maxAttemptsInput = document.getElementById('max_attempts');
+
+    if (hasDeadlineCheckbox && dueDateInput) {
+        hasDeadlineCheckbox.addEventListener('change', function() {
+            dueDateInput.disabled = !this.checked;
+            if (this.checked) {
+                dueDateInput.required = true;
+                dueDateInput.setAttribute('required', 'required');
+            } else {
+                dueDateInput.required = false;
+                dueDateInput.removeAttribute('required');
+                dueDateInput.value = '';
+            }
+        });
+    }
+
+    // Handle infinite retakes functionality
+    if (infiniteRetakesCheckbox && maxAttemptsInput) {
+        infiniteRetakesCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                maxAttemptsInput.disabled = true;
+                maxAttemptsInput.value = 999;
+            } else {
+                maxAttemptsInput.disabled = false;
+                maxAttemptsInput.value = 1;
+            }
         });
     }
 });
@@ -1378,7 +1707,7 @@ function initializeSortable() {
 }
 
 // Save quiz
-async function saveQuiz() {
+async function saveQuiz(isDraft = true) {
     const form = document.getElementById('quizForm');
     const formData = new FormData(form);
     
@@ -1393,6 +1722,16 @@ async function saveQuiz() {
     
     if (!programId) {
         alert('Please select a program');
+        return;
+    }
+    
+    // Validate deadline if checkbox is checked
+    const hasDeadline = document.getElementById('has_deadline').checked;
+    const dueDate = document.getElementById('due_date').value;
+    
+    if (hasDeadline && !dueDate) {
+        alert('Please select a deadline date and time when "Set Quiz Deadline" is checked');
+        document.getElementById('due_date').focus();
         return;
     }
     
@@ -1436,19 +1775,25 @@ async function saveQuiz() {
         professor_id: professorId,
         time_limit: parseInt(document.getElementById('time_limit').value) || 60,
         max_attempts: parseInt(document.getElementById('max_attempts').value) || 1,
+        infinite_retakes: document.getElementById('infinite_retakes').checked,
+        has_deadline: document.getElementById('has_deadline').checked,
+        due_date: document.getElementById('has_deadline').checked ? document.getElementById('due_date').value : null,
         questions: questions,
-        is_draft: true,
-                        _token: window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        is_draft: isDraft,
+        status: isDraft ? 'draft' : 'published',
+        _token: window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     };
     
     console.log('Quiz data being sent:', quizData);
 
     try {
-        const url = currentQuizId ? 
+        // Determine if this is an edit or create operation
+        const isEdit = currentQuizId && document.getElementById('quizId').value;
+        const url = isEdit ? 
             `/professor/quiz-generator/update-quiz/${currentQuizId}` : 
             '{{ route("professor.quiz-generator.save-manual") }}';
         
-        const method = currentQuizId ? 'PUT' : 'POST';    
+        const method = isEdit ? 'PUT' : 'POST';    
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -1462,17 +1807,19 @@ async function saveQuiz() {
         const data = await response.json();
         
         if (data.success) {
-            alert('Quiz saved successfully!');
+            const action = isEdit ? 'updated' : 'created';
+            const status = isDraft ? 'draft' : 'published';
+            showAlert('success', `Quiz ${action} successfully as ${status}!`);
             // Close modal and reload page
             const modal = bootstrap.Modal.getInstance(document.getElementById('createQuizModal'));
             modal.hide();
-            location.reload();
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Error saving quiz: ' + (data.message || 'Unknown error'));
+            showAlert('danger', 'Error saving quiz: ' + (data.message || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error saving quiz:', error);
-        alert('Error saving quiz. Please try again.');
+        showAlert('danger', 'Error saving quiz. Please try again.');
     }
 }
 
@@ -2048,6 +2395,40 @@ async function restoreQuiz(quizId) {
     }
 }
 
+async function deleteQuiz(quizId) {
+    if (!confirm('Are you sure you want to permanently delete this quiz? This action cannot be undone.')) {
+        return;
+    }
+    
+    // Double confirmation for safety
+    if (!confirm('This will permanently delete the quiz and all its questions. Are you absolutely sure?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/professor/quiz-generator/${quizId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.csrfToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('success', data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message);
+        }
+    } catch (error) {
+        console.error('Error deleting quiz:', error);
+        showAlert('danger', 'Error deleting quiz. Please try again.');
+    }
+}
+
     // Event listeners for quiz management
     document.addEventListener('DOMContentLoaded', function() {
         // Delete quiz buttons
@@ -2099,16 +2480,19 @@ async function restoreQuiz(quizId) {
             
             if (data.questions && data.questions.length > 0) {
                 let html = `
-                    <h4 class="mb-3">${data.quiz.title}</h4>
+                    <h4 class="mb-3 d-flex align-items-center">
+                        <i class="bi bi-list-ul me-2 text-primary"></i>
+                        ${data.quiz.title}
+                        <span class="badge bg-secondary ms-2">${data.questions.length} Questions</span>
+                    </h4>
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table class="table table-hover">
+                            <thead class="table-primary">
                                 <tr>
-                                    <th>#</th>
+                                    <th style="width: 60px;">#</th>
                                     <th>Question</th>
-                                    <th>Type</th>
-                                    <th>Correct Answer</th>
-                                    <th>Points</th>
+                                    <th style="width: 140px;">Type</th>
+                                    <th style="width: 120px;">Correct Answer</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2141,11 +2525,19 @@ async function restoreQuiz(quizId) {
                     
                     html += `
                         <tr>
-                            <td>${index + 1}</td>
-                            <td>${question.question_text}</td>
-                            <td>${question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'True/False'}</td>
-                            <td>${question.correct_answer}</td>
-                            <td>${question.points || 1}</td>
+                            <td class="fw-semibold">${index + 1}</td>
+                            <td>
+                                <div class="question-preview">
+                                    ${question.question_text}
+                                </div>
+                                ${optionsDisplay ? `<div class="options-preview mt-2 small text-muted">${optionsDisplay}</div>` : ''}
+                            </td>
+                            <td>
+                                <span class="badge ${question.question_type === 'multiple_choice' ? 'bg-primary' : 'bg-info'}">
+                                    ${question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'True/False'}
+                                </span>
+                            </td>
+                            <td class="fw-semibold text-success">${question.correct_answer}</td>
                         </tr>
                     `;
                     
@@ -2209,16 +2601,6 @@ async function restoreQuiz(quizId) {
         }
     }
 
-    // Edit Quiz
-    async function editQuiz(quizId) {
-        try {
-            window.location.href = `/professor/quiz-generator/edit/${quizId}`;
-        } catch (error) {
-            console.error('Error navigating to edit quiz:', error);
-            showAlert('danger', 'Error opening quiz editor. Please try again.');
-        }
-    }
-
 async function deleteQuiz(quizId) {
     if (!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
         return;
@@ -2249,11 +2631,18 @@ async function deleteQuiz(quizId) {
 }
 
 function showAlert(type, message) {
+    // Remove any existing alerts
+    const existingAlerts = document.querySelectorAll('.alert.position-fixed');
+    existingAlerts.forEach(alert => alert.remove());
+    
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
     alertDiv.innerHTML = `
-        ${message}
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'} me-2"></i>
+            <div>${message}</div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
     
@@ -2266,5 +2655,30 @@ function showAlert(type, message) {
         }
     }, 5000);
 }
+
+// Fix modal backdrop issues
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure modals close properly when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
+            const modal = bootstrap.Modal.getInstance(e.target);
+            if (modal) {
+                modal.hide();
+            }
+        }
+    });
+    
+    // Fix backdrop for viewQuestionsModal
+    const viewQuestionsModal = document.getElementById('viewQuestionsModal');
+    if (viewQuestionsModal) {
+        viewQuestionsModal.addEventListener('hidden.bs.modal', function() {
+            // Remove any lingering backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+        });
+    }
+});
 </script>
 @endpush

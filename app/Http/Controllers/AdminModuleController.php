@@ -589,17 +589,94 @@ class AdminModuleController extends Controller
     public function archived(Request $request)
     {
         $programs = Program::all();
+        $courses = Course::with(['module.program'])->whereHas('module', function($query) {
+            $query->where('is_archived', true);
+        })->orWhereHas('contentItems', function($query) {
+            $query->where('is_archived', true);
+        })->get();
+        
         $archivedModules = collect();
+        $archivedCourses = collect();
+        $archivedContent = collect();
+        $stats = [
+            'total_archived' => 0,
+            'archived_modules' => 0,
+            'archived_courses' => 0,
+            'archived_content' => 0
+        ];
         
         if ($request->has('program_id') && $request->program_id != '') {
+            // Get archived modules
             $archivedModules = Module::where('program_id', $request->program_id)
                            ->where('is_archived', true)
-                           ->with('program')
+                           ->with(['program', 'courses'])
                            ->orderBy('updated_at', 'desc')
                            ->get();
+            
+            // Get courses with archived content from modules in this program
+            $archivedCourses = Course::whereHas('module', function($query) use ($request) {
+                $query->where('program_id', $request->program_id)
+                      ->where('is_archived', false); // Include active modules too
+            })->with(['module.program', 'contentItems' => function($query) {
+                $query->where('is_archived', true)->orderBy('archived_at', 'desc');
+            }])->whereHas('contentItems', function($query) {
+                $query->where('is_archived', true);
+            })->orderBy('updated_at', 'desc')->get();
+            
+            // Also get courses from archived modules
+            $coursesFromArchivedModules = Course::whereHas('module', function($query) use ($request) {
+                $query->where('program_id', $request->program_id)
+                      ->where('is_archived', true);
+            })->with(['module.program', 'contentItems' => function($query) {
+                $query->orderBy('created_at', 'desc'); // All content from archived modules
+            }])->orderBy('updated_at', 'desc')->get();
+            
+            // Merge the course collections
+            $archivedCourses = $archivedCourses->merge($coursesFromArchivedModules)->unique('subject_id');
+            
+            // Get all archived content for this program (including standalone archived content)
+            $archivedContent = ContentItem::whereHas('course.module', function($query) use ($request) {
+                $query->where('program_id', $request->program_id);
+            })->where('is_archived', true)
+              ->with(['course.module.program'])
+              ->orderBy('archived_at', 'desc')
+              ->get();
+              
+            $stats['archived_modules'] = $archivedModules->count();
+            $stats['archived_courses'] = $archivedCourses->filter(function($course) {
+                return $course->contentItems->where('is_archived', true)->count() > 0;
+            })->count();
+            $stats['archived_content'] = $archivedContent->count();
+            $stats['total_archived'] = $stats['archived_modules'] + $stats['archived_content'];
+        } else {
+            // Get all archived modules
+            $archivedModules = Module::where('is_archived', true)
+                           ->with(['program', 'courses'])
+                           ->orderBy('updated_at', 'desc')
+                           ->get();
+            
+            // Get all courses with archived content
+            $archivedCourses = Course::with(['module.program', 'contentItems' => function($query) {
+                $query->where('is_archived', true);
+            }])->whereHas('contentItems', function($query) {
+                $query->where('is_archived', true);
+            })->orderBy('updated_at', 'desc')->get();
+            
+            // Get all archived content
+            $archivedContent = ContentItem::where('is_archived', true)
+              ->with(['course.module.program'])
+              ->orderBy('archived_at', 'desc')
+              ->get();
+              
+            $stats['archived_modules'] = $archivedModules->count();
+            $stats['archived_courses'] = $archivedCourses->count();
+            $stats['archived_content'] = $archivedContent->count();
+            $stats['total_archived'] = $stats['archived_modules'] + $stats['archived_content'];
         }
         
-        return view('admin.admin-modules.admin-modules-archived', compact('programs', 'archivedModules'));
+        return view('admin.admin-modules.admin-modules-archived', compact(
+            'programs', 'archivedModules', 'archivedCourses', 'archivedContent', 'stats'
+        ));
     }
 
     /**
@@ -1418,6 +1495,7 @@ class AdminModuleController extends Controller
         try {
             $courses = Course::where('module_id', $moduleId)
                 ->where('is_active', true)
+                ->where('is_archived', false)
                 ->orderBy('subject_name')
                 ->get(['subject_id', 'subject_name', 'subject_description', 'subject_price']);
 
@@ -1987,5 +2065,175 @@ class AdminModuleController extends Controller
         return view('admin.admin-modules.course-content-upload', [
             'programs' => $programs
         ]);
+    }
+
+    /**
+     * Archive content item
+     */
+    public function archiveContent($id)
+    {
+        try {
+            $content = ContentItem::findOrFail($id);
+            
+            // Set archived status
+            $content->is_archived = true;
+            $content->archived_at = now();
+            $content->save();
+
+            Log::info("Content archived: {$content->content_title} (ID: {$id})");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content archived successfully!',
+                'content' => $content
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error archiving content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error archiving content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore archived content item
+     */
+    public function restoreContent(Request $request, $id)
+    {
+        try {
+            $content = ContentItem::findOrFail($id);
+            
+            $content->update([
+                'is_archived' => false,
+                'archived_at' => null,
+                'archived_by_professor_id' => null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content restored successfully!'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error restoring content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error restoring content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk restore archived content for a course
+     */
+    public function bulkRestoreCourseContent(Request $request, $courseId)
+    {
+        try {
+            $archivedCount = ContentItem::where('course_id', $courseId)
+                ->where('is_archived', true)
+                ->update([
+                    'is_archived' => false,
+                    'archived_at' => null,
+                    'archived_by_professor_id' => null
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Restored {$archivedCount} content items successfully!"
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error bulk restoring content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error restoring content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete archived content
+     */
+    public function deleteArchivedContent(Request $request, $id)
+    {
+        try {
+            $content = ContentItem::where('id', $id)->where('is_archived', true)->firstOrFail();
+            
+            // Delete associated files if they exist
+            if ($content->attachment_path && Storage::disk('public')->exists($content->attachment_path)) {
+                Storage::disk('public')->delete($content->attachment_path);
+            }
+            
+            $content->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Content permanently deleted!'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting archived content: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting content: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get archived content statistics
+     */
+    public function getArchivedStats(Request $request)
+    {
+        try {
+            $programId = $request->get('program_id');
+            
+            $stats = [
+                'modules' => 0,
+                'content' => 0,
+                'by_type' => [
+                    'module' => 0,
+                    'assignment' => 0,
+                    'quiz' => 0,
+                    'test' => 0,
+                    'link' => 0
+                ]
+            ];
+            
+            if ($programId) {
+                $stats['modules'] = Module::where('program_id', $programId)
+                    ->where('is_archived', true)
+                    ->count();
+                    
+                $stats['content'] = ContentItem::whereHas('course.module', function($query) use ($programId) {
+                    $query->where('program_id', $programId);
+                })->where('is_archived', true)->count();
+                
+                $contentByType = ContentItem::whereHas('course.module', function($query) use ($programId) {
+                    $query->where('program_id', $programId);
+                })->where('is_archived', true)
+                  ->selectRaw('content_type, COUNT(*) as count')
+                  ->groupBy('content_type')
+                  ->get();
+            } else {
+                $stats['modules'] = Module::where('is_archived', true)->count();
+                $stats['content'] = ContentItem::where('is_archived', true)->count();
+                
+                $contentByType = ContentItem::where('is_archived', true)
+                  ->selectRaw('content_type, COUNT(*) as count')
+                  ->groupBy('content_type')
+                  ->get();
+            }
+            
+            foreach ($contentByType as $type) {
+                $stats['by_type'][$type->content_type] = $type->count;
+            }
+            
+            return response()->json(['success' => true, 'stats' => $stats]);
+        } catch (\Exception $e) {
+            Log::error('Error getting archived stats: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error getting statistics'
+            ], 500);
+        }
     }
 }

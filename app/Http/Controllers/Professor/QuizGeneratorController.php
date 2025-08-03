@@ -370,6 +370,9 @@ class QuizGeneratorController extends Controller
                 'is_draft' => 'nullable|boolean',
                 'time_limit' => 'nullable|integer|min:1',
                 'max_attempts' => 'nullable|integer|min:1',
+                'infinite_retakes' => 'nullable|boolean',
+                'has_deadline' => 'nullable|boolean',
+                'due_date' => 'nullable|date',
                 'questions' => 'required|array|min:1',
                 'questions.*.question_text' => 'required|string',
                 'questions.*.question_type' => 'required|string|in:multiple_choice,true_false',
@@ -404,7 +407,10 @@ class QuizGeneratorController extends Controller
                 'is_draft' => $isDraft,
                 'is_active' => !$isDraft,
                 'time_limit' => $validatedData['time_limit'] ?? 60,
-                'max_attempts' => $validatedData['max_attempts'] ?? 1,
+                'max_attempts' => $validatedData['infinite_retakes'] ? 999 : ($validatedData['max_attempts'] ?? 1),
+                'infinite_retakes' => $validatedData['infinite_retakes'] ?? false,
+                'has_deadline' => $validatedData['has_deadline'] ?? false,
+                'due_date' => ($validatedData['has_deadline'] && $validatedData['due_date']) ? $validatedData['due_date'] : null,
                 'total_questions' => count($validatedData['questions']),
                 'created_at' => now(),
             ]);
@@ -417,6 +423,7 @@ class QuizGeneratorController extends Controller
                     'course_id' => $validatedData['course_id'],
                     'content_type' => 'quiz',
                     'content_data' => json_encode(['quiz_id' => $quiz->quiz_id]),
+                    'due_date' => ($validatedData['has_deadline'] && $validatedData['due_date']) ? $validatedData['due_date'] : null,
                     'is_active' => !$isDraft,
                 ]);
 
@@ -424,12 +431,17 @@ class QuizGeneratorController extends Controller
             }
 
             foreach ($validatedData['questions'] as $index => $questionData) {
-                // Handle correct answers properly
+                // Handle correct answers properly - convert letters to indices
                 $correctAnswer = '';
                 if (!empty($questionData['correct_answers']) && is_array($questionData['correct_answers'])) {
                     $correctAnswer = $questionData['correct_answers'][0] ?? '';
                 } else {
                     $correctAnswer = $questionData['correct_answers'] ?? '';
+                }
+                
+                // Convert letter answers (A, B, C, D) to index format (0, 1, 2, 3)
+                if (is_string($correctAnswer) && preg_match('/^[A-Z]$/', $correctAnswer)) {
+                    $correctAnswer = (string)(ord($correctAnswer) - 65);
                 }
 
                 QuizQuestion::create([
@@ -1037,6 +1049,372 @@ class QuizGeneratorController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error moving quiz to draft: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update existing quiz with questions
+     */
+    public function updateQuizWithQuestions(Request $request, Quiz $quiz)
+    {
+        Log::info('=== Updating Quiz ===', [
+            'quiz_id' => $quiz->quiz_id,
+            'professor_id' => session('professor_id'),
+            'method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'is_json' => $request->isJson(),
+            'request_all' => $request->all(),
+        ]);
+
+        try {
+            $professor = Professor::find(session('professor_id'));
+            
+            if (!$professor || $quiz->professor_id !== $professor->professor_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz not found or access denied.'
+                ], 403);
+            }
+
+            // Handle both form data and JSON requests
+            $inputData = $request->isJson() ? $request->json()->all() : $request->all();
+            $request->merge($inputData);
+
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'program_id' => 'required|exists:programs,program_id',
+                'module_id' => 'nullable|exists:modules,modules_id',
+                'course_id' => 'nullable|exists:courses,subject_id',
+                'description' => 'nullable|string',
+                'instructions' => 'nullable|string',
+                'is_draft' => 'nullable|boolean',
+                'time_limit' => 'nullable|integer|min:1',
+                'max_attempts' => 'nullable|integer|min:1',
+                'infinite_retakes' => 'nullable|boolean',
+                'has_deadline' => 'nullable|boolean',
+                'due_date' => 'nullable|date',
+                'questions' => 'required|array|min:1',
+                'questions.*.question_text' => 'required|string',
+                'questions.*.question_type' => 'required|string|in:multiple_choice,true_false',
+                'questions.*.options' => 'nullable|array',
+                'questions.*.correct_answers' => 'nullable|array',
+                'questions.*.explanation' => 'nullable|string',
+                'questions.*.points' => 'nullable|numeric|min:0',
+                'questions.*.order' => 'nullable|integer|min:1',
+            ]);
+
+            DB::beginTransaction();
+
+            // Determine status based on is_draft flag
+            $isDraft = $validatedData['is_draft'] ?? true;
+            $status = $isDraft ? 'draft' : 'published';
+
+            // Update quiz
+            $quiz->update([
+                'quiz_title' => $validatedData['title'],
+                'quiz_description' => $validatedData['description'] ?? 'Manually created quiz.',
+                'instructions' => $validatedData['instructions'] ?? 'Please answer the following questions.',
+                'program_id' => $validatedData['program_id'],
+                'module_id' => $validatedData['module_id'],
+                'course_id' => $validatedData['course_id'],
+                'status' => $status,
+                'is_draft' => $isDraft,
+                'is_active' => !$isDraft,
+                'time_limit' => $validatedData['time_limit'] ?? 60,
+                'max_attempts' => $validatedData['infinite_retakes'] ? 999 : ($validatedData['max_attempts'] ?? 1),
+                'infinite_retakes' => $validatedData['infinite_retakes'] ?? false,
+                'has_deadline' => $validatedData['has_deadline'] ?? false,
+                'due_date' => ($validatedData['has_deadline'] && $validatedData['due_date']) ? $validatedData['due_date'] : null,
+                'total_questions' => count($validatedData['questions']),
+                'updated_at' => now(),
+            ]);
+
+            // Update content item if exists
+            if ($quiz->content_id) {
+                ContentItem::where('id', $quiz->content_id)->update([
+                    'content_title' => $validatedData['title'],
+                    'content_description' => 'Updated Quiz',
+                    'course_id' => $validatedData['course_id'],
+                    'due_date' => ($validatedData['has_deadline'] && $validatedData['due_date']) ? $validatedData['due_date'] : null,
+                    'is_active' => !$isDraft,
+                ]);
+            } elseif (!empty($validatedData['course_id'])) {
+                // Create content item if doesn't exist but course is specified
+                $contentItem = ContentItem::create([
+                    'content_title' => $validatedData['title'],
+                    'content_description' => 'Updated Quiz',
+                    'course_id' => $validatedData['course_id'],
+                    'content_type' => 'quiz',
+                    'content_data' => json_encode(['quiz_id' => $quiz->quiz_id]),
+                    'due_date' => ($validatedData['has_deadline'] && $validatedData['due_date']) ? $validatedData['due_date'] : null,
+                    'is_active' => !$isDraft,
+                ]);
+
+                $quiz->update(['content_id' => $contentItem->id]);
+            }
+
+            // Delete existing questions
+            QuizQuestion::where('quiz_id', $quiz->quiz_id)->delete();
+
+            // Create new questions
+            foreach ($validatedData['questions'] as $index => $questionData) {
+                $correctAnswer = '';
+                if (!empty($questionData['correct_answers']) && is_array($questionData['correct_answers'])) {
+                    $correctAnswer = $questionData['correct_answers'][0] ?? '';
+                } else {
+                    $correctAnswer = $questionData['correct_answers'] ?? '';
+                }
+                
+                // Convert letter answers (A, B, C, D) to index format (0, 1, 2, 3)
+                if (is_string($correctAnswer) && preg_match('/^[A-Z]$/', $correctAnswer)) {
+                    $correctAnswer = (string)(ord($correctAnswer) - 65);
+                }
+
+                QuizQuestion::create([
+                    'quiz_id' => $quiz->quiz_id,
+                    'quiz_title' => $quiz->quiz_title,
+                    'program_id' => $quiz->program_id,
+                    'question_text' => $questionData['question_text'],
+                    'question_type' => $questionData['question_type'],
+                    'question_order' => $questionData['order'] ?? ($index + 1),
+                    'options' => $questionData['options'] ?? [],
+                    'correct_answer' => $correctAnswer,
+                    'explanation' => $questionData['explanation'] ?? '',
+                    'question_source' => 'manual',
+                    'points' => $questionData['points'] ?? 1,
+                    'is_active' => true,
+                    'created_by_professor' => $professor->professor_id,
+                ]);
+            }
+
+            DB::commit();
+
+            Log::info('✓ Quiz updated successfully', [
+                'quiz_id' => $quiz->quiz_id, 
+                'status' => $status,
+                'questions_updated' => count($validatedData['questions'])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $isDraft ? 'Quiz draft updated successfully!' : 'Quiz updated and published successfully!',
+                'quiz_id' => $quiz->quiz_id,
+                'is_draft' => $isDraft
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Validation failed for quiz update', [
+                'quiz_id' => $quiz->quiz_id,
+                'errors' => $e->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating quiz', [
+                'quiz_id' => $quiz->quiz_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating quiz: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get questions for modal display
+     */
+    public function getQuestionsForModal(Quiz $quiz)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            
+            if (!$professor || $quiz->professor_id !== $professor->professor_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz not found or access denied.'
+                ], 403);
+            }
+
+            $questions = $quiz->questions()->orderBy('question_order')->get();
+            
+            return response()->json([
+                'success' => true,
+                'quiz' => [
+                    'quiz_id' => $quiz->quiz_id,
+                    'title' => $quiz->quiz_title,
+                    'quiz_title' => $quiz->quiz_title,
+                    'quiz_description' => $quiz->quiz_description,
+                    'program_id' => $quiz->program_id,
+                    'module_id' => $quiz->module_id,
+                    'course_id' => $quiz->course_id,
+                    'time_limit' => $quiz->time_limit,
+                    'max_attempts' => $quiz->max_attempts,
+                    'infinite_retakes' => $quiz->infinite_retakes,
+                    'has_deadline' => $quiz->has_deadline,
+                    'due_date' => $quiz->due_date,
+                    'instructions' => $quiz->instructions,
+                    'status' => $quiz->status,
+                    'program_name' => $quiz->program->program_name ?? 'Unknown Program',
+                ],
+                'questions' => $questions->map(function($question) {
+                    return [
+                        'id' => $question->id,
+                        'question_text' => $question->question_text,
+                        'question_type' => $question->question_type,
+                        'options' => $question->options,
+                        'correct_answer' => $question->correct_answer,
+                        'explanation' => $question->explanation,
+                        'points' => $question->points ?? 1,
+                        'question_order' => $question->question_order,
+                    ];
+                })
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading quiz questions for modal', [
+                'quiz_id' => $quiz->quiz_id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading questions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an existing quiz
+     */
+    public function updateQuiz(Request $request, Quiz $quiz)
+    {
+        try {
+            $professor = Professor::find(session('professor_id'));
+            
+            if (!$professor || $quiz->professor_id !== $professor->professor_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz not found or access denied.'
+                ], 403);
+            }
+
+            // Parse the JSON request
+            $inputData = json_decode($request->getContent(), true);
+            
+            Log::info('Updating quiz', [
+                'quiz_id' => $quiz->quiz_id,
+                'input_data_keys' => array_keys($inputData),
+                'questions_count' => isset($inputData['questions']) ? count($inputData['questions']) : 0
+            ]);
+
+            // Create new request with the input data for validation
+            $request->merge($inputData);
+
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'program_id' => 'required|exists:programs,program_id',
+                'module_id' => 'nullable|exists:modules,modules_id',
+                'course_id' => 'nullable|exists:courses,subject_id',
+                'description' => 'nullable|string',
+                'instructions' => 'nullable|string',
+                'is_draft' => 'nullable|boolean',
+                'time_limit' => 'nullable|integer|min:1',
+                'max_attempts' => 'nullable|integer|min:1',
+                'infinite_retakes' => 'nullable|boolean',
+                'has_deadline' => 'nullable|boolean',
+                'due_date' => 'nullable|date',
+                'questions' => 'required|array|min:1',
+                'questions.*.question_text' => 'required|string',
+                'questions.*.question_type' => 'required|string|in:multiple_choice,true_false',
+                'questions.*.options' => 'nullable|array',
+                'questions.*.correct_answers' => 'nullable|array',
+                'questions.*.explanation' => 'nullable|string',
+                'questions.*.points' => 'nullable|numeric|min:0',
+                'questions.*.order' => 'nullable|integer|min:1',
+            ]);
+
+            DB::beginTransaction();
+
+            // Determine status based on is_draft flag
+            $isDraft = $validatedData['is_draft'] ?? true;
+            $status = $isDraft ? 'draft' : 'published';
+
+            // Update quiz
+            $quiz->update([
+                'quiz_title' => $validatedData['title'],
+                'quiz_description' => $validatedData['description'] ?? 'Manually updated quiz.',
+                'program_id' => $validatedData['program_id'],
+                'module_id' => $validatedData['module_id'],
+                'course_id' => $validatedData['course_id'],
+                'instructions' => $validatedData['instructions'] ?? 'Please answer the following questions.',
+                'status' => $status,
+                'is_draft' => $isDraft,
+                'is_active' => !$isDraft,
+                'time_limit' => $validatedData['time_limit'] ?? 60,
+                'max_attempts' => $validatedData['infinite_retakes'] ? 999 : ($validatedData['max_attempts'] ?? 1),
+                'infinite_retakes' => $validatedData['infinite_retakes'] ?? false,
+                'has_deadline' => $validatedData['has_deadline'] ?? false,
+                'due_date' => $validatedData['has_deadline'] ? $validatedData['due_date'] : null,
+                'total_questions' => count($validatedData['questions']),
+            ]);
+
+            // Delete existing questions
+            $quiz->questions()->delete();
+
+            // Create new questions
+            foreach ($validatedData['questions'] as $index => $questionData) {
+                QuizQuestion::create([
+                    'quiz_id' => $quiz->quiz_id,
+                    'quiz_title' => $quiz->quiz_title,
+                    'program_id' => $quiz->program_id,
+                    'question_text' => $questionData['question_text'],
+                    'question_type' => $questionData['question_type'],
+                    'question_order' => $questionData['order'] ?? $index + 1,
+                    'options' => $questionData['options'] ?? [],
+                    'correct_answer' => $questionData['correct_answers'][0] ?? ($questionData['options'][0] ?? 'True'),
+                    'explanation' => $questionData['explanation'] ?? '',
+                    'question_source' => 'manual',
+                    'points' => $questionData['points'] ?? 1,
+                    'is_active' => true,
+                    'created_by_professor' => $professor->professor_id,
+                ]);
+            }
+
+            DB::commit();
+
+            Log::info('Quiz updated successfully', [
+                'quiz_id' => $quiz->quiz_id,
+                'total_questions' => count($validatedData['questions'])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz updated successfully.',
+                'quiz_id' => $quiz->quiz_id
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Validation failed during quiz update', ['errors' => $e->errors()]);
+            return response()->json(['success' => false, 'message' => 'Invalid input.', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating quiz', [
+                'quiz_id' => $quiz->quiz_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating quiz: ' . $e->getMessage()
             ], 500);
         }
     }

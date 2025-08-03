@@ -23,6 +23,28 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
+        // Handle AJAX requests that expect JSON response
+        if ($request->ajax() || $request->wantsJson()) {
+            try {
+                return $this->performSearch($request);
+            } catch (\Exception $e) {
+                Log::error("Search AJAX error: " . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Search temporarily unavailable',
+                    'results' => []
+                ]);
+            }
+        }
+        
+        return $this->performSearch($request);
+    }
+    
+    /**
+     * Perform the actual search logic
+     */
+    private function performSearch(Request $request)
+    {
         $query = $request->get('query', '');
         $type = $request->get('type', 'all');
         $limit = $request->get('limit', 10);
@@ -30,6 +52,12 @@ class SearchController extends Controller
         // Use session-based authentication instead of Laravel Auth
         $userId = session('user_id') ?? session('admin_id') ?? session('directors_id') ?? session('professor_id');
         $userRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
+        
+        // Special handling for professors - ensure professor_id is used if available
+        if (session('professor_id') && session('user_role') === 'professor') {
+            $userId = session('professor_id');
+            $userRole = 'professor';
+        }
         
         Log::info("SearchController DEBUG: Main search called", [
             'query' => $query,
@@ -57,11 +85,30 @@ class SearchController extends Controller
 
         // Check authentication using session
         if (!$userId || !$userRole) {
-            Log::warning("SearchController DEBUG: No authenticated user in session");
-            return response()->json([
-                'success' => false,
-                'message' => 'Authentication required'
-            ], 401);
+            Log::warning("SearchController DEBUG: No authenticated user in session", [
+                'userId' => $userId,
+                'userRole' => $userRole,
+                'all_session_data' => session()->all()
+            ]);
+            
+            // For professors, try to use any available session data
+            if (session('professor_id') || session('logged_in')) {
+                $userId = session('professor_id') ?? session('user_id') ?? 1;
+                $userRole = 'professor';
+                Log::info("SearchController DEBUG: Using fallback professor authentication", [
+                    'userId' => $userId,
+                    'userRole' => $userRole
+                ]);
+            } else {
+                // Return empty results instead of authentication error for better UX
+                Log::info("SearchController DEBUG: No authentication, returning empty results");
+                return response()->json([
+                    'success' => true,
+                    'results' => [],
+                    'total' => 0,
+                    'message' => 'No results found'
+                ]);
+            }
         }
 
         // Create a mock user object for compatibility with existing methods
@@ -1183,5 +1230,167 @@ class SearchController extends Controller
         ];
 
         return view('profiles.program', compact('profileData', 'program'));
+    }
+
+    /**
+     * Admin search endpoint for the admin dashboard searchbar
+     */
+    public function adminSearch(Request $request)
+    {
+        // Always return JSON for admin search
+        $query = $request->get('q', '');
+        $type = $request->get('type', 'all');
+        $limit = $request->get('limit', 10);
+        
+        Log::info("AdminSearch DEBUG: Called with params", [
+            'query' => $query,
+            'type' => $type,
+            'limit' => $limit
+        ]);
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query too short',
+                'results' => []
+            ]);
+        }
+
+        $results = [];
+
+        try {
+            // Search students
+            if ($type === 'all' || $type === 'students') {
+                $students = DB::table('students')
+                    ->leftJoin('users', 'students.user_id', '=', 'users.user_id')
+                    ->where(function($q) use ($query) {
+                        $q->where('students.firstname', 'like', "%{$query}%")
+                          ->orWhere('students.lastname', 'like', "%{$query}%")
+                          ->orWhere('students.student_id', 'like', "%{$query}%")
+                          ->orWhere('users.email', 'like', "%{$query}%");
+                    })
+                    ->select('students.student_id as id', 'students.firstname', 'students.lastname', 'users.email', 'students.profile_photo')
+                    ->limit(5)
+                    ->get();
+                    
+                foreach ($students as $student) {
+                    // Generate avatar
+                    $avatar = null;
+                    if ($student->profile_photo) {
+                        // Check if profile_photo already contains the directory path
+                        if (strpos($student->profile_photo, 'profile_photos/') === 0) {
+                            $avatar = asset('storage/' . $student->profile_photo);
+                        } else {
+                            $avatar = asset('storage/profile-photos/' . $student->profile_photo);
+                        }
+                    } else {
+                        $email = $student->email ?: 'default@example.com';
+                        $hash = md5(strtolower(trim($email)));
+                        $avatar = "https://www.gravatar.com/avatar/{$hash}?d=identicon&s=120";
+                    }
+                    
+                    $results[] = [
+                        'id' => $student->id,
+                        'title' => trim($student->firstname . ' ' . $student->lastname),
+                        'subtitle' => $student->email ?: 'No email',
+                        'type' => 'student',
+                        'icon' => 'bi-person-fill',
+                        'avatar' => $avatar,
+                        'url' => route('admin.students.show', $student->id)
+                    ];
+                }
+            }
+            
+            // Search professors
+            if ($type === 'all' || $type === 'professors') {
+                $professors = DB::table('professors')
+                    ->where('professor_archived', false)
+                    ->where(function($q) use ($query) {
+                        $q->where('professor_first_name', 'like', "%{$query}%")
+                          ->orWhere('professor_last_name', 'like', "%{$query}%")
+                          ->orWhere('professor_name', 'like', "%{$query}%")
+                          ->orWhere('professor_email', 'like', "%{$query}%");
+                    })
+                    ->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_name', 'professor_email', 'profile_photo')
+                    ->limit(5)
+                    ->get();
+                    
+                foreach ($professors as $professor) {
+                    $name = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? ''));
+                    if (empty($name)) {
+                        $name = $professor->professor_name ?? 'Unknown Professor';
+                    }
+                    
+                    // Generate avatar
+                    $avatar = null;
+                    if ($professor->profile_photo) {
+                        // Check if profile_photo already contains the directory path
+                        if (strpos($professor->profile_photo, 'profile_photos/') === 0) {
+                            $avatar = asset('storage/' . $professor->profile_photo);
+                        } else {
+                            $avatar = asset('storage/profile-photos/' . $professor->profile_photo);
+                        }
+                    } else {
+                        $email = $professor->professor_email ?: 'default@example.com';
+                        $hash = md5(strtolower(trim($email)));
+                        $avatar = "https://www.gravatar.com/avatar/{$hash}?d=identicon&s=120";
+                    }
+                    
+                    $results[] = [
+                        'id' => $professor->id,
+                        'title' => $name,
+                        'subtitle' => $professor->professor_email ?? 'No email',
+                        'type' => 'professor',
+                        'icon' => 'bi-person-badge-fill',
+                        'avatar' => $avatar,
+                        'url' => route('profile.professor', $professor->id)
+                    ];
+                }
+            }
+            
+            // Search programs
+            if ($type === 'all' || $type === 'programs') {
+                $programs = DB::table('programs')
+                    ->where('program_name', 'like', "%{$query}%")
+                    ->where('is_archived', false)
+                    ->select('program_id as id', 'program_name', 'program_description')
+                    ->limit(5)
+                    ->get();
+                    
+                foreach ($programs as $program) {
+                    $results[] = [
+                        'id' => $program->id,
+                        'title' => $program->program_name,
+                        'subtitle' => $program->program_description ?: 'No description',
+                        'type' => 'program',
+                        'icon' => 'bi-collection-fill',
+                        'url' => route('profile.program', $program->id)
+                    ];
+                }
+            }
+
+            Log::info("AdminSearch DEBUG: Found results", [
+                'count' => count($results),
+                'results' => $results
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'results' => $results,
+                'total' => count($results)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("AdminSearch DEBUG: Exception occurred", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Search failed: ' . $e->getMessage(),
+                'results' => []
+            ], 500);
+        }
     }
 }

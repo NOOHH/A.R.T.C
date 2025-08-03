@@ -58,6 +58,103 @@ use App\Http\Controllers\Professor\AnnouncementController as ProfessorAnnounceme
 
 // routes/web.php
 
+// Immediate search endpoint - placed at top to avoid middleware conflicts
+Route::get('/search-now', function(\Illuminate\Http\Request $request) {
+    try {
+        $query = $request->get('query', '');
+        $type = $request->get('type', 'all');
+        $limit = (int) $request->get('limit', 10);
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query too short',
+                'results' => []
+            ]);
+        }
+        
+        $results = [];
+        
+        // Direct database queries
+        if ($type === 'all' || $type === 'students') {
+            $students = \Illuminate\Support\Facades\DB::table('students')
+                ->select('student_id as id', 'firstname', 'lastname', 'email')
+                ->where(function($q) use ($query) {
+                    $q->where('firstname', 'LIKE', "%{$query}%")
+                      ->orWhere('lastname', 'LIKE', "%{$query}%")
+                      ->orWhere('email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($students as $student) {
+                $results[] = [
+                    'type' => 'student',
+                    'id' => $student->id,
+                    'name' => $student->firstname . ' ' . $student->lastname,
+                    'email' => $student->email,
+                    'url' => '/profile/user/' . $student->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'professors') {
+            $professors = \Illuminate\Support\Facades\DB::table('professors')
+                ->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_email')
+                ->where(function($q) use ($query) {
+                    $q->where('professor_first_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_last_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($professors as $professor) {
+                $results[] = [
+                    'type' => 'professor',
+                    'id' => $professor->id,
+                    'name' => $professor->professor_first_name . ' ' . $professor->professor_last_name,
+                    'email' => $professor->professor_email,
+                    'url' => '/profile/professor/' . $professor->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'programs') {
+            $programs = \Illuminate\Support\Facades\DB::table('programs')
+                ->select('program_id as id', 'program_name', 'program_description')
+                ->where('program_name', 'LIKE', "%{$query}%")
+                ->limit($limit)
+                ->get();
+                
+            foreach ($programs as $program) {
+                $results[] = [
+                    'type' => 'program',
+                    'id' => $program->id,
+                    'name' => $program->program_name,
+                    'description' => $program->program_description,
+                    'url' => '/profile/program/' . $program->id
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+            'total' => count($results),
+            'message' => count($results) > 0 ? 'Search completed successfully' : 'No results found'
+        ]);
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Search error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false, 
+            'message' => 'Search error: ' . $e->getMessage(), 
+            'results' => []
+        ]);
+    }
+});
+
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\StudentPaymentModalController;
 
@@ -127,6 +224,11 @@ Route::get('/seed-programs', [TestController::class, 'seedPrograms']);
 
 // Test database structure
 Route::get('/test-db-structure', [TestController::class, 'testDatabaseConnection']);
+
+// Test admin quiz creation
+Route::get('/test-admin-quiz', function () {
+    return view('test_admin_quiz');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -260,10 +362,9 @@ Route::get('/programs', function() {
     return redirect()->route('review-programs');
 })->name('programs.index');
 
-// Individual program details
+// Individual program details - redirect to profile
 Route::get('/programs/{id}', function($id) {
-    $program = \App\Models\Program::with('modules')->findOrFail($id);
-    return view('programs.show', compact('program'));
+    return redirect("/profile/program/{$id}");
 })->name('programs.show');
 
 // Enrollment selection
@@ -423,6 +524,13 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     // Enrolled Courses page - NEW
     Route::get('/student/enrolled-courses', [StudentDashboardController::class, 'enrolledCourses'])->name('student.enrolled-courses');
     
+    // Student Analytics page
+    Route::get('/student/analytics', [StudentDashboardController::class, 'analytics'])->name('student.analytics');
+    
+    // Student Profile page
+    Route::get('/student/profile', [StudentController::class, 'profile'])->name('student.profile');
+    Route::put('/student/profile', [StudentController::class, 'updateProfile'])->name('student.profile.update');
+    
     // Paywall route
     Route::get('/student/paywall', [StudentDashboardController::class, 'paywall'])->name('student.paywall');
     
@@ -453,6 +561,12 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     
     // Content view route - moved back inside middleware for authentication
     Route::get('/student/content/{contentId}/view', [StudentDashboardController::class, 'viewContent'])->name('student.content.view');
+    
+    // Quiz routes for students
+    Route::post('/student/quiz/{quizId}/start', [StudentDashboardController::class, 'startQuizAttempt'])->name('student.quiz.start');
+    Route::get('/student/quiz/attempt/{attemptId}/take', [StudentDashboardController::class, 'takeQuiz'])->name('student.quiz.take');
+    Route::post('/student/quiz/attempt/{attemptId}/submit', [StudentDashboardController::class, 'submitQuizAttempt'])->name('student.quiz.submit');
+    Route::get('/student/quiz/attempt/{attemptId}/results', [StudentDashboardController::class, 'showQuizResults'])->name('student.quiz.results');
 }); // END OF MIDDLEWARE GROUP
 
 // Simple test route
@@ -648,28 +762,36 @@ Route::get('/programs', function () {
     return view('programs.index', compact('programs'));
 })->name('programs.index');
 
-// Program details page
+// Program details page - redirect to profile
 Route::get('/programs/{id}', function ($id) {
-    $program = \App\Models\Program::where('program_id', $id)
-                                  ->where('is_archived', false)
-                                  ->with(['modules' => function($query) {
-                                      $query->where('is_archived', false)
-                                            ->orderBy('module_order')
-                                            ->orderBy('module_name');
-                                  }])
-                                  ->firstOrFail();
-    
-    return view('programs.show', compact('program'));
+    return redirect("/profile/program/{$id}");
 })->name('programs.show');
 
 // API endpoint for programs dropdown (for navbar)
 Route::get('/api/programs', function () {
     $programs = \App\Models\Program::where('is_archived', false)
-                                   ->select('program_id', 'program_name', 'program_description')
+                                   ->select('program_id', 'program_name', 'program_description', 'program_image')
                                    ->get();
     
-    return response()->json($programs);
+    return response()->json([
+        'success' => true,
+        'programs' => $programs
+    ]);
 })->name('api.programs');
+
+// API endpoint for individual program
+Route::get('/api/programs/{id}', function ($id) {
+    $program = \App\Models\Program::where('program_id', $id)
+                                  ->where('is_archived', false)
+                                  ->select('program_id', 'program_name', 'program_description', 'program_image')
+                                  ->first();
+    
+    if ($program) {
+        return response()->json($program);
+    } else {
+        return response()->json(['error' => 'Program not found'], 404);
+    }
+})->name('api.programs.show');
 
 // API endpoint for modules by program
 Route::get('/api/programs/{programId}/modules', function ($programId) {
@@ -700,9 +822,13 @@ Route::get('/api/programs/{programId}/modules', function ($programId) {
         $transformedModules = [];
         foreach ($modules as $module) {
             $transformedModules[] = [
+                'modules_id' => $module->modules_id,
                 'module_id' => $module->modules_id,
                 'module_name' => $module->module_name,
+                'id' => $module->modules_id,
+                'name' => $module->module_name,
                 'description' => $module->module_description,
+                'module_description' => $module->module_description,
                 'program_id' => $module->program_id,
                 'courses' => $coursesByModule[$module->modules_id] ?? [],
             ];
@@ -898,7 +1024,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::post('/admin/modules/batch', [AdminModuleController::class, 'batchStore'])->name('admin.modules.batch-store');
     Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])->name('admin.modules.course-content-upload');
     Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])->name('admin.modules.course-content-store');
-    Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive');
+    Route::post('/admin/modules/{module:modules_id}/toggle-archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive');
     Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])->name('admin.modules.batch-delete');
     Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])->name('admin.modules.archived');
     Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
@@ -909,6 +1035,19 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])->name('admin.programs.courses');
     Route::get('/admin/modules/{module}/courses', [AdminModuleController::class, 'getCoursesByModule'])->name('admin.modules.courses');
     Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])->name('admin.modules.batches.by-program');
+    
+    // Archive a module (moved inside middleware group)
+    Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])->name('admin.modules.archive');
+    
+    // New archived content management routes
+    Route::post('/admin/modules/content/{id}/restore', [AdminModuleController::class, 'restoreContent'])->name('admin.modules.content.restore');
+    Route::post('/admin/modules/course/{courseId}/bulk-restore', [AdminModuleController::class, 'bulkRestoreCourseContent'])->name('admin.modules.course.bulk-restore');
+    Route::delete('/admin/modules/content/{id}/delete-archived', [AdminModuleController::class, 'deleteArchivedContent'])->name('admin.modules.content.delete-archived');
+    Route::get('/admin/modules/archived-stats', [AdminModuleController::class, 'getArchivedStats'])->name('admin.modules.archived-stats');
+    
+    // Admin override settings
+    Route::get('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])->name('admin.modules.get-override');
+    Route::patch('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])->name('admin.modules.update-override');
 });
 
 // Test upload route
@@ -921,10 +1060,6 @@ Route::get('/test-endpoint', function() {
     return response()->json(['message' => 'Test endpoint working', 'time' => now()]);
 });
 
-// Toggle archive status
-Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
-     ->name('admin.modules.toggle-archive');
-     
 // Batch delete modules (used only by archived modules view)
 Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])
      ->name('admin.modules.batch-delete');
@@ -949,36 +1084,7 @@ Route::post('/admin/modules/update-order', [AdminModuleController::class, 'updat
 Route::post('/admin/modules/{id}/toggle-admin-override', [AdminModuleController::class, 'toggleAdminOverride'])
      ->name('admin.modules.toggle-admin-override');
 
-// Get batches for a program (AJAX)
-Route::get('/admin/programs/{program}/batches', [AdminModuleController::class, 'getBatchesForProgram'])
-     ->name('admin.programs.batches');
-
-// Get courses for a program (AJAX)
-Route::get('/admin/programs/{program}/courses', [AdminModuleController::class, 'getCoursesForProgram'])
-     ->name('admin.programs.courses');
-
-// Get courses by module ID (AJAX)
-Route::get('/admin/modules/{module}/courses', [AdminModuleController::class, 'getCoursesByModule'])
-     ->name('admin.modules.courses');
-
-// Get batches by program ID (AJAX)
-Route::get('/admin/modules/batches/{programId}', [AdminModuleController::class, 'getBatchesByProgram'])
-     ->name('admin.modules.batches.by-program');
-
-// Archive a module
-Route::post('/admin/modules/{id}/archive', [AdminModuleController::class, 'archive'])
-     ->name('admin.modules.archive');
-
-// Admin override settings
-Route::get   ('/admin/modules/{id}/override', [AdminModuleController::class, 'getOverrideSettings'])
-     ->name('admin.modules.get-override');
-Route::patch ('/admin/modules/{id}/override', [AdminModuleController::class, 'updateOverride'])
-     ->name('admin.modules.update-override');
-
-// Admin side API routes
-Route::get('admin/programs/{program}/batches',   [AdminModuleController::class, 'getBatchesForProgram']);
-Route::get('admin/programs/{program}/courses',   [AdminModuleController::class, 'getCoursesForProgram']);
-
+// These duplicate routes are now inside the admin.director.auth middleware group above
 
 // Admin Courses Routes
 Route::middleware(['admin.auth'])->group(function () {
@@ -1000,10 +1106,12 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.courses.update-order');
     Route::post('/admin/courses/move', [AdminCourseController::class, 'moveCourse'])
          ->name('admin.courses.move');
+    Route::post('/admin/courses/{id}/archive', [AdminCourseController::class, 'archive'])
+         ->name('admin.courses.archive');
 });
 
 // Admin Content Routes
-Route::middleware(['admin.auth'])->group(function () {
+Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/modules/{id}', [AdminModuleController::class, 'getModule'])
          ->name('admin.modules.get');
     Route::get('/admin/modules/{moduleId}/content', [AdminModuleController::class, 'getModuleContent'])
@@ -1024,6 +1132,8 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.content.move');
     Route::post('/admin/content/move-to-module', [AdminModuleController::class, 'moveContentToModule'])
          ->name('admin.content.move-to-module');
+    Route::post('/admin/content/{id}/archive', [AdminModuleController::class, 'archiveContent'])
+         ->name('admin.content.archive');
 });
 
 // Admin Packages Routes
@@ -1057,10 +1167,46 @@ Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'res
      ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
-Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
-     ->name('admin.quiz-generator');
-Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
-     ->name('admin.quiz-generator.generate');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/quiz-generator', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'index'])
+         ->name('admin.quiz-generator');
+    
+    // AJAX endpoints for form data
+    Route::get('/admin/quiz-generator/modules/{programId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getModulesByProgram']);
+    Route::get('/admin/quiz-generator/courses/{moduleId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getCoursesByModule']);
+    Route::get('/admin/quiz-generator/contents/{courseId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getContentByCourse']);
+    
+    // AI Question Generation
+    Route::post('/admin/quiz-generator/generate-ai-questions', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generateAIQuestions']);
+    
+    // Quiz CRUD operations
+    Route::post('/admin/quiz-generator/save', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'save']);
+    Route::post('/admin/quiz-generator/save-quiz', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'saveQuizWithQuestions']);
+    Route::post('/admin/quiz-generator/save-manual', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'saveManualQuiz']);
+    Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'updateQuiz']);
+    Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz']);
+    
+    // Edit routes for admin quiz management
+    Route::get('/admin/quiz-generator/{quiz}/edit', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'editQuestions'])->name('admin.quiz.edit');
+    Route::put('/admin/quiz-generator/{quiz}/questions/{question}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'updateQuestion'])->name('admin.quiz.question.update');
+    
+    // Status management routes
+    Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish']);
+    Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive']);
+    Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft']);
+    Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete']);
+    Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview']);
+    Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal']);
+    Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions']);
+    
+    // Test route for quiz save functionality
+    Route::get('/admin/test-quiz-save', function () {
+        return view('test-quiz-save');
+    });
+});
+
+// Admin search route (GET version for admin dashboard) - handles auth internally
+Route::get('/admin/search', [SearchController::class, 'adminSearch'])->name('admin.search');
 
 // Chat routes
 Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
@@ -1235,8 +1381,118 @@ Route::get('/chat/history/{user_id}', [ChatController::class, 'getChatHistory'])
 Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])->name('chat.send-message');
 Route::post('/chat/save-message', [ChatController::class, 'saveChatMessage'])->name('chat.save-message');
 
-// Enhanced Search functionality routes
+// Enhanced Search functionality routes - handle auth internally
 Route::get('/search', [SearchController::class, 'search'])->name('search');
+Route::get('/ajax/search', [SearchController::class, 'search'])->name('ajax.search'); // AJAX-specific route
+
+// Direct search route that completely bypasses middleware and session issues
+Route::get('/direct-search', function(\Illuminate\Http\Request $request) {
+    try {
+        $query = $request->get('query', '');
+        $type = $request->get('type', 'all');
+        $limit = $request->get('limit', 10);
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query too short',
+                'results' => []
+            ]);
+        }
+        
+        $results = [];
+        
+        // Direct database queries without any authentication checks
+        if ($type === 'all' || $type === 'students') {
+            $students = \Illuminate\Support\Facades\DB::table('students')
+                ->select('student_id as id', 'firstname', 'lastname', 'email')
+                ->where(function($q) use ($query) {
+                    $q->where('firstname', 'LIKE', "%{$query}%")
+                      ->orWhere('lastname', 'LIKE', "%{$query}%")
+                      ->orWhere('email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($students as $student) {
+                $results[] = [
+                    'type' => 'student',
+                    'id' => $student->id,
+                    'name' => $student->firstname . ' ' . $student->lastname,
+                    'email' => $student->email,
+                    'url' => '/profile/user/' . $student->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'professors') {
+            $professors = \Illuminate\Support\Facades\DB::table('professors')
+                ->select('professor_id as id', 'professor_first_name', 'professor_last_name', 'professor_email')
+                ->where(function($q) use ($query) {
+                    $q->where('professor_first_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_last_name', 'LIKE', "%{$query}%")
+                      ->orWhere('professor_email', 'LIKE', "%{$query}%");
+                })
+                ->limit($limit)
+                ->get();
+                
+            foreach ($professors as $professor) {
+                $results[] = [
+                    'type' => 'professor',
+                    'id' => $professor->id,
+                    'name' => $professor->professor_first_name . ' ' . $professor->professor_last_name,
+                    'email' => $professor->professor_email,
+                    'url' => '/profile/professor/' . $professor->id
+                ];
+            }
+        }
+        
+        if ($type === 'all' || $type === 'programs') {
+            $programs = \Illuminate\Support\Facades\DB::table('programs')
+                ->select('program_id as id', 'program_name', 'program_description')
+                ->where('program_name', 'LIKE', "%{$query}%")
+                ->limit($limit)
+                ->get();
+                
+            foreach ($programs as $program) {
+                $results[] = [
+                    'type' => 'program',
+                    'id' => $program->id,
+                    'name' => $program->program_name,
+                    'description' => $program->program_description,
+                    'url' => '/profile/program/' . $program->id
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+            'total' => count($results),
+            'message' => count($results) > 0 ? 'Search completed successfully' : 'No results found'
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Search error: ' . $e->getMessage(), 
+            'results' => []
+        ]);
+    }
+})->name('direct.search'); // Direct search route that bypasses all middleware
+
+Route::get('/test-ajax-search', function(\Illuminate\Http\Request $request) {
+    try {
+        $controller = new \App\Http\Controllers\SearchController();
+        return $controller->search($request);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Search error: ' . $e->getMessage(), 
+            'results' => []
+        ]);
+    }
+})->name('test.ajax.search'); // Test route that calls search controller directly
 Route::get('/search/advanced', [SearchController::class, 'advancedSearch'])->name('search.advanced');
 Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('search.suggestions');
 
@@ -1310,7 +1566,8 @@ Route::get('/admin/analytics/subjects', [AdminAnalyticsController::class, 'getSu
      ->name('admin.analytics.subjects');
 
 Route::get('/admin/analytics/programs', [AdminAnalyticsController::class, 'getPrograms'])
-     ->name('admin.analytics.programs');
+     ->name('admin.analytics.programs')
+     ->middleware(['admin.director.auth']);
 
 Route::get('/admin/analytics/student/{id}', [AdminAnalyticsController::class, 'getStudentDetail'])
      ->name('admin.analytics.student');
@@ -1327,7 +1584,8 @@ Route::get('/admin/analytics/subject-report', [AdminAnalyticsController::class, 
 
 // Board Passer Routes  
 Route::get('/admin/analytics/students-list', [AdminAnalyticsController::class, 'getStudentsList'])
-     ->name('admin.analytics.students-list');
+     ->name('admin.analytics.students-list')
+     ->middleware(['admin.director.auth']);
 Route::get('/admin/analytics/board-exams', [AdminAnalyticsController::class, 'getBoardExams'])
      ->name('admin.analytics.board-exams');
 Route::post('/admin/analytics/upload-board-passers', [AdminAnalyticsController::class, 'uploadBoardPassers'])
@@ -1426,6 +1684,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/students/archived', [AdminStudentListController::class, 'archived'])->name('admin.students.archived');
     Route::post('/admin/students/{id}/archive', [AdminStudentListController::class, 'archive'])->name('admin.students.archive');
     Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
+    Route::post('/admin/students/{student}/disapprove', [AdminStudentListController::class, 'disapprove'])->name('admin.students.disapprove');
     // Admin: Show a single student profile
     Route::get('/admin/students/{student}', [App\Http\Controllers\AdminStudentListController::class, 'show'])->name('admin.students.show');
 });
@@ -1531,9 +1790,20 @@ Route::post('/admin/payment-history/{paymentHistoryId}/undo', [App\Http\Controll
 Route::get('/admin/submissions', [AdminController::class, 'viewSubmissions'])
      ->name('admin.submissions');
 
-// Grade assignment submission
+// Assignment submissions (alias for admin.submissions)
+Route::get('/admin/assignment-submissions', [AdminController::class, 'viewSubmissions'])
+     ->name('admin.assignment-submissions');
+
+// Grade assignment submission (both endpoints)
 Route::post('/admin/submissions/{id}/grade', [AdminController::class, 'gradeSubmission'])
      ->name('admin.submissions.grade');
+
+Route::post('/admin/assignments/submissions/{id}/grade', [AdminController::class, 'gradeSubmission'])
+     ->name('admin.assignments.submissions.grade');
+
+// Download assignment submission
+Route::get('/admin/assignments/submissions/{id}/download', [AdminController::class, 'downloadSubmission'])
+     ->name('admin.assignments.download-submission');
 
 /*
 |--------------------------------------------------------------------------
@@ -1604,6 +1874,12 @@ Route::middleware(['professor.auth'])
     Route::put('/profile', [ProfessorDashboardController::class, 'updateProfile'])
          ->name('profile.update');
     
+    // Profile Photo Management
+    Route::post('/profile/photo', [ProfessorDashboardController::class, 'updateProfilePhoto'])
+         ->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfessorDashboardController::class, 'removeProfilePhoto'])
+         ->name('profile.photo.remove');
+    
     // Student Management
     // My batches (only those this prof owns)
     Route::get(
@@ -1642,33 +1918,13 @@ Route::middleware(['professor.auth'])
     Route::post('/meetings/{meeting}/finish', [\App\Http\Controllers\ProfessorMeetingController::class, 'finish'])
          ->name('meetings.finish');
     
-    // Additional professor routes for meetings/settings
-    Route::get('/settings', [ProfessorDashboardController::class, 'settings'])
-         ->name('settings');
-    Route::put('/settings', [ProfessorDashboardController::class, 'updateSettings'])
-         ->name('settings.update');
-    
-    // Enhanced Grading Management
-    Route::get('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'index'])
-         ->name('grading');
-    Route::post('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'store'])
-         ->name('grading.store');
-    Route::get('/grading/student/{student}', [\App\Http\Controllers\Professor\GradingController::class, 'studentDetails'])
-         ->name('grading.student-details');
-    Route::post('/grading/assignment/{student}/{assignment}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeAssignment'])
-         ->name('grading.assignment');
-    Route::post('/grading/activity/{student}/{activity}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeActivity'])
-         ->name('grading.activity');
-    Route::post('/grading/quiz/{student}/{quiz}', [\App\Http\Controllers\Professor\GradingController::class, 'gradeQuiz'])
-         ->name('grading.quiz');
-    Route::post('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignment'])
-         ->name('assignments.create');
-    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])
-         ->name('assignments.create');
-    Route::post('/activities/create', [\App\Http\Controllers\Professor\GradingController::class, 'createActivity'])
-         ->name('activities.create');
-    Route::post('/grading/export', [\App\Http\Controllers\Professor\GradingController::class, 'exportGrades'])
-         ->name('grading.export');
+    // Additional professor routes for meetings/settings (redirected to profile)
+    Route::get('/settings', function() {
+        return redirect()->route('professor.profile');
+    })->name('settings');
+    Route::put('/settings', function() {
+        return redirect()->route('professor.profile');
+    })->name('settings.update');
     
     // Chat routes
     Route::post('/chat/send', [\App\Http\Controllers\Professor\ChatController::class, 'sendMessage'])
@@ -1728,9 +1984,7 @@ Route::middleware(['professor.auth'])
     Route::put('/quiz-generator/update-quiz/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuizWithQuestions'])
          ->name('quiz-generator.update-quiz');
     
-    // Quiz edit and preview routes
-    Route::get('/quiz-generator/edit/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'editQuiz'])
-         ->name('quiz-generator.edit');
+    // Quiz preview route
     Route::get('/quiz-generator/preview/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'previewQuiz'])
          ->name('quiz-generator.preview');
     
@@ -1745,8 +1999,6 @@ Route::middleware(['professor.auth'])
          ->name('quiz-generator.draft');
     Route::delete('/quiz-generator/{quiz}/delete', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'deleteQuiz'])
          ->name('quiz-generator.delete');
-    Route::get('/quiz-generator/edit/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuizForEdit'])
-         ->name('quiz-generator.edit');
          
     // Temporary test route without authentication
     Route::post('/quiz-generator/test-generate', function(\Illuminate\Http\Request $request) {
@@ -1800,6 +2052,8 @@ Route::middleware(['professor.auth'])
     // This route is accessed from the front-end JavaScript
     Route::get('courses/{course}/edit', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'editCourse'])
          ->name('courses.edit');
+    Route::put('courses/{course}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'updateCourse'])
+         ->name('courses.update');
     // Professor Courses Store Route (for Blade form action)
     Route::post('courses', [\App\Http\Controllers\Professor\ProfessorCourseController::class, 'store'])
          ->name('courses.store');
@@ -1811,6 +2065,16 @@ Route::middleware(['professor.auth'])
          ->name('content.update');
     Route::delete('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'deleteContent'])
          ->name('content.delete');
+    
+    // Additional content management routes
+    Route::get('/content/{id}/view', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'viewContent'])
+         ->name('content.view');
+    Route::get('/content/{id}/edit', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'editContent'])
+         ->name('content.edit');
+    Route::post('/content/{id}/archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archiveContent'])
+         ->name('content.archive');
+    Route::post('/courses/{id}/archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archiveCourse'])
+         ->name('courses.archive');
     
     // Test file extraction route
     Route::post('/quiz-generator/test-file-extraction', function(\Illuminate\Http\Request $request) {
@@ -1912,19 +2176,13 @@ Route::middleware(['professor.auth'])
         $quizzes = \App\Models\Quiz::with('questions')->orderBy('created_at', 'desc')->get();
         return response()->json(['quizzes' => $quizzes]);
     });
-    Route::put('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'update'])
-         ->name('grading.update');
-    Route::delete('/grading/{grade}', [\App\Http\Controllers\ProfessorGradingController::class, 'destroy'])
-         ->name('grading.destroy');
-    Route::get('/grading/student/{student}', [\App\Http\Controllers\ProfessorGradingController::class, 'studentDetails'])
-         ->name('grading.student');
     Route::post('/quiz-generator/save-manual', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'saveManualQuiz'])
          ->name('quiz-generator.save-manual');
+    Route::put('/quiz-generator/update-quiz/{quiz}', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'updateQuiz'])
+         ->name('quiz-generator.update-quiz');
     Route::post('/quiz-generator/question/options', [\App\Http\Controllers\Professor\QuizGeneratorController::class, 'getQuestionOptions'])
          ->name('quiz-generator.question.options');
     // ...existing professor routes...
-    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])->name('grading.auto-grade-quizzes');
-    Route::get('/assignments/create', [\App\Http\Controllers\Professor\GradingController::class, 'createAssignmentForm'])->name('assignments.create');
     
     // Professor Announcements Routes
     Route::get('/announcements', [ProfessorAnnouncementController::class, 'index'])
@@ -1951,6 +2209,24 @@ Route::middleware(['professor.auth'])
          ->name('submissions.download');
     Route::post('/submissions/{id}/grade', [\App\Http\Controllers\Professor\SubmissionController::class, 'gradeSubmission'])
          ->name('submissions.grade');
+
+    // Professor Grading Routes
+    Route::get('/grading', [\App\Http\Controllers\Professor\GradingController::class, 'index'])
+         ->name('grading');
+    Route::get('/grading/student/{student}', [\App\Http\Controllers\Professor\GradingController::class, 'studentDetails'])
+         ->name('grading.student');
+    Route::get('/grading/student-details/{enrollment}', [\App\Http\Controllers\Professor\GradingController::class, 'studentDetails'])
+         ->name('grading.student-details');
+    Route::post('/grading/store', [\App\Http\Controllers\Professor\GradingController::class, 'store'])
+         ->name('grading.store');
+    Route::put('/grading/{grade}', [\App\Http\Controllers\Professor\GradingController::class, 'update'])
+         ->name('grading.update');
+    Route::delete('/grading/{grade}', [\App\Http\Controllers\Professor\GradingController::class, 'destroy'])
+         ->name('grading.destroy');
+    Route::post('/grading/auto-grade-quizzes', [\App\Http\Controllers\Professor\GradingController::class, 'autoGradeQuizzes'])
+         ->name('grading.auto-grade-quizzes');
+    Route::get('/grading/export', [\App\Http\Controllers\Professor\GradingController::class, 'export'])
+         ->name('grading.export');
 });
 
 // API routes for student and professor data
@@ -2742,6 +3018,201 @@ Route::post('/test-set-session', function(\Illuminate\Http\Request $request) {
 // Admin Enrollments
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/enrollments', [AdminProgramController::class, 'enrollmentManagement'])->name('admin.enrollments.index');
+
+// API routes for enrollment form
+Route::get('/api/modules/{moduleId}/courses', function($moduleId) {
+    try {
+        $courses = \App\Models\Course::where('module_id', $moduleId)
+            ->where('is_archived', false)
+            ->orderBy('subject_name')
+            ->get(['subject_id', 'subject_name']);
+            
+        return response()->json([
+            'success' => true,
+            'courses' => $courses
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+});
+
+// Test enrollment form
+Route::get('/test-enrollment-form', function () {
+    return view('test-enrollment');
+});
+
+// Test route for creating enrollment
+Route::get('/test-create-enrollment', function () {
+    try {
+        // Get a real student and program for testing
+        $student = \App\Models\Student::where('is_archived', false)
+            ->whereNotNull('date_approved')
+            ->first();
+            
+        $program = \App\Models\Program::where('is_archived', false)->first();
+        $batch = \App\Models\StudentBatch::first();
+        $package = \App\Models\Package::where('program_id', $program->program_id)->first();
+        
+        if (!$student || !$program || !$batch || !$package) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Missing required data',
+                'data' => [
+                    'student' => $student ? 'found' : 'missing',
+                    'program' => $program ? 'found' : 'missing',
+                    'batch' => $batch ? 'found' : 'missing',
+                    'package' => $package ? 'found' : 'missing'
+                ]
+            ]);
+        }
+        
+        // Check if enrollment already exists
+        $existingEnrollment = \App\Models\Enrollment::where([
+            'student_id' => $student->student_id,
+            'program_id' => $program->program_id
+        ])->first();
+        
+        if ($existingEnrollment) {
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Student already enrolled',
+                'enrollment_id' => $existingEnrollment->enrollment_id
+            ]);
+        }
+        
+        // Create the enrollment
+        $enrollment = \App\Models\Enrollment::create([
+            'student_id' => $student->student_id,
+            'program_id' => $program->program_id,
+            'package_id' => $package->package_id,
+            'batch_id' => $batch->batch_id,
+            'enrollment_type' => 'full',
+            'learning_mode' => 'online',
+            'enrollment_status' => 'enrolled',
+            'payment_status' => 'pending',
+            'amount' => $package->package_price ?? 0,
+            'enrollment_date' => now()
+        ]);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Enrollment created successfully',
+            'enrollment_id' => $enrollment->enrollment_id,
+            'data' => [
+                'student' => $student->firstname . ' ' . $student->lastname,
+                'program' => $program->program_name,
+                'package' => $package->package_name,
+                'batch' => $batch->batch_name
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+    }
+});
+
+// Test route for enrollment assignment
+Route::get('/test-enrollment-assignment', function () {
+    try {
+        // Get available data
+        $students = \App\Models\Student::where('is_archived', false)
+            ->whereNotNull('date_approved')
+            ->get(['student_id', 'firstname', 'lastname', 'email']);
+            
+        $programs = \App\Models\Program::where('is_archived', false)->get(['program_id', 'program_name']);
+        $batches = \App\Models\StudentBatch::get(['batch_id', 'batch_name', 'start_date']);
+        $packages = \App\Models\Package::get(['package_id', 'package_name', 'program_id']);
+        
+        $response = [
+            'status' => 'success',
+            'data_available' => [
+                'students' => $students->count(),
+                'programs' => $programs->count(),
+                'batches' => $batches->count(),
+                'packages' => $packages->count()
+            ],
+            'sample_data' => [
+                'student' => $students->first() ? [
+                    'id' => $students->first()->student_id,
+                    'name' => $students->first()->firstname . ' ' . $students->first()->lastname,
+                    'email' => $students->first()->email
+                ] : null,
+                'program' => $programs->first() ? [
+                    'id' => $programs->first()->program_id,
+                    'name' => $programs->first()->program_name
+                ] : null,
+                'batch' => $batches->first() ? [
+                    'id' => $batches->first()->batch_id,
+                    'name' => $batches->first()->batch_name
+                ] : null,
+                'package' => $packages->first() ? [
+                    'id' => $packages->first()->package_id,
+                    'name' => $packages->first()->package_name
+                ] : null
+            ]
+        ];
+        
+        // Test if we can create a sample enrollment assignment
+        if ($students->count() > 0 && $programs->count() > 0 && $batches->count() > 0 && $packages->count() > 0) {
+            $existingEnrollment = \App\Models\Enrollment::where([
+                'student_id' => $students->first()->student_id,
+                'program_id' => $programs->first()->program_id
+            ])->first();
+            
+            $response['enrollment_test'] = [
+                'can_enroll' => !$existingEnrollment,
+                'existing_enrollment' => $existingEnrollment ? $existingEnrollment->enrollment_id : null
+            ];
+        }
+        
+        return response()->json($response);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+    }
+});
+
+// Test route for enrollment management
+Route::get('/test-enrollment-management', function () {
+    try {
+        $controller = new \App\Http\Controllers\AdminProgramController();
+        $result = $controller->enrollmentManagement();
+        
+        if ($result instanceof \Illuminate\View\View) {
+            return [
+                'status' => 'success',
+                'view_name' => $result->getName(),
+                'data_keys' => array_keys($result->getData()),
+                'students_count' => $result->getData()['students']->count(),
+                'programs_count' => $result->getData()['programs']->count(),
+                'batches_count' => $result->getData()['batches']->count(),
+                'courses_count' => $result->getData()['courses']->count(),
+            ];
+        } else {
+            return ['status' => 'error', 'message' => 'Invalid response type'];
+        }
+    } catch (\Exception $e) {
+        return [
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ];
+    }
+});
     // ...add any other /admin/enrollments routes here...
 });
 
@@ -2755,4 +3226,135 @@ Route::middleware(['admin.director.auth'])->group(function () {
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
+});
+
+// Quiz score fix routes
+Route::get('/admin/fix-quiz-score/{attemptId}', [App\Http\Controllers\FixQuizSubmissionController::class, 'fixAttemptScore']);
+Route::get('/admin/fix-all-quiz-scores', [App\Http\Controllers\FixQuizSubmissionController::class, 'fixAllAttempts']);
+
+// Temporary test route for quiz generator
+Route::get('/test-quiz-link', function () {
+    return view('test-quiz-link');
+})->name('test.quiz.link');
+
+// Admin quiz management test route
+Route::get('/admin-quiz-test', function () {
+    // Set admin session for testing
+    session(['user_id' => 1, 'logged_in' => true, 'user_role' => 'admin']);
+    
+    $csrfToken = csrf_token();
+    
+    return view('admin-quiz-test', compact('csrfToken'));
+})->name('admin.quiz.test');
+
+// Quick quiz status API for testing
+Route::get('/api/quiz-status-summary', function () {
+    $quizzes = \App\Models\Quiz::with(['program'])->orderBy('created_at', 'desc')->get();
+    
+    $summary = [];
+    foreach ($quizzes as $quiz) {
+        $creator = 'Unknown';
+        if ($quiz->admin_id) {
+            $admin = \App\Models\Admin::find($quiz->admin_id);
+            $creator = "Admin: " . ($admin ? $admin->admin_name : "ID {$quiz->admin_id}");
+        } elseif ($quiz->professor_id) {
+            $prof = \App\Models\Professor::find($quiz->professor_id);
+            $creator = "Professor: " . ($prof ? $prof->professor_first_name . ' ' . $prof->professor_last_name : "ID {$quiz->professor_id}");
+        }
+        
+        $summary[] = [
+            'quiz_id' => $quiz->quiz_id,
+            'title' => $quiz->quiz_title,
+            'status' => $quiz->status,
+            'creator' => $creator,
+            'program' => $quiz->program ? $quiz->program->program_name : 'N/A',
+            'created_at' => $quiz->created_at->format('M d, Y H:i'),
+        ];
+    }
+    
+    return response()->json([
+        'total_quizzes' => count($summary),
+        'quizzes' => $summary,
+        'timestamp' => now()->format('Y-m-d H:i:s')
+    ]);
+})->name('api.quiz.status');
+
+// Debug route for authentication issues
+Route::get('/admin/debug/auth', [App\Http\Controllers\Admin\DebugController::class, 'authDebug'])
+     ->name('admin.debug.auth');
+
+// Test route for archive debugging
+Route::get('/test-archive', function() {
+    return view('test-archive');
+});
+
+// Auth debug route
+Route::get('/debug-auth', function() {
+    // Start PHP session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $data = [
+        'php_session' => $_SESSION ?? [],
+        'laravel_session' => session()->all(),
+        'auth_user' => Auth::user(),
+        'auth_director' => Auth::guard('director')->user(),
+        'auth_admin' => Auth::guard('admin')->user(),
+        'request_headers' => request()->headers->all(),
+        'middleware_check' => [
+            'php_logged_in' => isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'],
+            'php_user_type' => $_SESSION['user_type'] ?? null,
+            'laravel_logged_in' => session('logged_in') && session('user_id'),
+            'laravel_user_role' => session('user_role'),
+        ]
+    ];
+    
+    return response()->json($data, 200, [], JSON_PRETTY_PRINT);
+});
+
+// Test archive route (protected)
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::post('/test-archive-endpoint/{id}', function($id) {
+        try {
+            $controller = new \App\Http\Controllers\AdminModuleController();
+            $response = $controller->archive($id);
+            return $response;
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    });
+});
+
+// Test auth routes with middleware
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/test/auth', [App\Http\Controllers\Admin\TestAuthController::class, 'checkAuth']);
+    Route::post('/admin/test/save', [App\Http\Controllers\Admin\TestAuthController::class, 'testSave']);
+});
+
+// Test routes for debugging (no middleware)
+Route::get('/simulate-admin-login', [App\Http\Controllers\AuthTestController::class, 'simulateAdminLogin']);
+Route::post('/test-archive-auth/{id}', [App\Http\Controllers\AuthTestController::class, 'testArchiveWithAuth']);
+
+// Force logout and re-login for testing
+Route::get('/force-relogin', function() {
+    // Clear all sessions
+    Auth::logout();
+    Auth::guard('admin')->logout();
+    Auth::guard('director')->logout();
+    Auth::guard('professor')->logout();
+    session()->flush();
+    session()->regenerate();
+    
+    // Clear PHP session
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    session_destroy();
+    
+    return redirect('/login')->with('message', 'Logged out. Please login again to test.');
 });

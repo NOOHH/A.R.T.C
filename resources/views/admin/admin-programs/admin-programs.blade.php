@@ -7,29 +7,18 @@
 <link rel="stylesheet" href="{{ asset('css/admin/admin-programs/admin-programs.css') }}?v={{ time() }}">
 @endpush
 
+@push('scripts')
+<script>
+    // Pass session data to JavaScript
+    window.sessionSuccess = @json(session('success'));
+    window.sessionError = @json(session('error'));
+</script>
+@endpush
+
 @section('content')
-<!-- Display messages -->
-@if(session('success'))
-    <div class="success-message">{{ session('success') }}</div>
-@endif
-
-@if(session('error'))
-    <div class="error-message">{{ session('error') }}</div>
-@endif
-
-@if($errors->any())
-    <div class="error-message">
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-
 <!-- Analytics Cards Section -->
 <div class="analytics-cards">
-    <div class="analytics-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="analytics-card" style="background: #e3f2fd;">
         <div class="card-icon">🎓</div>
         <div class="card-content">
             <div class="card-number">{{ $totalPrograms ?? 0 }}</div>
@@ -44,7 +33,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: linear-gradient(135deg, #635664 0%, #eeeeee 100%);">
+    <div class="analytics-card" style="background: #f3e5f5;">
         <div class="card-icon">👥</div>
         <div class="card-content">
             <div class="card-number">{{ $totalEnrollments ?? 0 }}</div>
@@ -59,7 +48,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+    <div class="analytics-card" style="background: #e8f5e8;">
         <div class="card-icon">📚</div>
         <div class="card-content">
             <div class="card-number">{{ $activePrograms ?? 0 }}</div>
@@ -74,7 +63,7 @@
         </div>
     </div>
 
-    <div class="analytics-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+    <div class="analytics-card" style="background: #fff3e0;">
         <div class="card-icon">📈</div>
         <div class="card-content">
             <div class="card-number">{{ number_format($avgEnrollmentPerProgram ?? 0, 1) }}</div>
@@ -101,9 +90,6 @@
                     <a href="{{ route('admin.programs.archived') }}" class="view-archived-btn">
                         📁 View Archived
                     </a>
-                    <button type="button" class="add-module-btn batch-upload-btn" id="showBatchModal">
-                        📤 Batch Upload
-                    </button>
                 </div>
             </div>
 
@@ -121,7 +107,7 @@
 
                         <div class="program-actions">
                             <button type="button" class="view-enrollees-btn" data-program-id="{{ $program->program_id }}">
-                                👥 View Enrollees
+                                👥 <span style="color: black;">View Enrollees</span>
                             </button>
                             <button type="button" class="archive-btn" data-program-id="{{ $program->program_id }}">
                                 📁 Archive
@@ -230,12 +216,32 @@
 
 <!-- Add Program Modal -->
 <div class="modal-bg" id="addModalBg">
-    <div class="modal">
+    <div class="custom-modal">
         <h3>Create New Program</h3>
-        <form action="{{ route('admin.programs.store') }}" method="POST">
+        <form action="{{ route('admin.programs.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <input type="text" name="program_name" placeholder="Program Name" required>
             <textarea name="program_description" placeholder="Program Description" rows="4" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            
+            <!-- Program Image Upload -->
+            <div class="image-upload-section" style="margin: 15px 0;">
+                <label for="program_image" style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">
+                    Program Image (Optional)
+                </label>
+                <input type="file" 
+                       name="program_image" 
+                       id="program_image" 
+                       accept="image/*"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+                <small style="color: #666; font-size: 0.85em;">Recommended: 400x300px, max 2MB (JPG, PNG, WEBP)</small>
+                
+                <!-- Image Preview -->
+                <div id="imagePreview" style="margin-top: 10px; display: none;">
+                    <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #ddd;">
+                    <button type="button" id="removeImage" style="display: block; margin-top: 5px; background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer;">Remove Image</button>
+                </div>
+            </div>
+            
             <div class="modal-actions">
                 <button type="button" class="cancel-btn" id="cancelAddModal">Cancel</button>
                 <button type="submit" class="add-btn">Add Program</button>
@@ -246,7 +252,7 @@
 
 <!-- Enrollments Modal -->
 <div class="modal-bg" id="enrollmentsModal">
-    <div class="modal">
+    <div class="custom-modal">
         <h3>Enrolled Students</h3>
         <div class="loading" id="loadingMessage">Loading enrollments...</div>
         <ul id="enrollmentsList" style="display: none;"></ul>
@@ -256,39 +262,7 @@
     </div>
 </div>
 
-<!-- Batch Upload Modal -->
-<div class="modal-bg" id="batchModalBg">
-    <div class="modal" style="max-width: 600px; width: 90vw;">
-        <h3>Batch Upload Programs</h3>
-        <div class="file-upload-info">
-            <strong>CSV Format Required:</strong><br>
-            Column 1: Program Name (required)<br>
-            Column 2: Program Description (optional)<br>
-            <em>Example: "Web Development","Learn HTML, CSS, and JavaScript"</em>
-        </div>
-        
-        <form action="{{ route('admin.programs.batch-store') }}"
-              method="POST"
-              enctype="multipart/form-data"
-              id="batchProgramForm">
-            @csrf
-            
-            <div style="margin: 20px 0;">
-                <label for="csvFile"><strong>Select CSV File:</strong></label>
-                <input type="file" 
-                       id="csvFile" 
-                       name="csv_file" 
-                       accept=".csv"
-                       required>
-            </div>
 
-            <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelBatchModal">Cancel</button>
-                <button type="submit" class="add-btn">Upload Programs</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 
 @endsection
@@ -296,5 +270,54 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ asset('admin/admin-programs.js') }}?v={{ time() }}"></script>
+
+<script>
+// Image preview functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('program_image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const removeImageBtn = document.getElementById('removeImage');
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select a valid image file.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validate file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Image size must be less than 2MB.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+
+        // Remove image functionality
+        removeImageBtn.addEventListener('click', function() {
+            imageInput.value = '';
+            imagePreview.style.display = 'none';
+            previewImg.src = '';
+        });
+    }
+});
+</script>
 @endpush
 

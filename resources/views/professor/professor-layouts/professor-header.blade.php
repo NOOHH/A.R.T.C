@@ -25,7 +25,6 @@
         </button>
         
         <!-- Mobile Profile Icon -->
-        <div class="profile-icon">👤</div>
     </div>
 </header>
   

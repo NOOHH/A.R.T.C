@@ -14,6 +14,7 @@ class Quiz extends Model
 
     protected $fillable = [
         'professor_id',
+        'admin_id',
         'program_id',
         'module_id',
         'course_id', 
@@ -31,6 +32,9 @@ class Quiz extends Model
         'instant_feedback',
         'show_correct_answers',
         'max_attempts',
+        'due_date',
+        'infinite_retakes',
+        'has_deadline',
         'randomize_order',
         'randomize_mc_options',
         'tags',
@@ -42,9 +46,12 @@ class Quiz extends Model
         'allow_retakes' => 'boolean',
         'instant_feedback' => 'boolean',
         'show_correct_answers' => 'boolean',
+        'infinite_retakes' => 'boolean',
+        'has_deadline' => 'boolean',
         'randomize_order' => 'boolean',
         'randomize_mc_options' => 'boolean',
         'tags' => 'array',
+        'due_date' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -57,6 +64,16 @@ class Quiz extends Model
     public function program()
     {
         return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    public function module()
+    {
+        return $this->belongsTo(Module::class, 'module_id', 'modules_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'subject_id');
     }
 
     public function questions()

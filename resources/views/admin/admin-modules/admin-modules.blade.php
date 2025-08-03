@@ -3,7 +3,6 @@
 @section('title', 'Modules')
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="{{ asset('css/admin/admin-modules.css') }}" rel="stylesheet">
 @endpush
@@ -222,6 +221,31 @@
     transition: all 0.3s ease;
   }
   
+  /* Mobile Course Header */
+  @media (max-width: 768px) {
+    .course-header {
+      padding: 1.2rem 1.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    
+    .course-header h5 {
+      font-size: 1.1rem;
+      line-height: 1.3;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .course-header {
+      padding: 1rem 1.2rem;
+    }
+    
+    .course-header h5 {
+      font-size: 1rem;
+    }
+  }
+  
   .course-header:hover {
     background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
   }
@@ -252,6 +276,39 @@
     border: 1px solid #e9ecef;
     border-radius: 10px;
     transition: all 0.3s ease;
+  }
+  
+  /* Mobile Content Items */
+  @media (max-width: 768px) {
+    .content-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.2rem 1rem;
+    }
+    
+    .content-item-info {
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+    
+    .content-item:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .content-item {
+      padding: 1rem 0.8rem;
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+    }
+    
+    .content-item-info {
+      gap: 0.6rem;
+    }
   }
   
   .content-item:hover {
@@ -571,7 +628,7 @@
           <div class="action-btn-group">
             <button class="action-btn-green" onclick="showAddCourseModal({{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-plus-circle"></i> Add Course</button>
             <button class="action-btn-green" onclick="editModule({{ $module->modules_id }})"><i class="bi bi-pencil"></i></button>
-            <button class="action-btn-green" onclick="deleteModule({{ $module->modules_id }})"><i class="bi bi-trash"></i></button>
+            <button class="action-btn-green" onclick="archiveModule({{ $module->modules_id }})"><i class="bi bi-archive"></i></button>
             <button class="action-btn-green" onclick="openOverrideModal('module', {{ $module->modules_id }}, '{{ $escapedModuleName }}')"><i class="bi bi-sliders"></i> Override Settings</button>
           </div>
         </div>
@@ -840,9 +897,29 @@ function loadModuleContentInViewer(moduleId) {
     subtitleElement.textContent = 'Fetching module details';
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
-    // Fetch module content
-    fetch(`/admin/modules/${moduleId}/content`)
-        .then(response => response.json())
+    // Fetch module content with proper headers
+    fetch(`/admin/modules/${moduleId}/content`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON - authentication may have expired');
+            }
+            
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 titleElement.textContent = data.module.module_name;
@@ -899,9 +976,29 @@ function loadCourseContentInViewer(moduleId, courseId) {
     subtitleElement.textContent = 'Fetching course content';
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
-    // Fetch course content
-    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`)
-        .then(response => response.json())
+    // Fetch course content with proper headers
+    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON - authentication may have expired');
+            }
+            
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 titleElement.textContent = data.course.course_name;
@@ -966,14 +1063,52 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
     const subtitleElement = document.getElementById('content-subtitle');
     const viewerBody = document.getElementById('contentViewer');
     
+    // Handle quiz content specially
+    if (contentType === 'quiz') {
+        titleElement.textContent = contentTitle || 'Quiz';
+        subtitleElement.textContent = `QUIZ • Course ID: ${courseId}`;
+        viewerBody.innerHTML = `
+            <div class="content-display">
+                <div class="quiz-preview">
+                    <h5><i class="bi bi-question-circle"></i> Quiz Content</h5>
+                    <p><strong>Quiz:</strong> ${contentTitle}</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Quiz content cannot be previewed here. 
+                        Use the Quiz Generator or Quiz Management tools to view and edit quiz content.
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ route('admin.quiz-generator') }}" class="btn btn-primary" target="_blank">
+                            <i class="bi bi-pencil-square"></i> Manage Quizzes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
     // Show loading state
     titleElement.textContent = 'Loading Content...';
     subtitleElement.textContent = 'Fetching content details';
     viewerBody.innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
     // Fetch content details
-    fetch(`/admin/content/${contentId}`)
-        .then(response => response.json())
+    fetch(`/admin/content/${contentId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 const content = data.content;
@@ -1533,7 +1668,24 @@ function loadContentInViewer(contentId, contentType, contentTitle, moduleId, cou
         })
         .catch(error => {
             console.error('Error loading content:', error);
-            viewerBody.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+            titleElement.textContent = 'Error Loading Content';
+            subtitleElement.textContent = `Content ID: ${contentId}`;
+            
+            let errorMessage = 'Error loading content';
+            if (error.message.includes('404')) {
+                errorMessage = 'Content not found (404). This content may have been deleted or moved.';
+            } else if (error.message.includes('500')) {
+                errorMessage = 'Server error (500). Please try again later or contact support.';
+            } else if (error.message.includes('403')) {
+                errorMessage = 'Access denied (403). You may not have permission to view this content.';
+            }
+            
+            viewerBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> ${errorMessage}
+                    <br><small class="text-muted">Error details: ${error.message}</small>
+                </div>
+            `;
         });
 }
 window.loadContentInViewer = loadContentInViewer;
@@ -1602,10 +1754,9 @@ function displayCourses(moduleId, courses) {
                     <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">
                         <div class="action-btn-group">
                             <button class="action-btn-green" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')"><i class="bi bi-plus"></i> Add Content</button>
-                            @php $escapedCourseName = isset($course) ? addslashes($course->subject_name) : ''; @endphp
-                            <button class="action-btn-green" onclick="editCourse({{ isset($course) ? $course->subject_id : '' }})"><i class="bi bi-pencil"></i></button>
-                            <button class="action-btn-green" onclick="deleteCourse({{ isset($course) ? $course->subject_id : '' }})"><i class="bi bi-trash"></i></button>
-                            <button class="action-btn-green" onclick="openOverrideModal('course', {{ isset($course) ? $course->subject_id : '' }}, '{{ $escapedCourseName }}')"><i class="bi bi-sliders"></i> Override Settings</button>
+                            <button class="action-btn-green" onclick="editCourse(${course.subject_id})"><i class="bi bi-pencil"></i></button>
+                            <button class="action-btn-green" onclick="archiveCourse(${course.subject_id})"><i class="bi bi-archive"></i></button>
+                            <button class="action-btn-green" onclick="openOverrideModal('course', ${course.subject_id}, '${course.subject_name.replace(/'/g, "\\'")}')"><i class="bi bi-sliders"></i> Override Settings</button>
                         </div>
                     </div>
                 </div>
@@ -1630,11 +1781,32 @@ function loadCourseContent(moduleId, courseId) {
     
     container.innerHTML = '<div class="text-center p-3"><i class="bi bi-arrow-clockwise fa-spin"></i> Loading content...</div>';
     
-    fetch(`/admin/courses/${courseId}/content`)
-        .then(response => response.json())
+    // Use the correct API endpoint with proper headers
+    fetch(`/admin/modules/${moduleId}/courses/${courseId}/content`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned HTML instead of JSON - authentication may have expired');
+            }
+            
+            return response.json();
+        })
         .then(data => {
-            if (data.success && data.content) {
-                displayCourseContent(moduleId, courseId, data.content);
+            if (data.success && data.content_items) {
+                displayCourseContent(moduleId, courseId, data.content_items);
                 container.dataset.loaded = 'true';
             } else {
                 container.innerHTML = `
@@ -1649,7 +1821,18 @@ function loadCourseContent(moduleId, courseId) {
         })
         .catch(error => {
             console.error('Error loading content:', error);
-            container.innerHTML = '<div class="alert alert-danger">Error loading content</div>';
+            
+            // Enhanced error handling for mobile
+            let errorMessage = 'Error loading content';
+            if (error.message.includes('authentication')) {
+                errorMessage = 'Session expired. Please refresh the page.';
+            } else if (error.message.includes('HTTP 404')) {
+                errorMessage = 'Content not found.';
+            } else if (error.message.includes('HTTP 403')) {
+                errorMessage = 'Access denied.';
+            }
+            
+            container.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
         });
 }
 
@@ -1690,7 +1873,7 @@ function displayCourseContent(moduleId, courseId, contentItems) {
                     <div class="action-btn-group">
                         <button class="action-btn-green" onclick="loadContentInViewer(${item.id}, '${item.content_type}', '${item.content_title}', ${moduleId}, ${courseId})" title="View Content"><i class="bi bi-eye"></i></button>
                         <button class="action-btn-green" onclick="editContent(${item.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="action-btn-green" onclick="deleteContent(${item.id})"><i class="bi bi-trash"></i></button>
+                        <button class="action-btn-green" onclick="archiveContent(${item.id})"><i class="bi bi-archive"></i></button>
                         @php $escapedContentTitle = isset($item) ? addslashes($item->content_title) : ''; @endphp
                         <button class="action-btn-green" onclick="openOverrideModal('content', ${item.id}, '${item.content_title}')"><i class="bi bi-sliders"></i> Override Settings</button>
                     </div>
@@ -1853,6 +2036,104 @@ function editModule(moduleId) {
         });
 }
 
+// Global variables to store the module ID and name for archiving
+let moduleToArchiveId = null;
+let moduleToArchiveName = null;
+
+// Open the archive confirmation modal
+function openArchiveModal(moduleId, moduleName) {
+    moduleToArchiveId = moduleId;
+    moduleToArchiveName = moduleName;
+    
+    // Set the module name in the modal
+    document.getElementById('archiveModuleName').textContent = moduleName;
+    
+    // Show the modal
+    document.getElementById('archiveConfirmationModal').classList.add('show');
+}
+
+// Close the archive confirmation modal
+function closeArchiveModal() {
+    document.getElementById('archiveConfirmationModal').classList.remove('show');
+    moduleToArchiveId = null;
+    moduleToArchiveName = null;
+}
+
+// Confirm and execute the archive action
+function confirmArchive() {
+    if (!moduleToArchiveId) {
+        showNotification('No module selected for archiving', 'error');
+        closeArchiveModal();
+        return;
+    }
+    
+    // Show loading state
+    const archiveBtn = document.querySelector('#archiveConfirmationModal .add-btn');
+    const originalText = archiveBtn.textContent;
+    archiveBtn.disabled = true;
+    archiveBtn.textContent = 'Archiving...';
+    
+    fetch(`/admin/modules/${moduleToArchiveId}/archive`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        closeArchiveModal();
+        
+        if (data.success) {
+            showNotification('Module archived successfully!', 'success');
+            // Reload the page to reflect changes
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to archive module', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        closeArchiveModal();
+        showNotification(`An error occurred: ${error.message}`, 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        archiveBtn.disabled = false;
+        archiveBtn.textContent = originalText;
+    });
+}
+
+// Replace the existing archiveModule function with this one that uses the modal
+function archiveModule(moduleId, moduleName = '') {
+    // If module name wasn't provided, try to get it from the DOM
+    if (!moduleName) {
+        const moduleElement = document.querySelector(`[data-module-id="${moduleId}"]`);
+        if (moduleElement) {
+            const titleElement = moduleElement.querySelector('.module-title-section h4');
+            if (titleElement) {
+                moduleName = titleElement.textContent.trim();
+            }
+        }
+        
+        // Default name if we couldn't find it
+        if (!moduleName) {
+            moduleName = `Module #${moduleId}`;
+        }
+    }
+    
+    // Open the confirmation modal
+    openArchiveModal(moduleId, moduleName);
+}
+
 function toggleModule(moduleId) {
     const content = document.getElementById(`module-content-${moduleId}`);
     const icon = content.previousElementSibling.querySelector('.module-toggle-icon');
@@ -1900,8 +2181,24 @@ function updateModuleDetails(moduleId, newName, newDescription) {
 }
 
 function editCourse(courseId) {
+    // Check if courseId is valid
+    if (!courseId || courseId === 'undefined') {
+        alert('Error: Invalid course ID');
+        console.error('editCourse called with invalid courseId:', courseId);
+        return;
+    }
+    
     // Implementation for editing course
-    fetch(`/admin/courses/${courseId}`)
+    fetch(`/admin/courses/${courseId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1969,25 +2266,42 @@ function updateCourseDetails(courseId, courseData) {
     });
 }
 
-function deleteCourse(courseId) {
-    if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-        fetch(`/admin/courses/${courseId}`, {
-            method: 'DELETE',
+function archiveCourse(courseId) {
+    // Check if courseId is valid
+    if (!courseId || courseId === 'undefined') {
+        alert('Error: Invalid course ID');
+        console.error('archiveCourse called with invalid courseId:', courseId);
+        return;
+    }
+    
+    if (confirm('Are you sure you want to archive this course? Archived courses can be restored later.')) {
+        fetch(`/admin/courses/${courseId}/archive`, {
+            method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
+                showAlert('Course archived successfully!', 'success');
                 location.reload();
             } else {
-                alert('Error: ' + (data.message || 'Failed to delete course'));
+                alert('Error: ' + (data.message || 'Failed to archive course'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting the course');
+            alert('An error occurred while archiving the course: ' + error.message);
         });
     }
 }
@@ -2080,25 +2394,35 @@ function editContent(contentId) {
         });
 }
 
-function deleteContent(contentId) {
-    if (confirm('Are you sure you want to delete this content? This action cannot be undone.')) {
-        fetch(`/admin/content/${contentId}`, {
-            method: 'DELETE',
+function archiveContent(contentId) {
+    if (confirm('Are you sure you want to archive this content? Archived content can be restored later.')) {
+        fetch(`/admin/content/${contentId}/archive`, {
+            method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
+                showAlert('Content archived successfully!', 'success');
                 location.reload();
             } else {
-                alert('Error: ' + (data.message || 'Failed to delete content'));
+                alert('Error: ' + (data.message || 'Failed to archive content'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting the content');
+            alert('An error occurred while archiving the content: ' + error.message);
         });
     }
 }
@@ -2120,6 +2444,7 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: 150,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
+            fallbackOnBody: true, // << add this
             onEnd: function(evt) {
                 const moduleIds = Array.from(modulesContainer.children).map(el => 
                     el.getAttribute('data-module-id')
@@ -3286,19 +3611,6 @@ window.saveOverrideSettings = function() {
     if (typeof showNotification === 'function') showNotification('Override settings saved!', 'success');
 };
 
-// --- Archive Button Fix ---
-window.archiveModule = function(moduleId, moduleName) {
-    // Show archive confirmation modal and set module name/id
-    document.getElementById('archiveModuleName').textContent = moduleName;
-    document.getElementById('archiveConfirmationModal').classList.add('show');
-    window.confirmArchive = function() {
-        // Implement AJAX or form submission to archive the module
-        // ...
-        document.getElementById('archiveConfirmationModal').classList.remove('show');
-        if (typeof showNotification === 'function') showNotification('Module archived!', 'success');
-    };
-};
-
 
 planSelect.addEventListener('change', updateBatchVisibility);
 programSelect.addEventListener('change', function() {
@@ -3359,18 +3671,8 @@ window.saveOverrideSettings = function() {
     if (typeof showNotification === 'function') showNotification('Override settings saved!', 'success');
 };
 
-// --- Archive Button Fix ---
-window.archiveModule = function(moduleId, moduleName) {
-    // Show archive confirmation modal and set module name/id
-    document.getElementById('archiveModuleName').textContent = moduleName;
-    document.getElementById('archiveConfirmationModal').classList.add('show');
-    window.confirmArchive = function() {
-        // Implement AJAX or form submission to archive the module
-        // ...
-        document.getElementById('archiveConfirmationModal').classList.remove('show');
-        if (typeof showNotification === 'function') showNotification('Module archived!', 'success');
-    };
-};
+// REMOVED: Conflicting Archive Button Fix that was overwriting the working archiveModule function
+// The proper archiveModule function is defined earlier in the file around line 1910
 
 // Before submitting the addModuleForm, remove the batch_id field if plan is not 'full'
 document.getElementById('addModuleForm').addEventListener('submit', function(e) {

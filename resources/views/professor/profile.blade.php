@@ -74,153 +74,6 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="phone" class="form-label">Phone Number</label>
-                                <input type="tel" 
-                                       class="form-control profile-input @error('phone') is-invalid @enderror" 
-                                       id="phone" 
-                                       name="phone" 
-                                       value="{{ old('phone', $professor->dynamic_data['phone'] ?? '') }}" 
-                                       readonly
-                                       placeholder="+1 (555) 123-4567">
-                                @error('phone')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Professional Information -->
-                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-4">
-                        <i class="bi bi-briefcase me-2"></i>Professional Information
-                    </h6>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="title" class="form-label">Professional Title</label>
-                                <input type="text" 
-                                       class="form-control profile-input @error('title') is-invalid @enderror" 
-                                       id="title" 
-                                       name="title" 
-                                       value="{{ old('title', $professor->dynamic_data['title'] ?? '') }}" 
-                                       readonly
-                                       placeholder="e.g., Associate Professor, Senior Lecturer">
-                                @error('title')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="specialization" class="form-label">Specialization</label>
-                                <input type="text" 
-                                       class="form-control profile-input @error('specialization') is-invalid @enderror" 
-                                       id="specialization" 
-                                       name="specialization" 
-                                       value="{{ old('specialization', $professor->dynamic_data['specialization'] ?? '') }}" 
-                                       readonly
-                                       placeholder="e.g., Computer Science, Mathematics">
-                                @error('specialization')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="experience_years" class="form-label">Years of Experience</label>
-                                <input type="number" 
-                                       class="form-control profile-input @error('experience_years') is-invalid @enderror" 
-                                       id="experience_years" 
-                                       name="experience_years" 
-                                       value="{{ old('experience_years', $professor->dynamic_data['experience_years'] ?? '') }}" 
-                                       readonly
-                                       min="0" 
-                                       max="50">
-                                @error('experience_years')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="education" class="form-label">Highest Education</label>
-                                <select class="form-select profile-input @error('education') is-invalid @enderror" 
-                                        id="education" 
-                                        name="education" 
-                                        disabled>
-                                    <option value="">Select Education Level</option>
-                                    <option value="bachelor" {{ old('education', $professor->dynamic_data['education'] ?? '') === 'bachelor' ? 'selected' : '' }}>Bachelor's Degree</option>
-                                    <option value="master" {{ old('education', $professor->dynamic_data['education'] ?? '') === 'master' ? 'selected' : '' }}>Master's Degree</option>
-                                    <option value="doctorate" {{ old('education', $professor->dynamic_data['education'] ?? '') === 'doctorate' ? 'selected' : '' }}>Doctorate/PhD</option>
-                                    <option value="other" {{ old('education', $professor->dynamic_data['education'] ?? '') === 'other' ? 'selected' : '' }}>Other</option>
-                                </select>
-                                @error('education')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Contact & Social Links -->
-                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-4">
-                        <i class="bi bi-link-45deg me-2"></i>Contact & Social Links
-                    </h6>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="linkedin" class="form-label">LinkedIn Profile</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-linkedin"></i></span>
-                                    <input type="url" 
-                                           class="form-control profile-input @error('linkedin') is-invalid @enderror" 
-                                           id="linkedin" 
-                                           name="linkedin" 
-                                           value="{{ old('linkedin', $professor->dynamic_data['linkedin'] ?? '') }}" 
-                                           readonly
-                                           placeholder="https://linkedin.com/in/username">
-                                </div>
-                                @error('linkedin')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="website" class="form-label">Personal Website</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-globe"></i></span>
-                                    <input type="url" 
-                                           class="form-control profile-input @error('website') is-invalid @enderror" 
-                                           id="website" 
-                                           name="website" 
-                                           value="{{ old('website', $professor->dynamic_data['website'] ?? '') }}" 
-                                           readonly
-                                           placeholder="https://yourwebsite.com">
-                                </div>
-                                @error('website')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="bio" class="form-label">Professional Bio</label>
-                        <textarea class="form-control profile-input @error('bio') is-invalid @enderror" 
-                                  id="bio" 
-                                  name="bio" 
-                                  rows="4" 
-                                  readonly
-                                  placeholder="Brief description of your professional background, expertise, and teaching philosophy...">{{ old('bio', $professor->dynamic_data['bio'] ?? '') }}</textarea>
-                        @error('bio')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
 
                     <!-- Dynamic Fields -->
@@ -277,7 +130,7 @@
                     @endif
 
                     <!-- Action Buttons -->
-                    <div class="d-flex justify-content-end mt-4" id="actionButtons" style="display: none !important;">
+                    <div class="d-flex justify-content-end mt-4" id="actionButtons" style="display: none;">
                         <button type="button" class="btn btn-secondary me-2" onclick="cancelEdit()">
                             <i class="bi bi-x-circle me-1"></i>Cancel
                         </button>
@@ -292,54 +145,50 @@
 
     <!-- Sidebar Info -->
     <div class="col-lg-4">
-        <!-- Quick Stats -->
+        <!-- Profile Photo -->
         <div class="card mb-4">
             <div class="card-header">
                 <h6 class="mb-0">
-                    <i class="bi bi-graph-up me-2"></i>Quick Stats
+                    <i class="bi bi-camera me-2"></i>Profile Photo
                 </h6>
             </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6">
-                        <div class="border-end">
-                            <h4 class="text-primary mb-0">{{ $professor->programs->count() }}</h4>
-                            <small class="text-muted">Programs</small>
+            <div class="card-body text-center">
+                <div class="position-relative d-inline-block mb-3">
+                    @if($professor->profile_photo)
+                        <img src="{{ asset('storage/' . $professor->profile_photo) }}" 
+                             alt="Profile Photo" 
+                             class="rounded-circle" 
+                             style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #e9ecef;">
+                    @else
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 120px; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 2.5rem;">
+                            <i class="bi bi-person"></i>
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <h4 class="text-success mb-0">{{ $professor->batches->count() }}</h4>
-                        <small class="text-muted">Batches</small>
-                    </div>
+                    @endif
                 </div>
-            </div>
-        </div>
-
-        <!-- Assigned Programs -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="bi bi-collection me-2"></i>Assigned Programs
-                </h6>
-            </div>
-            <div class="card-body">
-                @if($professor->programs->count() > 0)
-                    @foreach($professor->programs as $program)
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="badge bg-primary me-2">{{ $program->program_name }}</span>
-                            @if($program->pivot && $program->pivot->video_link)
-                                <a href="{{ $program->pivot->video_link }}" 
-                                   target="_blank" 
-                                   class="btn btn-sm btn-outline-success ms-auto"
-                                   title="Meeting Link">
-                                    <i class="bi bi-camera-video"></i>
-                                </a>
-                            @endif
-                        </div>
-                    @endforeach
-                @else
-                    <p class="text-muted mb-0">No programs assigned yet.</p>
-                @endif
+                <form method="POST" action="{{ route('professor.profile.photo.update') }}" enctype="multipart/form-data" id="photoForm">
+                    @csrf
+                    <div class="mb-3">
+                        <input type="file" 
+                               class="form-control @error('profile_photo') is-invalid @enderror" 
+                               id="profile_photo" 
+                               name="profile_photo" 
+                               accept="image/*"
+                               onchange="previewPhoto(this)">
+                        @error('profile_photo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Max file size: 2MB. Allowed: JPG, PNG, GIF</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload me-1"></i>Update Photo
+                    </button>
+                    @if($professor->profile_photo)
+                        <button type="button" class="btn btn-outline-danger btn-sm ms-2" onclick="removePhoto()">
+                            <i class="bi bi-trash me-1"></i>Remove
+                        </button>
+                    @endif
+                </form>
             </div>
         </div>
 
@@ -421,163 +270,51 @@ function cancelEdit() {
     // Reset form to original values
     document.getElementById('profileForm').reset();
 }
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Find the current profile image or placeholder
+            const currentImg = input.closest('.card-body').querySelector('img, .rounded-circle');
+            if (currentImg.tagName === 'IMG') {
+                currentImg.src = e.target.result;
+            } else {
+                // Replace placeholder with actual image
+                const imgElement = document.createElement('img');
+                imgElement.src = e.target.result;
+                imgElement.alt = 'Profile Photo';
+                imgElement.className = 'rounded-circle';
+                imgElement.style.cssText = 'width: 120px; height: 120px; object-fit: cover; border: 3px solid #e9ecef;';
+                currentImg.parentNode.replaceChild(imgElement, currentImg);
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removePhoto() {
+    if (confirm('Are you sure you want to remove your profile photo?')) {
+        fetch('{{ route("professor.profile.photo.remove") }}', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error removing photo: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while removing the photo.');
+        });
+    }
+}
 </script>
 @endpush
-                            <input type="email" 
-                                   class="form-control @error('email') is-invalid @enderror" 
-                                   id="email" 
-                                   name="email" 
-                                   value="{{ old('email', $professor->email) }}" 
-                                   required>
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Dynamic Additional Fields -->
-                        @if(isset($dynamicFields) && $dynamicFields->count() > 0)
-                        <hr>
-                        <h6 class="mb-3">Additional Information</h6>
-                        
-                        @foreach($dynamicFields as $field)
-                            <div class="mb-3">
-                                <label for="dynamic_{{ $field->field_name }}" class="form-label">
-                                    {{ $field->display_name }} 
-                                    @if($field->is_required) * @endif
-                                </label>
-                                
-                                @if($field->field_type === 'text')
-                                    <input type="text" 
-                                           class="form-control @error('dynamic.'.$field->field_name) is-invalid @enderror" 
-                                           id="dynamic_{{ $field->field_name }}" 
-                                           name="dynamic[{{ $field->field_name }}]" 
-                                           value="{{ old('dynamic.'.$field->field_name, $professor->dynamic_data[$field->field_name] ?? '') }}"
-                                           {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'textarea')
-                                    <textarea class="form-control @error('dynamic.'.$field->field_name) is-invalid @enderror" 
-                                              id="dynamic_{{ $field->field_name }}" 
-                                              name="dynamic[{{ $field->field_name }}]" 
-                                              rows="3"
-                                              {{ $field->is_required ? 'required' : '' }}>{{ old('dynamic.'.$field->field_name, $professor->dynamic_data[$field->field_name] ?? '') }}</textarea>
-                                @elseif($field->field_type === 'select')
-                                    <select class="form-select @error('dynamic.'.$field->field_name) is-invalid @enderror" 
-                                            id="dynamic_{{ $field->field_name }}" 
-                                            name="dynamic[{{ $field->field_name }}]"
-                                            {{ $field->is_required ? 'required' : '' }}>
-                                        <option value="">Choose...</option>
-                                        @if($field->field_options)
-                                            @foreach(json_decode($field->field_options, true) as $option)
-                                                <option value="{{ $option }}" 
-                                                        {{ (old('dynamic.'.$field->field_name, $professor->dynamic_data[$field->field_name] ?? '') == $option) ? 'selected' : '' }}>
-                                                    {{ $option }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                @elseif($field->field_type === 'email')
-                                    <input type="email" 
-                                           class="form-control @error('dynamic.'.$field->field_name) is-invalid @enderror" 
-                                           id="dynamic_{{ $field->field_name }}" 
-                                           name="dynamic[{{ $field->field_name }}]" 
-                                           value="{{ old('dynamic.'.$field->field_name, $professor->dynamic_data[$field->field_name] ?? '') }}"
-                                           {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'phone')
-                                    <input type="tel" 
-                                           class="form-control @error('dynamic.'.$field->field_name) is-invalid @enderror" 
-                                           id="dynamic_{{ $field->field_name }}" 
-                                           name="dynamic[{{ $field->field_name }}]" 
-                                           value="{{ old('dynamic.'.$field->field_name, $professor->dynamic_data[$field->field_name] ?? '') }}"
-                                           {{ $field->is_required ? 'required' : '' }}>
-                                @elseif($field->field_type === 'date')
-                                    <input type="date" 
-                                           class="form-control @error('dynamic.'.$field->field_name) is-invalid @enderror" 
-                                           id="dynamic_{{ $field->field_name }}" 
-                                           name="dynamic[{{ $field->field_name }}]" 
-                                           value="{{ old('dynamic.'.$field->field_name, $professor->dynamic_data[$field->field_name] ?? '') }}"
-                                           {{ $field->is_required ? 'required' : '' }}>
-                                @endif
-                                
-                                @if($field->help_text)
-                                    <div class="form-text">{{ $field->help_text }}</div>
-                                @endif
-                                
-                                @error('dynamic.'.$field->field_name)
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        @endforeach
-                        @endif
-                        
-                        <hr>
-                        
-                        <h6 class="mb-3">Change Password</h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">New Password</label>
-                                    <input type="password" 
-                                           class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" 
-                                           name="password">
-                                    <div class="form-text">Leave empty to keep current password</div>
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">Confirm New Password</label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="password_confirmation" 
-                                           name="password_confirmation">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-lg me-2"></i>Update Profile
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Account Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-3">
-                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" 
-                             style="width: 80px; height: 80px;">
-                            <i class="bi bi-person-fill text-white" style="font-size: 2rem;"></i>
-                        </div>
-                        <h5 class="mt-3 mb-1">{{ $professor->full_name }}</h5>
-                        <small class="text-muted">Professor</small>
-                    </div>
-                    
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <strong>Email:</strong><br>
-                            <small class="text-muted">{{ $professor->email }}</small>
-                        </li>
-                        <li class="mb-2">
-                            <strong>Professor ID:</strong><br>
-                            <small class="text-muted">#{{ $professor->professor_id }}</small>
-                        </li>
-                        <li class="mb-2">
-                            <strong>Assigned Programs:</strong><br>
-                            <small class="text-muted">{{ $professor->programs->count() }} program(s)</small>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection

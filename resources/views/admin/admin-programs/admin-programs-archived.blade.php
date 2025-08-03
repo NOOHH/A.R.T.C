@@ -6,198 +6,392 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ asset('css/admin/admin-programs.css') }}">
+@endpush
+
+@push('scripts')
+<script>
+    // Pass session data to JavaScript
+    window.sessionSuccess = @json(session('success'));
+    window.sessionError = @json(session('error'));
+</script>
+@endpush
+
+@push('styles')
 <style>
-  /* Main wrapper */
+  /* Professional Design Overhaul for Archived Programs */
+  body {
+    background: #f8fafc !important;
+    overflow-x: hidden;
+  }
+  
   .main-content-wrapper {
     align-items: flex-start !important;
-  }
-
-  /* Container */
-  .programs-container {
-    background: #fff;
-    padding: 40px 20px 60px;
-    margin: 40px 0 0 0;
-    max-width: 1400px;
+    overflow-x: hidden;
     width: 100%;
-    box-sizing: border-box;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    max-width: 100vw;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
   }
 
-  /* Header with Bootstrap approach */
+  /* Modern Professional Container */
+  .programs-container {
+    background: #ffffff;
+    padding: 32px;
+    margin: 20px auto;
+    max-width: 1200px;
+    width: calc(100% - 40px);
+    box-sizing: border-box;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+    overflow: visible;
+  }
+
+  /* Professional Header */
+  .programs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+
   .programs-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #6c757d;
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: #1e293b;
     margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .programs-header h1::before {
+    content: '📁';
+    font-size: 2rem;
+    opacity: 0.8;
   }
 
   .back-to-programs-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #3b82f6;
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 50px;
-    font-size: 1rem;
-    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.2s ease;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-  }
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15);
   }
 
   .back-to-programs-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    color: white;
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
     text-decoration: none;
+    color: white;
   }
 
-  /* Programs grid */
+  /* Stats Summary Cards */
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Modern Grid Layout */
   .programs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
     margin-bottom: 40px;
   }
 
-  /* Program card - archived styling */
+  /* Professional Program Cards */
   .program-card {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 15px;
-    padding: 25px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
     transition: all 0.3s ease;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
     position: relative;
-    opacity: 0.7;
-    border-left: 5px solid #6c757d;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .program-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #64748b;
   }
 
   .program-card:hover {
-    opacity: 1;
-    transform: translateY(-5px);
+    transform: translateY(-4px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: #c7d2fe;
   }
 
   .program-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #6c757d;
-    margin-bottom: 15px;
-    line-height: 1.3;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .program-title::after {
+    content: '📋';
+    opacity: 0.6;
+  }
+
+  .program-description {
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .program-stats {
-    margin-bottom: 20px;
-  }
-
-  .enrollment-count {
-    color: #6c757d;
-    font-size: 0.95rem;
-    background: rgba(108, 117, 125, 0.1);
-    padding: 8px 12px;
-    border-radius: 20px;
-    display: inline-block;
-  }
-
-  .program-actions {
     display: flex;
-    gap: 10px;
+    gap: 16px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
   }
 
-  .view-enrollees-btn, .unarchive-btn, .delete-program-btn {
-    padding: 8px 15px;
+  .stat-item {
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .enrollment-count {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .modules-count {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  /* Professional Action Buttons */
+  .program-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  .action-btn {
+    padding: 8px 16px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    min-height: 36px;
   }
 
-  .view-enrollees-btn {
-    background: #17a2b8;
+  .view-btn {
+    background: #0ea5e9;
     color: white;
   }
-  .view-enrollees-btn:hover {
-    background: #138496;
-    transform: scale(1.05);
+
+  .view-btn:hover {
+    background: #0284c7;
+    color: white;
+    text-decoration: none;
   }
 
-  .unarchive-btn {
-    background: #28a745;
+  .restore-btn {
+    background: #10b981;
     color: white;
   }
-  .unarchive-btn:hover {
-    background: #218838;
-    transform: scale(1.05);
+
+  .restore-btn:hover {
+    background: #059669;
+    color: white;
+    text-decoration: none;
   }
 
-  .delete-program-btn {
-    background: #dc3545;
+  .delete-btn {
+    background: #ef4444;
     color: white;
   }
-  .delete-program-btn:hover {
-    background: #c82333;
-    transform: scale(1.05);
+
+  .delete-btn:hover {
+    background: #dc2626;
+    color: white;
+    text-decoration: none;
   }
 
-  /* Empty state */
+  /* Empty State Design */
   .no-programs {
     text-align: center;
-    padding: 60px 20px;
-    color: #6c757d;
-    font-size: 1.1rem;
+    padding: 80px 20px;
+    color: #64748b;
   }
-  .no-programs::before {
-    content: '📁';
-    display: block;
-    font-size: 3rem;
-    margin-bottom: 15px;
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
     opacity: 0.5;
   }
 
-  /* Messages */
-  .success-message, .error-message {
-    padding: 15px;
+  .empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+  }
+
+  .empty-message {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  /* Alert Messages */
+  .alert-modern {
+    padding: 16px 20px;
     border-radius: 8px;
-    margin-bottom: 20px;
-    font-weight: 500;
+    margin-bottom: 24px;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
-  .success-message {
-    background: #d4edda;
-    color: #155724;
-    border-left: 4px solid #28a745;
+  .alert-success {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
   }
 
-  .error-message {
-    background: #f8d7da;
-    color: #721c24;
-    border-left: 4px solid #dc3545;
+  .alert-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
   }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .programs-container {
+      padding: 20px;
+      margin: 10px;
+      width: calc(100% - 20px);
+    }
+
+    .programs-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      text-align: left;
+    }
+
+    .programs-header h1 {
+      font-size: 1.8rem;
+    }
+
+    .programs-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .stats-summary {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .program-stats {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .program-actions {
+      flex-direction: column;
+    }
+
+    .action-btn {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .programs-container {
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .programs-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .program-card {
+      padding: 16px;
+    }
+  }
+
 
   .error-message ul {
     margin: 0;
@@ -349,57 +543,98 @@
     margin-right: 10px;
     transform: scale(1.2);
   }
+
+  /* Toast notification styles */
+  .toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .toast-notification.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-left: 4px solid #28a745;
+  }
+
+  .toast-notification.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-left: 4px solid #dc3545;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
 </style>
 @endpush
 
 @section('content')
-<!-- Display messages -->
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
-@if($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show">
-        <ul class="mb-0">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
 
 <div class="programs-container">
-    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
-        <h1 class="display-4 fw-bold text-uppercase text-muted mb-0" style="letter-spacing: 2px;">Archived Programs</h1>
-        <div class="d-flex gap-3 align-items-center">
-            <a href="{{ route('admin.programs.index') }}" class="btn btn-lg text-white fw-semibold px-4 py-2 rounded-pill shadow back-to-programs-btn">
-                <i class="fas fa-arrow-left me-2"></i>Back to Programs
+    <!-- Professional Header -->
+    <div class="programs-header">
+        <div>
+            <h1>Archived Programs</h1>
+            <p class="header-subtitle">Manage and review archived programs</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ route('admin.programs.index') }}" class="action-btn action-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Programs</span>
             </a>
         </div>
     </div>
 
-    <!-- Batch Actions -->
+    <!-- Stats Summary -->
     @if($archivedPrograms->count() > 0)
-    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded-3 border">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="selectAllPrograms" onchange="toggleSelectAll()">
-            <label class="form-check-label fw-semibold" for="selectAllPrograms">
-                Select All Programs
-            </label>
+    <div class="stats-summary">
+        <div class="stat-item">
+            <div class="stat-value">{{ $archivedPrograms->count() }}</div>
+            <div class="stat-label">Archived Programs</div>
         </div>
-        <button type="button" class="btn btn-danger fw-semibold" id="batchDeleteBtn" onclick="batchDeletePrograms()">
-            <i class="fas fa-trash me-2"></i>Delete Selected
+        <div class="stat-item">
+            <div class="stat-value">{{ $archivedPrograms->sum('enrollments_count') ?? 0 }}</div>
+            <div class="stat-label">Total Past Enrollments</div>
+        </div>
+    </div>
+
+    <!-- Batch Actions -->
+    <div class="batch-actions">
+        <div class="batch-selection">
+            <input type="checkbox" id="selectAllPrograms" onchange="toggleSelectAll()">
+            <label for="selectAllPrograms">Select All Programs</label>
+        </div>
+        <button type="button" class="action-btn action-btn-danger" id="batchDeleteBtn" onclick="batchDeletePrograms()">
+            <i class="fas fa-trash"></i>
+            <span>Delete Selected</span>
         </button>
     </div>
     @endif
@@ -407,49 +642,56 @@
     <div class="programs-grid">
         @forelse($archivedPrograms as $program)
             <div class="program-card">
-                <div class="archived-badge">ARCHIVED</div>
-                <div class="d-flex align-items-start gap-3">
-                    <input type="checkbox" 
-                           class="form-check-input program-checkbox mt-1" 
-                           data-program-id="{{ $program->program_id }}"
-                           onchange="toggleProgramSelection({{ $program->program_id }}, this)">
-                    <div class="flex-grow-1">
-                        <div class="program-title">{{ $program->program_name }}</div>
-                        
-                        <div class="program-stats">
-                            <div class="enrollment-count">
-                                <i class="fas fa-user-graduate me-2"></i>Enrolled Students: {{ $program->enrollments_count ?? 0 }}
-                            </div>
+                <div class="card-header">
+                    <div class="card-selection">
+                        <input type="checkbox" 
+                               class="program-checkbox" 
+                               data-program-id="{{ $program->program_id }}"
+                               onchange="toggleProgramSelection({{ $program->program_id }}, this)">
+                    </div>
+                    <div class="card-status">ARCHIVED</div>
+                </div>
+                
+                <div class="card-content">
+                    <div class="program-title">{{ $program->program_name }}</div>
+                    
+                    <div class="program-stats">
+                        <div class="stat-row">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>{{ $program->enrollments_count ?? 0 }} past enrollments</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 flex-wrap mt-3">
-                    <button type="button" class="btn btn-info btn-sm fw-semibold view-enrollees-btn" data-program-id="{{ $program->program_id }}">
-                        <i class="fas fa-users me-1"></i>View Enrollees
-                    </button>
-                    <button type="button" class="btn btn-success btn-sm fw-semibold unarchive-btn" data-program-id="{{ $program->program_id }}">
-                        <i class="fas fa-folder-open me-1"></i>Unarchive
-                    </button>
+                <div class="program-actions">
+                    <form action="{{ route('admin.programs.toggle-archive', $program->program_id) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="action-btn action-btn-success" onclick="return confirm('Are you sure you want to unarchive this program?')">
+                            <i class="fas fa-folder-open"></i>
+                            <span>Unarchive</span>
+                        </button>
+                    </form>
                     <form action="{{ route('admin.programs.delete', $program->program_id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm fw-semibold" onclick="return confirm('Are you sure you want to permanently delete this program? This action cannot be undone.')">
-                            <i class="fas fa-trash me-1"></i>Delete Permanently
+                        <button type="submit" class="action-btn action-btn-danger" onclick="return confirm('Are you sure you want to permanently delete this program? This action cannot be undone.')">
+                            <i class="fas fa-trash"></i>
+                            <span>Delete</span>
                         </button>
                     </form>
                 </div>
             </div>
         @empty
-            <div class="col-12 text-center py-5">
-                <div class="bg-light border border-2 border-dashed rounded-4 p-5">
-                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                    <div class="text-muted h5 mb-2">No archived programs found.</div>
-                    <small class="text-muted">
-                        <a href="{{ route('admin.programs.index') }}" class="text-primary text-decoration-none">
-                            <i class="fas fa-arrow-left me-1"></i>Go back to active programs
-                        </a>
-                    </small>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="empty-title">No archived programs found</div>
+                <div class="empty-description">
+                    <a href="{{ route('admin.programs.index') }}" class="empty-link">
+                        <i class="fas fa-arrow-left"></i>
+                        Go back to active programs
+                    </a>
                 </div>
             </div>
         @endforelse
@@ -559,28 +801,60 @@ document.addEventListener('DOMContentLoaded', function() {
             const programId = e.target.dataset.programId;
             
             if (confirm('Are you sure you want to unarchive this program?')) {
-                fetch(`/admin/programs/${programId}/toggle-archive`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload(); // Refresh the page to update the UI
-                    } else {
-                        alert('Error: ' + (data.message || 'Something went wrong'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while unarchiving the program.');
-                });
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/programs/${programId}/toggle-archive`;
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                
+                form.appendChild(csrfInput);
+                document.body.appendChild(form);
+                form.submit();
             }
         }
     });
+
+    // Check for session flash messages and display as toasts
+    const successMessage = window.sessionSuccess || '';
+    const errorMessage = window.sessionError || '';
+    
+    if (successMessage && successMessage !== '') {
+        showMessage(successMessage, 'success');
+    }
+    
+    if (errorMessage && errorMessage !== '') {
+        showMessage(errorMessage, 'error');
+    }
+
+    // Show message function for toasts
+    function showMessage(message, type = 'success') {
+        console.log('Showing message:', message, type);
+        
+        // Remove existing toast notifications
+        document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
+        
+        const toastDiv = document.createElement('div');
+        toastDiv.className = `toast-notification ${type}`;
+        toastDiv.textContent = message;
+        
+        document.body.appendChild(toastDiv);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toastDiv.parentNode) {
+                toastDiv.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => {
+                    if (toastDiv.parentNode) {
+                        toastDiv.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
 });
 
 // Batch delete functionality

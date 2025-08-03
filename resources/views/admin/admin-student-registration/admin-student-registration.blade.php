@@ -711,53 +711,603 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Define functions IMMEDIATELY to ensure they're available for inline handlers
+window.viewRegistrationDetails = function(registrationId) {
+    console.log('viewRegistrationDetails called with ID:', registrationId);
+    
+    if (!registrationId) {
+        alert('Invalid registration ID');
+        return;
+    }
+    
+    // Initialize modal if needed
+    if (!registrationModal) {
+        registrationModal = new bootstrap.Modal(document.getElementById('registrationModal'));
+    }
+    
+    const modalDetails = document.getElementById('modal-details');
+    const modalActions = document.getElementById('modal-actions');
+    
+    modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    registrationModal.show();
+
+    fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch details');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Left Column - Personal Information
+            let leftColumn = `
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-person"></i> Personal Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Full Name:</strong></div>
+                                <div class="col-sm-8">${na(data.firstname)} ${na(data.middlename)} ${na(data.lastname)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Email:</strong></div>
+                                <div class="col-sm-8">${na(data.email)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Phone:</strong></div>
+                                <div class="col-sm-8">${na(data.contact_number || data.mobile_number)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Address:</strong></div>
+                                <div class="col-sm-8">${na(data.street_address)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>City:</strong></div>
+                                <div class="col-sm-8">${na(data.city)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Province:</strong></div>
+                                <div class="col-sm-8">${na(data.province)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>ZIP Code:</strong></div>
+                                <div class="col-sm-8">${na(data.zip_code)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Education:</strong></div>
+                                <div class="col-sm-8">${na(data.educational_attainment)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>School:</strong></div>
+                                <div class="col-sm-8">${na(data.school)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Course:</strong></div>
+                                <div class="col-sm-8">${na(data.course)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Batch Date:</strong></div>
+                                <div class="col-sm-8">${na(data.batch_start_date)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Status:</strong></div>
+                                <div class="col-sm-8">
+                                    <span class="badge ${data.status === 'approved' ? 'bg-success' : 
+                                                      data.status === 'rejected' ? 'bg-danger' : 'bg-warning'}">${na(data.status)}</span>
+                                </div>
+                            </div>
+                            ${data.rejection_reason ? `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Rejection Reason:</strong></div>
+                                <div class="col-sm-8 text-danger">${na(data.rejection_reason)}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Right Column - Documents and Additional Info
+            let rightColumn = `
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-files"></i> Documents</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>2x2 Photo:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.photo_2x2, '2x2 Photo')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>PSA Birth Certificate:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.PSA, 'PSA Birth Certificate')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Diploma:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.diploma, 'Diploma')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>TOR:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.TOR, 'Transcript of Records')}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Program Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Program:</strong></div>
+                                <div class="col-sm-8">${na(data.program_title)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Package:</strong></div>
+                                <div class="col-sm-8">${na(data.package_name)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Plan:</strong></div>
+                                <div class="col-sm-8">${na(data.plan_name)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Registration Date:</strong></div>
+                                <div class="col-sm-8">${na(data.created_at_formatted)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modalDetails.innerHTML = leftColumn + rightColumn;
+
+            // Setup action buttons based on status and view type
+            let actionButtons = '';
+            if (isHistory) {
+                if (data.status === 'approved') {
+                    actionButtons = `
+                        <button type="button" class="btn btn-warning" onclick="undoApproval('${registrationId}')">
+                            <i class="bi bi-arrow-counterclockwise"></i> Undo Approval
+                        </button>
+                    `;
+                }
+            } else {
+                // Pending view - show approve/reject buttons
+                actionButtons = `
+                    <button type="button" class="btn btn-success" onclick="approveRegistration('${registrationId}')">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="rejectRegistration('${registrationId}')">
+                        <i class="bi bi-x-circle"></i> Reject
+                    </button>
+                `;
+            }
+
+            modalActions.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                ${actionButtons}
+            `;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalDetails.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Failed to load registration details. Please try again.
+                    </div>
+                </div>
+            `;
+            modalActions.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            `;
+        });
+};
+
+window.approveRegistration = function(registrationId) {
+    console.log('approveRegistration called with ID:', registrationId);
+    if (confirm('Are you sure you want to approve this registration?')) {
+        // Create and submit form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/registration/${registrationId}/approve`;
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+};
+
+window.rejectRegistration = function(registrationId) {
+    console.log('rejectRegistration called with ID:', registrationId);
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason && reason.trim()) {
+        // Create and submit form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/registration/${registrationId}/reject`;
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content;
+        
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason;
+        
+        form.appendChild(csrfInput);
+        form.appendChild(reasonInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+};
+
+// Global variables and functions that need to be available immediately
+let registrationModal;
+let rejectReasonModal;
+const baseUrl = window.location.origin;
+const token = document.querySelector('meta[name="csrf-token"]')?.content;
+const isHistory = '{{ isset($history) && $history ? "true" : "false" }}' === 'true';
+
+function na(value) {
+    return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
+}
+
+// DUPLICATE REMOVED: Global function for viewing registration details
+// window.viewRegistrationDetails = function(registrationId) {
+    /*if (!registrationId) {
+        alert('Invalid registration ID');
+        return;
+    }
+    
+    if (!registrationModal) {
+        registrationModal = new bootstrap.Modal(document.getElementById('registrationModal'));
+    }
+    
+    const modalDetails = document.getElementById('modal-details');
+    const modalActions = document.getElementById('modal-actions');
+    
+    modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    registrationModal.show();
+
+    fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch details');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Left Column - Personal Information
+            let leftColumn = `
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-person"></i> Personal Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Full Name:</strong></div>
+                                <div class="col-sm-8">${na(data.firstname)} ${na(data.middlename)} ${na(data.lastname)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Email:</strong></div>
+                                <div class="col-sm-8">${na(data.email)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Phone:</strong></div>
+                                <div class="col-sm-8">${na(data.contact_number || data.mobile_number)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Address:</strong></div>
+                                <div class="col-sm-8">${na(data.street_address)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>City:</strong></div>
+                                <div class="col-sm-8">${na(data.city)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Province:</strong></div>
+                                <div class="col-sm-8">${na(data.province)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>ZIP Code:</strong></div>
+                                <div class="col-sm-8">${na(data.zip_code)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Education:</strong></div>
+                                <div class="col-sm-8">${na(data.educational_attainment)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>School:</strong></div>
+                                <div class="col-sm-8">${na(data.school)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Course:</strong></div>
+                                <div class="col-sm-8">${na(data.course)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Batch Date:</strong></div>
+                                <div class="col-sm-8">${na(data.batch_start_date)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Status:</strong></div>
+                                <div class="col-sm-8">
+                                    <span class="badge ${data.status === 'approved' ? 'bg-success' : 
+                                                      data.status === 'rejected' ? 'bg-danger' : 'bg-warning'}">${na(data.status)}</span>
+                                </div>
+                            </div>
+                            ${data.rejection_reason ? `
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Rejection Reason:</strong></div>
+                                <div class="col-sm-8 text-danger">${na(data.rejection_reason)}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Right Column - Documents and Additional Info
+            let rightColumn = `
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-files"></i> Documents</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>2x2 Photo:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.photo_2x2, '2x2 Photo')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>PSA Birth Certificate:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.PSA, 'PSA Birth Certificate')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Diploma:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.diploma, 'Diploma')}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>TOR:</strong></div>
+                                <div class="col-sm-8">${formatDocumentLink(data.TOR, 'Transcript of Records')}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-mortarboard"></i> Program Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Program:</strong></div>
+                                <div class="col-sm-8">${na(data.program_title)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Package:</strong></div>
+                                <div class="col-sm-8">${na(data.package_name)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Plan:</strong></div>
+                                <div class="col-sm-8">${na(data.plan_name)}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-4"><strong>Registration Date:</strong></div>
+                                <div class="col-sm-8">${na(data.created_at_formatted)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modalDetails.innerHTML = leftColumn + rightColumn;
+
+            // Setup action buttons based on status and view type
+            let actionButtons = '';
+            if (isHistory) {
+                if (data.status === 'approved') {
+                    actionButtons = `
+                        <button type="button" class="btn btn-warning" onclick="undoApproval('${registrationId}')">
+                            <i class="bi bi-arrow-counterclockwise"></i> Undo Approval
+                        </button>
+                    `;
+                }
+            } else {
+                // Pending view - show approve/reject buttons
+                actionButtons = `
+                    <button type="button" class="btn btn-success" onclick="approveRegistration('${registrationId}')">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="rejectRegistration('${registrationId}')">
+                        <i class="bi bi-x-circle"></i> Reject
+                    </button>
+                `;
+            }
+
+            modalActions.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                ${actionButtons}
+            `;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalDetails.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Failed to load registration details. Please try again.
+                    </div>
+                </div>
+            `;
+            modalActions.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            `;
+        });
+        */ // END DUPLICATE FUNCTION COMMENT
+
+// Note: Duplicate function definitions removed to prevent conflicts
+// Global functions are defined at the top of the script section
+
+// Helper functions that need to be available globally
+function formatDocumentLink(filename, label) {
+    if (!filename || filename === 'N/A') {
+        return `<span class="text-muted">Not uploaded</span>`;
+    }
+    const ext = filename.split('.').pop().toLowerCase();
+    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
+    const isPdf = ext === 'pdf';
+    let viewBtn = '';
+    if (isImage || isPdf) {
+        viewBtn = `<button type="button" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1" onclick="showDocumentPreview('${filename}','${label}')"><i class="bi bi-eye"></i> View</button>`;
+    } else {
+        viewBtn = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1"><i class="bi bi-eye"></i> View</a>`;
+    }
+    return viewBtn;
+}
+
+// Document preview function
+window.showDocumentPreview = function(filename, label) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const modal = new bootstrap.Modal(document.getElementById('documentImageModal'));
+    const modalBody = document.getElementById('documentImageModalBody');
+    let content = '';
+    if (["jpg","jpeg","png","gif","webp"].includes(ext)) {
+        content = `<img src="${baseUrl}/storage/documents/${filename}" alt="${label}" class="img-fluid" style="max-height:70vh;">`;
+    } else if (ext === 'pdf') {
+        content = `<iframe src="${baseUrl}/storage/documents/${filename}" style="width:100%;height:70vh;" frameborder="0"></iframe>`;
+    } else {
+        content = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank">Download ${label}</a>`;
+    }
+    modalBody.innerHTML = content;
+    document.getElementById('documentImageModalLabel').textContent = label + ' Preview';
+    modal.show();
+};
+
+// Load registration fields for rejection marking
+function loadRegistrationFieldsForRejection(registrationId) {
+    const container = document.getElementById('rejectionFieldsContainer');
+    
+    fetch(`${baseUrl}/admin/registration/${registrationId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            let fieldsHtml = '<div class="row">';
+            
+            // Create checkboxes for marking fields that need correction
+            const fields = [
+                { name: 'firstname', label: 'First Name', value: data.firstname },
+                { name: 'lastname', label: 'Last Name', value: data.lastname },
+                { name: 'contact_number', label: 'Contact Number', value: data.contact_number },
+                { name: 'street_address', label: 'Address', value: data.street_address },
+                { name: 'PSA', label: 'PSA Birth Certificate', value: 'Document' },
+                { name: 'diploma', label: 'Diploma', value: 'Document' },
+                { name: 'TOR', label: 'Transcript of Records', value: 'Document' }
+            ];
+            
+            fieldsHtml += '<div class="col-12"><h6>Select fields to mark as needing correction:</h6>';
+            
+            fields.forEach(field => {
+                fieldsHtml += `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="rejected_fields[]" value="${field.name}" id="reject_${field.name}">
+                        <label class="form-check-label" for="reject_${field.name}">${field.label}: ${field.value || 'N/A'}</label>
+                    </div>
+                `;
+            });
+            
+            fieldsHtml += '</div>';
+            container.innerHTML = fieldsHtml;
+        })
+        .catch(error => {
+            console.error('Error loading fields:', error);
+            container.innerHTML = '<div class="alert alert-danger">Failed to load registration fields.</div>';
+        });
+}
+
+// Function to show confirmation modal
+window.showConfirmModal = function(title, message, confirmText, confirmClass, onConfirm, options = {}) {
+    // Create modal if it doesn't exist
+    let confirmModal = document.getElementById('confirmActionModal');
+    if (!confirmModal) {
+        const modalHtml = `
+            <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmActionModalTitle"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p id="confirmActionModalMessage"></p>
+                            <div id="confirmActionModalExtra"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn" id="confirmActionBtn">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        confirmModal = document.getElementById('confirmActionModal');
+    }
+
+    // Update modal content
+    document.getElementById('confirmActionModalTitle').textContent = title;
+    document.getElementById('confirmActionModalMessage').textContent = message;
+    const extraDiv = document.getElementById('confirmActionModalExtra');
+    extraDiv.innerHTML = '';
+    if (options.reason) {
+        extraDiv.innerHTML = `<label for='undoReasonInput' class='form-label mt-2'>Reason <span class='text-danger'>*</span></label><textarea id='undoReasonInput' class='form-control' rows='3' required placeholder='Please provide a reason...'></textarea><div class='invalid-feedback'>Reason is required.</div>`;
+    }
+
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    confirmBtn.textContent = confirmText;
+    confirmBtn.className = `btn ${confirmClass}`;
+    
+    // Remove any existing event listeners and add new one
+    confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+    const newConfirmBtn = document.getElementById('confirmActionBtn');
+    
+    newConfirmBtn.addEventListener('click', function() {
+        if (options.reason) {
+            const reasonInput = document.getElementById('undoReasonInput');
+            if (!reasonInput.value.trim()) {
+                reasonInput.classList.add('is-invalid');
+                reasonInput.focus();
+                return;
+            } else {
+                reasonInput.classList.remove('is-invalid');
+            }
+        }
+        onConfirm();
+        const modal = bootstrap.Modal.getInstance(confirmModal);
+        modal.hide();
+    });
+
+    // Show the modal
+    const modal = new bootstrap.Modal(confirmModal);
+    modal.show();
+};
+
 document.addEventListener('DOMContentLoaded', function() {
-    const registrationModal = new bootstrap.Modal(document.getElementById('registrationModal'));
-    const rejectReasonModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
-    const baseUrl = window.location.origin;
-    const token = document.querySelector('meta[name="csrf-token"]').content;
-    const isHistory = '{{ isset($history) && $history ? "true" : "false" }}' === 'true';
-
-    function na(value) {
-        return (value === undefined || value === null || value === '' || value === 'null') ? 'N/A' : value;
+    // Initialize modals
+    if (!registrationModal) {
+        registrationModal = new bootstrap.Modal(document.getElementById('registrationModal'));
+    }
+    if (!rejectReasonModal) {
+        rejectReasonModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
     }
 
-    function formatDocumentLink(filename, label) {
-        if (!filename || filename === 'N/A') {
-            return `<span class="text-muted">Not uploaded</span>`;
-        }
-        const ext = filename.split('.').pop().toLowerCase();
-        const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
-        const isPdf = ext === 'pdf';
-        let viewBtn = '';
-        if (isImage || isPdf) {
-            viewBtn = `<button type="button" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1" onclick="showDocumentPreview('${filename}','${label}')"><i class="bi bi-eye"></i> View</button>`;
-        } else {
-            viewBtn = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill d-inline-flex align-items-center gap-1"><i class="bi bi-eye"></i> View</a>`;
-        }
-        return viewBtn;
-    }
-
-    // Add the showDocumentPreview function:
-    window.showDocumentPreview = function(filename, label) {
-        const ext = filename.split('.').pop().toLowerCase();
-        const modal = new bootstrap.Modal(document.getElementById('documentImageModal'));
-        const modalBody = document.getElementById('documentImageModalBody');
-        let content = '';
-        if (["jpg","jpeg","png","gif","webp"].includes(ext)) {
-            content = `<img src="${baseUrl}/storage/documents/${filename}" alt="${label}" class="img-fluid" style="max-height:70vh;">`;
-        } else if (ext === 'pdf') {
-            content = `<iframe src="${baseUrl}/storage/documents/${filename}" style="width:100%;height:70vh;" frameborder="0"></iframe>`;
-        } else {
-            content = `<a href="${baseUrl}/storage/documents/${filename}" target="_blank">Download ${label}</a>`;
-        }
-        modalBody.innerHTML = content;
-        document.getElementById('documentImageModalLabel').textContent = label + ' Preview';
-        modal.show();
-    };
-
-    // Global function for viewing registration details using enhanced modal
-    window.viewRegistrationDetails = function(registrationId) {
+    // DUPLICATE REMOVED: Global function for viewing registration details using enhanced modal
+    /*window.viewRegistrationDetails = function(registrationId) {
         if (!registrationId) {
             alert('Invalid registration ID');
             return;
@@ -1081,45 +1631,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 `;
             });
-    };
+    */  // END DUPLICATE FUNCTION COMMENT
 
-    // Global function for approving registration
-    window.approveRegistration = function(registrationId) {
-        // Show custom confirmation modal
-        showConfirmModal(
-            'Confirm Approval', 
-            'Are you sure you want to approve this registration? This action cannot be undone.',
-            'Yes, Approve',
-            'btn-success',
-            function() {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `${baseUrl}/admin/registration/${registrationId}/approve`;
-                
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = token;
-                
-                form.appendChild(csrfInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        );
-    };
-
-    // Global function for rejecting registration with field marking
-    window.rejectRegistration = function(registrationId) {
-        const rejectForm = document.getElementById('rejectReasonForm');
-        rejectForm.action = `${baseUrl}/admin/registration/${registrationId}/reject`;
-        
-        // Load registration fields for marking
-        loadRegistrationFieldsForRejection(registrationId);
-        
-        registrationModal.hide();
-        const rejectModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
-        rejectModal.show();
-    };
+    // Note: Duplicate function definitions removed - using global functions defined at top
 
     // Load registration fields for rejection marking
     function loadRegistrationFieldsForRejection(registrationId) {

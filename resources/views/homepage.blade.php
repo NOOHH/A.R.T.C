@@ -13,6 +13,399 @@
 
 <style>
     {!! App\Helpers\SettingsHelper::getHomepageStyles() !!}
+    
+    /* Modern Program Card Design - Inspired by meme card layout */
+.program-card-modern {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    max-width: 320px;
+    margin: 0 auto;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+    
+    .program-card-modern:hover {
+        transform: translateY(-6px);
+         box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+    }
+    
+.program-image-container {
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2.5rem;
+}
+    
+.program-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+    
+    .program-card-modern:hover .program-image {
+        transform: scale(1.05);
+    }
+    
+    .program-image-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+    
+.program-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+    
+.program-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+    
+.program-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+    
+.program-learn-more-btn {
+    background: #ffffff;
+    border: 2px solid #764ba2;
+    color: #764ba2;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    align-self: start;
+    text-decoration: none;
+}
+    
+.program-learn-more-btn:hover {
+        background: white;
+        color: #1a1a1a;
+        border-color: white;
+    }
+    
+
+.carousel-nav {
+    background: #ffffff;
+    border: 2px solid #764ba2;
+    color: #764ba2;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-nav:hover {
+    background: #764ba2;
+    color: #fff;
+}
+.carousel-nav.prev-btn {
+    left: -22px;
+}
+
+.carousel-nav.next-btn {
+    right: -22px;
+}
+.programs-section {
+    padding: 60px 0;
+    overflow: hidden; /* added */
+}
+
+.programs-carousel-container {
+    padding: 50px; /* added to contain edge cards */
+}
+/* Responsive */
+@media (max-width: 768px) {
+    .program-card-modern {
+        max-width: 280px;
+    }
+    .program-image-container {
+        height: 150px;
+    }
+}
+    /* Carousel adjustments for new design */
+    .programs-carousel {
+        display: flex;
+        gap: 30px;
+        overflow-x: auto;
+        padding: 20px 0;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .programs-carousel::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .program-card-wrapper {
+        flex: 0 0 auto;
+        width: 320px;
+    }
+    
+    /* Center cards when there are only 2 programs */
+    .programs-carousel:has(.program-card-wrapper:nth-child(2):last-child) {
+        justify-content: center;
+    }
+    
+    /* Alternative for browsers that don't support :has() */
+    .programs-carousel.two-cards {
+        justify-content: center;
+    }
+    
+    /* Additional centering for exactly 2 cards */
+    .program-card-wrapper:nth-child(1):nth-last-child(2),
+    .program-card-wrapper:nth-child(2):nth-last-child(1) {
+        /* This targets the first card when there are exactly 2 cards total,
+           and the second card when there are exactly 2 cards total */
+    }
+    
+    /* Center container when exactly 2 cards */
+    .programs-carousel-container:has(.program-card-wrapper:nth-child(2):last-child) .programs-carousel {
+        justify-content: center;
+    }
+    
+    @media (max-width: 768px) {
+        .program-card-wrapper {
+            width: 280px;
+        }
+        
+        .program-card-modern {
+            max-width: 280px;
+        }
+        
+        .program-image-container {
+            height: 160px;
+        }
+    }
+    
+    /* Professional Modal Styles */
+    .program-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    .program-modal-content {
+        background: white;
+        border-radius: 16px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        scrollbar-width: none; 
+    }
+
+    .program-modal-content::-webkit-scrollbar {
+    display: none; /* for Chrome, Safari */
+}
+    
+    .program-modal-header {
+        padding: 2rem 2rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .program-modal-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .close-modal:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+    
+    .program-description {
+        padding: 1rem 2rem;
+        color: #6c757d;
+        line-height: 1.6;
+        font-size: 1rem;
+    }
+    
+    .modules-section {
+        padding: 1rem 2rem 2rem;
+    }
+    
+    .modules-section h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .module-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+    
+    .module-item:hover {
+        background: #e9ecef;
+        transform: translateX(2px);
+    }
+    
+    .module-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .module-description {
+        color: #6c757d;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+    
+    .courses-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .courses-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .courses-list {
+        display: grid;
+        gap: 0.5rem;
+    }
+    
+    .course-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .course-item:hover {
+        border-color: #667eea;
+        background: #f8f9fb;
+    }
+    
+    .course-name {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .course-description {
+        color: #6c757d;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+    
+    .no-modules-message {
+        text-align: center;
+        color: #adb5bd;
+        font-style: italic;
+        padding: 2rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 2px dashed #dee2e6;
+    }
+    
+    /* Responsive Modal */
+    @media (max-width: 768px) {
+        .program-modal {
+            padding: 1rem;
+        }
+        
+        .program-modal-content {
+            max-height: 90vh;
+        }
+        
+        .program-modal-header,
+        .program-description,
+        .modules-section {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        
+        .program-modal-title {
+            font-size: 1.5rem;
+        }
+    }
 </style>
 @endpush
 
@@ -63,26 +456,33 @@ $homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
                 <div class="programs-carousel" id="programsCarousel">
                     @foreach($programs as $program)
                     <div class="program-card-wrapper">
-                        <div class="card program-card h-100 shadow-sm">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title text-primary fw-bold">{{ $program->program_name }}</h5>
-                                <p class="card-text text-muted flex-grow-1">
+                        <div class="program-card-modern">
+                            <!-- Program Image -->
+                            <div class="program-image-container">
+                                @if(isset($program->program_image) && $program->program_image)
+                                    <img src="{{ asset('storage/program-images/' . $program->program_image) }}" 
+                                         alt="{{ $program->program_name }}" 
+                                         class="program-image">
+                                @else
+                                    <div class="program-image-placeholder">
+                                        <i class="bi bi-mortarboard-fill"></i>
+                                    </div>
+                                @endif
+                            </div>
+                            
+                            <!-- Program Content -->
+                            <div class="program-content">
+                                <h3 class="program-title">{{ $program->program_name }}</h3>
+                                <p class="program-description">
                                     @if(!empty($program->program_description))
-                                        {{ Str::limit($program->program_description, 150) }}
+                                        {{ Str::limit($program->program_description, 120) }}
                                     @else
-                                        No description yet.
+                                        Discover comprehensive learning opportunities designed to advance your career and knowledge in this specialized field.
                                     @endif
                                 </p>
-                                <div class="mt-auto">
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-outline-primary btn-sm" onclick="showProgramDetails({{ $program->program_id }})">
-                                            <i class="bi bi-eye me-1"></i>Quick View
-                                        </button>
-                                        <a href="{{ route('programs.show', $program->program_id) }}" class="btn btn-primary btn-sm">
-                                            <i class="bi bi-arrow-right me-1"></i>Details
-                                        </a>
-                                    </div>
-                                </div>
+                                <button class="program-learn-more-btn" onclick="showProgramDetails({{ $program->program_id }})">
+                                    Learn more
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -99,12 +499,7 @@ $homepageContent = \App\Helpers\SettingsHelper::getHomepageContent();
                 </button>
                 @endif
                 
-                <!-- View All Programs Button -->
-                <div class="text-center mt-4">
-                    <a href="{{ route('review-programs') }}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-grid me-2"></i>View All Programs
-                    </a>
-                </div>
+                
             </div>
         @else
             <div class="text-center py-5">
@@ -223,18 +618,37 @@ function showProgramDetails(programId) {
             }
             return response.json();
         })
-        .then(modules => {
+        .then(data => {
             const modulesList = document.getElementById('modulesList');
             
-            if (modules.length > 0) {
+            if (data.success && data.modules && data.modules.length > 0) {
                 let html = '';
-                modules.forEach(module => {
+                data.modules.forEach(module => {
                     html += `
                         <div class="module-item">
-                            <div class="module-name">${module.module_name}</div>
-                            <div class="module-description">${module.module_description || 'No description available.'}</div>
-                        </div>
+                            <div class="module-name">
+                                <i class="bi bi-collection me-2"></i>${module.module_name || module.name}
+                            </div>
+                            <div class="module-description">${module.module_description || module.description || 'No description available.'}</div>
                     `;
+                    
+                    // Add courses if they exist
+                    if (module.courses && module.courses.length > 0) {
+                        html += '<div class="courses-section">';
+                        html += '<div class="courses-title"><i class="bi bi-book me-1"></i>Courses:</div>';
+                        html += '<div class="courses-list">';
+                        module.courses.forEach(course => {
+                            html += `
+                                <div class="course-item">
+                                    <div class="course-name">${course.course_name}</div>
+                                    ${course.description ? `<div class="course-description">${course.description}</div>` : ''}
+                                </div>
+                            `;
+                        });
+                        html += '</div></div>';
+                    }
+                    
+                    html += '</div>';
                 });
                 modulesList.innerHTML = html;
             } else {
@@ -326,6 +740,24 @@ function initCarouselDragScroll() {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize carousel drag scrolling
     initCarouselDragScroll();
+    
+    // Center cards if there are exactly 2
+    const carousel = document.getElementById('programsCarousel');
+    if (carousel) {
+        const cardCount = carousel.querySelectorAll('.program-card-wrapper').length;
+        
+        if (cardCount === 2) {
+            carousel.classList.add('two-cards');
+            // Force centering for 2 cards
+            carousel.style.justifyContent = 'center';
+        } else if (cardCount === 1) {
+            // Also center single card
+            carousel.style.justifyContent = 'center';
+        } else {
+            // Default alignment for 3+ cards
+            carousel.style.justifyContent = 'flex-start';
+        }
+    }
     
     // Make sure all content is visible immediately
     document.querySelectorAll('.fade-in-up').forEach(el => {

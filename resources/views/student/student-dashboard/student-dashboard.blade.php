@@ -527,24 +527,7 @@
         margin-bottom: 0;
         font-size: 0.9rem;
     }
-    
-    /* Enhanced deadlines and announcements */
-    .deadlines-card, .announcements-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    .deadline-item, .announcement-item {
-        transition: background-color 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .deadline-item:hover, .announcement-item:hover {
-        background-color: rgba(102, 126, 234, 0.05);
-    }
+
     
     /* Ultra Compact Announcement Design */
     .announcement-content {
@@ -851,6 +834,18 @@
         }
     }
 
+    /* Enhanced deadlines and announcement cards (normalized) */
+.deadlines-card,
+.announcement-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+}
+
+
     /* Professional Deadline Cards Design */
     .deadlines-card {
         background: white;
@@ -859,11 +854,42 @@
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.2);
         backdrop-filter: blur(10px);
+        
     }
     
+.deadlines-content {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 !important;
+    
+    /* limit and enable scrolling */
+    max-height: 420px;           /* adjust height as needed */
+    overflow-y: auto;
+    width: 100%;
+}
+.deadlines-content::-webkit-scrollbar {
+    width: 4px;
+}
+.deadlines-content::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.03);
+    border-radius: 5px;
+}
+.deadlines-content::-webkit-scrollbar-thumb {
+    background: rgba(102,126,234,0.4);
+    border-radius: 5px;
+}
+
+@media (max-width: 768px) {
     .deadlines-content {
-        padding: 0 !important;
+        max-height: 320px;
     }
+}
+.deadline-item-modern {
+    width: 100%;
+    flex: 0 0 auto;
+    min-width: 0; /* prevent flex-based overflow */
+}
     
     .deadline-item-modern {
         margin-bottom: 0 !important;
@@ -877,11 +903,7 @@
         border-bottom: none;
     }
     
-    .deadline-item-modern:hover {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-        transform: translateX(4px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
+
     
     .deadline-item-modern::before {
         content: '';
@@ -1149,18 +1171,6 @@
     <div class="dashboard-card courses-card">
         <div class="card-header">
             <h2>My Programs</h2>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="completion-badge">{{ count($courses) > 0 ? floor(array_sum(array_column($courses, 'progress')) / count($courses)) : '0' }}% overall progress</span>
-                <button onclick="refreshDashboard()" class="btn btn-sm btn-outline-light" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                </button>
-                <button onclick="testDashboardUpdate()" class="btn btn-sm btn-outline-warning" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
-                    <i class="bi bi-bug"></i> Test
-                </button>
-                <button onclick="testProgramModal()" class="btn btn-sm btn-outline-info" style="border-radius: 20px; padding: 4px 12px; font-size: 0.8rem;">
-                    <i class="bi bi-collection"></i> Test Program Profile
-                </button>
-            </div>
         </div>
         <div class="courses-list">
             @forelse($courses as $course)
@@ -3306,8 +3316,8 @@ function redirectToAssignment(referenceId, moduleId, type, programId) {
         }
     } else if (type === 'quiz') {
         if (referenceId) {
-            // Redirect to quiz start page using the module ID (referenceId for quizzes)
-            window.location.href = `/student/quiz/${referenceId}/start`;
+            // Redirect to content view page for quizzes (referenceId is content_id)
+            window.location.href = `/student/content/${referenceId}/view`;
         } else {
             console.warn('No reference ID provided for quiz');
             window.location.href = '/student/dashboard';

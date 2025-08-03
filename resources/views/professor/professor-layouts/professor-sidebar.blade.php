@@ -2,42 +2,33 @@
 <aside class="modern-sidebar" id="modernSidebar">
     <!-- Sidebar Header with Brand and Toggle -->
     <div class="sidebar-header">
-        <div class="sidebar-brand">
-            <img src="{{ asset('images/ARTC_logo.png') }}" alt="A.R.T.C" class="brand-logo" style="height: 32px; width: auto; margin-right: 8px;">
-            <div class="brand-content">
-                <span class="brand-title">A.R.T.C</span>
-                <span class="brand-subtitle">Professor Portal</span>
+
+        
+        <!-- Profile Information in Header -->
+        @php
+            $professor = \App\Models\Professor::where('professor_id', session('professor_id'))->first();
+            $profilePhoto = $professor && $professor->profile_photo ? $professor->profile_photo : null;
+            $professorName = $professor ? $professor->professor_name : session('professor_name', 'Professor');
+        @endphp
+        
+        <div class="header-profile">
+            @if($profilePhoto)
+                <img src="{{ asset('storage/' . $profilePhoto) }}" 
+                     alt="Profile" 
+                     class="header-profile-avatar">
+            @else
+                <div class="header-profile-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                    {{ substr($professorName, 0, 1) }}{{ substr(explode(' ', $professorName)[1] ?? '', 0, 1) }}
+                </div>
+            @endif
+            <div class="header-profile-info">
+                <p class="header-profile-name">{{ $professorName }}</p>
+                <p class="header-profile-role">Professor</p>
             </div>
         </div>
-        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
-            <i class="bi bi-chevron-left"></i>
-        </button>
     </div>
     
     <div class="sidebar-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-        <!-- User Profile Section -->
-        <div class="user-profile">
-            @php
-                $professor = \App\Models\Professor::where('professor_id', session('user_id'))->first();
-                $profilePhoto = $professor && $professor->profile_photo ? $professor->profile_photo : null;
-            @endphp
-            
-            <div class="user-info">
-                <div class="user-avatar">
-                    @if($profilePhoto)
-                        <img src="{{ asset('storage/profile-photos/' . $profilePhoto) }}" 
-                             alt="Profile" 
-                             style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                    @else
-                        {{ substr(session('user_firstname', 'P'), 0, 1) }}{{ substr(session('user_lastname', 'R'), 0, 1) }}
-                    @endif
-                </div>
-                <div class="profile-info">
-                    <div class="profile-name">{{ $user->name ?? session('user_name', 'Professor') }}</div>
-                    <div class="profile-role">Professor</div>
-                </div>
-            </div>
-        </div>
         
         <nav class="sidebar-nav">
             <!-- Dashboard -->
@@ -97,36 +88,20 @@
                     <span>My Programs</span>
                 </a>
             </div>
-            <!-- Assignments Dropdown -->
+            
+            <!-- Submissions/Grading -->
             <div class="nav-item">
-                <a class="nav-link dropdown-toggle" href="#assignmentsMenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="assignmentsMenu">
-                    <i class="bi bi-clipboard-check"></i>
-                    <span>Assignments</span>
-                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                <a href="{{ route('professor.submissions.index') }}" class="nav-link @if(str_starts_with(Route::currentRouteName(), 'professor.submissions')) active @endif">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Submissions</span>
                 </a>
-                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'professor.assignments') || str_starts_with(Route::currentRouteName(), 'professor.submissions')) show @endif" id="assignmentsMenu">
-                    <div class="submenu">
-                        <a href="{{ route('professor.grading') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.index') active @endif">
-                            <i class="bi bi-list-task"></i>
-                            <span>View All</span>
-                        </a>
-                        <a href="{{ route('professor.assignments.create') }}" class="submenu-link @if(Route::currentRouteName() === 'professor.assignments.create') active @endif">
-                            <i class="bi bi-plus-circle"></i>
-                            <span>Create New</span>
-                        </a>
-                        <a href="{{ route('professor.submissions.index') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'professor.submissions')) active @endif">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span>Student Submissions</span>
-                        </a>
-                    </div>
-                </div>
             </div>
             
-            <!-- Settings -->
+            <!-- Profile -->
             <div class="nav-item">
-                <a href="{{ route('professor.settings') }}" class="nav-link @if(Route::currentRouteName() === 'professor.settings') active @endif">
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
+                <a href="{{ route('professor.profile') }}" class="nav-link @if(Route::currentRouteName() === 'professor.profile') active @endif">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Profile</span>
                 </a>
             </div>
             

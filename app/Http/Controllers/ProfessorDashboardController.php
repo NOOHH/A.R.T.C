@@ -11,6 +11,7 @@ use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ProfessorDashboardController extends Controller
 {
@@ -45,6 +46,9 @@ class ProfessorDashboardController extends Controller
         // Check if AI Quiz feature is enabled
         $aiQuizEnabled = AdminSetting::where('setting_key', 'ai_quiz_enabled')->value('setting_value') == 'true';
 
+        // Check if announcement management is enabled for professors
+        $announcementManagementEnabled = AdminSetting::where('setting_key', 'professor_announcement_management_enabled')->value('setting_value') === '1';
+
         // Placeholder for upcoming meetings (set to 0 for now)
         $upcomingMeetings = 0;
         // Placeholder for pending assignments (set to 0 for now)
@@ -54,7 +58,7 @@ class ProfessorDashboardController extends Controller
         $programIds = $assignedPrograms->pluck('program_id')->toArray();
         $announcements = $this->getTargetedAnnouncementsForProfessor($programIds);
         
-        return view('professor.dashboard', compact('professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules', 'aiQuizEnabled', 'upcomingMeetings', 'pendingAssignments', 'announcements'));
+        return view('professor.dashboard', compact('professor', 'assignedPrograms', 'totalPrograms', 'totalStudents', 'totalModules', 'aiQuizEnabled', 'announcementManagementEnabled', 'upcomingMeetings', 'pendingAssignments', 'announcements'));
     }
 
     public function programs()
@@ -75,7 +79,10 @@ class ProfessorDashboardController extends Controller
     public function programDetails($programId)
     {
         $professor = Professor::find(session('professor_id'));
-        $program = $professor->programs()->where('professor_program.program_id', $programId)->with(['modules'])->firstOrFail();
+        $program = $professor->programs()
+            ->where('professor_program.program_id', $programId)
+            ->with(['modules.courses'])
+            ->firstOrFail();
         
         // Calculate students for this program
         $program->students = Student::whereHas('enrollments', function ($query) use ($program) {
@@ -146,14 +153,6 @@ class ProfessorDashboardController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:professors,professor_email,' . $professor->professor_id . ',professor_id',
-            'phone' => 'nullable|string|max:20',
-            'title' => 'nullable|string|max:255',
-            'specialization' => 'nullable|string|max:255',
-            'experience_years' => 'nullable|integer|min:0|max:50',
-            'education' => 'nullable|in:bachelor,master,doctorate,other',
-            'linkedin' => 'nullable|url',
-            'website' => 'nullable|url',
-            'bio' => 'nullable|string|max:1000',
         ];
         
         // Add dynamic field validation rules
@@ -199,15 +198,7 @@ class ProfessorDashboardController extends Controller
         // Prepare dynamic data
         $dynamicData = $professor->dynamic_data ?: [];
         
-        // Standard profile fields
-        $profileFields = ['phone', 'title', 'specialization', 'experience_years', 'education', 'linkedin', 'website', 'bio'];
-        foreach ($profileFields as $field) {
-            if (isset($validatedData[$field])) {
-                $dynamicData[$field] = $validatedData[$field];
-            }
-        }
-        
-        // Add dynamic form fields
+        // Add dynamic form fields only
         foreach ($dynamicFields as $field) {
             if (isset($validatedData[$field->field_name])) {
                 $dynamicData[$field->field_name] = $validatedData[$field->field_name];
@@ -224,6 +215,42 @@ class ProfessorDashboardController extends Controller
         ]);
         
         return redirect()->route('professor.profile')->with('success', 'Profile updated successfully!');
+    }
+
+    public function updateProfilePhoto(Request $request)
+    {
+        $professor = Professor::find(session('professor_id'));
+        
+        $request->validate([
+            'profile_photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max
+        ]);
+
+        // Delete old photo if exists
+        if ($professor->profile_photo && Storage::disk('public')->exists($professor->profile_photo)) {
+            Storage::disk('public')->delete($professor->profile_photo);
+        }
+
+        // Store new photo
+        $photoPath = $request->file('profile_photo')->store('profile-photos', 'public');
+        
+        $professor->profile_photo = $photoPath;
+        $professor->save();
+
+        return redirect()->route('professor.profile')->with('success', 'Profile photo updated successfully!');
+    }
+
+    public function removeProfilePhoto()
+    {
+        $professor = Professor::find(session('professor_id'));
+        
+        if ($professor->profile_photo && Storage::disk('public')->exists($professor->profile_photo)) {
+            Storage::disk('public')->delete($professor->profile_photo);
+        }
+        
+        $professor->profile_photo = null;
+        $professor->save();
+
+        return response()->json(['success' => true, 'message' => 'Profile photo removed successfully!']);
     }
 
     public function studentList()
@@ -301,45 +328,6 @@ class ProfessorDashboardController extends Controller
         return view('professor.students.batches', compact('professor', 'batches'));
     }
 
-    public function settings()
-    {
-        $professor = Professor::find(session('professor_id'));
-        
-        if (!$professor) {
-            return redirect()->route('professor.dashboard')->with('error', 'Professor not found.');
-        }
-
-        return view('professor.settings', compact('professor'));
-    }
-
-    public function updateSettings(Request $request)
-    {
-        $professor = Professor::find(session('professor_id'));
-        
-        $request->validate([
-            'notification_preferences' => 'nullable|array',
-            'timezone' => 'nullable|string',
-            'language' => 'nullable|string',
-            'email_notifications' => 'boolean',
-            'sms_notifications' => 'boolean',
-        ]);
-
-        // Get current dynamic data
-        $dynamicData = $professor->dynamic_data ?: [];
-        
-        // Update settings
-        $dynamicData['notification_preferences'] = $request->notification_preferences ?: [];
-        $dynamicData['timezone'] = $request->timezone;
-        $dynamicData['language'] = $request->language;
-        $dynamicData['email_notifications'] = $request->has('email_notifications');
-        $dynamicData['sms_notifications'] = $request->has('sms_notifications');
-        
-        $professor->dynamic_data = $dynamicData;
-        $professor->save();
-
-        return redirect()->route('professor.dashboard')->with('success', 'Settings updated successfully!');
-    }
-
     /**
      * Get targeted announcements for professors
      */
@@ -364,22 +352,24 @@ class ProfessorDashboardController extends Controller
             $mainQuery->orWhere(function($specificQuery) use ($programIds) {
                 $specificQuery->where('target_scope', 'specific');
 
-                // Check if professor is in target users
-                $specificQuery->where(function($userQuery) {
-                    $userQuery->whereJsonContains('target_users', 'professors')
-                             ->orWhereNull('target_users');
-                });
+                $specificQuery->where(function($targetQuery) use ($programIds) {
+                    // Check if professor is in target users OR target_users is null
+                    $targetQuery->where(function($userQuery) {
+                        $userQuery->whereJsonContains('target_users', 'professors')
+                                 ->orWhereNull('target_users');
+                    });
 
-                // Check if professor's programs are targeted
-                if (!empty($programIds)) {
-                    $specificQuery->where(function($programQuery) use ($programIds) {
+                    // AND check if professor's programs are targeted OR target_programs is null
+                    $targetQuery->where(function($programQuery) use ($programIds) {
                         $programQuery->whereNull('target_programs');
                         
-                        foreach ($programIds as $programId) {
-                            $programQuery->orWhereJsonContains('target_programs', $programId);
+                        if (!empty($programIds)) {
+                            foreach ($programIds as $programId) {
+                                $programQuery->orWhereJsonContains('target_programs', (string)$programId);
+                            }
                         }
                     });
-                }
+                });
             });
         });
 

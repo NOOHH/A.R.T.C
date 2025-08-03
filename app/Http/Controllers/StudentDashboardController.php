@@ -485,11 +485,72 @@ class StudentDashboardController extends Controller
                     return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
                 });
 
+            // Add quiz deadlines from content_items
+            $quizDeadlines = \App\Models\ContentItem::where('content_type', 'quiz')
+                ->whereNotNull('due_date')
+                ->whereIn('course_id', $enrolledCourseIds)
+                ->get()
+                ->map(function($item) use ($student) {
+                    // Check if student has completed this quiz
+                    $contentData = is_string($item->content_data) ? json_decode($item->content_data, true) : $item->content_data;
+                    $quizId = $contentData['quiz_id'] ?? null;
+                    
+                    $completion = null;
+                    if ($quizId) {
+                        // Check for completed quiz attempts
+                        $completion = \App\Models\QuizAttempt::where('student_id', $student->student_id)
+                            ->where('quiz_id', $quizId)
+                            ->where('status', 'completed')
+                            ->orderBy('completed_at', 'desc')
+                            ->first();
+                    }
+                    
+                    // Determine status based on completion and due date
+                    $now = now();
+                    if ($completion) {
+                        $status = 'completed';
+                        $grade = $completion->score;
+                    } elseif ($item->due_date < $now) {
+                        $status = 'overdue';
+                        $grade = null;
+                    } else {
+                        $status = 'pending';
+                        $grade = null;
+                    }
+                    
+                    // Get course and program info for navigation and display
+                    $course = \App\Models\Course::find($item->course_id);
+                    $module = $course ? \App\Models\Module::find($course->module_id) : null;
+                    $program = $module ? \App\Models\Program::find($module->program_id) : null;
+                    
+                    return (object) [
+                        'title' => $item->content_title,
+                        'description' => $item->content_description ?? 'Quiz deadline',
+                        'due_date' => $item->due_date,
+                        'type' => 'quiz',
+                        'reference_id' => $item->id,
+                        'status' => $status,
+                        'feedback' => null,
+                        'grade' => $grade,
+                        'course_id' => $item->course_id,
+                        'module_id' => $module ? $module->modules_id : null,
+                        'course_name' => $course ? $course->subject_name : null,
+                        'module_name' => $module ? $module->module_name : null,
+                        'program_name' => $program ? $program->program_name : null,
+                        'program_id' => $program ? $program->program_id : null,
+                        'completion' => $completion
+                    ];
+                })
+                ->filter(function($deadline) {
+                    // Show upcoming deadlines and overdue quizzes
+                    return $deadline->due_date >= now()->subDays(7) || $deadline->status === 'overdue';
+                });
+
             // Auto-create missing deadline entries for assignments that don't have them
             $this->createMissingAssignmentDeadlines($student, $enrolledProgramIds, $enrolledCourseIds);
 
             // Merge and sort deadlines by due date
-            $allDeadlines = $deadlines->concat($assignmentDeadlines)
+            $allDeadlines = $deadlines->concat($assignmentDeadlines)->concat($quizDeadlines)
                 ->sortBy('due_date')
                 ->take(5)
                 ->values();
@@ -588,6 +649,14 @@ class StudentDashboardController extends Controller
         if ($student) {
             // Check if student has any enrollment for this program
             $enrollment = $student->enrollments()->where('program_id', $courseId)->first();
+            
+            // If not found via student relationship, try by user_id
+            if (!$enrollment) {
+                $enrollment = \App\Models\Enrollment::where('user_id', session('user_id'))
+                    ->where('program_id', $courseId)
+                    ->first();
+            }
+            
             $isEnrolled = (bool) $enrollment;
         }
         
@@ -2102,7 +2171,13 @@ class StudentDashboardController extends Controller
             $contentData = null;
             if ($content->content_data) {
                 try {
-                    $contentData = json_decode($content->content_data, true);
+                    // Handle double-encoded JSON
+                    $firstDecode = json_decode($content->content_data, true);
+                    if (is_string($firstDecode)) {
+                        $contentData = json_decode($firstDecode, true);
+                    } else {
+                        $contentData = $firstDecode;
+                    }
                 } catch (\Exception $e) {
                     \Log::warning('Failed to parse content_data JSON', ['error' => $e->getMessage()]);
                     $contentData = null;
@@ -2264,6 +2339,28 @@ class StudentDashboardController extends Controller
                 $content->module_id = null;
             }
 
+            // Handle quiz content type
+            $quiz = null;
+            $quizAttempts = [];
+            $hasActiveAttempt = false;
+            $activeAttempt = null;
+            
+            if ($content->content_type === 'quiz' && isset($contentData['quiz_id'])) {
+                $quiz = \App\Models\Quiz::with('questions')->find($contentData['quiz_id']);
+                
+                if ($quiz && $student) {
+                    // Get all attempts for this student and quiz
+                    $quizAttempts = \App\Models\QuizAttempt::where('quiz_id', $quiz->quiz_id)
+                        ->where('student_id', $student->student_id)
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+                    
+                    // Check for active (incomplete) attempt
+                    $activeAttempt = $quizAttempts->where('status', 'in_progress')->first();
+                    $hasActiveAttempt = $activeAttempt !== null;
+                }
+            }
+
             return view('student.content.view', compact(
                 'content',
                 'course',
@@ -2272,7 +2369,11 @@ class StudentDashboardController extends Controller
                 'fileNames',
                 'isCompleted',
                 'submissions',
-                'contentData'
+                'contentData',
+                'quiz',
+                'quizAttempts',
+                'hasActiveAttempt',
+                'activeAttempt'
             ));
 
         } catch (\Exception $e) {
@@ -2703,6 +2804,8 @@ class StudentDashboardController extends Controller
                     if ($enrollmentCourse->course) {
                         $enrollmentInfo['courses'][] = [
                             'course_id' => $enrollmentCourse->course->subject_id,
+                            'subject_id' => $enrollmentCourse->course->subject_id,
+                            'program_id' => $enrollment->program->program_id,
                             'course_name' => $enrollmentCourse->course->subject_name,
                             'course_description' => $enrollmentCourse->course->subject_description,
                             'module_name' => $enrollmentCourse->module->module_name ?? 'N/A',
@@ -2723,6 +2826,8 @@ class StudentDashboardController extends Controller
                     foreach ($module->courses as $course) {
                         $enrollmentInfo['courses'][] = [
                             'course_id' => $course->subject_id,
+                            'subject_id' => $course->subject_id,
+                            'program_id' => $enrollment->program->program_id,
                             'course_name' => $course->subject_name,
                             'course_description' => $course->subject_description,
                             'module_name' => $module->module_name,
@@ -2735,10 +2840,421 @@ class StudentDashboardController extends Controller
             $enrolledCoursesData[] = $enrollmentInfo;
         }
 
+        // Prepare student programs data for sidebar component
+        $studentPrograms = [];
+        if ($student) {
+            $enrollments = \App\Models\Enrollment::where('user_id', session('user_id'))
+                ->with(['program', 'package'])
+                ->where('enrollment_status', 'approved')
+                ->get();
+            
+            foreach ($enrollments as $enrollmentData) {
+                if ($enrollmentData->program) {
+                    $studentPrograms[] = [
+                        'program_id' => $enrollmentData->program->program_id,
+                        'program_name' => $enrollmentData->program->program_name,
+                        'package_name' => $enrollmentData->package ? $enrollmentData->package->package_name : 'No Package'
+                    ];
+                }
+            }
+        }
+
         return view('student.enrolled-courses', [
             'user' => $user,
             'student' => $student,
-            'enrolledCoursesData' => $enrolledCoursesData
+            'enrolledCoursesData' => $enrolledCoursesData,
+            'studentPrograms' => $studentPrograms
         ]);
+    }
+
+    /**
+     * Start a new quiz attempt
+     */
+    public function startQuizAttempt(Request $request, $quizId)
+    {
+        try {
+            // Get current student
+            $student = Student::where('user_id', session('user_id'))->first();
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found'], 404);
+            }
+
+            // Get quiz with questions
+            $quiz = \App\Models\Quiz::with('questions')->find($quizId);
+            if (!$quiz) {
+                return response()->json(['success' => false, 'message' => 'Quiz not found'], 404);
+            }
+
+            // Check if quiz is published
+            if ($quiz->status !== 'published') {
+                return response()->json(['success' => false, 'message' => 'Quiz is not available'], 403);
+            }
+
+            // Check if student has exceeded max attempts
+            $attemptCount = \App\Models\QuizAttempt::where('quiz_id', $quizId)
+                ->where('student_id', $student->student_id)
+                ->where('status', 'completed')
+                ->count();
+
+            if ($attemptCount >= $quiz->max_attempts) {
+                return response()->json(['success' => false, 'message' => 'Maximum attempts exceeded'], 403);
+            }
+
+            // Check if there's already an active attempt
+            $activeAttempt = \App\Models\QuizAttempt::where('quiz_id', $quizId)
+                ->where('student_id', $student->student_id)
+                ->where('status', 'in_progress')
+                ->first();
+
+            if ($activeAttempt) {
+                return response()->json([
+                    'success' => true, 
+                    'redirect' => route('student.quiz.take', $activeAttempt->attempt_id),
+                    'message' => 'Continuing existing attempt'
+                ]);
+            }
+
+            // Create new attempt
+            $attempt = \App\Models\QuizAttempt::create([
+                'quiz_id' => $quizId,
+                'student_id' => $student->student_id,
+                'started_at' => now(),
+                'status' => 'in_progress',
+                'answers' => [],
+                'total_questions' => $quiz->questions->count()
+            ]);
+
+            Log::info('Quiz attempt started', [
+                'attempt_id' => $attempt->attempt_id,
+                'quiz_id' => $quizId,
+                'student_id' => $student->student_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'redirect' => route('student.quiz.take', $attempt->attempt_id),
+                'message' => 'Quiz started successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error starting quiz', [
+                'quiz_id' => $quizId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json(['success' => false, 'message' => 'Error starting quiz'], 500);
+        }
+    }
+
+    /**
+     * Display quiz taking interface
+     */
+    public function takeQuiz($attemptId)
+    {
+        try {
+            // Get current student
+            $student = Student::where('user_id', session('user_id'))->first();
+            if (!$student) {
+                return redirect()->route('student.dashboard')->with('error', 'Student not found');
+            }
+
+            // Get quiz attempt
+            $attempt = \App\Models\QuizAttempt::with(['quiz.questions', 'student'])
+                ->find($attemptId);
+
+            if (!$attempt) {
+                return redirect()->route('student.dashboard')->with('error', 'Quiz attempt not found');
+            }
+
+            // Verify attempt belongs to current student
+            if ($attempt->student_id !== $student->student_id) {
+                return redirect()->route('student.dashboard')->with('error', 'Access denied');
+            }
+
+            // Check if attempt is still active
+            if ($attempt->status !== 'in_progress') {
+                return redirect()->route('student.dashboard')->with('error', 'Quiz attempt is no longer active');
+            }
+
+            $quiz = $attempt->quiz;
+
+            // Check time limit
+            $timeRemaining = null;
+            if ($quiz->time_limit > 0) {
+                $timeElapsed = $attempt->started_at->diffInMinutes(now());
+                $timeRemaining = max(0, $quiz->time_limit - $timeElapsed);
+                
+                if ($timeRemaining <= 0) {
+                    // Auto-submit quiz due to time limit
+                    $this->submitQuizAttempt(new Request(), $attemptId);
+                    return redirect()->route('student.dashboard')->with('error', 'Quiz time limit exceeded');
+                }
+            }
+
+            // Randomize questions if enabled
+            $questions = $quiz->questions;
+            if ($quiz->randomize_order) {
+                $questions = $questions->shuffle();
+            }
+
+            // Randomize multiple choice options if enabled
+            if ($quiz->randomize_mc_options) {
+                foreach ($questions as $question) {
+                    if ($question->question_type === 'multiple_choice' && is_array($question->options)) {
+                        $options = $question->options;
+                        $correctAnswer = $question->correct_answer;
+                        
+                        // Create array with answer mapping
+                        $optionMap = [];
+                        foreach ($options as $index => $option) {
+                            $letter = chr(65 + $index);
+                            $optionMap[$letter] = $option;
+                        }
+                        
+                        // Shuffle options and update correct answer
+                        $shuffledOptions = collect($optionMap)->shuffle();
+                        $question->options = $shuffledOptions->values()->toArray();
+                        
+                        // Update correct answer to new position
+                        $newIndex = $shuffledOptions->search($optionMap[$correctAnswer]);
+                        if ($newIndex !== false) {
+                            $question->correct_answer = chr(65 + $newIndex);
+                        }
+                    }
+                }
+            }
+
+            return view('student.quiz.take', compact(
+                'attempt',
+                'quiz', 
+                'questions',
+                'student',
+                'timeRemaining'
+            ));
+
+        } catch (\Exception $e) {
+            Log::error('Error displaying quiz', [
+                'attempt_id' => $attemptId,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('student.dashboard')->with('error', 'Error loading quiz');
+        }
+    }
+
+    /**
+     * Submit quiz answers
+     */
+    public function submitQuizAttempt(Request $request, $attemptId)
+    {
+        try {
+            // Get current student
+            $student = Student::where('user_id', session('user_id'))->first();
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found'], 404);
+            }
+
+            // Get quiz attempt
+            $attempt = \App\Models\QuizAttempt::with(['quiz.questions'])->find($attemptId);
+            if (!$attempt) {
+                return response()->json(['success' => false, 'message' => 'Quiz attempt not found'], 404);
+            }
+
+            // Verify attempt belongs to current student
+            if ($attempt->student_id !== $student->student_id) {
+                return response()->json(['success' => false, 'message' => 'Access denied'], 403);
+            }
+
+            // Check if attempt is still active
+            if ($attempt->status !== 'in_progress') {
+                return response()->json(['success' => false, 'message' => 'Quiz attempt already completed'], 400);
+            }
+
+            // Get submitted answers
+            $answers = $request->input('answers', []);
+            
+            // Calculate score
+            $quiz = $attempt->quiz;
+            $questions = $quiz->questions;
+            $correctAnswers = 0;
+            $totalQuestions = $questions->count();
+
+            foreach ($questions as $question) {
+                $questionId = (string)$question->id; // Convert to string for consistency
+                $studentAnswer = $answers[$questionId] ?? null;
+                $correctAnswer = $question->correct_answer;
+
+                if ($studentAnswer !== null) {
+                    $isCorrect = false;
+                    
+                    if ($question->question_type === 'multiple_choice') {
+                        // Handle both letter and index formats
+                        if (is_string($studentAnswer) && preg_match('/^[A-Z]$/', $studentAnswer)) {
+                            // Convert letter (A, B, C) to index (0, 1, 2)
+                            $convertedAnswer = (string)(ord($studentAnswer) - 65);
+                            $isCorrect = $convertedAnswer === (string)$correctAnswer;
+                        } else {
+                            // Direct comparison - handle both numeric and string indices
+                            $isCorrect = (string)$studentAnswer === (string)$correctAnswer;
+                        }
+                        
+                        // Enhanced logging for debugging
+                        Log::debug('Answer comparison', [
+                            'question_id' => $questionId,
+                            'student_answer' => $studentAnswer,
+                            'correct_answer' => $correctAnswer,
+                            'student_answer_type' => gettype($studentAnswer),
+                            'correct_answer_type' => gettype($correctAnswer),
+                            'is_correct' => $isCorrect
+                        ]);
+                    } else {
+                        // For other question types (true/false, etc.)
+                        $isCorrect = $studentAnswer === $correctAnswer;
+                    }
+                    
+                    if ($isCorrect) {
+                        $correctAnswers++;
+                    }
+                }
+            }
+
+            $score = $totalQuestions > 0 ? ($correctAnswers / $totalQuestions) * 100 : 0;
+
+            // Update attempt
+            $attempt->update([
+                'answers' => $answers,
+                'score' => $score,
+                'correct_answers' => $correctAnswers,
+                'completed_at' => now(),
+                'time_taken' => $attempt->started_at->diffInMinutes(now()),
+                'status' => 'completed'
+            ]);
+
+            Log::info('Quiz submitted', [
+                'attempt_id' => $attemptId,
+                'score' => $score,
+                'correct_answers' => $correctAnswers,
+                'total_questions' => $totalQuestions
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'score' => $score,
+                'correct_answers' => $correctAnswers,
+                'total_questions' => $totalQuestions,
+                'redirect' => route('student.quiz.results', $attemptId)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error submitting quiz', [
+                'attempt_id' => $attemptId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['success' => false, 'message' => 'Error submitting quiz'], 500);
+        }
+    }
+
+    /**
+     * Show quiz results
+     */
+    public function showQuizResults($attemptId)
+    {
+        try {
+            // Get current student
+            $student = Student::where('user_id', session('user_id'))->first();
+            if (!$student) {
+                return redirect()->route('student.dashboard')->with('error', 'Student not found');
+            }
+
+            // Get quiz attempt with quiz and questions
+            $attempt = \App\Models\QuizAttempt::with(['quiz.questions', 'student'])
+                ->find($attemptId);
+
+            if (!$attempt) {
+                return redirect()->route('student.dashboard')->with('error', 'Quiz attempt not found');
+            }
+
+            // Verify attempt belongs to current student
+            if ($attempt->student_id !== $student->student_id) {
+                return redirect()->route('student.dashboard')->with('error', 'Access denied');
+            }
+
+            // Check if attempt is completed
+            if ($attempt->status !== 'completed') {
+                return redirect()->route('student.dashboard')->with('error', 'Quiz attempt not completed');
+            }
+
+            $quiz = $attempt->quiz;
+            $questions = $quiz->questions;
+            $studentAnswers = $attempt->answers;
+
+            // Find the content item associated with this quiz
+            $contentId = request()->query('content_id'); // First try to get from query params
+            if (!$contentId) {
+                // If not in query params, try to find by quiz_id
+                $content = \App\Models\ContentItem::where('content_type', 'quiz')
+                    ->whereRaw("JSON_EXTRACT(content_data, '$.quiz_id') = ?", [$quiz->quiz_id])
+                    ->first();
+                if ($content) {
+                    $contentId = $content->id;
+                }
+            }
+
+            // Prepare detailed results
+            $results = [];
+            foreach ($questions as $question) {
+                $questionId = $question->id;
+                $studentAnswer = $studentAnswers[$questionId] ?? null;
+                
+                // Convert student answer to letter format for display if it's numeric
+                $studentAnswerDisplay = $studentAnswer;
+                $correctAnswerDisplay = $question->correct_answer;
+                
+                if ($question->question_type === 'multiple_choice') {
+                    // If student answer is numeric (0, 1, 2), convert to letter (A, B, C)
+                    if (is_numeric($studentAnswer)) {
+                        $studentAnswerDisplay = chr(65 + (int)$studentAnswer);
+                    }
+                    
+                    // If correct answer is numeric (0, 1, 2), convert to letter (A, B, C)
+                    if (is_numeric($correctAnswerDisplay)) {
+                        $correctAnswerDisplay = chr(65 + (int)$correctAnswerDisplay);
+                    }
+                    
+                    // For comparison, normalize both to the same format
+                    $normalizedStudentAnswer = is_numeric($studentAnswer) ? (string)$studentAnswer : (string)(ord($studentAnswer) - 65);
+                    $normalizedCorrectAnswer = is_numeric($question->correct_answer) ? (string)$question->correct_answer : (string)(ord($question->correct_answer) - 65);
+                    
+                    $isCorrect = $normalizedStudentAnswer === $normalizedCorrectAnswer;
+                } else {
+                    $isCorrect = $studentAnswer === $question->correct_answer;
+                }
+                
+                $results[] = [
+                    'question' => $question,
+                    'student_answer' => $studentAnswerDisplay,
+                    'correct_answer' => $correctAnswerDisplay,
+                    'is_correct' => $isCorrect
+                ];
+            }
+
+            return view('student.quiz.results', compact(
+                'attempt',
+                'quiz',
+                'student',
+                'results',
+                'contentId'
+            ));
+
+        } catch (\Exception $e) {
+            Log::error('Error showing quiz results', [
+                'attempt_id' => $attemptId,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('student.dashboard')->with('error', 'Error loading quiz results');
+        }
     }
 }
