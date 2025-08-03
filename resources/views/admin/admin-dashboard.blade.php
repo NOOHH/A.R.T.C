@@ -114,11 +114,6 @@
                     <div class="description">Generate student certificates</div>
                 </a>
                 
-                <a href="{{ route('admin.enrollments.index') }}" class="module-action-card">
-                    <span class="icon">📝</span>
-                    <div class="title">Enrollment Management</div>
-                    <div class="description">Assign courses & manage enrollments</div>
-                </a>
             </div>
         </div>
 

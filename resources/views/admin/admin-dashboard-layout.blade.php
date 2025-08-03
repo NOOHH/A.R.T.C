@@ -367,6 +367,36 @@
         min-width: 0;
     }
 
+    /* Hide scrollbars for sidebar navigation */
+    .sidebar-nav::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .sidebar-nav {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    /* Hide scrollbars for sidebar content */
+    .sidebar-content::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .sidebar-content {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    /* Hide scrollbars for submenu */
+    .submenu::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .submenu {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+    }
+
     .nav-item {
         margin: 0.25rem 1rem;
         min-width: 0;

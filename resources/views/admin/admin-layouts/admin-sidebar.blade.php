@@ -44,13 +44,6 @@
                 </a>
             </div>
 
-            <!-- Certificate Management -->
-            <div class="nav-item">
-                <a href="{{ route('admin.certificates') }}" class="nav-link @if(Route::currentRouteName() === 'admin.certificates') active @endif">
-                    <i class="bi bi-award"></i><span>Certificate Management</span>
-                </a>
-            </div>
-
             <!-- Registration Menu -->
             @php
                 $registrationMenuVisible = $isAdmin || ($isDirector && ($directorFeatures['manage_enrollments'] || $directorFeatures['manage_batches']));
@@ -126,7 +119,7 @@
                 <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#collapsePrograms" role="button" aria-expanded="false" aria-controls="collapsePrograms">
                     <i class="bi bi-mortarboard"></i><span>Programs</span>
                 </a>
-                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index') show @endif" id="collapsePrograms">
+                <div class="collapse @if(str_starts_with(Route::currentRouteName(), 'admin.programs') || str_starts_with(Route::currentRouteName(), 'admin.modules') || Route::currentRouteName() === 'admin.packages.index' || Route::currentRouteName() === 'admin.certificates' || str_starts_with(Route::currentRouteName(), 'admin.submissions')) show @endif" id="collapsePrograms">
                     <div class="submenu">
                         @if($isAdmin || ($isDirector && $directorFeatures['manage_programs']))
                             <a href="{{ route('admin.programs.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.programs.index') active @endif">
@@ -146,6 +139,16 @@
                         @if($isAdmin)
                             <a href="{{ route('admin.packages.index') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.packages.index') active @endif">
                                 <i class="bi bi-box-seam"></i><span>Packages</span>
+                            </a>
+                        @endif
+                        @if($isAdmin)
+                            <a href="{{ route('admin.certificates') }}" class="submenu-link @if(Route::currentRouteName() === 'admin.certificates') active @endif">
+                                <i class="bi bi-award"></i><span>Certificates</span>
+                            </a>
+                        @endif
+                        @if($isAdmin)
+                            <a href="{{ route('admin.submissions') }}" class="submenu-link @if(str_starts_with(Route::currentRouteName(), 'admin.submissions')) active @endif">
+                                <i class="bi bi-file-earmark-text"></i><span>Assignment Submissions</span>
                             </a>
                         @endif
                     </div>

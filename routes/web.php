@@ -1620,6 +1620,10 @@ Route::post('/admin/payment-history/{paymentHistoryId}/undo', [App\Http\Controll
 Route::get('/admin/submissions', [AdminController::class, 'viewSubmissions'])
      ->name('admin.submissions');
 
+// Assignment submissions (alias for admin.submissions)
+Route::get('/admin/assignment-submissions', [AdminController::class, 'viewSubmissions'])
+     ->name('admin.assignment-submissions');
+
 // Grade assignment submission
 Route::post('/admin/submissions/{id}/grade', [AdminController::class, 'gradeSubmission'])
      ->name('admin.submissions.grade');
