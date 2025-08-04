@@ -15,6 +15,8 @@ use App\Models\Deadline;
 use App\Models\Announcement;
 use App\Models\Package;
 use App\Models\AssignmentSubmission;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
 
 class StudentDashboardController extends Controller
 {
@@ -1589,17 +1591,81 @@ class StudentDashboardController extends Controller
     /**
      * Start quiz
      */
-    public function startQuiz($moduleId)
+    public function startQuiz($quizId)
     {
-        $module = Module::find($moduleId);
-        
-        if (!$module) {
-            return redirect()->back()->with('error', 'Module not found.');
+        try {
+            Log::info('startQuiz called with quizId: ' . $quizId);
+            
+            $student = Student::where('user_id', session('user_id'))->first();
+            
+            if (!$student) {
+                Log::error('Student not found for user_id: ' . session('user_id'));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student not found.'
+                ]);
+            }
+            
+            Log::info('Student found: ' . $student->student_id);
+
+            $quiz = Quiz::find($quizId);
+            
+            if (!$quiz) {
+                Log::error('Quiz not found: ' . $quizId);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz not found.'
+                ]);
+            }
+            
+            Log::info('Quiz found: ' . $quiz->quiz_title);
+
+            // Check if student has remaining attempts
+            $completedAttempts = QuizAttempt::where('quiz_id', $quizId)
+                ->where('student_id', $student->student_id)
+                ->where('status', 'completed')
+                ->count();
+
+            Log::info('Completed attempts: ' . $completedAttempts . ', max attempts: ' . $quiz->max_attempts . ', infinite retakes: ' . ($quiz->infinite_retakes ? 'true' : 'false'));
+
+            // Only check attempt limit if infinite retakes is disabled
+            if (!$quiz->infinite_retakes && $completedAttempts >= $quiz->max_attempts) {
+                Log::warning('Max attempts reached for student: ' . $student->student_id . ', quiz: ' . $quizId);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have reached the maximum number of attempts for this quiz.'
+                ]);
+            }
+
+            // Create a new quiz attempt
+            $attempt = QuizAttempt::create([
+                'quiz_id' => $quizId,
+                'student_id' => $student->student_id,
+                'status' => 'in_progress',
+                'started_at' => now(),
+                'total_questions' => 0, // Will be set when questions are loaded
+                'answers' => json_encode([])
+            ]);
+            
+            Log::info('Quiz attempt created: ' . $attempt->attempt_id);
+
+            $redirectUrl = route('student.quiz.take', ['attemptId' => $attempt->attempt_id]);
+            Log::info('Redirect URL: ' . $redirectUrl);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz started successfully!',
+                'redirect' => $redirectUrl
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Quiz start error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while starting the quiz.'
+            ]);
         }
-        
-        // For now, redirect to the module page
-        // In the future, you can create a dedicated quiz interface
-        return redirect()->route('student.module', ['moduleId' => $moduleId]);
     }
     
     /**
@@ -2890,13 +2956,13 @@ class StudentDashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Quiz is not available'], 403);
             }
 
-            // Check if student has exceeded max attempts
+            // Check if student has exceeded max attempts (only if infinite retakes is disabled)
             $attemptCount = \App\Models\QuizAttempt::where('quiz_id', $quizId)
                 ->where('student_id', $student->student_id)
                 ->where('status', 'completed')
                 ->count();
 
-            if ($attemptCount >= $quiz->max_attempts) {
+            if (!$quiz->infinite_retakes && $attemptCount >= $quiz->max_attempts) {
                 return response()->json(['success' => false, 'message' => 'Maximum attempts exceeded'], 403);
             }
 
@@ -2953,27 +3019,43 @@ class StudentDashboardController extends Controller
     public function takeQuiz($attemptId)
     {
         try {
-            // Get current student
-            $student = Student::where('user_id', session('user_id'))->first();
+            Log::info('takeQuiz called with attemptId: ' . $attemptId);
+            
+            // Get current student using Laravel session (consistent with other methods)
+            $userId = session('user_id');
+            if (!$userId) {
+                Log::error('No user_id in session');
+                return redirect()->route('student.dashboard')->with('error', 'Please log in to continue');
+            }
+            
+            $student = Student::where('user_id', $userId)->first();
             if (!$student) {
+                Log::error('Student not found for user_id: ' . $userId);
                 return redirect()->route('student.dashboard')->with('error', 'Student not found');
             }
+            
+            Log::info('Student found: ' . $student->student_id);
 
             // Get quiz attempt
-            $attempt = \App\Models\QuizAttempt::with(['quiz.questions', 'student'])
+            $attempt = QuizAttempt::with(['quiz.questions', 'student'])
                 ->find($attemptId);
 
             if (!$attempt) {
+                Log::error('Quiz attempt not found: ' . $attemptId);
                 return redirect()->route('student.dashboard')->with('error', 'Quiz attempt not found');
             }
+            
+            Log::info('Quiz attempt found: ' . $attempt->attempt_id . ', status: ' . $attempt->status);
 
             // Verify attempt belongs to current student
             if ($attempt->student_id !== $student->student_id) {
+                Log::error('Access denied - attempt belongs to student: ' . $attempt->student_id . ', current student: ' . $student->student_id);
                 return redirect()->route('student.dashboard')->with('error', 'Access denied');
             }
 
             // Check if attempt is still active
             if ($attempt->status !== 'in_progress') {
+                Log::error('Quiz attempt is not in progress: ' . $attempt->status);
                 return redirect()->route('student.dashboard')->with('error', 'Quiz attempt is no longer active');
             }
 
@@ -3049,8 +3131,13 @@ class StudentDashboardController extends Controller
     public function submitQuizAttempt(Request $request, $attemptId)
     {
         try {
-            // Get current student
-            $student = Student::where('user_id', session('user_id'))->first();
+            // Get current student using Laravel session (consistent with other methods)
+            $userId = session('user_id');
+            if (!$userId) {
+                return response()->json(['success' => false, 'message' => 'Please log in to continue'], 401);
+            }
+            
+            $student = Student::where('user_id', $userId)->first();
             if (!$student) {
                 return response()->json(['success' => false, 'message' => 'Student not found'], 404);
             }

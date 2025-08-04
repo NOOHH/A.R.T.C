@@ -1637,7 +1637,7 @@ This action cannot be undone.') }}</textarea>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="method_name" class="form-label">Method Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="e.g., GCash, Maya, Bank Transfer">
+                                    <input type="text" class="form-control" id="method_name" name="method_name" required placeholder="GCash, Maya,">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1645,12 +1645,8 @@ This action cannot be undone.') }}</textarea>
                                     <label for="method_type" class="form-label">Method Type <span class="text-danger">*</span></label>
                                     <select class="form-control" id="method_type" name="method_type" required>
                                         <option value="">Select Type</option>
-                                        <option value="credit_card">Credit Card</option>
                                         <option value="gcash">GCash</option>
                                         <option value="maya">Maya</option>
-                                        <option value="bank_transfer">Bank Transfer</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="other">Other</option>
                                     </select>
                                 </div>
                             </div>

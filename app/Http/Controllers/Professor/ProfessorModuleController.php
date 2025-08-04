@@ -532,6 +532,8 @@ class ProfessorModuleController extends Controller
             
             $programs = $professor->assignedPrograms()->get();
             $modules = collect();
+            $archivedCourses = collect();
+            $archivedContent = collect();
         
         if ($request->has('program_id') && $request->program_id != '') {
             // Check if professor is assigned to this program
@@ -541,14 +543,33 @@ class ProfessorModuleController extends Controller
                                ->with('error', 'You are not assigned to this program.');
             }
             
+            // Get archived modules
             $modules = Module::where('program_id', $request->program_id)
                            ->where('is_archived', true)
                            ->with(['program', 'batch'])
                            ->orderBy('updated_at', 'desc')
                            ->get();
+            
+            // Get archived courses for this program
+            $archivedCourses = Course::whereHas('module', function($query) use ($request) {
+                $query->where('program_id', $request->program_id);
+            })
+            ->where('is_archived', true)
+            ->with(['module', 'module.program'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+            
+            // Get archived content items for this program
+            $archivedContent = \App\Models\ContentItem::whereHas('course.module', function($query) use ($request) {
+                $query->where('program_id', $request->program_id);
+            })
+            ->where('is_archived', true)
+            ->with(['course', 'course.module', 'course.module.program'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
         }
 
-        return view('professor.modules.archived', compact('programs', 'modules'));
+        return view('professor.modules.archived', compact('programs', 'modules', 'archivedCourses', 'archivedContent'));
         } catch (\Exception $e) {
             Log::error('ProfessorModuleController archived error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -592,9 +613,10 @@ class ProfessorModuleController extends Controller
                 return response()->json(['error' => 'You are not assigned to this program.'], 403);
             }
 
-            // Get courses for this module
+            // Get courses for this module (excluding archived courses)
             $courses = Course::where('module_id', $moduleId)
                 ->where('is_active', true)
+                ->where('is_archived', false)
                 ->orderBy('subject_order', 'asc')
                 ->get();
 
@@ -646,11 +668,13 @@ class ProfessorModuleController extends Controller
                 return response()->json(['error' => 'You are not assigned to this program.'], 403);
             }
 
-            // Get courses for this module with their content items
+            // Get courses for this module with their content items (excluding archived courses)
             $courses = Course::where('module_id', $moduleId)
                 ->where('is_active', true)
+                ->where('is_archived', false)
                 ->with(['contentItems' => function($query) {
                     $query->where('is_active', true)
+                          ->where('is_archived', false)
                           ->orderBy('content_order', 'asc');
                 }])
                 ->orderBy('subject_order', 'asc')

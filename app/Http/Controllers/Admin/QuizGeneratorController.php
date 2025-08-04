@@ -791,11 +791,7 @@ class QuizGeneratorController extends Controller
      */
     public function preview(Quiz $quiz)
     {
-        // Admin can view any quiz
-        if ($quiz->professor_id !== null) {
-            return redirect()->route('admin.quiz-generator')
-                ->with('error', 'Quiz not found or access denied.');
-        }
+        // Admin can view any quiz (removed restriction on professor-created quizzes)
 
         $questions = $quiz->questions()->orderBy('question_order')->get();
         
@@ -1002,12 +998,7 @@ class QuizGeneratorController extends Controller
     {
         try {
             // Admin can archive any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Removed professor_id restriction - admin can modify any quiz
 
             $quiz->update(['status' => 'archived']);
 
@@ -1037,12 +1028,7 @@ class QuizGeneratorController extends Controller
     {
         try {
             // Admin can restore any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Removed professor_id restriction - admin can modify any quiz
 
             $quiz->update(['status' => 'draft']);
 
@@ -1071,13 +1057,7 @@ class QuizGeneratorController extends Controller
     public function moveToDraft(Quiz $quiz)
     {
         try {
-            // Admin can modify any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Admin can modify any quiz (removed restriction on professor-created quizzes)
 
             $quiz->update([
                 'status' => 'draft',
@@ -1190,13 +1170,7 @@ class QuizGeneratorController extends Controller
     public function updateQuestion(Request $request, Quiz $quiz, QuizQuestion $question)
     {
         try {
-            // Admin can modify any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Admin can modify any quiz (removed restriction on professor-created quizzes)
 
             if ($question->quiz_id !== $quiz->quiz_id) {
                 return response()->json([
@@ -1253,13 +1227,7 @@ class QuizGeneratorController extends Controller
     public function addQuestion(Request $request, Quiz $quiz)
     {
         try {
-            // Admin can modify any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Admin can modify any quiz (removed restriction on professor-created quizzes)
 
             $validatedData = $request->validate([
                 'question_text' => 'required|string',
@@ -1323,13 +1291,7 @@ class QuizGeneratorController extends Controller
     public function deleteQuestion(Request $request, Quiz $quiz, QuizQuestion $question)
     {
         try {
-            // Admin can modify any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Admin can modify any quiz (removed restriction on professor-created quizzes)
 
             if ($question->quiz_id !== $quiz->quiz_id) {
                 return response()->json([
@@ -1383,13 +1345,7 @@ class QuizGeneratorController extends Controller
         ]);
 
         try {
-            // Admin can modify any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Admin can modify any quiz (removed restriction on professor-created quizzes)
 
             // Handle both form data and JSON requests
             $inputData = $request->isJson() ? $request->json()->all() : $request->all();
@@ -1549,12 +1505,7 @@ class QuizGeneratorController extends Controller
     {
         try {
             // Admin can view any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Removed professor_id restriction - admin can modify any quiz
 
             $questions = $quiz->questions()->orderBy('question_order')->get();
             
@@ -1683,13 +1634,7 @@ class QuizGeneratorController extends Controller
             // Find the quiz
             $quiz = Quiz::findOrFail($quizId);
             
-            // Admin can modify any quiz
-            if ($quiz->professor_id !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Quiz not found or access denied.'
-                ], 403);
-            }
+            // Admin can modify any quiz (removed restriction on professor-created quizzes)
 
             // Handle both form data and JSON requests
             $inputData = $request->isJson() ? $request->json()->all() : $request->all();
@@ -1801,5 +1746,14 @@ class QuizGeneratorController extends Controller
                 'message' => 'Error updating quiz: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Update method for route compatibility
+     */
+    public function update(Request $request, $quizId)
+    {
+        // This method is an alias for updateQuiz to maintain route compatibility
+        return $this->updateQuiz($request, $quizId);
     }
 }

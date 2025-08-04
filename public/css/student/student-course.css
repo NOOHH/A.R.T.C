@@ -1,16 +1,23 @@
-/* Ensure main content fills the available width */
-.main-content {
-  width: 100%;
-  max-width: 100vw;
-  min-width: 0;
-  background: #f5f7fa; /* or your desired background */
-  overflow-x: auto;
-}
+/* Course page specific fixes - Only affects course-related content */
 
-/* Remove any unwanted margin/padding from parent containers */
-.container-fluid, .row.g-0 {
+/* Ensure main content fills the available width for course pages */
+.main-content {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  background: #f8fafc !important;
+  overflow-x: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Remove any unwanted margin/padding from course page containers */
+.content-wrapper .container-fluid, 
+.content-wrapper .row.g-0 {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
 }
 
 /* OVERRIDE: Hide sidebar and force main content full width on course page */
@@ -22,10 +29,10 @@ body:not(.with-sidebar) .sidebar-reopen-btn {
 
 body:not(.with-sidebar) .main-content {
   width: 100% !important;
-  max-width: 100vw !important;
+  max-width: 100% !important;
   min-width: 0 !important;
   margin-left: 0 !important;
-  background: #f5f7fa !important;
+  background: #f8fafc !important;
   flex: 1 1 100% !important;
 }
 
@@ -35,8 +42,8 @@ body:not(.with-sidebar) .content-wrapper {
 
 /* Make content-wrapper take full screen on course page */
 body:not(.with-sidebar) .content-wrapper {
-  width: 100vw !important;
-  max-width: 100vw !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-width: 0 !important;
   height: 100vh !important;
   max-height: 100vh !important;
@@ -44,15 +51,32 @@ body:not(.with-sidebar) .content-wrapper {
   margin: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  background: #f5f7fa !important;
+  background: #f8fafc !important;
   padding: 0 !important;
+  overflow-x: hidden !important;
 }
 
 /* Remove padding from .main-content if present */
 body:not(.with-sidebar) .main-content {
   padding: 0 !important;
 }
-/* student-course.css */
+
+/* Ensure course page containers respect width constraints */
+.content-wrapper .container-fluid, 
+.content-wrapper .row, 
+.content-wrapper .col, 
+.content-wrapper .col-md-*, 
+.content-wrapper .col-lg-* {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Fix any potential overflow issues within course content */
+.content-wrapper * {
+  box-sizing: border-box;
+}
+
+/* Course-specific styling */
 #content-viewer .empty-state + .mb-3 strong,
 #content-viewer .mb-3 strong {
   color: #ff5722; /* your new color */

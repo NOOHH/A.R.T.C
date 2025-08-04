@@ -656,22 +656,48 @@
         .course-item, .content-item {
             background: white;
             border: 1px solid #e9ecef;
-            border-radius: 0.5rem;
+            border-radius: 1rem;
             margin-bottom: 1rem;
-            padding: 1.5rem;
+            padding: 0;
             transition: all 0.3s ease;
             cursor: pointer;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: relative;
         }
 
         .course-item:hover, .content-item:hover {
             border-color: var(--primary-color);
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
-            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.15);
+            transform: translateY(-4px);
         }
 
         .course-item.active, .content-item.active {
             border-color: var(--primary-color);
             background-color: #f8f9ff;
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.18);
+        }
+
+        .content-item-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            gap: 1.25rem;
+            min-height: 140px;
+        }
+
+        .content-item-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .content-item-actions {
+            flex-shrink: 0;
+            margin-left: auto;
         }
 
         .item-header {
@@ -681,41 +707,153 @@
         }
 
         .item-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 0.5rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 1rem;
-            font-size: 1.2rem;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);
+            pointer-events: none;
         }
 
         .video-icon {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger-color);
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
         }
 
         .document-icon {
-            background-color: rgba(13, 110, 253, 0.1);
-            color: var(--primary-color);
+            background: linear-gradient(135deg, #4dabf7, #339af0);
+            color: white;
         }
 
         .assignment-icon {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning-color);
+            background: linear-gradient(135deg, #ffd43b, #fab005);
+            color: white;
+        }
+
+        .item-details {
+            flex: 1;
+            min-width: 0;
         }
 
         .item-title {
-            font-weight: 600;
+            font-weight: 700;
             color: var(--dark-color);
-            margin: 0;
+            margin: 0 0 0.75rem 0;
+            font-size: 1.2rem;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
         }
 
         .item-description {
-            color: var(--secondary-color);
-            margin: 0.5rem 0 0 0;
+            color: #6c757d;
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .item-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .item-badges .badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            text-transform: capitalize;
+            border: 1px solid transparent;
+        }
+
+        .item-badges .badge.bg-primary {
+            background: linear-gradient(135deg, #0d6efd, #0056b3) !important;
+            border-color: #0056b3;
+        }
+
+        .item-badges .badge.bg-success {
+            background: linear-gradient(135deg, #198754, #146c43) !important;
+            border-color: #146c43;
+        }
+
+        .item-badges .badge.bg-warning {
+            background: linear-gradient(135deg, #ffc107, #d39e00) !important;
+            border-color: #d39e00;
+            color: #000;
+        }
+
+        .item-badges .badge.bg-info {
+            background: linear-gradient(135deg, #0dcaf0, #0aa2c0) !important;
+            border-color: #0aa2c0;
+        }
+
+        .item-badges .badge.bg-secondary {
+            background: linear-gradient(135deg, #6c757d, #5a6169) !important;
+            border-color: #5a6169;
+        }
+
+        .mark-complete-btn {
+            padding: 0.65rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 140px;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            text-transform: none;
+            letter-spacing: 0.02em;
+        }
+
+        .mark-complete-btn.btn-success {
+            background: linear-gradient(135deg, #198754, #146c43);
+            border-color: #146c43;
+        }
+
+        .mark-complete-btn.btn-outline-success {
+            background: white;
+            color: #198754;
+            border-color: #198754;
+        }
+
+        .mark-complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .mark-complete-btn:disabled {
+            opacity: 0.6;
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+            cursor: not-allowed;
         }
 
         /* Video Player Styles */
@@ -783,12 +921,78 @@
 
         .content-grid {
             display: grid;
-            gap: 1rem;
+            gap: 1.5rem;
+            padding: 0.5rem;
+        }
+
+        .courses-grid {
+            display: grid;
+            gap: 1.5rem;
+            padding: 0.5rem;
         }
 
         @media (min-width: 768px) {
-            .content-grid {
-                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            .content-grid, .courses-grid {
+                grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .content-grid, .courses-grid {
+                grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            .content-grid, .courses-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 0.25rem;
+            }
+
+            .content-item-body {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1.25rem;
+                padding: 1.25rem;
+                min-height: auto;
+            }
+
+            .content-item-main {
+                flex-direction: row;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .content-item-actions {
+                align-self: stretch;
+                margin-left: 0;
+            }
+
+            .mark-complete-btn {
+                width: 100%;
+                min-width: auto;
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .item-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 1.3rem;
+            }
+
+            .item-title {
+                font-size: 1.1rem;
+            }
+
+            .item-description {
+                font-size: 0.9rem;
+            }
+
+            .item-badges .badge {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.6rem;
             }
         }
 
@@ -1188,21 +1392,29 @@
                     allContentCompleted = course.content_items.every(item => window.completedContentIds.includes(parseInt(item.id)));
                 }
                 html += `
-                    <div class="course-item d-flex justify-content-between align-items-center" onclick="selectCourse('${course.course_id}')">
-                        <div class="d-flex align-items-center flex-grow-1">
-                            <div class="item-header">
+                    <div class="course-item" onclick="selectCourse('${course.course_id}')">
+                        <div class="content-item-body">
+                            <div class="content-item-main">
                                 <div class="item-icon ${icon.class}">
-                                    <i class="bi ${icon.icon}"></i>
+                                    <i class="${icon.icon}"></i>
                                 </div>
-                                <h5 class="item-title">${course.course_name || course.name || 'Untitled Course'}</h5>
+                                <div class="item-details">
+                                    <h5 class="item-title">${course.course_name || course.name || 'Untitled Course'}</h5>
+                                    ${(course.course_description || course.description) ? `<p class="item-description">${course.course_description || course.description}</p>` : ''}
+                                    <div class="item-badges">
+                                        <span class="badge bg-primary">${course.type || course.course_type || 'Course'}</span>
+                                        ${course.duration ? `<span class="badge bg-secondary">${course.duration}</span>` : ''}
+                                        ${course.content_items && course.content_items.length ? `<span class="badge bg-info"><i class="bi bi-collection"></i> ${course.content_items.length} items</span>` : ''}
+                                    </div>
+                                </div>
                             </div>
-                            ${(course.course_description || course.description) ? `<p class=\"item-description\">${course.course_description || course.description}</p>` : ''}
-                            <div class="mt-2">
-                                <span class="badge bg-primary">${course.type || course.course_type || 'Course'}</span>
-                                ${course.duration ? `<span class=\"badge bg-secondary ms-1\">${course.duration}</span>` : ''}
+                            <div class="content-item-actions">
+                                <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm mark-complete-btn" onclick="event.stopPropagation(); toggleComplete('course', '${course.course_id}', this)" ${allContentCompleted ? '' : 'disabled title=\'Complete all course content first\''}>
+                                    <i class="bi ${isCompleted ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                    ${isCompleted ? 'Completed' : 'Mark Complete'}
+                                </button>
                             </div>
                         </div>
-                        <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); toggleComplete('course', '${course.course_id}', this)" ${allContentCompleted ? '' : 'disabled title=\'Complete all course content first\''}>${isCompleted ? 'Unmark as Complete' : 'Mark Complete'}</button>
                     </div>
                 `;
             });
@@ -1307,23 +1519,31 @@
                 const isQuiz = item.content_type === 'quiz';
 
                 let itemHtml = `
-                    <div class="content-item d-flex justify-content-between align-items-center" data-content-id="${item.id}" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
-                        <div class="d-flex align-items-center flex-grow-1">
-                            <div class="item-header">
+                    <div class="content-item" data-content-id="${item.id}" onclick="openContent('${item.id}', '${item.content_type || item.type}')">
+                        <div class="content-item-body">
+                            <div class="content-item-main">
                                 <div class="item-icon ${icon.class}">
-                                    <i class="bi ${icon.icon}"></i>
+                                    <i class="${icon.icon}"></i>
                                 </div>
-                                <h5 class="item-title">${item.content_title || item.title || 'Untitled Content'}</h5>
+                                <div class="item-details">
+                                    <h5 class="item-title">${item.content_title || item.title || 'Untitled Content'}</h5>
+                                    ${(item.content_description || item.description) ? `<p class="item-description">${item.content_description || item.description}</p>` : ''}
+                                    <div class="item-badges">
+                                        <span class="badge bg-primary">${item.content_type || item.type || 'content'}</span>
+                                        ${hasAttachment ? '<span class="badge bg-success"><i class="bi bi-paperclip"></i> Attachment</span>' : ''}
+                                        ${isAssignment ? '<span class="badge bg-warning"><i class="bi bi-pencil"></i> Assignment</span>' : ''}
+                                        ${isQuiz ? '<span class="badge bg-info"><i class="bi bi-question-circle"></i> Quiz</span>' : ''}
+                                        ${item.duration ? `<span class="badge bg-secondary">${item.duration}</span>` : ''}
+                                    </div>
+                                </div>
                             </div>
-                            ${(item.content_description || item.description) ? `<p class=\"item-description\">${item.content_description || item.description}</p>` : ''}
-                            <div class="mt-2">
-                                <span class="badge bg-primary">${item.content_type || item.type || 'Content'}</span>
-                                ${hasAttachment ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-paperclip\"></i> Attachment</span>` : ''}
-                                ${item.duration ? `<span class=\"badge bg-secondary ms-1\">${item.duration}</span>` : ''}
-                                ${isContentCompleted ? `<span class=\"badge bg-success ms-1\"><i class=\"bi bi-check-circle\"></i> Completed</span>` : ''}
+                            <div class="content-item-actions">
+                                <button class="btn ${isContentCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm mark-complete-btn" onclick="event.stopPropagation(); markComplete('content', '${item.id}', this)" ${isContentCompleted ? 'disabled' : ''}>
+                                    <i class="bi ${isContentCompleted ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                    ${isContentCompleted ? 'Completed' : 'Mark Complete'}
+                                </button>
                             </div>
                         </div>
-                        <button class="btn ${isContentCompleted ? 'btn-outline-success' : 'btn-success'} btn-sm ms-auto mark-complete-btn" style="min-width:120px;" onclick="event.stopPropagation(); markComplete('content', '${item.id}', this)" ${isContentCompleted ? 'disabled' : ''}>${isContentCompleted ? 'Completed' : 'Mark Complete'}</button>
                     </div>
                 `;
 

@@ -6,37 +6,73 @@
     <!-- Content-specific styles -->
     <link href="{{ asset('css/student/student-course.css') }}" rel="stylesheet">
     <style>
-        /* Override layout constraints to allow proper scrolling */
-        body {
-            background: #f8fafc !important;
-            height: auto !important;
-            overflow-y: auto !important;
+        /* CONTENT VIEW PAGE SPECIFIC FIXES - Only affects this page */
+        
+        /* Fix red bottom background and ensure full screen coverage */
+        body, html {
+            height: 100% !important;
+            overflow-x: hidden !important;
         }
         
         .student-container {
-            height: auto !important;
-            overflow: visible !important;
+            height: 100vh !important;
+            overflow: hidden !important;
         }
         
         .main-content-area {
-            overflow: visible !important;
-            height: auto !important;
+            height: 100vh !important;
+            overflow: hidden !important;
         }
         
+        /* Fix horizontal scrollbar for content page only */
         .content-wrapper {
-            overflow: visible !important;
-            height: auto !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
             background: #f8fafc !important;
-            min-height: 100vh;
-            padding-bottom: 4rem;
+            min-height: 100vh !important;
+            height: 100vh !important;
+            padding: 2rem !important;
+            padding-bottom: 2rem !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            position: relative !important;
         }
         
+        /* Override red background only for content wrapper */
+        .content-wrapper {
+            background: #f8fafc !important;
+            background-color: #f8fafc !important;
+            background-image: none !important;
+        }
+        
+        /* Ensure content fills available space */
+        .content-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f8fafc !important;
+            z-index: -1;
+        }
+        
+        /* Content page specific styling */
         .content-page {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
-            min-height: calc(100vh - 200px);
+            padding: 0;
+            min-height: calc(100vh - 4rem);
+            height: auto;
             position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         .content-header {
@@ -178,6 +214,21 @@
         .status-graded {
             background: #cce5ff;
             color: #0056b3;
+        }
+        
+        /* Ensure content page containers respect width constraints */
+        .content-page .container-fluid, 
+        .content-page .row, 
+        .content-page .col, 
+        .content-page .col-md-*, 
+        .content-page .col-lg-* {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* Fix any potential overflow issues within content page */
+        .content-page * {
+            box-sizing: border-box;
         }
         
         @media (max-width: 768px) {
@@ -1023,21 +1074,24 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Quiz start response:', data);
                 if (data.success) {
                     // Hide modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('startQuizModal'));
                     modal.hide();
                     
+                    console.log('Redirecting to:', data.redirect);
                     // Redirect to quiz
                     window.location.href = data.redirect;
                 } else {
+                    console.error('Quiz start failed:', data.message);
                     showNotification(data.message || 'Error starting quiz', 'error');
                     startBtn.innerHTML = originalText;
                     startBtn.disabled = false;
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Quiz start fetch error:', error);
                 showNotification('Error starting quiz', 'error');
                 startBtn.innerHTML = originalText;
                 startBtn.disabled = false;

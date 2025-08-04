@@ -6,135 +6,50 @@
     <link href="{{ asset('css/student/student-course.css') }}" rel="stylesheet">
     <link href="{{ asset('css/student/student-navbar.css') }}" rel="stylesheet">
     <style>
-        /* Fix navbar and layout positioning for quiz results */
-        .main-header {
-            position: fixed !important;
-            top: 0 !important;
-            left: 280px !important;
-            right: 0 !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 1rem 2rem !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(169, 29, 58, 0.1);
-        }
+        /* Header fixed at top, respecting sidebar width */
+.main-header {
+  position: fixed;
+  top: 0;
+  left: 0; /* will be adjusted via the collapsed state below */
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  z-index: 1050;
+  transition: left .3s;
+}
 
-        /* Fix content wrapper for proper layout */
-        .content-wrapper {
-            margin-top: 160px !important;
-            padding: 0 !important;
-            height: auto !important;
-            min-height: auto !important;
-            overflow: visible !important;
-            background: #f8fafc !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-        }
+/* Push content down so it isn’t hidden under header */
+.results-container {
+  padding-top: calc(60px + 20px); /* header height + breathing room */
+}
 
-        /* Main layout adjustments */
-        .main-content-area {
-            margin-left: 280px;
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+:root {
+  --sidebar-expanded-width: 250px;
+  --sidebar-collapsed-width: 80px;
+}
 
-        /* Sidebar responsive behavior */
-        .professional-sidebar.collapsed + .main-content-area {
-            margin-left: 70px;
-        }
+/* Sidebar width control */
+.professional-sidebar {
+  width: var(--sidebar-expanded-width);
+  transition: width .3s;
+}
+body.sidebar-collapsed .professional-sidebar {
+  width: var(--sidebar-collapsed-width);
+}
 
-        .professional-sidebar.collapsed ~ .main-content-area .main-header {
-            left: 70px !important;
-        }
+/* Main content shifts based on sidebar state */
+.main-content-area {
+  margin-left: var(--sidebar-expanded-width);
+  transition: margin-left .3s;
+}
+body.sidebar-collapsed .main-content-area {
+  margin-left: var(--sidebar-collapsed-width);
+}
 
-        /* Fix for sidebar toggle functionality */
-        .main-content-area.sidebar-collapsed {
-            margin-left: 70px !important;
-        }
-
-        .main-content-area.sidebar-collapsed .main-header {
-            left: 70px !important;
-        }
-
-        /* Ensure proper transitions */
-        .main-content-area,
-        .main-header {
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Additional fix for when sidebar is collapsed via JavaScript */
-        .professional-sidebar.collapsed ~ .main-content-area {
-            margin-left: 70px !important;
-        }
-
-        .professional-sidebar.collapsed ~ .main-content-area .main-header {
-            left: 70px !important;
-        }
-
-        @media (max-width: 768px) {
-            .main-content-area {
-                margin-left: 0 !important;
-            }
-            
-            .main-header {
-                left: 0 !important;
-            }
-            
-            .content-wrapper {
-                margin-top: 100px !important;
-            }
-
-            .results-header {
-            padding: 2rem;
-            border-radius: 0.5rem;
-            margin-top: 1000px !important;
-            margin-bottom: 2rem;
-            }
-        }
-
-        /* Search box fix */
-        .search-input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            background: #f4f6fa;
-            border-radius: 25px;
-            border: 1.5px solid #e0e6ed;
-            box-shadow: 0 2px 8px rgba(45, 27, 105, 0.06);
-            padding: 0.5rem 1rem;
-            transition: box-shadow 0.2s, border-color 0.2s;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .search-input-wrapper:focus-within {
-            border-color: #3b82f6;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.10);
-        }
-
-        .search-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #2d1b69;
-            font-size: 0.95rem;
-            padding: 0.25rem 0;
-        }
-
-        .search-input::placeholder {
-            color: #9ca3af;
-        }
-
-        .search-icon {
-            font-size: 1.1rem;
-            color: #9ca3af;
-            margin-right: 0.5rem;
-        }
-
-        /* Quiz results specific styles */
         body {
             background: #f8fafc !important;
             height: auto !important;
@@ -153,7 +68,6 @@
             color: white;
             padding: 2rem;
             border-radius: 0.5rem;
-            margin-top: 90px !important;
             margin-bottom: 2rem;
             text-align: center;
         }
@@ -296,10 +210,19 @@
                 margin-left: 1rem;
             }
         }
+
+        /* make sure the content doesn't get hidden under the navbar */
+.results-container {
+  padding-top: 80px; /* navbar height + breathing room */
+  margin-top: 0;
+}
+
     </style>
 @endsection
 
 @section('content')
+@include('components.student-navbar')
+
 <div class="results-container">
     <!-- Results Header -->
     <div class="results-header">
@@ -514,92 +437,6 @@
 
 @push('scripts')
 <script>
-    // Enhanced search functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('studentSearchInput');
-        const searchResults = document.getElementById('studentSearchResults');
-        const searchClear = document.getElementById('searchClearBtn');
-        
-        if (searchInput) {
-            // Make sure search is functional
-            searchInput.addEventListener('input', function() {
-                const query = this.value.trim();
-                
-                if (query.length > 0) {
-                    if (searchClear) searchClear.style.display = 'block';
-                    
-                    // Perform search (this would typically make an AJAX call)
-                    performSearch(query);
-                } else {
-                    if (searchClear) searchClear.style.display = 'none';
-                    if (searchResults) searchResults.style.display = 'none';
-                }
-            });
-        }
-        
-        if (searchClear) {
-            searchClear.addEventListener('click', function() {
-                if (searchInput) searchInput.value = '';
-                this.style.display = 'none';
-                if (searchResults) searchResults.style.display = 'none';
-            });
-        }
-
-        // Fix navbar position when sidebar is toggled
-        const sidebar = document.getElementById('studentSidebar');
-        const mainHeader = document.querySelector('.main-header');
-        const mainContentArea = document.querySelector('.main-content-area');
-        
-        if (sidebar && mainHeader && mainContentArea) {
-            // Function to update navbar position based on sidebar state
-            function updateNavbarPosition() {
-                if (window.innerWidth >= 769) {
-                    if (sidebar.classList.contains('collapsed')) {
-                        mainHeader.style.left = '70px';
-                        mainContentArea.style.marginLeft = '70px';
-                    } else {
-                        mainHeader.style.left = '280px';
-                        mainContentArea.style.marginLeft = '280px';
-                    }
-                } else {
-                    mainHeader.style.left = '0';
-                    mainContentArea.style.marginLeft = '0';
-                }
-            }
-
-            // Initial position update
-            updateNavbarPosition();
-
-            // Watch for sidebar class changes
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        updateNavbarPosition();
-                    }
-                });
-            });
-
-            observer.observe(sidebar, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-
-            // Also listen for window resize
-            window.addEventListener('resize', updateNavbarPosition);
-        }
-    });
-    
-    function performSearch(query) {
-        // Basic search implementation
-        // In a real application, this would make an AJAX call to search endpoint
-        console.log('Searching for:', query);
-        
-        // Show search results dropdown
-        const searchResults = document.getElementById('studentSearchResults');
-        if (searchResults) {
-            searchResults.style.display = 'block';
-            // Add actual search results here
-        }
-    }
+    // The retakeQuiz function has been removed as the button was causing bugs
 </script>
 @endpush

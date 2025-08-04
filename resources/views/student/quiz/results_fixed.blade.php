@@ -8,10 +8,10 @@
     <style>
         /* Fix navbar and layout positioning for quiz results */
         .main-header {
-            position: fixed !important;
-            top: 0 !important;
-            left: 280px !important;
-            right: 0 !important;
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
             height: auto !important;
             margin: 0 !important;
             padding: 1rem 2rem !important;
@@ -24,7 +24,7 @@
 
         /* Fix content wrapper for proper layout */
         .content-wrapper {
-            margin-top: 160px !important;
+            margin: 0 !important;
             padding: 0 !important;
             height: auto !important;
             min-height: auto !important;
@@ -45,52 +45,9 @@
             margin-left: 70px;
         }
 
-        .professional-sidebar.collapsed ~ .main-content-area .main-header {
-            left: 70px !important;
-        }
-
-        /* Fix for sidebar toggle functionality */
-        .main-content-area.sidebar-collapsed {
-            margin-left: 70px !important;
-        }
-
-        .main-content-area.sidebar-collapsed .main-header {
-            left: 70px !important;
-        }
-
-        /* Ensure proper transitions */
-        .main-content-area,
-        .main-header {
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Additional fix for when sidebar is collapsed via JavaScript */
-        .professional-sidebar.collapsed ~ .main-content-area {
-            margin-left: 70px !important;
-        }
-
-        .professional-sidebar.collapsed ~ .main-content-area .main-header {
-            left: 70px !important;
-        }
-
         @media (max-width: 768px) {
             .main-content-area {
                 margin-left: 0 !important;
-            }
-            
-            .main-header {
-                left: 0 !important;
-            }
-            
-            .content-wrapper {
-                margin-top: 100px !important;
-            }
-
-            .results-header {
-            padding: 2rem;
-            border-radius: 0.5rem;
-            margin-top: 1000px !important;
-            margin-bottom: 2rem;
             }
         }
 
@@ -153,7 +110,6 @@
             color: white;
             padding: 2rem;
             border-radius: 0.5rem;
-            margin-top: 90px !important;
             margin-bottom: 2rem;
             text-align: center;
         }
@@ -543,49 +499,6 @@
                 this.style.display = 'none';
                 if (searchResults) searchResults.style.display = 'none';
             });
-        }
-
-        // Fix navbar position when sidebar is toggled
-        const sidebar = document.getElementById('studentSidebar');
-        const mainHeader = document.querySelector('.main-header');
-        const mainContentArea = document.querySelector('.main-content-area');
-        
-        if (sidebar && mainHeader && mainContentArea) {
-            // Function to update navbar position based on sidebar state
-            function updateNavbarPosition() {
-                if (window.innerWidth >= 769) {
-                    if (sidebar.classList.contains('collapsed')) {
-                        mainHeader.style.left = '70px';
-                        mainContentArea.style.marginLeft = '70px';
-                    } else {
-                        mainHeader.style.left = '280px';
-                        mainContentArea.style.marginLeft = '280px';
-                    }
-                } else {
-                    mainHeader.style.left = '0';
-                    mainContentArea.style.marginLeft = '0';
-                }
-            }
-
-            // Initial position update
-            updateNavbarPosition();
-
-            // Watch for sidebar class changes
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        updateNavbarPosition();
-                    }
-                });
-            });
-
-            observer.observe(sidebar, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-
-            // Also listen for window resize
-            window.addEventListener('resize', updateNavbarPosition);
         }
     });
     
