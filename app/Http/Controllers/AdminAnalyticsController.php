@@ -926,6 +926,9 @@ class AdminAnalyticsController extends Controller
             $totalStudents = $studentsQuery->count();
             $studentsTrend = $this->calculateTrend('students', $filters);
             
+            // Average Quiz Score
+            $avgQuizScore = $this->calculateAverageQuizScore($filters);
+            
             // Completion Rate
             $completionRate = $this->calculateCompletionRate($filters);
             $completionTrend = $this->calculateTrend('completion', $filters);
@@ -933,6 +936,7 @@ class AdminAnalyticsController extends Controller
             return [
                 'boardPassRate' => round($boardPassRate, 1),
                 'totalStudents' => $totalStudents,
+                'avgQuizScore' => round($avgQuizScore, 1),
                 'completionRate' => round($completionRate, 1),
                 'boardPassTrend' => $boardPassTrend,
                 'studentsTrend' => $studentsTrend,
@@ -943,6 +947,7 @@ class AdminAnalyticsController extends Controller
             return [
                 'boardPassRate' => 0,
                 'totalStudents' => 0,
+                'avgQuizScore' => 0,
                 'completionRate' => 0,
                 'boardPassTrend' => ['value' => 0, 'period' => 'this period'],
                 'studentsTrend' => ['value' => 0, 'period' => 'this period'],
@@ -1073,7 +1078,7 @@ class AdminAnalyticsController extends Controller
             // Check for quiz_results table
             if (DB::getSchemaBuilder()->hasTable('quiz_results')) {
                 $query = DB::table('quiz_results')
-                    ->join('users', '', '=', 'users.user_id')
+                    ->join('users', 'quiz_results.user_id', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {
@@ -1094,7 +1099,7 @@ class AdminAnalyticsController extends Controller
             // Check for module_completions table if no quiz_results
             if (!$avgScore && DB::getSchemaBuilder()->hasTable('module_completions')) {
                 $query = DB::table('module_completions')
-                    ->join('users', '', '=', 'users.user_id')
+                    ->join('users', 'module_completions.user_id', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {
@@ -1115,7 +1120,7 @@ class AdminAnalyticsController extends Controller
             // Check for quiz_answers table
             if (!$avgScore && DB::getSchemaBuilder()->hasTable('quiz_answers')) {
                 $query = DB::table('quiz_answers')
-                    ->join('users', '', '=', 'users.user_id')
+                    ->join('users', 'quiz_answers.user_id', '=', 'users.user_id')
                     ->where('users.role', 'student');
 
                 if (!empty($filters['year'])) {

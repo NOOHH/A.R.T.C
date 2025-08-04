@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\Program;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
@@ -425,15 +426,29 @@ class ClassMeetingController extends Controller
     {
         $studentId = null;
 
-        // Get student ID from session
-        if (session('user_id')) {
-            $student = Student::where('user_id', session('user_id'))->first();
+        // Get student ID from session - try both session() and SessionManager
+        $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+        
+        // Log debugging information
+        Log::info('studentUpcomingMeetings called', [
+            'session_user_id' => session('user_id'),
+            'sessionmanager_user_id' => \App\Helpers\SessionManager::get('user_id'),
+            'final_user_id' => $userId,
+            'session_data' => session()->all()
+        ]);
+        
+        if ($userId) {
+            $student = Student::where('user_id', $userId)->first();
             if ($student) {
                 $studentId = $student->student_id;
             }
         }
 
         if (!$studentId) {
+            Log::warning('studentUpcomingMeetings: No student found', [
+                'user_id' => $userId,
+                'session_data' => session()->all()
+            ]);
             return response()->json(['error' => 'Not authenticated'], 401);
         }
 
@@ -514,9 +529,11 @@ class ClassMeetingController extends Controller
         $studentId = null;
         $student = null;
 
-        // Get student ID from session or Auth
-        if (session('user_id')) {
-            $student = Student::where('user_id', session('user_id'))->first();
+        // Get student ID from session - try both session() and SessionManager
+        $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+        
+        if ($userId) {
+            $student = Student::where('user_id', $userId)->first();
             if ($student) {
                 $studentId = $student->student_id;
             }

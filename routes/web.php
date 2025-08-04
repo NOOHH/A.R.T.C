@@ -601,32 +601,32 @@ Route::get('/test-content-view/{contentId}', function($contentId) {
     }
 });
 
-Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
-Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
-Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
-Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
-Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
+    Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
+    Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
+    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
+    Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
+    Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
 
-// AI-generated quiz routes
-Route::get('/student/ai-quiz/{quizId}/start', [StudentDashboardController::class, 'startAiQuiz'])->name('student.ai-quiz.start');
-Route::post('/student/ai-quiz/{quizId}/submit', [StudentDashboardController::class, 'submitAiQuiz'])->name('student.ai-quiz.submit');
+    // AI-generated quiz routes
+    Route::get('/student/ai-quiz/{quizId}/start', [StudentDashboardController::class, 'startAiQuiz'])->name('student.ai-quiz.start');
+    Route::post('/student/ai-quiz/{quizId}/submit', [StudentDashboardController::class, 'submitAiQuiz'])->name('student.ai-quiz.submit');
 
-// Payment routes
-Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
-Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
-Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
-Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
+    // Payment routes
+    Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
+    Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
+    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
+    Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
 
-// Rejected Registration Management Routes
-Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
-Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
-Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
-Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
-Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
-Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
-Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
-Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
-Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
+    // Rejected Registration Management Routes
+    Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
+    Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
+    Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
+    Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
+    Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
+    Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
+    Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
+    Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
+    Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
 
 // Update overdue deadlines (can be called by admin or cron job)
 Route::post('/student/update-overdue-deadlines', [App\Http\Controllers\StudentDashboardController::class, 'updateOverdueDeadlines']);

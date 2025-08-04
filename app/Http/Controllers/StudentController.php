@@ -648,7 +648,7 @@ class StudentController extends Controller
                 'created_by_admin_id' => 1
             ]);
             $packages = collect([$defaultPackage]);
-            \Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
+            Log::info('Auto-generated default full package', ['package_id' => $defaultPackage->package_id]);
         }
         $formRequirements = \App\Models\FormRequirement::active()->get();
         $educationLevels = ['High School', 'College', 'Graduate', 'Postgraduate'];
@@ -656,7 +656,8 @@ class StudentController extends Controller
         // Get student data if user is logged in
         $student = null;
         if ($isUserLoggedIn) {
-            $student = \App\Models\Student::where('user_id', session('user_id'))->first();
+            $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+            $student = \App\Models\Student::where('user_id', $userId)->first();
         }
         
         // Create default objects for plans
@@ -714,7 +715,9 @@ class StudentController extends Controller
     public function getRejectionDetails($id)
     {
         try {
-            $userId = session('user_id');
+            // Get user ID from session - try both session() and SessionManager
+            $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+            
             if (!$userId) {
                 return response()->json([
                     'success' => false,
@@ -853,7 +856,9 @@ class StudentController extends Controller
     public function getEditForm($id)
     {
         try {
-            $userId = session('user_id');
+            // Get user ID from session - try both session() and SessionManager
+            $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+            
             if (!$userId) {
                 return response()->json([
                     'success' => false,
@@ -913,10 +918,16 @@ class StudentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting edit form: ' . $e->getMessage());
+            Log::error('Error getting edit form: ' . $e->getMessage(), [
+                'enrollment_id' => $id,
+                'user_id' => $userId ?? 'unknown',
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Internal server error'
+                'message' => 'Internal server error: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -927,7 +938,9 @@ class StudentController extends Controller
     public function getRejectedRegistration($id)
     {
         try {
-            $userId = session('user_id');
+            // Get user ID from session - try both session() and SessionManager
+            $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+            
             if (!$userId) {
                 return response()->json([
                     'success' => false,
@@ -988,7 +1001,9 @@ class StudentController extends Controller
     public function resubmitRegistration(Request $request, $id)
     {
         try {
-            $userId = session('user_id');
+            // Get user ID from session - try both session() and SessionManager
+            $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+            
             if (!$userId) {
                 return response()->json([
                     'success' => false,
@@ -1098,7 +1113,9 @@ class StudentController extends Controller
     public function deleteRegistration($id)
     {
         try {
-            $userId = session('user_id');
+            // Get user ID from session - try both session() and SessionManager
+            $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+            
             if (!$userId) {
                 return response()->json([
                     'success' => false,

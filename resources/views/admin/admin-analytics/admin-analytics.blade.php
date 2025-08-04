@@ -117,9 +117,6 @@
                                 <button type="button" class="btn btn-outline-danger" onclick="exportData('pdf')" title="Export as PDF">
                                     <i class="bi bi-file-earmark-pdf me-1"></i>PDF
                                 </button>
-                                <button type="button" class="btn btn-outline-secondary" onclick="exportData('excel')" title="Export as JSON">
-                                    <i class="bi bi-filetype-json me-1"></i>JSON
-                                </button>
                                 <button type="button" class="btn btn-outline-success" onclick="exportData('csv')" title="Export as CSV">
                                     <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
                                 </button>

@@ -112,19 +112,19 @@
         <h2>Key Metrics</h2>
         <div class="metrics-grid">
             <div class="metric-card">
-                <div class="metric-value">{{ $metrics['boardPassRate'] }}%</div>
+                <div class="metric-value">{{ $metrics['boardPassRate'] ?? 0 }}%</div>
                 <div class="metric-label">Board Pass Rate</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">{{ number_format($metrics['totalStudents']) }}</div>
+                <div class="metric-value">{{ number_format($metrics['totalStudents'] ?? 0) }}</div>
                 <div class="metric-label">Total Students</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">{{ $metrics['avgQuizScore'] }}%</div>
+                <div class="metric-value">{{ $metrics['avgQuizScore'] ?? 0 }}%</div>
                 <div class="metric-label">Avg Quiz Score</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">{{ $metrics['completionRate'] }}%</div>
+                <div class="metric-value">{{ $metrics['completionRate'] ?? 0 }}%</div>
                 <div class="metric-label">Completion Rate</div>
             </div>
         </div>
@@ -144,14 +144,14 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['recentlyEnrolled'] as $student)
+                @foreach($tables['recentlyEnrolled'] ?? [] as $student)
                 <tr>
-                    <td>{{ $student['name'] }}</td>
-                    <td>{{ $student['email'] }}</td>
-                    <td>{{ $student['program'] }}</td>
-                    <td>{{ $student['plan'] }}</td>
-                    <td>{{ $student['enrollment_date'] }}</td>
-                    <td>{{ $student['status'] }}</td>
+                    <td>{{ $student['name'] ?? '' }}</td>
+                    <td>{{ $student['email'] ?? '' }}</td>
+                    <td>{{ $student['program'] ?? '' }}</td>
+                    <td>{{ $student['plan'] ?? '' }}</td>
+                    <td>{{ $student['enrollment_date'] ?? '' }}</td>
+                    <td>{{ $student['status'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -172,14 +172,14 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['recentlyCompleted'] as $student)
+                @foreach($tables['recentlyCompleted'] ?? [] as $student)
                 <tr>
-                    <td>{{ $student['name'] }}</td>
-                    <td>{{ $student['email'] }}</td>
-                    <td>{{ $student['program'] }}</td>
-                    <td>{{ $student['plan'] }}</td>
-                    <td>{{ $student['completion_date'] }}</td>
-                    <td>{{ $student['final_score'] }}%</td>
+                    <td>{{ $student['name'] ?? '' }}</td>
+                    <td>{{ $student['email'] ?? '' }}</td>
+                    <td>{{ $student['program'] ?? '' }}</td>
+                    <td>{{ $student['plan'] ?? '' }}</td>
+                    <td>{{ $student['completion_date'] ?? '' }}</td>
+                    <td>{{ $student['final_score'] ?? 0 }}%</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -200,14 +200,14 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['recentPayments'] as $payment)
+                @foreach($tables['recentPayments'] ?? [] as $payment)
                 <tr>
-                    <td>{{ $payment['student_name'] }}</td>
-                    <td>{{ $payment['program'] }}</td>
-                    <td>₱{{ number_format($payment['amount'], 2) }}</td>
-                    <td>{{ $payment['payment_date'] }}</td>
-                    <td>{{ $payment['status'] }}</td>
-                    <td>{{ $payment['payment_method'] }}</td>
+                    <td>{{ $payment['student_name'] ?? '' }}</td>
+                    <td>{{ $payment['program'] ?? '' }}</td>
+                    <td>₱{{ number_format($payment['amount'] ?? 0, 2) }}</td>
+                    <td>{{ $payment['payment_date'] ?? '' }}</td>
+                    <td>{{ $payment['status'] ?? '' }}</td>
+                    <td>{{ $payment['payment_method'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -228,13 +228,13 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['boardPassers'] as $passer)
+                @foreach($tables['boardPassers'] ?? [] as $passer)
                 <tr>
-                    <td>{{ $passer['student_id'] }}</td>
-                    <td>{{ $passer['full_name'] }}</td>
+                    <td>{{ $passer['student_id'] ?? '' }}</td>
+                    <td>{{ $passer['full_name'] ?? '' }}</td>
                     <td>{{ $passer['program_name'] ?? $passer['program'] ?? 'Unknown Program' }}</td>
-                    <td>{{ $passer['exam_date'] }}</td>
-                    <td>{{ $passer['result'] }}</td>
+                    <td>{{ $passer['exam_date'] ?? '' }}</td>
+                    <td>{{ $passer['result'] ?? '' }}</td>
                     <td>{{ $passer['rating'] ? $passer['rating'] . '%' : 'N/A' }}</td>
                 </tr>
                 @endforeach
@@ -256,14 +256,14 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($tables['batchPerformance'] as $batch)
+                @foreach($tables['batchPerformance'] ?? [] as $batch)
                 <tr>
-                    <td>{{ $batch['batch_name'] }}</td>
-                    <td>{{ $batch['student_count'] }}</td>
-                    <td>{{ $batch['average_score'] }}%</td>
-                    <td>{{ $batch['pass_rate'] }}%</td>
-                    <td>{{ $batch['completion_rate'] }}%</td>
-                    <td>{{ $batch['status'] }}</td>
+                    <td>{{ $batch['batch_name'] ?? '' }}</td>
+                    <td>{{ $batch['student_count'] ?? 0 }}</td>
+                    <td>{{ $batch['average_score'] ?? 0 }}%</td>
+                    <td>{{ $batch['pass_rate'] ?? 0 }}%</td>
+                    <td>{{ $batch['completion_rate'] ?? 0 }}%</td>
+                    <td>{{ $batch['status'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -277,10 +277,10 @@
                including student performance, program effectiveness, and overall training outcomes.</p>
             <p><strong>Key Insights:</strong></p>
             <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
-                <li>Board pass rate: {{ $metrics['boardPassRate'] }}% (Target: 70%+)</li>
-                <li>Student completion rate: {{ $metrics['completionRate'] }}%</li>
-                <li>Average quiz performance: {{ $metrics['avgQuizScore'] }}%</li>
-                <li>Total active students: {{ $metrics['totalStudents'] }}</li>
+                <li>Board pass rate: {{ $metrics['boardPassRate'] ?? 0 }}% (Target: 70%+)</li>
+                <li>Student completion rate: {{ $metrics['completionRate'] ?? 0 }}%</li>
+                <li>Average quiz performance: {{ $metrics['avgQuizScore'] ?? 0 }}%</li>
+                <li>Total active students: {{ $metrics['totalStudents'] ?? 0 }}</li>
             </ul>
         </div>
         
