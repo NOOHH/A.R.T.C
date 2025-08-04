@@ -191,12 +191,12 @@ class PaymentController extends Controller
                 'amount' => $enrollment->package ? $enrollment->package->amount : 0,
                 'payment_status' => 'pending',
                 'reference_number' => $request->reference_number,
-                'payment_details' => json_encode([
+                'payment_details' => [
                     'payment_method_name' => $paymentMethod->name,
                     'payment_proof_path' => $path,
                     'reference_number' => $request->reference_number,
                     'uploaded_at' => now()->toISOString()
-                ]),
+                ],
                 'notes' => 'Payment proof uploaded by student - awaiting admin verification'
             ]);
 

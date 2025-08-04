@@ -1802,7 +1802,9 @@ class AdminController extends Controller
                 'rejected_fields' => $payment->rejected_fields,
                 'payment_details' => $paymentDetails,
                 'program_name' => $payment->enrollment->program->program_name ?? 'N/A',
-                'package_name' => $payment->enrollment->package->package_name ?? 'N/A'
+                'package_name' => $payment->enrollment->package->package_name ?? 'N/A',
+                'transaction_date' => $payment->created_at ? $payment->created_at->format('M d, Y g:i A') : 'N/A',
+                'created_at' => $payment->created_at ? $payment->created_at->format('M d, Y g:i A') : 'N/A'
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Payment not found or database error.'], 404);
@@ -2192,6 +2194,7 @@ class AdminController extends Controller
                     ? asset('storage/' . $paymentDetails['payment_proof_path']) 
                     : null,
                 'created_at' => $payment->created_at ? $payment->created_at->format('M d, Y g:i A') : 'N/A',
+                'transaction_date' => $payment->created_at ? $payment->created_at->format('M d, Y g:i A') : 'N/A',
                 'notes' => $payment->notes ?? '',
             ];
             return response()->json($response);

@@ -46,7 +46,7 @@ class StudentPaymentController extends Controller
                 'payment_method' => $request->payment_method,
                 'amount' => $this->calculateAmount($enrollment),
                 'payment_status' => 'pending',
-                'payment_details' => json_encode($this->getPaymentDetails($request)),
+                'payment_details' => $this->getPaymentDetails($request),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -128,12 +128,12 @@ class StudentPaymentModalController extends Controller
                 'payment_method' => $this->mapPaymentMethodType($paymentMethod->method_type),
                 'amount' => $request->amount,
                 'payment_status' => 'pending',
-                'payment_details' => json_encode([
+                'payment_details' => [
                     'payment_proof_path' => $path,
                     'reference_number' => $request->reference_number,
                     'payment_method_name' => $paymentMethod->method_name,
                     'uploaded_at' => now()->toISOString()
-                ]),
+                ],
                 'reference_number' => $request->reference_number,
                 'notes' => 'Payment proof uploaded by student'
             ]);
