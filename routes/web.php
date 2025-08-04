@@ -1912,6 +1912,8 @@ Route::middleware(['professor.auth'])
          ->name('profile');
     Route::put('/profile', [ProfessorDashboardController::class, 'updateProfile'])
          ->name('profile.update');
+    Route::post('/profile/photo', [ProfessorDashboardController::class, 'updateProfilePhoto'])
+         ->name('profile.photo.update');
     
     // Student Management
     // My batches (only those this prof owns)
@@ -2125,6 +2127,12 @@ Route::middleware(['professor.auth'])
          ->name('content.update');
     Route::delete('/content/{id}', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'deleteContent'])
          ->name('content.delete');
+    
+    // Archive routes for courses and content
+    Route::post('/courses/{id}/archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archiveCourse'])
+         ->name('courses.archive');
+    Route::post('/content/{id}/archive', [\App\Http\Controllers\Professor\ProfessorModuleController::class, 'archiveContent'])
+         ->name('content.archive');
     
     // Test file extraction route
     Route::post('/quiz-generator/test-file-extraction', function(\Illuminate\Http\Request $request) {

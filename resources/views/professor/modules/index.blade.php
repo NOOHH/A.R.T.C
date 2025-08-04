@@ -315,92 +315,75 @@
   gap: 1.5rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .action-buttons .btn {
-  padding: 1.2rem 2rem;
-  font-weight: 600;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  padding: 1rem 1.8rem;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease;
   text-decoration: none;
-  border: none;
+  border: 1px solid #e2e8f0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  min-width: 180px;
+  gap: 0.75rem;
+  min-width: 200px;
+  background: white;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: relative;
-  overflow: hidden;
 }
 
 .action-buttons .btn i {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
 }
 
-.action-buttons .btn span {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
+.action-buttons .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #cbd5e1;
 }
 
-.action-buttons .btn small {
-  font-weight: 400;
-  opacity: 0.9;
+.action-buttons .btn:hover i {
+  transform: scale(1.1);
 }
 
-.action-buttons .btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
+.add-course-content-btn {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
 }
 
-.action-buttons .btn:hover::before {
-  left: 100%;
-}
-
-.batch-upload-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+.add-course-content-btn:hover {
+  background: #3b82f6;
   color: white;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-}
-
-.batch-upload-btn:hover {
-  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
-  color: white;
+  border-color: #3b82f6;
 }
 
 .view-archived-btn {
-  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+  border-color: #6b7280;
+  color: #6b7280;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
 }
 
 .view-archived-btn:hover {
-  background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+  background: #6b7280;
   color: white;
+  border-color: #6b7280;
 }
 
 .quiz-generator-btn {
-  background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
 }
 
 .quiz-generator-btn:hover {
-  background: linear-gradient(135deg, #5a2d91 0%, #d91a72 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
+  background: #8b5cf6;
   color: white;
+  border-color: #8b5cf6;
 }
 
 /* Cross-module drag and drop styles */
@@ -999,37 +982,20 @@
                     <option value="asynchronous">Asynchronous</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label for="contentTypeFilter">Filter by Content Type:</label>
-                <select id="contentTypeFilter" class="form-select">
-                    <option value="">All Content Types</option>
-                    <option value="lesson">📚 Lesson</option>
-                    <option value="video">🎥 Video</option>
-                    <option value="assignment">📝 Assignment</option>
-                    <option value="quiz">❓ Quiz</option>
-                    <option value="test">📋 Test</option>
-                    <option value="link">🔗 External Link</option>
-                </select>
-            </div>
+
         </div>
     </div>
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-        <button type="button" class="batch-upload-btn" id="showBatchModal">
-            <i class="bi bi-cloud-upload-fill"></i> 
-            <span>Add Course Content</span>
-            <small class="d-block" style="font-size: 0.7rem; opacity: 0.9;">Upload materials & assignments</small>
-        </button>
-        <a href="{{ route('professor.modules.archived') }}" class="view-archived-btn">
-            <i class="bi bi-archive-fill"></i> 
-            <span>View Archived</span>
-            <small class="d-block" style="font-size: 0.7rem; opacity: 0.9;">Manage archived content</small>
+        <a href="http://127.0.0.1:8000/professor/modules/course-content-upload?program_id=40&module_id=86&course_id=60" class="btn add-course-content-btn">
+            <i class="bi bi-plus-circle"></i> Add Course Content
         </a>
-        <a href="{{ route('professor.quiz-generator') }}" class="quiz-generator-btn">
-            <i class="bi bi-robot"></i> 
-            <span>AI Quiz Generator</span>
-            <small class="d-block" style="font-size: 0.7rem; opacity: 0.9;">Generate quizzes with AI</small>
+        <a href="{{ route('professor.modules.archived') }}" class="btn view-archived-btn">
+            <i class="bi bi-archive"></i> View Archived
+        </a>
+        <a href="{{ route('professor.quiz-generator') }}" class="btn quiz-generator-btn">
+            <i class="bi bi-robot"></i> AI Quiz Generator
         </a>
     </div>
 
@@ -1185,28 +1151,37 @@ function setupModalEventListeners() {
     const closeAddModalBtn = document.getElementById('closeAddModalBtn');
     const addContentForm = document.getElementById('addContentForm');
     
-    // Close modal when clicking on background
-    addModalBg.addEventListener('click', function(e) {
-        if (e.target === addModalBg) {
+    // Only add event listeners if elements exist
+    if (addModalBg) {
+        // Close modal when clicking on background
+        addModalBg.addEventListener('click', function(e) {
+            if (e.target === addModalBg) {
+                addModalBg.classList.remove('show');
+            }
+        });
+    }
+    
+    if (closeAddModal) {
+        // Close modal when clicking close button
+        closeAddModal.addEventListener('click', function() {
             addModalBg.classList.remove('show');
-        }
-    });
+        });
+    }
     
-    // Close modal when clicking close button
-    closeAddModal.addEventListener('click', function() {
-        addModalBg.classList.remove('show');
-    });
+    if (closeAddModalBtn) {
+        // Close modal when clicking cancel button
+        closeAddModalBtn.addEventListener('click', function() {
+            addModalBg.classList.remove('show');
+        });
+    }
     
-    // Close modal when clicking cancel button
-    closeAddModalBtn.addEventListener('click', function() {
-        addModalBg.classList.remove('show');
-    });
-    
-    // Handle form submission
-    addContentForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitContentForm();
-    });
+    if (addContentForm) {
+        // Handle form submission
+        addContentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitContentForm();
+        });
+    }
     
     // Handle plan selection to show/hide batch field
     const planSelectElement = document.getElementById('planSelect');
@@ -1540,12 +1515,6 @@ function loadModuleCourses(moduleId) {
                                 <div class="course-actions" onclick="event.stopPropagation();">
                                     <button class="btn btn-sm btn-outline-light" onclick="showAddContentModal(${moduleId}, ${course.subject_id}, '${course.subject_name}')">
                                         <i class="bi bi-plus"></i> Add Content
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-light" onclick="editCourse(${course.subject_id})" title="Edit Course">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-light" onclick="archiveCourse(${course.subject_id})" title="Archive Course">
-                                        <i class="bi bi-archive"></i>
                                     </button>
                                 </div>
                             </div>

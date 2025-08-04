@@ -6,37 +6,38 @@
     <!-- Content-specific styles -->
     <link href="{{ asset('css/student/student-course.css') }}" rel="stylesheet">
     <style>
-        /* Override layout constraints to allow proper scrolling */
-        body {
-            background: #f8fafc !important;
-            height: auto !important;
-            overflow-y: auto !important;
-        }
+        /* CONTENT VIEW PAGE SPECIFIC FIXES - Only affects this page */
         
-        .student-container {
-            height: auto !important;
-            overflow: visible !important;
-        }
-        
-        .main-content-area {
-            overflow: visible !important;
-            height: auto !important;
-        }
-        
+        /* Fix horizontal scrollbar for content page only */
         .content-wrapper {
-            overflow: visible !important;
-            height: auto !important;
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100% !important;
             background: #f8fafc !important;
             min-height: 100vh;
             padding-bottom: 4rem;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
         }
         
+        /* Override red background only for content wrapper */
+        .content-wrapper {
+            background: #f8fafc !important;
+            background-color: #f8fafc !important;
+            background-image: none !important;
+        }
+        
+        /* Content page specific styling */
         .content-page {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
             min-height: calc(100vh - 200px);
             position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
         
         .content-header {
@@ -178,6 +179,21 @@
         .status-graded {
             background: #cce5ff;
             color: #0056b3;
+        }
+        
+        /* Ensure content page containers respect width constraints */
+        .content-page .container-fluid, 
+        .content-page .row, 
+        .content-page .col, 
+        .content-page .col-md-*, 
+        .content-page .col-lg-* {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* Fix any potential overflow issues within content page */
+        .content-page * {
+            box-sizing: border-box;
         }
         
         @media (max-width: 768px) {

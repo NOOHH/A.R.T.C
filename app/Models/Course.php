@@ -24,6 +24,7 @@ class Course extends Model
         'subject_order',
         'is_required',
         'is_active',
+        'is_archived',
     ];
 
     protected $casts = [
@@ -31,6 +32,7 @@ class Course extends Model
         'subject_order' => 'integer',
         'is_required' => 'boolean',
         'is_active' => 'boolean',
+        'is_archived' => 'boolean',
     ];
 
     // Relationships
@@ -106,5 +108,15 @@ class Course extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('subject_order', 'asc');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('is_archived', true);
+    }
+
+    public function scopeNotArchived($query)
+    {
+        return $query->where('is_archived', false);
     }
 }

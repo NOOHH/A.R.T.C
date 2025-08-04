@@ -1802,4 +1802,13 @@ class QuizGeneratorController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update method for route compatibility
+     */
+    public function update(Request $request, $quizId)
+    {
+        // This method is an alias for updateQuiz to maintain route compatibility
+        return $this->updateQuiz($request, $quizId);
+    }
 }
