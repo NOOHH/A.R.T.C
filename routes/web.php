@@ -1691,6 +1691,11 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
     // Admin: Show a single student profile
     Route::get('/admin/students/{student}', [App\Http\Controllers\AdminStudentListController::class, 'show'])->name('admin.students.show');
+    // Admin: Approve and disapprove students
+    Route::patch('/admin/students/{student}/approve', [App\Http\Controllers\AdminStudentListController::class, 'approve'])->name('admin.students.approve');
+    Route::patch('/admin/students/{student}/disapprove', [App\Http\Controllers\AdminStudentListController::class, 'disapprove'])->name('admin.students.disapprove');
+    // Admin: Restore archived students
+    Route::patch('/admin/students/{student}/restore', [App\Http\Controllers\AdminStudentListController::class, 'restore'])->name('admin.students.restore');
     
     // Debug routes for CSV export
     Route::get('/admin/students/debug-export', [App\Http\Controllers\DebugStudentExportController::class, 'debugExport'])->name('admin.students.debug-export');
