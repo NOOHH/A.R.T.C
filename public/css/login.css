@@ -7,35 +7,125 @@ body {
 }
 .left {
     flex: 1;
-    background: linear-gradient(to bottom, #8e2de2, #c84f8f);
+    background: linear-gradient(180deg, #8e24aa 0%, #c2185b 50%, #b0004c 100%);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
     color: #fff;
     position: relative;
+    padding: 40px 60px;
+    overflow: hidden;
+    min-height: 100vh;
+}
+.left::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    transform: rotate(45deg);
+}
+.left::after {
+    content: '';
+    position: absolute;
+    top: 60px;
+    right: 80px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
 }
 .left .review-text {
-    font-size: 2rem;
+    font-size: 3.2rem;
     font-weight: bold;
-    text-align: center;
-    margin-bottom: 32px;
-    margin-top: 40px;
+    text-align: left;
+    margin-bottom: 60px;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    z-index: 2;
+    position: relative;
+    margin-top: 20px;
+    color: #ffffff;
+}
+.left .login-illustration-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    width: 100%;
 }
 .left .login-illustration {
-    width: 350px;
-    max-width: 90%;
-    margin: 0 auto 24px auto;
+    width: 480px;
+    max-width: 85%;
+    height: auto;
     display: block;
+    filter: drop-shadow(0 15px 40px rgba(0,0,0,0.3));
+    position: relative;
+    z-index: 2;
 }
-.left .copyright {
+
+/* Floating icons around the illustration */
+.left .login-illustration-container::before {
+    content: '💬';
     position: absolute;
-    bottom: 24px;
-    left: 0;
-    width: 100%;
-    text-align: center;
+    top: 15%;
+    left: 20%;
+    font-size: 2.5rem;
+    color: #888;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite;
+}
+
+.left .login-illustration-container::after {
+    content: '📄';
+    position: absolute;
+    top: 20%;
+    right: 25%;
+    font-size: 2.5rem;
+    color: #888;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite 1s;
+}
+
+/* Additional floating elements */
+.left .floating-icon-1 {
+    position: absolute;
+    top: 35%;
+    left: 15%;
+    font-size: 2.5rem;
+    color: #888;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite 0.5s;
+}
+
+.left .floating-icon-2 {
+    position: absolute;
+    top: 25%;
+    right: 15%;
+    font-size: 2.5rem;
+    color: #ffa500;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite 1.5s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.left .copyright {
+    text-align: left;
     font-size: 0.95em;
     color: #f3e6f7;
+    padding-top: 20px;
+    background: transparent;
 }
 .right {
     flex: 1;
@@ -96,33 +186,84 @@ body {
 .login-form input[type="email"],
 .login-form input[type="password"] {
     width: 100%;
-    padding: 10px 16px;
-    border-radius: 22px;
-    border: 1.5px solid #ccc;
-    margin-bottom: 16px;
+    padding: 14px 20px;
+    border-radius: 25px;
+    border: 2px solid #e0e0e0;
+    margin-bottom: 20px;
     font-size: 1em;
     outline: none;
-    background: #fafafa;
+    background: #f8f9fa;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
+}
+
+.login-form .input-row input {
+    padding-right: 50px;
+}
+.login-form input[type="email"]:focus,
+.login-form input[type="password"]:focus {
+    border-color: #9b59b6;
+    box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+    background: #fff;
 }
 .login-form .input-row {
     position: relative;
+    margin-bottom: 20px;
+}
+.login-form .input-row input {
+    margin-bottom: 0;
 }
 .login-form .input-row .toggle-password {
     position: absolute;
-    right: 16px;
+    right: 15px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    color: #888;
+    background: rgba(139, 69, 19, 0.1);
+    border: 1px solid rgba(139, 69, 19, 0.2);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    color: #8B4513;
+    backdrop-filter: blur(5px);
+}
+
+.login-form .input-row .toggle-password:hover {
+    background: rgba(139, 69, 19, 0.2);
+    border-color: rgba(139, 69, 19, 0.4);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+}
+
+.login-form .input-row .toggle-password:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.login-form .input-row .toggle-password.showing {
+    background: rgba(139, 69, 19, 0.2);
+    border-color: rgba(139, 69, 19, 0.4);
+    color: #8B4513;
+}
+
+.login-form .input-row .toggle-password.showing:hover {
+    background: rgba(139, 69, 19, 0.3);
+    border-color: rgba(139, 69, 19, 0.6);
 }
 .login-form .forgot {
-    color: #b00020;
-    font-size: 0.98em;
-    margin-bottom: 18px;
+    color: #9b59b6;
+    font-size: 0.95em;
+    margin-bottom: 24px;
     display: block;
     text-decoration: none;
+    transition: color 0.3s;
 }
 .login-form .forgot:hover {
+    color: #8e44ad;
     text-decoration: underline;
 }
 .login-form button[type="submit"] {
@@ -130,16 +271,20 @@ body {
     background: #b0004c;
     color: #fff;
     border: none;
-    border-radius: 22px;
-    padding: 12px 0;
-    font-size: 1.1em;
-    font-weight: bold;
+    border-radius: 25px;
+    padding: 14px 0;
+    font-size: 1em;
+    font-weight: 600;
     margin-bottom: 16px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 .login-form button[type="submit"]:hover {
-    background: #8e2de2;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(176, 0, 76, 0.3);
+    background: #8e24aa;
 }
 .login-form .google-btn {
     width: 100%;

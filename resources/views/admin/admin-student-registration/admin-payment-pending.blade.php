@@ -1053,7 +1053,7 @@ document.getElementById('undoPaymentForm').addEventListener('submit', function(e
         return;
     }
 
-    fetch(`/admin/payment/${paymentId}/undo-approval`, {
+    fetch(`/admin/payments/${paymentId}/undo-approval`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

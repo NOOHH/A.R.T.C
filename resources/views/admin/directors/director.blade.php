@@ -89,14 +89,15 @@
                                                        class="btn btn-sm btn-outline-warning" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                                            data-bs-toggle="modal" 
-                                                            data-bs-target="#archiveModal"
-                                                            data-director-id="{{ $director->directors_id }}"
-                                                            data-director-name="{{ $director->full_name }}"
-                                                            title="Archive">
-                                                        <i class="bi bi-archive"></i>
-                                                    </button>
+                                                    <form method="POST" action="{{ route('admin.directors.archive', $director) }}" 
+                                                          style="display: inline;" 
+                                                          onsubmit="return confirm('Are you sure you want to archive {{ $director->full_name }}?');">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Archive">
+                                                            <i class="bi bi-archive"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
@@ -115,38 +116,6 @@
                         </div>
                     @endif
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Archive Confirmation Modal -->
-<div class="modal fade" id="archiveModal" tabindex="-1" aria-labelledby="archiveModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="archiveModalLabel">
-                    <i class="bi bi-archive text-warning"></i> Archive Director
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-3"></i>
-                    <h5>Are you sure you want to archive this director?</h5>
-                    <p class="text-muted mb-3">Director: <strong id="directorNameToArchive"></strong></p>
-                    <p class="text-muted">This action will move the director to the archived list. You can restore them later if needed.</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="archiveForm" method="POST" style="display: inline;">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-archive"></i> Archive Director
-                    </button>
-                </form>
             </div>
         </div>
     </div>
@@ -272,38 +241,47 @@
 @endif
 
 // Clear form when modal is closed
-document.getElementById('addDirectorModal').addEventListener('hidden.bs.modal', function () {
-    // Clear form fields
-    const form = this.querySelector('form');
-    form.reset();
-    
-    // Remove validation error classes
-    form.querySelectorAll('.is-invalid').forEach(function(element) {
-        element.classList.remove('is-invalid');
+const addDirectorModal = document.getElementById('addDirectorModal');
+if (addDirectorModal) {
+    addDirectorModal.addEventListener('hidden.bs.modal', function () {
+        // Clear form fields
+        const form = this.querySelector('form');
+        form.reset();
+        
+        // Remove validation error classes
+        form.querySelectorAll('.is-invalid').forEach(function(element) {
+            element.classList.remove('is-invalid');
+        });
+        
+        // Hide error messages
+        form.querySelectorAll('.invalid-feedback').forEach(function(element) {
+            element.style.display = 'none';
+        });
+        
+        // Reset program access to "All Programs"
+        const allProgramsCheckbox = document.getElementById('program_all');
+        if (allProgramsCheckbox) {
+            allProgramsCheckbox.checked = true;
+        }
+        
+        // Uncheck all individual program checkboxes
+        const programCheckboxes = document.querySelectorAll('.program-checkbox');
+        programCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     });
-    
-    // Hide error messages
-    form.querySelectorAll('.invalid-feedback').forEach(function(element) {
-        element.style.display = 'none';
-    });
-    
-    // Reset program access to "All Programs"
-    const allProgramsCheckbox = document.getElementById('program_all');
-    if (allProgramsCheckbox) {
-        allProgramsCheckbox.checked = true;
-    }
-    
-    // Uncheck all individual program checkboxes
-    const programCheckboxes = document.querySelectorAll('.program-checkbox');
-    programCheckboxes.forEach(checkbox => {
-        checkbox.checked = false;
-    });
-});
+}
 
 // Handle program access selection logic
 document.addEventListener('DOMContentLoaded', function() {
     const allProgramsCheckbox = document.getElementById('program_all');
     const programCheckboxes = document.querySelectorAll('.program-checkbox');
+    
+    // Check if elements exist before adding event listeners
+    if (!allProgramsCheckbox) {
+        console.warn('Element with ID "program_all" not found');
+        return;
+    }
     
     // Handle "All Programs" checkbox
     allProgramsCheckbox.addEventListener('change', function() {
@@ -330,19 +308,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-});
-
-// Handle archive modal
-document.getElementById('archiveModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const directorId = button.getAttribute('data-director-id');
-    const directorName = button.getAttribute('data-director-name');
-    
-    // Update modal content
-    document.getElementById('directorNameToArchive').textContent = directorName;
-    
-    // Update form action
-    const form = document.getElementById('archiveForm');
-    form.action = `/admin/directors/${directorId}/archive`;
 });
 </script>

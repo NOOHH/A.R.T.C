@@ -1088,6 +1088,7 @@ function performSearch(query = null) {
         return response.json();
     })
     .then(data => {
+        console.log('Search response received:', data);
         showSearchLoading(false);
         displaySearchResults(data);
     })
@@ -1130,13 +1131,19 @@ function showSearchLoading(show) {
 }
 
 function displaySearchResults(data) {
+    console.log('Displaying search results:', data);
     const resultsContainer = document.getElementById('searchResults');
-    if (!resultsContainer) return;
+    if (!resultsContainer) {
+        console.error('Search results container not found');
+        return;
+    }
 
     resultsContainer.innerHTML = '';
 
     if (data.results && data.results.length > 0) {
-        data.results.forEach(result => {
+        console.log('Processing', data.results.length, 'results');
+        data.results.forEach((result, index) => {
+            console.log(`Result ${index}:`, result);
             const resultItem = document.createElement('div');
             resultItem.className = 'search-result-item p-2 border-bottom';
             
@@ -1158,8 +1165,12 @@ function displaySearchResults(data) {
                 </div>
             `;
             resultItem.addEventListener('click', () => {
+                console.log('Search result clicked:', result);
                 if (result.url) {
+                    console.log('Redirecting to:', result.url);
                     window.location.href = result.url;
+                } else {
+                    console.error('No URL found for result:', result);
                 }
             });
             resultsContainer.appendChild(resultItem);

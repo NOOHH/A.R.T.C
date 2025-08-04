@@ -104,36 +104,38 @@
                         </li>
                     </ul>
                 </div>
-                <div class="card-body">
+                <div class="card-body overflow-hidden">
                     <div class="tab-content" id="meeting-tabContent">
                         <!-- Current Meetings -->
                         <div class="tab-pane fade show active" id="current" role="tabpanel">
                             @if($currentMeetings->count() > 0)
-                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
+                                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3">
                                     @foreach($currentMeetings as $meeting)
-                                        <div class="meeting-card card border-warning flex-shrink-0" style="min-width:320px;max-width:340px;">
-                                            <div class="card-header bg-warning text-dark">
-                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
-                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
-                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
-                                                </p>
-                                                @if($meeting->meeting_url)
-                                                    <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-warning">
-                                                        <i class="bi bi-camera-video me-1"></i>Join Meeting
-                                                    </a>
-                                                @endif
-                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
-                                                        <i class="bi bi-trash"></i> Delete
-                                                    </button>
-                                                </form>
+                                        <div class="col">
+                                            <div class="meeting-card card border-warning h-100">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="card-text">
+                                                        <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                        <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
+                                                        <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
+                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
+                                                    </p>
+                                                    @if($meeting->meeting_url)
+                                                        <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-warning">
+                                                            <i class="bi bi-camera-video me-1"></i>Join Meeting
+                                                        </a>
+                                                    @endif
+                                                    <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -163,35 +165,37 @@
                         @endphp
                         <div class="tab-pane fade" id="today" role="tabpanel">
                             @if($todayMeetingsFiltered->count() > 0)
-                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
+                                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3">
                                     @foreach($todayMeetingsFiltered as $meeting)
-                                        <div class="meeting-card card border-info flex-shrink-0" style="min-width:320px;max-width:340px;">
-                                            <div class="card-header bg-info text-white">
-                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
-                                                    <strong>Time:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('h:i A') }}<br>
-                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes<br>
-                                                    <strong>Status:</strong> <span class="badge bg-{{ $meeting->status === 'ongoing' ? 'warning' : ($meeting->status === 'completed' ? 'success' : 'secondary') }}">{{ ucfirst($meeting->status) }}</span>
-                                                </p>
-                                                @if($meeting->description)
-                                                    <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
-                                                @endif
-                                                @if($meeting->meeting_url)
-                                                    <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-info">
-                                                        <i class="bi bi-camera-video me-1"></i>Meeting Link
-                                                    </a>
-                                                @endif
-                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
-                                                        <i class="bi bi-trash"></i> Delete
-                                                    </button>
-                                                </form>
+                                        <div class="col">
+                                            <div class="meeting-card card border-info h-100">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="card-text">
+                                                        <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                        <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
+                                                        <strong>Time:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('h:i A') }}<br>
+                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes<br>
+                                                        <strong>Status:</strong> <span class="badge bg-{{ $meeting->status === 'ongoing' ? 'warning' : ($meeting->status === 'completed' ? 'success' : 'secondary') }}">{{ ucfirst($meeting->status) }}</span>
+                                                    </p>
+                                                    @if($meeting->description)
+                                                        <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
+                                                    @endif
+                                                    @if($meeting->meeting_url)
+                                                        <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-info">
+                                                            <i class="bi bi-camera-video me-1"></i>Meeting Link
+                                                        </a>
+                                                    @endif
+                                                    <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -208,34 +212,36 @@
                         <!-- Upcoming Meetings -->
                         <div class="tab-pane fade" id="upcoming" role="tabpanel">
                             @if($upcomingMeetingsFiltered->count() > 0)
-                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
+                                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3">
                                     @foreach($upcomingMeetingsFiltered as $meeting)
-                                        <div class="meeting-card card border-primary flex-shrink-0" style="min-width:320px;max-width:340px;">
-                                            <div class="card-header bg-primary text-white">
-                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
-                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
-                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
-                                                </p>
-                                                @if($meeting->description)
-                                                    <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
-                                                @endif
-                                                @if($meeting->meeting_url)
-                                                    <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-camera-video me-1"></i>Meeting Link
-                                                    </a>
-                                                @endif
-                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
-                                                        <i class="bi bi-trash"></i> Delete
-                                                    </button>
-                                                </form>
+                                        <div class="col">
+                                            <div class="meeting-card card border-primary h-100">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="card-text">
+                                                        <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                        <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
+                                                        <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
+                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
+                                                    </p>
+                                                    @if($meeting->description)
+                                                        <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
+                                                    @endif
+                                                    @if($meeting->meeting_url)
+                                                        <a href="{{ $meeting->meeting_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-camera-video me-1"></i>Meeting Link
+                                                        </a>
+                                                    @endif
+                                                    <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -252,37 +258,39 @@
                         <!-- Finished Meetings -->
                         <div class="tab-pane fade" id="finished" role="tabpanel">
                             @if($finishedMeetingsFiltered->count() > 0)
-                                <div class="meeting-carousel d-flex flex-row overflow-auto gap-3 pb-2" style="white-space:nowrap;">
+                                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3">
                                     @foreach($finishedMeetingsFiltered as $meeting)
-                                        <div class="meeting-card card border-success flex-shrink-0" style="min-width:320px;max-width:340px;">
-                                            <div class="card-header bg-success text-white">
-                                                <h6 class="mb-0">{{ $meeting->title }}</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <p class="card-text">
-                                                    <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
-                                                    <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
-                                                    <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
-                                                    <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
-                                                </p>
-                                                @if($meeting->description)
-                                                    <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
-                                                @endif
-                                                @if($meeting->actual_start_time && $meeting->actual_end_time)
+                                        <div class="col">
+                                            <div class="meeting-card card border-success h-100">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0">{{ $meeting->title }}</h6>
+                                                </div>
+                                                <div class="card-body">
                                                     <p class="card-text">
-                                                        <small class="text-success">
-                                                            <i class="bi bi-clock me-1"></i>
-                                                            Actual duration: {{ \Carbon\Carbon::parse($meeting->actual_start_time)->diffInMinutes(\Carbon\Carbon::parse($meeting->actual_end_time)) }} minutes
-                                                        </small>
+                                                        <strong>Program:</strong> {{ $meeting->batch && $meeting->batch->program ? $meeting->batch->program->program_name : 'Unknown Program' }}<br>
+                                                        <strong>Batch:</strong> {{ $meeting->batch ? $meeting->batch->batch_name : 'Unknown Batch' }}<br>
+                                                        <strong>Date:</strong> {{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y h:i A') }}<br>
+                                                        <strong>Duration:</strong> {{ $meeting->duration_minutes }} minutes
                                                     </p>
-                                                @endif
-                                                <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
-                                                        <i class="bi bi-trash"></i> Delete
-                                                    </button>
-                                                </form>
+                                                    @if($meeting->description)
+                                                        <p class="card-text"><small class="text-muted">{{ $meeting->description }}</small></p>
+                                                    @endif
+                                                    @if($meeting->actual_start_time && $meeting->actual_end_time)
+                                                        <p class="card-text">
+                                                            <small class="text-success">
+                                                                <i class="bi bi-clock me-1"></i>
+                                                                Actual duration: {{ \Carbon\Carbon::parse($meeting->actual_start_time)->diffInMinutes(\Carbon\Carbon::parse($meeting->actual_end_time)) }} minutes
+                                                            </small>
+                                                        </p>
+                                                    @endif
+                                                    <form action="{{ route('admin.professors.deleteMeeting', [$professor->professor_id, $meeting->meeting_id]) }}" method="POST" style="display:inline-block;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this meeting?')">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -472,29 +480,27 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.7rem;
 }
 
-/* Meeting carousel styling */
-.meeting-carousel {
-    display: flex;
-    gap: 1rem;
-    overflow-x: auto;
-    padding: 1rem 0;
-}
-
+/* Meeting card grid styling */
 .meeting-card {
-    min-width: 300px;
-    max-width: 350px;
-    flex: 0 0 auto;
-    margin-bottom: 1rem;
-}
-
-.meeting-card .card {
     height: 100%;
     border: 1px solid #ddd;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .meeting-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Ensure cards have consistent height */
+.meeting-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.meeting-card .card-body .btn-group {
+    margin-top: auto;
 }
 </style>
 @endpush

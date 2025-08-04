@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 
 class Admin extends Authenticatable
 {
@@ -33,4 +34,19 @@ class Admin extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Hash the password when setting it
+     */
+    public function setPasswordAttribute($password)
+    {
+        if (!empty($password)) {
+            // Check if password is already hashed by looking for bcrypt pattern
+            if (strlen($password) === 60 && preg_match('/^\$2[aby]\$\d{1,2}\$[.\/A-Za-z0-9]{53}$/', $password)) {
+                $this->attributes['password'] = $password;
+            } else {
+                $this->attributes['password'] = Hash::make($password);
+            }
+        }
+    }
 }

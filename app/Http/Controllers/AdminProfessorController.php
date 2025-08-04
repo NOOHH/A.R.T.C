@@ -299,6 +299,35 @@ class AdminProfessorController extends Controller
     }
 
     /**
+     * Get professor's video links for all programs
+     */
+    public function getVideos($professor_id)
+    {
+        try {
+            $professor = Professor::with(['programs' => function($query) {
+                $query->withPivot(['video_link', 'video_description']);
+            }])->findOrFail($professor_id);
+
+            $html = view('admin.professors.partials.video-management', compact('professor'))->render();
+            
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getVideos:', [
+                'professor_id' => $professor_id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'html' => '<p class="text-danger">Error loading video data.</p>'
+            ], 500);
+        }
+    }
+
+    /**
      * Get professor's batches for meeting creation
      */
     public function getProfessorBatches($professor_id)

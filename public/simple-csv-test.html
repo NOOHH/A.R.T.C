@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple CSV Test</title>
+</head>
+<body>
+    <h1>Simple CSV Export Test</h1>
+    
+    <p>Click the links below to test CSV exports:</p>
+    
+    <ul>
+        <li><a href="/admin/students/debug-export" target="_blank">Debug Export (JSON) - Open in new tab</a></li>
+        <li><a href="/admin/students/test-csv" target="_blank">Simple Test CSV - Should download</a></li>
+        <li><a href="/admin/students/export" target="_blank">Student Export - Should download</a></li>
+        <li><a href="/admin/students/export?status=approved" target="_blank">Approved Students Export</a></li>
+    </ul>
+    
+    <div id="results"></div>
+    
+    <script>
+        console.log('Simple test page loaded');
+        
+        // Check if we can access the debug endpoint
+        fetch('/admin/students/debug-export')
+            .then(response => {
+                console.log('Debug endpoint response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Debug endpoint data:', data);
+                document.getElementById('results').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                console.error('Debug endpoint error:', error);
+                document.getElementById('results').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            });
+    </script>
+</body>
+</html>

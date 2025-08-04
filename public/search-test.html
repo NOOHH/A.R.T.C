@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Fix Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-button { background: #007cba; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; margin: 5px; }
+        .test-button:hover { background: #005a87; }
+        .results { margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 3px; white-space: pre-wrap; font-family: monospace; }
+        .error { background: #ffe6e6; color: #d00; }
+        .success { background: #e6ffe6; color: #0a0; }
+    </style>
+</head>
+<body>
+    <h1>Search Fix Verification Test</h1>
+    
+    <div class="test-section">
+        <h2>Admin Search Test</h2>
+        <button class="test-button" onclick="testAdminSearch()">Test Admin Search</button>
+        <div id="adminSearchResults" class="results" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Student Search Test</h2>
+        <button class="test-button" onclick="testStudentSearch()">Test Student Search</button>
+        <div id="studentSearchResults" class="results" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>General Search Test</h2>
+        <button class="test-button" onclick="testGeneralSearch()">Test General Search</button>
+        <div id="generalSearchResults" class="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function testAdminSearch() {
+            const resultsDiv = document.getElementById('adminSearchResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = 'Testing admin search...';
+            resultsDiv.className = 'results';
+
+            try {
+                const response = await fetch('/admin/search?q=test&type=all', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+
+                const result = await response.text();
+                
+                if (response.status === 404) {
+                    resultsDiv.className = 'results error';
+                    resultsDiv.innerHTML = 'ERROR 404: Route not found\n\nThis means the admin search route is not properly registered.';
+                } else if (response.status === 500) {
+                    resultsDiv.className = 'results error';
+                    resultsDiv.innerHTML = 'ERROR 500: Server error\n\n' + result;
+                } else {
+                    resultsDiv.className = 'results success';
+                    try {
+                        const jsonResult = JSON.parse(result);
+                        resultsDiv.innerHTML = 'SUCCESS: Admin search route is working!\n\nResponse:\n' + JSON.stringify(jsonResult, null, 2);
+                    } catch (e) {
+                        resultsDiv.innerHTML = 'PARTIAL SUCCESS: Route exists but returned HTML instead of JSON\n\nResponse:\n' + result.substring(0, 500) + '...';
+                    }
+                }
+            } catch (error) {
+                resultsDiv.className = 'results error';
+                resultsDiv.innerHTML = 'Network Error: ' + error.message;
+            }
+        }
+
+        async function testStudentSearch() {
+            const resultsDiv = document.getElementById('studentSearchResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = 'Testing student search...';
+            resultsDiv.className = 'results';
+
+            try {
+                const response = await fetch('/student/search?query=test&type=all', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+
+                const result = await response.text();
+                
+                if (response.status === 404) {
+                    resultsDiv.className = 'results error';
+                    resultsDiv.innerHTML = 'ERROR 404: Route not found\n\nThis means the student search route is not properly registered.';
+                } else if (response.status === 500) {
+                    resultsDiv.className = 'results error';
+                    resultsDiv.innerHTML = 'ERROR 500: Server error\n\n' + result;
+                } else {
+                    resultsDiv.className = 'results success';
+                    try {
+                        const jsonResult = JSON.parse(result);
+                        resultsDiv.innerHTML = 'SUCCESS: Student search route is working!\n\nResponse:\n' + JSON.stringify(jsonResult, null, 2);
+                    } catch (e) {
+                        resultsDiv.innerHTML = 'PARTIAL SUCCESS: Route exists but returned HTML instead of JSON\n\nResponse:\n' + result.substring(0, 500) + '...';
+                    }
+                }
+            } catch (error) {
+                resultsDiv.className = 'results error';
+                resultsDiv.innerHTML = 'Network Error: ' + error.message;
+            }
+        }
+
+        async function testGeneralSearch() {
+            const resultsDiv = document.getElementById('generalSearchResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = 'Testing general search...';
+            resultsDiv.className = 'results';
+
+            try {
+                const response = await fetch('/search?query=test&type=all', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+
+                const result = await response.text();
+                
+                if (response.status === 404) {
+                    resultsDiv.className = 'results error';
+                    resultsDiv.innerHTML = 'ERROR 404: Route not found';
+                } else if (response.status === 500) {
+                    resultsDiv.className = 'results error';
+                    resultsDiv.innerHTML = 'ERROR 500: Server error\n\n' + result;
+                } else {
+                    resultsDiv.className = 'results success';
+                    try {
+                        const jsonResult = JSON.parse(result);
+                        resultsDiv.innerHTML = 'SUCCESS: General search route is working!\n\nResponse:\n' + JSON.stringify(jsonResult, null, 2);
+                    } catch (e) {
+                        resultsDiv.innerHTML = 'PARTIAL SUCCESS: Route exists but returned HTML instead of JSON\n\nResponse:\n' + result.substring(0, 500) + '...';
+                    }
+                }
+            } catch (error) {
+                resultsDiv.className = 'results error';
+                resultsDiv.innerHTML = 'Network Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

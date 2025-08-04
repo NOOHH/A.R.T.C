@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Hash;
 
 class Director extends Authenticatable
 {
@@ -30,6 +31,16 @@ class Director extends Authenticatable
         'directors_archived' => 'boolean',
         'has_all_program_access' => 'boolean',
     ];
+
+    /**
+     * Hash the password when setting it
+     */
+    public function setDirectorsPasswordAttribute($password)
+    {
+        if (!empty($password)) {
+            $this->attributes['directors_password'] = Hash::make($password);
+        }
+    }
 
     // Relationships
     public function programs()

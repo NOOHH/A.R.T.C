@@ -5,6 +5,38 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
 
 <style>
+/* Professional Tab Styling for Quiz Generator Page Only */
+#quizTabs .nav-link {
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.5rem !important;
+    margin-right: 0.5rem !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+#quizTabs .nav-link:hover {
+    background-color: #e9ecef !important;
+    border-color: #adb5bd !important;
+    color: #495057 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+#quizTabs .nav-link.active {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
+}
+
+#quizTabs .nav-link.active:hover {
+    background-color: #0b5ed7 !important;
+    border-color: #0b5ed7 !important;
+    transform: translateY(-1px) !important;
+}
 /* Quiz Canvas Styles */
 .quiz-canvas {
     min-height: 400px;

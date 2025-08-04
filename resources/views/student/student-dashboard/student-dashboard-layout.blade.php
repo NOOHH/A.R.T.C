@@ -67,14 +67,15 @@
       overflow-y: auto    !important;
     }
 
-    /* 2) Restore your white “card” appearance on the content wrapper */
+    /* 2) Restore your white "card" appearance on the content wrapper */
     .content-wrapper {
       background-color: #fff;
       border-radius: .5rem;
       box-shadow: 0 .125rem .25rem rgba(0,0,0,0.075);
       overflow: visible !important;
       width: 100%;
-      height: 100%;
+      height: 100vh !important;
+      min-height: 100vh !important;
     }
 
     /* 3) Sidebar toggle button styling */

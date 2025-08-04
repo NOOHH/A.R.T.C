@@ -493,6 +493,10 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     Route::get('/student/settings', [StudentController::class, 'settings'])->name('student.settings');
     Route::put('/student/settings', [StudentController::class, 'updateSettings'])->name('student.settings.update');
     
+    // Student search route
+    Route::get('/student/search', [App\Http\Controllers\SearchController::class, 'search'])
+         ->name('student.search');
+    
     // Course route - moved inside middleware group for authentication
     Route::get('/student/course/{courseId}', [StudentDashboardController::class, 'course'])->name('student.course');
     
@@ -902,6 +906,10 @@ Route::get('/test/email/{email}', function($email) {
 Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])
          ->name('admin.dashboard');
+    
+    // Admin search route
+    Route::get('/admin/search', [App\Http\Controllers\SearchController::class, 'adminSearch'])
+         ->name('admin.search');
 
     // Admin approve/reject registration
     Route::get('/admin/modal-test', function() {
@@ -1209,10 +1217,38 @@ Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'res
      ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
-Route::get('/admin/quiz-generator', [AdminModuleController::class, 'adminQuizGenerator'])
+Route::get('/admin/quiz-generator', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'index'])
      ->name('admin.quiz-generator');
-Route::post('/admin/quiz-generator/generate', [AdminModuleController::class, 'generateAdminAiQuiz'])
+Route::post('/admin/quiz-generator/generate', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generate'])
      ->name('admin.quiz-generator.generate');
+Route::post('/admin/quiz-generator/save-quiz', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'save'])
+     ->name('admin.quiz-generator.save');
+Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'update'])
+     ->name('admin.quiz-generator.update');
+Route::get('/admin/quiz-generator/modules/{programId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getModulesByProgram'])
+     ->name('admin.quiz-generator.modules');
+Route::get('/admin/quiz-generator/courses/{moduleId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getCoursesByModule'])
+     ->name('admin.quiz-generator.courses');
+Route::get('/admin/quiz-generator/contents/{courseId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getContentsByCourse'])
+     ->name('admin.quiz-generator.contents');
+Route::post('/admin/quiz-generator/generate-ai-questions', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generateAIQuestions'])
+     ->name('admin.quiz-generator.generate-ai-questions');
+Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz'])
+     ->name('admin.quiz-generator.get-quiz');
+Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish'])
+     ->name('admin.quiz-generator.publish');
+Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive'])
+     ->name('admin.quiz-generator.archive');
+Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft'])
+     ->name('admin.quiz-generator.draft');
+Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete'])
+     ->name('admin.quiz-generator.delete');
+Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview'])
+     ->name('admin.quiz-generator.preview');
+Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal'])
+     ->name('admin.quiz-generator.api.questions');
+Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions'])
+     ->name('admin.quiz-generator.question-options');
 
 // Chat routes
 Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
@@ -1692,6 +1728,15 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::post('/admin/students/{id}/unarchive', [AdminStudentListController::class, 'unarchive'])->name('admin.students.unarchive');
     // Admin: Show a single student profile
     Route::get('/admin/students/{student}', [App\Http\Controllers\AdminStudentListController::class, 'show'])->name('admin.students.show');
+    // Admin: Approve and disapprove students
+    Route::patch('/admin/students/{student}/approve', [App\Http\Controllers\AdminStudentListController::class, 'approve'])->name('admin.students.approve');
+    Route::patch('/admin/students/{student}/disapprove', [App\Http\Controllers\AdminStudentListController::class, 'disapprove'])->name('admin.students.disapprove');
+    // Admin: Restore archived students
+    Route::patch('/admin/students/{student}/restore', [App\Http\Controllers\AdminStudentListController::class, 'restore'])->name('admin.students.restore');
+    
+    // Debug routes for CSV export
+    Route::get('/admin/students/debug-export', [App\Http\Controllers\DebugStudentExportController::class, 'debugExport'])->name('admin.students.debug-export');
+    Route::get('/admin/students/test-csv', [App\Http\Controllers\DebugStudentExportController::class, 'testCsvDownload'])->name('admin.students.test-csv');
 });
 
 /*
@@ -1707,49 +1752,51 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/professors/{id}', [AdminProfessorController::class, 'show'])->name('admin.professors.show');
     Route::put('/admin/professors/{id}', [AdminProfessorController::class, 'update'])->name('admin.professors.update');
     Route::delete('/admin/professors/{id}', [AdminProfessorController::class, 'destroy'])->name('admin.professors.delete');
-    // ...add any other /admin/professors routes here...
+    
+    Route::get('/admin/professors/archived', [AdminProfessorController::class, 'archived'])
+         ->name('admin.professors.archived');
+
+    Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
+         ->name('admin.professors.edit');
+
+    Route::get('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'viewMeetings'])
+         ->name('admin.professors.meetings');
+
+    Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
+         ->name('admin.professors.update');
+
+    Route::patch('/admin/professors/{professor}/archive', [AdminProfessorController::class, 'archive'])
+         ->name('admin.professors.archive');
+
+    Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController::class, 'restore'])
+         ->name('admin.professors.restore');
+
+    Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
+         ->name('admin.professors.destroy');
+
+    Route::get('/admin/professors/{id}/profile', [AdminProfessorController::class, 'showProfile'])
+         ->name('admin.professors.profile');
+
+    Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
+         ->name('admin.professors.video.update');
+
+    // Professor batch assignment routes
+    Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorController::class, 'assignBatch'])
+         ->name('admin.professors.assign-batch');
+
+    Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
+         ->name('admin.professors.unassign-batch');
+
+    // Professor programs API route for meeting creation
+    Route::get('/admin/professors/{professor}/programs', [AdminProfessorController::class, 'getProfessorPrograms'])
+         ->name('admin.professors.programs');
+    Route::get('/admin/professors/{professor}/videos', [AdminProfessorController::class, 'getVideos'])
+         ->name('admin.professors.videos');
+    
+    // Professor meeting creation route
+    Route::post('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'createMeeting'])
+         ->name('admin.professors.createMeeting');
 });
-
-Route::get('/admin/professors/archived', [AdminProfessorController::class, 'archived'])
-     ->name('admin.professors.archived');
-
-Route::post('/admin/professors', [AdminProfessorController::class, 'store'])
-     ->name('admin.professors.store');
-
-Route::get('/admin/professors/{professor}/edit', [AdminProfessorController::class, 'edit'])
-     ->name('admin.professors.edit');
-
-Route::get('/admin/professors/{professor}/meetings', [AdminProfessorController::class, 'viewMeetings'])
-     ->name('admin.professors.meetings');
-
-Route::put('/admin/professors/{professor}', [AdminProfessorController::class, 'update'])
-     ->name('admin.professors.update');
-
-Route::patch('/admin/professors/{professor}/archive', [AdminProfessorController::class, 'archive'])
-     ->name('admin.professors.archive');
-
-Route::patch('/admin/professors/{professor}/restore', [AdminProfessorController::class, 'restore'])
-     ->name('admin.professors.restore');
-
-Route::delete('/admin/professors/{professor}', [AdminProfessorController::class, 'destroy'])
-     ->name('admin.professors.destroy');
-
-Route::get('/admin/professors/{id}/profile', [AdminProfessorController::class, 'showProfile'])
-     ->name('admin.professors.profile');
-
-Route::post('/admin/professors/{professor}/programs/{program}/video', [AdminProfessorController::class, 'updateVideoLink'])
-     ->name('admin.professors.video.update');
-
-// Professor batch assignment routes
-Route::post('/admin/professors/{professor}/assign-batch', [AdminProfessorController::class, 'assignBatch'])
-     ->name('admin.professors.assign-batch');
-
-Route::delete('/admin/professors/{professor}/unassign-batch/{batch}', [AdminProfessorController::class, 'unassignBatch'])
-     ->name('admin.professors.unassign-batch');
-
-// Professor programs API route for meeting creation
-Route::get('/admin/professors/{professor}/programs', [AdminProfessorController::class, 'getProfessorPrograms'])
-     ->name('admin.professors.programs');
 
 Route::post('/admin/settings/logo', [AdminSettingsController::class, 'updateGlobalLogo']);
 Route::post('/admin/settings/favicon', [AdminSettingsController::class, 'updateFavicon']);
@@ -2820,6 +2867,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\PaymentController::class, 'approve'])->name('admin.payments.approve');
     Route::post('/payments/{id}/approve-resubmission', [\App\Http\Controllers\Admin\PaymentController::class, 'approveResubmission'])->name('admin.payments.approve-resubmission');
     Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\PaymentController::class, 'reject'])->name('admin.payments.reject');
+    Route::post('/payments/{id}/undo-approval', [\App\Http\Controllers\Admin\PaymentController::class, 'undoApproval'])->name('admin.payments.undo-approval');
     Route::post('/payments/{id}/update-rejection', [\App\Http\Controllers\Admin\PaymentController::class, 'updateRejection'])->name('admin.payments.update-rejection');
     Route::get('/payments/{id}/download-proof', [\App\Http\Controllers\Admin\PaymentController::class, 'downloadProof'])->name('admin.payments.download-proof');
     Route::get('/payments/stats', [\App\Http\Controllers\Admin\PaymentController::class, 'getStats'])->name('admin.payments.stats');

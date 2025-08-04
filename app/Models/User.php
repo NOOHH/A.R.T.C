@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
@@ -28,6 +29,19 @@ class User extends Authenticatable
         'enrollment_id',
     ];
 
+    /**
+     * Validation rules for the User model
+     */
+    public static $rules = [
+        'email' => 'required|email|unique:users,email',
+        'user_firstname' => 'required|string|max:255',
+        'user_lastname' => 'nullable|string|max:255',
+        'password' => 'required|string|min:6',
+        'role' => 'required|string|in:unverified,student,professor,director,admin',
+        'admin_id' => 'nullable|integer|exists:admins,admin_id',
+        'directors_id' => 'nullable|integer|exists:directors,directors_id',
+    ];
+
     protected $casts = [
         'is_online' => 'boolean',
         'last_seen' => 'datetime',
@@ -46,6 +60,21 @@ class User extends Authenticatable
     public function registration()
     {
         return $this->hasOne(Registration::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Hash the password when setting it
+     */
+    public function setPasswordAttribute($password)
+    {
+        if (!empty($password)) {
+            // Check if password is already hashed by looking for bcrypt pattern
+            if (strlen($password) === 60 && preg_match('/^\$2[aby]\$\d{1,2}\$[.\/A-Za-z0-9]{53}$/', $password)) {
+                $this->attributes['password'] = $password;
+            } else {
+                $this->attributes['password'] = Hash::make($password);
+            }
+        }
     }
 
     /**

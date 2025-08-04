@@ -356,7 +356,7 @@ function displaySearchResults(results) {
                         <i class="bi bi-collection text-primary" style="font-size: 1.5rem;"></i>
                     </div>
                     <div class="search-result-info">
-                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-name">${result.name || 'Unknown Program'}</div>
                         <div class="search-result-email">${result.description || ''}</div>
                         <small class="text-muted">Program</small>
                     </div>
@@ -368,9 +368,9 @@ function displaySearchResults(results) {
         } else if (result.type === 'student') {
             return `
                 <div class="search-result-item" data-url="${result.url || '/profile/user/' + result.id}" style="cursor: pointer;">
-                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name || 'Student'}" class="search-result-avatar">
                     <div class="search-result-info">
-                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-name">${result.name || 'Unknown Student'}</div>
                         <div class="search-result-email">${result.email || ''}</div>
                         <small class="text-muted">Student</small>
                     </div>
@@ -382,9 +382,9 @@ function displaySearchResults(results) {
         } else if (result.type === 'professor') {
             return `
                 <div class="search-result-item" data-url="${result.url || '/profile/professor/' + result.id}" style="cursor: pointer;">
-                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name || 'Professor'}" class="search-result-avatar">
                     <div class="search-result-info">
-                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-name">${result.name || 'Unknown Professor'}</div>
                         <div class="search-result-email">${result.email || ''}</div>
                         <small class="text-muted">Professor</small>
                     </div>
@@ -397,14 +397,14 @@ function displaySearchResults(results) {
             // Fallback for other types
             return `
                 <div class="search-result-item" data-id="${result.id}" data-type="${result.type}" style="cursor: pointer;">
-                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name}" class="search-result-avatar">
+                    <img src="${result.avatar || '/images/default-avatar.png'}" alt="${result.name || 'User'}" class="search-result-avatar">
                     <div class="search-result-info">
-                        <div class="search-result-name">${result.name}</div>
+                        <div class="search-result-name">${result.name || 'Unknown User'}</div>
                         <div class="search-result-email">${result.email || ''}</div>
-                        <small class="text-muted">${result.type}</small>
+                        <small class="text-muted">${result.type || 'User'}</small>
                     </div>
                     <div class="search-result-role">
-                        <span class="badge bg-secondary">${result.type}</span>
+                        <span class="badge bg-secondary">${result.type || 'User'}</span>
                     </div>
                 </div>
             `;
@@ -472,7 +472,7 @@ function showResultModal(result) {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="searchResultModalLabel">
-                            <i class="bi bi-${getTypeIcon(result.type)} me-2"></i>${result.name}
+                            <i class="bi bi-${getTypeIcon(result.type)} me-2"></i>${result.name || 'Unknown'}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -482,13 +482,13 @@ function showResultModal(result) {
                                 <div class="result-icon mb-3">
                                     <i class="bi bi-${getTypeIcon(result.type)}" style="font-size: 4rem; color: ${getTypeColor(result.type)};"></i>
                                 </div>
-                                <span class="badge bg-${getTypeBadgeColor(result.type)} fs-6">${result.type}</span>
+                                <span class="badge bg-${getTypeBadgeColor(result.type)} fs-6">${result.type || 'User'}</span>
                             </div>
                             <div class="col-md-9">
-                                <h4 class="mb-3">${result.name}</h4>
+                                <h4 class="mb-3">${result.name || 'Unknown'}</h4>
                                 ${result.email ? `<p><strong>Email:</strong> ${result.email}</p>` : ''}
                                 ${result.description ? `<p><strong>Description:</strong> ${result.description}</p>` : ''}
-                                <p><strong>ID:</strong> ${result.id}</p>
+                                <p><strong>ID:</strong> ${result.id || 'N/A'}</p>
                                 
                                 ${getResultActions(result)}
                             </div>

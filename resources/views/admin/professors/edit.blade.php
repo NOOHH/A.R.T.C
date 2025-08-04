@@ -343,7 +343,6 @@ function generateReferralCodeProf() {
     const lastName = document.getElementById('last_name').value || '';
     
     if (!firstName.trim() || !lastName.trim()) {
-        alert('Please enter the professor first and last name');
         return;
     }
     

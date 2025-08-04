@@ -191,6 +191,87 @@
         .step-indicator.completed {
             background: #198754;
         }
+        
+        /* Enhanced Password Toggle Design */
+        .input-row {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .input-row input {
+            margin-bottom: 0;
+            padding-right: 50px;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            background: rgba(139, 69, 19, 0.1);
+            border: 1px solid rgba(139, 69, 19, 0.2);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #8B4513;
+            backdrop-filter: blur(5px);
+        }
+        
+        .toggle-password:hover {
+            background: rgba(139, 69, 19, 0.2);
+            border-color: rgba(139, 69, 19, 0.4);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+        }
+        
+        .toggle-password:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        
+        .toggle-password.showing {
+            background: rgba(139, 69, 19, 0.2);
+            border-color: rgba(139, 69, 19, 0.4);
+            color: #8B4513;
+        }
+        
+                 .toggle-password.showing:hover {
+             background: rgba(139, 69, 19, 0.3);
+             border-color: rgba(139, 69, 19, 0.6);
+         }
+         
+         /* Input field styling to match login page */
+         .login-form input[type="text"],
+         .login-form input[type="email"],
+         .login-form input[type="password"] {
+             width: 100%;
+             padding: 14px 20px;
+             border-radius: 25px;
+             border: 2px solid #e0e0e0;
+             margin-bottom: 20px;
+             font-size: 1em;
+             outline: none;
+             background: #f8f9fa;
+             transition: border-color 0.3s, box-shadow 0.3s;
+             box-sizing: border-box;
+         }
+         
+         .login-form input[type="text"]:focus,
+         .login-form input[type="email"]:focus,
+         .login-form input[type="password"]:focus {
+             border-color: #9b59b6;
+             box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+             background: #fff;
+         }
+         
+         .login-form .row .col-md-6 input {
+             margin-bottom: 20px;
+         }
     </style>
 </head>
 <body class="login-page">
@@ -203,8 +284,15 @@
         <div class="review-text">
             Review Smarter.<br>Learn Better.<br>Succeed Faster.
         </div>
+
+        <div class="login-illustration-container">
+            <img src="{{ asset('images/Login-image.png') }}" alt="Login Illustration" class="login-illustration">
+            <div class="floating-icon-1">📚</div>
+            <div class="floating-icon-2">▶️</div>
+        </div>
+
         <div class="copyright">
-            {!! $footer['text'] ?? '© Copyright Ascendo Review and Training Center.<br>All Rights Reserved.' !!}
+            © Copyright Ascendo Review and Training Center.<br>All Rights Reserved.
         </div>
     </div>
     <div class="right">
@@ -235,16 +323,16 @@
 
         <form class="login-form" method="POST" action="{{ route('user.signup') }}" id="signupForm">
             @csrf
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="first_name">First Name</label>
-                    <input type="text" id="first_name" name="first_name" class="form-control" placeholder="First Name" value="{{ old('first_name') }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="last_name">Last Name</label>
-                    <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Last Name" value="{{ old('last_name') }}" required>
-                </div>
-            </div>
+                         <div class="row mb-3">
+                 <div class="col-md-6">
+                     <label for="first_name">First Name</label>
+                     <input type="text" id="first_name" name="first_name" placeholder="First Name" value="{{ old('first_name') }}" required>
+                 </div>
+                 <div class="col-md-6">
+                     <label for="last_name">Last Name</label>
+                     <input type="text" id="last_name" name="last_name" placeholder="Last Name" value="{{ old('last_name') }}" required>
+                 </div>
+             </div>
 
             <label for="email">Enter your email address</label>
             <div class="email-input-group">
@@ -269,12 +357,12 @@
                     </div>
                 </div>
                 
-                <div class="otp-input-group">
-                    <input type="text" id="otp" name="otp" class="form-control otp-input" placeholder="000000" maxlength="6" pattern="\d{6}">
-                    <button type="button" id="verifyOtpBtn" class="btn btn-otp mt-2 w-100" onclick="verifyOTP()">
-                        <i class="fas fa-check-circle"></i> Verify Code
-                    </button>
-                </div>
+                                 <div class="otp-input-group">
+                     <input type="text" id="otp" name="otp" class="otp-input" placeholder="000000" maxlength="6" pattern="\d{6}">
+                     <button type="button" id="verifyOtpBtn" class="btn btn-otp mt-2 w-100" onclick="verifyOTP()">
+                         <i class="fas fa-check-circle"></i> Verify Code
+                     </button>
+                 </div>
                 
                 <div id="otpStatus" class="status-message" style="display: none;"></div>
             </div>
@@ -408,10 +496,16 @@
 
         function togglePassword(fieldId) {
             const pwd = document.getElementById(fieldId);
+            const toggleBtn = pwd.nextElementSibling;
+            
             if (pwd.type === 'password') {
                 pwd.type = 'text';
+                toggleBtn.classList.add('showing');
+                toggleBtn.innerHTML = '👁️‍🗨️';
             } else {
                 pwd.type = 'password';
+                toggleBtn.classList.remove('showing');
+                toggleBtn.innerHTML = '👁️';
             }
         }
 
