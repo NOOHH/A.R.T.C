@@ -874,7 +874,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
          ->name('admin.dashboard');
     
     // Admin search route
-    Route::get('/admin/search', [App\Http\Controllers\SearchController::class, 'search'])
+    Route::get('/admin/search', [App\Http\Controllers\SearchController::class, 'adminSearch'])
          ->name('admin.search');
 
 // Admin approve/reject registration

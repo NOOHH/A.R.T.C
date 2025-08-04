@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 
 class Professor extends Authenticatable
@@ -79,7 +80,9 @@ class Professor extends Authenticatable
      */
     public function setPasswordAttribute($value)
     {
-        $this->attributes['professor_password'] = $value;
+        if (!empty($value)) {
+            $this->attributes['professor_password'] = Hash::make($value);
+        }
     }
 
     /**

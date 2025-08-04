@@ -45,7 +45,8 @@ class SearchController extends Controller
      */
     private function performSearch(Request $request)
     {
-        $query = $request->get('query', '');
+        // Handle both 'query' and 'q' parameters for compatibility
+        $query = $request->get('query', '') ?: $request->get('q', '');
         $type = $request->get('type', 'all');
         $limit = $request->get('limit', 10);
         
@@ -53,30 +54,30 @@ class SearchController extends Controller
         $userId = session('user_id') ?? session('admin_id') ?? session('directors_id') ?? session('professor_id');
         $userRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
         
+        // Special detection for admin users
+        if (session('admin_id') || session('user_type') === 'admin') {
+            $userId = session('admin_id') ?? session('user_id');
+            $userRole = 'admin';
+        }
+        // Special detection for director users
+        elseif (session('directors_id') || session('user_type') === 'director') {
+            $userId = session('directors_id') ?? session('user_id');
+            $userRole = 'director';
+        }
         // Special handling for professors - ensure professor_id is used if available
-        if (session('professor_id') && session('user_role') === 'professor') {
+        elseif (session('professor_id') && session('user_role') === 'professor') {
             $userId = session('professor_id');
             $userRole = 'professor';
         }
         
-        Log::info("SearchController DEBUG: Main search called", [
+        Log::info("SearchController: Main search called", [
             'query' => $query,
             'type' => $type,
-            'limit' => $limit,
             'session_user_id' => $userId,
-            'session_user_role' => $userRole,
-            'session_user_type' => session('user_type'),
-            'session_role' => session('role'),
-            'session_type' => session('type'),
-            'session_admin_id' => session('admin_id'),
-            'session_directors_id' => session('directors_id'),
-            'session_professor_id' => session('professor_id'),
-            'auth_user_id' => Auth::id(),
-            'auth_user_role' => Auth::user() ? Auth::user()->role : 'null'
+            'session_user_role' => $userRole
         ]);
         
         if (strlen($query) < 2) {
-            Log::info("SearchController DEBUG: Query too short");
             return response()->json([
                 'success' => false,
                 'message' => 'Query too short'
@@ -91,8 +92,17 @@ class SearchController extends Controller
                 'all_session_data' => session()->all()
             ]);
             
-            // For professors, try to use any available session data
-            if (session('professor_id') || session('logged_in')) {
+            // For admin/director, try to use any available session data
+            if (session('admin_id') || session('directors_id') || session('logged_in')) {
+                $userId = session('admin_id') ?? session('directors_id') ?? session('user_id') ?? 1;
+                $userRole = session('admin_id') ? 'admin' : (session('directors_id') ? 'director' : 'admin');
+                Log::info("SearchController DEBUG: Using fallback admin/director authentication", [
+                    'userId' => $userId,
+                    'userRole' => $userRole
+                ]);
+            }
+            // For professors, try to use any available session data  
+            elseif (session('professor_id') || session('logged_in')) {
                 $userId = session('professor_id') ?? session('user_id') ?? 1;
                 $userRole = 'professor';
                 Log::info("SearchController DEBUG: Using fallback professor authentication", [
@@ -120,34 +130,21 @@ class SearchController extends Controller
         $results = [];
 
         try {
-            Log::info("SearchController DEBUG: About to switch on type", ['type' => $type]);
-            
             switch ($type) {
                 case 'students':
-                    Log::info("SearchController DEBUG: Searching students");
                     $results = $this->searchStudents($query, $limit, $user);
                     break;
                 case 'professors':
-                    Log::info("SearchController DEBUG: Searching professors");
                     $results = $this->searchProfessors($query, $limit, $user);
                     break;
                 case 'programs':
-                    Log::info("SearchController DEBUG: Searching programs");
                     $results = $this->searchPrograms($query, $limit, $user);
                     break;
                 case 'all':
                 default:
-                    Log::info("SearchController DEBUG: Searching all - calling searchAll");
                     $results = $this->searchAll($query, $limit, $user);
                     break;
             }
-
-            Log::info("SearchController DEBUG: Search completed", [
-                'results_count' => count($results),
-                'results_summary' => array_map(function($r) {
-                    return ['type' => $r['type'] ?? 'unknown', 'name' => $r['name'] ?? 'unknown'];
-                }, $results)
-            ]);
 
             return response()->json([
                 'success' => true,
@@ -156,9 +153,8 @@ class SearchController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error("SearchController DEBUG: Exception occurred", [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error("SearchController: Exception occurred", [
+                'error' => $e->getMessage()
             ]);
             
             return response()->json([
@@ -272,24 +268,13 @@ class SearchController extends Controller
      */
     private function searchAll($query, $limit, $user)
     {
-        Log::info("SearchController DEBUG: searchAll called", [
-            'query' => $query,
-            'limit' => $limit,
-            'user_id' => $user ? $user->user_id : 'null',
-            'user_role' => $user ? $user->role : 'null'
-        ]);
-        
         $results = [];
         
         // For students: Show ALL available programs and professors
         if ($user && $user->role === 'student') {
-            Log::info("SearchController DEBUG: User is student, calling searchAllProgramsForStudent");
-            
             // Search ALL active programs (not just enrolled ones)
             $programResults = $this->searchAllProgramsForStudent($query, $limit, $user);
             $results = array_merge($results, $programResults);
-            
-            Log::info("SearchController DEBUG: Got program results", ['count' => count($programResults)]);
             
             // Search ALL professors
             $professorResults = $this->searchAllProfessorsForStudent($query, $limit - count($results), $user);
@@ -354,12 +339,12 @@ class SearchController extends Controller
             return [
                 'id' => $userItem->user_id ?? '',
                 'type' => 'user',
-                'name' => (isset($userItem->user_firstname) ? $userItem->user_firstname : '') . ' ' . (isset($userItem->user_lastname) ? $userItem->user_lastname : ''),
+                'name' => trim((isset($userItem->user_firstname) ? $userItem->user_firstname : '') . ' ' . (isset($userItem->user_lastname) ? $userItem->user_lastname : '')),
                 'email' => $userItem->email ?? '',
-                'role' => isset($userItem->role) ? ucfirst($userItem->role) : '',
-                'avatar' => $this->getUserAvatar($userItem),
+                'role' => isset($userItem->role) ? ucfirst($userItem->role) : 'User',
+                'avatar' => $this->getUserAvatar($userItem) ?? '',
                 'status' => isset($userItem->is_online) && $userItem->is_online ? 'Online' : 'Offline',
-                'profile_url' => $this->getUserProfileUrl($userItem)
+                'profile_url' => $this->getUserProfileUrl($userItem) ?? '#'
             ];
         })->toArray();
     }
@@ -481,11 +466,24 @@ class SearchController extends Controller
             ->with(['modules.courses'])
             ->limit($limit)
             ->get();
-        return $programs->map(function($program) {
+        return $programs->map(function($program) use ($user) {
             $moduleCount = $program->modules->count();
             $courseCount = $program->modules->sum(function($module) {
                 return $module->courses->count();
             });
+            
+            // Generate appropriate URL based on user role
+            $profileUrl = '#';
+            if ($user && $user->role === 'student') {
+                $profileUrl = route('professor.professor.view.program', $program->program_id);
+            } elseif ($user && in_array($user->role, ['admin', 'director'])) {
+                $profileUrl = route('admin.programs.index') . '?program_id=' . $program->program_id;
+            } elseif ($user && $user->role === 'professor') {
+                $profileUrl = route('professor.professor.view.program', $program->program_id);
+            } else {
+                $profileUrl = route('profile.program', $program->program_id);
+            }
+            
             return [
                 'id' => $program->program_id,
                 'type' => 'program',
@@ -494,7 +492,7 @@ class SearchController extends Controller
                 'modules_count' => $moduleCount,
                 'courses_count' => $courseCount,
                 'created_at' => $program->created_at->format('M d, Y'),
-                'profile_url' => route('profile.program', $program->program_id)
+                'profile_url' => $profileUrl
             ];
         })->toArray();
     }
@@ -684,15 +682,6 @@ class SearchController extends Controller
         // Check multiple session variables for user role
         $currentUserRole = session('user_role') ?? session('user_type') ?? session('role') ?? session('type');
         
-        Log::info("SearchController DEBUG: getStudentProfileUrl", [
-            'studentId' => $studentId,
-            'currentUserRole' => $currentUserRole,
-            'session_user_role' => session('user_role'),
-            'session_user_type' => session('user_type'),
-            'session_role' => session('role'),
-            'session_type' => session('type')
-        ]);
-        
         if ($currentUserRole === 'professor') {
             return route('professor.view.student', $studentId);
         } else {
@@ -848,14 +837,6 @@ class SearchController extends Controller
      */
     private function searchAllProgramsForStudent($query, $limit, $user)
     {
-        // Debug logging
-        Log::info("SearchController DEBUG: searchAllProgramsForStudent called", [
-            'query' => $query,
-            'limit' => $limit,
-            'user_id' => $user ? $user->user_id : 'null',
-            'user_role' => $user ? $user->role : 'null'
-        ]);
-
         // Get student's enrolled programs to mark them properly
         $student = Student::where('user_id', $user->user_id)->first();
         $enrolledProgramIds = $student ? $student->enrollments->pluck('program_id')->unique() : collect();
@@ -904,6 +885,18 @@ class SearchController extends Controller
                 return $module->courses->count();
             });
             
+            // Generate appropriate URL based on user role
+            $profileUrl = '#';
+            if ($user && $user->role === 'student') {
+                $profileUrl = route('professor.professor.view.program', $program->program_id);
+            } elseif ($user && in_array($user->role, ['admin', 'director'])) {
+                $profileUrl = route('admin.programs.index') . '?program_id=' . $program->program_id;
+            } elseif ($user && $user->role === 'professor') {
+                $profileUrl = route('professor.professor.view.program', $program->program_id);
+            } else {
+                $profileUrl = route('profile.program', $program->program_id);
+            }
+            
             $result = [
                 'id' => $program->program_id,
                 'type' => 'program',
@@ -912,7 +905,7 @@ class SearchController extends Controller
                 'role' => $isEnrolled ? 'Enrolled Program' : 'Available Program',
                 'avatar' => $this->getUserAvatar((object)['email' => 'program@artc.edu']),
                 'status' => $isEnrolled ? 'Enrolled' : 'Available',
-                'profile_url' => route('profile.program', $program->program_id),
+                'profile_url' => $profileUrl,
                 'modules_count' => $program->modules->count(),
                 'courses_count' => $coursesCount,
                 'professors' => $program->professors->map(function($prof) {

@@ -241,38 +241,47 @@
 @endif
 
 // Clear form when modal is closed
-document.getElementById('addDirectorModal').addEventListener('hidden.bs.modal', function () {
-    // Clear form fields
-    const form = this.querySelector('form');
-    form.reset();
-    
-    // Remove validation error classes
-    form.querySelectorAll('.is-invalid').forEach(function(element) {
-        element.classList.remove('is-invalid');
+const addDirectorModal = document.getElementById('addDirectorModal');
+if (addDirectorModal) {
+    addDirectorModal.addEventListener('hidden.bs.modal', function () {
+        // Clear form fields
+        const form = this.querySelector('form');
+        form.reset();
+        
+        // Remove validation error classes
+        form.querySelectorAll('.is-invalid').forEach(function(element) {
+            element.classList.remove('is-invalid');
+        });
+        
+        // Hide error messages
+        form.querySelectorAll('.invalid-feedback').forEach(function(element) {
+            element.style.display = 'none';
+        });
+        
+        // Reset program access to "All Programs"
+        const allProgramsCheckbox = document.getElementById('program_all');
+        if (allProgramsCheckbox) {
+            allProgramsCheckbox.checked = true;
+        }
+        
+        // Uncheck all individual program checkboxes
+        const programCheckboxes = document.querySelectorAll('.program-checkbox');
+        programCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     });
-    
-    // Hide error messages
-    form.querySelectorAll('.invalid-feedback').forEach(function(element) {
-        element.style.display = 'none';
-    });
-    
-    // Reset program access to "All Programs"
-    const allProgramsCheckbox = document.getElementById('program_all');
-    if (allProgramsCheckbox) {
-        allProgramsCheckbox.checked = true;
-    }
-    
-    // Uncheck all individual program checkboxes
-    const programCheckboxes = document.querySelectorAll('.program-checkbox');
-    programCheckboxes.forEach(checkbox => {
-        checkbox.checked = false;
-    });
-});
+}
 
 // Handle program access selection logic
 document.addEventListener('DOMContentLoaded', function() {
     const allProgramsCheckbox = document.getElementById('program_all');
     const programCheckboxes = document.querySelectorAll('.program-checkbox');
+    
+    // Check if elements exist before adding event listeners
+    if (!allProgramsCheckbox) {
+        console.warn('Element with ID "program_all" not found');
+        return;
+    }
     
     // Handle "All Programs" checkbox
     allProgramsCheckbox.addEventListener('change', function() {

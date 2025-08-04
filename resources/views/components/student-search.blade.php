@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function performStudentSearch(query) {
         console.log('Student search: Starting search for query:', query);
         
-        fetch(`/search?query=${encodeURIComponent(query)}`, {
+        fetch(`/student/search?query=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
