@@ -115,7 +115,6 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
             min-height: 400px;
-            flex: 1;
         }
         
         .content-actions {
@@ -233,23 +232,9 @@
         }
         
         @media (max-width: 768px) {
-            .student-container {
-                height: 100vh !important;
-            }
-            
-            .main-content-area {
-                height: 100vh !important;
-            }
-            
-            .content-wrapper {
-                height: 100vh !important;
-                min-height: 100vh !important;
-                padding: 1rem !important;
-            }
-            
             .content-page {
-                padding: 0;
-                min-height: calc(100vh - 2rem);
+                padding: 1rem;
+                min-height: calc(100vh - 150px);
             }
             
             .content-header {
@@ -263,7 +248,6 @@
             .content-body {
                 padding: 1.5rem;
                 min-height: 300px;
-                flex: 1;
             }
             
             .content-actions {
@@ -1090,21 +1074,24 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Quiz start response:', data);
                 if (data.success) {
                     // Hide modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('startQuizModal'));
                     modal.hide();
                     
+                    console.log('Redirecting to:', data.redirect);
                     // Redirect to quiz
                     window.location.href = data.redirect;
                 } else {
+                    console.error('Quiz start failed:', data.message);
                     showNotification(data.message || 'Error starting quiz', 'error');
                     startBtn.innerHTML = originalText;
                     startBtn.disabled = false;
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Quiz start fetch error:', error);
                 showNotification('Error starting quiz', 'error');
                 startBtn.innerHTML = originalText;
                 startBtn.disabled = false;

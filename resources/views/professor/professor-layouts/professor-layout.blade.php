@@ -867,6 +867,53 @@
     .main-header .btn-link:hover {
         color: #5b3b91;
     }
+
+    /* Quiz Generator Tab Styling */
+    .nav-tabs .nav-link {
+        color: #6c757d !important;
+        background-color: #f8f9fa !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        margin-right: 0.25rem !important;
+        padding: 0.75rem 1.25rem !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    .nav-tabs .nav-link:hover {
+        background-color: #e9ecef !important;
+        border-color: #adb5bd !important;
+        color: #495057 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: white !important;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
+    }
+
+    .nav-tabs .nav-link.active:hover {
+        background-color: #0b5ed7 !important;
+        border-color: #0b5ed7 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* Card header tabs specific styling */
+    .card-header-tabs .nav-link {
+        border-bottom: none !important;
+        border-radius: 0.5rem !important;
+        margin-bottom: -1px !important;
+    }
+
+    .card-header-tabs .nav-link.active {
+        border-bottom: 2px solid #0d6efd !important;
+        background-color: white !important;
+        color: #0d6efd !important;
+        font-weight: 600 !important;
+    }
     </style>
 
     {{-- Global UI Styles --}}

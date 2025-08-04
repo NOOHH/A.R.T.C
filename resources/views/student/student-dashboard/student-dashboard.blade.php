@@ -854,56 +854,87 @@
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.2);
         backdrop-filter: blur(10px);
-        
     }
     
-.deadlines-content {
-    display: flex !important;
-    flex-direction: column;
-    gap: 12px;
-    padding: 0 !important;
-    
-    /* limit and enable scrolling */
-    max-height: 420px;           /* adjust height as needed */
-    overflow-y: auto;
-    width: 100%;
-}
-.deadlines-content::-webkit-scrollbar {
-    width: 4px;
-}
-.deadlines-content::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.03);
-    border-radius: 5px;
-}
-.deadlines-content::-webkit-scrollbar-thumb {
-    background: rgba(102,126,234,0.4);
-    border-radius: 5px;
-}
-
-@media (max-width: 768px) {
     .deadlines-content {
-        max-height: 320px;
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+        padding: 20px !important;
+        padding-top: 32px !important;
+        
+        /* limit and enable scrolling */
+        max-height: 450px;           /* increased height */
+        overflow-y: auto;
+        width: 100%;
+        
+        /* Add smooth scrolling */
+        scroll-behavior: smooth;
+        
+        /* Better spacing for content */
+        box-sizing: border-box;
     }
-}
-.deadline-item-modern {
-    width: 100%;
-    flex: 0 0 auto;
-    min-width: 0; /* prevent flex-based overflow */
-}
-    
+    .deadlines-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    .deadlines-content::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.03);
+        border-radius: 6px;
+        margin: 10px 0;
+    }
+    .deadlines-content::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, rgba(102,126,234,0.6), rgba(118,75,162,0.6));
+        border-radius: 6px;
+        transition: background 0.3s ease;
+    }
+    .deadlines-content::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, rgba(102,126,234,0.8), rgba(118,75,162,0.8));
+    }
+
+    @media (max-width: 768px) {
+        .deadlines-content {
+            max-height: 360px;
+            padding: 15px !important;
+            padding-top: 2rem !important;
+        }
+    }
     .deadline-item-modern {
-        margin-bottom: 0 !important;
+        width: 100%;
+        flex: 0 0 auto;
+        min-width: 0; /* prevent flex-based overflow */
+        margin-bottom: 12px !important;
+        margin-top: 0 !important;
         border-bottom: 1px solid #f0f0f0;
         transition: all 0.3s ease;
         cursor: pointer;
         position: relative;
+        
+        /* Add proper spacing */
+        padding: 0 !important;
+        background: transparent;
+        border-radius: 12px;
+        
+        /* Prevent content cutoff */
+        overflow: visible;
+    }
+    
+    /* Ensure first deadline item has proper top spacing */
+    .deadlines-content .deadline-item-modern:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
     
     .deadline-item-modern:last-child {
         border-bottom: none;
+        margin-bottom: 8px !important; /* Add bottom margin to last item */
     }
     
-
+    .deadline-item-modern:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+    }
     
     .deadline-item-modern::before {
         content: '';
@@ -930,27 +961,34 @@
     }
     
     .deadline-item-modern .card-body {
-        padding: 16px 20px;
+        padding: 18px 20px 16px 20px !important;
+        
+        /* Ensure proper spacing and prevent cutoff */
+        min-height: auto;
+        box-sizing: border-box;
+        margin: 0 !important;
     }
     
     /* Compact deadline header */
     .deadline-item-modern .d-flex.align-items-start {
-        margin-bottom: 12px !important;
+        margin-bottom: 14px !important;
     }
     
     .deadline-item-modern .card-title {
         font-size: 0.95rem !important;
         font-weight: 600;
         color: #2c3e50;
-        margin-bottom: 4px !important;
+        margin-bottom: 6px !important;
         line-height: 1.3;
+        word-wrap: break-word;
     }
     
     .deadline-item-modern .card-text {
         font-size: 0.8rem;
         color: #7f8c8d;
-        margin-bottom: 8px !important;
+        margin-bottom: 10px !important;
         line-height: 1.4;
+        word-wrap: break-word;
     }
     
     /* Compact badges */
@@ -976,6 +1014,7 @@
     /* Compact due date section */
     .deadline-item-modern .d-flex.align-items-center.justify-content-between:last-of-type {
         margin-bottom: 0 !important;
+        padding-top: 4px;
     }
     
     .deadline-item-modern .fw-medium {
@@ -986,8 +1025,8 @@
     /* Compact action indicator */
     .deadline-item-modern .border-top {
         border-top: 1px solid #f0f0f0 !important;
-        padding-top: 8px !important;
-        margin-top: 8px;
+        padding-top: 10px !important;
+        margin-top: 10px !important;
     }
     
     .deadline-item-modern .border-top .fw-medium {
@@ -999,29 +1038,34 @@
     .deadline-item-modern .badge.bg-danger,
     .deadline-item-modern .badge.bg-warning {
         font-size: 0.65rem !important;
-        padding: 3px 6px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-weight: 500;
     }
     
     /* Feedback section compact */
     .deadline-item-modern .alert {
-        padding: 8px 12px;
-        margin-bottom: 8px !important;
-        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 10px !important;
+        border-radius: 10px;
+        border: none;
     }
     
     .deadline-item-modern .alert h6 {
         font-size: 0.8rem;
-        margin-bottom: 4px !important;
+        margin-bottom: 6px !important;
+        font-weight: 600;
     }
     
     .deadline-item-modern .alert p {
         font-size: 0.75rem;
         margin-bottom: 0;
+        line-height: 1.4;
     }
     
     @media (max-width: 768px) {
         .deadline-item-modern .card-body {
-            padding: 12px 16px;
+            padding: 14px 18px 12px 18px !important;
         }
         
         .deadline-item-modern .card-title {
@@ -1029,7 +1073,7 @@
         }
         
         .deadline-item-modern .card-text {
-            font-size: 0.75rem;
+            font-size: 0.75rem !important;
         }
         
         .deadline-item-modern .bg-primary.rounded-circle,
@@ -1041,6 +1085,15 @@
         .deadline-item-modern .bg-primary.rounded-circle i,
         .deadline-item-modern .bg-success.rounded-circle i {
             font-size: 0.8rem !important;
+        }
+        
+        /* Ensure proper spacing on mobile */
+        .deadline-item-modern {
+            margin-bottom: 10px !important;
+        }
+        
+        .deadline-item-modern:last-child {
+            margin-bottom: 6px !important;
         }
     }
     
@@ -1264,7 +1317,7 @@
         <div class="card-header">
             <h2><i class="bi bi-calendar-check me-2"></i>Deadlines</h2>
         </div>
-        <div class="deadlines-content p-3">
+        <div class="deadlines-content">
             @forelse($deadlines as $deadline)
                 <div class="card mb-3 deadline-item-modern shadow-sm border-0" 
                      onclick="redirectToAssignment('{{ $deadline->reference_id }}', '{{ $deadline->module_id }}', '{{ $deadline->type }}', '{{ $deadline->program_id ?? '' }}')"
@@ -3290,36 +3343,12 @@ function testDashboardUpdate() {
 function redirectToAssignment(referenceId, moduleId, type, programId) {
     console.log('Redirecting to:', { referenceId, moduleId, type, programId });
     
-    if (type === 'assignment') {
-        if (programId) {
-            // Directly redirect to student course page using the program ID
-            window.location.href = `/student/course/${programId}`;
-        } else if (moduleId) {
-            // Fallback: Get the program ID for this module
-            fetch(`/api/module/${moduleId}/program`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.program_id) {
-                        window.location.href = `/student/course/${data.program_id}`;
-                    } else {
-                        console.warn('No program ID found for module', moduleId);
-                        window.location.href = '/student/dashboard';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error getting program ID:', error);
-                    window.location.href = '/student/dashboard';
-                });
-        } else {
-            console.warn('No program ID or module ID provided for assignment', referenceId);
-            window.location.href = '/student/dashboard';
-        }
-    } else if (type === 'quiz') {
+    if (type === 'assignment' || type === 'quiz') {
         if (referenceId) {
-            // Redirect to content view page for quizzes (referenceId is content_id)
+            // Redirect to content view page for both assignments and quizzes (referenceId is content_id)
             window.location.href = `/student/content/${referenceId}/view`;
         } else {
-            console.warn('No reference ID provided for quiz');
+            console.warn('No reference ID provided for', type);
             window.location.href = '/student/dashboard';
         }
     } else {

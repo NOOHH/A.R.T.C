@@ -467,24 +467,63 @@
 
 <body>
 @php
-    // Ensure we have proper authentication context
-    if (!session('user_id') || session('user_role') !== 'student') {
-        redirect()->route('login')->send();
+    // Ensure we have proper authentication context using SessionManager
+    $userId = \App\Helpers\SessionManager::get('user_id');
+    $userType = \App\Helpers\SessionManager::get('user_type');
+    $isLoggedIn = \App\Helpers\SessionManager::isLoggedIn();
+    
+    // Debug authentication
+    \Log::info('Quiz take authentication check', [
+        'user_id' => $userId,
+        'user_type' => $userType,
+        'is_logged_in' => $isLoggedIn,
+        'attempt_id' => $attempt->attempt_id,
+        'attempt_student_id' => $attempt->student_id
+    ]);
+    
+    if (!$isLoggedIn) {
+        \Log::warning('Quiz access denied - not authenticated', [
+            'user_id' => $userId,
+            'is_logged_in' => $isLoggedIn
+        ]);
+        echo '<script>console.log("Authentication failed - redirecting to login"); window.location.href = "/";</script>';
+        echo '<div style="text-align: center; padding: 50px;"><p>Redirecting to login...</p></div>';
+        exit;
+    }
+    
+    if ($userType !== 'student') {
+        \Log::warning('Quiz access denied - not a student', [
+            'user_id' => $userId,
+            'user_type' => $userType
+        ]);
+        echo '<script>console.log("Access denied - not a student"); window.location.href = "/";</script>';
+        echo '<div style="text-align: center; padding: 50px;"><p>Access denied. Student role required.</p></div>';
         exit;
     }
     
     // Check if this attempt is still active
     if ($attempt->status !== 'in_progress') {
+        \Log::info('Quiz attempt not in progress', [
+            'attempt_id' => $attempt->attempt_id,
+            'status' => $attempt->status
+        ]);
+        
         // Redirect to results if already completed
         if ($attempt->status === 'completed') {
-            redirect()->route('student.quiz.results', $attempt->attempt_id)->send();
+            echo '<script>console.log("Quiz already completed - redirecting to results"); window.location.href = "' . route('student.quiz.results', $attempt->attempt_id) . '";</script>';
             exit;
         } else {
             // Redirect to dashboard for other statuses
-            redirect()->route('student.dashboard')->with('error', 'Quiz attempt is not available.')->send();
+            echo '<script>console.log("Quiz attempt not available - status: ' . $attempt->status . '"); window.location.href = "' . route('student.dashboard') . '"; alert("Quiz attempt is not available.");</script>';
             exit;
         }
     }
+    
+    \Log::info('Quiz take access granted', [
+        'user_id' => $userId,
+        'attempt_id' => $attempt->attempt_id,
+        'quiz_id' => $attempt->quiz_id
+    ]);
 @endphp
 
 <div class="quiz-container">
@@ -872,7 +911,7 @@
         window.removeEventListener('beforeunload', function() {});
         
         // Submit quiz with proper error handling
-        fetch(`{{ route('student.quiz.submit', ['attemptId' => $attempt->attempt_id]) }}`, {
+        fetch(`{{ route('student.quiz.submit.attempt', ['attemptId' => $attempt->attempt_id]) }}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -112,6 +112,16 @@ class UnifiedLoginController extends Controller
             'logged_in' => true
         ]);
 
+        // Also set SessionManager variables for compatibility with CheckSession middleware
+        \App\Helpers\SessionManager::init();
+        \App\Helpers\SessionManager::set('user_id', $user->user_id);
+        \App\Helpers\SessionManager::set('user_name', $user->user_firstname . ' ' . $user->user_lastname);
+        \App\Helpers\SessionManager::set('user_firstname', $user->user_firstname);
+        \App\Helpers\SessionManager::set('user_lastname', $user->user_lastname);
+        \App\Helpers\SessionManager::set('user_email', $user->email);
+        \App\Helpers\SessionManager::set('user_role', 'student');
+        \App\Helpers\SessionManager::set('user_type', 'student');
+
         Log::info('Student logged in successfully', ['user_id' => $user->user_id, 'role' => 'student']);
 
         // Check if user is coming from enrollment process (preserve exact original functionality)
@@ -180,6 +190,14 @@ class UnifiedLoginController extends Controller
             'logged_in' => true
         ]);
 
+        // Also set SessionManager variables for compatibility with CheckSession middleware
+        \App\Helpers\SessionManager::init();
+        \App\Helpers\SessionManager::set('user_id', $professor->professor_id);
+        \App\Helpers\SessionManager::set('user_name', $professor->full_name);
+        \App\Helpers\SessionManager::set('user_email', $professor->professor_email);
+        \App\Helpers\SessionManager::set('user_role', 'professor');
+        \App\Helpers\SessionManager::set('user_type', 'professor');
+
         Log::info('Professor logged in successfully', ['professor_id' => $professor->professor_id]);
 
         // Redirect to professor dashboard
@@ -219,6 +237,14 @@ class UnifiedLoginController extends Controller
             'role'       => 'admin',
             'logged_in' => true
         ]);
+
+        // Also set SessionManager variables for compatibility with CheckSession middleware
+        \App\Helpers\SessionManager::init();
+        \App\Helpers\SessionManager::set('user_id', $admin->admin_id);
+        \App\Helpers\SessionManager::set('user_name', $admin->admin_name);
+        \App\Helpers\SessionManager::set('user_email', $admin->email);
+        \App\Helpers\SessionManager::set('user_role', 'admin');
+        \App\Helpers\SessionManager::set('user_type', 'admin');
 
         Log::info('Admin logged in successfully', ['admin_id' => $admin->admin_id]);
 
@@ -281,6 +307,14 @@ class UnifiedLoginController extends Controller
             'logged_in' => true
         ]);
 
+        // Also set SessionManager variables for compatibility with CheckSession middleware
+        \App\Helpers\SessionManager::init();
+        \App\Helpers\SessionManager::set('user_id', $director->directors_id);
+        \App\Helpers\SessionManager::set('user_name', $director->directors_name);
+        \App\Helpers\SessionManager::set('user_email', $director->directors_email);
+        \App\Helpers\SessionManager::set('user_role', 'director');
+        \App\Helpers\SessionManager::set('user_type', 'director');
+
         Log::info('Director logged in successfully', ['directors_id' => $director->directors_id]);
 
         // Redirect to director dashboard
@@ -295,6 +329,10 @@ class UnifiedLoginController extends Controller
         // Clear all session data
         $request->session()->flush();
         $request->session()->regenerateToken();
+        
+        // Also clear SessionManager variables
+        \App\Helpers\SessionManager::init();
+        \App\Helpers\SessionManager::destroy();
         
         // Redirect to home page (preserving original behavior)
         return redirect('/')->with('success', 'You have been logged out successfully.');

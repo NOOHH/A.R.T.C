@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz System Test Hub - A.R.T.C</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .test-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .test-card p {
+            color: #6c757d;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #212529;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .status-section {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .problem-section {
+            background: #ffe6e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Quiz System Test Hub</h1>
+            <p>Comprehensive testing tools for quiz redirect issues</p>
+        </div>
+        
+        <div class="content">
+            <div class="problem-section">
+                <h2>🔍 Problem Identified</h2>
+                <p><strong>Issue:</strong> Quiz attempts redirect to dashboard instead of showing quiz interface</p>
+                <p><strong>Root Cause:</strong> Session authentication mismatch between frontend (user ID 15) and Laravel session</p>
+                <p><strong>Database Status:</strong> Quiz attempt #3 shows "in_progress" ✅</p>
+            </div>
+            
+            <div class="status-section">
+                <h2>✅ Solution Available</h2>
+                <p>Use the tools below to diagnose and fix the quiz system. Follow the numbered steps for best results.</p>
+            </div>
+            
+            <h2>🛠️ Test Tools</h2>
+            
+            <div class="test-grid">
+                <!-- Step 1: Fix Ownership -->
+                <div class="test-card">
+                    <h3><span class="step-number">1</span>Fix Quiz Ownership</h3>
+                    <p>Ensures quiz attempt #3 belongs to your student (user_id 15). Run this first to fix database ownership issues.</p>
+                    <a href="/fix_quiz_attempt.php" class="btn btn-warning" target="_blank">Fix Ownership</a>
+                </div>
+                
+                <!-- Step 2: Setup Session -->
+                <div class="test-card">
+                    <h3><span class="step-number">2</span>Setup Session</h3>
+                    <p>Sets up Laravel session to match your frontend user data (ID: 15, Name: Vince Michael Dela Vega).</p>
+                    <a href="/set_test_session.php" class="btn btn-info" target="_blank">Setup Session</a>
+                </div>
+                
+                <!-- Step 3: Direct Quiz Test -->
+                <div class="test-card">
+                    <h3><span class="step-number">3</span>Direct Quiz Test</h3>
+                    <p><strong>⭐ MAIN TEST:</strong> Working quiz interface that bypasses Laravel session issues. Take the quiz here!</p>
+                    <a href="/direct_quiz_test.php" class="btn btn-success" target="_blank">Take Quiz Now</a>
+                </div>
+                
+                <!-- Step 4: Laravel Route Test -->
+                <div class="test-card">
+                    <h3><span class="step-number">4</span>Laravel Route Test</h3>
+                    <p>Test the original Laravel route after fixing ownership and session. Should work without redirects.</p>
+                    <a href="/student/quiz/take/3" class="btn btn-primary" target="_blank">Test Laravel Route</a>
+                </div>
+                
+                <!-- Debug Session -->
+                <div class="test-card">
+                    <h3>🔍 Debug Session</h3>
+                    <p>Check current session state, student lookup, and authentication status. Use for troubleshooting.</p>
+                    <a href="/debug_quiz_session.php" class="btn btn-info" target="_blank">Debug Session</a>
+                </div>
+                
+                <!-- System Diagnostics -->
+                <div class="test-card">
+                    <h3>🔧 System Diagnostics</h3>
+                    <p>Comprehensive system check including routes, database, models, and Laravel configuration.</p>
+                    <a href="/debug-quiz-system" class="btn btn-info" target="_blank">System Check</a>
+                </div>
+                
+                <!-- Reset Attempt -->
+                <div class="test-card">
+                    <h3>🔄 Reset Quiz Attempt</h3>
+                    <p>Reset quiz attempt #3 back to "in_progress" status if it was accidentally completed.</p>
+                    <a href="/debug-reset-attempt/3" class="btn btn-warning" target="_blank">Reset Attempt</a>
+                </div>
+                
+                <!-- Student Dashboard -->
+                <div class="test-card">
+                    <h3>🏠 Student Dashboard</h3>
+                    <p>Return to the main student dashboard to see if quiz links work properly after fixes.</p>
+                    <a href="/student/dashboard" class="btn btn-primary" target="_blank">Dashboard</a>
+                </div>
+            </div>
+            
+            <div class="status-section">
+                <h2>📋 Quick Test Sequence</h2>
+                <ol>
+                    <li><strong>Fix Ownership:</strong> Click "Fix Ownership" to ensure attempt belongs to your user</li>
+                    <li><strong>Setup Session:</strong> Click "Setup Session" to align Laravel with your frontend</li>
+                    <li><strong>Take Quiz:</strong> Click "Take Quiz Now" - this should work immediately</li>
+                    <li><strong>Test Laravel Route:</strong> Click "Test Laravel Route" to verify the original route works</li>
+                </ol>
+            </div>
+            
+            <div class="problem-section">
+                <h2>⚠️ If Still Having Issues</h2>
+                <ul>
+                    <li>Use "Debug Session" to check what session data is set</li>
+                    <li>Use "System Check" to verify all components are working</li>
+                    <li>Use "Reset Attempt" if the quiz shows as completed</li>
+                    <li>Check browser console for JavaScript errors</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Quiz System Fix Tools - A.R.T.C Learning Management System</p>
+            <p>All tools are safe and only affect test data</p>
+        </div>
+    </div>
+</body>
+</html>
