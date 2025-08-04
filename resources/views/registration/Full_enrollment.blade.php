@@ -53,7 +53,41 @@
     }
     window.showTermsModal = showTermsModal;
     
-
+    // CRITICAL: Define acceptTerms function in global scope
+    function acceptTerms() {
+        console.log('🔧 Global acceptTerms function called');
+        try {
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            if (termsCheckbox) {
+                // Check the checkbox
+                termsCheckbox.checked = true;
+                console.log('✅ Terms checkbox checked by global function');
+                
+                // Enable the submit button
+                const submitButton = document.getElementById('submitButton');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('disabled');
+                    submitButton.style.opacity = '1';
+                    console.log('✅ Submit button enabled by global function');
+                }
+                
+                // Also trigger the form validation if available
+                if (typeof validateFormForSubmission === 'function') {
+                    console.log('🔧 Calling validateFormForSubmission');
+                    validateFormForSubmission();
+                }
+            } else {
+                console.error('❌ Terms checkbox not found in global acceptTerms');
+            }
+        } catch (err) {
+            console.error('❌ Error in global acceptTerms:', err);
+        }
+    }
+    
+    // CRITICAL: Immediately assign to window to ensure global availability
+    window.acceptTerms = acceptTerms;
+    
     </script>
     <!-- reCAPTCHA -->
     @if(env('RECAPTCHA_SITE_KEY'))
@@ -2814,7 +2848,7 @@
             <div class="form-check mb-4">
                 <input class="form-check-input" type="checkbox" id="termsCheckbox" name="terms_accepted" required>
                 <label class="form-check-label" for="termsCheckbox">
-                    I agree to the <a href="#" onclick="showTermsModal()" class="text-decoration-none">Terms and Conditions</a>
+                    I agree to the <a href="#" onclick="(function(e) { e.preventDefault(); try { if(typeof window.showTermsModal === 'function') { window.showTermsModal(); } else if(typeof showTermsModal === 'function') { showTermsModal(); } else { console.error('showTermsModal not found'); const modal = document.getElementById('termsModal'); if(modal && typeof bootstrap !== 'undefined') { new bootstrap.Modal(modal).show(); } } } catch(err) { console.error('Error showing terms modal:', err); } })(event)" class="text-decoration-none">Terms and Conditions</a>
                 </label>
             </div>
 
@@ -2907,7 +2941,35 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="acceptTerms()">I Accept</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="(function() {
+                        console.log('I Accept button clicked');
+                        // Direct implementation for maximum reliability
+                        const checkbox = document.getElementById('termsCheckbox');
+                        if(checkbox) {
+                            checkbox.checked = true;
+                            console.log('✅ Terms checkbox checked directly');
+                        }
+                        
+                        const submitBtn = document.getElementById('submitButton');
+                        if(submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('disabled');
+                            submitBtn.style.opacity = '1';
+                            console.log('✅ Submit button enabled directly');
+                        }
+                        
+                        // Also try to call the global function if it exists
+                        try {
+                            if(typeof window.acceptTerms === 'function') {
+                                window.acceptTerms();
+                                console.log('✅ Global acceptTerms function called');
+                            } else {
+                                console.warn('⚠️ window.acceptTerms is not a function');
+                            }
+                        } catch(err) {
+                            console.error('❌ Error calling acceptTerms:', err);
+                        }
+                    })();">I Accept</button>
                 </div>
             </div>
         </div>
@@ -4830,6 +4892,48 @@ if (currentStep !== finalStep) {
     document.addEventListener('DOMContentLoaded', () => {
         console.log('DOM loaded, initializing registration form');
         
+        // CRITICAL: Define/redefine acceptTerms function for maximum availability
+        console.log('🔧 Setting up reliable acceptTerms function in DOMContentLoaded');
+        
+        // Always define the function, regardless of whether it already exists
+        window.acceptTerms = function() {
+            console.log('🔧 acceptTerms function called from DOMContentLoaded handler');
+            try {
+                // Get the terms checkbox
+                const termsCheckbox = document.getElementById('termsCheckbox');
+                if (termsCheckbox) {
+                    // Check the checkbox
+                    termsCheckbox.checked = true;
+                    console.log('✅ Terms checkbox checked by DOMContentLoaded handler');
+                    
+                    // Enable the submit button directly - most reliable approach
+                    const submitBtn = document.getElementById('submitButton');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('disabled');
+                        submitBtn.style.opacity = '1';
+                        console.log('✅ Submit button enabled by DOMContentLoaded handler');
+                    } else {
+                        console.warn('⚠️ Submit button not found');
+                    }
+                    
+                    // Also try the form validation function as a backup
+                    if (typeof window.validateFormForSubmission === 'function') {
+                        try {
+                            window.validateFormForSubmission();
+                            console.log('✅ Form validation triggered');
+                        } catch(err) {
+                            console.error('❌ Error in validateFormForSubmission:', err);
+                        }
+                    }
+                } else {
+                    console.error('❌ Terms checkbox not found in DOMContentLoaded handler!');
+                }
+            } catch(err) {
+                console.error('❌ Error in acceptTerms DOMContentLoaded handler:', err);
+            }
+        };
+        
         // Initialize form with user data if logged in
         if (isUserLoggedIn) {
             loadUserPrefillData();
@@ -5087,16 +5191,23 @@ if (currentStep !== finalStep) {
     function validateFormForSubmission() {
         console.log('🔍 === Validating Form for Submission ===');
         
-        // Get all required fields
-        const requiredFields = [
-            'user_firstname',
-            'user_lastname', 
-            'user_email',
-            'password',
-            'password_confirmation',
-            'programSelect',
-            'batchSelect'
-        ];
+        // For logged-in users, we need different validation rules
+        const requiredFields = [];
+        
+        if (isUserLoggedIn) {
+            // Logged-in users only need to select program and accept terms
+            requiredFields.push('programSelect');
+        } else {
+            // Non-logged-in users need account fields
+            requiredFields.push(
+                'user_firstname',
+                'user_lastname', 
+                'user_email',
+                'password',
+                'password_confirmation',
+                'programSelect'
+            );
+        }
         
         // Check if all required fields are filled
         let allFieldsFilled = true;
@@ -5111,8 +5222,35 @@ if (currentStep !== finalStep) {
                     allFieldsFilled = false;
                 }
             } else {
-                fieldStatus[fieldId] = false;
-                allFieldsFilled = false;
+                // For final step submission, we check different fields
+                if (fieldId === 'user_firstname') {
+                    const altField = document.getElementById('firstname');
+                    if (altField && altField.value && altField.value.trim().length > 0) {
+                        fieldStatus[fieldId] = true;
+                    } else {
+                        fieldStatus[fieldId] = false;
+                        allFieldsFilled = false;
+                    }
+                } else if (fieldId === 'user_lastname') {
+                    const altField = document.getElementById('lastname');
+                    if (altField && altField.value && altField.value.trim().length > 0) {
+                        fieldStatus[fieldId] = true;
+                    } else {
+                        fieldStatus[fieldId] = false;
+                        allFieldsFilled = false;
+                    }
+                } else if (fieldId === 'user_email') {
+                    const altField = document.getElementById('email');
+                    if (altField && altField.value && altField.value.trim().length > 0) {
+                        fieldStatus[fieldId] = true;
+                    } else {
+                        fieldStatus[fieldId] = false;
+                        allFieldsFilled = false;
+                    }
+                } else {
+                    fieldStatus[fieldId] = false;
+                    allFieldsFilled = false;
+                }
             }
         });
         
@@ -5128,7 +5266,8 @@ if (currentStep !== finalStep) {
             allFieldsFilled,
             termsAccepted,
             emailVerified,
-            isUserLoggedIn
+            isUserLoggedIn,
+            currentStep
         });
         
         // Enable submit button only if ALL conditions are met
@@ -5145,7 +5284,11 @@ if (currentStep !== finalStep) {
                 submitButton.disabled = true;
                 submitButton.classList.add('disabled');
                 submitButton.style.opacity = '0.5';
-                console.log('❌ Submit button disabled');
+                console.log('❌ Submit button disabled - missing:', {
+                    allFieldsFilled,
+                    termsAccepted,
+                    emailVerified
+                });
             }
         }
         
@@ -5154,8 +5297,97 @@ if (currentStep !== finalStep) {
 
 
     
+    // Function to accept terms and conditions
+    function acceptTerms() {
+        console.log('🔧 acceptTerms function called');
+        const termsCheckbox = document.getElementById('termsCheckbox');
+        if (termsCheckbox) {
+            termsCheckbox.checked = true;
+            console.log('✅ Terms and conditions accepted - checkbox checked');
+            
+            // Trigger form validation to enable submit button
+            if (typeof validateFormForSubmission === 'function') {
+                console.log('🔧 Calling validateFormForSubmission');
+                validateFormForSubmission();
+            } else {
+                console.log('🔧 validateFormForSubmission not found, using fallback');
+                // Fallback: manually enable submit button if validation function not available
+                const submitButton = document.getElementById('submitButton');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('disabled');
+                    submitButton.style.opacity = '1';
+                    console.log('✅ Submit button enabled via acceptTerms fallback');
+                }
+            }
+        } else {
+            console.error('❌ Terms checkbox not found!');
+        }
+    }
+    
+    // Make acceptTerms globally available immediately
+    window.acceptTerms = acceptTerms;
+    
     // Make validateFormForSubmission available globally
     window.validateFormForSubmission = validateFormForSubmission;
+    
+    // Backup definition in case of scope issues
+    if (typeof window.acceptTerms === 'undefined') {
+        window.acceptTerms = function() {
+            console.log('🔧 Backup acceptTerms function called');
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            if (termsCheckbox) {
+                termsCheckbox.checked = true;
+                console.log('✅ Terms accepted via backup function');
+                
+                // Trigger validation
+                if (typeof window.validateFormForSubmission === 'function') {
+                    window.validateFormForSubmission();
+                } else {
+                    // Direct enable submit button
+                    const submitButton = document.getElementById('submitButton');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.classList.remove('disabled');
+                        submitButton.style.opacity = '1';
+                        console.log('✅ Submit button enabled via backup acceptTerms');
+                    }
+                }
+            }
+        };
+    }
 
     </script>
+<!-- Final safety check for acceptTerms function -->
+<script>
+// This script ensures acceptTerms is defined in all contexts and scopes
+(function() {
+    // Final check for acceptTerms function
+    if (typeof window.acceptTerms !== 'function') {
+        console.warn('⚠️ acceptTerms not defined at end of page - creating final fallback');
+        window.acceptTerms = function() {
+            console.log('🔧 Final fallback acceptTerms called');
+            try {
+                // Direct implementation
+                const checkbox = document.getElementById('termsCheckbox');
+                if (checkbox) {
+                    checkbox.checked = true;
+                    console.log('✅ Terms checkbox checked by final fallback');
+                }
+                
+                const submitBtn = document.getElementById('submitButton');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('disabled');
+                    submitBtn.style.opacity = '1';
+                    console.log('✅ Submit button enabled by final fallback');
+                }
+            } catch(err) {
+                console.error('❌ Error in final fallback acceptTerms:', err);
+            }
+        };
+    }
+})();
+</script>
+
 @endsection
