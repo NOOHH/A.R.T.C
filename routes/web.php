@@ -1914,6 +1914,8 @@ Route::middleware(['professor.auth'])
          ->name('profile.update');
     Route::post('/profile/photo', [ProfessorDashboardController::class, 'updateProfilePhoto'])
          ->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfessorDashboardController::class, 'removeProfilePhoto'])
+         ->name('profile.photo.remove');
     
     // Student Management
     // My batches (only those this prof owns)

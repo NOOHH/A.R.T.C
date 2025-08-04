@@ -8,17 +8,37 @@
     <style>
         /* CONTENT VIEW PAGE SPECIFIC FIXES - Only affects this page */
         
+        /* Fix red bottom background and ensure full screen coverage */
+        body, html {
+            height: 100% !important;
+            overflow-x: hidden !important;
+        }
+        
+        .student-container {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        
+        .main-content-area {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        
         /* Fix horizontal scrollbar for content page only */
         .content-wrapper {
             overflow-x: hidden !important;
+            overflow-y: auto !important;
             width: 100% !important;
             max-width: 100% !important;
             background: #f8fafc !important;
-            min-height: 100vh;
-            padding-bottom: 4rem;
+            min-height: 100vh !important;
+            height: 100vh !important;
+            padding: 2rem !important;
+            padding-bottom: 2rem !important;
             margin: 0 !important;
             border-radius: 0 !important;
             box-shadow: none !important;
+            position: relative !important;
         }
         
         /* Override red background only for content wrapper */
@@ -28,16 +48,31 @@
             background-image: none !important;
         }
         
+        /* Ensure content fills available space */
+        .content-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f8fafc !important;
+            z-index: -1;
+        }
+        
         /* Content page specific styling */
         .content-page {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
-            min-height: calc(100vh - 200px);
+            padding: 0;
+            min-height: calc(100vh - 4rem);
+            height: auto;
             position: relative;
             width: 100%;
             box-sizing: border-box;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         .content-header {
@@ -80,6 +115,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
             min-height: 400px;
+            flex: 1;
         }
         
         .content-actions {
@@ -197,9 +233,23 @@
         }
         
         @media (max-width: 768px) {
+            .student-container {
+                height: 100vh !important;
+            }
+            
+            .main-content-area {
+                height: 100vh !important;
+            }
+            
+            .content-wrapper {
+                height: 100vh !important;
+                min-height: 100vh !important;
+                padding: 1rem !important;
+            }
+            
             .content-page {
-                padding: 1rem;
-                min-height: calc(100vh - 150px);
+                padding: 0;
+                min-height: calc(100vh - 2rem);
             }
             
             .content-header {
@@ -213,6 +263,7 @@
             .content-body {
                 padding: 1.5rem;
                 min-height: 300px;
+                flex: 1;
             }
             
             .content-actions {
