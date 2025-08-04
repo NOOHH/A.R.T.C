@@ -21,6 +21,40 @@
 
     <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Full_Enrollment.css') }}">
     <script src="{{ asset('js/enrollment/full_enrollment.js') }}"></script>
+    
+    <!-- Terms Modal Function - Define immediately after Bootstrap -->
+    <script>
+    // Function to show terms and conditions modal - Define immediately after Bootstrap loads
+    function showTermsModal() {
+        try {
+            const modalElement = document.getElementById('termsModal');
+            if (!modalElement) {
+                console.error('Terms modal element not found');
+                return;
+            }
+            
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                // Fallback: show modal manually if Bootstrap is not available
+                modalElement.style.display = 'block';
+                modalElement.classList.add('show');
+                document.body.classList.add('modal-open');
+                
+                // Add backdrop
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            }
+        } catch (error) {
+            console.error('Error showing terms modal:', error);
+        }
+    }
+    window.showTermsModal = showTermsModal;
+    
+
+    </script>
     <!-- reCAPTCHA -->
     @if(env('RECAPTCHA_SITE_KEY'))
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -2780,7 +2814,7 @@
             <div class="form-check mb-4">
                 <input class="form-check-input" type="checkbox" id="termsCheckbox" name="terms_accepted" required>
                 <label class="form-check-label" for="termsCheckbox">
-                    I agree to the <a href="#" id="showTerms">Terms and Conditions</a>
+                    I agree to the <a href="#" onclick="showTermsModal()" class="text-decoration-none">Terms and Conditions</a>
                 </label>
             </div>
 
@@ -2861,15 +2895,20 @@
     </div>
 
     <!-- Terms and Conditions Modal -->
-    <div id="termsModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center;">
-        <div class="modal-content" style="max-width: 600px; background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <h3>Terms and Conditions</h3>
-            <div style="max-height: 320px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem;">
-                {!! nl2br(e(\App\Models\AdminSetting::getValue('full_enrollment_terms', 'By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.'))) !!}
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="acceptTerms()" class="btn btn-primary">Accept</button>
-                <button onclick="declineTerms()" class="btn btn-secondary">Decline</button>
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+{!! nl2br(e(\App\Models\AdminSetting::getValue('full_enrollment_terms', 'By registering for this platform, you agree to abide by all policies, privacy guidelines, and usage restrictions as provided by our review center. Please read the full document before accepting.'))) !!}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="acceptTerms()">I Accept</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2877,116 +2916,6 @@
 
     <!-- JavaScript for form validation and functionality -->
     <script>
-    // 🚨 EMERGENCY DEBUGGING: Check if script is loading
-    console.log('🔧 SCRIPT LOADING: Full enrollment script starting...');
-    console.log('🔧 SCRIPT LOADING: Current time:', new Date().toISOString());
-    
-    // 🚨 EMERGENCY: Global function availability check
-    console.log('🔧 EMERGENCY: Checking global function availability...');
-    console.log('  - typeof showTermsModal:', typeof showTermsModal);
-    console.log('  - typeof window.showTermsModal:', typeof window.showTermsModal);
-    console.log('  - typeof closeTermsModal:', typeof closeTermsModal);
-    console.log('  - typeof window.closeTermsModal:', typeof window.closeTermsModal);
-    
-    // CRITICAL: Define modal functions immediately at the top to prevent "function not found" errors
-    console.log('🔧 DEFINING: showTermsModal function...');
-    
-    // Define function in multiple ways to ensure availability
-    function showTermsModal() {
-        console.log('✅ showTermsModal called via regular function');
-        const modal = document.getElementById('termsModal');
-        if (!modal) {
-            console.error('❌ Terms modal not found');
-            console.log('🔍 Available elements with "terms" in ID:');
-            document.querySelectorAll('[id*="terms"]').forEach(el => console.log('  -', el.id));
-            return;
-        }
-        console.log('✅ Modal found, showing...');
-        // show the modal
-        modal.style.display = 'flex';
-        // lock background scrolling
-        document.body.style.overflow = 'hidden';
-        console.log('✅ Modal should be visible now');
-    }
-    console.log('✅ Regular showTermsModal function defined');
-    
-    // Also attach to window object
-    window.showTermsModal = showTermsModal;
-    console.log('✅ window.showTermsModal defined');
-    
-    console.log('🔧 DEFINING: closeTermsModal function...');
-    
-    function closeTermsModal() {
-        console.log('✅ closeTermsModal called via regular function');
-        const modal = document.getElementById('termsModal');
-        if (!modal) {
-            console.error('❌ Terms modal not found for closing');
-            return;
-        }
-        console.log('✅ Closing terms modal');
-        // hide the modal
-        modal.style.display = 'none';
-        // restore background scrolling
-        document.body.style.overflow = '';
-        console.log('✅ Modal should be hidden now');
-    }
-    console.log('✅ Regular closeTermsModal function defined');
-    
-    // Also attach to window object
-    window.closeTermsModal = closeTermsModal;
-    console.log('✅ window.closeTermsModal defined');
-    console.log('✅ Regular closeTermsModal function defined');
-    
-    // 🚨 EMERGENCY FALLBACK: Add click handler after DOM is ready
-    console.log('🔧 SETTING UP: Emergency fallback click handler...');
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔧 DOMContentLoaded fired - setting up emergency handlers...');
-        const termsLink = document.getElementById('showTerms');
-        if (termsLink) {
-            console.log('✅ Terms link found, adding emergency click handler...');
-            termsLink.addEventListener('click', function(e) {
-                console.log('🚨 EMERGENCY: Terms link clicked via event listener');
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Try to call the function
-                if (typeof window.showTermsModal === 'function') {
-                    console.log('✅ Calling window.showTermsModal...');
-                    window.showTermsModal();
-                } else if (typeof showTermsModal === 'function') {
-                    console.log('✅ Calling regular showTermsModal...');
-                    showTermsModal();
-                } else {
-                    console.error('❌ Both functions are undefined!');
-                    console.log('🔍 Available functions:', Object.keys(window).filter(key => key.includes('showTerms')));
-                }
-            });
-            console.log('✅ Emergency click handler added to terms link');
-        } else {
-            console.error('❌ Terms link not found!');
-        }
-    });
-    
-    // 🚨 ADDITIONAL DEBUGGING: Check function availability
-    console.log('🔧 DEBUGGING: Function availability check...');
-    console.log('  - typeof window.showTermsModal:', typeof window.showTermsModal);
-    console.log('  - typeof showTermsModal:', typeof showTermsModal);
-    console.log('  - window.showTermsModal === function:', typeof window.showTermsModal === 'function');
-    console.log('  - showTermsModal === function:', typeof showTermsModal === 'function');
-    
-    // 🚨 CHECK MODAL HTML EXISTS
-    console.log('🔧 CHECKING: Modal HTML existence...');
-    const modalElement = document.getElementById('termsModal');
-    console.log('  - Modal element found:', !!modalElement);
-    if (modalElement) {
-        console.log('  - Modal display style:', modalElement.style.display);
-        console.log('  - Modal visibility:', modalElement.style.visibility);
-        console.log('  - Modal z-index:', modalElement.style.zIndex);
-    } else {
-        console.error('❌ Modal element not found!');
-        console.log('🔍 All elements with "modal" in ID:');
-        document.querySelectorAll('[id*="modal"]').forEach(el => console.log('  -', el.id));
-    }
     
     // Define validateStep4 function immediately to prevent "function not found" errors
     window.validateStep4 = function() {
@@ -4981,18 +4910,7 @@ if (currentStep !== finalStep) {
             }
         }, 1000);
 
-        // Modal click outside to close
-        const termsModal = document.getElementById('termsModal');
-        if (termsModal) {
-            termsModal.addEventListener('click', e => {
-                if (e.target.id === 'termsModal') closeTermsModal();
-            });
-        }
 
-        // Escape key to close modal
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeTermsModal();
-        });
         
         // ADDITIONAL SAFETY: Global Enter key handler for the entire document
         document.addEventListener('keydown', function(event) {
@@ -5234,45 +5152,10 @@ if (currentStep !== finalStep) {
         return allFieldsFilled && termsAccepted && emailVerified;
     }
 
-    // Terms and Conditions modal functions
-    function acceptTerms() {
-        // Check the terms and conditions checkbox
-        const termsCheckbox = document.getElementById('termsCheckbox');
-        if (termsCheckbox) {
-            termsCheckbox.checked = true;
-            // Trigger change event to ensure validation runs
-            termsCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        
-        // Validate form and update submit button
-        validateFormForSubmission();
-        
-        // Close the modal
-        closeTermsModal();
-        
-        console.log('Terms and conditions accepted');
-    }
 
-    function declineTerms() {
-        // Uncheck the terms and conditions checkbox
-        const termsCheckbox = document.getElementById('termsCheckbox');
-        if (termsCheckbox) {
-            termsCheckbox.checked = false;
-            // Trigger change event to ensure validation runs
-            termsCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        
-        // Validate form and update submit button
-        validateFormForSubmission();
-        
-        // Close the modal
-        closeTermsModal();
-        
-        // Show a message to the user
-        showWarning('You must accept the terms and conditions to proceed with registration.');
-        
-        console.log('Terms and conditions declined');
-    }
+    
+    // Make validateFormForSubmission available globally
+    window.validateFormForSubmission = validateFormForSubmission;
 
     </script>
 @endsection
