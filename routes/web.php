@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -873,6 +874,29 @@ Route::get('/payment-methods/enabled', [AdminSettingsController::class, 'getEnab
 // Test route for modal functionality (no authentication required)
 Route::get('/test/registration/{id}/details', [AdminController::class, 'getRegistrationDetailsJson'])
      ->name('test.registration.details');
+
+// Test route for email functionality
+Route::get('/test/email/{email}', function($email) {
+    try {
+        Log::info('Email test route accessed', ['email' => $email]);
+        
+        Mail::raw("Hello!\n\nThis is a test email from A.R.T.C system.\n\nIf you receive this, the email system is working correctly.\n\nTime sent: " . now()->format('Y-m-d H:i:s') . "\n\nBest regards,\nA.R.T.C Team", function ($message) use ($email) {
+            $message->to($email)
+                    ->subject('A.R.T.C - Email System Test');
+        });
+        
+        Log::info('Email test sent successfully', ['email' => $email]);
+        return response()->json(['status' => 'success', 'message' => 'Test email sent successfully to ' . $email]);
+        
+    } catch (\Exception $e) {
+        Log::error('Email test failed', [
+            'email' => $email,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json(['status' => 'error', 'message' => 'Email test failed: ' . $e->getMessage()], 500);
+    }
+})->name('test.email');
 
 // Admin dashboard and admin routes with middleware
 Route::middleware(['admin.director.auth'])->group(function () {

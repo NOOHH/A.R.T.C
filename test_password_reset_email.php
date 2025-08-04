@@ -2,37 +2,87 @@
 
 require_once 'vendor/autoload.php';
 
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 // Bootstrap Laravel
 $app = require_once 'bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-// Create a fake request for password reset
-$request = Request::create('/password/email', 'POST', [
-    'email' => 'vince03handsome11@gmail.com'
-]);
+echo "=== Password Reset Email Test ===\n\n";
 
-// Set up the environment
-$response = $kernel->handle($request);
+// Test email configuration
+echo "1. Checking email configuration...\n";
+echo "MAIL_MAILER: " . env('MAIL_MAILER', 'not set') . "\n";
+echo "MAIL_HOST: " . env('MAIL_HOST', 'not set') . "\n";
+echo "MAIL_PORT: " . env('MAIL_PORT', 'not set') . "\n";
+echo "MAIL_USERNAME: " . env('MAIL_USERNAME', 'not set') . "\n";
+echo "MAIL_PASSWORD: " . (env('MAIL_PASSWORD') ? 'set' : 'not set') . "\n";
+echo "MAIL_ENCRYPTION: " . env('MAIL_ENCRYPTION', 'not set') . "\n";
+echo "MAIL_FROM_ADDRESS: " . env('MAIL_FROM_ADDRESS', 'not set') . "\n";
+echo "MAIL_FROM_NAME: " . env('MAIL_FROM_NAME', 'not set') . "\n\n";
+
+// Test if the email exists in the database
+echo "2. Checking if email exists in database...\n";
+$email = 'bmjustimbaste2003@gmail.com';
 
 try {
-    // Get the controller
-    $controller = new App\Http\Controllers\UnifiedLoginController();
+    $db = new PDO(
+        'mysql:host=' . env('DB_HOST', '127.0.0.1') . 
+        ';dbname=' . env('DB_DATABASE', 'artc') . 
+        ';port=' . env('DB_PORT', '3306'),
+        env('DB_USERNAME', 'root'),
+        env('DB_PASSWORD', '')
+    );
     
-    echo "Testing password reset email...\n";
+    // Check students table
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM students WHERE email = ?");
+    $stmt->execute([$email]);
+    $studentCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    echo "Students table: " . $studentCount . " records found\n";
     
-    // Call the sendResetLinkEmail method directly
-    $result = $controller->sendResetLinkEmail($request);
+    // Check admins table
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM admins WHERE email = ?");
+    $stmt->execute([$email]);
+    $adminCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    echo "Admins table: " . $adminCount . " records found\n";
     
-    echo "Result: " . $result . "\n";
-    echo "Test completed.\n";
+    // Check professors table
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM professors WHERE professor_email = ?");
+    $stmt->execute([$email]);
+    $professorCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    echo "Professors table: " . $professorCount . " records found\n";
+    
+    // Check directors table
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM directors WHERE directors_email = ?");
+    $stmt->execute([$email]);
+    $directorCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    echo "Directors table: " . $directorCount . " records found\n\n";
+    
+    if ($studentCount + $adminCount + $professorCount + $directorCount == 0) {
+        echo "❌ Email not found in any table!\n";
+        exit;
+    }
     
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . "\n";
-    echo "Line: " . $e->getLine() . "\n";
+    echo "❌ Database connection error: " . $e->getMessage() . "\n";
+    exit;
 }
 
-$kernel->terminate($request, $response);
+// Test email sending
+echo "3. Testing email sending...\n";
+
+try {
+    Mail::raw("Test email from A.R.T.C system", function ($message) use ($email) {
+        $message->to($email)
+                ->subject('A.R.T.C - Test Email');
+    });
+    
+    echo "✅ Test email sent successfully!\n";
+    
+} catch (Exception $e) {
+    echo "❌ Email sending failed: " . $e->getMessage() . "\n";
+    echo "Error details: " . $e->getTraceAsString() . "\n";
+}
+
+echo "\n=== Test Complete ===\n";

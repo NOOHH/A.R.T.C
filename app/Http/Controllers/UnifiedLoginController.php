@@ -16,6 +16,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use App\Mail\PasswordResetMail;
 
 /**
@@ -386,6 +387,13 @@ class UnifiedLoginController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
+        // Log the request for debugging
+        Log::info('Password reset request received', [
+            'email' => $request->email,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent()
+        ]);
+
         // Check if email exists in any of the user tables
         $userExists = false;
         $userType = null;
@@ -398,6 +406,7 @@ class UnifiedLoginController extends Controller
                 $userExists = true;
                 $userType = 'student';
                 $userName = trim(($student->firstname ?? '') . ' ' . ($student->lastname ?? ''));
+                Log::info('User found in students table', ['email' => $request->email, 'user_id' => $student->student_id]);
             }
             // Check admins table (uses 'email' column)
             elseif (Admin::where('email', $request->email)->exists()) {
@@ -405,6 +414,7 @@ class UnifiedLoginController extends Controller
                 $userExists = true;
                 $userType = 'admin';
                 $userName = $admin->admin_name ?? 'Admin';
+                Log::info('User found in admins table', ['email' => $request->email, 'admin_id' => $admin->admin_id]);
             }
             // Check professors table (uses 'professor_email' column)
             elseif (Professor::where('professor_email', $request->email)->exists()) {
@@ -412,6 +422,7 @@ class UnifiedLoginController extends Controller
                 $userExists = true;
                 $userType = 'professor';
                 $userName = trim(($professor->professor_first_name ?? '') . ' ' . ($professor->professor_last_name ?? '')) ?: $professor->professor_name ?? 'Professor';
+                Log::info('User found in professors table', ['email' => $request->email, 'professor_id' => $professor->professor_id]);
             }
             // Check directors table (uses 'directors_email' column)
             elseif (Director::where('directors_email', $request->email)->exists()) {
@@ -419,22 +430,32 @@ class UnifiedLoginController extends Controller
                 $userExists = true;
                 $userType = 'director';
                 $userName = trim(($director->directors_first_name ?? '') . ' ' . ($director->directors_last_name ?? '')) ?: $director->directors_name ?? 'Director';
+                Log::info('User found in directors table', ['email' => $request->email, 'director_id' => $director->director_id]);
             }
 
             if ($userExists) {
                 // Generate password reset token
                 $token = Str::random(64);
                 
-                // Store the token in session with expiration (1 hour)
-                session([
-                    'password_reset_token' => $token,
-                    'password_reset_email' => $request->email,
-                    'password_reset_user_type' => $userType,
-                    'password_reset_expires' => now()->addHour()
+                // Clear any existing tokens for this email
+                DB::table('password_resets')->where('email', $request->email)->delete();
+                
+                // Store the token in database with expiration (1 hour)
+                DB::table('password_resets')->insert([
+                    'email' => $request->email,
+                    'token' => $token,
+                    'user_type' => $userType,
+                    'created_at' => now()
                 ]);
                 
                 // Generate reset URL
                 $resetUrl = url('/password/reset/' . $token . '?email=' . urlencode($request->email));
+                
+                Log::info('Attempting to send password reset email', [
+                    'email' => $request->email,
+                    'user_type' => $userType,
+                    'reset_url' => $resetUrl
+                ]);
                 
                 // Send password reset email using the same method as OTP
                 Mail::raw("Hello {$userName},\n\nYou have requested to reset your password for your A.R.T.C account.\n\nClick the following link to reset your password:\n{$resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you did not request this password reset, please ignore this email.\n\nBest regards,\nA.R.T.C Team", function ($message) use ($request) {
@@ -461,7 +482,8 @@ class UnifiedLoginController extends Controller
                 'email' => $request->email,
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             // Still return success message for security, but log the error
@@ -474,25 +496,30 @@ class UnifiedLoginController extends Controller
      */
     public function showResetForm(Request $request, $token = null)
     {
-        // Validate token and check if it's not expired
-        $storedToken = session('password_reset_token');
-        $storedEmail = session('password_reset_email');
-        $expiry = session('password_reset_expires');
-        
-        if (!$token || !$storedToken || $token !== $storedToken) {
+        if (!$token) {
             return redirect()->route('password.request')
                 ->withErrors(['email' => 'Invalid password reset token.']);
         }
         
-        if (!$expiry || now()->isAfter($expiry)) {
-            // Clear expired token
-            session()->forget(['password_reset_token', 'password_reset_email', 'password_reset_user_type', 'password_reset_expires']);
+        // Look up token in database
+        $resetRecord = DB::table('password_resets')->where('token', $token)->first();
+        
+        if (!$resetRecord) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Invalid password reset token.']);
+        }
+        
+        // Check if token is expired (1 hour)
+        $tokenAge = now()->diffInMinutes($resetRecord->created_at);
+        if ($tokenAge > 60) {
+            // Delete expired token
+            DB::table('password_resets')->where('token', $token)->delete();
             return redirect()->route('password.request')
                 ->withErrors(['email' => 'Password reset token has expired. Please request a new one.']);
         }
         
-        // Use email from session if not provided in request
-        $email = $request->email ?: $storedEmail;
+        // Use email from request or from database record
+        $email = $request->email ?: $resetRecord->email;
         
         return view('Login.change-password')->with([
             'token' => $token,
@@ -542,23 +569,22 @@ class UnifiedLoginController extends Controller
             }
         }
 
-        // Validate token
-        $storedToken = session('password_reset_token');
-        $storedEmail = session('password_reset_email');
-        $userType = session('password_reset_user_type');
-        $expiry = session('password_reset_expires');
+        // Validate token using database
+        $resetRecord = DB::table('password_resets')->where('token', $request->token)->first();
         
-        if (!$storedToken || $request->token !== $storedToken) {
+        if (!$resetRecord) {
             return back()->withErrors(['token' => 'Invalid password reset token.']);
         }
         
-        if (!$expiry || now()->isAfter($expiry)) {
-            // Clear expired token
-            session()->forget(['password_reset_token', 'password_reset_email', 'password_reset_user_type', 'password_reset_expires']);
+        // Check if token is expired (1 hour)
+        $tokenAge = now()->diffInMinutes($resetRecord->created_at);
+        if ($tokenAge > 60) {
+            // Delete expired token
+            DB::table('password_resets')->where('token', $request->token)->delete();
             return back()->withErrors(['token' => 'Password reset token has expired. Please request a new one.']);
         }
         
-        if ($request->email !== $storedEmail) {
+        if ($request->email !== $resetRecord->email) {
             return back()->withErrors(['email' => 'Email address does not match the reset request.']);
         }
 
@@ -616,7 +642,7 @@ class UnifiedLoginController extends Controller
 
             if ($updated) {
                 // Clear the reset token after successful password update
-                session()->forget(['password_reset_token', 'password_reset_email', 'password_reset_user_type', 'password_reset_expires']);
+                DB::table('password_resets')->where('token', $request->token)->delete();
                 
                 return redirect()->route('login')->with('status', 'Your password has been reset successfully! You can now log in with your new password.');
             }
