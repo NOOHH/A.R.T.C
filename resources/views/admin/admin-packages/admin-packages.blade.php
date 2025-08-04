@@ -969,7 +969,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="package_type" class="required">Package Type</label>
-                    <select id="package_type" name="package_type" required>
+                    <select id="package_type" name="package_type" required onchange="handlePackageTypeChange()">
                         <option value="">Select Package Type</option>
                         <option value="full">Full Enrollment</option>
                         <option value="modular">Modular Enrollment</option>
@@ -1000,6 +1000,47 @@
 
             <div class="form-row">
                 <div class="form-group">
+                    <label for="program_id" class="required">Program</label>
+                    <select id="program_id" name="program_id" required onchange="loadProgramData()">
+                        <option value="">Select Program</option>
+                        @foreach($programs as $program)
+                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- Modular Package Options -->
+            <div class="form-group" id="selectionTypeGroup" style="display: none;">
+                <label for="selection_type" class="required">Selection Type</label>
+                <select id="selection_type" name="selection_type" onchange="handleSelectionTypeChange()">
+                    <option value="">Select Type</option>
+                    <option value="module">Module Selection</option>
+                    <option value="course">Course Selection</option>
+                    <option value="both">Both</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="selectionModeGroup" style="display: none;">
+                <label class="required">Count Based On</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option">
+                        <input type="radio" id="selection_mode_modules" name="selection_mode" value="modules" checked onchange="handleSelectionModeChange()">
+                        <label for="selection_mode_modules">
+                            <i class="fas fa-layer-group me-2"></i>Module Count
+                        </label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="radio" id="selection_mode_courses" name="selection_mode" value="courses" onchange="handleSelectionModeChange()">
+                        <label for="selection_mode_courses">
+                            <i class="fas fa-book me-2"></i>Course Count
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row" id="countLimitsGroup" style="display: none;">
+                <div class="form-group">
                     <label for="module_count">Maximum Modules (Optional)</label>
                     <input type="number" id="module_count" name="module_count" min="1" max="50" placeholder="Leave empty for unlimited">
                     <small class="form-text text-muted">Set module limit (optional)</small>
@@ -1008,6 +1049,44 @@
                     <label for="course_count">Maximum Courses (Optional)</label>
                     <input type="number" id="course_count" name="course_count" min="1" max="50" placeholder="Leave empty for unlimited">
                     <small class="form-text text-muted">Set course limit (optional)</small>
+                </div>
+            </div>
+
+            <!-- Module Selection -->
+            <div class="selection-section" id="moduleSelection" style="display: none;">
+                <h4><i class="fas fa-layer-group me-2"></i>Select Modules</h4>
+                <div class="selection-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Choose specific modules for this package. Students will only access these modules.
+                </div>
+                <div class="loading" id="moduleLoading" style="display: none;">
+                    <i class="fas fa-spinner"></i>Loading modules...
+                </div>
+                <div class="checkboxes-grid" id="moduleCheckboxes">
+                    <!-- Modules will be loaded here -->
+                </div>
+                <div class="selected-display" id="selectedModulesDisplay" style="display: none;">
+                    <h5>Selected Modules: <span id="selectedModulesCount">0</span></h5>
+                    <div id="selectedModulesList"></div>
+                </div>
+            </div>
+
+            <!-- Course Selection -->
+            <div class="selection-section" id="courseSelection" style="display: none;">
+                <h4><i class="fas fa-book me-2"></i>Select Courses</h4>
+                <div class="selection-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Choose specific courses for this package. Students will only access these courses.
+                </div>
+                <div class="loading" id="courseLoading" style="display: none;">
+                    <i class="fas fa-spinner"></i>Loading courses...
+                </div>
+                <div class="checkboxes-grid" id="courseCheckboxes">
+                    <!-- Courses will be loaded here -->
+                </div>
+                <div class="selected-display" id="selectedCoursesDisplay" style="display: none;">
+                    <h5>Selected Courses: <span id="selectedCoursesCount">0</span></h5>
+                    <div id="selectedCoursesList"></div>
                 </div>
             </div>
             
@@ -1047,7 +1126,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="edit_package_type" class="required">Package Type</label>
-                    <select id="edit_package_type" name="package_type" required>
+                    <select id="edit_package_type" name="package_type" required onchange="handleEditPackageTypeChange()">
                         <option value="full">Full Enrollment</option>
                         <option value="modular">Modular Enrollment</option>
                     </select>
@@ -1056,6 +1135,46 @@
                 <div class="form-group">
                     <label for="edit_amount" class="required">Price (₱)</label>
                     <input type="number" id="edit_amount" name="amount" min="0" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit_program_id" class="required">Program</label>
+                    <select id="edit_program_id" name="program_id" required onchange="loadEditProgramData()">
+                        @foreach($programs as $program)
+                            <option value="{{ $program->program_id }}">{{ $program->program_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- Edit Modular Package Options -->
+            <div class="form-group" id="editSelectionTypeGroup" style="display: none;">
+                <label for="edit_selection_type" class="required">Selection Type</label>
+                <select id="edit_selection_type" name="selection_type" onchange="handleEditSelectionTypeChange()">
+                    <option value="">Select Type</option>
+                    <option value="module">Module Selection</option>
+                    <option value="course">Course Selection</option>
+                    <option value="both">Both</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="editSelectionModeGroup" style="display: none;">
+                <label class="required">Count Based On</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option">
+                        <input type="radio" id="edit_selection_mode_modules" name="selection_mode" value="modules" checked onchange="handleEditSelectionModeChange()">
+                        <label for="edit_selection_mode_modules">
+                            <i class="fas fa-layer-group me-2"></i>Module Count
+                        </label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="radio" id="edit_selection_mode_courses" name="selection_mode" value="courses" onchange="handleEditSelectionModeChange()">
+                        <label for="edit_selection_mode_courses">
+                            <i class="fas fa-book me-2"></i>Course Count
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1075,16 +1194,43 @@
             </div>
             <small class="form-text text-muted mb-3">Set the access period for this package. The period starts after payment approval. Leave blank for unlimited access.</small>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="edit_module_count">Maximum Modules (Optional)</label>
-                    <input type="number" id="edit_module_count" name="module_count" min="1" max="50" placeholder="Leave empty for unlimited">
-                    <small class="form-text text-muted">Set module limit (optional)</small>
+
+
+            <!-- Edit Module Selection -->
+            <div class="selection-section" id="editModuleSelection" style="display: none;">
+                <h4><i class="fas fa-layer-group me-2"></i>Select Modules</h4>
+                <div class="selection-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Choose specific modules for this package.
                 </div>
-                <div class="form-group">
-                    <label for="edit_course_count">Maximum Courses (Optional)</label>
-                    <input type="number" id="edit_course_count" name="course_count" min="1" max="50" placeholder="Leave empty for unlimited">
-                    <small class="form-text text-muted">Set course limit (optional)</small>
+                <div class="loading" id="editModuleLoading" style="display: none;">
+                    <i class="fas fa-spinner"></i>Loading modules...
+                </div>
+                <div class="checkboxes-grid" id="editModuleCheckboxes">
+                    <!-- Modules will be loaded here -->
+                </div>
+                <div class="selected-display" id="editSelectedModulesDisplay" style="display: none;">
+                    <h5>Selected Modules: <span id="editSelectedModulesCount">0</span></h5>
+                    <div id="editSelectedModulesList"></div>
+                </div>
+            </div>
+
+            <!-- Edit Course Selection -->
+            <div class="selection-section" id="editCourseSelection" style="display: none;">
+                <h4><i class="fas fa-book me-2"></i>Select Courses</h4>
+                <div class="selection-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Choose specific courses for this package.
+                </div>
+                <div class="loading" id="editCourseLoading" style="display: none;">
+                    <i class="fas fa-spinner"></i>Loading courses...
+                </div>
+                <div class="checkboxes-grid" id="editCourseCheckboxes">
+                    <!-- Courses will be loaded here -->
+                </div>
+                <div class="selected-display" id="editSelectedCoursesDisplay" style="display: none;">
+                    <h5>Selected Courses: <span id="editSelectedCoursesCount">0</span></h5>
+                    <div id="editSelectedCoursesList"></div>
                 </div>
             </div>
             
@@ -1130,13 +1276,23 @@ function hideElement(elementId) {
 
 // Modal functions
 function showAddModal() {
-    document.getElementById('addPackageModal').classList.add('active');
+    const addPackageModal = document.getElementById('addPackageModal');
+    const addPackageForm = document.getElementById('addPackageForm');
+    
+    if (addPackageModal) {
+        addPackageModal.classList.add('active');
+    }
+    
     // Reset form
-    document.getElementById('addPackageForm').reset();
+    if (addPackageForm) {
+        addPackageForm.reset();
+    }
+    
     selectedModules = [];
     selectedCourses = [];
     updateSelectedModulesDisplay();
     updateSelectedCoursesDisplay();
+    
     // Hide conditional fields
     hideElement('selectionTypeGroup');
     hideElement('selectionModeGroup');
@@ -1146,15 +1302,24 @@ function showAddModal() {
 }
 
 function closeAddModal() {
-    document.getElementById('addPackageModal').classList.remove('active');
+    const addPackageModal = document.getElementById('addPackageModal');
+    if (addPackageModal) {
+        addPackageModal.classList.remove('active');
+    }
 }
 
 function showEditModal() {
-    document.getElementById('editPackageModal').classList.add('active');
+    const editPackageModal = document.getElementById('editPackageModal');
+    if (editPackageModal) {
+        editPackageModal.classList.add('active');
+    }
 }
 
 function closeEditModal() {
-    document.getElementById('editPackageModal').classList.remove('active');
+    const editPackageModal = document.getElementById('editPackageModal');
+    if (editPackageModal) {
+        editPackageModal.classList.remove('active');
+    }
     editSelectedModules = [];
     editSelectedCourses = [];
     updateEditSelectedModulesDisplay();
@@ -1169,7 +1334,10 @@ function handlePackageTypeChange() {
         showElement('selectionTypeGroup');
         showElement('selectionModeGroup');
         showElement('countLimitsGroup');
-        document.getElementById('selection_type').setAttribute('required', 'required');
+        const selectionTypeElement = document.getElementById('selection_type');
+        if (selectionTypeElement) {
+            selectionTypeElement.setAttribute('required', 'required');
+        }
         handleSelectionTypeChange();
         handleSelectionModeChange();
     } else {
@@ -1178,7 +1346,10 @@ function handlePackageTypeChange() {
         hideElement('countLimitsGroup');
         hideElement('moduleSelection');
         hideElement('courseSelection');
-        document.getElementById('selection_type').removeAttribute('required');
+        const selectionTypeElement = document.getElementById('selection_type');
+        if (selectionTypeElement) {
+            selectionTypeElement.removeAttribute('required');
+        }
     }
 }
 
@@ -1212,29 +1383,53 @@ function handleSelectionModeChange() {
     // This function can be used for UI feedback if needed
 }
 
+function handleSelectionTypeChange() {
+    const selectionType = document.getElementById('selection_type').value;
+    const programId = document.getElementById('program_id').value;
+    
+    hideElement('moduleSelection');
+    hideElement('courseSelection');
+    
+    if (!programId) {
+        return; // No program selected yet
+    }
+    
+    if (selectionType === 'module') {
+        showElement('moduleSelection');
+        loadModulesForProgram(programId, 'add');
+    } else if (selectionType === 'course') {
+        showElement('courseSelection');
+        loadCoursesForProgram(programId, 'add');
+    } else if (selectionType === 'both') {
+        showElement('moduleSelection');
+        showElement('courseSelection');
+        loadModulesForProgram(programId, 'add');
+        loadCoursesForProgram(programId, 'add');
+    }
+}
+
 function handleEditPackageTypeChange() {
     const packageType = document.getElementById('edit_package_type').value;
     
     if (packageType === 'modular') {
         showElement('editSelectionTypeGroup');
         showElement('editSelectionModeGroup');
-        showElement('editCountLimitsGroup');
-        document.getElementById('edit_selection_type').setAttribute('required', 'required');
+        const selectionTypeElement = document.getElementById('edit_selection_type');
+        if (selectionTypeElement) {
+            selectionTypeElement.setAttribute('required', 'required');
+        }
         handleEditSelectionTypeChange();
         handleEditSelectionModeChange();
     } else {
         hideElement('editSelectionTypeGroup');
         hideElement('editSelectionModeGroup');
-        hideElement('editCountLimitsGroup');
         hideElement('editModuleSelection');
         hideElement('editCourseSelection');
-        document.getElementById('edit_selection_type').removeAttribute('required');
+        const selectionTypeElement = document.getElementById('edit_selection_type');
+        if (selectionTypeElement) {
+            selectionTypeElement.removeAttribute('required');
+        }
     }
-}
-
-function handleEditSelectionModeChange() {
-    // Selection mode just changes which field is primary, but both are always available
-    // This function can be used for UI feedback if needed
 }
 
 function handleEditSelectionTypeChange() {
@@ -1260,6 +1455,11 @@ function handleEditSelectionTypeChange() {
         loadModulesForProgram(programId, 'edit');
         loadCoursesForProgram(programId, 'edit');
     }
+}
+
+function handleEditSelectionModeChange() {
+    // Selection mode just changes which field is primary, but both are always available
+    // This function can be used for UI feedback if needed
 }
 
 // Program change handlers
@@ -1296,9 +1496,17 @@ function loadModulesForProgram(programId, mode) {
     const loadingId = mode === 'add' ? 'moduleLoading' : 'editModuleLoading';
     const containerId = mode === 'add' ? 'moduleCheckboxes' : 'editModuleCheckboxes';
     
+    const loadingElement = document.getElementById(loadingId);
+    const containerElement = document.getElementById(containerId);
+    
+    if (!loadingElement || !containerElement) {
+        console.error('Required elements not found for loading modules');
+        return;
+    }
+    
     showLoading(loadingId);
     
-    fetch(`/get-program-modules?program_id=${programId}`)
+    fetch(`/admin/get-program-modules?program_id=${programId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1309,8 +1517,7 @@ function loadModulesForProgram(programId, mode) {
             hideLoading(loadingId);
             
             if (data.success && data.modules) {
-                const container = document.getElementById(containerId);
-                container.innerHTML = '';
+                containerElement.innerHTML = '';
                 
                 data.modules.forEach(module => {
                     const courseCount = module.courses ? module.courses.length : 0;
@@ -1325,10 +1532,10 @@ function loadModulesForProgram(programId, mode) {
                             <span class="course-count">${courseCount} courses</span>
                         </label>
                     `;
-                    container.appendChild(checkbox);
+                    containerElement.appendChild(checkbox);
                 });
             } else {
-                document.getElementById(containerId).innerHTML = '<p class="text-muted">No modules found for this program.</p>';
+                containerElement.innerHTML = '<p class="text-muted">No modules found for this program.</p>';
             }
         })
         .catch(error => {
@@ -1343,9 +1550,17 @@ function loadCoursesForProgram(programId, mode) {
     const loadingId = mode === 'add' ? 'courseLoading' : 'editCourseLoading';
     const containerId = mode === 'add' ? 'courseCheckboxes' : 'editCourseCheckboxes';
     
+    const loadingElement = document.getElementById(loadingId);
+    const containerElement = document.getElementById(containerId);
+    
+    if (!loadingElement || !containerElement) {
+        console.error('Required elements not found for loading courses');
+        return;
+    }
+    
     showLoading(loadingId);
     
-    fetch(`/get-program-modules?program_id=${programId}`)
+    fetch(`/admin/get-program-modules?program_id=${programId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1356,8 +1571,7 @@ function loadCoursesForProgram(programId, mode) {
             hideLoading(loadingId);
             
             if (data.success && data.modules) {
-                const container = document.getElementById(containerId);
-                container.innerHTML = '';
+                containerElement.innerHTML = '';
                 
                 let totalCourses = 0;
                 data.modules.forEach(module => {
@@ -1382,22 +1596,22 @@ function loadCoursesForProgram(programId, mode) {
                                     ${course.subject_name}
                                 </label>
                             `;
-                            container.appendChild(checkbox);
+                            containerElement.appendChild(checkbox);
                         });
                     }
                 });
                 
                 if (totalCourses === 0) {
-                    container.innerHTML = '<p class="text-muted">No courses found for this program.</p>';
+                    containerElement.innerHTML = '<p class="text-muted">No courses found for this program.</p>';
                 }
             } else {
-                document.getElementById(containerId).innerHTML = '<p class="text-muted">No courses found for this program.</p>';
+                containerElement.innerHTML = '<p class="text-muted">No courses found for this program.</p>';
             }
         })
         .catch(error => {
             hideLoading(loadingId);
             console.error('Error loading courses:', error);
-            document.getElementById(containerId).innerHTML = '<p class="text-danger">Error loading courses. Please try again.</p>';
+            containerElement.innerHTML = '<p class="text-danger">Error loading courses. Please try again.</p>';
         });
 }
 
@@ -1452,12 +1666,14 @@ function updateSelectedModulesDisplay() {
     const count = document.getElementById('selectedModulesCount');
     const list = document.getElementById('selectedModulesList');
     
-    count.textContent = selectedModules.length;
-    list.innerHTML = selectedModules.map(module => 
-        `<span class="selected-badge">${module.name}</span>`
-    ).join('');
-    
-    display.style.display = selectedModules.length > 0 ? 'block' : 'none';
+    if (display && count && list) {
+        count.textContent = selectedModules.length;
+        list.innerHTML = selectedModules.map(module => 
+            `<span class="selected-badge">${module.name}</span>`
+        ).join('');
+        
+        display.style.display = selectedModules.length > 0 ? 'block' : 'none';
+    }
 }
 
 function updateEditSelectedModulesDisplay() {
@@ -1465,12 +1681,14 @@ function updateEditSelectedModulesDisplay() {
     const count = document.getElementById('editSelectedModulesCount');
     const list = document.getElementById('editSelectedModulesList');
     
-    count.textContent = editSelectedModules.length;
-    list.innerHTML = editSelectedModules.map(module => 
-        `<span class="selected-badge">${module.name}</span>`
-    ).join('');
-    
-    display.style.display = editSelectedModules.length > 0 ? 'block' : 'none';
+    if (display && count && list) {
+        count.textContent = editSelectedModules.length;
+        list.innerHTML = editSelectedModules.map(module => 
+            `<span class="selected-badge">${module.name}</span>`
+        ).join('');
+        
+        display.style.display = editSelectedModules.length > 0 ? 'block' : 'none';
+    }
 }
 
 function updateSelectedCoursesDisplay() {
@@ -1478,12 +1696,14 @@ function updateSelectedCoursesDisplay() {
     const count = document.getElementById('selectedCoursesCount');
     const list = document.getElementById('selectedCoursesList');
     
-    count.textContent = selectedCourses.length;
-    list.innerHTML = selectedCourses.map(course => 
-        `<span class="selected-badge">${course.name}</span>`
-    ).join('');
-    
-    display.style.display = selectedCourses.length > 0 ? 'block' : 'none';
+    if (display && count && list) {
+        count.textContent = selectedCourses.length;
+        list.innerHTML = selectedCourses.map(course => 
+            `<span class="selected-badge">${course.name}</span>`
+        ).join('');
+        
+        display.style.display = selectedCourses.length > 0 ? 'block' : 'none';
+    }
 }
 
 function updateEditSelectedCoursesDisplay() {
@@ -1491,12 +1711,14 @@ function updateEditSelectedCoursesDisplay() {
     const count = document.getElementById('editSelectedCoursesCount');
     const list = document.getElementById('editSelectedCoursesList');
     
-    count.textContent = editSelectedCourses.length;
-    list.innerHTML = editSelectedCourses.map(course => 
-        `<span class="selected-badge">${course.name}</span>`
-    ).join('');
-    
-    display.style.display = editSelectedCourses.length > 0 ? 'block' : 'none';
+    if (display && count && list) {
+        count.textContent = editSelectedCourses.length;
+        list.innerHTML = editSelectedCourses.map(course => 
+            `<span class="selected-badge">${course.name}</span>`
+        ).join('');
+        
+        display.style.display = editSelectedCourses.length > 0 ? 'block' : 'none';
+    }
 }
 
 // Edit package function
@@ -1513,28 +1735,44 @@ function editPackage(packageId) {
                 const packageData = data.package;
                 
                 // Fill form fields
-                document.getElementById('edit_package_name').value = packageData.package_name || '';
-                document.getElementById('edit_description').value = packageData.description || '';
-                document.getElementById('edit_package_type').value = packageData.package_type || 'full';
-                document.getElementById('edit_selection_type').value = packageData.selection_type || 'module';
-                document.getElementById('edit_amount').value = packageData.amount || '';
-                document.getElementById('edit_program_id').value = packageData.program_id || '';
-                document.getElementById('edit_module_count').value = packageData.module_count || '';
-                document.getElementById('edit_course_count').value = packageData.course_count || '';
-                document.getElementById('edit_access_period_days').value = packageData.access_period_days || '';
-                document.getElementById('edit_access_period_months').value = packageData.access_period_months || '';
-                document.getElementById('edit_access_period_years').value = packageData.access_period_years || '';
+                const editPackageName = document.getElementById('edit_package_name');
+                const editDescription = document.getElementById('edit_description');
+                const editPackageType = document.getElementById('edit_package_type');
+                const editSelectionType = document.getElementById('edit_selection_type');
+                const editAmount = document.getElementById('edit_amount');
+                const editProgramId = document.getElementById('edit_program_id');
+
+                const editAccessPeriodDays = document.getElementById('edit_access_period_days');
+                const editAccessPeriodMonths = document.getElementById('edit_access_period_months');
+                const editAccessPeriodYears = document.getElementById('edit_access_period_years');
+                
+                if (editPackageName) editPackageName.value = packageData.package_name || '';
+                if (editDescription) editDescription.value = packageData.description || '';
+                if (editPackageType) editPackageType.value = packageData.package_type || 'full';
+                if (editSelectionType) editSelectionType.value = packageData.selection_type || 'module';
+                if (editAmount) editAmount.value = packageData.amount || '';
+                if (editProgramId) editProgramId.value = packageData.program_id || '';
+
+                if (editAccessPeriodDays) editAccessPeriodDays.value = packageData.access_period_days || '';
+                if (editAccessPeriodMonths) editAccessPeriodMonths.value = packageData.access_period_months || '';
+                if (editAccessPeriodYears) editAccessPeriodYears.value = packageData.access_period_years || '';
                 
                 // Set selection mode
                 const selectionMode = packageData.selection_mode || 'modules';
-                if (selectionMode === 'courses') {
-                    document.getElementById('edit_selection_mode_courses').checked = true;
-                } else {
-                    document.getElementById('edit_selection_mode_modules').checked = true;
+                const editSelectionModeCourses = document.getElementById('edit_selection_mode_courses');
+                const editSelectionModeModules = document.getElementById('edit_selection_mode_modules');
+                
+                if (selectionMode === 'courses' && editSelectionModeCourses) {
+                    editSelectionModeCourses.checked = true;
+                } else if (editSelectionModeModules) {
+                    editSelectionModeModules.checked = true;
                 }
                 
                 // Set form action
-                document.getElementById('editPackageForm').action = `/admin/packages/${packageId}`;
+                const editPackageForm = document.getElementById('editPackageForm');
+                if (editPackageForm) {
+                    editPackageForm.action = `/admin/packages/${packageId}`;
+                }
                 
                 // Handle package type specific fields
                 handleEditPackageTypeChange();

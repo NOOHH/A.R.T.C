@@ -98,7 +98,7 @@
     <!-- Action Buttons -->
     <div class="action-buttons">
         <button type="button" class="add-module-btn" id="showAddModal">
-            <i class="bi bi-plus-circle"></i> Add New Content
+            <i class="bi bi-plus-circle"></i> Add New Module
         </button>
         <button type="button" class="add-course-btn" id="showAddCourseModal">
             <i class="bi bi-journal-plus"></i> Add New Course
@@ -376,9 +376,10 @@
   }
   
   .module-actions {
-    display: none; /* Hide the module actions to remove white background */
+    display: flex; /* Show the module actions */
     gap: 1rem;
     align-items: center;
+    background: transparent; /* Remove any background */
   }
   
   .module-actions .btn {
@@ -692,6 +693,9 @@
     align-items: center;
     gap: 0.4rem;
     flex-wrap: wrap;
+    background: transparent; /* Remove any background */
+    padding: 0; /* Remove any padding */
+    margin: 0; /* Remove any margin */
   }
   
   /* Course header actions */
@@ -2643,7 +2647,7 @@ function archiveContent(contentId) {
 
 function viewSubmissions(assignmentId) {
     // Implementation for viewing submissions
-    window.open(`/admin/assignments/${assignmentId}/submissions`, '_blank');
+    window.open('/admin/submissions', '_blank');
 }
 
 // Initialize sortable functionality for modules
@@ -3929,7 +3933,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="modal-bg" id="addModalBg">
     <div class="modal">
         <div class="modal-header">
-            <h3><i class="bi bi-plus-circle"></i> Add New Content</h3>
+            <h3><i class="bi bi-plus-circle"></i> Add New Modules</h3>
             <button type="button" class="modal-close" id="closeAddModal">
                 <i class="bi bi-x"></i>
             </button>
@@ -3978,12 +3982,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="form-group">
                     <label for="content_type">Content Type <span class="text-danger">*</span></label>
                     <select id="content_type" name="content_type" class="form-select" required>
-                        <option value="lesson">📚 Lesson</option>
+                        <option value="lesson">📚 File</option>
                         <option value="video">🎥 Video</option>
-                        <option value="assignment">📝 Assignment</option>
-                        <option value="quiz">❓ Quiz</option>
-                        <option value="test">📋 Test</option>
-                        <option value="link">🔗 External Link</option>
                     </select>
                 </div>
                 <!-- 5. Title -->

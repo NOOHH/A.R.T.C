@@ -1904,14 +1904,17 @@ class AdminModuleController extends Controller
     public function archiveContent($id)
     {
         try {
+            Log::info("Archive content request received for ID: {$id}");
+            
             $content = ContentItem::findOrFail($id);
+            Log::info("Content found: {$content->content_title} (ID: {$id})");
             
             // Set archived status
             $content->is_archived = true;
             $content->archived_at = now();
             $content->save();
 
-            Log::info("Content archived: {$content->content_title} (ID: {$id})");
+            Log::info("Content archived successfully: {$content->content_title} (ID: {$id})");
 
             return response()->json([
                 'success' => true,
@@ -1919,7 +1922,10 @@ class AdminModuleController extends Controller
                 'content' => $content
             ]);
         } catch (\Exception $e) {
-            Log::error('Error archiving content: ' . $e->getMessage());
+            Log::error('Error archiving content: ' . $e->getMessage(), [
+                'content_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error archiving content: ' . $e->getMessage()

@@ -2656,4 +2656,50 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Error downloading submission file.');
         }
     }
+
+    /**
+     * View submissions for a specific assignment
+     */
+    public function viewAssignmentSubmissions($assignmentId)
+    {
+        try {
+            // Get the assignment details
+            $assignment = \App\Models\ContentItem::where('content_id', $assignmentId)
+                ->where('content_type', 'assignment')
+                ->with(['module.program', 'course'])
+                ->firstOrFail();
+
+            // Get all submissions for this assignment
+            $submissions = AssignmentSubmission::with([
+                'student' => function($q) {
+                    $q->with('user');
+                }, 
+                'program', 
+                'module'
+            ])
+            ->where('content_id', $assignmentId)
+            ->orderBy('submitted_at', 'desc')
+            ->get();
+
+            // Decode files JSON to array for each submission
+            foreach ($submissions as $submission) {
+                if (is_string($submission->files)) {
+                    $decoded = json_decode($submission->files, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $submission->files = $decoded;
+                    }
+                }
+            }
+
+            return view('admin.assignment-submissions', compact(
+                'assignment',
+                'submissions'
+            ));
+
+        } catch (\Exception $e) {
+            Log::error('Error loading assignment submissions: ' . $e->getMessage());
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Error loading assignment submissions: ' . $e->getMessage());
+        }
+    }
 }

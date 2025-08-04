@@ -1277,6 +1277,7 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/modules/course-content-upload', [AdminModuleController::class, 'showCourseContentUploadPage'])->name('admin.modules.course-content-upload');
     Route::post('/admin/modules/course-content-store', [AdminModuleController::class, 'courseContentStore'])->name('admin.modules.course-content-store');
     Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive');
+    Route::post('/admin/modules/{module}/toggle-archive', [AdminModuleController::class, 'toggleArchive'])->name('admin.modules.toggle-archive.post');
     Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])->name('admin.modules.batch-delete');
     Route::get('/admin/modules/archived', [AdminModuleController::class, 'archived'])->name('admin.modules.archived');
     Route::delete('/admin/modules/{module:modules_id}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
@@ -1301,7 +1302,11 @@ Route::get('/test-endpoint', function() {
 
 // Toggle archive status
 Route::patch('/admin/modules/{module:modules_id}/archive', [AdminModuleController::class, 'toggleArchive'])
-     ->name('admin.modules.toggle-archive');
+     ->name('admin.modules.toggle-archive')
+     ->middleware('admin.director.auth');
+Route::post('/admin/modules/{module}/toggle-archive', [AdminModuleController::class, 'toggleArchive'])
+     ->name('admin.modules.toggle-archive.post')
+     ->middleware('admin.director.auth');
      
 // Batch delete modules (used only by archived modules view)
 Route::delete('/admin/modules/batch-delete', [AdminModuleController::class, 'batchDelete'])
@@ -1378,6 +1383,8 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.courses.update-order');
     Route::post('/admin/courses/move', [AdminCourseController::class, 'moveCourse'])
          ->name('admin.courses.move');
+    Route::post('/admin/courses/{id}/archive', [AdminCourseController::class, 'archive'])
+         ->name('admin.courses.archive');
 });
 
 // Admin Content Routes
@@ -1402,6 +1409,14 @@ Route::middleware(['admin.auth'])->group(function () {
          ->name('admin.content.move');
     Route::post('/admin/content/move-to-module', [AdminModuleController::class, 'moveContentToModule'])
          ->name('admin.content.move-to-module');
+    Route::post('/admin/content/{id}/archive', [AdminModuleController::class, 'archiveContent'])
+         ->name('admin.content.archive');
+    Route::post('/admin/modules/content/{id}/restore', [AdminModuleController::class, 'restoreContent'])
+         ->name('admin.content.restore');
+    Route::post('/admin/modules/course/{courseId}/bulk-restore', [AdminModuleController::class, 'bulkRestoreCourseContent'])
+         ->name('admin.courses.bulk-restore');
+    Route::delete('/admin/modules/content/{id}/delete-archived', [AdminModuleController::class, 'deleteArchivedContent'])
+         ->name('admin.content.delete-archived');
 });
 
 // Admin Packages Routes
@@ -3109,6 +3124,10 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function () {
     Route::post('/payment-methods/{methodId}/fields', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'store']);
     Route::delete('/payment-method-fields/{fieldId}', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'destroy']);
     Route::post('/payment-methods/{methodId}/toggle', [\App\Http\Controllers\Admin\PaymentMethodFieldController::class, 'toggleMethod']);
+    
+    // Assignment submissions
+    Route::get('/assignments/{assignmentId}/submissions', [\App\Http\Controllers\AdminController::class, 'viewAssignmentSubmissions'])->name('admin.assignments.submissions');
+    Route::post('/assignments/submissions/{submissionId}/grade', [\App\Http\Controllers\AdminController::class, 'gradeSubmission'])->name('admin.assignments.grade-submission');
 });
 
 // Add this route for multi-program batch fetching

@@ -17,6 +17,101 @@ body {
     padding-top: 0 !important;
 }
 
+/* ENROLLMENT PAGE SPECIFIC DROPDOWN FIXES */
+.enrollment-page .navbar .dropdown-menu {
+    background: white !important;
+    background-color: white !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px !important;
+    padding: 8px 0 !important;
+    margin-top: 8px !important;
+    color: #222 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    transition: none !important;
+    width: auto !important;
+    min-width: 200px !important;
+    z-index: 1050 !important;
+    position: absolute !important;
+    display: none !important;
+}
+
+.enrollment-page .navbar .dropdown-menu.show {
+    display: block !important;
+}
+
+.enrollment-page .navbar .dropdown-menu .dropdown-item {
+    padding: 10px 20px !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-weight: 500 !important;
+    color: #222 !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    text-align: left !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+}
+
+.enrollment-page .navbar .dropdown-menu .dropdown-item:hover {
+    background: rgba(92, 47, 145, 0.1) !important;
+    color: #5c2f91 !important;
+    transform: translateX(5px) !important;
+    border-radius: 0 !important;
+}
+
+.enrollment-page .navbar .dropdown-menu .dropdown-item:focus,
+.enrollment-page .navbar .dropdown-menu .dropdown-item:active {
+    background: rgba(92, 47, 145, 0.1) !important;
+    color: #5c2f91 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.enrollment-page .navbar .dropdown-menu .dropdown-item.text-danger:hover {
+    background: rgba(220, 53, 69, 0.1) !important;
+    color: #dc3545 !important;
+}
+
+.enrollment-page .navbar .dropdown-menu .dropdown-divider {
+    margin: 8px 0 !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Force override any enrollment page specific styles that might interfere */
+.enrollment-page .navbar-nav .dropdown {
+    position: relative !important;
+}
+
+.enrollment-page .navbar-nav .dropdown-toggle::after {
+    display: inline-block !important;
+    margin-left: 0.255em !important;
+    vertical-align: 0.255em !important;
+    content: "" !important;
+    border-top: 0.3em solid !important;
+    border-right: 0.3em solid transparent !important;
+    border-bottom: 0 !important;
+    border-left: 0.3em solid transparent !important;
+}
+
+.enrollment-page .navbar-nav .dropdown-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg) !important;
+}
+
+/* Ensure proper positioning for right-aligned dropdowns */
+.enrollment-page .navbar-nav.ms-auto .dropdown-menu {
+    right: 0 !important;
+    left: auto !important;
+    transform: none !important;
+}
+
 .enrollment-hero {
     min-height: 70vh;
     display: flex;
@@ -280,3 +375,84 @@ body {
     </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+// ENROLLMENT PAGE SPECIFIC DROPDOWN FIXES
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure Bootstrap dropdowns are properly initialized
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl);
+    });
+    
+    // Additional dropdown functionality for enrollment page
+    var dropdownToggles = document.querySelectorAll('.navbar-nav .dropdown-toggle');
+    
+    dropdownToggles.forEach(function(toggle) {
+        // Ensure proper event handling
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var dropdownMenu = this.nextElementSibling;
+            var isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.navbar-nav .dropdown-menu.show').forEach(function(menu) {
+                if (menu !== dropdownMenu) {
+                    menu.classList.remove('show');
+                    menu.previousElementSibling.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+            // Toggle current dropdown
+            if (isExpanded) {
+                dropdownMenu.classList.remove('show');
+                this.setAttribute('aria-expanded', 'false');
+            } else {
+                dropdownMenu.classList.add('show');
+                this.setAttribute('aria-expanded', 'true');
+            }
+        });
+        
+        // Handle dropdown item clicks
+        var dropdownMenu = toggle.nextElementSibling;
+        if (dropdownMenu) {
+            var dropdownItems = dropdownMenu.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    // Close dropdown after item click
+                    setTimeout(function() {
+                        dropdownMenu.classList.remove('show');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }, 100);
+                });
+            });
+        }
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.navbar-nav .dropdown-menu.show').forEach(function(menu) {
+                menu.classList.remove('show');
+                menu.previousElementSibling.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+    
+    // Close dropdowns on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.navbar-nav .dropdown-menu.show').forEach(function(menu) {
+                menu.classList.remove('show');
+                menu.previousElementSibling.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+    
+    console.log('Enrollment page dropdown fixes applied');
+});
+</script>
+@endpush
+

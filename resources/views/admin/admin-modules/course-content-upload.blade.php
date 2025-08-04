@@ -303,9 +303,6 @@
                             <option value="lesson">📚 Lesson</option>
                             <option value="video">🎥 Video</option>
                             <option value="assignment">📝 Assignment</option>
-                            <option value="quiz">❓ Quiz</option>
-                            <option value="test">📋 Test</option>
-                            <option value="link">🔗 External Link</option>
                         </select>
                     </div>
                 </div>
