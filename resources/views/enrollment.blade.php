@@ -177,15 +177,7 @@ body {
                                 onclick="window.location.href='/enrollment/modular'; return false;">
                             <i class="bi bi-puzzle"></i> Enroll Now
                         </a>
-                        
-                        <!-- Alternative direct link for modular enrollment -->
-                        <div class="d-flex flex-column align-items-center mt-2">
-                            <a href="/direct-to-modular" 
-                                    class="btn btn-sm btn-outline-secondary mb-1"
-                                    style="font-size: 0.8rem;">
-                                Direct Link
-                            </a>
-                        </div>
+
                         
                         <script>
                             // Enhanced modular enrollment button handler with multiple backup methods

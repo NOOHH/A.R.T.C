@@ -80,15 +80,19 @@ window.viewRegistrationDetails = function(registrationId) {
         // We're on a page with the modal, use it
         console.log('Using modal for registration details');
         
-                 // Initialize modal if needed
-         let registrationModal = new bootstrap.Modal(modalElement);
-         
-         const modalDetails = document.getElementById('registration-details-content');
-         
-         if (modalDetails) {
-             modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
-         }
-         registrationModal.show();
+        // Initialize modal if needed
+        let registrationModal = new bootstrap.Modal(modalElement);
+        
+        const modalDetails = document.getElementById('registration-details-content');
+        
+        if (!modalDetails) {
+            console.error('Modal details element not found');
+            alert('Error: Modal details element not found. Please refresh the page and try again.');
+            return;
+        }
+        
+        modalDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+        registrationModal.show();
 
         // Fetch registration details and populate modal
         fetch(`/test/registration/${registrationId}/details`)
@@ -98,10 +102,10 @@ window.viewRegistrationDetails = function(registrationId) {
                 }
                 return response.json();
             })
-                         .then(data => {
-                 console.log('Registration details received:', data);
-                 
-                 if (modalDetails) {
+            .then(data => {
+                console.log('Registration details received:', data);
+                
+                if (modalDetails) {
                      // Use the existing modal population logic if available
                      if (typeof populateRegistrationModal === 'function') {
                          populateRegistrationModal(data, modalDetails);

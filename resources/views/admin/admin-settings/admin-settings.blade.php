@@ -4493,8 +4493,21 @@ function renderEducationLevels(levels) {
     
     let html = '';
     levels.forEach((level, index) => {
-        const fileRequirements = level.file_requirements || [];
+        let fileRequirements = level.file_requirements || [];
         let fileReqsHtml = '';
+        
+        // Handle string format (JSON) - parse it
+        if (typeof fileRequirements === 'string') {
+            try {
+                fileRequirements = JSON.parse(fileRequirements);
+            } catch (e) {
+                console.warn('Failed to parse file_requirements JSON for level:', level.level_name, e);
+                fileRequirements = [];
+            }
+        }
+        
+        // Debug file requirements
+        console.log('File requirements for level:', level.level_name, fileRequirements);
         
         if (Array.isArray(fileRequirements) && fileRequirements.length > 0) {
             fileReqsHtml = fileRequirements.map(req => {
@@ -4573,6 +4586,12 @@ function saveEducationLevel() {
     const form = document.getElementById('educationLevelForm');
     const formData = new FormData(form);
 
+    // Debug form data
+    console.log('Form data for education level:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+
     // Collect document requirements
     const documentRequirements = [];
     document.querySelectorAll('.document-requirement-item').forEach(item => {
@@ -4615,9 +4634,14 @@ function saveEducationLevel() {
     const data = {
         level_name: formData.get('level_name'),
         description: formData.get('description'),
-        is_active: formData.get('is_active') === '1',
+        is_active: formData.get('is_active') === 'on' || formData.get('is_active') === '1',
         file_requirements: documentRequirements
     };
+
+    // Debug the data being sent
+    console.log('Data being sent to server:', data);
+    console.log('is_active value:', formData.get('is_active'));
+    console.log('is_active boolean:', data.is_active);
 
     // Add ID for updates
     if (editingEducationLevelId) {
@@ -4687,6 +4711,10 @@ function editEducationLevel(id) {
     document.getElementById('level_name').value = educationLevel.level_name || '';
     document.getElementById('description').value = educationLevel.level_description || educationLevel.description || '';
     document.getElementById('is_active').checked = educationLevel.is_active;
+    
+    // Debug the is_active value
+    console.log('Education level is_active value:', educationLevel.is_active);
+    console.log('Checkbox checked state:', document.getElementById('is_active').checked);
     
     // Populate document requirements
     const container = document.getElementById('fileRequirementsContainer');

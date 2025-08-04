@@ -49,7 +49,7 @@ class EducationLevelController extends Controller
                 'available_full_plan' => 'boolean',
                 'available_modular_plan' => 'boolean',
                 'file_requirements' => 'nullable', // Accept any format
-                'is_active' => 'boolean'
+                'is_active' => 'nullable|boolean'
             ]);
 
             // Handle file requirements - convert to string if it's an array
@@ -71,6 +71,11 @@ class EducationLevelController extends Controller
             // Set default order if not provided
             if (!isset($validated['level_order'])) {
                 $validated['level_order'] = EducationLevel::max('level_order') + 1;
+            }
+
+            // Set default is_active if not provided
+            if (!isset($validated['is_active'])) {
+                $validated['is_active'] = true;
             }
 
             $educationLevel = EducationLevel::create($validated);
@@ -123,7 +128,7 @@ class EducationLevelController extends Controller
                 'available_full_plan' => 'boolean',
                 'available_modular_plan' => 'boolean',
                 'file_requirements' => 'nullable', // Accept any format
-                'is_active' => 'boolean'
+                'is_active' => 'nullable|boolean'
             ]);
 
             // Handle file requirements - convert to string if it's an array
@@ -140,6 +145,11 @@ class EducationLevelController extends Controller
                         ], 400);
                     }
                 }
+            }
+
+            // Set default is_active if not provided
+            if (!isset($validated['is_active'])) {
+                $validated['is_active'] = true;
             }
 
             $educationLevel->update($validated);

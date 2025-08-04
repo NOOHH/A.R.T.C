@@ -545,19 +545,12 @@ class ModularRegistrationController extends Controller
                 ], 400);
             }
 
-            // Get program suggestions
-            try {
-                $suggestions = $this->ocrService->suggestPrograms($extractedText);
-            } catch (\Exception $e) {
-                Log::warning('Program suggestions failed for modular enrollment', ['error' => $e->getMessage()]);
-                $suggestions = [];
-            }
+            // Program suggestions removed - users can manually select their program
             
             return response()->json([
                 'success' => true,
                 'message' => 'Document validated successfully.',
                 'file_path' => $permanentPath,
-                'suggestions' => $suggestions,
                 'ocr_metadata' => [
                     'text_length' => strlen($extractedText),
                     'name_validation' => $nameValid
@@ -670,13 +663,43 @@ class ModularRegistrationController extends Controller
                         
                         if ($fieldName) {
                             $normalizedFieldName = strtolower($fieldName);
-                            $hasFile = $request->hasFile($normalizedFieldName);
+                            
+                            // Check multiple case variations to handle form submission inconsistencies
+                            $hasFile = $request->hasFile($normalizedFieldName) || 
+                                      $request->hasFile($fieldName) || 
+                                      $request->hasFile(strtoupper($fieldName));
+                            
+                            $hasFilePath = ($request->has($normalizedFieldName . '_path') && $request->input($normalizedFieldName . '_path')) ||
+                                          ($request->has($fieldName . '_path') && $request->input($fieldName . '_path')) ||
+                                          ($request->has(strtoupper($fieldName) . '_path') && $request->input(strtoupper($fieldName) . '_path'));
+                            
                             $isRequired = isset($requirement['is_required']) && $requirement['is_required'];
 
+                            // Log the validation check for debugging
+                            Log::info('File validation check', [
+                                'field_name' => $fieldName,
+                                'normalized_field_name' => $normalizedFieldName,
+                                'has_file' => $hasFile,
+                                'has_file_path' => $hasFilePath,
+                                'is_required' => $isRequired,
+                                'request_files' => array_keys($request->allFiles()),
+                                'request_inputs' => array_keys($request->all())
+                            ]);
+
                             if ($isRequired) {
-                                $rules[$normalizedFieldName] = 'required|file|max:10240';
+                                // Check if file is uploaded OR if file path exists (from previous upload)
+                                if ($hasFile) {
+                                    $rules[$normalizedFieldName] = 'file|max:10240';
+                                } elseif ($hasFilePath) {
+                                    // File was already uploaded and validated, just require the path
+                                    $rules[$normalizedFieldName . '_path'] = 'required|string';
+                                } else {
+                                    $rules[$normalizedFieldName] = 'required|file|max:10240';
+                                }
                             } elseif ($hasFile) {
                                 $rules[$normalizedFieldName] = 'file|max:10240';
+                            } elseif ($hasFilePath) {
+                                $rules[$normalizedFieldName . '_path'] = 'string';
                             }
                         }
                     }
@@ -694,10 +717,23 @@ class ModularRegistrationController extends Controller
                 $enhancedErrors[$field] = [
                     "The {$field} file is required for your selected education level. Please upload the required document."
                 ];
+            } elseif (str_ends_with($field, '_path') && in_array($field, array_keys($rules))) {
+                // Handle file path errors
+                $originalField = str_replace('_path', '', $field);
+                $enhancedErrors[$originalField] = [
+                    "The {$originalField} file is required for your selected education level. Please upload the required document."
+                ];
             } else {
                 $enhancedErrors[$field] = $messages;
             }
         }
+        
+        // Additional debug logging for file validation errors
+        Log::info('Enhanced file errors debug', [
+            'original_errors' => $errors,
+            'enhanced_errors' => $enhancedErrors,
+            'validation_rules' => array_keys($rules)
+        ]);
         
         return $enhancedErrors;
     }
@@ -707,6 +743,7 @@ class ModularRegistrationController extends Controller
         $uploadedFiles = [];
         $allFiles = $request->allFiles();
         
+        // Process actual file uploads
         if (!empty($allFiles)) {
             foreach ($allFiles as $fieldName => $file) {
                 try {
@@ -726,6 +763,19 @@ class ModularRegistrationController extends Controller
                         'error' => $e->getMessage()
                     ]);
                 }
+            }
+        }
+        
+        // Process file paths from previous uploads
+        $allInputs = $request->all();
+        foreach ($allInputs as $fieldName => $value) {
+            if (str_ends_with($fieldName, '_path') && !empty($value)) {
+                $originalFieldName = str_replace('_path', '', $fieldName);
+                $uploadedFiles[$originalFieldName] = $value;
+                Log::info('Modular file path from previous upload', [
+                    'field' => $originalFieldName,
+                    'path' => $value
+                ]);
             }
         }
         

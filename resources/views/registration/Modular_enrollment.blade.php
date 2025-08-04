@@ -14,8 +14,10 @@
     {!! App\Helpers\UIHelper::getNavbarStyles() !!}
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
-        // Define CSRF token as constant for consistency with Full_enrollment
+        // Define constants for consistency with Full_enrollment
         const CSRF_TOKEN = "{{ csrf_token() }}";
+        const VALIDATE_URL = "{{ route('registration.validateFile') }}";
+        const PREFILL_URL = "{{ route('registration.userPrefill') }}";
     </script>
      <link rel="stylesheet" href="{{ asset('css/ENROLLMENT/Modular_enrollment.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -338,14 +340,14 @@
                 
                 <!-- Carousel Indicators -->
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                    <!-- Indicators will be dynamically generated -->
                 </div>
             </div>
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
                     <i class="bi bi-arrow-left me-2"></i> Previous
                 </button>
-                <button type="button" class="btn btn-primary btn-lg" onclick="nextStep()" disabled id="step2-next">
+                <button type="button" class="btn btn-primary btn-lg" onclick="nextStep()" disabled id="step3-next">
                     NEXT: SELECT MODULES <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
@@ -387,7 +389,7 @@
                 <button type="button" class="btn btn-outline-secondary btn-lg" onclick="prevStep()">
                     <i class="bi bi-arrow-left me-2"></i> Previous
                 </button>
-                <button type="button" class="btn btn-primary btn-lg" onclick="nextStep()" disabled id="step3-next">
+                <button type="button" class="btn btn-primary btn-lg" onclick="nextStep()" disabled id="step4-modules-next">
                     NEXT: LEARNING MODE <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
@@ -555,10 +557,6 @@
                     
                     <!-- Always show firstname and lastname fields first if they're not in dynamic fields -->
                     @if(!$hasFirstNameField || !$hasLastNameField)
-                        <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-left: 4px solid #007bff; border-radius: 0.25rem;">
-                            <h4 style="margin-bottom: 1rem; color: #007bff;">
-                                <i class="bi bi-person-circle me-2"></i>Personal Information
-                            </h4>
                             @if(!$hasFirstNameField)
                                 <div class="form-group">
                                     <label for="firstname" style="font-weight:700;">
@@ -577,7 +575,7 @@
                                     <input type="text" name="lastname" id="lastname" class="form-control" required>
                                 </div>
                             @endif
-                        </div>
+
                     @endif
                     
                     @php 
@@ -884,6 +882,9 @@
     let selectedCourses = {};
     let extraModulePrice = 0;
     
+    // Timeout management
+    let loadProgramsTimeoutId = null;
+    
     // CSRF token is now defined in the head section as a constant
     
     // Data from controller
@@ -958,6 +959,9 @@
     
     // Step navigation
     function nextStep() {
+        console.log('nextStep called, current step before:', currentStep);
+        console.log('totalSteps:', totalSteps);
+        
         if (currentStep < totalSteps) {
             // Handle step transitions based on new structure
             if (currentStep === 1) {
@@ -976,6 +980,8 @@
                 currentStep++;
             }
             
+            console.log('current step after transition:', currentStep);
+            
             // Copy data when moving to final step
             if ((isUserLoggedIn && currentStep === 6) || (!isUserLoggedIn && currentStep === 7)) {
                 copyStepperDataToFinalForm();
@@ -983,6 +989,8 @@
             
             updateStepper();
             loadStepContent();
+        } else {
+            console.log('Already at last step, cannot proceed');
         }
     }
     
@@ -1025,8 +1033,14 @@
             if (contentElement) {
                 if (i === currentStep) {
                     contentElement.classList.add('active');
+                    contentElement.style.display = 'block';
+                    contentElement.style.visibility = 'visible';
+                    contentElement.style.opacity = '1';
                 } else {
                     contentElement.classList.remove('active');
+                    contentElement.style.display = 'none';
+                    contentElement.style.visibility = 'hidden';
+                    contentElement.style.opacity = '0';
                 }
             }
         }
@@ -1039,57 +1053,86 @@
         }
     }
     
-    // Update stepper UI
-    function updateStepper() {
-        // Update step indicators
-        for (let i = 1; i <= totalSteps; i++) {
-            const step = document.getElementById(`step-${i}`);
-            step.classList.remove('active', 'completed');
-            
-            if (i < currentStep) {
-                step.classList.add('completed');
-            } else if (i === currentStep) {
-                step.classList.add('active');
-            }
-        }
-        
-        // Update progress bar
-        const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
-        document.getElementById('progressBar').style.width = progress + '%';
-        
-        // Show/hide step content
-        for (let i = 1; i <= totalSteps; i++) {
-            const content = document.getElementById(`content-${i}`);
-            content.classList.remove('active');
-        }
-        document.getElementById(`content-${currentStep}`).classList.add('active');
-    }
-    
     // Load content for each step
     function loadStepContent() {
         console.log('Loading content for step:', currentStep);
+        
+        // First, ensure the current step content is visible
+        updateStepper();
+        
+        // Debug: Check step visibility after updateStepper
+        const currentContent = document.getElementById(`content-${currentStep}`);
+        console.log(`Step ${currentStep} content element:`, currentContent);
+        console.log(`Step ${currentStep} content display:`, currentContent ? currentContent.style.display : 'N/A');
+        console.log(`Step ${currentStep} content classes:`, currentContent ? currentContent.className : 'N/A');
+        
+        // Then load the specific content for the step
         switch (currentStep) {
             case 2:
-                // Reset program selection when entering step 2
+                // Package selection step - no programs to load here
+                console.log('Step 2: Package selection - no programs to load');
+                break;
+            case 3:
+                // Program selection step - load programs here where programsGrid exists
+                console.log('Step 3: Program selection - loading programs');
+                
+                // Reset program selection when entering step 3
                 selectedProgramId = null;
                 const programIdField = document.getElementById('program_id');
                 if (programIdField) {
                     programIdField.value = '';
                 }
-                const step2NextBtn = document.getElementById('step2-next');
-                if (step2NextBtn) {
-                    step2NextBtn.disabled = true;
+                const step3NextBtn = document.getElementById('step3-next');
+                if (step3NextBtn) {
+                    step3NextBtn.disabled = true;
                 }
-                // Delay loading programs to ensure DOM is ready
-                setTimeout(loadPrograms, 100);
-                break;
-            case 3:
-                // Module selection step - load modules for selected program
-                setTimeout(loadModules, 100);
+                
+                // Check if programCarousel exists before calling loadPrograms
+                const programCarousel = document.getElementById('programCarousel');
+                console.log('programCarousel exists before setTimeout:', !!programCarousel);
+                
+                // Delay loading programs to ensure DOM is ready and step is visible
+                setTimeout(() => {
+                    console.log('Step 3 setTimeout callback - about to call loadPrograms');
+                    console.log('Current step in setTimeout:', currentStep);
+                    
+                    // Double-check that we're still on step 3 before loading programs
+                    if (currentStep !== 3) {
+                        console.log('Step changed during setTimeout, not loading programs');
+                        return;
+                    }
+                    
+                    const carouselAfterDelay = document.getElementById('programCarousel');
+                    console.log('programCarousel exists after delay:', !!carouselAfterDelay);
+                    loadPrograms();
+                }, 200);
                 break;
             case 4:
-                // Module selection: ensure modules load when arriving here
-                setTimeout(loadModules, 100);
+                // Module selection step - load modules for selected program
+                console.log('Step 4: Module selection - loading modules');
+                
+                // Check button state when entering step 4
+                const step4NextBtn = document.getElementById('step4-modules-next');
+                if (step4NextBtn) {
+                    console.log('step4-modules-next button state when entering step 4:', {
+                        disabled: step4NextBtn.disabled,
+                        selectedModulesLength: selectedModules.length,
+                        packageSelectionMode: packageSelectionMode
+                    });
+                }
+                
+                setTimeout(() => {
+                    console.log('Step 4 setTimeout callback - about to call loadModules');
+                    console.log('Current step in setTimeout:', currentStep);
+                    
+                    // Double-check that we're still on step 4 before loading modules
+                    if (currentStep !== 4) {
+                        console.log('Step changed during setTimeout, not loading modules');
+                        return;
+                    }
+                    
+                    loadModules();
+                }, 200);
                 break;
             case 5:
                 setupAccountForm();
@@ -1145,7 +1188,7 @@
         document.getElementById('program_id').value = programId;
         
         // Enable next button
-        document.getElementById('step2-next').disabled = false;
+        document.getElementById('step3-next').disabled = false;
         
         console.log('Updated selectedProgramIds:', selectedProgramIds);
     }
@@ -1186,7 +1229,7 @@
         }
         
         // Enable/disable next button based on selection
-        const nextButton = document.getElementById('step2-next');
+        const nextButton = document.getElementById('step3-next');
         if (nextButton) {
             nextButton.disabled = selectedProgramIds.length === 0;
         }
@@ -1200,13 +1243,62 @@
     
     // Load programs from the database using the filtered API endpoint
     function loadPrograms() {
-        const grid = document.getElementById('programsGrid');
-        if (!grid) {
-            console.error('programsGrid element not found');
+        console.log('loadPrograms called');
+        console.log('Current step:', currentStep);
+        console.log('DOM ready state:', document.readyState);
+        
+        // If we are not on step 3, stop trying to load programs
+        if (currentStep !== 3) {
+            console.log('loadPrograms: Not on step 3, stopping further retries.');
+            if (loadProgramsTimeoutId) {
+                clearTimeout(loadProgramsTimeoutId);
+                loadProgramsTimeoutId = null;
+            }
             return;
         }
         
-        grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading programs...</div>';
+        // Add retry counter to prevent infinite loops
+        if (!window.loadProgramsRetryCount) {
+            window.loadProgramsRetryCount = 0;
+        }
+        
+        // Wait for DOM to be ready if programCarousel doesn't exist yet
+        const carousel = document.getElementById('programCarousel');
+        console.log('programCarousel element found:', !!carousel);
+        console.log('programCarousel element:', carousel);
+        
+        if (!carousel) {
+            window.loadProgramsRetryCount++;
+            console.log('programCarousel element not found, waiting for DOM... (attempt ' + window.loadProgramsRetryCount + ')');
+            
+            // Debug: Check if step 3 content is visible
+            const step3Content = document.getElementById('content-3');
+            console.log('Step 3 content element:', step3Content);
+            console.log('Step 3 content display:', step3Content ? step3Content.style.display : 'N/A');
+            console.log('Step 3 content classes:', step3Content ? step3Content.className : 'N/A');
+            
+            // Debug: Check all elements with 'program' in the ID
+            const allProgramElements = document.querySelectorAll('[id*="program"]');
+            console.log('All elements with "program" in ID:', Array.from(allProgramElements).map(el => el.id));
+            
+            // Limit retries to prevent infinite loop
+            if (window.loadProgramsRetryCount > 50) { // 5 seconds max
+                console.error('programCarousel element not found after 50 attempts, stopping retry');
+                return;
+            }
+            
+            loadProgramsTimeoutId = setTimeout(loadPrograms, 100);
+            return;
+        }
+        
+        // Reset retry counter on success
+        window.loadProgramsRetryCount = 0;
+        
+        // Show loading spinner in the carousel
+        const carouselInner = carousel.querySelector('.carousel-inner');
+        if (carouselInner) {
+            carouselInner.innerHTML = '<div class="carousel-item active"><div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading programs...</div></div>';
+        }
         
         // Fetch filtered programs based on student's current enrollments
         const apiUrl = '/api/enrollment/available-programs' + (EFFECTIVE_USER_ID ? `?user_id=${EFFECTIVE_USER_ID}` : '');
@@ -1233,19 +1325,36 @@
                 window.availableProgramsForModular = data;
                 displayPrograms(data);
             } else {
-                grid.innerHTML = '<div class="alert alert-info">No programs available for enrollment.</div>';
+                const carouselInner = carousel.querySelector('.carousel-inner');
+                if (carouselInner) {
+                    carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No programs available for enrollment.</div></div>';
+                }
             }
         })
         .catch(error => {
             console.error('Error fetching available programs:', error);
-            grid.innerHTML = '<div class="alert alert-danger">Error loading programs. Please try again.</div>';
+            const carouselInner = carousel.querySelector('.carousel-inner');
+            if (carouselInner) {
+                carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-danger">Error loading programs. Please try again.</div></div>';
+            }
         });
     }
-    // Display programs in the grid (update to show real data)
+    // Display programs in the carousel (MAIN FUNCTION - processes API data correctly)
     function displayPrograms(programs) {
-        const grid = document.getElementById('programsGrid');
+        console.log('displayPrograms called with:', programs);
+        console.log('programs length:', programs.length);
+        console.log('programs type:', typeof programs);
+        console.log('programs is array:', Array.isArray(programs));
+        
+        const carousel = document.getElementById('programCarousel');
+        console.log('programCarousel element found:', !!carousel);
+        
         if (!programs || programs.length === 0) {
-            grid.innerHTML = '<div class="alert alert-info">No programs available for enrollment.</div>';
+            console.log('No programs to display');
+            const carouselInner = carousel.querySelector('.carousel-inner');
+            if (carouselInner) {
+                carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No programs available for enrollment.</div></div>';
+            }
             return;
         }
         
@@ -1260,8 +1369,12 @@
             programChunks.push(programs.slice(i, i + chunkSize));
         }
         
+        console.log('Program chunks created:', programChunks);
+        console.log('Number of chunks:', programChunks.length);
+        
         // Create carousel slides with multi-selection support
         programChunks.forEach((chunk, index) => {
+            console.log(`Creating slide ${index} with programs:`, chunk);
             const isActive = index === 0 ? 'active' : '';
             let slideHtml = `<div class="carousel-item ${isActive}">
                 <div class="row justify-content-center">`;
@@ -1295,7 +1408,11 @@
         
         // Update carousel indicators if there are multiple slides
         const indicatorsContainer = document.querySelector('#programCarousel .carousel-indicators');
+        console.log('Indicators container found:', !!indicatorsContainer);
+        console.log('Program chunks length:', programChunks.length);
+        
         if (programChunks.length > 1) {
+            console.log('Multiple slides detected, showing controls');
             indicatorsContainer.innerHTML = '';
             programChunks.forEach((chunk, index) => {
                 const isActive = index === 0 ? 'active' : '';
@@ -1307,12 +1424,47 @@
             indicatorsContainer.style.display = 'block';
             
             // Show/hide carousel controls
-            document.querySelector('#programCarousel .carousel-control-prev').style.display = 'block';
-            document.querySelector('#programCarousel .carousel-control-next').style.display = 'block';
+            const prevControl = document.querySelector('#programCarousel .carousel-control-prev');
+            const nextControl = document.querySelector('#programCarousel .carousel-control-next');
+            console.log('Prev control found:', !!prevControl);
+            console.log('Next control found:', !!nextControl);
+            
+            if (prevControl) prevControl.style.display = 'block';
+            if (nextControl) nextControl.style.display = 'block';
         } else {
+            console.log('Single slide detected, hiding controls');
             indicatorsContainer.style.display = 'none';
-            document.querySelector('#programCarousel .carousel-control-prev').style.display = 'none';
-            document.querySelector('#programCarousel .carousel-control-next').style.display = 'none';
+            const prevControl = document.querySelector('#programCarousel .carousel-control-prev');
+            const nextControl = document.querySelector('#programCarousel .carousel-control-next');
+            if (prevControl) prevControl.style.display = 'none';
+            if (nextControl) nextControl.style.display = 'none';
+        }
+        
+        console.log('displayPrograms completed successfully');
+        console.log('Final carousel HTML length:', carouselInner.innerHTML.length);
+        console.log('Final carousel HTML preview:', carouselInner.innerHTML.substring(0, 200) + '...');
+        
+        // Initialize Bootstrap carousel if available
+        if (typeof bootstrap !== 'undefined' && bootstrap.Carousel) {
+            console.log('Initializing Bootstrap carousel');
+            const carouselElement = document.getElementById('programCarousel');
+            if (carouselElement) {
+                new bootstrap.Carousel(carouselElement, {
+                    interval: false,
+                    wrap: false
+                });
+            }
+        } else {
+            console.log('Bootstrap carousel not available');
+        }
+        
+        // Add inline styles to ensure carousel controls are visible
+        if (programChunks.length > 1) {
+            const carouselContainer = document.getElementById('programCarousel');
+            if (carouselContainer) {
+                carouselContainer.style.marginLeft = '60px';
+                carouselContainer.style.marginRight = '60px';
+            }
         }
         
         // Optionally, fetch and display modules for each program
@@ -1341,87 +1493,191 @@
     // Load modules
 function loadModules() {
     console.log('loadModules called');
+    console.log('Current step:', currentStep);
+    console.log('selectedPackageId:', selectedPackageId);
+    console.log('selectedProgramId:', selectedProgramId);
+    console.log('window.selectedPackageId:', window.selectedPackageId);
+    console.log('window.selectedProgramId:', window.selectedProgramId);
     
-    const grid = document.getElementById('modulesGrid');
-    const limitSpan = document.getElementById('moduleLimit');
-    
-    if (!grid) {
-        console.error('modulesGrid element not found');
+    // If we are not on step 4, stop trying to load modules
+    if (currentStep !== 4) {
+        console.log('loadModules: Not on step 4, stopping.');
         return;
     }
     
-    grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading modules...</div>';
+    const carousel = document.getElementById('moduleCarousel');
+    const limitSpan = document.getElementById('moduleLimit');
+    
+    console.log('moduleCarousel element found:', !!carousel);
+    console.log('moduleCarousel element:', carousel);
+    
+    if (!carousel) {
+        console.error('moduleCarousel element not found');
+        return;
+    }
+    
+    // Show loading spinner in the carousel
+    const carouselInner = carousel.querySelector('.carousel-inner');
+    if (carouselInner) {
+        carouselInner.innerHTML = '<div class="carousel-item active"><div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i> Loading modules...</div></div>';
+    }
     
     if (limitSpan) {
         limitSpan.textContent = packageModuleLimit || 3;
     }
 
-    // Get the selected program ID
-    const programId = selectedProgramId || (selectedProgramIds.length > 0 ? selectedProgramIds[0] : null);
+    // Get the selected program ID (this is the key fix)
+    const programId = selectedProgramId || window.selectedProgramId;
+    
+    console.log('Final programId to use:', programId);
     
     if (!programId) {
         console.error('No program selected');
-        grid.innerHTML = '<div class="alert alert-warning">Please select a program first.</div>';
+        const carouselInner = carousel.querySelector('.carousel-inner');
+        if (carouselInner) {
+            carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-warning">Please select a program first.</div></div>';
+        }
         return;
     }
     
     console.log('Loading modules for program ID:', programId);
     
-    // Fetch modules for the selected program
+    // Fetch modules for the selected program (not package)
+    console.log('Making API call to:', `/api/programs/${programId}/modules`);
+    
     fetch(`/api/programs/${programId}/modules`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('API response status:', response.status);
+            console.log('API response headers:', response.headers);
+            return response.json();
+        })
         .then(data => {
             console.log('Modules API response:', data);
+            console.log('Response success:', data.success);
+            console.log('Response modules count:', data.modules ? data.modules.length : 'N/A');
+            console.log('Response modules:', data.modules);
             
             if (data.success && data.modules && data.modules.length > 0) {
                 const modules = data.modules.map(module => ({
                     ...module,
-                    module_id: module.modules_id || module.id,
+                    module_id: module.module_id || module.modules_id || module.id,
                     module_name: module.module_name || module.name,
-                    description: module.module_description || module.description
+                    description: module.description || module.module_description
                 }));
                 
+                console.log('Processed modules:', modules);
+                console.log('selectedModules before processAndDisplayModules:', selectedModules);
                 processAndDisplayModules(modules);
             } else {
-                grid.innerHTML = '<div class="alert alert-info">No modules available for this program.</div>';
+                console.log('No modules found or API returned error');
+                if (data.debug_info) {
+                    console.log('Debug info:', data.debug_info);
+                }
+                const carouselInner = carousel.querySelector('.carousel-inner');
+                if (carouselInner) {
+                    carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No modules available for this program.</div></div>';
+                }
             }
         })
         .catch(error => {
             console.error('Error loading modules:', error);
-            grid.innerHTML = '<div class="alert alert-danger">Error loading modules. Please try again.</div>';
+            const carouselInner = carousel.querySelector('.carousel-inner');
+            if (carouselInner) {
+                carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-danger">Error loading modules. Please try again.</div></div>';
+            }
         });
 }
 
     
     function processAndDisplayModules(allModules) {
+        console.log('processAndDisplayModules called with:', allModules);
+        console.log('allModules length:', allModules.length);
+        console.log('allModules type:', typeof allModules);
+        console.log('allModules is array:', Array.isArray(allModules));
+        
         if (allModules.length === 0) {
-            const grid = document.getElementById('modulesGrid');
-            grid.innerHTML = '<div class="alert alert-info">No modules available for the selected program(s).</div>';
+            console.log('No modules to process, showing empty message');
+            const carousel = document.getElementById('moduleCarousel');
+            if (carousel) {
+                const carouselInner = carousel.querySelector('.carousel-inner');
+                if (carouselInner) {
+                    carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No modules available for the selected program(s).</div></div>';
+                }
+            } else {
+                console.error('moduleCarousel element not found in processAndDisplayModules');
+            }
             return;
         }
-        // Remove duplicates based on module_id
+        
+        // Debug: Log all module IDs to see if there are duplicates
+        console.log('All module IDs:', allModules.map(m => m.module_id));
+        console.log('All module names:', allModules.map(m => m.module_name));
+        
+        // Remove duplicates based on module_id (but keep all modules since they have different IDs)
         const uniqueModules = allModules.filter((module, index, self) => 
             index === self.findIndex(m => m.module_id === module.module_id)
         );
-        console.log('Loading modules:', uniqueModules);
+        
+        console.log('Unique module IDs:', uniqueModules.map(m => m.module_id));
+        console.log('Unique module names:', uniqueModules.map(m => m.module_name));
+        
+        // Additional debug: Check if any modules are being filtered out incorrectly
+        if (uniqueModules.length !== allModules.length) {
+            console.warn('WARNING: Modules were filtered out!');
+            console.warn('Original count:', allModules.length);
+            console.warn('Filtered count:', uniqueModules.length);
+            
+            const originalIds = allModules.map(m => m.module_id);
+            const filteredIds = uniqueModules.map(m => m.module_id);
+            const removedIds = originalIds.filter(id => !filteredIds.includes(id));
+            console.warn('Removed module IDs:', removedIds);
+        }
+        
+        console.log('Unique modules after filtering:', uniqueModules);
+        console.log('Unique modules length:', uniqueModules.length);
+        
+        console.log('About to call displayModules with:', uniqueModules);
         displayModules(uniqueModules);
     }
     
     // Display modules
     function displayModules(modules) {
+        console.log('displayModules called with:', modules);
+        console.log('modules length:', modules.length);
+        console.log('modules type:', typeof modules);
+        console.log('modules is array:', Array.isArray(modules));
+        
         const carousel = document.getElementById('moduleCarousel');
+        console.log('moduleCarousel element found:', !!carousel);
+        console.log('moduleCarousel element:', carousel);
+        
+        if (!carousel) {
+            console.error('moduleCarousel element not found');
+            return;
+        }
+        
         const carouselInner = carousel.querySelector('.carousel-inner');
         const indicators = carousel.querySelector('.carousel-indicators');
         
+        console.log('carouselInner found:', !!carouselInner);
+        console.log('indicators found:', !!indicators);
+        
         if (!modules || modules.length === 0) {
-            carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No modules available for this program.</div></div>';
-            indicators.innerHTML = '';
+            console.log('No modules to display, showing empty message');
+            if (carouselInner) {
+                carouselInner.innerHTML = '<div class="carousel-item active"><div class="alert alert-info">No modules available for this program.</div></div>';
+            }
+            if (indicators) {
+                indicators.innerHTML = '';
+            }
             return;
         }
         
         // Clear existing content
         carouselInner.innerHTML = '';
         indicators.innerHTML = '';
+        
+        console.log('Cleared carousel content, about to create slides');
         
         // Group modules into slides (2 modules per slide)
         const modulesPerSlide = 2;
@@ -1430,8 +1686,12 @@ function loadModules() {
             slides.push(modules.slice(i, i + modulesPerSlide));
         }
         
+        console.log('Created slides array:', slides);
+        console.log('Number of slides:', slides.length);
+        
         // Create carousel slides
         slides.forEach((slideModules, slideIndex) => {
+            console.log(`Creating slide ${slideIndex} with modules:`, slideModules);
             const isActive = slideIndex === 0 ? 'active' : '';
             
             let modulesHtml = '';
@@ -1498,6 +1758,30 @@ function loadModules() {
             controls.forEach(control => control.style.display = 'block');
             indicators.style.display = 'flex';
         }
+        
+        console.log('displayModules completed successfully');
+        console.log('Final carousel HTML length:', carouselInner.innerHTML.length);
+        console.log('Final carousel HTML preview:', carouselInner.innerHTML.substring(0, 200) + '...');
+        console.log('selectedModules after displayModules:', selectedModules);
+        
+        // Check button state after modules are displayed
+        const step4NextBtn = document.getElementById('step4-modules-next');
+        if (step4NextBtn) {
+            console.log('step4-modules-next button state after displayModules:', {
+                disabled: step4NextBtn.disabled,
+                selectedModulesLength: selectedModules.length,
+                packageSelectionMode: packageSelectionMode
+            });
+        }
+        
+        // Add inline styles to ensure carousel controls are visible
+        if (slides.length > 1) {
+            const carouselContainer = document.getElementById('moduleCarousel');
+            if (carouselContainer) {
+                carouselContainer.style.marginLeft = '60px';
+                carouselContainer.style.marginRight = '60px';
+            }
+        }
     }
     
     // Handle module selection
@@ -1545,19 +1829,39 @@ function loadModules() {
         updateSelectedModulesWithCourses();
         
         // Enable/disable next button based on selection mode
+        const step4NextBtn = document.getElementById('step4-modules-next');
+        console.log('step4-modules-next button found:', !!step4NextBtn);
+        console.log('Button state variables:', {
+            packageSelectionMode: packageSelectionMode,
+            packageModuleLimit: packageModuleLimit,
+            packageCourseLimit: packageCourseLimit,
+            selectedModulesLength: selectedModules.length,
+            selectedCourses: selectedCourses
+        });
+        
         if (packageSelectionMode === 'courses') {
             // For course-based packages, check total course count across all modules
             let totalSelectedCourses = 0;
             Object.values(selectedCourses).forEach(courses => {
                 totalSelectedCourses += courses.length;
             });
-            document.getElementById('step3-next').disabled = totalSelectedCourses === 0 || (packageCourseLimit && totalSelectedCourses < packageCourseLimit);
+            const shouldDisable = totalSelectedCourses === 0 || (packageCourseLimit && totalSelectedCourses < packageCourseLimit);
+            if (step4NextBtn) {
+                step4NextBtn.disabled = shouldDisable;
+                console.log('Course mode: step4-modules-next disabled =', shouldDisable, 'totalSelectedCourses =', totalSelectedCourses);
+            }
         } else {
             // For module-based packages, check module count
-            document.getElementById('step3-next').disabled = selectedModules.length === 0;
+            const shouldDisable = selectedModules.length === 0;
+            if (step4NextBtn) {
+                step4NextBtn.disabled = shouldDisable;
+                console.log('Module mode: step4-modules-next disabled =', shouldDisable, 'selectedModules.length =', selectedModules.length);
+            }
         }
         
         console.log('Selected modules with courses:', selectedModules);
+        console.log('selectedModules array length:', selectedModules.length);
+        console.log('selectedModules array content:', JSON.stringify(selectedModules));
     }
     window.handleModuleSelection = handleModuleSelection;
     
@@ -2878,14 +3182,14 @@ function copyStepperDataToFinalForm() {
             firstnameInput.className = 'form-control';
             firstnameInput.value = userFirstname;
             firstnameInput.required = true;
-            firstnameInput.dataset.populated = 'created';
+            firstnameInput.dataset.populated = 'force-created';
             
             // Create a label and wrapper
             const firstnameGroup = document.createElement('div');
             firstnameGroup.className = 'form-group';
             const firstnameLabel = document.createElement('label');
             firstnameLabel.htmlFor = 'firstname';
-            firstnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>First Name <span class="required">*</span>';
+            firstnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>First Name <span class="required" style="color: red;">*</span>';
             firstnameLabel.style.fontWeight = '700';
             
             firstnameGroup.appendChild(firstnameLabel);
@@ -2934,14 +3238,14 @@ function copyStepperDataToFinalForm() {
             lastnameInput.className = 'form-control';
             lastnameInput.value = userLastname;
             lastnameInput.required = true;
-            lastnameInput.dataset.populated = 'created';
+            lastnameInput.dataset.populated = 'force-created';
             
             // Create a label and wrapper
             const lastnameGroup = document.createElement('div');
             lastnameGroup.className = 'form-group';
             const lastnameLabel = document.createElement('label');
             lastnameLabel.htmlFor = 'lastname';
-            lastnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>Last Name <span class="required">*</span>';
+            lastnameLabel.innerHTML = '<i class="bi bi-person me-2"></i>Last Name <span class="required" style="color: red;">*</span>';
             lastnameLabel.style.fontWeight = '700';
             
             lastnameGroup.appendChild(lastnameLabel);
@@ -3031,44 +3335,7 @@ function setOrCreateHidden(form, name, value) {
     }
 }
 
-// Hook into step navigation and form submission
-function nextStep() {
-    if (currentStep < totalSteps) {
-        // Copy data when leaving account registration step
-        if (!isUserLoggedIn && currentStep === 6) {
-            // For non-logged-in users: step 6 is account registration
-            copyStepperDataToFinalForm();
-        } else if (isUserLoggedIn && currentStep === 5) {
-            // For logged-in users: copy data when leaving step 5 (learning mode)
-            copyStepperDataToFinalForm();
-        }
-
-        // Handle step transitions based on new structure
-        if (currentStep === 1) {
-            // This should not be reached since step 1 uses selectAccountOption
-            console.log('Step 1 should use selectAccountOption');
-            return;
-        } else if (isUserLoggedIn && currentStep === 5) {
-            // Skip from step 5 (learning mode) directly to step 6 (form) for logged-in users
-            currentStep = 6;
-        } else if (!isUserLoggedIn && currentStep === 6) {
-            // For non-logged-in users, go from step 6 (account) to step 7 (form)
-            currentStep = 7;
-            copyStepperDataToFinalForm(); // Copy account data to final form
-        } else {
-            // Normal progression
-            currentStep++;
-        }
-
-        // Copy data when moving to final step
-        if ((isUserLoggedIn && currentStep === 6) || (!isUserLoggedIn && currentStep === 7)) {
-            copyStepperDataToFinalForm();
-        }
-
-        updateStepper();
-        loadStepContent();
-    }
-}
+// Hook into form submission (removed duplicate nextStep function)
 
 // Also copy data right before form submission (in case user edits fields in step 6)
 document.addEventListener('DOMContentLoaded', function() {
@@ -3152,6 +3419,23 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Submit via AJAX to handle the response properly
             const formData = new FormData(form);
+            
+            // CRITICAL FIX: Ensure all uploaded file paths are included in form submission
+            const fileInputs = form.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(fileInput => {
+                const fieldName = fileInput.name;
+                const uploadedFilePath = fileInput.dataset.uploadedFilePath;
+                
+                if (uploadedFilePath) {
+                    // Add file paths for both original case and lowercase to ensure backend compatibility
+                    const fieldNameVariations = [fieldName, fieldName.toLowerCase()];
+                    
+                    fieldNameVariations.forEach(variation => {
+                        formData.append(variation + '_path', uploadedFilePath);
+                        console.log(`✅ Added file path for ${variation}: ${uploadedFilePath}`);
+                    });
+                }
+            });
             
             // Double-check that Start_Date is not empty in FormData
             if (!formData.get('Start_Date') || formData.get('Start_Date') === '') {
@@ -3602,6 +3886,13 @@ function handleFileUpload(inputElement) {
     }
     
     console.log('Found names for OCR validation:', firstName, lastName);
+    console.log('Form data being sent for validation:', {
+        firstName: firstName,
+        lastName: lastName,
+        fieldName: fieldName,
+        fileName: file.name,
+        fileSize: file.size
+    });
     
     // Only require names if we're on the actual form step
     const isOnFormStep = isUserLoggedIn ? (currentStep === 6) : (currentStep === 7);
@@ -3628,7 +3919,7 @@ function handleFileUpload(inputElement) {
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     
-            fetch('{{ route("registration.validateFile") }}', {
+            fetch(VALIDATE_URL, {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -3659,25 +3950,26 @@ function handleFileUpload(inputElement) {
             
             // CRITICAL FIX: Store the file path for form submission
             if (data.file_path) {
-                let hiddenFileInput = document.querySelector(`input[name="${fieldName}_path"]`);
-                if (!hiddenFileInput) {
-                    hiddenFileInput = document.createElement('input');
-                    hiddenFileInput.type = 'hidden';
-                    hiddenFileInput.name = fieldName + '_path';
-                    inputElement.parentNode.appendChild(hiddenFileInput);
-                }
-                hiddenFileInput.value = data.file_path;
-                console.log('Stored file path for', fieldName, ':', data.file_path);
+                // Store in dataset for form submission
+                inputElement.dataset.uploadedFilePath = data.file_path;
+                
+                // Create hidden fields for both original case and lowercase to ensure compatibility
+                const fieldNameVariations = [fieldName, fieldName.toLowerCase()];
+                
+                fieldNameVariations.forEach(variation => {
+                    let hiddenFileInput = document.querySelector(`input[name="${variation}_path"]`);
+                    if (!hiddenFileInput) {
+                        hiddenFileInput = document.createElement('input');
+                        hiddenFileInput.type = 'hidden';
+                        hiddenFileInput.name = variation + '_path';
+                        inputElement.parentNode.appendChild(hiddenFileInput);
+                    }
+                    hiddenFileInput.value = data.file_path;
+                    console.log('✅ Stored file path for', variation, ':', data.file_path);
+                });
             }
             
-            // Handle education level detection
-            if (data.certificate_level) {
-                handleEducationLevelDetection(data.certificate_level);
-            }
-            
-            if (data.suggestions && data.suggestions.length > 0) {
-                showProgramSuggestions(data.suggestions);
-            }
+            // File uploaded successfully - no need for education level detection or program suggestions
         } else {
             console.error('File validation failed:', data);
             
@@ -3709,37 +4001,7 @@ function handleFileUpload(inputElement) {
     });
 }
 
-// Show program suggestions in dropdown
-function showProgramSuggestions(suggestions) {
-    const programSelect = document.getElementById('programSelect');
-    if (!programSelect) return;
-    
-    // Clear existing suggestions
-    const existingSuggestions = programSelect.querySelectorAll('.suggestion-option');
-    existingSuggestions.forEach(option => option.remove());
-    
-    // Add suggestion header
-    if (suggestions.length > 0) {
-        const headerOption = document.createElement('option');
-        headerOption.disabled = true;
-        headerOption.textContent = '--- Suggested Programs ---';
-        headerOption.className = 'suggestion-header';
-        programSelect.insertBefore(headerOption, programSelect.children[1]);
-        
-        // Add suggestions
-        suggestions.forEach(suggestion => {
-            const option = document.createElement('option');
-            option.value = suggestion.program.program_id;
-            option.textContent = `⭐ ${suggestion.program.program_name} (Match: ${suggestion.score})`;
-            option.className = 'suggestion-option';
-            option.style.backgroundColor = '#e3f2fd';
-            programSelect.insertBefore(option, programSelect.children[programSelect.children.length]);
-        });
-        
-        // Show notification
-        showInfoModal(`We found ${suggestions.length} program(s) that match your uploaded certificate. Check the suggested programs at the top of the dropdown.`);
-    }
-}
+// Program suggestions removed - users can manually select their program
 
 // Modal functions for OCR feedback
 function showLoadingModal(message) {
@@ -3905,169 +4167,7 @@ function closeModal() {
 }
 
 // Handle education level detection from OCR (similar to Full_enrollment)
-function handleEducationLevelDetection(detectedLevel) {
-    console.log('Education level detected:', detectedLevel);
-    
-    // Find the education level dropdown
-    const educationSelect = document.getElementById('educationLevel');
-    if (!educationSelect) {
-        console.warn('Education level dropdown not found');
-        return;
-    }
-    
-    // Try to find and select the detected education level
-    let matchFound = false;
-    const options = educationSelect.options;
-    
-    for (let i = 0; i < options.length; i++) {
-        const optionText = options[i].textContent.toLowerCase();
-        const detectedLower = detectedLevel.toLowerCase();
-        
-        // Check for exact match or partial match
-        if (optionText.includes(detectedLower) || detectedLower.includes(optionText)) {
-            educationSelect.selectedIndex = i;
-            matchFound = true;
-            break;
-        }
-    }
-    
-    if (matchFound) {
-        // Trigger the change event to update form requirements
-        educationSelect.dispatchEvent(new Event('change'));
-        
-        // Show confirmation modal
-        showEducationLevelModal(detectedLevel, true);
-    } else {
-        // Show options modal if no match found
-        showEducationLevelModal(detectedLevel, false);
-    }
-}
-
-// Show education level detection modal
-function showEducationLevelModal(detectedLevel, matchFound) {
-    let modal = document.getElementById('educationLevelModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'educationLevelModal';
-        modal.className = 'modal-overlay';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    if (matchFound) {
-        modal.innerHTML = `
-            <div class="modal-content" style="
-                background: white;
-                padding: 0;
-                border-radius: 8px;
-                min-width: 400px;
-                max-width: 500px;
-                border-left: 4px solid #28a745;
-            ">
-                <div class="modal-header" style="
-                    padding: 1rem 1.5rem;
-                    border-bottom: 1px solid #dee2e6;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h5 style="margin: 0; color: #28a745;">
-                        <i class="bi bi-check-circle-fill me-2"></i>Education Level Detected
-                    </h5>
-                    <button type="button" onclick="closeEducationLevelModal()" class="close-btn" style="
-                        background: none;
-                        border: none;
-                        font-size: 1.5rem;
-                        cursor: pointer;
-                    ">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <p>We detected "<strong>${detectedLevel}</strong>" from your document and have automatically selected it in the education level field.</p>
-                    <p>If this is incorrect, you can change it manually in the form.</p>
-                </div>
-                <div class="modal-footer" style="
-                    padding: 1rem 1.5rem;
-                    border-top: 1px solid #dee2e6;
-                    text-align: right;
-                ">
-                    <button type="button" onclick="closeEducationLevelModal()" class="btn btn-success" style="
-                        background: #28a745;
-                        border: 1px solid #28a745;
-                        color: white;
-                        padding: 0.375rem 0.75rem;
-                        border-radius: 0.25rem;
-                        cursor: pointer;
-                    ">Understood</button>
-                </div>
-            </div>
-        `;
-    } else {
-        modal.innerHTML = `
-            <div class="modal-content" style="
-                background: white;
-                padding: 0;
-                border-radius: 8px;
-                min-width: 400px;
-                max-width: 500px;
-                border-left: 4px solid #ffc107;
-            ">
-                <div class="modal-header" style="
-                    padding: 1rem 1.5rem;
-                    border-bottom: 1px solid #dee2e6;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h5 style="margin: 0; color: #856404;">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Education Level Detected
-                    </h5>
-                    <button type="button" onclick="closeEducationLevelModal()" class="close-btn" style="
-                        background: none;
-                        border: none;
-                        font-size: 1.5rem;
-                        cursor: pointer;
-                    ">&times;</button>
-                </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <p>We detected "<strong>${detectedLevel}</strong>" from your document, but couldn't automatically match it to our available options.</p>
-                    <p>Please manually select your education level from the dropdown in the form.</p>
-                </div>
-                <div class="modal-footer" style="
-                    padding: 1rem 1.5rem;
-                    border-top: 1px solid #dee2e6;
-                    text-align: right;
-                ">
-                    <button type="button" onclick="closeEducationLevelModal()" class="btn btn-warning" style="
-                        background: #ffc107;
-                        border: 1px solid #ffc107;
-                        color: #212529;
-                        padding: 0.375rem 0.75rem;
-                        border-radius: 0.25rem;
-                        cursor: pointer;
-                    ">OK</button>
-                </div>
-            </div>
-        `;
-    }
-    
-    modal.style.display = 'flex';
-}
-
-function closeEducationLevelModal() {
-    const modal = document.getElementById('educationLevelModal');
-    if (modal) modal.style.display = 'none';
-}
+// Education level detection removed - users can manually select their education level
 
 // Name sync logic between Account and Form steps
 function syncNamesBetweenSteps() {
@@ -4259,116 +4359,10 @@ window.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Replace the displayPrograms and loadPrograms logic for the program card carousel:
-async function displayPrograms() {
-    // Use controller data first, then API as fallback
-    let programs = window.programs && window.programs.length > 0 ? window.programs : 
-                   (window.availableProgramsForModular.length ? window.availableProgramsForModular : 
-                   await fetchAvailableProgramsForStudent());
-    
-    console.log('displayPrograms: Using programs from', 
-        window.programs && window.programs.length > 0 ? 'controller' : 'API', 
-        '- Count:', programs.length);
-    
-    window.availableProgramsForModular = programs;
-    const grid = document.getElementById('programsGrid');
-    
-    if (!programs || programs.length === 0) {
-        grid.innerHTML = '<div class="alert alert-info">No programs available. Please contact the administrator.</div>';
-        return;
-    }
-    
-    // Clear existing content
-    const carouselInner = document.querySelector('#programCarousel .carousel-inner');
-    if (carouselInner) {
-        carouselInner.innerHTML = '';
-    } else {
-        console.warn('Carousel inner element not found, using grid fallback');
-        // Fallback: display as simple grid
-        displayProgramsAsGrid(programs);
-        return;
-    }
-    
-    // Group programs into chunks for carousel slides (2 programs per slide)
-    const chunkSize = 2;
-    const programChunks = [];
-    for (let i = 0; i < programs.length; i += chunkSize) {
-        programChunks.push(programs.slice(i, i + chunkSize));
-    }
-    
-    // Create carousel slides
-    programChunks.forEach((chunk, index) => {
-        const isActive = index === 0 ? 'active' : '';
-        let slideHtml = `<div class="carousel-item ${isActive}"><div class="row justify-content-center">`;
-        
-        chunk.forEach(program => {
-            const description = program.program_description || program.description || 'No description available.';
-            const moduleCount = program.modules ? program.modules.length : 0;
-            
-            slideHtml += `
-                <div class="col-md-5 mb-4">
-                    <div class="card selection-card h-100" 
-                         onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
-                        <div class="card-body">
-                            <h4 class="card-title">${program.program_name}</h4>
-                            <p class="card-text">${description}</p>
-                            <small class="text-muted">${moduleCount} modules available</small>
-                            <div id="modules-for-program-${program.program_id}"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        slideHtml += `</div></div>`;
-        carouselInner.innerHTML += slideHtml;
-    });
-    // Update carousel indicators if there are multiple slides
-    const indicatorsContainer = document.querySelector('#programCarousel .carousel-indicators');
-    if (programChunks.length > 1) {
-        indicatorsContainer.innerHTML = '';
-        programChunks.forEach((chunk, index) => {
-            const isActive = index === 0 ? 'active' : '';
-            indicatorsContainer.innerHTML += `
-                <button type="button" data-bs-target="#programCarousel" data-bs-slide-to="${index}" 
-                        class="${isActive}" aria-label="Slide ${index + 1}"></button>
-            `;
-        });
-        indicatorsContainer.style.display = 'block';
-        document.querySelector('#programCarousel .carousel-control-prev').style.display = 'block';
-        document.querySelector('#programCarousel .carousel-control-next').style.display = 'block';
-    } else {
-        indicatorsContainer.style.display = 'none';
-        document.querySelector('#programCarousel .carousel-control-prev').style.display = 'none';
-        document.querySelector('#programCarousel .carousel-control-next').style.display = 'none';
-    }
-}
+// REMOVED: Duplicate displayPrograms function that was causing conflicts
 
 // Fallback function to display programs as simple grid
-function displayProgramsAsGrid(programs) {
-    const grid = document.getElementById('programsGrid');
-    if (!grid) return;
-    
-    let gridHtml = '<div class="row">';
-    programs.forEach(program => {
-        const description = program.program_description || program.description || 'No description available.';
-        const moduleCount = program.modules ? program.modules.length : 0;
-        
-        gridHtml += `
-            <div class="col-md-6 mb-4">
-                <div class="card selection-card h-100" 
-                     onclick="selectProgram(${program.program_id})" style="cursor:pointer;">
-                    <div class="card-body">
-                        <h4 class="card-title">${program.program_name}</h4>
-                        <p class="card-text">${description}</p>
-                        <small class="text-muted">${moduleCount} modules available</small>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    gridHtml += '</div>';
-    grid.innerHTML = gridHtml;
-}
+// REMOVED: displayProgramsAsGrid function - no longer needed
 
 // Function to select a program
 function selectProgram(programId) {
@@ -4396,10 +4390,77 @@ function selectProgram(programId) {
 }
 
 // Global function assignments
-window.displayProgramsAsGrid = displayProgramsAsGrid;
 window.selectProgram = selectProgram;
-window.addEventListener('DOMContentLoaded', displayPrograms);
-window.displayPrograms = displayPrograms;
+// REMOVED: Event listener that was calling the duplicate displayPrograms function
+
+    // Function to handle step transitions with animation
+    function animateStepTransition(fromStep, toStep, isBack = false) {
+        const from = document.getElementById(fromStep);
+        const to = document.getElementById(toStep);
+        
+        console.log('Animating transition:', fromStep, '->', toStep);
+        console.log('From element found:', !!from);
+        console.log('To element found:', !!to);
+        
+        if (!from || !to) {
+            console.error('Step elements not found:', fromStep, toStep);
+            // Fallback: just hide/show without animation
+            const allSteps = document.querySelectorAll('.step-content');
+            allSteps.forEach(step => {
+                step.style.display = 'none';
+                step.classList.remove('active');
+            });
+            if (to) {
+                to.style.display = 'block';
+                to.classList.add('active');
+                // Don't override CSS transition styles
+            }
+            return;
+        }
+        
+        console.log('Starting transition animation...');
+        
+        // Hide all other steps
+        const allSteps = document.querySelectorAll('.step-content');
+        allSteps.forEach(step => {
+            if (step !== to) {
+                step.classList.remove('active');
+                // Let CSS handle the display/opacity transition
+            }
+        });
+        
+        // Show the target step - let CSS handle the transition
+        to.classList.add('active');
+        
+        console.log('Step transition completed - target step should now be animating in');
+        
+        // Check if the transition worked after the CSS animation completes
+        setTimeout(() => {
+            const toStepVisible = window.getComputedStyle(to).display !== 'none' && to.classList.contains('active');
+            const toStepOpacity = window.getComputedStyle(to).opacity;
+            console.log('Post-transition check - target step visible:', toStepVisible);
+            console.log('Target step computed opacity:', toStepOpacity);
+            console.log('Target step classes:', to.className);
+        }, 450); // Wait for CSS transition to complete (400ms + buffer)
+    }
+
+    // Helper function to update hidden start date field
+    function updateHiddenStartDate() {
+        // No longer needed since we removed the duplicate hidden field
+        // The visible date input field will be used directly
+        console.log('Hidden start date field removed - using visible date input');
+    }
+
+    // Helper function to update hidden program_id field  
+    function updateHiddenProgramId() {
+        const programSelect = document.getElementById('programSelect');
+        const hiddenProgramInput = document.getElementById('hidden_program_id');
+        
+        if (programSelect && hiddenProgramInput) {
+            hiddenProgramInput.value = programSelect.value;
+            console.log('Updated hidden program_id:', programSelect.value);
+        }
+    }
 </script>
 
 <style>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 03, 2025 at 12:53 PM
+-- Generation Time: Aug 04, 2025 at 02:09 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -61,7 +61,8 @@ CREATE TABLE `admins` (
 --
 
 INSERT INTO `admins` (`admin_id`, `admin_name`, `email`, `password`, `created_at`, `updated_at`) VALUES
-(1, 'Administrator', 'admin@artc.com', '$2y$10$wVoqaCx2cyvujuym1wakQ.x8UqUSisfeNeXXsmm1HYhc2OclIn4bC', '2025-06-30 08:41:42', '2025-06-30 16:45:13');
+(1, 'Administrator', 'admin@artc.com', '$2y$10$wVoqaCx2cyvujuym1wakQ.x8UqUSisfeNeXXsmm1HYhc2OclIn4bC', '2025-06-30 08:41:42', '2025-06-30 16:45:13'),
+(2, 'Test Admin', 'bmjustimbaste2003@gmail.com', '$2y$10$mIYayfYQ4izoQLXVYMiPpOFbZnT/OKMW5Iua/XySOjzMMR.xHaTfm', '2025-08-03 23:59:43', '2025-08-03 23:59:43');
 
 -- --------------------------------------------------------
 
@@ -105,7 +106,10 @@ INSERT INTO `admin_settings` (`setting_id`, `setting_key`, `setting_value`, `set
 (118, 'director_view_chat_logs', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21'),
 (119, 'director_manage_settings', 'true', NULL, 1, '2025-07-29 08:38:21', '2025-07-29 08:38:21'),
 (120, 'professor_announcement_management_enabled', '1', 'Enable announcement management for professors', 1, '2025-08-02 18:23:39', '2025-08-02 18:23:39'),
-(121, 'director_manage_announcements', 'true', NULL, 1, '2025-08-02 22:45:14', '2025-08-02 22:45:25');
+(121, 'director_manage_announcements', 'true', NULL, 1, '2025-08-02 22:45:14', '2025-08-02 22:45:25'),
+(122, 'full_enrollment_terms', 'Terms and Conditions for Full Enrollment:\r\n\r\n1. Enrollment Agreement\r\nBy enrolling in this full program, you agree to follow all institutional policies and procedures.\r\n\r\n2. Payment Terms\r\nAll fees must be paid according to the schedule provided. Late payments may result in suspension of access to course materials.\r\n\r\n3. Academic Integrity\r\nStudents are expected to maintain the highest standards of academic honesty and integrity.\r\n\r\n4. Program Completion\r\nStudents must complete all required modules and assessments to receive certification.\r\n\r\n5. Refund Policy\r\nRefunds are available according to the institutional refund policy. Please contact administration for details.\r\n\r\n6. Data Privacy\r\nYour personal information will be handled according to our privacy policy and applicable data protection laws.\r\n\r\n7. Program Duration\r\nThe program duration is as specified in your enrollment agreement. Extensions may be available upon request.\r\n\r\nBy proceeding with full enrollment, you acknowledge that you have read, understood, and agree to these terms and conditions.', NULL, 1, '2025-08-03 11:26:50', '2025-08-03 11:37:39'),
+(123, 'modular_enrollment_terms', 'Terms and Conditions for Modular Enrollment:\r\n\r\n1. Module-Based Learning\r\nYou are enrolling in selected modules of our program. Each module is a standalone unit with its own requirements.\r\n\r\n2. Flexible Schedule\r\nModular enrollment allows you to complete modules at your own pace within the specified timeframes.\r\n\r\n3. Payment Terms\r\nPayment is required per module or package selected. Payment plans may be available for multiple modules.\r\n\r\n4. Module Completion\r\nYou must complete all activities and assessments within each enrolled module to receive certification.\r\n\r\n5. Prerequisites\r\nSome modules may have prerequisites. Please ensure you meet all requirements before enrolling.\r\n\r\n6. Module Access\r\nAccess to module materials is granted upon payment confirmation and remains active for the duration specified.\r\n\r\n7. Certification\r\nCertificates are awarded upon successful completion of each module. Full program certification requires completion of all core modules.\r\n\r\n8. Refund Policy\r\nModule-specific refund policies apply. Please review the refund terms for each module before enrollment.\r\n\r\nBy proceeding with modular enrollment, you acknowledge that you have read, understood, and agree to these terms and conditions.', NULL, 1, '2025-08-03 11:26:50', '2025-08-03 11:26:50'),
+(124, 'require_terms_acceptance', '1', NULL, 1, '2025-08-03 11:26:50', '2025-08-03 11:26:50');
 
 -- --------------------------------------------------------
 
@@ -358,11 +362,15 @@ INSERT INTO `class_meetings` (`meeting_id`, `batch_id`, `professor_id`, `title`,
 (7, 16, 8, 'Introduction to Software Engineering', 'Overview of software development lifecycle', '2025-07-27 10:00:00', 90, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:02', '2025-07-26 02:43:02'),
 (8, 16, 8, 'Database Design Workshop', 'Hands-on database design session', '2025-07-29 14:00:00', 120, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:02', '2025-07-26 02:43:02'),
 (9, 16, 8, 'Project Review Session', 'Review of ongoing projects and assignments', '2025-08-02 09:00:00', 60, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:02', '2025-07-26 02:43:02'),
-(10, 16, 8, 'Advanced Programming Concepts', 'Object-oriented programming and design patterns', '2025-08-05 13:00:00', 90, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:02', '2025-07-26 02:43:02'),
 (11, 16, 8, 'Introduction to Software Engineering', 'Overview of software development lifecycle', '2025-07-27 10:00:00', 90, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:28', '2025-07-26 02:43:28'),
 (12, 16, 8, 'Database Design Workshop', 'Hands-on database design session', '2025-07-29 14:00:00', 120, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:28', '2025-07-26 02:43:28'),
 (13, 16, 8, 'Project Review Session', 'Review of ongoing projects and assignments', '2025-08-02 09:00:00', 60, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:28', '2025-07-26 02:43:28'),
-(14, 16, 8, 'Advanced Programming Concepts', 'Object-oriented programming and design patterns', '2025-08-05 13:00:00', 90, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:28', '2025-07-26 02:43:28');
+(14, 16, 8, 'Advanced Programming Concepts', 'Object-oriented programming and design patterns', '2025-08-05 13:00:00', 90, 'https://zoom.us/j/example', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-07-26 02:43:28', '2025-07-26 02:43:28'),
+(15, 17, 8, 'TEST2', NULL, '2025-08-04 00:53:00', 60, 'https://l.messenger.com/l.php?u=https%3A%2F%2Fteams.microsoft.com%2Fmeet%2F4825281791486%3Fp%3DsUtftB86FIn4AkNTQk&h=AT0CzrNorRavAfaW0ZPNC2wDKm3YPRX5YEkeBBwjWhD_7nLAcND2OGUYAIE8Y6GNshI6er4V2VEPK0g1i7yEzvWjNNXmweWqi0PTwlBqz8JI2ZK18ge19RvPxKmm7CJnK9Xnsg', NULL, 'ongoing', 1, 0, 0, '2025-08-04 00:55:45', NULL, '2025-08-03 16:53:47', '2025-08-03 16:55:45'),
+(16, 17, 8, 'qweqweqwe', 'qweqwe', '2025-08-20 01:12:00', 60, 'https://l.messenger.com/l.php?u=https%3A%2F%2Fteams.microsoft.com%2Fmeet%2F4825281791486%3Fp%3DsUtftB86FIn4AkNTQk&h=AT0CzrNorRavAfaW0ZPNC2wDKm3YPRX5YEkeBBwjWhD_7nLAcND2OGUYAIE8Y6GNshI6er4V2VEPK0g1i7yEzvWjNNXmweWqi0PTwlBqz8JI2ZK18ge19RvPxKmm7CJnK9Xnsg', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-08-03 17:12:55', '2025-08-03 17:12:55'),
+(17, 17, 8, 'naisu', NULL, '2025-08-06 01:36:00', 60, 'https://www.youtube.com/watch?v=RG9sJDP36Go', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-08-03 17:37:23', '2025-08-03 17:37:23'),
+(18, 17, 8, 'naisu', NULL, '2025-08-22 01:37:00', 60, 'https://www.youtube.com/watch?v=RG9sJDP36Go', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-08-03 17:37:37', '2025-08-03 17:37:37'),
+(19, 17, 8, 'wagg', 'qweq', '2025-08-04 04:43:00', 60, 'https://discord.com/channels/1337022964066947203/1337022964066947207', NULL, 'scheduled', 1, 0, 0, NULL, NULL, '2025-08-03 12:43:31', '2025-08-03 12:43:31');
 
 -- --------------------------------------------------------
 
@@ -463,7 +471,11 @@ INSERT INTO `content_items` (`id`, `content_title`, `content_description`, `less
 (103, 'qweqwe', 'Manually Created Quiz', NULL, 50, 'quiz', NULL, '\"{\\\"quiz_id\\\":60}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 0, 0, NULL, NULL, NULL, '2025-08-02 19:06:22', '2025-08-02 19:06:22', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
 (104, 'www', NULL, NULL, 50, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1754177288_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 23:28:08', '2025-08-02 23:28:08', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
 (105, 'wqeqwe', 'qweqwe', NULL, 55, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1754179172_1753907633_final-docu.pdf\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-02 23:59:32', '2025-08-02 23:59:32', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(106, 'www', NULL, NULL, 55, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1754179331_pngtree-brown-and-white-dog-png-image_10146522.png\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-03 00:02:11', '2025-08-03 00:02:11', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+(106, 'www', NULL, NULL, 55, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1754179331_pngtree-brown-and-white-dog-png-image_10146522.png\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-03 00:02:11', '2025-08-03 00:02:11', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(107, 'TE', 'AI Generated Quiz', NULL, 58, 'quiz', NULL, '\"{\\\"quiz_id\\\":61}\"', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, 0, 0, 1, 1, 1, '2025-08-03 18:31:37', NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:31:37', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(108, 'NYE', NULL, NULL, 58, 'lesson', NULL, '{\"lesson_video_url\":null}', NULL, '[\"content\\/1754245433_diploma-certificate-2-1024x791.jpg\"]', 0.00, NULL, NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 1, '2025-08-03 18:31:45', NULL, NULL, '2025-08-03 18:23:53', '2025-08-03 18:31:45', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(109, 'Culi signment 1', NULL, NULL, 59, 'assignment', NULL, '{\"assignment_instructions\":null,\"due_date\":\"2025-08-04T03:21\",\"max_points\":0}', NULL, '[\"content\\/1754248896_Privacy-Policy-for-Academic-Review-and-Training-Center.docx\"]', 0.00, '2025-08-04 03:21:00', NULL, 0, 0, 0, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-03 11:21:36', '2025-08-03 11:21:36', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(110, 'Nur assignment 1', NULL, NULL, 60, 'assignment', NULL, '{\"assignment_instructions\":null,\"due_date\":\"2025-08-05T04:21\",\"max_points\":0}', NULL, '[\"content\\/1754252513_Updated-Privacy-Policy-for-ARTC (1).docx\"]', 0.00, '2025-08-05 04:21:00', NULL, 0, 0, 1, NULL, 10, NULL, 0, 0, 1, 1, 0, NULL, NULL, NULL, '2025-08-03 12:21:53', '2025-08-03 12:21:53', 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -524,9 +536,11 @@ INSERT INTO `courses` (`subject_id`, `subject_name`, `subject_description`, `mod
 (53, 'Mechanics', NULL, 79, 5000.00, 2, 0, 0, 1, 0, NULL, '2025-07-27 06:27:51', '2025-07-27 06:27:51', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (54, 'qweqwe', NULL, 80, 23123.00, 1, 0, 0, 1, 1, NULL, '2025-08-02 20:42:13', '2025-08-02 20:42:17', 0, 0, NULL, NULL, NULL, NULL, NULL),
 (55, 'www', NULL, 82, 213123.00, 1, 0, 0, 1, 0, NULL, '2025-08-02 23:58:53', '2025-08-02 23:58:53', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(56, 'qweqweqwe', 'qweqwe', 82, 21.00, 2, 0, 0, 1, 0, NULL, '2025-08-03 00:00:13', '2025-08-03 00:00:13', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(57, 'qweqwe', NULL, 82, 222.00, 3, 0, 0, 1, 0, NULL, '2025-08-03 00:01:04', '2025-08-03 00:01:04', 0, 0, NULL, NULL, NULL, NULL, NULL),
-(58, 'qweqwe', 'wqe', 83, 213123.00, 1, 0, 0, 1, 0, NULL, '2025-08-03 02:14:07', '2025-08-03 02:14:07', 0, 0, NULL, NULL, NULL, NULL, NULL);
+(56, 'qweqweqwe', 'qweqwe', 82, 21.00, 2, 0, 0, 1, 1, NULL, '2025-08-03 00:00:13', '2025-08-03 18:32:00', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(57, 'qweqwe', NULL, 82, 222.00, 3, 0, 0, 1, 1, NULL, '2025-08-03 00:01:04', '2025-08-03 18:31:55', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(58, 'qweqwe', 'wqe', 83, 213123.00, 1, 0, 0, 1, 0, NULL, '2025-08-03 02:14:07', '2025-08-03 18:15:28', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(59, 'Culi Both 1', NULL, 85, 100.00, 1, 0, 0, 1, 0, NULL, '2025-08-03 11:21:16', '2025-08-03 11:21:16', 0, 0, NULL, NULL, NULL, NULL, NULL),
+(60, 'NurMod 1', NULL, 86, 100.00, 1, 0, 0, 1, 0, NULL, '2025-08-03 12:21:28', '2025-08-03 12:21:28', 0, 0, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -593,7 +607,8 @@ CREATE TABLE `directors` (
 INSERT INTO `directors` (`directors_id`, `admin_id`, `directors_name`, `directors_first_name`, `directors_last_name`, `directors_email`, `directors_password`, `referral_code`, `directors_archived`, `has_all_program_access`, `created_at`, `updated_at`) VALUES
 (7, 1, 'alek piriz', 'alek', 'piriz', 'alek@gmail.com', '$2y$10$.eS0jFVC9.cpmtFI7J/bqe5/cwNumfI4JzgI8Hrtl7tcCBknTL/ey', NULL, 0, 1, '2025-07-09 12:04:55', '2025-07-09 12:21:25'),
 (8, 1, '123123 weq', '123123', 'weq', 'Director1@gmail.com', '$2y$10$gWhR8euTSIkWAGcsLm83OueLzPoOCUQ41gh3VE/PfGRiN4bWKHiyC', NULL, 0, 1, '2025-07-12 05:32:17', '2025-07-12 05:41:43'),
-(999, 1, 'Test Director', 'Test', 'Director', 'director@test.com', '$2y$10$NW5OepcYIwp9Aq0WFrthnOBTQ5shyTDkT9AhJo9gEpyebef/a6L8S', NULL, 0, 1, '2025-07-13 12:51:05', '2025-07-13 12:51:05');
+(999, 1, 'Test Director', 'Test', 'Director', 'director@test.com', '$2y$10$NW5OepcYIwp9Aq0WFrthnOBTQ5shyTDkT9AhJo9gEpyebef/a6L8S', NULL, 0, 1, '2025-07-13 12:51:05', '2025-07-13 12:51:05'),
+(1000, 1, 'direk rek', 'direk', 'rek', 'direk@gmail.com', '12345678', 'DIRDIRE1000', 0, 1, '2025-08-03 13:35:01', '2025-08-03 13:35:10');
 
 -- --------------------------------------------------------
 
@@ -697,9 +712,10 @@ CREATE TABLE `enrollments` (
 --
 
 INSERT INTO `enrollments` (`enrollment_id`, `registration_id`, `student_id`, `user_id`, `program_id`, `package_id`, `enrollment_type`, `learning_mode`, `batch_id`, `individual_start_date`, `individual_end_date`, `enrollment_status`, `progress_percentage`, `completion_date`, `last_activity`, `total_modules`, `completed_modules`, `total_courses`, `completed_courses`, `certificate_eligible`, `certificate_requested`, `certificate_issued`, `payment_status`, `batch_access_granted`, `created_at`, `start_date`, `updated_at`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `photo_2x2`, `diploma_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `passport_photo`, `medical_certificate`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `tor`, `good_moral`, `psa`) VALUES
-(199, 1, '2025-07-00001', 1, 40, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'paid', 0, '2025-07-31 07:13:51', NULL, '2025-07-31 07:14:38', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(199, 1, '2025-07-00001', 1, 40, 34, 'Modular', 'Asynchronous', 17, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'paid', 1, '2025-07-31 07:13:51', NULL, '2025-08-03 12:43:57', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (200, 2, '2025-07-00001', 1, 41, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'paid', 0, '2025-07-31 07:16:10', NULL, '2025-07-31 07:16:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(201, 3, NULL, 1, 40, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'pending', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'pending', 0, '2025-08-03 02:37:30', NULL, '2025-08-03 02:37:30', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(201, 3, '2025-07-00001', 1, 40, 34, 'Modular', 'Asynchronous', NULL, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'pending', 0, '2025-08-03 02:37:30', NULL, '2025-08-03 13:38:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(202, 4, '2025-08-00001', 2, 54, 33, 'Modular', 'Synchronous', NULL, NULL, NULL, 'approved', 0.00, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 'pending', 0, '2025-08-03 12:24:36', NULL, '2025-08-03 14:35:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -797,7 +813,14 @@ INSERT INTO `enrollment_courses` (`id`, `enrollment_id`, `course_id`, `module_id
 (75, 199, 51, 78, 'course', 0.00, 1, '2025-07-31 07:14:15', '2025-07-31 07:14:15'),
 (76, 199, 48, 77, 'course', 0.00, 1, '2025-07-31 07:14:15', '2025-07-31 07:14:15'),
 (77, 200, 52, 79, 'course', 0.00, 1, '2025-07-31 07:16:21', '2025-07-31 07:16:21'),
-(78, 200, 53, 79, 'course', 0.00, 1, '2025-07-31 07:16:21', '2025-07-31 07:16:21');
+(78, 200, 53, 79, 'course', 0.00, 1, '2025-07-31 07:16:21', '2025-07-31 07:16:21'),
+(86, 201, 55, 82, 'course', 0.00, 1, '2025-08-03 13:38:48', '2025-08-03 13:38:48'),
+(87, 201, 56, 82, 'course', 0.00, 1, '2025-08-03 13:38:48', '2025-08-03 13:38:48'),
+(88, 201, 57, 82, 'course', 0.00, 1, '2025-08-03 13:38:48', '2025-08-03 13:38:48'),
+(89, 201, 58, 83, 'course', 0.00, 1, '2025-08-03 13:38:48', '2025-08-03 13:38:48'),
+(90, 202, 60, 86, 'course', 0.00, 1, '2025-08-03 14:35:31', '2025-08-03 14:35:31'),
+(91, 202, 58, 83, 'course', 0.00, 1, '2025-08-03 14:35:31', '2025-08-03 14:35:31'),
+(92, 202, 59, 85, 'course', 0.00, 1, '2025-08-03 14:35:31', '2025-08-03 14:35:31');
 
 -- --------------------------------------------------------
 
@@ -838,6 +861,13 @@ CREATE TABLE `form_requirements` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `section_name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `form_requirements`
+--
+
+INSERT INTO `form_requirements` (`id`, `field_name`, `field_label`, `field_type`, `entity_type`, `program_type`, `is_required`, `is_active`, `is_bold`, `field_options`, `validation_rules`, `sort_order`, `created_at`, `updated_at`, `section_name`) VALUES
+(22, 'birthday', 'Birthday', 'text', 'student', 'both', 0, 1, 0, NULL, NULL, 5, '2025-08-03 11:38:28', '2025-08-03 11:38:28', 'Personal Information');
 
 -- --------------------------------------------------------
 
@@ -1010,9 +1040,11 @@ INSERT INTO `modules` (`modules_id`, `module_name`, `module_description`, `progr
 (74, 'Modules 2', NULL, 38, NULL, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-25 15:33:56', '2025-07-25 15:33:56', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (75, 'Modules 1', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-26 00:57:19', '2025-07-26 00:57:19', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
 (76, 'Modules 2', NULL, 39, 16, 'Synchronous', 'module', '[]', NULL, NULL, NULL, NULL, NULL, '2025-07-26 00:57:33', '2025-07-26 00:57:33', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
-(82, 'TEST', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-02 22:39:27', '2025-08-03 00:04:05', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 3),
-(83, 'Modules 12', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-02 23:54:44', '2025-08-03 00:04:05', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
-(84, 'TEST', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-03 00:02:32', '2025-08-03 00:04:05', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2);
+(82, 'TEST', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-02 22:39:27', '2025-08-03 18:35:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 3),
+(83, 'Modules 12', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-02 23:54:44', '2025-08-03 18:35:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 1),
+(84, 'TEST', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-03 00:02:32', '2025-08-03 18:35:06', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 2),
+(85, 'Culi Both', NULL, 54, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-03 11:21:03', '2025-08-03 11:21:03', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0),
+(86, 'NurModular', NULL, 40, NULL, 'Synchronous', 'lesson', '{\"lesson_video_url\":null}', NULL, NULL, NULL, NULL, NULL, '2025-08-03 12:21:17', '2025-08-03 12:21:17', 0, 0, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1109,7 +1141,8 @@ CREATE TABLE `package_modules` (
 CREATE TABLE `password_resets` (
   `email` varchar(255) NOT NULL,
   `token` varchar(255) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL
+  `created_at` timestamp NULL DEFAULT NULL,
+  `user_type` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1302,7 +1335,8 @@ CREATE TABLE `professors` (
 --
 
 INSERT INTO `professors` (`professor_id`, `admin_id`, `professor_name`, `professor_first_name`, `professor_last_name`, `professor_email`, `professor_password`, `referral_code`, `profile_photo`, `dynamic_data`, `professor_archived`, `created_at`, `updated_at`) VALUES
-(8, 1, 'robert SANS', 'robert', 'SANS', 'robert@gmail.com', '$2y$10$VoMnQqIuvSditKfIjnEoNuMWmB1FmLLOgaeTWvqNpld78kK/LfB3K', 'PROF08RSAN', 'profile_photos/JFuMcwmIxxFGaTySFx2BoovXUl0jVjE2hxpdjKJc.jpg', '{\"test\":\"value\"}', 0, '2025-07-09 12:02:17', '2025-08-02 18:41:21');
+(8, 1, 'robert SANS', 'robert', 'SANS', 'robert@gmail.com', '$2y$10$VoMnQqIuvSditKfIjnEoNuMWmB1FmLLOgaeTWvqNpld78kK/LfB3K', 'PROF08RSAN', 'profile_photos/JFuMcwmIxxFGaTySFx2BoovXUl0jVjE2hxpdjKJc.jpg', '{\"test\":\"value\"}', 0, '2025-07-09 12:02:17', '2025-08-02 18:41:21'),
+(9, 1, 'prof san', 'prof', 'san', 'prof@gmail.com', '$2y$10$225u09AH4SDFyTH5oXwtM./T4lfuRnxjPeLwdCs1tx7o2Be6xJjMC', 'PROF48PRSA', NULL, NULL, 0, '2025-08-03 13:33:57', '2025-08-03 13:34:30');
 
 -- --------------------------------------------------------
 
@@ -1332,7 +1366,9 @@ INSERT INTO `professor_batch` (`id`, `batch_id`, `professor_id`, `assigned_at`, 
 (5, 13, 8, '2025-07-21 05:22:28', NULL, '2025-07-21 05:22:28', '2025-07-21 05:22:28'),
 (6, 14, 8, '2025-07-24 05:24:25', NULL, '2025-07-24 05:24:25', '2025-07-24 05:24:25'),
 (7, 15, 8, '2025-07-25 05:10:11', NULL, '2025-07-25 05:10:11', '2025-07-25 05:10:11'),
-(8, 16, 8, '2025-07-25 05:53:50', NULL, '2025-07-25 05:53:50', '2025-07-25 05:53:50');
+(8, 16, 8, '2025-07-25 05:53:50', NULL, '2025-07-25 05:53:50', '2025-07-25 05:53:50'),
+(9, 17, 8, '2025-08-03 16:53:24', NULL, '2025-08-03 16:53:24', '2025-08-03 16:53:24'),
+(10, 16, 9, '2025-08-03 13:34:05', 1, '2025-08-03 13:34:05', '2025-08-03 13:34:05');
 
 -- --------------------------------------------------------
 
@@ -1356,7 +1392,9 @@ CREATE TABLE `professor_program` (
 
 INSERT INTO `professor_program` (`id`, `professor_id`, `program_id`, `video_link`, `video_description`, `created_at`, `updated_at`) VALUES
 (15, 8, 40, NULL, NULL, '2025-07-27 08:04:48', '2025-07-27 08:04:48'),
-(16, 8, 41, NULL, NULL, '2025-07-27 08:04:48', '2025-07-27 08:04:48');
+(16, 8, 41, NULL, NULL, '2025-07-27 08:04:48', '2025-07-27 08:04:48'),
+(17, 9, 40, NULL, NULL, '2025-08-03 13:34:15', '2025-08-03 13:34:15'),
+(18, 9, 55, NULL, NULL, '2025-08-03 13:34:15', '2025-08-03 13:34:15');
 
 -- --------------------------------------------------------
 
@@ -1384,12 +1422,8 @@ CREATE TABLE `programs` (
 
 INSERT INTO `programs` (`program_id`, `program_name`, `created_by_admin_id`, `director_id`, `created_at`, `updated_at`, `is_active`, `is_archived`, `program_description`, `program_image`, `admin_override`) VALUES
 (40, 'Nursing', 1, NULL, '2025-07-27 05:44:50', '2025-07-27 05:44:50', 1, 0, 'Nurse', NULL, NULL),
-(41, 'Mechanical Engineer', 1, NULL, '2025-07-27 06:26:58', '2025-08-03 10:45:34', 1, 1, NULL, NULL, NULL),
-(44, 'Nursing', 1, NULL, '2025-08-03 10:45:14', '2025-08-03 10:45:14', 1, 0, 'Nurse', '1754217914_Sample.webp', NULL),
-(45, 'asdasdasd', 1, NULL, '2025-08-03 10:46:06', '2025-08-03 10:46:28', 1, 1, 'asdasd', NULL, NULL),
-(46, 'asdsd', 1, NULL, '2025-08-03 10:46:09', '2025-08-03 10:46:27', 1, 1, 'asdasda', NULL, NULL),
-(47, '3', 1, NULL, '2025-08-03 10:48:30', '2025-08-03 10:48:30', 1, 0, NULL, NULL, NULL),
-(48, '4', 1, NULL, '2025-08-03 10:48:37', '2025-08-03 10:48:37', 1, 0, NULL, NULL, NULL);
+(54, 'Culinary', 1, NULL, '2025-08-03 11:19:01', '2025-08-03 11:19:01', 1, 0, NULL, NULL, NULL),
+(55, 'Biodiversity', 1, NULL, '2025-08-03 11:20:06', '2025-08-03 11:20:06', 1, 0, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1444,7 +1478,8 @@ INSERT INTO `quizzes` (`quiz_id`, `professor_id`, `admin_id`, `program_id`, `mod
 (57, 8, NULL, 41, 79, 52, 100, 'asdasdasaaa', 'Please answer the following questions.', 'dasdasd', 1, 60, NULL, 1, 'published', 0, 1, 0, 1, 999, 0, NULL, 0, 0, 0, NULL, '2025-08-02 16:52:17', '2025-08-02 16:55:33'),
 (58, NULL, 1, 40, 78, 50, 101, 'AI?', 'Please answer the following questions.', 'AI?', 10, 60, NULL, 1, 'published', 0, 0, 0, 1, 1, 0, NULL, 0, 0, 0, NULL, '2025-08-02 16:53:00', '2025-08-02 17:00:52'),
 (59, NULL, 1, 41, 79, 52, 102, 'asdasd', 'Please answer the following questions.', 'asdasd', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 17:01:09', '2025-08-02 17:01:09'),
-(60, 8, NULL, 40, 78, 50, 103, 'qweqwe', 'Please answer the following questions.', 'qweqwe', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 19:06:22', '2025-08-02 19:06:22');
+(60, 8, NULL, 40, 78, 50, 103, 'qweqwe', 'Please answer the following questions.', 'qweqwe', 1, 60, NULL, 0, 'draft', 0, 0, 0, 1, 1, 0, NULL, 1, 0, 0, NULL, '2025-08-02 19:06:22', '2025-08-02 19:06:22'),
+(61, NULL, 1, 40, 83, 58, 107, 'TE', 'Please answer the following questions.', 'TE', 10, 60, NULL, 0, 'draft', 0, 1, 0, 1, 999, 1, '2025-07-29 02:13:00', 1, 0, 0, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34');
 
 -- --------------------------------------------------------
 
@@ -1537,7 +1572,17 @@ INSERT INTO `quiz_questions` (`id`, `quiz_id`, `quiz_title`, `program_id`, `ques
 (415, 58, 'AI?', 40, 'For cylinders rolling in opposite directions, the center distance is calculated as:', 'multiple_choice', NULL, '[\"(D  + D ) \\/ 2\",\"(D  - D ) \\/ 2\",\"(D  + D ) \\/ 4\",\"(D  - D ) \\/ 4\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
 (416, 58, 'AI?', 40, 'According to the notes, what determines the direction of rotation of a driven cylinder with multiple gears and idlers?', 'multiple_choice', NULL, '[\"The number of idlers.\",\"The size of the gears.\",\"Whether the number of gears and idlers is even or odd.\",\"The friction loss in the system.   **III.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 16:53:00', '2025-08-02 16:53:00'),
 (417, 59, 'asdasd', 41, 'asdasd', 'multiple_choice', NULL, '[\"Option Aasdasdasd\",\"Option Bdasd\",\"Option Casdas\",\"Option Dasdasd\"]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-02 17:01:09', '2025-08-02 17:01:09'),
-(418, 60, 'qweqwe', 40, 'qweeqwqew', 'multiple_choice', NULL, '[null,null,null,null]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 19:06:22', '2025-08-02 19:06:22');
+(418, 60, 'qweqwe', 40, 'qweeqwqew', 'multiple_choice', NULL, '[null,null,null,null]', '0', '', 'manual', NULL, NULL, 1, NULL, 1, NULL, 8, '2025-08-02 19:06:22', '2025-08-02 19:06:22'),
+(419, 61, 'TE', 40, 'What is the formula for center distance when cylinders are rolling in opposite directions?', 'multiple_choice', NULL, '[\"(D  + D )\\/2\",\"(D  - D )\\/2\",\"D  + D\",\"D  - D\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(420, 61, 'TE', 40, 'According to the document, what is the relationship between the number of idlers and the speed of the driven cylinder, assuming no friction loss?', 'multiple_choice', NULL, '[\"The number of idlers directly affects the speed.\",\"The number of idlers inversely affects the speed.\",\"The number of idlers has no bearing on the speed.\",\"The number of idlers determines the direction of rotation.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(421, 61, 'TE', 40, 'Which of the following formulas represents tensile stress for a solid circular cross-section?', 'multiple_choice', NULL, '[\"F\\/4 r\\u00b2\",\"F\\/ r\\u00b2\",\"4F\\/ r\\u00b2\",\"F\\/2 r\\u00b2\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(422, 61, 'TE', 40, 'How is allowable stress (S<sub>allow</sub>) calculated?', 'multiple_choice', NULL, '[\"Yield stress \\/ Factor of Safety\",\"Ultimate stress \\/ Factor of Safety\",\"Design stress \\/ Factor of Safety\",\"Yield stress x Factor of Safety\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(423, 61, 'TE', 40, 'What is the formula for shearing stress (S<sub>s</sub>) for a single bolt or rivet joining two plates?', 'multiple_choice', NULL, '[\"F\\/2 D\\u00b2\",\"F\\/( D\\u00b2\\/4)\",\"F\\/( D\\u00b2\\/2)\",\"F\\/(2 D\\u00b2)\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(424, 61, 'TE', 40, 'In the context of punching a hole, what area (A) is used in the shearing stress calculation for a square hole?', 'multiple_choice', NULL, '[\"d\\u00b2\\/4\",\"4s\\u00b2\",\"s\\u00b2\",\"4st, where s is the side length and t is the thickness.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(425, 61, 'TE', 40, 'What is the formula for bearing stress (S<sub>b</sub>)?', 'multiple_choice', NULL, '[\"F<sub>b<\\/sub>\\/L\",\"F<sub>b<\\/sub>\\/D\",\"F<sub>b<\\/sub>\\/(D x L)\",\"F<sub>b<\\/sub>\\/(2 x D x L)\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(426, 61, 'TE', 40, 'How is the factor of safety (FS) calculated based on yield strength?', 'multiple_choice', NULL, '[\"S<sub>u<\\/sub> \\/ S<sub>allow<\\/sub>\",\"S<sub>y<\\/sub> \\/ S<sub>allow<\\/sub>\",\"S<sub>allow<\\/sub> \\/ S<sub>u<\\/sub>\",\"S<sub>allow<\\/sub> \\/ S<sub>y<\\/sub>\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(427, 61, 'TE', 40, 'What is the formula for torsional shear stress (S<sub>s</sub>) for a solid shaft?', 'multiple_choice', NULL, '[\"16T\\/ D\\u00b3\",\"16T\\/ D\",\"16T\\/( D\\u00b3\\/2)\",\"16T\\/D\\u00b3\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34'),
+(428, 61, 'TE', 40, 'For a rectangular beam, what is the formula for bending stress (S<sub>f</sub>)?', 'multiple_choice', NULL, '[\"M<sub>c<\\/sub>\\/I\",\"6Mc\\/bh\\u00b2\",\"6M\\/bh\\u00b2\",\"M<sub>c<\\/sub>\\/bh\\u00b2   **III.\"]', 'A', 'Based on the document content.', 'manual', NULL, NULL, 1, NULL, 1, NULL, NULL, '2025-08-03 18:13:34', '2025-08-03 18:13:34');
 
 -- --------------------------------------------------------
 
@@ -1593,7 +1638,7 @@ CREATE TABLE `registrations` (
   `photo_2x2` varchar(255) DEFAULT NULL,
   `Start_Date` date DEFAULT NULL,
   `status` enum('pending','approved','rejected','resubmitted') DEFAULT 'pending',
-  `approved_by` timestamp NULL DEFAULT NULL,
+  `approved_by` bigint(20) UNSIGNED DEFAULT NULL,
   `approved_at` timestamp NULL DEFAULT NULL,
   `undo_reason` text DEFAULT NULL,
   `undone_at` timestamp NULL DEFAULT NULL,
@@ -1660,17 +1705,19 @@ CREATE TABLE `registrations` (
   `barangay_clearance` varchar(255) DEFAULT NULL,
   `police_clearance` varchar(255) DEFAULT NULL,
   `nbi_clearance` varchar(255) DEFAULT NULL,
-  `form_137` varchar(255) DEFAULT NULL COMMENT 'Form 137 document path'
+  `form_137` varchar(255) DEFAULT NULL COMMENT 'Form 137 document path',
+  `birthday` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `registrations`
 --
 
-INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `program_name`, `enrollment_type`, `learning_mode`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `dynamic_fields`, `photo_2x2`, `Start_Date`, `status`, `approved_by`, `approved_at`, `undo_reason`, `undone_at`, `undone_by`, `rejection_reason`, `rejected_fields`, `rejected_by`, `rejected_at`, `resubmitted_at`, `original_submission`, `created_at`, `updated_at`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `selected_courses`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `education_level`, `sync_async_mode`, `Test`, `last_name`, `referral_code`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `form_137`) VALUES
-(1, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753974831_Vince _Certificate (1).pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:13:51', '2025-08-02 17:44:10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753974831_1753907633_final-docu.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":78,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"50\\\",\\\"51\\\"]},{\\\"id\\\":77,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"48\\\"]}]\"', '\"[\\\"50\\\",\\\"51\\\",\\\"48\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(2, 1, 34, 'Package 33', NULL, NULL, 41, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:16:10', '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":79,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]},{\\\"id\\\":\\\"79\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]}]\"', '\"[\\\"52\\\",\\\"53\\\",\\\"52\\\",\\\"53\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(3, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-08-03', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-08-03 02:37:30', '2025-08-03 02:37:30', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":82,\\\"name\\\":\\\"TEST3 courses selected\\\",\\\"selected_courses\\\":[\\\"55\\\",\\\"56\\\",\\\"57\\\"]},{\\\"id\\\":83,\\\"name\\\":\\\"Modules 121 course selected\\\",\\\"selected_courses\\\":[\\\"58\\\"]}]\"', '\"[\\\"55\\\",\\\"56\\\",\\\"57\\\",\\\"58\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `registrations` (`registration_id`, `user_id`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `program_name`, `enrollment_type`, `learning_mode`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `dynamic_fields`, `photo_2x2`, `Start_Date`, `status`, `approved_by`, `approved_at`, `undo_reason`, `undone_at`, `undone_by`, `rejection_reason`, `rejected_fields`, `rejected_by`, `rejected_at`, `resubmitted_at`, `original_submission`, `created_at`, `updated_at`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `selected_courses`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `education_level`, `sync_async_mode`, `Test`, `last_name`, `referral_code`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `form_137`, `birthday`) VALUES
+(1, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, 'uploads/education_requirements/1753974831_Vince _Certificate (1).pdf', '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:14:15', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:13:51', '2025-08-02 17:44:10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 'uploads/education_requirements/1753974831_1753907633_final-docu.pdf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":78,\\\"name\\\":\\\"Modules 22 courses selected\\\",\\\"selected_courses\\\":[\\\"50\\\",\\\"51\\\"]},{\\\"id\\\":77,\\\"name\\\":\\\"Modules 11 course selected\\\",\\\"selected_courses\\\":[\\\"48\\\"]}]\"', '\"[\\\"50\\\",\\\"51\\\",\\\"48\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(2, 1, 34, 'Package 33', NULL, NULL, 41, 'Mechanical Engineer', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-07-31', 'approved', NULL, '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 07:16:10', '2025-07-31 07:16:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":79,\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]},{\\\"id\\\":\\\"79\\\",\\\"name\\\":\\\"Modules 12 courses selected\\\",\\\"selected_courses\\\":[\\\"52\\\",\\\"53\\\"]}]\"', '\"[\\\"52\\\",\\\"53\\\",\\\"52\\\",\\\"53\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(3, 1, 34, 'Package 33', NULL, NULL, 40, 'Nursing', 'Modular', 'asynchronous', 'Vince Michael', NULL, 'Dela Vega', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"asynchronous\\\"}\"', NULL, '2025-08-03', 'approved', 1, '2025-08-03 13:38:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-08-03 02:37:30', '2025-08-03 13:38:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":82,\\\"name\\\":\\\"TEST3 courses selected\\\",\\\"selected_courses\\\":[\\\"55\\\",\\\"56\\\",\\\"57\\\"]},{\\\"id\\\":83,\\\"name\\\":\\\"Modules 121 course selected\\\",\\\"selected_courses\\\":[\\\"58\\\"]}]\"', '\"[\\\"55\\\",\\\"56\\\",\\\"57\\\",\\\"58\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(4, 2, 33, 'Modular', NULL, NULL, 54, 'Culinary', 'Modular', 'synchronous', 'Edward', NULL, 'McKintyre', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"{\\\"referral_code\\\":\\\"\\\",\\\"registration_mode\\\":\\\"synchronous\\\",\\\"birthday\\\":null}\"', NULL, '2025-08-03', 'approved', 1, '2025-08-03 14:35:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-08-03 12:24:36', '2025-08-03 14:35:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '\"[{\\\"id\\\":86,\\\"name\\\":\\\"NurModular1 course selected\\\",\\\"selected_courses\\\":[\\\"60\\\"]},{\\\"id\\\":\\\"86\\\",\\\"name\\\":\\\"NurModular1 course selected\\\",\\\"selected_courses\\\":[\\\"60\\\"]},{\\\"id\\\":83,\\\"name\\\":\\\"Modules 121 course selected\\\",\\\"selected_courses\\\":[\\\"58\\\",\\\"58\\\"]},{\\\"id\\\":85,\\\"name\\\":\\\"Culi Both1 course selected\\\",\\\"selected_courses\\\":[\\\"59\\\"]}]\"', '\"[\\\"60\\\",\\\"60\\\",\\\"58\\\",\\\"58\\\",\\\"59\\\"]\"', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Graduate', 'sync', NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1768,15 +1815,17 @@ CREATE TABLE `students` (
   `id_photo` varchar(255) DEFAULT NULL,
   `barangay_clearance` varchar(255) DEFAULT NULL,
   `police_clearance` varchar(255) DEFAULT NULL,
-  `nbi_clearance` varchar(255) DEFAULT NULL
+  `nbi_clearance` varchar(255) DEFAULT NULL,
+  `birthday` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `students`
 --
 
-INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `photo_2x2`, `profile_photo`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `is_archived`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `education_level`, `program_name`, `enrollment_type`, `learning_mode`, `Undergraduate`, `Graduate`, `dynamic_fields`, `status`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `referral_code`, `ama_namin`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `Test`, `last_name`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`) VALUES
-('2025-07-00001', 1, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_1_1754156650.jpg', NULL, '2025-07-31 07:14:15', '2025-07-31 07:14:15', '2025-08-02 17:44:10', 'vince03handsome11@gmail.com', 0, 34, 'Package 33', NULL, NULL, 40, 'Graduate', 'Nursing', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `students` (`student_id`, `user_id`, `firstname`, `middlename`, `lastname`, `student_school`, `street_address`, `state_province`, `city`, `zipcode`, `contact_number`, `emergency_contact_number`, `good_moral`, `PSA`, `Course_Cert`, `TOR`, `Cert_of_Grad`, `photo_2x2`, `profile_photo`, `Start_Date`, `date_approved`, `created_at`, `updated_at`, `email`, `is_archived`, `package_id`, `package_name`, `plan_id`, `plan_name`, `program_id`, `education_level`, `program_name`, `enrollment_type`, `learning_mode`, `Undergraduate`, `Graduate`, `dynamic_fields`, `status`, `phone_number`, `telephone_number`, `religion`, `citizenship`, `civil_status`, `birthdate`, `gender`, `work_experience`, `preferred_schedule`, `emergency_contact_relationship`, `health_conditions`, `disability_support`, `valid_id`, `birth_certificate`, `diploma_certificate`, `medical_certificate`, `passport_photo`, `parent_guardian_name`, `parent_guardian_contact`, `referral_code`, `ama_namin`, `previous_school`, `graduation_year`, `course_taken`, `special_needs`, `scholarship_program`, `employment_status`, `monthly_income`, `school_name`, `selected_modules`, `test_field_auto`, `testering`, `master`, `bagit`, `real`, `test_auto_column_1752439854`, `nyan`, `Test`, `last_name`, `school_id`, `diploma`, `valid_school_identification`, `transcript_of_records`, `certificate_of_good_moral_character`, `psa_birth_certificate`, `transcript_records`, `moral_certificate`, `birth_cert`, `id_photo`, `barangay_clearance`, `police_clearance`, `nbi_clearance`, `birthday`) VALUES
+('2025-07-00001', 1, 'Vince Michael', '', 'Dela Vega', NULL, '', '', '', '', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'profile_1_1754156650.jpg', NULL, '2025-07-31 07:14:15', '2025-07-31 07:14:15', '2025-08-02 17:44:10', 'vince03handsome11@gmail.com', 0, 34, 'Package 33', NULL, NULL, 40, 'Graduate', 'Nursing', 'Modular', 'asynchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('2025-08-00001', 2, 'Edward', NULL, 'McKintyre', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-08-03 14:35:31', '2025-08-03 14:35:31', '2025-08-03 14:35:31', 'bryan@gmail.com', 0, 33, 'Modular', NULL, NULL, 54, 'Graduate', 'Culinary', 'Modular', 'synchronous', 0, 0, NULL, 'approved', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1807,7 +1856,8 @@ CREATE TABLE `student_batches` (
 --
 
 INSERT INTO `student_batches` (`batch_id`, `batch_name`, `program_id`, `professor_id`, `max_capacity`, `current_capacity`, `is_active`, `batch_status`, `registration_deadline`, `start_date`, `end_date`, `description`, `created_by`, `created_at`, `updated_at`) VALUES
-(16, 'Batch 1 Civil Engineer', 39, 8, 100, 0, 1, 'ongoing', '2025-08-07', '2025-07-20', NULL, NULL, NULL, '2025-07-25 05:53:50', '2025-07-25 05:53:50');
+(16, 'Batch 1 Civil Engineer', 39, 8, 100, 0, 1, 'ongoing', '2025-08-07', '2025-07-20', NULL, NULL, NULL, '2025-07-25 05:53:50', '2025-07-25 05:53:50'),
+(17, 'Batch 1 Engineering', 40, 8, 100, 1, 1, 'ongoing', '2025-09-03', '2025-08-04', NULL, NULL, NULL, '2025-08-03 16:53:24', '2025-08-03 12:43:57');
 
 -- --------------------------------------------------------
 
@@ -1869,8 +1919,8 @@ CREATE TABLE `ui_settings` (
 
 INSERT INTO `ui_settings` (`id`, `section`, `setting_key`, `setting_value`, `setting_type`, `created_at`, `updated_at`) VALUES
 (1, 'navbar', 'header_bg', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-22 05:25:15'),
-(2, 'navbar', 'header_text', '#d23737', 'color', '2025-07-03 08:17:32', '2025-07-22 05:25:15'),
-(3, 'navbar', 'header_border', '#e0e0e0', 'color', '2025-07-03 08:17:32', '2025-07-14 23:18:10'),
+(2, 'navbar', 'header_text', '#333333', 'color', '2025-07-03 08:17:32', '2025-08-03 11:43:04'),
+(3, 'navbar', 'header_border', '#ff0000', 'color', '2025-07-03 08:17:32', '2025-08-03 11:43:04'),
 (4, 'navbar', 'search_bg', '#f8f9fa', 'color', '2025-07-03 08:17:32', '2025-07-03 08:37:56'),
 (5, 'navbar', 'sidebar_bg', '#343a40', 'color', '2025-07-03 08:17:32', '2025-07-22 02:57:33'),
 (6, 'navbar', 'sidebar_text', '#ffffff', 'color', '2025-07-03 08:17:32', '2025-07-03 08:37:56'),
@@ -1885,10 +1935,10 @@ INSERT INTO `ui_settings` (`id`, `section`, `setting_key`, `setting_value`, `set
 (15, 'global', 'logo_url', 'http://localhost/images/ARTC_logo.png', 'file', '2025-07-03 08:37:56', '2025-07-03 08:37:56'),
 (16, 'global', 'favicon_url', 'http://localhost/favicon.ico', 'file', '2025-07-03 08:37:56', '2025-07-03 08:37:56'),
 (17, 'global', 'site_title', 'A.R.T.C', 'text', '2025-07-03 08:37:56', '2025-07-03 08:37:56'),
-(18, 'footer', 'footer_bg_color', '#ff1fe1', 'color', '2025-07-06 08:54:51', '2025-07-22 05:24:08'),
+(18, 'footer', 'footer_bg_color', '#212529', 'color', '2025-07-06 08:54:51', '2025-08-03 11:43:32'),
 (19, 'footer', 'footer_text_color', '#ffffff', 'color', '2025-07-06 08:54:51', '2025-07-06 08:54:51'),
 (20, 'footer', 'footer_text', '© Copyright Ascendo Review and Training Center. All Rights Reserved.', 'text', '2025-07-06 08:54:51', '2025-07-06 08:54:51'),
-(21, 'footer', 'footer_link_color', '#adb5bd', 'color', '2025-07-06 08:54:51', '2025-07-15 23:47:44'),
+(21, 'footer', 'footer_link_color', '#0080ff', 'color', '2025-07-06 08:54:51', '2025-08-03 11:43:32'),
 (22, 'footer', 'footer_link_hover_color', '#ffffff', 'color', '2025-07-06 08:54:51', '2025-07-06 08:54:51'),
 (23, 'homepage', 'hero_bg_color', '#29d1b5', 'color', '2025-07-06 10:00:27', '2025-07-06 10:00:27'),
 (24, 'homepage', 'hero_text_color', '#ffffff', 'color', '2025-07-06 10:00:27', '2025-07-06 10:00:27'),
@@ -1925,7 +1975,7 @@ CREATE TABLE `users` (
   `user_firstname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('unverified','student','professor') DEFAULT 'unverified',
+  `role` varchar(32) DEFAULT 'unverified',
   `enrollment_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -1936,7 +1986,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `admin_id`, `directors_id`, `is_online`, `last_seen`, `email`, `user_firstname`, `user_lastname`, `password`, `role`, `enrollment_id`, `created_at`, `updated_at`) VALUES
-(1, 1, NULL, 0, NULL, 'vince03handsome11@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$M.UIDtIlXTUCaIrz/MF8W.DD0mCXhTHdlVKTMvqexuT0gxdxHbpWS', 'student', 201, '2025-07-31 07:13:51', '2025-08-03 02:37:30');
+(1, 1, NULL, 0, NULL, 'vince03handsome11@gmail.com', 'Vince Michael', 'Dela Vega', '$2y$10$M.UIDtIlXTUCaIrz/MF8W.DD0mCXhTHdlVKTMvqexuT0gxdxHbpWS', 'student', 201, '2025-07-31 07:13:51', '2025-08-03 02:37:30'),
+(9, 1, NULL, 0, NULL, 'John@gmail.com', 'John Wick', '', '$2y$10$OzzKIcTyK6CY5LZ8OhUXQ.9elxu8LDKrqh4k0hI0ieY2FFB2R3RF.', 'professor', NULL, '2025-08-03 22:34:16', '2025-08-03 22:34:16'),
+(10, 1, NULL, 0, NULL, 'vmdelavewwweqega03@gmail.com', 'wwe ewqeqwe', '', '$2y$10$BzhA1dLSQkvQiX/W2f/bveNh4QNoW4o3GAS0IuUGyz.Qum9vvnqiC', 'professor', NULL, '2025-08-03 23:46:06', '2025-08-03 23:46:06'),
+(11, 1, 1023, 0, NULL, 'wwwwwwwwwwwwwww@gmail.com', 'wwwwwwwwwww wwwwwwwww', '', '$2y$10$v0VE.RRrv5VTb/2wLpVPQ.FNXsgiYKSeNDLG9lFjGTVaAkqBu7nuO', 'director', NULL, '2025-08-03 23:55:17', '2025-08-03 23:55:17'),
+(12, 1, 1024, 0, NULL, 'zzzzz@gmail.com', 'zzzzzzz zzzzzzzzz', '', '$2y$10$SxD/ymjBTRiMO8DNaY.5l.wxIACr1AU.oK.iRZT5r6zAvozYgeOS6', 'director', NULL, '2025-08-03 23:55:39', '2025-08-03 23:55:39');
 
 -- --------------------------------------------------------
 
@@ -2402,13 +2456,13 @@ ALTER TABLE `activities`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `admin_settings`
 --
 ALTER TABLE `admin_settings`
-  MODIFY `setting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=122;
+  MODIFY `setting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
 -- AUTO_INCREMENT for table `announcements`
@@ -2456,7 +2510,7 @@ ALTER TABLE `chats`
 -- AUTO_INCREMENT for table `class_meetings`
 --
 ALTER TABLE `class_meetings`
-  MODIFY `meeting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `meeting_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `content_completions`
@@ -2468,13 +2522,13 @@ ALTER TABLE `content_completions`
 -- AUTO_INCREMENT for table `content_items`
 --
 ALTER TABLE `content_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=107;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=111;
 
 --
 -- AUTO_INCREMENT for table `courses`
 --
 ALTER TABLE `courses`
-  MODIFY `subject_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
+  MODIFY `subject_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT for table `course_completions`
@@ -2492,7 +2546,7 @@ ALTER TABLE `deadlines`
 -- AUTO_INCREMENT for table `directors`
 --
 ALTER TABLE `directors`
-  MODIFY `directors_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1000;
+  MODIFY `directors_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1001;
 
 --
 -- AUTO_INCREMENT for table `director_program`
@@ -2510,13 +2564,13 @@ ALTER TABLE `education_levels`
 -- AUTO_INCREMENT for table `enrollments`
 --
 ALTER TABLE `enrollments`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=202;
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=203;
 
 --
 -- AUTO_INCREMENT for table `enrollment_courses`
 --
 ALTER TABLE `enrollment_courses`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
 
 --
 -- AUTO_INCREMENT for table `failed_jobs`
@@ -2528,7 +2582,7 @@ ALTER TABLE `failed_jobs`
 -- AUTO_INCREMENT for table `form_requirements`
 --
 ALTER TABLE `form_requirements`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `meeting_attendance_logs`
@@ -2552,7 +2606,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
+  MODIFY `modules_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
 
 --
 -- AUTO_INCREMENT for table `module_completions`
@@ -2618,31 +2672,31 @@ ALTER TABLE `plan`
 -- AUTO_INCREMENT for table `professors`
 --
 ALTER TABLE `professors`
-  MODIFY `professor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `professor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `professor_batch`
 --
 ALTER TABLE `professor_batch`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `professor_program`
 --
 ALTER TABLE `professor_program`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `program_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT for table `quizzes`
 --
 ALTER TABLE `quizzes`
-  MODIFY `quiz_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `quiz_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `quiz_attempts`
@@ -2660,7 +2714,7 @@ ALTER TABLE `quiz_options`
 -- AUTO_INCREMENT for table `quiz_questions`
 --
 ALTER TABLE `quiz_questions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=419;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=429;
 
 --
 -- AUTO_INCREMENT for table `referrals`
@@ -2672,13 +2726,13 @@ ALTER TABLE `referrals`
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
-  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `registration_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `student_batches`
 --
 ALTER TABLE `student_batches`
-  MODIFY `batch_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `batch_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `student_progress`
@@ -2696,7 +2750,7 @@ ALTER TABLE `ui_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `websockets_statistics_entries`

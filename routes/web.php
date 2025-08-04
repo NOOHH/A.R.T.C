@@ -843,6 +843,221 @@ Route::get('/api/programs/{programId}/modules', function ($programId) {
     }
 })->name('api.programs.modules');
 
+// API endpoint for modules by package
+Route::get('/api/packages/{packageId}/modules', function ($packageId) {
+    try {
+        // Get the package
+        $package = DB::table('packages')->where('package_id', $packageId)->first();
+        
+        if (!$package) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Package not found'
+            ], 404);
+        }
+        
+        // Debug logging
+        Log::info('Package modules API called', [
+            'package_id' => $packageId,
+            'package_name' => $package->package_name,
+            'package_type' => $package->package_type,
+            'program_id' => $package->program_id
+        ]);
+        
+        // For modular packages, we can get modules directly from the package_modules table
+        // or from the program associated with the package
+        $modules = collect([]); // Initialize as a collection
+        
+        // First, try to get modules directly from package_modules table
+        $packageModules = DB::table('package_modules')
+            ->join('modules', 'package_modules.modules_id', '=', 'modules.modules_id')
+            ->where('package_modules.package_id', $packageId)
+            ->where('modules.is_archived', false)
+            ->select('modules.modules_id', 'modules.module_name', 'modules.module_description', 'modules.program_id')
+            ->get();
+        
+        Log::info('Package modules from pivot table', [
+            'package_modules_count' => $packageModules->count(),
+            'package_modules' => $packageModules->toArray()
+        ]);
+        
+        if ($packageModules->isNotEmpty()) {
+            $modules = $packageModules;
+        } else {
+            // Fallback: get modules from the program associated with this package
+            if ($package->program_id) {
+                $programModules = DB::table('modules')
+                    ->where('program_id', $package->program_id)
+                    ->where('is_archived', false)
+                    ->orderBy('module_order', 'asc')
+                    ->select('modules_id', 'module_name', 'module_description', 'program_id')
+                    ->get();
+                
+                Log::info('Program modules fallback', [
+                    'program_id' => $package->program_id,
+                    'program_modules_count' => $programModules->count(),
+                    'program_modules' => $programModules->toArray()
+                ]);
+                
+                $modules = $programModules;
+            } else {
+                Log::warning('Package has no program_id and no package_modules entries', [
+                    'package_id' => $packageId,
+                    'package_name' => $package->package_name
+                ]);
+            }
+        }
+        
+        if ($modules->isEmpty()) { // Now safe to use isEmpty()
+            Log::info('No modules found for package', [
+                'package_id' => $packageId,
+                'package_name' => $package->package_name
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'modules' => [],
+                'message' => 'No modules found for this package',
+                'debug_info' => [
+                    'package_id' => $packageId,
+                    'package_name' => $package->package_name,
+                    'package_type' => $package->package_type,
+                    'program_id' => $package->program_id,
+                    'package_modules_count' => $packageModules->count() ?? 0
+                ]
+            ]);
+        }
+        
+        $moduleIds = $modules->pluck('modules_id')->toArray();
+        $courses = DB::table('courses')
+            ->whereIn('module_id', $moduleIds)
+            ->select('subject_id as course_id', 'subject_name as course_name', 'subject_description as description', 'module_id')
+            ->get();
+
+        $coursesByModule = [];
+        foreach ($courses as $course) {
+            $coursesByModule[$course->module_id][] = [
+                'course_id' => $course->course_id,
+                'course_name' => $course->course_name,
+                'description' => $course->description,
+            ];
+        }
+
+        // Get program names for modules
+        $programIds = $modules->pluck('program_id')->unique()->toArray();
+        $programs = DB::table('programs')
+            ->whereIn('program_id', $programIds)
+            ->select('program_id', 'program_name')
+            ->get()
+            ->keyBy('program_id');
+
+        $transformedModules = [];
+        foreach ($modules as $module) {
+            $program = $programs->get($module->program_id);
+            $transformedModules[] = [
+                'module_id' => $module->modules_id,
+                'module_name' => $module->module_name,
+                'description' => $module->module_description,
+                'program_id' => $module->program_id,
+                'program_name' => $program ? $program->program_name : 'Unknown Program',
+                'courses' => $coursesByModule[$module->modules_id] ?? [],
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'modules' => $transformedModules,
+            'package_name' => $package->package_name
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error loading package modules:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Error loading modules: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('api.packages.modules');
+
+// API endpoint for modules by program (for modular enrollment)
+Route::get('/api/programs/{programId}/modules', function ($programId) {
+    try {
+        Log::info('Program modules API called', [
+            'program_id' => $programId
+        ]);
+        
+        // Get modules for the specific program
+        $modules = DB::table('modules')
+            ->where('program_id', $programId)
+            ->where('is_archived', false)
+            ->orderBy('module_order', 'asc')
+            ->select('modules_id', 'module_name', 'module_description', 'program_id')
+            ->get();
+        
+        Log::info('Found modules for program', [
+            'program_id' => $programId,
+            'modules_count' => $modules->count(),
+            'modules' => $modules->toArray()
+        ]);
+        
+        if ($modules->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'modules' => [],
+                'message' => 'No modules found for this program',
+                'debug_info' => [
+                    'program_id' => $programId
+                ]
+            ]);
+        }
+        
+        // Get courses for these modules
+        $moduleIds = $modules->pluck('modules_id')->toArray();
+        $courses = DB::table('courses')
+            ->whereIn('module_id', $moduleIds)
+            ->select('subject_id as course_id', 'subject_name as course_name', 'subject_description as description', 'module_id')
+            ->get();
+
+        $coursesByModule = [];
+        foreach ($courses as $course) {
+            $coursesByModule[$course->module_id][] = [
+                'course_id' => $course->course_id,
+                'course_name' => $course->course_name,
+                'description' => $course->description,
+            ];
+        }
+
+        // Get program info
+        $program = DB::table('programs')
+            ->where('program_id', $programId)
+            ->select('program_id', 'program_name')
+            ->first();
+
+        $transformedModules = [];
+        foreach ($modules as $module) {
+            $transformedModules[] = [
+                'module_id' => $module->modules_id,
+                'module_name' => $module->module_name,
+                'description' => $module->module_description,
+                'program_id' => $module->program_id,
+                'program_name' => $program ? $program->program_name : 'Unknown Program',
+                'courses' => $coursesByModule[$module->modules_id] ?? [],
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'modules' => $transformedModules,
+            'program_name' => $program ? $program->program_name : 'Unknown Program'
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error loading program modules:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Error loading modules: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('api.programs.modules');
+
 /*
 |--------------------------------------------------------------------------
 | Student Enrollment
