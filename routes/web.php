@@ -578,6 +578,36 @@ Route::post('/student/logout', [UnifiedLoginController::class, 'logout'])->name(
     
     // Content view route - moved back inside middleware for authentication
     Route::get('/student/content/{contentId}/view', [StudentDashboardController::class, 'viewContent'])->name('student.content.view');
+    
+    // Additional content routes - moved inside middleware for authentication
+    Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
+    Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
+    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
+    
+    // Additional quiz routes - moved inside middleware for authentication
+    // Note: These routes are already defined above in the middleware group, so we don't need duplicates here
+
+    // AI-generated quiz routes - moved inside middleware for authentication
+    // Note: These routes are already defined above in the middleware group, so we don't need duplicates here
+
+    // Payment routes - moved inside middleware for authentication
+    Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
+    Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
+    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
+    Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
+
+    // Rejected Registration Management Routes - moved inside middleware for authentication
+    Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
+    Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
+    Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
+    Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
+    
+    // Additional student routes - moved inside middleware for authentication
+    Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
+    Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
+    Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
+    Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
+    Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
 }); // END OF MIDDLEWARE GROUP
 
 // Simple test route
@@ -600,33 +630,6 @@ Route::get('/test-content-view/{contentId}', function($contentId) {
         ]);
     }
 });
-
-    Route::get('/student/content/{contentId}', [StudentDashboardController::class, 'getContent'])->name('student.content');
-    Route::get('/student/content/{contentId}/submission-info', [StudentDashboardController::class, 'getSubmissionInfo'])->name('student.submission-info');
-    Route::get('/student/content/{contentId}/submissions', [App\Http\Controllers\StudentDashboardController::class, 'getSubmissionsByContent']);
-    Route::get('/student/quiz/{moduleId}/practice', [StudentDashboardController::class, 'practiceQuiz'])->name('student.quiz.practice');
-    Route::post('/student/quiz/{moduleId}/submit', [StudentDashboardController::class, 'submitQuiz'])->name('student.quiz.submit');
-
-    // AI-generated quiz routes
-    Route::get('/student/ai-quiz/{quizId}/start', [StudentDashboardController::class, 'startAiQuiz'])->name('student.ai-quiz.start');
-    Route::post('/student/ai-quiz/{quizId}/submit', [StudentDashboardController::class, 'submitAiQuiz'])->name('student.ai-quiz.submit');
-
-    // Payment routes
-    Route::post('/student/payment/process', [App\Http\Controllers\StudentPaymentController::class, 'processPayment'])->name('student.payment.process');
-    Route::get('/student/payment/history', [App\Http\Controllers\StudentPaymentController::class, 'paymentHistory'])->name('student.payment.history');
-    Route::get('/student/payment/methods', [App\Http\Controllers\StudentPaymentController::class, 'getPaymentMethods'])->name('student.payment.methods');
-    Route::get('/student/payment/enrollment/{id}/details', [App\Http\Controllers\StudentPaymentController::class, 'getEnrollmentDetails'])->name('student.payment.enrollment.details');
-
-    // Rejected Registration Management Routes
-    Route::get('/student/enrollment/{id}/rejection-details', [StudentController::class, 'getRejectionDetails'])->name('student.enrollment.rejection-details');
-    Route::get('/student/enrollment/{id}/edit-form', [StudentController::class, 'getEditForm'])->name('student.enrollment.edit-form');
-    Route::put('/student/enrollment/{id}/resubmit', [StudentController::class, 'resubmitRegistration'])->name('student.enrollment.resubmit');
-    Route::delete('/student/enrollment/{id}/delete', [StudentController::class, 'deleteRegistration'])->name('student.enrollment.delete');
-    Route::post('/student/content/{id}/complete', [App\Http\Controllers\StudentDashboardController::class, 'markContentDone']);
-    Route::post('/student/assignment/save-draft', [App\Http\Controllers\StudentDashboardController::class, 'saveAssignmentDraft']);
-    Route::post('/student/assignment/remove-draft', [App\Http\Controllers\StudentDashboardController::class, 'removeAssignmentDraft']);
-    Route::post('/student/uncomplete-module', [App\Http\Controllers\StudentDashboardController::class, 'uncompleteModule']);
-    Route::post('/student/complete-module/{id}', [App\Http\Controllers\StudentDashboardController::class, 'completeModule']);
 
 // Update overdue deadlines (can be called by admin or cron job)
 Route::post('/student/update-overdue-deadlines', [App\Http\Controllers\StudentDashboardController::class, 'updateOverdueDeadlines']);
@@ -1435,38 +1438,40 @@ Route::post('/admin/packages/{id}/restore', [AdminPackageController::class, 'res
      ->name('admin.packages.restore');
 
 // Admin AI Quiz Generator
-Route::get('/admin/quiz-generator', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'index'])
-     ->name('admin.quiz-generator');
-Route::post('/admin/quiz-generator/generate', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generate'])
-     ->name('admin.quiz-generator.generate');
-Route::post('/admin/quiz-generator/save-quiz', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'save'])
-     ->name('admin.quiz-generator.save');
-Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'update'])
-     ->name('admin.quiz-generator.update');
-Route::get('/admin/quiz-generator/modules/{programId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getModulesByProgram'])
-     ->name('admin.quiz-generator.modules');
-Route::get('/admin/quiz-generator/courses/{moduleId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getCoursesByModule'])
-     ->name('admin.quiz-generator.courses');
-Route::get('/admin/quiz-generator/contents/{courseId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getContentsByCourse'])
-     ->name('admin.quiz-generator.contents');
-Route::post('/admin/quiz-generator/generate-ai-questions', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generateAIQuestions'])
-     ->name('admin.quiz-generator.generate-ai-questions');
-Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz'])
-     ->name('admin.quiz-generator.get-quiz');
-Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish'])
-     ->name('admin.quiz-generator.publish');
-Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive'])
-     ->name('admin.quiz-generator.archive');
-Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft'])
-     ->name('admin.quiz-generator.draft');
-Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete'])
-     ->name('admin.quiz-generator.delete');
-Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview'])
-     ->name('admin.quiz-generator.preview');
-Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal'])
-     ->name('admin.quiz-generator.api.questions');
-Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions'])
-     ->name('admin.quiz-generator.question-options');
+Route::middleware(['admin.director.auth'])->group(function () {
+    Route::get('/admin/quiz-generator', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'index'])
+         ->name('admin.quiz-generator');
+    Route::post('/admin/quiz-generator/generate', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generate'])
+         ->name('admin.quiz-generator.generate');
+    Route::post('/admin/quiz-generator/save-quiz', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'save'])
+         ->name('admin.quiz-generator.save');
+    Route::put('/admin/quiz-generator/update-quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'update'])
+         ->name('admin.quiz-generator.update');
+    Route::get('/admin/quiz-generator/modules/{programId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getModulesByProgram'])
+         ->name('admin.quiz-generator.modules');
+    Route::get('/admin/quiz-generator/courses/{moduleId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getCoursesByModule'])
+         ->name('admin.quiz-generator.courses');
+    Route::get('/admin/quiz-generator/contents/{courseId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getContentsByCourse'])
+         ->name('admin.quiz-generator.contents');
+    Route::post('/admin/quiz-generator/generate-ai-questions', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'generateAIQuestions'])
+         ->name('admin.quiz-generator.generate-ai-questions');
+    Route::get('/admin/quiz-generator/quiz/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuiz'])
+         ->name('admin.quiz-generator.get-quiz');
+    Route::post('/admin/quiz-generator/{quizId}/publish', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'publish'])
+         ->name('admin.quiz-generator.publish');
+    Route::post('/admin/quiz-generator/{quizId}/archive', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'archive'])
+         ->name('admin.quiz-generator.archive');
+    Route::post('/admin/quiz-generator/{quizId}/draft', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'draft'])
+         ->name('admin.quiz-generator.draft');
+    Route::delete('/admin/quiz-generator/{quizId}/delete', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'delete'])
+         ->name('admin.quiz-generator.delete');
+    Route::get('/admin/quiz-generator/preview/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'preview'])
+         ->name('admin.quiz-generator.preview');
+    Route::get('/admin/quiz-generator/api/questions/{quizId}', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionsForModal'])
+         ->name('admin.quiz-generator.api.questions');
+    Route::post('/admin/quiz-generator/get-question-options', [App\Http\Controllers\Admin\QuizGeneratorController::class, 'getQuestionOptions'])
+         ->name('admin.quiz-generator.question-options');
+});
 
 // Chat routes
 Route::get('/admin/chat', [AdminController::class, 'chatIndex'])->name('admin.chat.index');
@@ -2746,18 +2751,18 @@ Route::get('/logout-test', function () {
 })->name('logout.test');
 
 // Debug route to check session state
-Route::get('/debug/session', function () {
+Route::get('/debug/session', function() {
     return response()->json([
         'session_user_id' => session('user_id'),
+        'sessionmanager_user_id' => \App\Helpers\SessionManager::get('user_id'),
         'session_user_role' => session('user_role'),
-        'session_role' => session('role'),
+        'sessionmanager_user_type' => \App\Helpers\SessionManager::getUserType(),
         'session_logged_in' => session('logged_in'),
-        'php_session_user_id' => $_SESSION['user_id'] ?? null,
-        'php_session_user_type' => $_SESSION['user_type'] ?? null,
+        'sessionmanager_logged_in' => \App\Helpers\SessionManager::isLoggedIn(),
         'all_session_data' => session()->all(),
-        'php_session_data' => $_SESSION ?? []
+        'cookies' => request()->cookies->all()
     ]);
-});
+})->name('debug.session');
 
 // Test route to check database tables
 Route::get('/debug/chat-tables', function () {
@@ -3505,3 +3510,24 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
 });
+
+// Debug route for enrollment data
+Route::get('/debug/enrollment/{id}', function($id) {
+    $userId = session('user_id') ?? \App\Helpers\SessionManager::get('user_id');
+    
+    $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
+        ->where('user_id', $userId)
+        ->first();
+    
+    $registration = \App\Models\Registration::where('registration_id', $id)
+        ->where('user_id', $userId)
+        ->first();
+    
+    return response()->json([
+        'enrollment_id' => $id,
+        'user_id' => $userId,
+        'enrollment' => $enrollment ? $enrollment->toArray() : null,
+        'registration' => $registration ? $registration->toArray() : null,
+        'session_data' => session()->all()
+    ]);
+})->name('debug.enrollment');

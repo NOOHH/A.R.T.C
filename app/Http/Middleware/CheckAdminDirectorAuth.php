@@ -97,6 +97,7 @@ class CheckAdminDirectorAuth
                 'admin/modules' => 'director_manage_modules',
                 'admin/students' => 'director_view_students',
                 'admin/announcements' => 'director_manage_announcements',
+                'admin/quiz-generator' => 'director_manage_modules', // Use modules permission for quiz generator
             ];
             foreach ($featureMap as $prefix => $settingKey) {
                 if (str_starts_with($path, $prefix)) {

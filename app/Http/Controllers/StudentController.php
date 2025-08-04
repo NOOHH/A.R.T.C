@@ -866,17 +866,116 @@ class StudentController extends Controller
                 ], 401);
             }
 
-            // Find the enrollment
+            // Find the enrollment - be more flexible with status checking
             $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
                 ->where('user_id', $userId)
-                ->where('status', 'rejected')
                 ->first();
+
+            // Log debugging information
+            Log::info('getEditForm debugging', [
+                'enrollment_id' => $id,
+                'user_id' => $userId,
+                'enrollment_found' => $enrollment ? true : false,
+                'enrollment_status' => $enrollment ? $enrollment->enrollment_status : 'not_found',
+                'enrollment_data' => $enrollment ? $enrollment->toArray() : null
+            ]);
+
+            // If enrollment not found, try to find it in registrations table
+            if (!$enrollment) {
+                $registration = \App\Models\Registration::where('registration_id', $id)
+                    ->where('user_id', $userId)
+                    ->where('status', 'rejected')
+                    ->first();
+                
+                if ($registration) {
+                    // Create a mock enrollment object from registration data
+                    $rejectedFields = [];
+                    if ($registration->rejected_fields) {
+                        try {
+                            if (is_array($registration->rejected_fields)) {
+                                $rejectedFields = $registration->rejected_fields;
+                            } else {
+                                $rejectedFields = json_decode($registration->rejected_fields, true) ?: [];
+                            }
+                        } catch (\Exception $e) {
+                            $rejectedFields = [];
+                        }
+                    }
+                    
+                    // Create base enrollment object
+                    $enrollment = (object) [
+                        'enrollment_id' => $registration->registration_id,
+                        'user_id' => $registration->user_id,
+                        'enrollment_status' => 'rejected',
+                        'rejected_fields' => $rejectedFields,
+                        'rejection_reason' => $registration->rejection_reason ?? '',
+                        'rejected_at' => $registration->rejected_at ?? $registration->updated_at,
+                        // Add other fields that might be needed by the view
+                        'firstname' => $registration->firstname ?? '',
+                        'lastname' => $registration->lastname ?? '',
+                        'middlename' => $registration->middlename ?? '',
+                        'email' => $registration->email ?? '',
+                        'contact_number' => $registration->contact_number ?? '',
+                        'address' => $registration->street_address ?? '',
+                        'education_level' => $registration->education_level ?? '',
+                        // Add file/document fields that the view expects
+                        'tor' => $registration->tor ?? null,
+                        'psa_birth_certificate' => $registration->psa_birth_certificate ?? null,
+                        'good_moral_certificate' => $registration->good_moral_certificate ?? null,
+                        'certificate' => $registration->certificate ?? null,
+                        'photo' => $registration->photo ?? null,
+                        'transcript' => $registration->transcript ?? null,
+                        'diploma' => $registration->diploma ?? null,
+                        'marriage_certificate' => $registration->marriage_certificate ?? null,
+                        'profile_photo' => $registration->profile_photo ?? null,
+                    ];
+                    
+                    // Add any other fields from registration that might be accessed
+                    foreach ($registration->getAttributes() as $key => $value) {
+                        if (!isset($enrollment->{$key})) {
+                            $enrollment->{$key} = $value;
+                        }
+                    }
+                }
+            }
+
+            // Check if enrollment exists but status might be different
+            if ($enrollment && !in_array($enrollment->enrollment_status, ['rejected', 'rejected_registration'])) {
+                // Check if there's a related registration that's rejected
+                $relatedRegistration = null;
+                if (isset($enrollment->registration_id)) {
+                    $relatedRegistration = \App\Models\Registration::where('registration_id', $enrollment->registration_id)
+                        ->where('status', 'rejected')
+                        ->first();
+                }
+                
+                if ($relatedRegistration) {
+                    // Update the enrollment status to reflect the rejected registration
+                    $enrollment->enrollment_status = 'rejected';
+                    $enrollment->rejected_fields = $relatedRegistration->rejected_fields ?? [];
+                    $enrollment->rejection_reason = $relatedRegistration->rejection_reason ?? '';
+                    $enrollment->rejected_at = $relatedRegistration->rejected_at ?? $relatedRegistration->updated_at;
+                } else {
+                    // If no related registration, check if this enrollment has rejection data
+                    if ($enrollment->rejected_fields || $enrollment->rejection_reason || $enrollment->rejected_at) {
+                        // This enrollment has rejection data, treat it as rejected
+                        $enrollment->enrollment_status = 'rejected';
+                    }
+                }
+            }
 
             if (!$enrollment) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Rejected enrollment not found'
                 ], 404);
+            }
+
+            // Ensure we have the minimum required data for the view
+            if (!isset($enrollment->firstname) && isset($enrollment->user)) {
+                $enrollment->firstname = $enrollment->user->user_firstname ?? '';
+                $enrollment->lastname = $enrollment->user->user_lastname ?? '';
+                $enrollment->email = $enrollment->user->email ?? '';
             }
 
             // Get user details
@@ -887,9 +986,18 @@ class StudentController extends Controller
                 ->orderBy('sort_order')
                 ->get();
 
-            // Get rejected fields
+            // Get rejected fields - handle both Eloquent models and stdClass objects
             $rejectedFields = [];
-            $rejectedFieldsData = $enrollment->getAttribute('rejected_fields');
+            $rejectedFieldsData = null;
+            
+            if (method_exists($enrollment, 'getAttribute')) {
+                // This is an Eloquent model
+                $rejectedFieldsData = $enrollment->getAttribute('rejected_fields');
+            } else {
+                // This is a stdClass object
+                $rejectedFieldsData = $enrollment->rejected_fields ?? null;
+            }
+            
             if ($rejectedFieldsData) {
                 try {
                     // If it's already an array (from model casting), use it directly
@@ -961,9 +1069,18 @@ class StudentController extends Controller
                 ], 404);
             }
 
-            // Get rejected fields
+            // Get rejected fields - handle both Eloquent models and stdClass objects
             $rejectedFields = [];
-            $rejectedFieldsData = $enrollment->getAttribute('rejected_fields');
+            $rejectedFieldsData = null;
+            
+            if (method_exists($enrollment, 'getAttribute')) {
+                // This is an Eloquent model
+                $rejectedFieldsData = $enrollment->getAttribute('rejected_fields');
+            } else {
+                // This is a stdClass object
+                $rejectedFieldsData = $enrollment->rejected_fields ?? null;
+            }
+            
             if ($rejectedFieldsData) {
                 try {
                     // If it's already an array (from model casting), use it directly
@@ -1011,10 +1128,10 @@ class StudentController extends Controller
                 ], 401);
             }
 
-            // Find the enrollment
+            // Find the enrollment - use correct column name
             $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
                 ->where('user_id', $userId)
-                ->where('status', 'rejected')
+                ->where('enrollment_status', 'rejected')
                 ->first();
 
             if (!$enrollment) {
@@ -1043,9 +1160,10 @@ class StudentController extends Controller
 
             $validated = $request->validate($rules);
 
-            // Update the enrollment data
+            // Update the enrollment data - try both status column names
             $updateData = [
-                'status' => 'resubmitted',
+                'enrollment_status' => 'resubmitted',
+                'status' => 'resubmitted', // Fallback
                 'rejected_fields' => null,
                 'rejected_by' => null,
                 'rejected_at' => null,
@@ -1123,10 +1241,10 @@ class StudentController extends Controller
                 ], 401);
             }
 
-            // Find the enrollment
+            // Find the enrollment - use correct column name
             $enrollment = \App\Models\Enrollment::where('enrollment_id', $id)
                 ->where('user_id', $userId)
-                ->where('status', 'rejected')
+                ->where('enrollment_status', 'rejected')
                 ->first();
 
             if (!$enrollment) {

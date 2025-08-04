@@ -73,8 +73,8 @@ class Kernel extends HttpKernel
         'admin.director.auth' => \App\Http\Middleware\CheckAdminDirectorAuth::class,
         'professor.auth' => \App\Http\Middleware\CheckProfessorAuth::class,
         'session.auth' => \App\Http\Middleware\SessionAuth::class,
-        'check.session' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        'role.dashboard' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'check.session' => \App\Http\Middleware\CheckSession::class,
+        'role.dashboard' => \App\Http\Middleware\RoleDashboard::class,
         'course.access' => \App\Http\Middleware\CheckCourseAccess::class,
     ];
 }
