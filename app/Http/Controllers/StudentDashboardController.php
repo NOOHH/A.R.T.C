@@ -1626,9 +1626,10 @@ class StudentDashboardController extends Controller
                 ->where('status', 'completed')
                 ->count();
 
-            Log::info('Completed attempts: ' . $completedAttempts . ', max attempts: ' . $quiz->max_attempts);
+            Log::info('Completed attempts: ' . $completedAttempts . ', max attempts: ' . $quiz->max_attempts . ', infinite retakes: ' . ($quiz->infinite_retakes ? 'true' : 'false'));
 
-            if ($completedAttempts >= $quiz->max_attempts) {
+            // Only check attempt limit if infinite retakes is disabled
+            if (!$quiz->infinite_retakes && $completedAttempts >= $quiz->max_attempts) {
                 Log::warning('Max attempts reached for student: ' . $student->student_id . ', quiz: ' . $quizId);
                 return response()->json([
                     'success' => false,
@@ -2955,13 +2956,13 @@ class StudentDashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Quiz is not available'], 403);
             }
 
-            // Check if student has exceeded max attempts
+            // Check if student has exceeded max attempts (only if infinite retakes is disabled)
             $attemptCount = \App\Models\QuizAttempt::where('quiz_id', $quizId)
                 ->where('student_id', $student->student_id)
                 ->where('status', 'completed')
                 ->count();
 
-            if ($attemptCount >= $quiz->max_attempts) {
+            if (!$quiz->infinite_retakes && $attemptCount >= $quiz->max_attempts) {
                 return response()->json(['success' => false, 'message' => 'Maximum attempts exceeded'], 403);
             }
 
