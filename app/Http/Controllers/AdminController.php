@@ -57,7 +57,7 @@ class AdminController extends Controller
             $dbError = 'Database connection failed: ' . $e->getMessage();
         }
 
-        return view('admin.admin-dashboard', compact('registrations', 'analytics', 'dbError'));
+        return view('admin.admin-dashboard.admin-dashboard', compact('registrations', 'analytics', 'dbError'));
     }
 
     public function showRegistration($id)

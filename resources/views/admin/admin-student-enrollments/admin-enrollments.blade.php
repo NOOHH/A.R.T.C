@@ -1,4 +1,4 @@
-@extends('admin.admin-dashboard-layout')
+@extends('admin.admin-dashboard.admin-dashboard-layout')
 
 @section('title', 'Enrollment Management')
 

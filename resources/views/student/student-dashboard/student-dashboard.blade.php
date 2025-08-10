@@ -408,7 +408,7 @@
     
     /* Enhanced modal and payment method styling */
     .modal {
-        z-index: 1055 !important;
+        z-index: 1000001 !important;
         position: fixed;
         top: 0;
         left: 0;
@@ -423,7 +423,7 @@
     }
     
     .modal-backdrop {
-        z-index: 1040 !important;
+        z-index: 1000000 !important;
         position: fixed;
         top: 0;
         left: 0;
@@ -440,7 +440,7 @@
     
     /* Ensure modal content is above backdrop */
     .modal-dialog {
-        z-index: 1060 !important;
+        z-index: 1000002 !important;
         margin: auto;
     }
     
@@ -1173,11 +1173,10 @@
     
     .modal.fade.show {
         z-index: 9999 !important;
-          display: flex !important;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
     }
 
     #paymentModal .modal-dialog {
@@ -1185,6 +1184,47 @@
   max-width: 960px;
   width: 100%;
 }
+
+    /* Payment Modal specific z-index overrides */
+    #paymentModal {
+        z-index: 1000001 !important;
+    }
+    
+    #paymentModal .modal-backdrop {
+        z-index: 1000000 !important;
+    }
+    
+    #paymentModal .modal-dialog {
+        z-index: 1000002 !important;
+    }
+    
+    #paymentModal .modal-content {
+        z-index: 1000003 !important;
+    }
+    
+    /* Force payment modal to be above everything */
+    #paymentModal.show {
+        z-index: 1000001 !important;
+    }
+    
+    #paymentModal.show .modal-dialog {
+        z-index: 1000002 !important;
+    }
+    
+    #paymentModal.show .modal-content {
+        z-index: 1000003 !important;
+    }
+    
+    /* Ensure payment modal is above announcement modal */
+    #paymentModal,
+    #paymentModal * {
+        z-index: 1000001 !important;
+    }
+    
+    #paymentModal .modal-dialog,
+    #paymentModal .modal-content {
+        z-index: 1000002 !important;
+    }
 </style>
 @endpush
 
@@ -1661,6 +1701,10 @@
 </div>
 
 <!-- Inline scripts moved to student-dashboard.page.js for modular architecture -->
+
+@push('scripts')
+<script src="{{ asset('js/student/student-dashboard.page.js') }}"></script>
+@endpush
 
 <!-- Announcement Modal -->
 <div class="announcement-modal" id="announcementModal">

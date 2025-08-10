@@ -1,4 +1,4 @@
-@extends('admin.admin-dashboard-layout')
+@extends('admin.admin-dashboard.admin-dashboard-layout')
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">

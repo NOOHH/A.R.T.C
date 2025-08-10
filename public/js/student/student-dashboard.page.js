@@ -83,17 +83,8 @@
       focus: true
     });
     
-    // Add comprehensive event listeners
-    paymentModalElement.addEventListener('shown.bs.modal', function(e) {
-      console.log('Payment modal fully shown');
-      paymentModalElement.setAttribute('tabindex', '-1');
-      paymentModalElement.focus();
-    }, { once: true });
-    
-    paymentModalElement.addEventListener('hidden.bs.modal', function(e) {
-      console.log('Payment modal hidden');
-      resetPaymentModal();
-    }, { once: true });
+    // Add protection against accidental closing
+    paymentModalElement.setAttribute('data-payment-modal-active', 'true');
     
     // Show the modal
     try {
@@ -101,10 +92,10 @@
       console.log('Payment modal show() called successfully');
     } catch (error) {
       console.error('Error showing payment modal:', error);
-      // Fallback manual show
+      // Fallback manual show with high z-index
       paymentModalElement.style.display = 'block';
       paymentModalElement.classList.add('show');
-      paymentModalElement.style.zIndex = '1055';
+      paymentModalElement.style.zIndex = '1000001';
       paymentModalElement.focus();
     }
   }
@@ -427,6 +418,12 @@
     selectedPaymentMethod = null;
     enrollmentDetails = null;
     currentEnrollmentId = null;
+    
+    // Remove protection attribute
+    const paymentModalElement = document.getElementById('paymentModal');
+    if (paymentModalElement) {
+      paymentModalElement.removeAttribute('data-payment-modal-active');
+    }
   }
 
   function removeAllBackdrops() {
@@ -626,6 +623,80 @@
     console.log('Testing payment modal...');
     showPaymentModal(999, 'Test Course DEBUG');
   }
+  
+  // Debug function to check z-index conflicts
+  function debugZIndexConflicts() {
+    console.log('🔍 Checking for z-index conflicts...');
+    
+    const elements = document.querySelectorAll('*');
+    const highZIndexElements = [];
+    
+    elements.forEach(el => {
+      const zIndex = window.getComputedStyle(el).zIndex;
+      if (zIndex !== 'auto' && parseInt(zIndex) > 1000) {
+        highZIndexElements.push({
+          element: el,
+          zIndex: zIndex,
+          tagName: el.tagName,
+          className: el.className,
+          id: el.id
+        });
+      }
+    });
+    
+    console.log('High z-index elements found:', highZIndexElements);
+    
+    // Check if payment modal exists and its z-index
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal) {
+      const modalZIndex = window.getComputedStyle(paymentModal).zIndex;
+      console.log('Payment modal z-index:', modalZIndex);
+      console.log('Payment modal display:', window.getComputedStyle(paymentModal).display);
+      console.log('Payment modal visibility:', window.getComputedStyle(paymentModal).visibility);
+      console.log('Payment modal active attribute:', paymentModal.getAttribute('data-payment-modal-active'));
+    }
+    
+    return highZIndexElements;
+  }
+  
+  // Debug function to monitor modal state
+  function debugModalState() {
+    console.log('🔍 Debugging modal state...');
+    
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal) {
+      console.log('Payment Modal State:');
+      console.log('- Display:', window.getComputedStyle(paymentModal).display);
+      console.log('- Visibility:', window.getComputedStyle(paymentModal).visibility);
+      console.log('- Z-index:', window.getComputedStyle(paymentModal).zIndex);
+      console.log('- Classes:', paymentModal.className);
+      console.log('- Active attribute:', paymentModal.getAttribute('data-payment-modal-active'));
+      console.log('- Bootstrap instance:', bootstrap.Modal.getInstance(paymentModal));
+      
+      // Check for overlaying elements
+      const rect = paymentModal.getBoundingClientRect();
+      const elementsAtPosition = document.elementsFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2
+      );
+      
+      console.log('Elements at modal center:', elementsAtPosition);
+    }
+    
+    // Check all modals
+    const allModals = document.querySelectorAll('.modal');
+    console.log('All modals found:', allModals.length);
+    allModals.forEach((modal, index) => {
+      console.log(`Modal ${index + 1}:`, {
+        id: modal.id,
+        display: window.getComputedStyle(modal).display,
+        zIndex: window.getComputedStyle(modal).zIndex,
+        classes: modal.className
+      });
+    });
+  }
+  
+  window.debugModalState = debugModalState;
 
   function testProgramModal() {
     console.log('Testing program modal...');
@@ -645,6 +716,32 @@
   window.redirectToAssignment = redirectToAssignment;
   window.openAnnouncementModal = openAnnouncementModal;
   window.closeAnnouncementModal = closeAnnouncementModal;
+  window.debugZIndexConflicts = debugZIndexConflicts;
+  window.emergencyCleanup = emergencyCleanup;
+  
+  // Function to properly close payment modal
+  function closePaymentModal() {
+    const paymentModalElement = document.getElementById('paymentModal');
+    if (paymentModalElement) {
+      // Remove protection attribute first
+      paymentModalElement.removeAttribute('data-payment-modal-active');
+      
+      // Close the modal properly
+      const instance = bootstrap.Modal.getInstance(paymentModalElement);
+      if (instance) {
+        instance.hide();
+      } else {
+        // Fallback manual close
+        paymentModalElement.style.display = 'none';
+        paymentModalElement.classList.remove('show');
+      }
+      
+      // Clean up
+      resetPaymentModal();
+    }
+  }
+  
+  window.closePaymentModal = closePaymentModal;
 
   function initStudentDashboard() {
     console.log('Student Dashboard initialized with complete functionality');
@@ -652,17 +749,88 @@
     // Load meetings data on page load
     loadMeetingsData();
     
-    // Global modal cleanup
-    if (typeof bootstrap !== 'undefined') {
-      document.addEventListener('hidden.bs.modal', function() {
-        setTimeout(removeAllBackdrops, 100);
-      });
-    }
+    // Remove the global modal cleanup that was causing conflicts
+    // Instead, handle payment modal cleanup specifically
     
-    // Escape key modal closing
+    // Escape key modal closing - only for announcement modal
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         closeAnnouncementModal();
+      }
+    });
+    
+    // Global protection against payment modal interference
+    document.addEventListener('hidden.bs.modal', function(e) {
+      const modal = e.target;
+      // If this is the payment modal and it's marked as active, prevent closing
+      if (modal.id === 'paymentModal' && modal.getAttribute('data-payment-modal-active') === 'true') {
+        console.log('⚠️ Attempted to close active payment modal - preventing');
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    });
+    
+    // Specific payment modal protection
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal) {
+      // Prevent other modals from interfering with payment modal
+      paymentModal.addEventListener('show.bs.modal', function(e) {
+        console.log('Payment modal showing - protecting from interference');
+        // Stop event propagation to prevent other handlers
+        e.stopPropagation();
+      });
+      
+      paymentModal.addEventListener('shown.bs.modal', function(e) {
+        console.log('Payment modal fully shown - ensuring interactivity');
+        // Ensure modal stays on top
+        paymentModal.style.zIndex = '1000001';
+        const modalDialog = paymentModal.querySelector('.modal-dialog');
+        if (modalDialog) {
+          modalDialog.style.zIndex = '1000002';
+        }
+        const modalContent = paymentModal.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.style.zIndex = '1000003';
+        }
+        
+        // Remove any interfering backdrops
+        removeAllBackdrops();
+        
+        // Create a new backdrop specifically for payment modal
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.style.zIndex = '1000000';
+        backdrop.style.position = 'fixed';
+        backdrop.style.top = '0';
+        backdrop.style.left = '0';
+        backdrop.style.width = '100vw';
+        backdrop.style.height = '100vh';
+        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        document.body.appendChild(backdrop);
+      });
+      
+      paymentModal.addEventListener('hidden.bs.modal', function(e) {
+        console.log('Payment modal hidden - cleaning up');
+        resetPaymentModal();
+        // Only clean up payment modal backdrops
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+          if (backdrop.style.zIndex === '1000000') {
+            backdrop.remove();
+          }
+        });
+      });
+    }
+    
+    // Ensure payment modal is always accessible - simplified approach
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.onclick && e.target.onclick.toString().includes('showPaymentModal')) {
+        console.log('Payment button clicked - preparing modal');
+        // Simple cleanup without setTimeout to avoid timing issues
+        removeAllBackdrops();
+        if (paymentModal) {
+          paymentModal.style.zIndex = '1000001';
+        }
       }
     });
   }

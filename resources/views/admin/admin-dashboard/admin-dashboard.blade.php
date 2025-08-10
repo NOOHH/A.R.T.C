@@ -1,4 +1,4 @@
-@extends('admin.admin-dashboard-layout')
+@extends('admin.admin-dashboard.admin-dashboard-layout')
 @section('title','Admin Dashboard')
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/admin/admin-dashboard.css') }}">
