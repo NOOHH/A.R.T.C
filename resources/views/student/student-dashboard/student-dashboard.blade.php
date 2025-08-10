@@ -422,40 +422,13 @@
         
     }
     
-    .modal-backdrop {
-        z-index: 1000000 !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw !important;
-        height: 100vh !important;
-        background-color: rgba(0, 0, 0, 0.5) !important;
-    }
-    
-    /* Prevent backdrop persistence issues */
-    body.modal-open {
-        padding-right: 0 !important;
-        overflow: hidden !important;
-    }
-    
-    /* Ensure modal content is above backdrop */
-    .modal-dialog {
-        z-index: 1000002 !important;
-        margin: auto;
-    }
-    
-    .modal.show {
-        display: block !important;
-    }
-    
-    
+
     .modal-content {
         position: relative;
         display: flex;
         flex-direction: column;
         width: 100%;
         pointer-events: auto;
-        background-color: #fff;
         background-clip: padding-box;
         border: none;
         border-radius: 20px;
@@ -464,13 +437,14 @@
     
     }
     
+
+
     .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: rgb(6, 23, 97);
         color: white;
         border-radius: 20px 20px 0 0;
         padding: 20px 25px;
         border-bottom: none;
-        
     }
     
     .modal-title {
@@ -1117,114 +1091,10 @@
         from { transform: translateX(100%); }
         to { transform: translateX(0); }
     }
-    
-    /* Program Modal specific styles for dashboard */
-    #programModal {
-        z-index: 9999 !important;
-    }
-    
-    #programModal .modal-dialog {
-        z-index: 10000 !important;
-    }
-    
-    #programModal .modal-content {
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-        border: none;
-        z-index: 10001 !important;
-    }
-    
-    #programModal .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 20px 20px 0 0;
-        padding: 20px 25px;
-        border-bottom: none;
-    }
-    
-    #programModal .modal-title {
-        font-weight: 700;
-        font-size: 1.3rem;
-    }
-    
-    #programModal .btn-close {
-        filter: brightness(0) invert(1);
-        opacity: 0.8;
-    }
-    
-    #programModal .btn-close:hover {
-        opacity: 1;
-    }
-    
-    /* Ensure program modal displays above dashboard elements */
-    #programModal.modal.show {
-        display: block !important;
-        z-index: 9999 !important;
-    }
-    
-    #programModal .modal-backdrop {
-        z-index: 9998 !important;
-    }
-    
-    /* Override any competing z-index from layout */
-    .modal-backdrop.show {
-        z-index: 9998 !important;
-    }
-    
-    .modal.fade.show {
-        z-index: 9999 !important;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-    }
 
-    #paymentModal .modal-dialog {
-  margin: 0; /* override your earlier `margin: 1.75rem;` */
-  max-width: 960px;
-  width: 100%;
-}
 
-    /* Payment Modal specific z-index overrides */
-    #paymentModal {
-        z-index: 1000001 !important;
-    }
-    
-    #paymentModal .modal-backdrop {
-        z-index: 1000000 !important;
-    }
-    
-    #paymentModal .modal-dialog {
-        z-index: 1000002 !important;
-    }
-    
-    #paymentModal .modal-content {
-        z-index: 1000003 !important;
-    }
-    
-    /* Force payment modal to be above everything */
-    #paymentModal.show {
-        z-index: 1000001 !important;
-    }
-    
-    #paymentModal.show .modal-dialog {
-        z-index: 1000002 !important;
-    }
-    
-    #paymentModal.show .modal-content {
-        z-index: 1000003 !important;
-    }
-    
-    /* Ensure payment modal is above announcement modal */
-    #paymentModal,
-    #paymentModal * {
-        z-index: 1000001 !important;
-    }
-    
-    #paymentModal .modal-dialog,
-    #paymentModal .modal-content {
-        z-index: 1000002 !important;
-    }
+ 
+
 </style>
 @endpush
 

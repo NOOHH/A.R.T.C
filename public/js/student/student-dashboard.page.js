@@ -15,21 +15,33 @@
   window.emergencyCleanup = function() {
     console.log('🚨 EMERGENCY CLEANUP - Removing all modal elements and backdrops');
     
-    // Close all modals
+    // Close all Bootstrap modals
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
       modal.style.display = 'none';
       modal.classList.remove('show');
       
       // Dispose Bootstrap instances
-      const instance = bootstrap.Modal.getInstance(modal);
-      if (instance) {
-        instance.dispose();
+      if (typeof bootstrap !== 'undefined') {
+        const instance = bootstrap.Modal.getInstance(modal);
+        if (instance) {
+          instance.dispose();
+        }
       }
     });
     
-    // Remove all backdrops
+    // Close custom modal
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal && paymentModal.getAttribute('data-payment-modal-active') === 'true') {
+      closeCustomModal(paymentModal);
+    }
+    
+    // Remove all backdrops (both Bootstrap and custom)
     removeAllBackdrops();
+    const customBackdrop = document.getElementById('customModalBackdrop');
+    if (customBackdrop) {
+      customBackdrop.remove();
+    }
     
     // Reset page state
     document.body.style.overflow = '';
@@ -44,13 +56,6 @@
   function showPaymentModal(enrollmentId, courseName) {
     console.log('showPaymentModal called with:', enrollmentId, courseName);
     currentEnrollmentId = enrollmentId;
-    
-    // Ensure Bootstrap is available
-    if (typeof bootstrap === 'undefined') {
-      console.error('Bootstrap is not available');
-      alert('Payment modal functionality is not available. Please refresh the page.');
-      return;
-    }
     
     const paymentModalElement = document.getElementById('paymentModal');
     if (!paymentModalElement) {
@@ -69,35 +74,162 @@
     loadPaymentMethods();
     loadEnrollmentDetails(enrollmentId);
     
-    // Force remove any existing modal instances
-    const existingInstance = bootstrap.Modal.getInstance(paymentModalElement);
-    if (existingInstance) {
-      existingInstance.dispose();
-      console.log('Disposed existing modal instance');
+    // Create custom modal implementation
+    showCustomModal(paymentModalElement);
+  }
+  
+  // Custom Modal Implementation
+  function showCustomModal(modalElement) {
+    console.log('Showing custom modal...');
+    
+    // Remove any existing Bootstrap instances
+    if (typeof bootstrap !== 'undefined') {
+      const existingInstance = bootstrap.Modal.getInstance(modalElement);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
     }
     
-    // Create new modal instance with proper options for closing
-    paymentModalInstance = new bootstrap.Modal(paymentModalElement, {
-      backdrop: true,
-      keyboard: true,
-      focus: true
+    // Clean up any existing custom backdrops
+    const existingBackdrops = document.querySelectorAll('.custom-modal-backdrop');
+    existingBackdrops.forEach(backdrop => backdrop.remove());
+    
+    // Set modal as active
+    modalElement.setAttribute('data-payment-modal-active', 'true');
+    
+    // Create custom backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'custom-modal-backdrop';
+    backdrop.id = 'customModalBackdrop';
+    backdrop.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: auto;
+    `;
+    
+    // Style the modal - ensure it's positioned correctly
+    modalElement.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000001;
+    display: block;
+    opacity: 0;
+    transform: scale(0.7);
+    transition: all 0.3s ease;
+    background: white;
+    border-radius: 0; /* no rounded corners for fullscreen */
+    box-shadow: none; /* remove shadow if you want flush edges */
+    width: 100vw;
+    height: 110vh;
+    overflow: auto;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+  `;
+  
+    
+    // Remove Bootstrap classes that might interfere
+    modalElement.classList.remove('fade', 'show');
+    modalElement.classList.add('custom-modal');
+    
+    // Add backdrop to body first
+    document.body.appendChild(backdrop);
+    
+    // Add modal to body (not to backdrop) to avoid nesting issues
+    document.body.appendChild(modalElement);
+    
+    // Position the modal absolutely within the backdrop
+    modalElement.style.position = 'fixed';
+    modalElement.style.top = '50%';
+    modalElement.style.left = '50%';
+    modalElement.style.transform = 'translate(-50%, -50%) scale(0.7)';
+    modalElement.style.zIndex = '1000001';
+    
+    // Add body styles
+    document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = '0';
+    
+    // Animate in
+    requestAnimationFrame(() => {
+      backdrop.style.opacity = '1';
+      modalElement.style.opacity = '1';
+      modalElement.style.transform = 'translate(-50%, -50%) scale(1)';
     });
     
-    // Add protection against accidental closing
-    paymentModalElement.setAttribute('data-payment-modal-active', 'true');
+    // Add click handlers
+    backdrop.addEventListener('click', function(e) {
+      if (e.target === backdrop) {
+        closeCustomModal(modalElement);
+      }
+    });
     
-    // Show the modal
-    try {
-      paymentModalInstance.show();
-      console.log('Payment modal show() called successfully');
-    } catch (error) {
-      console.error('Error showing payment modal:', error);
-      // Fallback manual show with high z-index
-      paymentModalElement.style.display = 'block';
-      paymentModalElement.classList.add('show');
-      paymentModalElement.style.zIndex = '1000001';
-      paymentModalElement.focus();
+    // Add escape key handler
+    const escapeHandler = function(e) {
+      if (e.key === 'Escape') {
+        closeCustomModal(modalElement);
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Add close button handler
+    const closeBtn = modalElement.querySelector('.btn-close');
+    if (closeBtn) {
+      closeBtn.onclick = function() {
+        closeCustomModal(modalElement);
+      };
     }
+    
+    // Focus the modal
+    modalElement.focus();
+    
+    console.log('Custom modal shown successfully');
+  }
+  
+  function closeCustomModal(modalElement) {
+    console.log('Closing custom modal...');
+    
+    const backdrop = document.getElementById('customModalBackdrop');
+    if (!backdrop) return;
+    
+    // Animate out
+    backdrop.style.opacity = '0';
+    modalElement.style.opacity = '0';
+    modalElement.style.transform = 'translate(-50%, -50%) scale(0.7)';
+    
+    // Remove after animation
+    setTimeout(() => {
+      // Reset modal styles
+      modalElement.style.cssText = '';
+      modalElement.classList.remove('custom-modal');
+      modalElement.classList.add('fade');
+      
+      // Remove backdrop
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      
+      // Reset body styles
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      
+      // Clean up
+      resetPaymentModal();
+      
+      console.log('Custom modal closed successfully');
+    }, 300);
   }
 
   async function loadPaymentMethods() {
@@ -723,21 +855,7 @@
   function closePaymentModal() {
     const paymentModalElement = document.getElementById('paymentModal');
     if (paymentModalElement) {
-      // Remove protection attribute first
-      paymentModalElement.removeAttribute('data-payment-modal-active');
-      
-      // Close the modal properly
-      const instance = bootstrap.Modal.getInstance(paymentModalElement);
-      if (instance) {
-        instance.hide();
-      } else {
-        // Fallback manual close
-        paymentModalElement.style.display = 'none';
-        paymentModalElement.classList.remove('show');
-      }
-      
-      // Clean up
-      resetPaymentModal();
+      closeCustomModal(paymentModalElement);
     }
   }
   
@@ -749,9 +867,6 @@
     // Load meetings data on page load
     loadMeetingsData();
     
-    // Remove the global modal cleanup that was causing conflicts
-    // Instead, handle payment modal cleanup specifically
-    
     // Escape key modal closing - only for announcement modal
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
@@ -759,80 +874,30 @@
       }
     });
     
-    // Global protection against payment modal interference
-    document.addEventListener('hidden.bs.modal', function(e) {
-      const modal = e.target;
-      // If this is the payment modal and it's marked as active, prevent closing
-      if (modal.id === 'paymentModal' && modal.getAttribute('data-payment-modal-active') === 'true') {
-        console.log('⚠️ Attempted to close active payment modal - preventing');
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    });
-    
-    // Specific payment modal protection
-    const paymentModal = document.getElementById('paymentModal');
-    if (paymentModal) {
-      // Prevent other modals from interfering with payment modal
-      paymentModal.addEventListener('show.bs.modal', function(e) {
-        console.log('Payment modal showing - protecting from interference');
-        // Stop event propagation to prevent other handlers
-        e.stopPropagation();
-      });
-      
-      paymentModal.addEventListener('shown.bs.modal', function(e) {
-        console.log('Payment modal fully shown - ensuring interactivity');
-        // Ensure modal stays on top
-        paymentModal.style.zIndex = '1000001';
-        const modalDialog = paymentModal.querySelector('.modal-dialog');
-        if (modalDialog) {
-          modalDialog.style.zIndex = '1000002';
-        }
-        const modalContent = paymentModal.querySelector('.modal-content');
-        if (modalContent) {
-          modalContent.style.zIndex = '1000003';
-        }
-        
-        // Remove any interfering backdrops
-        removeAllBackdrops();
-        
-        // Create a new backdrop specifically for payment modal
-        const backdrop = document.createElement('div');
-        backdrop.className = 'modal-backdrop fade show';
-        backdrop.style.zIndex = '1000000';
-        backdrop.style.position = 'fixed';
-        backdrop.style.top = '0';
-        backdrop.style.left = '0';
-        backdrop.style.width = '100vw';
-        backdrop.style.height = '100vh';
-        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        document.body.appendChild(backdrop);
-      });
-      
-      paymentModal.addEventListener('hidden.bs.modal', function(e) {
-        console.log('Payment modal hidden - cleaning up');
-        resetPaymentModal();
-        // Only clean up payment modal backdrops
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-          if (backdrop.style.zIndex === '1000000') {
-            backdrop.remove();
-          }
-        });
-      });
-    }
-    
-    // Ensure payment modal is always accessible - simplified approach
+    // Custom modal protection - prevent other scripts from interfering
     document.addEventListener('click', function(e) {
       if (e.target && e.target.onclick && e.target.onclick.toString().includes('showPaymentModal')) {
-        console.log('Payment button clicked - preparing modal');
-        // Simple cleanup without setTimeout to avoid timing issues
-        removeAllBackdrops();
-        if (paymentModal) {
-          paymentModal.style.zIndex = '1000001';
-        }
+        console.log('Payment button clicked - preparing custom modal');
+        // Remove any existing Bootstrap backdrops that might interfere
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+          backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
       }
     });
+    
+    // Prevent Bootstrap modals from interfering with custom modal
+    if (typeof bootstrap !== 'undefined') {
+      document.addEventListener('show.bs.modal', function(e) {
+        const paymentModal = document.getElementById('paymentModal');
+        if (paymentModal && paymentModal.getAttribute('data-payment-modal-active') === 'true') {
+          console.log('⚠️ Bootstrap modal trying to show while custom payment modal is active - preventing');
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
