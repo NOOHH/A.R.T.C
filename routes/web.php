@@ -3524,3 +3524,23 @@ Route::middleware(['admin.director.auth'])->group(function () {
     Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
     // ...add any other /admin/settings routes here...
 });
+
+// CSRF Token Test Route
+Route::get('/csrf-test', function () {
+    return response()->json([
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+        'session_status' => session()->isStarted() ? 'started' : 'not_started',
+        'secure' => request()->secure(),
+        'domain' => config('session.domain'),
+        'secure_cookie' => config('session.secure'),
+        'app_env' => app()->environment(),
+        'app_url' => config('app.url'),
+        'asset_url' => config('app.asset_url'),
+    ]);
+})->name('csrf.test');
+
+// Debug login form
+Route::get('/debug-login', function () {
+    return view('Login.login');
+})->name('debug.login');

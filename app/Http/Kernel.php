@@ -22,6 +22,7 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\ForceHttps::class,
+        \App\Http\Middleware\CsrfTokenFix::class,
     
         \App\Http\Middleware\ConvertQuizAnswers::class,
     ];
