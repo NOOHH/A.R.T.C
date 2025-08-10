@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\ServiceProvider;
 
 return [
 
@@ -56,8 +57,6 @@ return [
 
     'url' => env('APP_URL', 'https://laravel-zfurp.sevalla.app'),
 
-    'asset_url' => env('ASSET_URL', 'https://laravel-zfurp.sevalla.app'),
-
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -69,7 +68,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => 'UTC',
 
     /*
     |--------------------------------------------------------------------------
@@ -124,6 +123,24 @@ return [
     'key' => env('APP_KEY'),
 
     'cipher' => 'AES-256-CBC',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maintenance Mode Driver
+    |--------------------------------------------------------------------------
+    |
+    | These configuration options determine the driver used to determine and
+    | manage Laravel's "maintenance mode" status. The "cache" driver will
+    | allow maintenance mode to be controlled across multiple machines.
+    |
+    | Supported drivers: "file", "cache"
+    |
+    */
+
+    'maintenance' => [
+        'driver' => 'file',
+        // 'store' => 'redis',
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -191,8 +208,21 @@ return [
     */
 
     'aliases' => Facade::defaultAliases()->merge([
-        // ...
+        // 'Example' => App\Facades\Example::class,
     ])->toArray(),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Asset URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used to generate URLs for assets like CSS, JavaScript,
+    | and images. You should set this to the root of your application
+    | so that it is used when generating asset URLs.
+    |
+    */
+
+    'asset_url' => env('ASSET_URL', 'https://laravel-zfurp.sevalla.app'),
 
     /*
     |--------------------------------------------------------------------------

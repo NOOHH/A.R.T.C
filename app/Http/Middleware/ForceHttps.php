@@ -33,8 +33,12 @@ class ForceHttps
             if (!Config::get('session.domain')) {
                 Config::set('session.domain', '.laravel-zfurp.sevalla.app');
             }
+            
+            // Ensure CSRF token is properly configured
+            Config::set('session.cookie', 'laravel_session');
+            Config::set('session.lifetime', 120);
         }
-
+        
         return $next($request);
     }
 }

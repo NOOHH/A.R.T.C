@@ -3544,3 +3544,15 @@ Route::get('/csrf-test', function () {
 Route::get('/debug-login', function () {
     return view('Login.login');
 })->name('debug.login');
+
+// Simple test route
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'ARTC Application is working!',
+        'timestamp' => now(),
+        'environment' => app()->environment(),
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+    ]);
+})->name('test');
