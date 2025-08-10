@@ -23,9 +23,13 @@ class CsrfTokenFix
             Session::start();
         }
 
-        // Regenerate CSRF token if it doesn't exist
-        if (!$request->session()->has('_token')) {
-            $request->session()->regenerateToken();
+        // Only try to access session if it's available
+        try {
+            if ($request->hasSession() && !$request->session()->has('_token')) {
+                $request->session()->regenerateToken();
+            }
+        } catch (\Exception $e) {
+            // Session not available yet, continue without error
         }
 
         // Set secure cookie parameters for HTTPS
