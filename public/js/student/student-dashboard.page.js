@@ -30,10 +30,15 @@
       }
     });
     
-    // Close custom modal
+    // Close custom modals
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal && paymentModal.getAttribute('data-payment-modal-active') === 'true') {
       closeCustomModal(paymentModal);
+    }
+    
+    const announcementModal = document.getElementById('announcementModal');
+    if (announcementModal && announcementModal.getAttribute('data-announcement-modal-active') === 'true') {
+      closeCustomAnnouncementModal(announcementModal);
     }
     
     // Remove all backdrops (both Bootstrap and custom)
@@ -228,7 +233,160 @@
       // Clean up
       resetPaymentModal();
       
-      console.log('Custom modal closed successfully');
+          console.log('Custom modal closed successfully');
+  }, 300);
+}
+
+  // Custom Announcement Modal Implementation
+  function showCustomAnnouncementModal(modalElement) {
+    console.log('Showing custom announcement modal...');
+    
+    // Remove any existing Bootstrap instances
+    if (typeof bootstrap !== 'undefined') {
+      const existingInstance = bootstrap.Modal.getInstance(modalElement);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+    }
+    
+    // Clean up any existing custom backdrops
+    const existingBackdrops = document.querySelectorAll('.custom-announcement-modal-backdrop');
+    existingBackdrops.forEach(backdrop => backdrop.remove());
+    
+    // Set modal as active
+    modalElement.setAttribute('data-announcement-modal-active', 'true');
+    
+    // Create custom backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'custom-announcement-modal-backdrop';
+    backdrop.id = 'customAnnouncementModalBackdrop';
+    backdrop.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: auto;
+    `;
+    
+    // Style the modal - ensure it's positioned correctly
+    modalElement.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1000001;
+      display: block;
+      opacity: 0;
+      transform: scale(0.7);
+      transition: all 0.3s ease;
+      background: white;
+      border-radius: 0; /* no rounded corners for fullscreen */
+      box-shadow: none; /* remove shadow if you want flush edges */
+      width: 100vw;
+      height: 110vh;
+      overflow: auto;
+      margin: 0;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    `;
+    
+    // Remove Bootstrap classes that might interfere
+    modalElement.classList.remove('fade', 'show');
+    modalElement.classList.add('custom-announcement-modal');
+    
+    // Add backdrop to body first
+    document.body.appendChild(backdrop);
+    
+    // Add modal to body (not to backdrop) to avoid nesting issues
+    document.body.appendChild(modalElement);
+    
+    // Position the modal absolutely within the backdrop
+    modalElement.style.position = 'fixed';
+    modalElement.style.top = '50%';
+    modalElement.style.left = '50%';
+    modalElement.style.transform = 'translate(-50%, -50%) scale(0.7)';
+    modalElement.style.zIndex = '1000001';
+    
+    // Add body styles
+    document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = '0';
+    
+    // Animate in
+    requestAnimationFrame(() => {
+      backdrop.style.opacity = '1';
+      modalElement.style.opacity = '1';
+      modalElement.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+    
+    // Add click handlers
+    backdrop.addEventListener('click', function(e) {
+      if (e.target === backdrop) {
+        closeCustomAnnouncementModal(modalElement);
+      }
+    });
+    
+    // Add escape key handler
+    const escapeHandler = function(e) {
+      if (e.key === 'Escape') {
+        closeCustomAnnouncementModal(modalElement);
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Add close button handler
+    const closeBtn = modalElement.querySelector('.btn-close');
+    if (closeBtn) {
+      closeBtn.onclick = function() {
+        closeCustomAnnouncementModal(modalElement);
+      };
+    }
+    
+    // Focus the modal
+    modalElement.focus();
+    
+    console.log('Custom announcement modal shown successfully');
+  }
+  
+  function closeCustomAnnouncementModal(modalElement) {
+    console.log('Closing custom announcement modal...');
+    
+    const backdrop = document.getElementById('customAnnouncementModalBackdrop');
+    if (!backdrop) return;
+    
+    // Animate out
+    backdrop.style.opacity = '0';
+    modalElement.style.opacity = '0';
+    modalElement.style.transform = 'translate(-50%, -50%) scale(0.7)';
+    
+    // Remove after animation
+    setTimeout(() => {
+      // Reset modal styles
+      modalElement.style.cssText = '';
+      modalElement.classList.remove('custom-announcement-modal');
+      modalElement.classList.add('fade');
+      
+      // Remove backdrop
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      
+      // Reset body styles
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      
+      // Clean up
+      modalElement.removeAttribute('data-announcement-modal-active');
+      
+      console.log('Custom announcement modal closed successfully');
     }, 300);
   }
 
@@ -559,9 +717,22 @@
   }
 
   function removeAllBackdrops() {
+    // Remove all Bootstrap modal backdrops
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
       backdrop.remove();
     });
+    
+    // Remove custom modal backdrops
+    const customBackdrop = document.getElementById('customModalBackdrop');
+    if (customBackdrop) {
+      customBackdrop.remove();
+    }
+    
+    const customAnnouncementBackdrop = document.getElementById('customAnnouncementModalBackdrop');
+    if (customAnnouncementBackdrop) {
+      customAnnouncementBackdrop.remove();
+    }
+    
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
@@ -725,28 +896,38 @@
 
   // Announcement Modal Functions
   function openAnnouncementModal(id, title, content, type, time) {
-    const modal = document.getElementById('announcementModal');
+    console.log('openAnnouncementModal called with:', id, title, content, type, time);
+    
+    const modalElement = document.getElementById('announcementModal');
+    if (!modalElement) {
+      console.error('Announcement modal element not found');
+      return;
+    }
+    
+    // Set modal content
     const modalTitle = document.getElementById('announcementModalTitle');
     const modalContent = document.getElementById('announcementModalContent');
     const modalType = document.getElementById('announcementModalType');
     const modalTime = document.getElementById('announcementModalTime');
+    const modalLabel = document.getElementById('announcementModalLabel');
     
     if (modalTitle) modalTitle.textContent = title;
     if (modalContent) modalContent.textContent = content;
-    if (modalType) modalType.textContent = type === 'video' ? 'Video Announcement' : 'Text Announcement';
-    if (modalTime) modalTime.textContent = time;
-    
-    if (modal) {
-      modal.classList.add('show');
-      document.body.style.overflow = 'hidden';
+    if (modalType) {
+      const typeText = type === 'video' ? 'Video Announcement' : 'Text Announcement';
+      modalType.innerHTML = `<i class="bi bi-megaphone"></i> ${typeText}`;
     }
+    if (modalTime) modalTime.textContent = time;
+    if (modalLabel) modalLabel.textContent = 'Announcement';
+    
+    // Create custom modal implementation
+    showCustomAnnouncementModal(modalElement);
   }
 
   function closeAnnouncementModal() {
-    const modal = document.getElementById('announcementModal');
-    if (modal) {
-      modal.classList.remove('show');
-      document.body.style.overflow = 'auto';
+    const modalElement = document.getElementById('announcementModal');
+    if (modalElement) {
+      closeCustomAnnouncementModal(modalElement);
     }
   }
 

@@ -391,6 +391,7 @@
         background: #f8f9fa;
         border-radius: 8px;
         padding: 20px;
+        
         border: 2px dashed #dee2e6;
     }
     
@@ -398,7 +399,6 @@
         background: #fff;
         border-radius: 8px;
         padding: 15px;
-        border-left: 4px solid #0d6efd;
     }
     
     .payment-instructions li {
@@ -615,91 +615,13 @@
     }
     
     /* Announcement Modal Styles */
-    .announcement-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .announcement-modal.show {
-        display: flex;
-        opacity: 1;
-    }
-    
-    .announcement-modal-backdrop {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(5px);
-    }
-    
-    .announcement-modal-content {
-        position: relative;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        max-width: 500px;
-        width: 90%;
-        max-height: 80vh;
-        overflow: hidden;
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-    }
-    
-    .announcement-modal.show .announcement-modal-content {
-        transform: scale(1);
-    }
-    
-    .announcement-modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 25px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
     .announcement-modal-badge {
         display: flex;
         align-items: center;
         gap: 8px;
         font-size: 0.9rem;
         font-weight: 600;
-    }
-    
-    .announcement-modal-close {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 1.1rem;
-    }
-    
-    .announcement-modal-close:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: scale(1.1);
-    }
-    
-    .announcement-modal-body {
-        padding: 25px;
+        color: #667eea;
     }
     
     .announcement-modal-title {
@@ -730,29 +652,6 @@
         color: #34495e;
         white-space: pre-wrap;
         word-wrap: break-word;
-    }
-    
-    @media (max-width: 768px) {
-        .announcement-modal-content {
-            width: 95%;
-            max-height: 85vh;
-        }
-        
-        .announcement-modal-header {
-            padding: 15px 20px;
-        }
-        
-        .announcement-modal-body {
-            padding: 20px;
-        }
-        
-        .announcement-modal-title {
-            font-size: 1.2rem;
-        }
-        
-        .announcement-modal-text {
-            font-size: 0.95rem;
-        }
     }
     
     /* Enhanced badges */
@@ -1512,9 +1411,6 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" id="paymentModalFooter">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
         </div>
     </div>
 </div>
@@ -1577,21 +1473,20 @@
 @endpush
 
 <!-- Announcement Modal -->
-<div class="announcement-modal" id="announcementModal">
-    <div class="announcement-modal-backdrop" id="announcementModalBackdrop"></div>
-    <div class="announcement-modal-content">
-        <div class="announcement-modal-header">
-            <div class="announcement-modal-badge" id="announcementModalType">
-                <i class="bi bi-megaphone"></i>
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center">
+                    <h5 class="modal-title" id="announcementModalLabel">Announcement</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <button class="announcement-modal-close" onclick="closeAnnouncementModal()">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-        <div class="announcement-modal-body">
-            <h3 class="announcement-modal-title" id="announcementModalTitle"></h3>
-            <div class="announcement-modal-time" id="announcementModalTime"></div>
-            <div class="announcement-modal-text" id="announcementModalContent"></div>
+            <div class="modal-body">
+                <h3 class="announcement-modal-title" id="announcementModalTitle"></h3>
+                <div class="announcement-modal-time" id="announcementModalTime"></div>
+                <div class="announcement-modal-text" id="announcementModalContent"></div>
+            </div>
         </div>
     </div>
 </div>
