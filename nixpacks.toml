@@ -1,0 +1,15 @@
+[phases.install]
+cmds = [
+  "composer install --no-dev --prefer-dist --optimize-autoloader",
+  "npm ci"
+]
+
+[phases.build]
+cmds = ["npm run prod"]
+
+[phases.setup]
+cmds = [
+  "mkdir -p /var/log/nginx",
+  "mkdir -p /var/cache/nginx",
+  "chmod -R ug+rwX storage bootstrap/cache"
+]
