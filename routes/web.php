@@ -3556,3 +3556,27 @@ Route::get('/test', function () {
         'session_id' => session()->getId(),
     ]);
 })->name('test');
+
+// Debug login page CSRF
+Route::get('/debug-login-csrf', function () {
+    return view('Login.login')->with([
+        'debug_csrf' => csrf_token(),
+        'debug_session' => session()->getId(),
+        'debug_secure' => request()->secure(),
+        'debug_domain' => config('session.domain'),
+    ]);
+})->name('debug.login.csrf');
+
+// Test login form submission
+Route::post('/test-login-submit', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Login form submission test successful',
+        'csrf_token_received' => $request->input('_token'),
+        'csrf_token_session' => session()->token(),
+        'tokens_match' => $request->input('_token') === session()->token(),
+        'session_id' => session()->getId(),
+        'email' => $request->input('email'),
+        'timestamp' => now(),
+    ]);
+})->name('test.login.submit');

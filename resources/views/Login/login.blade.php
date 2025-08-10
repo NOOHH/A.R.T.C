@@ -121,6 +121,17 @@
             @csrf
             <input type="hidden" name="from_enrollment" value="{{ request()->query('from_enrollment', 'false') }}">
             
+            @if(isset($debug_csrf))
+            <!-- Debug Information -->
+            <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
+                <strong>Debug Info:</strong><br>
+                CSRF Token: {{ $debug_csrf }}<br>
+                Session ID: {{ $debug_session }}<br>
+                Secure: {{ $debug_secure ? 'Yes' : 'No' }}<br>
+                Domain: {{ $debug_domain }}
+            </div>
+            @endif
+            
             <label for="email">Enter your email address</label>
             <input type="email" id="email" name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
 
