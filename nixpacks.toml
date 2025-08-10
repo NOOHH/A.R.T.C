@@ -1,5 +1,7 @@
+# Add MySQL client and other required packages
 [phases.install]
 cmds = [
+  "apt-get update && apt-get install -y default-mysql-client",
   "composer install --no-dev --prefer-dist --optimize-autoloader",
   "npm ci"
 ]
@@ -13,3 +15,11 @@ cmds = [
   "mkdir -p /var/cache/nginx",
   "chmod -R ug+rwX storage bootstrap/cache"
 ]
+
+# Configure the start command to handle migrations properly
+[start]
+cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+
+# Add environment variables for the build
+[variables]
+NODE_ENV = "production"
