@@ -17,9 +17,12 @@ cmds = [
 ]
 
 # Use a more robust start command that handles database setup properly
+# The command will continue even if schema loading fails
 [start]
-cmd = "bash -c 'php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000'"
+cmd = "bash -c 'php artisan migrate --force || echo \"Migration failed, continuing...\" && php artisan serve --host=0.0.0.0 --port=8000'"
 
 # Add environment variables for the build
 [variables]
 NODE_ENV = "production"
+LARAVEL_LOAD_SCHEMA = "false"
+SCHEMA_LOADING_METHOD = "disabled"

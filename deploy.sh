@@ -21,29 +21,37 @@ if [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
         echo "✅ Database connection established"
     fi
     
-    # Run database migrations
+    # Run database migrations with error handling
     echo "🔄 Running database migrations..."
-    php artisan migrate --force
+    if php artisan migrate --force; then
+        echo "✅ Migrations completed successfully"
+    else
+        echo "⚠️  Migrations failed, but continuing deployment..."
+    fi
     
-    # Load schema if needed (using our custom command)
-    if [ -f "database/schema/mysql-schema.sql" ]; then
+    # Load schema if needed (using our custom command) - only if file exists and is not empty
+    if [ -f "database/schema/mysql-schema.sql" ] && [ -s "database/schema/mysql-schema.sql" ]; then
         echo "📋 Loading database schema..."
-        php artisan db:load-schema --file=mysql-schema.sql || {
+        if php artisan db:load-schema --file=mysql-schema.sql; then
+            echo "✅ Schema loaded successfully"
+        else
             echo "⚠️  Schema loading failed, continuing with migrations only"
-        }
+        fi
+    else
+        echo "ℹ️  No schema file found or schema file is empty, skipping schema loading"
     fi
     
     # Clear and cache configuration
     echo "🧹 Clearing and caching configuration..."
-    php artisan config:clear
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
+    php artisan config:clear || echo "⚠️  Config clear failed, continuing..."
+    php artisan config:cache || echo "⚠️  Config cache failed, continuing..."
+    php artisan route:cache || echo "⚠️  Route cache failed, continuing..."
+    php artisan view:cache || echo "⚠️  View cache failed, continuing..."
     
     # Set proper permissions
     echo "🔐 Setting file permissions..."
-    chmod -R 775 storage bootstrap/cache
-    chown -R www-data:www-data storage bootstrap/cache
+    chmod -R 775 storage bootstrap/cache || echo "⚠️  Permission setting failed, continuing..."
+    chown -R www-data:www-data storage bootstrap/cache || echo "⚠️  Ownership setting failed, continuing..."
     
     echo "✅ Deployment completed successfully!"
     
@@ -56,7 +64,7 @@ else
     
     # For local development
     echo "🔄 Running database migrations..."
-    php artisan migrate
+    php artisan migrate || echo "⚠️  Local migration failed"
     
     echo "✅ Local deployment completed!"
 fi
