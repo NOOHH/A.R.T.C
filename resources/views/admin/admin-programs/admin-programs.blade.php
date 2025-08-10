@@ -168,54 +168,7 @@
         <!-- Activities -->
         <div class="activities-panel">
             <div class="panel-header">
-                <h3>🔄 Recent Activities</h3>
-                <a href="#" class="view-all-link">View all</a>
-            </div>
-            <div class="activities-list">
-                @forelse($recentActivities ?? [] as $activity)
-                    <div class="activity-item">
-                        <div class="activity-icon">{{ $activity['icon'] }}</div>
-                        <div class="activity-content">
-                            <div class="activity-text">{{ $activity['text'] }}</div>
-                            <div class="activity-time">{{ $activity['time'] }}</div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="activity-item">
-                        <div class="activity-icon">📚</div>
-                        <div class="activity-content">
-                            <div class="activity-text">New program "Advanced Programming" created</div>
-                            <div class="activity-time">2 hours ago</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-icon">👥</div>
-                        <div class="activity-content">
-                            <div class="activity-text">25 students enrolled in "Web Development"</div>
-                            <div class="activity-time">5 hours ago</div>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-icon">🎓</div>
-                        <div class="activity-content">
-                            <div class="activity-text">Program "Data Science" updated</div>
-                            <div class="activity-time">1 day ago</div>
-                        </div>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Program Button -->
-<!-- Add Program Button -->
-<button class="add-program-btn" id="showAddModal">
-    <span style="font-size:1.3em;">&#43;</span> Add Program
-</button>
-
-<!-- Add Program Modal -->
-<div class="modal-bg" id="addModalBg">
+        {{-- Inline script removed: moved to admin-programs.page.js --}}
     <div class="custom-modal">
         <h3>Create New Program</h3>
         <form action="{{ route('admin.programs.store') }}" method="POST" enctype="multipart/form-data">

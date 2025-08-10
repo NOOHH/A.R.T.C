@@ -900,6 +900,13 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Compiled Application Script (includes page initializers) -->
+@if(function_exists('mix'))
+    <script src="{{ mix('js/app.js') }}" defer></script>
+@else
+    <script src="{{ asset('js/app.js') }}" defer></script>
+@endif
+
 <!-- Admin Layout JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {

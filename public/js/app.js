@@ -25053,6 +25053,33 @@ __webpack_require__.r(__webpack_exports__);
 
 __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
+// Auto-require all colocated page scripts named *.page.js under resources/views.
+try {
+  var pagesContext = __webpack_require__("./resources/views sync recursive \\\\.page\\\\.js$");
+  pagesContext.keys().forEach(pagesContext);
+} catch (e) {
+  console.warn('Page context load failed (non-webpack env?)', e);
+}
+
+// Generic page initializer dispatcher using a <meta name="page-id" content="..."> set in each Blade.
+function runPageInit() {
+  var meta = document.querySelector('meta[name="page-id"]');
+  if (!meta) return;
+  var pageId = meta.getAttribute('content');
+  if (window.__PageInits && typeof window.__PageInits[pageId] === 'function') {
+    try {
+      window.__PageInits[pageId]();
+    } catch (e) {
+      console.error('Error running page init for', pageId, e);
+    }
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', runPageInit);
+} else {
+  runPageInit();
+}
+
 /***/ }),
 
 /***/ "./resources/js/bootstrap.js":
@@ -25085,7 +25112,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.Pusher = __webpack_require__(/*! pusher-js */ "./node_modules/pusher-js/dist/web/pusher.js");
 window.Echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_0__["default"]({
   broadcaster: 'pusher',
-  key: "local",
+  key: "65dfa2e5c1d475e67f7d",
   wsHost: window.location.hostname,
   wsPort: 6001,
   forceTLS: false,
@@ -25093,6 +25120,24 @@ window.Echo = new laravel_echo__WEBPACK_IMPORTED_MODULE_0__["default"]({
   disableStats: true,
   enabledTransports: ['ws', 'wss']
 });
+
+/***/ }),
+
+/***/ "./resources/views sync recursive \\\\.page\\\\.js$":
+/*!*********************************************!*\
+  !*** ./resources/views/ sync \\.page\\.js$ ***!
+  \*********************************************/
+/***/ ((module) => {
+
+function webpackEmptyContext(req) {
+	var e = new Error("Cannot find module '" + req + "'");
+	e.code = 'MODULE_NOT_FOUND';
+	throw e;
+}
+webpackEmptyContext.keys = () => ([]);
+webpackEmptyContext.resolve = webpackEmptyContext;
+webpackEmptyContext.id = "./resources/views sync recursive \\\\.page\\\\.js$";
+module.exports = webpackEmptyContext;
 
 /***/ })
 
