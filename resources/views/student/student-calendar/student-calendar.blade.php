@@ -516,6 +516,9 @@ body.modal-open {
         </div>
     </div>
 </div>
+
+<!-- Custom Event Modal Backdrop -->
+<div id="customEventModalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.5); z-index: 999998;"></div>
 @endsection
 
 @push('scripts')
@@ -578,9 +581,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalCloseBtn = document.getElementById('eventModalCloseBtn');
     
     function closeModal() {
-        modal.classList.remove('show');
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
+        const modal = document.getElementById('eventModal');
+        if (modal) {
+            closeCustomEventModal(modal);
+        }
     }
     
     if (modalClose) {
@@ -1066,10 +1070,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         modalBody.innerHTML = bodyHtml;
         
-        // Show modal
-        modal.classList.add('show');
-        document.body.classList.add('modal-open');
-        document.body.style.overflow = 'hidden';
+        // Show custom modal
+        showCustomEventModal(modal);
         
         console.log('✅ Custom modal shown');
     }
@@ -1134,16 +1136,157 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`📝 Generated HTML for ${dayEvents.length} events`);
         }
         
-        // Show modal
-        modal.classList.add('show');
-        document.body.classList.add('modal-open');
-        document.body.style.overflow = 'hidden';
+        // Show custom modal
+        showCustomEventModal(modal);
         
         console.log('✅ Custom modal shown');
     }
     
     // Make showEventDetails available globally
     window.showEventDetails = showEventDetails;
+    
+    // Custom Event Modal Functions
+    function showCustomEventModal(modalElement) {
+        console.log('🎯 showCustomEventModal called');
+        
+        // Remove any existing backdrops
+        removeAllEventBackdrops();
+        
+        // Create and show backdrop
+        const backdrop = document.getElementById('customEventModalBackdrop');
+        if (backdrop) {
+            backdrop.style.display = 'block';
+            backdrop.style.zIndex = '999998';
+        }
+        
+        // Hide navbar and sidebar
+        const navbar = document.querySelector('.main-header');
+        const sidebar = document.querySelector('#studentSidebar');
+        const wrapper = document.querySelector('.main-content-area');
+        
+        if (navbar) {
+            navbar.style.display = 'none';
+            console.log('✅ Navbar hidden');
+        }
+        
+        if (sidebar) {
+            sidebar.style.display = 'none';
+            console.log('✅ Sidebar hidden');
+        }
+        
+        if (wrapper) {
+            wrapper.style.marginLeft = '0';
+            console.log('✅ Wrapper margins reset');
+        }
+        
+        // Apply fullscreen modal styles
+        modalElement.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            margin: 0 !important;
+            padding: 20px !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        `;
+        
+        // Style the modal content
+        const modalContent = modalElement.querySelector('.custom-modal-content');
+        if (modalContent) {
+            modalContent.style.cssText = `
+                background: white !important;
+                border-radius: 12px !important;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+                max-width: 90% !important;
+                max-height: 90vh !important;
+                width: auto !important;
+                margin: 0 !important;
+                overflow: hidden !important;
+                animation: modalSlideIn 0.3s ease-out !important;
+            `;
+        }
+        
+        // Show modal
+        modalElement.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+        
+        console.log('✅ Custom event modal displayed');
+    }
+    
+    function closeCustomEventModal(modalElement) {
+        console.log('🎯 closeCustomEventModal called');
+        
+        // Hide modal
+        modalElement.style.display = 'none';
+        modalElement.style.cssText = '';
+        
+        // Reset modal content styles
+        const modalContent = modalElement.querySelector('.custom-modal-content');
+        if (modalContent) {
+            modalContent.style.cssText = '';
+        }
+        
+        // Remove backdrop
+        const backdrop = document.getElementById('customEventModalBackdrop');
+        if (backdrop) {
+            backdrop.style.display = 'none';
+        }
+        
+        // Restore navbar and sidebar
+        const navbar = document.querySelector('.main-header');
+        const sidebar = document.querySelector('#studentSidebar');
+        const wrapper = document.querySelector('.main-content-area');
+        
+        if (navbar) {
+            navbar.style.display = '';
+            console.log('✅ Navbar restored');
+        }
+        
+        if (sidebar) {
+            sidebar.style.display = '';
+            console.log('✅ Sidebar restored');
+        }
+        
+        if (wrapper) {
+            wrapper.style.marginLeft = '';
+            console.log('✅ Wrapper margins restored');
+        }
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        
+        console.log('✅ Custom event modal closed');
+    }
+    
+    function removeAllEventBackdrops() {
+        console.log('🧹 Removing all event modal backdrops');
+        
+        // Remove custom backdrop
+        const customBackdrop = document.getElementById('customEventModalBackdrop');
+        if (customBackdrop) {
+            customBackdrop.style.display = 'none';
+        }
+        
+        // Remove any Bootstrap backdrops
+        const bootstrapBackdrops = document.querySelectorAll('.modal-backdrop');
+        bootstrapBackdrops.forEach(backdrop => {
+            backdrop.remove();
+        });
+        
+        console.log('✅ All event modal backdrops removed');
+    }
     
     // Function to update calendar icon based on current day
     function updateCalendarIcon() {
@@ -1174,9 +1317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close the modal first
         const modal = document.getElementById('eventModal');
         if (modal) {
-            modal.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
+            closeCustomEventModal(modal);
         }
         
         // Store assignment info in sessionStorage for the course page to use
@@ -1205,9 +1346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close the modal first
         const modal = document.getElementById('eventModal');
         if (modal) {
-            modal.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
+            closeCustomEventModal(modal);
         }
         
         // Navigate directly to the quiz content page
@@ -1227,9 +1366,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close the modal first
         const modal = document.getElementById('eventModal');
         if (modal) {
-            modal.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
+            closeCustomEventModal(modal);
         }
         
         // Store announcement data in sessionStorage for the dashboard to use
@@ -1251,9 +1388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close the modal first
         const modal = document.getElementById('eventModal');
         if (modal) {
-            modal.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
+            closeCustomEventModal(modal);
         }
         
         // Store lesson info in sessionStorage for the course page to use
