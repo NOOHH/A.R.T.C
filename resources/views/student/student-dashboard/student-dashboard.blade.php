@@ -416,9 +416,8 @@
         overflow-x: hidden;
         overflow-y: auto;
         outline: 0;
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        
-        
+        /* Let Bootstrap handle the backdrop; do not paint an overlay on the modal itself */
+        background-color: transparent !important;
     }
     
     .modal-backdrop {
@@ -1497,7 +1496,7 @@
 </div>
 
 <!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -2486,6 +2485,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize Payment Modal
         const paymentModal = document.getElementById('paymentModal');
         if (paymentModal) {
+            // Ensure sidebar backdrop never sits above modal
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+
             // Dispose any existing instances
             const existingPaymentInstance = bootstrap.Modal.getInstance(paymentModal);
             if (existingPaymentInstance) {
@@ -2494,8 +2497,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Create new instance
             paymentModalInstance = new bootstrap.Modal(paymentModal, {
-                backdrop: true,
-                keyboard: true,
+                backdrop: 'static',
+                keyboard: false,
                 focus: true
             });
             
@@ -2508,7 +2511,7 @@ document.addEventListener('DOMContentLoaded', function() {
             paymentModal.addEventListener('hidden.bs.modal', function() {
                 console.log('Payment modal hidden');
                 resetPaymentModal();
-                // Force remove any stuck backdrops
+                // Keep Bootstrap's backdrop lifecycle; only clear stray backdrops when none are open
                 removeAllBackdrops();
             });
             
@@ -2560,13 +2563,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Global backdrop click handler
         document.addEventListener('click', function(e) {
-            // Payment modal backdrop
+            // Disable manual backdrop closing; Bootstrap handles static backdrop
             if (e.target.id === 'paymentModal' && e.target.classList.contains('modal')) {
-                console.log('Payment modal backdrop clicked');
-                if (paymentModalInstance) {
-                    paymentModalInstance.hide();
-                }
-                setTimeout(removeAllBackdrops, 100);
+                e.stopPropagation();
             }
             
             // Status modal backdrop
@@ -2632,21 +2631,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to forcefully remove all modal backdrops
 function removeAllBackdrops() {
-    console.log('Removing all modal backdrops...');
-    
-    // Remove all modal-backdrop elements
+    // If any Bootstrap modal is currently shown, don't touch backdrops
+    const anyOpenModal = document.querySelector('.modal.show');
+    if (anyOpenModal) {
+        return;
+    }
+    console.log('Removing stray modal backdrops...');
     const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => {
-        console.log('Removing backdrop:', backdrop);
-        backdrop.remove();
-    });
-    
-    // Ensure body classes are cleaned up
+    backdrops.forEach(b => b.remove());
     document.body.classList.remove('modal-open');
     document.body.style.paddingRight = '';
     document.body.style.overflow = '';
-    
-    console.log(`Removed ${backdrops.length} backdrop(s)`);
 }
 
 function resetPaymentModal() {
@@ -2702,8 +2697,8 @@ function showPaymentModal(enrollmentId, courseName) {
     
     // Create new modal instance with proper options for closing
     paymentModalInstance = new bootstrap.Modal(paymentModalElement, {
-        backdrop: true, // Allow closing with backdrop click
-        keyboard: true, // Allow closing with ESC key
+        backdrop: 'static',
+        keyboard: false,
         focus: true
     });
     
@@ -2718,6 +2713,7 @@ function showPaymentModal(enrollmentId, courseName) {
     paymentModalElement.addEventListener('hidden.bs.modal', function(e) {
         console.log('Payment modal hidden');
         resetPaymentModal();
+        removeAllBackdrops();
     }, { once: true });
     
     // Show the modal
@@ -2733,6 +2729,13 @@ function showPaymentModal(enrollmentId, courseName) {
         
         // Focus the modal for accessibility
         paymentModalElement.focus();
+        // Dim the page using a temporary backdrop under the modal
+        if (!document.querySelector('.modal-backdrop')) {
+            const bd = document.createElement('div');
+            bd.className = 'modal-backdrop fade show';
+            document.body.appendChild(bd);
+            document.body.classList.add('modal-open');
+        }
         
         // Add simple close functionality
         const closeModal = () => {
