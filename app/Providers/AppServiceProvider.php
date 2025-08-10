@@ -32,9 +32,13 @@ class AppServiceProvider extends ServiceProvider
         // Register view composer for student sidebar
         view()->composer('components.student-sidebar', \App\Http\View\Composers\StudentSidebarComposer::class);
         
-        // Force HTTPS for assets in production
+        // Force HTTPS for assets and configure session in production
         if (app()->environment('production')) {
             URL::forceScheme('https');
+            
+            // Configure session for HTTPS
+            config(['session.secure' => true]);
+            config(['session.same_site' => 'lax']);
         }
     }
 }

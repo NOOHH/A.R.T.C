@@ -17,8 +17,15 @@ class ForceHttps
      */
     public function handle(Request $request, Closure $next)
     {
-        if (App::environment('production') && !$request->secure()) {
-            return redirect()->secure($request->getRequestUri());
+        if (App::environment('production')) {
+            // Force HTTPS for all requests
+            if (!$request->secure()) {
+                return redirect()->secure($request->getRequestUri());
+            }
+            
+            // Configure session for HTTPS
+            config(['session.secure' => true]);
+            config(['session.same_site' => 'lax']);
         }
 
         return $next($request);
