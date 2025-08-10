@@ -18,6 +18,6 @@ class HomepageController extends Controller
         $settings = \App\Helpers\SettingsHelper::getSettings();
         $homepageTitle = $settings['homepage']['title'] ?? 'ENROLL NOW';
         
-        return view('homepage', compact('programs', 'homepageTitle'));
+        return view('welcome.homepage', compact('programs', 'homepageTitle'));
     }
 }

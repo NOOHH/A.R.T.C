@@ -73,7 +73,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}?v={{ time() }}">
+            <link rel="stylesheet" href="{{ asset('css/homepage/navbar.css') }}?v={{ time() }}">
     <style>
         {!! \App\Helpers\SettingsHelper::getNavbarStyles() !!}
         {!! \App\Helpers\SettingsHelper::getFooterStyles() !!}
@@ -705,10 +705,7 @@
     
     @stack('scripts') {{-- Ensure page-specific scripts are loaded before </body> --}}
 
-    <!-- Debug script for enrollment buttons -->
-    <script src="{{ asset('js/enrollment-debug.js') }}"></script>
-    <!-- Direct fix for modular enrollment button -->
-    <script src="{{ asset('js/modular-button-fix.js') }}"></script>
+
     
 
 </body>

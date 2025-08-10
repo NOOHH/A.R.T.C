@@ -566,7 +566,7 @@ class ClassMeetingController extends Controller
         // Optionally, keep pastMeetings for attendance stats if needed
         $pastMeetings = collect();
 
-        return view('student.meetings', compact(
+        return view('student.student-meetings.meetings', compact(
             'upcomingMeetings',
             'currentMeetings',
             'todaysMeetings',

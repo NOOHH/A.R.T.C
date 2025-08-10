@@ -2132,7 +2132,7 @@ function displayRegistrationDetails(data, registrationId) {
 </script>
 
 <!-- Enhanced Registration Modal JavaScript -->
-<script src="{{ asset('js/enhanced-registration-modal.js') }}"></script>
+        <script src="{{ asset('js/enrollment/enhanced-registration-modal.js') }}"></script>
 
 <!-- Confirmation Modal Template (will be created dynamically) -->
 

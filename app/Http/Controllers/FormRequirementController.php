@@ -14,7 +14,7 @@ class FormRequirementController extends Controller
     public function index()
     {
         $requirements = FormRequirement::orderBy('sort_order')->get();
-        return view('admin.form-requirements', compact('requirements'));
+        return view('admin.admin-settings.form-requirements', compact('requirements'));
     }
 
     /**

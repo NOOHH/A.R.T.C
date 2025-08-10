@@ -881,7 +881,7 @@ class StudentRegistrationController extends Controller
 
     public function showEnrollmentSelection()
     {
-        return view('enrollment');
+        return view('welcome.enrollment');
     }
 
     /**

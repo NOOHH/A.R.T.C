@@ -198,7 +198,7 @@ class StudentController extends Controller
             $student->program_name = 'Not enrolled yet';
         }
 
-        return view('student.settings', compact('user', 'student', 'formRequirements'));
+        return view('student.student-settings.settings', compact('user', 'student', 'formRequirements'));
     }
 
     public function updateSettings(Request $request)

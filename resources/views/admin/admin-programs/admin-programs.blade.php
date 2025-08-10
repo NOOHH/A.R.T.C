@@ -222,7 +222,7 @@
 @push('scripts')
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ asset('admin/admin-programs.js') }}?v={{ time() }}"></script>
+        <script src="{{ asset('js/admin/admin-programs.js') }}?v={{ time() }}"></script>
 
 <script>
 // Image preview functionality

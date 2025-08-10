@@ -997,7 +997,7 @@ class StudentDashboardController extends Controller
             $student->email = session('user_email', '');
         }
 
-        return view('student.settings', compact('student'));
+        return view('student.student-settings.settings', compact('student'));
     }
 
     public function updateSettings(Request $request)
@@ -2925,7 +2925,7 @@ class StudentDashboardController extends Controller
             }
         }
 
-        return view('student.enrolled-courses', [
+        return view('student.student-courses.enrolled-courses', [
             'user' => $user,
             'student' => $student,
             'enrolledCoursesData' => $enrolledCoursesData,

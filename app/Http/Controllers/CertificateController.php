@@ -664,7 +664,7 @@ class CertificateController extends Controller
         if ($enrollmentId) {
             $enrollment = Enrollment::find($enrollmentId);
             if ($enrollment && $enrollment->enrollment_status === 'approved') {
-                return view('certificate.verify', [
+                return view('admin.certificates.verify', [
                     'valid' => true,
                     'student_name' => $studentName,
                     'program' => $enrollment->program->program_name ?? 'Unknown Program',
@@ -675,7 +675,7 @@ class CertificateController extends Controller
             }
         }
 
-        return view('certificate.verify', [
+        return view('admin.certificates.verify', [
             'valid' => false,
             'message' => 'Certificate could not be verified.'
         ]);
