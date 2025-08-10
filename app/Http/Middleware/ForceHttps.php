@@ -29,10 +29,8 @@ class ForceHttps
             Config::set('session.same_site', 'lax');
             Config::set('session.http_only', true);
             
-            // Set cookie domain if not already set
-            if (!Config::get('session.domain')) {
-                Config::set('session.domain', '.laravel-zfurp.sevalla.app');
-            }
+            // Don't set a hardcoded domain - let Laravel use the current host
+            // This prevents domain binding issues that cause 419 errors
             
             // Ensure CSRF token is properly configured
             Config::set('session.cookie', 'laravel_session');
