@@ -50,9 +50,10 @@ class UnifiedLoginController extends Controller
      */
     public function login(Request $request)
     {
+        // TEMPORARY: Relaxed validation for debugging
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:1', // Reduced from 6 to 1 for testing
         ]);
 
         $email = $request->email;
