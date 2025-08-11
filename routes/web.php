@@ -27,6 +27,16 @@ Route::get('/debug-session', function (Request $request) {
     ]);
 })->name('debug.session');
 
+// Simple test route to check if Laravel is working
+Route::get('/test-simple', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Laravel is working!',
+        'timestamp' => now(),
+        'environment' => app()->environment()
+    ]);
+})->name('test.simple');
+
 // Admin: Delete a meeting for a professor
 Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
 use App\Http\Controllers\StudentController;
