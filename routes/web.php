@@ -3617,3 +3617,16 @@ Route::post('/test-login-submit', function (\Illuminate\Http\Request $request) {
         'timestamp' => now(),
     ]);
 })->name('test.login.submit');
+
+// Debug login test route
+Route::get('/debug-login-test', function() {
+    return response()->json([
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+        'session_started' => session()->isStarted(),
+        'app_url' => config('app.url'),
+        'session_domain' => config('session.domain'),
+        'session_secure' => config('session.secure'),
+        'session_same_site' => config('session.same_site'),
+    ]);
+});

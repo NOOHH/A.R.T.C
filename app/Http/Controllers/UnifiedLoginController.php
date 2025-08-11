@@ -50,6 +50,15 @@ class UnifiedLoginController extends Controller
      */
     public function login(Request $request)
     {
+        // Add comprehensive logging for debugging
+        Log::info('Login attempt started', [
+            'email' => $request->email,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'session_id' => session()->getId(),
+            'csrf_token' => $request->input('_token')
+        ]);
+
         // TEMPORARY: Relaxed validation for debugging
         $request->validate([
             'email' => 'required|email',
@@ -59,34 +68,41 @@ class UnifiedLoginController extends Controller
         $email = $request->email;
         $password = $request->password;
 
+        Log::info('Validation passed, checking user tables', ['email' => $email]);
+
         // Priority order: Admin -> Director -> Professor -> Student (Users table)
         // This ensures admins and directors have priority access
 
         // 1. Check if user is an admin
         $admin = Admin::where('email', $email)->first();
         if ($admin) {
+            Log::info('Admin found, attempting login', ['admin_id' => $admin->admin_id]);
             return $this->loginAdmin($admin, $password, $request);
         }
 
         // 2. Check if user is a director
         $director = Director::where('directors_email', $email)->first();
         if ($director) {
+            Log::info('Director found, attempting login', ['director_id' => $director->directors_id]);
             return $this->loginDirector($director, $password, $request);
         }
 
         // 3. Check if user is a professor
         $professor = Professor::where('professor_email', $email)->first();
         if ($professor) {
+            Log::info('Professor found, attempting login', ['professor_id' => $professor->professor_id]);
             return $this->loginProfessor($professor, $password, $request);
         }
 
         // 4. Check users table for any user (students, unverified, etc.) - preserving original behavior
         $user = User::where('email', $email)->first();
         if ($user) {
+            Log::info('User found in users table, attempting login', ['user_id' => $user->user_id]);
             return $this->loginStudent($user, $password, $request);
         }
 
         // If no account found in any table
+        Log::warning('No user found in any table', ['email' => $email]);
         return back()->withErrors(['email' => 'The provided credentials do not match our records.'])->withInput($request->only('email'));
     }
 
@@ -95,8 +111,15 @@ class UnifiedLoginController extends Controller
      */
     private function loginStudent($user, $password, $request)
     {
+        Log::info('Student login attempt', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'password_check' => Hash::check($password, $user->password)
+        ]);
+
         // Verify password
         if (!Hash::check($password, $user->password)) {
+            Log::warning('Student password verification failed', ['user_id' => $user->user_id]);
             return back()->withErrors(['password' => 'The password is incorrect.'])->withInput();
         }
 
