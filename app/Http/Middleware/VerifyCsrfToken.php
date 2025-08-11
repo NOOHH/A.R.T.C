@@ -25,5 +25,7 @@ class VerifyCsrfToken extends Middleware
         '/registration/validate-file',
         '/modular/registration/validate-file',
         '/modular/registration/user-prefill',
+        // TEMPORARY 419 FIX - REMOVE AFTER FIXING SESSION ISSUE
+        '/login',
     ];
 }

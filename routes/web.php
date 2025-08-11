@@ -12,6 +12,21 @@ use Illuminate\Support\Facades\Schema;
 // Broadcasting Authentication (for Laravel Echo + Pusher)
 Broadcast::routes(['middleware' => ['web']]);
 
+// Temporary 419 debugging routes - REMOVE AFTER FIXING
+Route::get('/debug-session', function (Request $request) {
+    return response()->json([
+        'session_id' => session()->getId(),
+        'csrf_token' => csrf_token(),
+        'session_data' => session()->all(),
+        'cookie_params' => session()->getCookieParams(),
+        'domain' => config('session.domain'),
+        'secure' => config('session.secure'),
+        'same_site' => config('session.same_site'),
+        'request_host' => $request->getHost(),
+        'request_scheme' => $request->getScheme(),
+    ]);
+})->name('debug.session');
+
 // Admin: Delete a meeting for a professor
 Route::delete('/admin/professors/{professor}/meetings/{meeting}', [App\Http\Controllers\AdminProfessorController::class, 'deleteMeeting'])->name('admin.professors.deleteMeeting');
 use App\Http\Controllers\StudentController;
