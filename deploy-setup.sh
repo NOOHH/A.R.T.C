@@ -55,3 +55,4 @@ echo "⚠️  Set APP_URL to your production domain"
 echo "⚠️  Configure mail settings if needed"
 echo ""
 echo "Ready for deployment! 🚀"
+

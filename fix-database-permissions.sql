@@ -22,3 +22,4 @@ SHOW GRANTS FOR 'smartprep'@'%';
 -- 7. Test access
 USE `artc`;
 SHOW TABLES;
+

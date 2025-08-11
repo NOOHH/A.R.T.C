@@ -464,6 +464,18 @@ Route::get('/csrf-token', function() {
     ]);
 });
 
+// Cookie test route (forces session write)
+Route::get('/cookie-test', function () {
+    session()->put('_ping', now());
+    return response()->json([
+        'ok' => true,
+        'session_id' => session()->getId(),
+        'has_ping' => session()->has('_ping'),
+        'csrf_token' => csrf_token(),
+        'session_started' => session()->isStarted(),
+    ]);
+});
+
 // Unified login page and authentication for all user types
 Route::get('/login', [UnifiedLoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [UnifiedLoginController::class, 'login'])->name('login.submit');
