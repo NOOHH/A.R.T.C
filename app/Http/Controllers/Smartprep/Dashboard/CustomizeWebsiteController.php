@@ -36,8 +36,13 @@ class CustomizeWebsiteController extends Controller
         // Create a website request record
         DB::table('website_requests')->insert([
             'user_id' => $user->id,
-            'user_email' => $user->email,
-            'customization_data' => $request->input('customization_data'),
+            'business_name' => $request->input('business_name', 'Unnamed Business'),
+            'business_type' => $request->input('business_type', 'General'),
+            'description' => $request->input('description', 'Website customization request'),
+            'domain_preference' => $request->input('domain_preference'),
+            'contact_email' => $request->input('contact_email', $user->email),
+            'contact_phone' => $request->input('contact_phone'),
+            'template_data' => $request->input('customization_data'),
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),

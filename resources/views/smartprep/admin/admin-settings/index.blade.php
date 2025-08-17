@@ -504,32 +504,52 @@
                         <h5><i class="fas fa-cog me-2"></i>General Settings</h5>
                     </div>
                     
-                    <form id="generalForm" onsubmit="updateGeneral(event)">
+                    <form id="generalForm" method="POST" action="{{ route('smartprep.admin.settings.save') }}">
                         @csrf
+                        
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
+                        @if($errors->any())
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <ul class="mb-0">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
                         <div class="form-group mb-3">
                             <label class="form-label">Site Title</label>
-                            <input type="text" class="form-control" name="site_title" value="Ascendo Review and Training Center" placeholder="Enter site title">
+                            <input type="text" class="form-control" name="site_name" value="{{ $settings['site_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Enter site title">
                             <small class="form-text text-muted">Appears in browser tab and search results</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Site Tagline</label>
-                            <input type="text" class="form-control" name="tagline" value="Review Smarter. Learn Better. Succeed Faster." placeholder="Enter tagline">
+                            <input type="text" class="form-control" name="site_tagline" value="{{ $settings['site_tagline'] ?? 'Review Smarter. Learn Better. Succeed Faster.' }}" placeholder="Enter tagline">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Contact Email</label>
-                            <input type="email" class="form-control" name="contact_email" value="admin@artc.com" placeholder="Contact email">
+                            <input type="email" class="form-control" name="contact_email" value="{{ $settings['contact_email'] ?? 'admin@artc.com' }}" placeholder="Contact email">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Phone Number</label>
-                            <input type="text" class="form-control" name="phone" value="+1 (555) 123-4567" placeholder="Phone number">
+                            <input type="text" class="form-control" name="contact_phone" value="{{ $settings['contact_phone'] ?? '+1 (555) 123-4567' }}" placeholder="Phone number">
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Address</label>
-                            <textarea class="form-control" name="address" rows="3" placeholder="Physical address">123 Education Street, Learning City, LC 12345</textarea>
+                            <textarea class="form-control" name="contact_address" rows="3" placeholder="Physical address">{{ $settings['contact_address'] ?? '123 Education Street, Learning City, LC 12345' }}</textarea>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
@@ -544,56 +564,61 @@
                         <h5><i class="fas fa-palette me-2"></i>Branding & Design</h5>
                     </div>
                     
-                    <form id="brandingForm" onsubmit="updateBranding(event)" enctype="multipart/form-data">
+                    <form id="brandingForm" method="POST" action="{{ route('smartprep.admin.settings.save') }}">
                         @csrf
+                        
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
                         <div class="form-group mb-3">
                             <label class="form-label">Primary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="#667eea" onchange="updatePreviewColor('primary', this.value)">
-                                <input type="text" class="form-control" name="primary_color" value="#667eea">
+                                <input type="color" class="color-input" value="{{ $settings['primary_color'] ?? '#667eea' }}" onchange="updatePreviewColor('primary', this.value)">
+                                <input type="text" class="form-control" name="primary_color" value="{{ $settings['primary_color'] ?? '#667eea' }}">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Secondary Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="#764ba2" onchange="updatePreviewColor('secondary', this.value)">
-                                <input type="text" class="form-control" name="secondary_color" value="#764ba2">
+                                <input type="color" class="color-input" value="{{ $settings['secondary_color'] ?? '#764ba2' }}" onchange="updatePreviewColor('secondary', this.value)">
+                                <input type="text" class="form-control" name="secondary_color" value="{{ $settings['secondary_color'] ?? '#764ba2' }}">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Background Color</label>
                             <div class="color-picker-group">
-                                <input type="color" class="color-input" value="#ffffff" onchange="updatePreviewColor('background', this.value)">
-                                <input type="text" class="form-control" name="background_color" value="#ffffff">
+                                <input type="color" class="color-input" value="{{ $settings['background_color'] ?? '#ffffff' }}" onchange="updatePreviewColor('background', this.value)">
+                                <input type="text" class="form-control" name="background_color" value="{{ $settings['background_color'] ?? '#ffffff' }}">
                             </div>
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label class="form-label">Logo Upload</label>
-                            <input type="file" class="form-control" name="logo" accept="image/*" onchange="previewLogo(this)">
-                            <small class="form-text text-muted">Recommended: 200x60px, PNG format with transparent background</small>
-                            <div class="mt-2">
-                                <img id="logoPreview" src="#" alt="Logo Preview" style="max-width: 200px; display: none;">
-                            </div>
+                            <label class="form-label">Logo URL</label>
+                            <input type="text" class="form-control" name="logo_url" value="{{ $settings['logo_url'] ?? '' }}" placeholder="Enter logo URL or path">
+                            <small class="form-text text-muted">Enter the URL or path to your logo image</small>
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label class="form-label">Favicon</label>
-                            <input type="file" class="form-control" name="favicon" accept="image/*">
+                            <label class="form-label">Favicon URL</label>
+                            <input type="text" class="form-control" name="favicon_url" value="{{ $settings['favicon_url'] ?? '' }}" placeholder="Enter favicon URL or path">
                             <small class="form-text text-muted">32x32px ICO or PNG format</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Custom Font</label>
                             <select class="form-control" name="font_family">
-                                <option value="Inter">Inter (Default)</option>
-                                <option value="Roboto">Roboto</option>
-                                <option value="Open Sans">Open Sans</option>
-                                <option value="Lato">Lato</option>
-                                <option value="Poppins">Poppins</option>
-                                <option value="Montserrat">Montserrat</option>
+                                <option value="Inter" {{ ($settings['font_family'] ?? 'Inter') == 'Inter' ? 'selected' : '' }}>Inter (Default)</option>
+                                <option value="Roboto" {{ ($settings['font_family'] ?? '') == 'Roboto' ? 'selected' : '' }}>Roboto</option>
+                                <option value="Open Sans" {{ ($settings['font_family'] ?? '') == 'Open Sans' ? 'selected' : '' }}>Open Sans</option>
+                                <option value="Lato" {{ ($settings['font_family'] ?? '') == 'Lato' ? 'selected' : '' }}>Lato</option>
+                                <option value="Poppins" {{ ($settings['font_family'] ?? '') == 'Poppins' ? 'selected' : '' }}>Poppins</option>
+                                <option value="Montserrat" {{ ($settings['font_family'] ?? '') == 'Montserrat' ? 'selected' : '' }}>Montserrat</option>
                             </select>
                         </div>
                         
@@ -609,61 +634,45 @@
                         <h5><i class="fas fa-bars me-2"></i>Navigation Bar</h5>
                     </div>
                     
-                    <form id="navbarForm" onsubmit="updateNavbar(event)">
+                    <form id="navbarForm" method="POST" action="{{ route('smartprep.admin.settings.save') }}">
                         @csrf
+                        
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+                        
                         <div class="form-group mb-3">
                             <label class="form-label">Brand Name</label>
-                            <input type="text" class="form-control" name="brand_name" value="Ascendo Review and Training Center" placeholder="Brand name">
+                            <input type="text" class="form-control" name="navbar_brand_name" value="{{ $settings['navbar_brand_name'] ?? 'Ascendo Review and Training Center' }}" placeholder="Brand name">
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label class="form-label">Brand Image</label>
-                            <input type="file" class="form-control" name="brand_image" accept="image/*">
-                            <small class="form-text text-muted">Logo for navigation bar</small>
+                            <label class="form-label">Brand Image URL</label>
+                            <input type="text" class="form-control" name="navbar_brand_image" value="{{ $settings['navbar_brand_image'] ?? '' }}" placeholder="Logo URL for navigation bar">
+                            <small class="form-text text-muted">Enter the URL or path to your logo image</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <label class="form-label">Navigation Style</label>
                             <select class="form-control" name="navbar_style">
-                                <option value="fixed-top">Fixed Top</option>
-                                <option value="sticky-top">Sticky Top</option>
-                                <option value="static">Static</option>
+                                <option value="fixed-top" {{ ($settings['navbar_style'] ?? 'fixed-top') == 'fixed-top' ? 'selected' : '' }}>Fixed Top</option>
+                                <option value="sticky-top" {{ ($settings['navbar_style'] ?? '') == 'sticky-top' ? 'selected' : '' }}>Sticky Top</option>
+                                <option value="static" {{ ($settings['navbar_style'] ?? '') == 'static' ? 'selected' : '' }}>Static</option>
                             </select>
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label class="form-label">Menu Items</label>
-                            <div class="nav-items-container">
-                                <div class="nav-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control me-2" name="nav_items[]" value="Home" placeholder="Menu label">
-                                    <input type="text" class="form-control me-2" name="nav_links[]" value="/" placeholder="Link">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNavItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div class="nav-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control me-2" name="nav_items[]" value="Review Programs" placeholder="Menu label">
-                                    <input type="text" class="form-control me-2" name="nav_links[]" value="/programs" placeholder="Link">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNavItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div class="nav-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control me-2" name="nav_items[]" value="About Us" placeholder="Menu label">
-                                    <input type="text" class="form-control me-2" name="nav_links[]" value="/about" placeholder="Link">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNavItem(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addNavItem()">
-                                <i class="fas fa-plus me-2"></i>Add Menu Item
-                            </button>
+                            <label class="form-label">Menu Items (JSON Format)</label>
+                            <textarea class="form-control" name="navbar_menu_items" rows="6" placeholder='[{"label":"Home","link":"/"}, {"label":"Programs","link":"/programs"}]'>{{ $settings['navbar_menu_items'] ?? '[{"label":"Home","link":"/"}, {"label":"Review Programs","link":"/programs"}, {"label":"About Us","link":"/about"}]' }}</textarea>
+                            <small class="form-text text-muted">Enter menu items in JSON format</small>
                         </div>
                         
                         <div class="form-group mb-3">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="show_login_button" checked>
+                                <input class="form-check-input" type="checkbox" name="show_login_button" value="1" {{ ($settings['show_login_button'] ?? '1') == '1' ? 'checked' : '' }}>
                                 <label class="form-check-label">Show Login Button</label>
                             </div>
                         </div>
