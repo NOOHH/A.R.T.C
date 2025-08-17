@@ -26,6 +26,12 @@ class TenantMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
+        // Skip tenant switching for SmartPrep routes - they should always use main DB
+        if ($request->is('smartprep/*')) {
+            $this->tenantService->switchToMain();
+            return $next($request);
+        }
+        
         $domain = $request->getHost();
         
         // For development, handle localhost/127.0.0.1

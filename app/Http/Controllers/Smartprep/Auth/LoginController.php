@@ -32,9 +32,15 @@ class LoginController extends Controller
             })->first();
 
         if ($user && Hash::check($password, $user->password)) {
-            Auth::guard('web')->login($user, $request->boolean('remember'));
+            Auth::guard('smartprep')->login($user, $request->boolean('remember'));
             $request->session()->regenerate();
-            return redirect()->route('smartprep.dashboard');
+            
+            // Redirect based on user role
+            if ($user->role === 'admin') {
+                return redirect()->route('smartprep.admin.dashboard');
+            } else {
+                return redirect()->route('smartprep.dashboard');
+            }
         }
 
         return back()->withErrors([
@@ -44,7 +50,7 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
+        Auth::guard('smartprep')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('smartprep.login');

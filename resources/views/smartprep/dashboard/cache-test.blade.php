@@ -24,7 +24,7 @@
     <div class="test-box">
         <h1>🚨 CACHE TEST - CHANGES ARE WORKING! 🚨</h1>
         <p>If you can see this RED background, the changes are being applied!</p>
-        <p>User: {{ Auth::user()->name }}</p>
+        <p>User: {{ Auth::guard('smartprep')->user()->name }}</p>
         <p>Time: {{ now() }}</p>
         <p>Active Websites: {{ $activeWebsites->count() }}</p>
         

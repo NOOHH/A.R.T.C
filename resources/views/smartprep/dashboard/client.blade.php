@@ -413,17 +413,17 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <a href="/" class="navbar-brand me-4">
+                    <a href="{{ route('smartprep.home') }}" class="navbar-brand me-4">
                         <i class="fas fa-graduation-cap me-2"></i>SmartPrep
                     </a>
                     <ul class="navbar-nav d-flex flex-row mb-0">
                         <li class="nav-item">
-                            <a class="nav-link active" href="{{ route('dashboard') }}">
+                            <a class="nav-link active" href="{{ route('smartprep.dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('dashboard.customize-website') }}">
+                            <a class="nav-link" href="{{ route('smartprep.dashboard.customize') }}">
                                 <i class="fas fa-palette me-2"></i>Customize Website
                             </a>
                         </li>
@@ -445,7 +445,7 @@
                 <ul class="navbar-nav d-flex flex-row mb-0">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>{{ Auth::user()->name }}
+                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('smartprep')->user()->name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>Home</a></li>

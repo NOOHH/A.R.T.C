@@ -84,5 +84,7 @@ class Kernel extends HttpKernel
     'tenant' => \App\Http\Middleware\TenantMiddleware::class,
     // SmartPrep-only middleware to force main DB context
     'smartprep.db' => \App\Http\Middleware\Smartprep\UseMainDatabase::class,
+    // SmartPrep authentication middleware
+    'smartprep.auth' => \App\Http\Middleware\Smartprep\Authenticate::class,
     ];
 }

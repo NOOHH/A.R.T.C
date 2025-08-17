@@ -41,6 +41,12 @@ return [
             'provider' => 'users',
         ],
 
+        // SmartPrep guard for main database users
+        'smartprep' => [
+            'driver' => 'session',
+            'provider' => 'smartprep_users',
+        ],
+
         // STUDENT GUARD
         'student' => [
             'driver'   => 'session',
@@ -88,6 +94,12 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model'  => App\Models\User::class,
+        ],
+
+        // SmartPrep users provider for main database
+        'smartprep_users' => [
+            'driver' => 'eloquent',
+            'model'  => App\Models\Smartprep\User::class,
         ],
 
         // STUDENT PROVIDER

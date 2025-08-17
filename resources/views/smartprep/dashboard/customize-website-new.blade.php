@@ -404,12 +404,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('dashboard') }}">
+                        <a class="nav-link" href="{{ route('smartprep.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('dashboard.customize-website') }}">
+                        <a class="nav-link active" href="{{ route('smartprep.dashboard.customize') }}">
                             <i class="fas fa-palette me-2"></i>Customize Website
                         </a>
                     </li>
@@ -425,13 +425,13 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>{{ Auth::user()->name }}
+                            <i class="fas fa-user-circle me-2"></i>{{ Auth::guard('smartprep')->user()->name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>Home</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
+                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
                                     @csrf
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -1526,7 +1526,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Email *</label>
-                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::user()->email }}">
+                                <input type="email" class="form-control form-control-modern" name="contact_email" required value="{{ Auth::guard('smartprep')->user()->email }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact Phone</label>

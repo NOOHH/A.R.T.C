@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Smartprep\Dashboard;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class CustomizeWebsiteController extends Controller
 {
@@ -24,5 +27,23 @@ class CustomizeWebsiteController extends Controller
     public function cacheTest()
     {
         return view('smartprep.dashboard.cache-test');
+    }
+
+    public function submitCustomization(Request $request)
+    {
+        $user = Auth::guard('smartprep')->user();
+        
+        // Create a website request record
+        DB::table('website_requests')->insert([
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'customization_data' => $request->input('customization_data'),
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('smartprep.dashboard.customize')
+            ->with('success', 'Your website customization request has been submitted successfully!');
     }
 }

@@ -8,6 +8,9 @@ class ClientDashboardController extends Controller
 {
     public function index()
     {
-        return view('smartprep.dashboard.client');
+        return view('smartprep.dashboard.client', [
+            'activeWebsites' => collect([]),
+            'websiteRequests' => collect([])
+        ]);
     }
 }

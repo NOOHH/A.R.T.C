@@ -549,19 +549,19 @@
                     <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                    @auth
+                    @auth('smartprep')
                         <li class="nav-item">
-                            <a class="btn btn-hero" href="/dashboard">
+                            <a class="btn btn-hero" href="{{ route('smartprep.dashboard') }}">
                                 <i class="fas fa-tachometer-alt"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                {{ Auth::user()->name }}
+                                {{ Auth::guard('smartprep')->user()->name }}
                             </a>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                                    <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline">
                                         @csrf
                                         <button type="submit" class="dropdown-item">
                                             <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -571,9 +571,9 @@
                             </ul>
                         </li>
                     @else
-                        <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ route('smartprep.login') }}">Login</a></li>
                         <li class="nav-item">
-                            <a class="btn btn-hero" href="/register">
+                            <a class="btn btn-hero" href="{{ route('smartprep.register') }}">
                                 <i class="fas fa-rocket"></i>Get Started
                             </a>
                         </li>
@@ -596,15 +596,15 @@
                         <h1 class="hero-title">Transform Education with SmartPrep</h1>
                         <p class="hero-subtitle">Empower your educational institution with our cutting-edge multi-tenant learning management platform. Build professional training websites that scale with your success.</p>
                         <div>
-                            @auth
-                                <a href="/dashboard" class="btn btn-hero me-3">
+                            @auth('smartprep')
+                                <a href="{{ route('smartprep.dashboard') }}" class="btn btn-hero me-3">
                                     <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
                                 </a>
                             @else
-                                <a href="/register" class="btn btn-hero me-3">
+                                <a href="{{ route('smartprep.register') }}" class="btn btn-hero me-3">
                                     <i class="fas fa-rocket me-2"></i>Create Account
                                 </a>
-                                <a href="/login" class="btn btn-outline-light btn-lg">
+                                <a href="{{ route('smartprep.login') }}" class="btn btn-outline-light btn-lg">
                                     <i class="fas fa-sign-in-alt me-2"></i>Login
                                 </a>
                             @endauth
@@ -795,12 +795,12 @@
                     <div class="cta-card">
                         <h2 class="display-4 fw-bold mb-4">Ready to Revolutionize Your Educational Platform?</h2>
                         <p class="lead mb-5">Join thousands of educators and training centers who trust SmartPrep to deliver exceptional learning experiences.</p>
-                        @auth
-                            <a href="/dashboard" class="btn btn-light btn-lg">
+                        @auth('smartprep')
+                            <a href="{{ route('smartprep.dashboard') }}" class="btn btn-light btn-lg">
                                 <i class="fas fa-tachometer-alt me-2"></i>Access Dashboard
                             </a>
                         @else
-                            <a href="/register" class="btn btn-light btn-lg me-3">
+                            <a href="{{ route('smartprep.register') }}" class="btn btn-light btn-lg me-3">
                                 <i class="fas fa-rocket me-2"></i>Create Your Account
                             </a>
                             <a href="#contact" class="btn btn-outline-light btn-lg">
@@ -832,11 +832,11 @@
                     <ul class="list-unstyled">
                         <li class="mb-2"><a href="#features" class="text-light text-decoration-none">Features</a></li>
                         <li class="mb-2"><a href="#about" class="text-light text-decoration-none">About</a></li>
-                        @auth
-                            <li class="mb-2"><a href="/dashboard" class="text-light text-decoration-none">Dashboard</a></li>
+                        @auth('smartprep')
+                            <li class="mb-2"><a href="{{ route('smartprep.dashboard') }}" class="text-light text-decoration-none">Dashboard</a></li>
                         @else
-                            <li class="mb-2"><a href="/login" class="text-light text-decoration-none">Login</a></li>
-                            <li class="mb-2"><a href="/register" class="text-light text-decoration-none">Register</a></li>
+                            <li class="mb-2"><a href="{{ route('smartprep.login') }}" class="text-light text-decoration-none">Login</a></li>
+                            <li class="mb-2"><a href="{{ route('smartprep.register') }}" class="text-light text-decoration-none">Register</a></li>
                         @endauth
                     </ul>
                 </div>

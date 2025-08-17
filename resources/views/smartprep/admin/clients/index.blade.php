@@ -1258,22 +1258,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                        <a class="nav-link" href="{{ route('smartprep.admin.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.website-requests') }}">
+                        <a class="nav-link" href="{{ route('smartprep.admin.website-requests') }}">
                             <i class="fas fa-clock me-2"></i>Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/admin/clients">
+                        <a class="nav-link active" href="{{ route('smartprep.admin.clients') }}">
                             <i class="fas fa-users me-2"></i>Clients
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/settings">
+                        <a class="nav-link" href="{{ route('smartprep.admin.settings') }}">
                             <i class="fas fa-cog me-2"></i>Settings
                         </a>
                     </li>
@@ -1288,7 +1288,7 @@
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>View Site</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
+                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
                                     @csrf
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -1313,7 +1313,7 @@
                     <p class="page-subtitle">Manage and monitor your multi-tenant client websites</p>
                 </div>
                 <div class="col-md-4 d-flex justify-content-md-end mt-4 mt-md-0">
-                    <a href="/admin/clients/create" class="btn btn-light btn-lg">
+                    <a href="{{ route('smartprep.admin.clients.create') }}" class="btn btn-light btn-lg">
                         <i class="fas fa-plus-circle me-2"></i>New Client
                     </a>
                 </div>
@@ -1496,7 +1496,7 @@
                                                     </a>
                                                     
                                                     @if(!isset($client->external_url))
-                                                        <a href="{{ route('admin.clients.edit', $client->id) }}" 
+                                                        <a href="{{ route('smartprep.admin.clients.edit', $client->id) }}" 
                                                           class="btn btn-outline-info btn-sm" title="Edit Client">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
@@ -1510,7 +1510,7 @@
 
                                                         
                                                         <form id="archive-form-{{ $client->id }}" 
-                                                              action="{{ route('admin.clients.archive', $client->id) }}" 
+                                                              action="{{ route('smartprep.admin.clients.archive', $client->id) }}" 
                                                               method="POST" style="display: none;">
                                                             @csrf
                                                             @method('PATCH')
@@ -1593,14 +1593,14 @@
                                                         </button>
                                                         
                                                         <form id="restore-form-{{ $client->id }}" 
-                                                              action="{{ route('admin.clients.unarchive', $client->id) }}" 
+                                                              action="{{ route('smartprep.admin.clients.unarchive', $client->id) }}" 
                                                               method="POST" style="display: none;">
                                                             @csrf
                                                             @method('PATCH')
                                                         </form>
                                                         
                                                         <form id="delete-form-{{ $client->id }}" 
-                                                              action="{{ route('admin.clients.destroy', $client->id) }}" 
+                                                              action="{{ route('smartprep.admin.clients.destroy', $client->id) }}" 
                                                               method="POST" style="display: none;">
                                                             @csrf
                                                             @method('DELETE')

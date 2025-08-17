@@ -382,12 +382,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('admin.dashboard') }}">
+                        <a class="nav-link active" href="{{ route('smartprep.admin.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.website-requests') }}">
+                        <a class="nav-link" href="{{ route('smartprep.admin.website-requests') }}">
                             <i class="fas fa-clock me-2"></i>Requests
                             @if($stats['pending_requests'] > 0)
                                 <span class="badge bg-warning text-dark ms-1">{{ $stats['pending_requests'] }}</span>
@@ -395,12 +395,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/clients">
+                        <a class="nav-link" href="{{ route('smartprep.admin.clients') }}">
                             <i class="fas fa-users me-2"></i>Clients
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/settings">
+                        <a class="nav-link" href="{{ route('smartprep.admin.settings') }}">
                             <i class="fas fa-cog me-2"></i>Settings
                         </a>
                     </li>
@@ -415,7 +415,7 @@
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>View Site</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
+                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
                                     @csrf
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -525,7 +525,7 @@
                             </div>
                             @endforeach
                             <div class="p-3 bg-light">
-                                <a href="{{ route('admin.website-requests') }}" class="btn-outline-custom btn-sm-custom w-100">
+                                <a href="{{ route('smartprep.admin.website-requests') }}" class="btn-outline-custom btn-sm-custom w-100">
                                     <i class="fas fa-eye me-2"></i>View All Requests
                                 </a>
                             </div>
@@ -567,7 +567,7 @@
                             </div>
                             @endforeach
                             <div class="p-3 bg-light">
-                                <a href="/admin/clients" class="btn-outline-custom btn-sm-custom w-100">
+                                <a href="{{ route('smartprep.admin.clients') }}" class="btn-outline-custom btn-sm-custom w-100">
                                     <i class="fas fa-users me-2"></i>Manage All Clients
                                 </a>
                             </div>

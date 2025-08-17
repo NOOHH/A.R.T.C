@@ -276,22 +276,22 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                        <a class="nav-link" href="{{ route('smartprep.admin.dashboard') }}">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('admin.website-requests') }}">
+                        <a class="nav-link active" href="{{ route('smartprep.admin.website-requests') }}">
                             <i class="fas fa-clock me-2"></i>Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/clients">
+                        <a class="nav-link" href="{{ route('smartprep.admin.clients') }}">
                             <i class="fas fa-users me-2"></i>Clients
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/settings">
+                        <a class="nav-link" href="{{ route('smartprep.admin.settings') }}">
                             <i class="fas fa-cog me-2"></i>Settings
                         </a>
                     </li>
@@ -306,7 +306,7 @@
                             <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>View Site</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
+                                <form method="POST" action="{{ route('smartprep.logout') }}" class="d-inline w-100">
                                     @csrf
                                     <button type="submit" class="dropdown-item">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -332,7 +332,7 @@
                 </div>
                 <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
                     <div class="d-flex flex-column align-items-lg-end">
-                        <div class="text-white-50 mb-2">{{ $requests->total() }} Total Requests</div>
+                        <div class="text-white-50 mb-2">{{ $requests->count() }} Total Requests</div>
                         <div class="fs-4 fw-bold">{{ $requests->where('status', 'pending')->count() }} Pending</div>
                     </div>
                 </div>
@@ -362,7 +362,7 @@
                     <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Requests</h5>
                 </div>
                 <div class="col-md-4">
-                    <form method="GET" action="{{ route('admin.website-requests') }}">
+                    <form method="GET" action="{{ route('smartprep.admin.website-requests') }}">
                         <select name="status" class="form-select" onchange="this.form.submit()">
                             <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Requests</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -480,7 +480,7 @@
             <div class="modal fade" id="approveModal{{ $request->id }}" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form method="POST" action="{{ route('admin.approve-request', $request) }}">
+                        <form method="POST" action="{{ route('smartprep.admin.approve-request', $request) }}">
                             @csrf
                             <div class="modal-header">
                                 <h5 class="modal-title">Approve Website Request</h5>
@@ -512,7 +512,7 @@
             <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form method="POST" action="{{ route('admin.reject-request', $request) }}">
+                        <form method="POST" action="{{ route('smartprep.admin.reject-request', $request) }}">
                             @csrf
                             <div class="modal-header">
                                 <h5 class="modal-title">Reject Website Request</h5>
