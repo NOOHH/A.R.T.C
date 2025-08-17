@@ -36,6 +36,8 @@ class Kernel extends HttpKernel
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             // \Illuminate\Session\Middleware\AuthenticateSession::class,
+            // Switch to the correct tenant database early in the web request lifecycle
+            \App\Http\Middleware\TenantMiddleware::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -45,6 +47,8 @@ class Kernel extends HttpKernel
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // Ensure API requests also resolve and switch to the correct tenant DB
+            \App\Http\Middleware\TenantMiddleware::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -76,5 +80,7 @@ class Kernel extends HttpKernel
         'check.session' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'role.dashboard' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'course.access' => \App\Http\Middleware\CheckCourseAccess::class,
+    // Optional route alias to force tenant resolution on specific routes/groups if needed
+    'tenant' => \App\Http\Middleware\TenantMiddleware::class,
     ];
 }

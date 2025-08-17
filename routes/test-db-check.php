@@ -66,3 +66,20 @@ Route::get('/test-db-comprehensive', function () {
         ]);
     }
 });
+
+// Lightweight debug endpoint to verify current DB connection/name in web context
+Route::get('/debug/which-db', function () {
+    try {
+        $default = config('database.default');
+        $currentDb = DB::select('select database() as db');
+        $dbName = $currentDb[0]->db ?? null;
+        return response()->json([
+            'default_connection' => $default,
+            'database' => $dbName,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
