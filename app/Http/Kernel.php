@@ -82,5 +82,7 @@ class Kernel extends HttpKernel
         'course.access' => \App\Http\Middleware\CheckCourseAccess::class,
     // Optional route alias to force tenant resolution on specific routes/groups if needed
     'tenant' => \App\Http\Middleware\TenantMiddleware::class,
+    // SmartPrep-only middleware to force main DB context
+    'smartprep.db' => \App\Http\Middleware\Smartprep\UseMainDatabase::class,
     ];
 }
